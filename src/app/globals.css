@@ -1,0 +1,103 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* ── Nền & Bề mặt ─────────────────────────────── */
+  --mcs-bg:              #f5f6f8;   /* Nền toàn trang */
+  --mcs-surface:         #ffffff;   /* Card, panel, modal */
+  --mcs-surface-2:       #f8f9fa;   /* Nền dòng xen kẽ bảng, sidebar nhẹ */
+  --mcs-surface-3:       #eef0f3;   /* Nền header bảng, nền input disabled */
+  --mcs-surface-hover:   #e8f4f4;   /* Hover state trên row, card */
+
+  /* ── Viền & Ngăn cách ─────────────────────────── */
+  --mcs-border:          #dde1e7;   /* Viền mặc định */
+  --mcs-border-strong:   #b2bec3;   /* Viền nổi bật, table border */
+  --mcs-divider:         #eceff1;   /* Ngăn cách nhẹ trong form */
+
+  /* ── Text ─────────────────────────────────────── */
+  --mcs-text:            #1a1a2e;   /* Text chính — đọc trên nền trắng */
+  --mcs-text-secondary:  #4a5568;   /* Label, caption, mô tả phụ */
+  --mcs-text-muted:      #718096;   /* Placeholder, hint, disabled text */
+  --mcs-text-inverse:    #ffffff;   /* Text trên nền tối (button, badge) */
+
+  /* ── Màu nhấn chính — Teal ────────────────────── */
+  --mcs-primary:         #0d7a7a;   /* Teal chính: button, link, active */
+  --mcs-primary-hover:   #0a6262;   /* Hover */
+  --mcs-primary-active:  #084f4f;   /* Active / pressed */
+  --mcs-primary-light:   #e6f4f4;   /* Nền nhạt khi highlight, tag */
+  --mcs-primary-mid:     #4db6ac;   /* Teal nhạt hơn cho gradient, chart */
+
+  /* ── Trạng thái — Ngữ nghĩa Màu */
+  --mcs-success:         #27ae60;
+  --mcs-success-hover:   #219150;
+  --mcs-success-light:   #eafaf1;
+  --mcs-success-text:    #1d6e3c;
+
+  --mcs-warning:         #f39c12;
+  --mcs-warning-hover:   #d68910;
+  --mcs-warning-light:   #fef9e7;
+  --mcs-warning-text:    #7d5a0a;
+
+  --mcs-error:           #e74c3c;
+  --mcs-error-hover:     #c0392b;
+  --mcs-error-light:     #fdf2f1;
+  --mcs-error-text:      #922b21;
+
+  --mcs-info:            #2980b9;
+  --mcs-info-hover:      #1f6391;
+  --mcs-info-light:      #eaf3fb;
+  --mcs-info-text:       #1a5276;
+
+  --mcs-neutral:         #95a5a6;
+  --mcs-neutral-hover:   #7f8c8d;
+  --mcs-neutral-light:   #f2f3f4;
+  --mcs-neutral-text:    #515a5a;
+}
+
+body {
+  background-color: var(--mcs-bg);
+  color: var(--mcs-text);
+  font-family: 'Inter', 'Noto Sans JP', sans-serif;
+  font-size: 12px;
+}
+
+/* Base Form Styling */
+input, select {
+  border: 1px solid var(--mcs-border);
+  background: var(--mcs-surface);
+  border-radius: 4px;
+  padding: 4px 8px;
+  color: var(--mcs-text);
+}
+input:focus, select:focus {
+  outline: none;
+  border-color: var(--mcs-primary);
+  box-shadow: 0 0 0 2px rgba(13, 122, 122, 0.15);
+}
+
+/* Standard Button */
+.btn-primary {
+  background-color: var(--mcs-primary);
+  color: white;
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-weight: 600;
+  transition: all 120ms ease;
+}
+.btn-primary:hover {
+  background-color: var(--mcs-primary-hover);
+}
+
+/* YSDMS Dual Language Wrapper */
+.ja {
+  font-size: 12px;
+  font-weight: 600;
+  display: block;
+}
+.vi {
+  font-size: 10px;
+  font-weight: 400;
+  color: var(--mcs-text-muted);
+  display: block;
+}
