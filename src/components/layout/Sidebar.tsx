@@ -1,13 +1,16 @@
 "use client"
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Home, Database, Box, FileText, Settings, Layers, Scissors, Truck } from 'lucide-react'
+import { Home, Database, Box, FileText, Settings, Layers, Scissors, Truck, Users, Server } from 'lucide-react'
 
 const MENU_ITEMS = [
   { href: '/', icon: Home, labelJA: 'ダッシュボード', labelVI: 'Dashboard' },
+  { href: '/master/customers', icon: Users, labelJA: '納入先マスター', labelVI: 'Khách Hàng/Giao Nhận' },
+  { href: '/master/machine', icon: Server, labelJA: '設備マスター', labelVI: 'Máy Đúc (Machine)' },
   { href: '/master/plastic', icon: Box, labelJA: 'プラ材料マスター', labelVI: 'Danh mục Nhựa' },
   { href: '/master/mold', icon: Layers, labelJA: '金型マスター', labelVI: 'Danh mục Khuôn' },
   { href: '/master/cutter', icon: Scissors, labelJA: '刃物マスター', labelVI: 'Danh mục Dao Cắt' },
+  { href: '/master/product', icon: FileText, labelJA: '製品マスター', labelVI: 'Danh mục Khay' },
   { href: '/inventory', icon: Database, labelJA: '在庫管理', labelVI: 'Quản lý Kho' },
   { href: '/production', icon: Truck, labelJA: '生産管理', labelVI: 'Sản xuất' },
   { href: '/settings', icon: Settings, labelJA: '設定', labelVI: 'Cài đặt' },

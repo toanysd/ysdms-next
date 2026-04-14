@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { Plus, Search } from 'lucide-react'
 
@@ -45,12 +46,14 @@ export default async function PlasticMasterPage() {
               className="h-[30px] w-[200px] pl-8 text-xs border-[var(--mcs-border)] focus:border-[var(--mcs-primary)] rounded"
             />
           </div>
-          <button className="btn-primary h-[30px] px-3 flex items-center gap-1 text-xs">
-            <Plus size={16} />
-            <div className="flex flex-col items-center leading-none mt-1">
-              <span className="ja">新規登録</span>
-            </div>
-          </button>
+          <Link href="/master/plastic/new">
+            <button className="btn-primary h-[30px] px-3 flex items-center gap-1 text-xs">
+              <Plus size={16} />
+              <div className="flex flex-col items-center leading-none mt-1">
+                <span className="ja">新規登録</span>
+              </div>
+            </button>
+          </Link>
         </div>
       </div>
 
