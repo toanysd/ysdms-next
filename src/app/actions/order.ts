@@ -51,7 +51,7 @@ export async function createOrderWithItemsAction(
 export async function updateOrderStatusAction(
     orderId: string,
     newStatus: OrderStatus
-): Promise<void> {
+): Promise<{ deductResult?: { status: string; rows_inserted?: number } }> {
     const supabase = await createClient()
 
     // Trigger log_order_status_change trên Database sẽ tự sinh dòng log trong order_status_history
@@ -65,6 +65,25 @@ export async function updateOrderStatusAction(
         throw new Error(error.message)
     }
 
+    // Khi chuyển sang in_production → gọi RPC trừ kho nhựa tự động
+    let deductResult = undefined
+    if (newStatus === 'in_production') {
+        const { data, error: rpcError } = await supabase
+            .rpc('auto_deduct_plastic_on_production', { p_order_id: orderId })
+
+        if (rpcError) {
+            console.error('Lỗi RPC auto-deduct:', rpcError)
+            // Không throw — status đã cập nhật, chỉ log lỗi trừ kho
+        } else {
+            deductResult = data
+            console.log('Auto-deduct result:', data)
+        }
+    }
+
     revalidatePath('/order')
     revalidatePath(`/order/${orderId}`)
+    revalidatePath('/inventory')
+    revalidatePath('/inventory/history')
+
+    return { deductResult }
 }
