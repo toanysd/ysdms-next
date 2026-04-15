@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
-import { Plus, Search, Layers } from 'lucide-react'
+import { Plus, Search, Layers, ChevronRight } from 'lucide-react'
 
 export type MoldBase = {
   id: string
@@ -8,21 +8,24 @@ export type MoldBase = {
   name: string | null
   customer_id: string | null
   is_active: boolean
+  prototype_base_id: string | null
   customers?: {
     name: string
     code: string
   } | null
+  mold_design_revision?: { id: string }[]
 }
 
 export default async function MoldBasePage() {
   const supabase = await createClient()
   
-  // Nạp dữ liệu kèm thông tin khách hàng (JOIN)
+  // Nạp dữ liệu kèm thông tin khách hàng (JOIN) + đếm Revisions
   const { data: molds, error } = await supabase
     .from('mold_base')
     .select(`
       *,
-      customers ( code, name )
+      customers ( code, name ),
+      mold_design_revision ( id )
     `)
     .order('code', { ascending: true })
 
@@ -59,46 +62,64 @@ export default async function MoldBasePage() {
       </div>
 
       <div className="flex-1 overflow-auto">
-        <table className="w-full text-left border-collapse min-w-[600px]">
+        <table className="w-full text-left border-collapse min-w-[700px]">
           <thead className="bg-[var(--mcs-surface-3)] sticky top-0 z-10 shadow-[0_1px_0_var(--mcs-border)] text-xs text-[var(--mcs-text-secondary)]">
             <tr>
-              <th className="p-3 font-bold w-[200px]">
+              <th className="p-3 font-bold w-[180px]">
                 <span className="ja">金型コード</span><span className="vi">Mã Khuôn (Base)</span>
               </th>
               <th className="p-3 font-bold">
                 <span className="ja">金型名称</span><span className="vi">Tên Khuôn</span>
               </th>
-              <th className="p-3 font-bold w-[200px]">
+              <th className="p-3 font-bold w-[160px]">
                 <span className="ja">顧客</span><span className="vi">Khách hàng</span>
               </th>
-              <th className="p-3 font-bold w-[120px]">
+              <th className="p-3 font-bold w-[100px] text-center">
+                <span className="ja">設計版数</span><span className="vi">Revisions</span>
+              </th>
+              <th className="p-3 font-bold w-[100px]">
                 <span className="ja">状態</span><span className="vi">Status</span>
               </th>
+              <th className="p-3 w-[40px]"></th>
             </tr>
           </thead>
           <tbody className="text-[12px]">
             {error && (
-              <tr><td colSpan={4} className="p-4 text-center text-[var(--mcs-error)]">Lỗi truy xuất: {error.message}</td></tr>
+              <tr><td colSpan={6} className="p-4 text-center text-[var(--mcs-error)]">Lỗi truy xuất: {error.message}</td></tr>
             )}
             {!error && (!molds || molds.length === 0) && (
-              <tr><td colSpan={4} className="p-8 text-center text-[var(--mcs-text-muted)]">Chưa có khuôn nào. Vui lòng tạo Khuôn gốc mới.</td></tr>
+              <tr><td colSpan={6} className="p-8 text-center text-[var(--mcs-text-muted)]">Chưa có khuôn nào. Vui lòng tạo Khuôn gốc mới.</td></tr>
             )}
             {molds?.map((item: MoldBase) => (
-              <tr key={item.id} className="border-b border-[var(--mcs-border)] hover:bg-[var(--mcs-surface-hover)] group cursor-pointer transition-colors">
-                <td className="p-3 font-mono font-bold text-[var(--mcs-text)] text-sm">{item.code}</td>
+              <tr key={item.id} className="border-b border-[var(--mcs-border)] hover:bg-[var(--mcs-surface-hover)] group transition-colors">
+                <td className="p-3">
+                  <Link href={`/master/mold/${item.id}`} className="font-mono font-bold text-[var(--mcs-primary)] text-sm hover:underline">
+                    {item.code}
+                  </Link>
+                </td>
                 <td className="p-3">{item.name || '-'}</td>
                 <td className="p-3">
                   {item.customers ? (
-                    <span className="px-2 py-0.5 bg-[var(--mcs-group-3)] bg-opacity-10 text-[var(--mcs-group-3)] border border-[var(--mcs-group-3)] border-opacity-30 rounded font-bold text-[11px]">
+                    <span className="px-2 py-0.5 bg-[var(--mcs-primary-light)] text-[var(--mcs-primary)] border border-[var(--mcs-primary)] border-opacity-30 rounded font-bold text-[11px]">
                       {item.customers.code}
                     </span>
                   ) : <span className="text-[var(--mcs-text-muted)]">-</span>}
+                </td>
+                <td className="p-3 text-center">
+                  <span className="inline-flex items-center justify-center min-w-[24px] h-[22px] px-1.5 rounded-full bg-[var(--mcs-surface-3)] text-[var(--mcs-text-secondary)] font-bold text-[11px]">
+                    {item.mold_design_revision?.length || 0}
+                  </span>
                 </td>
                 <td className="p-3">
                   {item.is_active ? 
                     (<span className="px-2 py-0.5 bg-[var(--mcs-success-light)] text-[var(--mcs-success-text)] border border-[rgba(39,174,96,0.25)] rounded uppercase text-[10px] font-bold">Active</span>) :
                     (<span className="px-2 py-0.5 bg-[var(--mcs-neutral-light)] text-[var(--mcs-neutral-text)] border border-[rgba(149,165,166,0.25)] rounded uppercase text-[10px] font-bold">Inactive</span>)
                   }
+                </td>
+                <td className="p-3">
+                  <Link href={`/master/mold/${item.id}`} className="opacity-0 group-hover:opacity-100 transition-opacity text-[var(--mcs-text-muted)]">
+                    <ChevronRight size={16} />
+                  </Link>
                 </td>
               </tr>
             ))}

@@ -24,7 +24,7 @@ export async function addMachineAction(formData: FormData) {
 
   if (error) {
     console.error('Error adding machine:', error)
-    return { error: error.message }
+    throw new Error(error.message)
   }
 
   revalidatePath('/master/machine')

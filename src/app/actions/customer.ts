@@ -30,7 +30,7 @@ export async function addCustomerAction(formData: FormData) {
 
   if (error) {
     console.error('Error adding customer:', error)
-    return { error: error.message }
+    throw new Error(error.message)
   }
 
   revalidatePath('/master/customers')

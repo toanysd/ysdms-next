@@ -24,7 +24,7 @@ export async function addCutterAction(formData: FormData) {
 
   if (error) {
     console.error('Error adding cutter:', error)
-    return { error: error.message }
+    throw new Error(error.message)
   }
 
   revalidatePath('/master/cutter')

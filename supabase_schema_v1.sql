@@ -30,6 +30,7 @@ CREATE TABLE public.mold_base (
     code TEXT NOT NULL UNIQUE, -- VD: JAE-001
     name TEXT,
     customer_code TEXT,
+    prototype_base_id UUID REFERENCES public.mold_base(id) ON DELETE SET NULL, -- Kế thừa thiết kế từ bản Thử nghiệm (D)
     is_active BOOLEAN DEFAULT true,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()

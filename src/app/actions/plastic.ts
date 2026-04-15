@@ -32,7 +32,7 @@ export async function addPlasticAction(formData: FormData) {
 
   if (error) {
     console.error('Error adding plastic:', error)
-    return { error: error.message }
+    throw new Error(error.message)
   }
 
   // Cập nhật lại cache cho trang danh sách
