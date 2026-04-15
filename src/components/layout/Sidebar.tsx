@@ -1,10 +1,11 @@
 "use client"
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Home, Database, Box, FileText, Settings, Layers, Scissors, Truck, Users, Server } from 'lucide-react'
+import { Home, Database, Box, FileText, Settings, Layers, Scissors, Truck, Users, Server, ClipboardList } from 'lucide-react'
 
 const MENU_ITEMS = [
   { href: '/', icon: Home, labelJA: 'ダッシュボード', labelVI: 'Dashboard' },
+  { href: '/order', icon: ClipboardList, labelJA: '受注・指示書', labelVI: 'Đơn Hàng / Chỉ Thị' },
   { href: '/master/customers', icon: Users, labelJA: '納入先マスター', labelVI: 'Khách Hàng/Giao Nhận' },
   { href: '/master/machine', icon: Server, labelJA: '設備マスター', labelVI: 'Máy Đúc (Machine)' },
   { href: '/master/plastic', icon: Box, labelJA: 'プラ材料マスター', labelVI: 'Danh mục Nhựa' },
@@ -25,7 +26,7 @@ export default function Sidebar() {
         <div className="font-bold text-[var(--mcs-primary)] text-xl w-[52px] text-center shrink-0">YSD</div>
         <div className="font-bold text-[var(--mcs-text)] whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity ml-2">Manufacturing</div>
       </div>
-      
+
       <nav className="flex-1 py-4 flex flex-col gap-1 overflow-y-auto overflow-x-hidden">
         {MENU_ITEMS.map((item) => {
           const isActive = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href))
