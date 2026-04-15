@@ -4,7 +4,7 @@ import { usePathname } from 'next/navigation'
 import { Home, Database, Box, FileText, Settings, Layers, Scissors, Truck, Users, Server, ClipboardList } from 'lucide-react'
 
 const MENU_ITEMS = [
-  { href: '/', icon: Home, labelJA: 'ダッシュボード', labelVI: 'Dashboard' },
+  { href: '/dashboard', icon: Home, labelJA: 'ダッシュボード', labelVI: 'Dashboard' },
   { href: '/order', icon: ClipboardList, labelJA: '受注・指示書', labelVI: 'Đơn Hàng / Chỉ Thị' },
   { href: '/master/customers', icon: Users, labelJA: '納入先マスター', labelVI: 'Khách Hàng/Giao Nhận' },
   { href: '/master/machine', icon: Server, labelJA: '設備マスター', labelVI: 'Máy Đúc (Machine)' },
