@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { BarChart3, Database, ClipboardList, ArrowRight } from 'lucide-react'
+import { BarChart3, Database, ClipboardList, Bell, ArrowRight } from 'lucide-react'
 
 /**
  * Reports Hub — Trang tổng hợp Báo cáo
@@ -25,6 +25,15 @@ export default function ReportsPage() {
             accent: 'blue',
             stats: ['Lọc theo tháng', 'Group theo KH', 'Export CSV'],
         },
+        {
+            href: '/reports/alerts',
+            icon: Bell,
+            titleJA: 'アラート・監視',
+            titleVI: 'Cảnh báo & Giám sát',
+            description: 'Giám sát ngưỡng tồn kho real-time, phân mức cảnh báo Chi tiết (Hết/Nguy hiểm/Cần bổ sung/Theo dõi).',
+            accent: 'red',
+            stats: ['Reorder Alert', 'Multi-level', 'Real-time'],
+        },
     ]
 
     const accentMap: Record<string, { border: string; bg: string; text: string; hoverBg: string; iconBg: string }> = {
@@ -41,6 +50,13 @@ export default function ReportsPage() {
             text: 'text-blue-700',
             hoverBg: 'hover:bg-blue-50',
             iconBg: 'bg-blue-100',
+        },
+        red: {
+            border: 'border-red-200',
+            bg: 'bg-red-50/60',
+            text: 'text-red-600',
+            hoverBg: 'hover:bg-red-50',
+            iconBg: 'bg-red-100',
         },
     }
 
@@ -66,7 +82,7 @@ export default function ReportsPage() {
                 </div>
 
                 {/* Report Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {reportModules.map((mod) => {
                         const colors = accentMap[mod.accent]
                         return (
