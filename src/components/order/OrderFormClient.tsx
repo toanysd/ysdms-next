@@ -68,8 +68,7 @@ export function OrderFormClient({ customers }: OrderFormClientProps) {
                 created_by: null
             }
 
-            const itemInserts: OrderItemInsert[] = items.map(i => ({
-                order_id: '',
+            const itemInserts: Omit<OrderItemInsert, 'order_id'>[] = items.map(i => ({
                 line_no: i.line_no,
                 product_pn_raw: i.product_pn_raw,
                 product_id: i.product_id,

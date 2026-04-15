@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { Plus, Search, FileText } from 'lucide-react'
+import { OrderWithCustomer } from '@/types/orders'
 
 export default async function OrderPage() {
     const supabase = await createClient()
@@ -35,12 +36,14 @@ export default async function OrderPage() {
                 </div>
 
                 <div className="flex items-center gap-2">
-                    <div className="relative">
-                        <Search className="absolute left-2 top-1.5 text-teal-600" size={16} />
+                    <div className="relative group">
+                        <Search className="absolute left-2 top-1.5 text-teal-400" size={16} />
                         <input
                             type="text"
-                            placeholder="Tìm theo Mã/LOT..."
-                            className="h-[30px] w-[200px] pl-8 text-xs border border-teal-200 focus:border-teal-500 focus:ring-1 focus:ring-teal-500 rounded outline-none"
+                            disabled
+                            placeholder="Sắp ra mắt..."
+                            title="Tính năng Search đang được nâng cấp"
+                            className="h-[30px] w-[200px] pl-8 text-xs border border-teal-200 bg-gray-50 text-gray-400 rounded outline-none cursor-not-allowed"
                         />
                     </div>
                     <Link href="/order/new">
@@ -82,7 +85,7 @@ export default async function OrderPage() {
                         </tr>
                     </thead>
                     <tbody className="text-[12px]">
-                        {orders?.map((item: any) => (
+                        {orders?.map((item: OrderWithCustomer) => (
                             <tr key={item.id} className="border-b border-[#e0e0e0] hover:bg-teal-50/30 group transition-colors cursor-pointer">
                                 <td className="p-3 font-mono font-bold text-teal-800 text-sm">{item.slip_no || '-'}</td>
                                 <td className="p-3 text-slate-600 font-mono">{item.order_date.substring(0, 10)}</td>

@@ -6,7 +6,7 @@ import { OrderInsert, OrderItemInsert, OrderStatus } from '@/types/orders'
 
 export async function createOrderWithItemsAction(
     header: OrderInsert,
-    items: OrderItemInsert[]
+    items: Omit<OrderItemInsert, 'order_id'>[]
 ): Promise<{ orderId: string }> {
     const supabase = await createClient()
 

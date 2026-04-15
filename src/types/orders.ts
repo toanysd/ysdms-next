@@ -78,12 +78,10 @@ export interface OrderStatusHistory {
 
 // ── View helpers (với JOIN) ───────────────────────────────────
 export interface OrderWithCustomer extends Order {
-    customer: {
-        id: string
-        customer_code: string
-        name_jp: string
-        name_short: string | null
-    }
+    customers: {
+        code: string
+        name_jp: string | null
+    } | null
 }
 
 export interface OrderItemWithProduct extends OrderItem {
