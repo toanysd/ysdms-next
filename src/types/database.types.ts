@@ -11,31 +11,52 @@ export type Database = {
     Tables: {
       customers: {
         Row: {
-          code: string
+          customer_code: string
+          delivery_name: string
+          delivery_address: string | null
+          requester_code: string | null
+          requester_name: string | null
           contact_person: string | null
-          created_at: string | null
+          phone: string | null
+          fax: string | null
+          parent_code: string | null
+          is_active: boolean
+          notes: string | null
+          created_at: string
+          updated_at: string
           id: string
-          is_active: boolean | null
-          name: string
-          name_jp: string | null
         }
         Insert: {
-          code: string
+          customer_code: string
+          delivery_name: string
+          delivery_address?: string | null
+          requester_code?: string | null
+          requester_name?: string | null
           contact_person?: string | null
-          created_at?: string | null
+          phone?: string | null
+          fax?: string | null
+          parent_code?: string | null
+          is_active?: boolean
+          notes?: string | null
+          created_at?: string
+          updated_at?: string
           id?: string
-          is_active?: boolean | null
-          name: string
-          name_jp?: string | null
         }
         Update: {
-          code?: string
+          customer_code?: string
+          delivery_name?: string
+          delivery_address?: string | null
+          requester_code?: string | null
+          requester_name?: string | null
           contact_person?: string | null
-          created_at?: string | null
+          phone?: string | null
+          fax?: string | null
+          parent_code?: string | null
+          is_active?: boolean
+          notes?: string | null
+          created_at?: string
+          updated_at?: string
           id?: string
-          is_active?: boolean | null
-          name?: string
-          name_jp?: string | null
         }
         Relationships: []
       }
@@ -571,16 +592,16 @@ export type TablesUpdate<T extends keyof PublicSchema["Tables"]> =
   PublicSchema["Tables"][T]["Update"]
 
 // ─── Convenient named exports ──────────────────────────────────
-export type Customer      = Tables<"customers">
+export type Customer = Tables<"customers">
 export type ProductMaster = Tables<"product_master">
-export type MoldBase      = Tables<"mold_base">
+export type MoldBase = Tables<"mold_base">
 export type MoldDesignRevision = Tables<"mold_design_revision">
-export type MoldPhysical  = Tables<"mold_physical">
+export type MoldPhysical = Tables<"mold_physical">
 export type PlasticMaster = Tables<"plastic_master">
-export type PlasticRoll   = Tables<"plastic_roll">
-export type CutterMaster  = Tables<"cutter_master">
+export type PlasticRoll = Tables<"plastic_roll">
+export type CutterMaster = Tables<"cutter_master">
 export type MachineMaster = Tables<"machine_master">
 export type ProductMoldMap = Tables<"product_mold_map">
 export type MoldPlasticBom = Tables<"mold_plastic_bom">
 export type MoldCutterConfig = Tables<"mold_cutter_config">
-export type InventoryTxn  = Tables<"inventory_txn">
+export type InventoryTxn = Tables<"inventory_txn">

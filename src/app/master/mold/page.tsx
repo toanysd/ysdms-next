@@ -10,21 +10,21 @@ export type MoldBase = {
   is_active: boolean
   prototype_base_id: string | null
   customers?: {
-    name: string
-    code: string
+    delivery_name: string
+    customer_code: string
   } | null
   mold_design_revision?: { id: string }[]
 }
 
 export default async function MoldBasePage() {
   const supabase = await createClient()
-  
+
   // Nạp dữ liệu kèm thông tin khách hàng (JOIN) + đếm Revisions
   const { data: molds, error } = await supabase
     .from('mold_base')
     .select(`
       *,
-      customers ( code, name ),
+      customers ( customer_code, delivery_name ),
       mold_design_revision ( id )
     `)
     .order('code', { ascending: true })
@@ -40,13 +40,13 @@ export default async function MoldBasePage() {
             <span className="vi font-normal text-[var(--mcs-text-muted)] mt-[-2px]">Danh mục Khuôn gốc</span>
           </h2>
         </div>
-        
+
         <div className="flex items-center gap-2">
           <div className="relative">
             <Search className="absolute left-2 top-1.5 text-[var(--mcs-text-muted)]" size={16} />
-            <input 
-              type="text" 
-              placeholder="Tìm mã khuôn..." 
+            <input
+              type="text"
+              placeholder="Tìm mã khuôn..."
               className="h-[30px] w-[200px] pl-8 text-xs border-[var(--mcs-border)] focus:border-[var(--mcs-primary)] rounded"
             />
           </div>
@@ -101,7 +101,7 @@ export default async function MoldBasePage() {
                 <td className="p-3">
                   {item.customers ? (
                     <span className="px-2 py-0.5 bg-[var(--mcs-primary-light)] text-[var(--mcs-primary)] border border-[var(--mcs-primary)] border-opacity-30 rounded font-bold text-[11px]">
-                      {item.customers.code}
+                      {item.customers.customer_code}
                     </span>
                   ) : <span className="text-[var(--mcs-text-muted)]">-</span>}
                 </td>
@@ -111,7 +111,7 @@ export default async function MoldBasePage() {
                   </span>
                 </td>
                 <td className="p-3">
-                  {item.is_active ? 
+                  {item.is_active ?
                     (<span className="px-2 py-0.5 bg-[var(--mcs-success-light)] text-[var(--mcs-success-text)] border border-[rgba(39,174,96,0.25)] rounded uppercase text-[10px] font-bold">Active</span>) :
                     (<span className="px-2 py-0.5 bg-[var(--mcs-neutral-light)] text-[var(--mcs-neutral-text)] border border-[rgba(149,165,166,0.25)] rounded uppercase text-[10px] font-bold">Inactive</span>)
                   }

@@ -20,7 +20,7 @@ export async function addMoldBaseAction(formData: FormData) {
     name: name.trim() || null,
     is_active: true
   }
-  
+
   if (customer_id) {
     insertData.customer_id = customer_id;
   }
@@ -36,7 +36,7 @@ export async function addMoldBaseAction(formData: FormData) {
 
   // Cập nhật lại cache cho trang danh sách
   revalidatePath('/master/mold')
-  
+
   // Trở về trang danh sách
   redirect('/master/mold')
 }
@@ -93,7 +93,7 @@ export async function getMoldBaseDetail(moldBaseId: string) {
     .from('mold_base')
     .select(`
       *,
-      customers ( code, name ),
+      customers ( customer_code, delivery_name ),
       prototype:mold_base!prototype_base_id ( id, code, name )
     `)
     .eq('id', moldBaseId)

@@ -12,7 +12,7 @@ export default async function InventoryDashboard() {
         .from('plastic_stock')
         .select(`
       id, plastic_id, current_kg, min_threshold_kg, last_updated,
-      plastic_master (code, material, color_name)
+      plastic_master (code, family, color)
     `)
         .order('current_kg', { ascending: true })
 
@@ -59,7 +59,7 @@ export default async function InventoryDashboard() {
                                         <div className="font-mono font-bold text-teal-900">{stock.plastic_master?.code || 'UNKNOWN'}</div>
                                         {isLowStock && <AlertCircle size={16} className="text-red-500 animate-pulse" />}
                                     </div>
-                                    <div className="text-sm text-gray-600 mb-4">{stock.plastic_master?.material} - {stock.plastic_master?.color_name}</div>
+                                    <div className="text-sm text-gray-600 mb-4">{stock.plastic_master?.family} - {stock.plastic_master?.color}</div>
 
                                     <div className="flex justify-between items-end mt-4 pt-3 border-t border-gray-100">
                                         <span className="text-xs text-gray-500">Tồn kho hiện tại:</span>

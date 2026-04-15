@@ -10,7 +10,7 @@ export default async function OrderPage() {
         .from('orders')
         .select(`
       *,
-      customers (code, name_jp)
+      customers (customer_code, delivery_name)
     `)
         .order('created_at', { ascending: false })
 
@@ -89,7 +89,7 @@ export default async function OrderPage() {
                             <tr key={item.id} className="border-b border-[#e0e0e0] hover:bg-teal-50/30 group transition-colors cursor-pointer">
                                 <td className="p-3 font-mono font-bold text-teal-800 text-sm">{item.slip_no || '-'}</td>
                                 <td className="p-3 text-slate-600 font-mono">{item.order_date.substring(0, 10)}</td>
-                                <td className="p-3 font-bold text-slate-700">{item.customers?.code} {item.customers?.name_jp ? `(${item.customers.name_jp})` : ''}</td>
+                                <td className="p-3 font-bold text-slate-700">{item.customers?.customer_code} {item.customers?.delivery_name ? `(${item.customers.delivery_name})` : ''}</td>
                                 <td className="p-3 capitalize">{item.order_type}</td>
                                 <td className="p-3 text-center">{getStatusBadge(item.status)}</td>
                                 <td className="p-3">{item.handler_name || '-'}</td>

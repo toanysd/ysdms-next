@@ -79,8 +79,8 @@ export interface OrderStatusHistory {
 // ── View helpers (với JOIN) ───────────────────────────────────
 export interface OrderWithCustomer extends Order {
     customers: {
-        code: string
-        name_jp: string | null
+        customer_code: string
+        delivery_name: string | null
     } | null
 }
 
