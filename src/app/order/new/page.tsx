@@ -7,9 +7,9 @@ export default async function NewOrderPage() {
     // Fetch customers to populate the dropdown using Service Role
     const { data: customers } = await supabase
         .from('customers')
-        .select('id, code, name_jp')
+        .select('id, customer_code, delivery_name')
         .eq('is_active', true)
-        .order('code', { ascending: true })
+        .order('customer_code', { ascending: true })
 
     return (
         <div className="flex-1 flex flex-col p-2 h-full">

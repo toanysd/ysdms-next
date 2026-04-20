@@ -10,8 +10,8 @@ import { OrderInsert, OrderItemInsert } from '@/types/orders'
 
 interface CustomerLite {
     id: string
-    code: string
-    name_jp: string | null
+    customer_code: string
+    delivery_name: string | null
 }
 
 interface OrderFormClientProps {
@@ -154,7 +154,7 @@ export function OrderFormClient({ customers }: OrderFormClientProps) {
                                 <select value={customerId} onChange={e => setCustomerId(e.target.value)} required className="w-full h-[34px] font-mono text-sm border-teal-200 focus:border-teal-500 focus:ring-1 focus:ring-teal-500 rounded px-2 bg-white cursor-pointer hover:bg-gray-50">
                                     <option value="">-- Chọn Khách Hàng --</option>
                                     {customers.map(c => (
-                                        <option key={c.id} value={c.id}>{c.code} - {c.name_jp || 'No Name'}</option>
+                                        <option key={c.id} value={c.id}>{c.customer_code} - {c.delivery_name || 'No Name'}</option>
                                     ))}
                                 </select>
                             </div>

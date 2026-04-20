@@ -1,0 +1,223 @@
+#!/usr/bin/env python3
+"""
+import_trays3.py — Đọc tray_data.xlsx và tạo SQL upsert cho bảng tray_master
+Dùng: python import_trays3.py "tray_data.xlsx"
+"""
+
+import sys
+import re
+import os
+from pathlib import Path
+import pandas as pd
+
+def find_header_row(df_raw):
+    """Tìm dòng chứa header thực sự bằng cách tìm từ khóa quen thuộc."""
+    keywords = ['品番', 'P/N', 'PN', '品名', '材質', '板厚', '外形', '外寸']
+    for i, row in df_raw.iterrows():
+        row_str = ' '.join(str(v) for v in row.values if pd.notna(v))
+        for kw in keywords:
+            if kw in row_str:
+                return i
+    return None
+
+def clean_val(v):
+    if pd.isna(v):
+        return None
+    if isinstance(v, float) and v == int(v):
+        return int(v)
+    return v
+
+def to_sql_val(v):
+    if v is None:
+        return 'NULL'
+    if isinstance(v, (int, float)):
+        return str(v)
+    s = str(v).replace("'", "''").strip()
+    return f"'{s}'" if s else 'NULL'
+
+def main():
+    if len(sys.argv) < 2:
+        print("Dùng: python import_trays3.py <file.xlsx>")
+        sys.exit(1)
+
+    xlsx_path = Path(sys.argv[1])
+    if not xlsx_path.exists():
+        print(f"Không tìm thấy file: {xlsx_path}")
+        sys.exit(1)
+
+    print(f"Đọc file: {xlsx_path.name}")
+
+    # --- BƯỚC 1: Đọc thô không header để tìm dòng header ---
+    df_raw = pd.read_excel(xlsx_path, header=None, sheet_name=0)
+    
+    # In 15 dòng đầu để debug
+    print("\n=== 15 dòng đầu (raw) ===")
+    for i, row in df_raw.head(15).iterrows():
+        vals = [str(v)[:20] for v in row.values if pd.notna(v)]
+        if vals:
+            print(f"  Row {i:2d}: {' | '.join(vals[:10])}")
+
+    header_row = find_header_row(df_raw)
+    
+    if header_row is None:
+        print("\n⚠️  Không tìm thấy header tự động.")
+        print("Hãy xem output ở trên và chỉnh HEADER_ROW thủ công:")
+        print("  Tìm dòng có 品番 hoặc P/N, rồi đặt HEADER_ROW = số đó")
+        print("\nThử dùng HEADER_ROW = 3 mặc định...")
+        header_row = 3
+    else:
+        print(f"\n✅ Tìm thấy header tại dòng {header_row}")
+
+    # --- BƯỚC 2: Đọc lại với header đúng ---
+    df = pd.read_excel(xlsx_path, header=header_row, sheet_name=0)
+    
+    # Loại cột Unnamed hoàn toàn trống
+    df = df.dropna(axis=1, how='all')
+    df.columns = [str(c).strip() for c in df.columns]
+    
+    print(f"\nCột sau khi đọc đúng header:")
+    for c in df.columns:
+        print(f"  [{c}]")
+
+    # --- BƯỚC 3: Mapping tên cột JP → field DB ---
+    # Map mở rộng — khớp partial (contains)
+    col_map_patterns = {
+        'part_no':      ['品番', 'P/N', 'PN', '品　番'],
+        'part_name':    ['品名', '品　名'],
+        'material':     ['材質', '材料'],
+        'thickness':    ['板厚', '厚さ', '厚み', 't=', 'T='],
+        'outer_length': ['外形L', '外寸L', '縦', 'L寸', '外形(L)', '全長L'],
+        'outer_width':  ['外形W', '外寸W', '横', 'W寸', '外形(W)', '全幅W'],
+        'height':       ['高さ', 'H寸', '高H', '外形H', '全高'],
+        'cavity_rows':  ['列数', '行数', 'タテ数', '縦数', 'rows', '縦(列)'],
+        'cavity_cols':  ['行数', '列数', 'ヨコ数', '横数', 'cols', '横(行)'],
+        'cavity_count': ['穴数', '数量', '個取', 'キャビ', 'cavity'],
+        'pitch_l':      ['ピッチL', 'PL', 'P(L)', 'ピッチ(L)'],
+        'pitch_w':      ['ピッチW', 'PW', 'P(W)', 'ピッチ(W)'],
+        'customer_code':['得意先', '客先', '顧客', 'customer'],
+        'note':         ['備考', 'メモ', 'note', 'NOTE'],
+    }
+
+    def find_col(patterns, columns):
+        for pat in patterns:
+            for col in columns:
+                if pat.lower() in col.lower():
+                    return col
+        return None
+
+    mapping = {}
+    print("\nMapping cột:")
+    for field, patterns in col_map_patterns.items():
+        matched = find_col(patterns, df.columns)
+        mapping[field] = matched
+        status = f"→ [{matched}]" if matched else "→ ✗ không tìm thấy"
+        print(f"  {field:<20} {status}")
+
+    # Nếu part_no vẫn chưa tìm thấy, thử dùng cột đầu tiên không rỗng
+    if mapping['part_no'] is None:
+        first_col = df.columns[0]
+        print(f"\n⚠️  Không map được part_no, thử dùng cột đầu tiên: [{first_col}]")
+        mapping['part_no'] = first_col
+
+    # --- BƯỚC 4: Lọc dòng hợp lệ ---
+    pn_col = mapping['part_no']
+    df_valid = df[df[pn_col].notna()].copy()
+    # Bỏ dòng mà part_no là text tiêu đề (chứa 品番 hoặc P/N)
+    df_valid = df_valid[~df_valid[pn_col].astype(str).str.contains('品番|P/N|PN|品　番', na=False)]
+    # Bỏ dòng trống hoặc chỉ có dấu cách
+    df_valid = df_valid[df_valid[pn_col].astype(str).str.strip().ne('')]
+    df_valid = df_valid[df_valid[pn_col].astype(str).str.strip().ne('nan')]
+
+    print(f"\nTổng dòng hợp lệ: {len(df_valid)}")
+
+    if len(df_valid) == 0:
+        print("\n❌ Không có dữ liệu hợp lệ.")
+        print("Hãy kiểm tra output raw ở trên để xác định đúng cấu trúc file.")
+        sys.exit(1)
+
+    # --- BƯỚC 5: Tạo SQL ---
+    sql_path = xlsx_path.parent / (xlsx_path.stem + '_trays_upsert.sql')
+    
+    lines = []
+    lines.append("-- Auto-generated by import_trays3.py")
+    lines.append(f"-- Source: {xlsx_path.name}")
+    lines.append(f"-- Records: {len(df_valid)}")
+    lines.append("")
+    lines.append("BEGIN;")
+    lines.append("")
+
+    fields = [f for f, col in mapping.items() if col is not None]
+    fields_sql = ', '.join(fields)
+    
+    # Thêm các cột audit
+    insert_cols = fields + ['created_at', 'updated_at']
+
+    skipped = 0
+    inserted = 0
+
+    for _, row in df_valid.iterrows():
+        part_no_val = clean_val(row.get(mapping['part_no']))
+        if part_no_val is None:
+            skipped += 1
+            continue
+
+        vals = []
+        for field in fields:
+            col = mapping[field]
+            v = clean_val(row.get(col)) if col else None
+            vals.append(to_sql_val(v))
+        
+        # Thêm timestamps
+        vals.append('NOW()')
+        vals.append('NOW()')
+
+        insert_cols_sql = ', '.join(insert_cols)
+        vals_sql = ', '.join(vals)
+
+        # Build UPDATE clause (tất cả field trừ part_no và timestamps created_at)
+        update_parts = []
+        for field in fields:
+            if field == 'part_no':
+                continue
+            update_parts.append(f"{field} = EXCLUDED.{field}")
+        update_parts.append("updated_at = NOW()")
+        update_sql = ', '.join(update_parts)
+
+        sql = (
+            f"INSERT INTO tray_master ({insert_cols_sql})\n"
+            f"VALUES ({vals_sql})\n"
+            f"ON CONFLICT (part_no) DO UPDATE SET {update_sql};"
+        )
+        lines.append(sql)
+        lines.append("")
+        inserted += 1
+
+    lines.append("COMMIT;")
+
+    with open(sql_path, 'w', encoding='utf-8') as f:
+        f.write('\n'.join(lines))
+
+    # ALSO DUMP TO JSON FOR REST API UPLOAD
+    json_rows = []
+    for _, row in df_valid.iterrows():
+        part_no_val = clean_val(row.get(mapping['part_no']))
+        if not part_no_val: continue
+        obj = {}
+        for field in fields:
+            col = mapping[field]
+            v = clean_val(row.get(col)) if col else None
+            obj[field] = v
+        json_rows.append(obj)
+        
+    import json
+    json_path = xlsx_path.parent / (xlsx_path.stem + '_trays_upsert.json')
+    with open(json_path, 'w', encoding='utf-8') as jf:
+        json.dump(json_rows, jf, ensure_ascii=False, indent=2)
+
+    print(f"\n✅ Xong! {inserted} khay được xử lý, {skipped} dòng bỏ qua.")
+    print(f"📄 File SQL: {sql_path}")
+    print(f"📄 File JSON: {json_path}")
+
+
+if __name__ == '__main__':
+    main()
