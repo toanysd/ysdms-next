@@ -2,18 +2,29 @@
 
 import React from 'react'
 import { Plus, Trash2 } from 'lucide-react'
+import { ProductSearchInput } from './ProductSearchInput'
+import { ProcessTagsEditor } from './ProcessTagsEditor'
 
 export interface GridRow {
     _key: string
     line_no: number
     product_pn_raw: string
+    product_pn_internal?: string
     product_id: string | null
+    product_details?: {
+        material?: string
+        thickness?: number
+        length_val?: number
+        width_val?: number
+        mold_code?: string
+    }
     request_no: string
     quantity: number
     packing_qty: number | null
     packing_boxes: number | null
     delivery_date: string | null
     delivery_date_end: string | null
+    office_qty?: number | null
     process_notes: string
 }
 
@@ -31,6 +42,7 @@ export function OrderItemsGrid({ items, onChange }: OrderItemsGridProps) {
             _key: generateKey(),
             line_no: items.length + 1,
             product_pn_raw: '',
+            product_pn_internal: '',
             product_id: null,
             request_no: '',
             quantity: 0,
@@ -38,6 +50,7 @@ export function OrderItemsGrid({ items, onChange }: OrderItemsGridProps) {
             packing_boxes: null,
             delivery_date: null,
             delivery_date_end: null,
+            office_qty: null,
             process_notes: ''
         }
         onChange([...items, newRow])
@@ -60,11 +73,21 @@ export function OrderItemsGrid({ items, onChange }: OrderItemsGridProps) {
         onChange(newItems)
     }
 
+    const updateRowMultiple = (key: string, updates: Partial<GridRow>) => {
+        const newItems = items.map(item => {
+            if (item._key === key) {
+                return { ...item, ...updates }
+            }
+            return item
+        })
+        onChange(newItems)
+    }
+
     return (
         <div className="flex flex-col gap-2">
             <div className="flex items-center justify-between">
                 <h3 className="text-sm font-bold text-[var(--mcs-text)] flex items-center gap-2">
-                    📦 Danh Sách Mặt Hàng (Line Items)
+                    📦 明細リスト (Danh Sách Mặt Hàng)
                 </h3>
                 <button
                     type="button"
@@ -75,19 +98,21 @@ export function OrderItemsGrid({ items, onChange }: OrderItemsGridProps) {
                 </button>
             </div>
 
-            <div className="border border-[var(--mcs-border)] rounded-lg overflow-x-auto shadow-sm">
+            <div className="border border-[var(--mcs-border)] rounded-lg overflow-x-auto shadow-sm pb-48 min-h-[350px]">
                 <table className="w-full text-left border-collapse min-w-[900px]">
                     <thead className="bg-teal-50 border-b border-teal-200 text-[11px] text-teal-900 whitespace-nowrap">
                         <tr>
                             <th className="p-2 w-[40px] text-center border-r border-teal-100">No.</th>
-                            <th className="p-2 w-[120px] border-r border-teal-100">要求No. (Request)</th>
-                            <th className="p-2 w-[180px] border-r border-teal-100">P/N (Product Code) <span className="text-red-500">*</span></th>
-                            <th className="p-2 w-[80px] text-right border-r border-teal-100">Số lượng <span className="text-red-500">*</span></th>
-                            <th className="p-2 w-[80px] text-right border-r border-teal-100">Qty/Thùng</th>
-                            <th className="p-2 w-[80px] text-right border-r border-teal-100">Số Thùng</th>
-                            <th className="p-2 w-[120px] border-r border-teal-100">Ngày giao (納期)</th>
-                            <th className="p-2 min-w-[200px] border-r border-teal-100">Ghi chú (事項)</th>
-                            <th className="p-2 w-[40px] text-center">Xóa</th>
+                            <th className="p-2 w-[120px] border-r border-teal-100">要求No. (Mã Y/C)</th>
+                            <th className="p-2 min-w-[240px] border-r border-teal-100">品番 (P/N) <span className="text-red-500">*</span></th>
+                            <th className="p-2 w-[80px] text-right border-r border-teal-100">数量 (Số lượng) <span className="text-red-500">*</span></th>
+                            <th className="p-2 w-[50px] text-right border-r border-teal-100" title="Văn phòng">事務所 (VP)</th>
+                            <th className="p-2 w-[80px] text-right border-r border-teal-100">梱包入数 (Qty/Thùng)</th>
+                            <th className="p-2 w-[80px] text-right border-r border-teal-100">箱数 (Số Thùng)</th>
+                            <th className="p-2 w-[110px] border-r border-teal-100">出荷日 (Ngày xuất)</th>
+                            <th className="p-2 w-[110px] border-r border-teal-100">着日 (Ngày nhận)</th>
+                            <th className="p-2 min-w-[150px] border-r border-teal-100">事項 (Ghi chú)</th>
+                            <th className="p-2 w-[40px] text-center">削除 (Xóa)</th>
                         </tr>
                     </thead>
                     <tbody className="bg-white text-[12px]">
@@ -100,7 +125,7 @@ export function OrderItemsGrid({ items, onChange }: OrderItemsGridProps) {
                         ) : (
                             items.map((row) => (
                                 <tr key={row._key} className="border-b border-[#e0e0e0] hover:bg-teal-50/30 focus-within:bg-teal-50/50 transition-colors">
-                                    <td className="p-0 border-r border-[#e0e0e0] text-center text-[#7f8c8d] font-mono">{row.line_no}</td>
+                                    <td className="p-0 border-r border-[#e0e0e0] text-center text-[#7f8c8d] font-mono align-top pt-2.5">{row.line_no}</td>
 
                                     <td className="p-0 border-r border-[#e0e0e0]">
                                         <input
@@ -112,15 +137,32 @@ export function OrderItemsGrid({ items, onChange }: OrderItemsGridProps) {
                                         />
                                     </td>
 
-                                    <td className="p-0 border-r border-[#e0e0e0]">
-                                        <input
-                                            type="text"
-                                            value={row.product_pn_raw}
-                                            onChange={e => updateRow(row._key, 'product_pn_raw', e.target.value)}
-                                            className="w-full h-[34px] px-2 outline-none bg-transparent focus:bg-white focus:ring-1 ring-inset ring-teal-500 font-mono font-bold text-teal-800"
-                                            placeholder="Ví dụ: KSP-163..."
-                                            required
+                                    <td className="p-0 border-r border-[#e0e0e0] align-top bg-white">
+                                        <ProductSearchInput
+                                            defaultValue={row.product_pn_raw}
+                                            onChangeText={(val) => updateRow(row._key, 'product_pn_raw', val)}
+                                            onSelect={(product) => {
+                                                updateRowMultiple(row._key, {
+                                                    product_pn_raw: product.customer_code || product.pn,
+                                                    product_pn_internal: product.pn,
+                                                    product_id: product.id,
+                                                    product_details: {
+                                                        material: product.material,
+                                                        thickness: product.thickness,
+                                                        length_val: product.length_val,
+                                                        width_val: product.width_val,
+                                                        mold_code: product.mold_code
+                                                    }
+                                                })
+                                            }}
                                         />
+                                        {row.product_details?.material && (
+                                            <div className="px-2 pb-1.5 pt-0.5 flex items-center justify-start">
+                                                <span className="inline-block bg-emerald-50 text-emerald-700 text-[10px] px-1.5 py-0.5 rounded border border-emerald-200 font-bold whitespace-nowrap tracking-wide">
+                                                    📦 {row.product_details.material}/{row.product_details.thickness}mm | {row.product_details.length_val}×{row.product_details.width_val}
+                                                </span>
+                                            </div>
+                                        )}
                                     </td>
 
                                     <td className="p-0 border-r border-[#e0e0e0]">
@@ -132,6 +174,18 @@ export function OrderItemsGrid({ items, onChange }: OrderItemsGridProps) {
                                             onChange={e => updateRow(row._key, 'quantity', parseInt(e.target.value) || 0)}
                                             className="w-full h-[34px] px-2 outline-none bg-transparent focus:bg-white focus:ring-1 ring-inset ring-teal-500 text-right font-bold text-[var(--mcs-text)]"
                                             required
+                                        />
+                                    </td>
+
+                                    <td className="p-0 border-r border-[#e0e0e0]">
+                                        <input
+                                            type="number"
+                                            step="1"
+                                            min="0"
+                                            value={row.office_qty || ''}
+                                            onChange={e => updateRow(row._key, 'office_qty', parseInt(e.target.value) || null)}
+                                            className="w-full h-[34px] px-2 outline-none bg-transparent focus:bg-white focus:ring-1 ring-inset ring-teal-500 text-right text-emerald-700 font-bold bg-emerald-50/30"
+                                            placeholder="VP"
                                         />
                                     </td>
 
@@ -160,17 +214,23 @@ export function OrderItemsGrid({ items, onChange }: OrderItemsGridProps) {
                                             type="date"
                                             value={row.delivery_date || ''}
                                             onChange={e => updateRow(row._key, 'delivery_date', e.target.value)}
-                                            className="w-full h-[34px] px-2 outline-none bg-transparent focus:bg-white focus:ring-1 ring-inset ring-teal-500 text-[#7f8c8d]"
+                                            className="w-full h-[34px] px-1 outline-none bg-transparent focus:bg-white focus:ring-1 ring-inset ring-teal-500 text-[#7f8c8d] text-[11px]"
                                         />
                                     </td>
 
                                     <td className="p-0 border-r border-[#e0e0e0]">
                                         <input
-                                            type="text"
+                                            type="date"
+                                            value={row.delivery_date_end || ''}
+                                            onChange={e => updateRow(row._key, 'delivery_date_end', e.target.value)}
+                                            className="w-full h-[34px] px-1 outline-none bg-transparent focus:bg-white focus:ring-1 ring-inset ring-teal-500 text-[#7f8c8d] text-[11px]"
+                                        />
+                                    </td>
+
+                                    <td className="p-0 border-r border-[#e0e0e0] align-top bg-white">
+                                        <ProcessTagsEditor
                                             value={row.process_notes}
-                                            onChange={e => updateRow(row._key, 'process_notes', e.target.value)}
-                                            className="w-full h-[34px] px-2 outline-none bg-transparent focus:bg-white focus:ring-1 ring-inset ring-teal-500"
-                                            placeholder="別抜き・面取り..."
+                                            onChange={(val) => updateRow(row._key, 'process_notes', val)}
                                         />
                                     </td>
 

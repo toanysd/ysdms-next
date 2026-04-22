@@ -24,8 +24,8 @@ SET delivery_name = EXCLUDED.delivery_name,
 -- 2. Khay Sản Phẩm
 INSERT INTO public.product_master (id, code, name, remarks)
 VALUES 
-  ('11111111-1111-1111-1111-111111111102', 'SMK-227', '167CSS-048-00E', 'B-Size 365x245, PP 0.6mm, 56 pockets'),
-  ('11111111-1111-1111-1111-111111111103', 'SMK-228', '167CSS-049-00E', 'B-Size 365x245, PP 0.6mm, 56 pockets')
+  ('11111111-1111-1111-1111-111111111102', 'SMK-227', '167CSS-048-00E 365x245 サイズ 30個入', 'PP ナチュラル 0.6mm'),
+  ('11111111-1111-1111-1111-111111111103', 'SMK-228', '167CSS-049-00E 365x245 サイズ 30個入', 'PP ナチュラル 0.6mm')
 ON CONFLICT (id) DO NOTHING;
 
 -- 3. Máy đúc (Machine Master)

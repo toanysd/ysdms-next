@@ -13,7 +13,10 @@ export async function createOrderWithItemsAction(
     // 1. Chèn Header
     const { data: orderData, error: orderError } = await supabase
         .from('orders')
-        .insert([header])
+        .insert([{
+            ...header,
+            recipient_name: header.recipient_name ?? null
+        }])
         .select('id')
         .single()
 
@@ -46,6 +49,21 @@ export async function createOrderWithItemsAction(
 
     revalidatePath('/order')
     return { orderId }
+}
+
+export async function deleteOrderAction(orderId: string): Promise<void> {
+    const supabase = await createClient()
+
+    // 1. Check if it is actually draft
+    const { data: order, error: checkErr } = await supabase.from('orders').select('status').eq('id', orderId).single()
+    if (checkErr || !order) throw new Error('Không tìm thấy đơn hàng để xóa')
+    if (order.status !== 'draft') throw new Error('Chỉ được xóa đơn hàng ở trạng thái Nháp (Draft)')
+
+    // 2. Cascade delete will handle items if FK exists, but doing it manually is safer
+    await supabase.from('order_items').delete().eq('order_id', orderId)
+
+    const { error: delErr } = await supabase.from('orders').delete().eq('id', orderId)
+    if (delErr) throw new Error(delErr.message)
 }
 
 export async function updateOrderStatusAction(

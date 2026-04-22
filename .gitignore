@@ -34,3 +34,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Temporary test files
+test_molds.py
+test_product.ts
+test_tables.py
+add_col.js

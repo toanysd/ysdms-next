@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { getMoldHealthList } from '@/app/actions/maintenance'
 import { Wrench, AlertTriangle, ShieldCheck, Drill, ArrowRight, History } from 'lucide-react'
+import RecordMaintenanceButton from './RecordMaintenanceButton'
 
 // Dashboard Bảo trì Khuôn (Tầng 5C)
 export default async function MaintenanceDashboard() {
@@ -111,6 +112,9 @@ export default async function MaintenanceDashboard() {
                                             <div className="text-right text-[10px] mt-1 text-slate-500 font-mono">
                                                 {h.lifecycle_pct}% tới hạn
                                             </div>
+                                            <div className="mt-3 flex justify-end">
+                                                <RecordMaintenanceButton physicalId={h.physical_id} totalShots={h.total_shots} />
+                                            </div>
                                         </div>
                                     </div>
                                 )
@@ -157,9 +161,14 @@ export default async function MaintenanceDashboard() {
                                                 ) : <span className="text-[10px] text-slate-300 italic block text-center">No schedule</span>}
                                             </td>
                                             <td className="p-3 text-center">
-                                                <span className={`px-2 py-0.5 text-[10px] font-bold rounded border ${st.border} ${st.bg} ${st.color}`}>
-                                                    {h.health_status}
-                                                </span>
+                                                <div className="flex flex-col items-center gap-1.5">
+                                                    <span className={`px-2 py-0.5 text-[10px] font-bold rounded border ${st.border} ${st.bg} ${st.color}`}>
+                                                        {h.health_status}
+                                                    </span>
+                                                    {(h.health_status === 'OVERDUE' || h.health_status === 'WARNING') && (
+                                                        <RecordMaintenanceButton physicalId={h.physical_id} totalShots={h.total_shots} />
+                                                    )}
+                                                </div>
                                             </td>
                                         </tr>
                                     )

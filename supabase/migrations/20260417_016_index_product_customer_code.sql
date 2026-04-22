@@ -16,15 +16,14 @@ CREATE INDEX IF NOT EXISTS idx_product_master_customer_code
   ON public.product_master (customer_code);
 
 -- 3. Cập nhật nhẹ Dữ liệu Seed 015 vừa tạo để nó thể hiện đúng thiết kế mới
--- Chuyển 167CSS-048-00E từ cột Name sang cột customer_code
 UPDATE public.product_master
 SET customer_code = '167CSS-048-00E',
-    name = 'Khay SMK B-Size 56p'
+    name = '365x245 サイズ 30個入'
 WHERE id = '11111111-1111-1111-1111-111111111102';
 
 UPDATE public.product_master
 SET customer_code = '167CSS-049-00E',
-    name = 'Khay SMK B-Size 56p'
+    name = '365x245 サイズ 30個入'
 WHERE id = '11111111-1111-1111-1111-111111111103';
 
 COMMIT;

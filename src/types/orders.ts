@@ -28,7 +28,8 @@ export interface Order {
     delivery_site_code: string | null  // 納品先コード — ví dụ: "KSP3"
     delivery_address: string | null
     requester_code: string | null   // 依頼元 — ví dụ: "KBY01"
-    handler_name: string | null     // 担当者 — ví dụ: "桜井"
+    handler_name: string | null
+    recipient_name: string | null     // 担当者 — ví dụ: "桜井"
     internal_notes: string | null   // 注意事項
     approval_status: ApprovalStatus
     approved_by: string | null
@@ -53,6 +54,7 @@ export interface OrderItem {
     quantity: number                // 数量 tổng
     packing_qty: number | null      // 入数/箱 — ví dụ: 250
     packing_boxes: number | null    // 箱数 — ví dụ: 2
+    office_qty: number | null       // 事務所 — Số lượng gởi văn phòng
     delivery_date: string | null    // 納期 (ngày đầu)
     delivery_date_end: string | null // 納期 (ngày cuối nếu range)
     unit_price: number | null

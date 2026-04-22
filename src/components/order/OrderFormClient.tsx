@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation'
 import { Save, ArrowLeft, Loader2 } from 'lucide-react'
 import Link from 'next/link'
 import { OrderItemsGrid, GridRow } from './OrderItemsGrid'
+import { CustomerSearchInput } from './CustomerSearchInput'
+import { OrderPreviewPanel } from './OrderPreviewPanel'
 import { createOrderWithItemsAction } from '@/app/actions/order'
 import { OrderInsert, OrderItemInsert } from '@/types/orders'
 
@@ -12,10 +14,13 @@ interface CustomerLite {
     id: string
     customer_code: string
     delivery_name: string | null
+    delivery_address: string | null
+    requester_code: string | null
+    phone?: string | null
 }
 
 interface OrderFormClientProps {
-    customers: CustomerLite[]
+    customers?: CustomerLite[]
 }
 
 export function OrderFormClient({ customers }: OrderFormClientProps) {
@@ -28,13 +33,23 @@ export function OrderFormClient({ customers }: OrderFormClientProps) {
     const [orderDate, setOrderDate] = useState(new Date().toISOString().split('T')[0])
     const [orderType, setOrderType] = useState<'molding' | 'outsource' | 'prototype'>('molding')
     const [customerId, setCustomerId] = useState('')
-    const [deliverySite, setDeliverySite] = useState('')
-    const [requesterCode, setRequesterCode] = useState('')
+    const [selectedCustomer, setSelectedCustomer] = useState<CustomerLite | null>(null)
     const [handlerName, setHandlerName] = useState('')
+    const [recipientName, setRecipientName] = useState('')
     const [internalNotes, setInternalNotes] = useState('')
 
     // Items State
     const [items, setItems] = useState<GridRow[]>([])
+
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLFormElement>) => {
+        if (e.key === 'Enter') {
+            const target = e.target as HTMLElement;
+            // Chặn lưu hóa đơn nếu gõ Enter ở các ô Text/Lưới
+            if (target.tagName === 'INPUT' || target.tagName === 'SELECT') {
+                e.preventDefault();
+            }
+        }
+    }
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -57,10 +72,11 @@ export function OrderFormClient({ customers }: OrderFormClientProps) {
                 order_type: orderType,
                 status: 'draft',
                 customer_id: customerId,
-                delivery_site_code: deliverySite || null,
-                delivery_address: null,
-                requester_code: requesterCode || null,
+                delivery_site_code: selectedCustomer?.customer_code || null,
+                delivery_address: selectedCustomer?.delivery_address || null,
+                requester_code: selectedCustomer?.requester_code || null,
                 handler_name: handlerName || null,
+                recipient_name: recipientName || null,
                 internal_notes: internalNotes || null,
                 approval_status: 'pending',
                 approved_by: null,
@@ -76,6 +92,7 @@ export function OrderFormClient({ customers }: OrderFormClientProps) {
                 quantity: i.quantity,
                 packing_qty: i.packing_qty,
                 packing_boxes: i.packing_boxes,
+                office_qty: i.office_qty || null,
                 delivery_date: i.delivery_date || null,
                 delivery_date_end: i.delivery_date_end || null,
                 process_notes: i.process_notes || null,
@@ -97,14 +114,14 @@ export function OrderFormClient({ customers }: OrderFormClientProps) {
     }
 
     return (
-        <form onSubmit={handleSubmit} className="flex flex-col h-full bg-[var(--mcs-surface)] flex-1 overflow-hidden">
+        <form onSubmit={handleSubmit} onKeyDown={handleKeyDown} className="flex flex-col h-full bg-[var(--mcs-surface)] flex-1 overflow-hidden">
             <div className="h-[48px] bg-teal-50 px-4 flex items-center justify-between border-b border-teal-200 shrink-0 shadow-sm z-10">
                 <div className="flex items-center gap-2">
                     <Link href="/order" className="text-teal-700 hover:text-teal-900 transition-colors mr-2">
                         <ArrowLeft size={18} />
                     </Link>
                     <h2 className="text-[14px] font-bold text-teal-900 flex flex-col">
-                        <span className="ja">新規指示書作成 (Tạo Chỉ thị / Đơn Hàng)</span>
+                        <span className="ja">新規指示書作成 (Tạo Lưu đồ Chỉ thị)</span>
                     </h2>
                 </div>
                 <div className="flex items-center gap-2">
@@ -115,7 +132,7 @@ export function OrderFormClient({ customers }: OrderFormClientProps) {
                         className="h-[30px] px-6 rounded bg-teal-700 text-white font-bold text-xs hover:bg-teal-800 flex items-center justify-center gap-2 transition-colors disabled:opacity-50 shadow-sm"
                     >
                         {isSubmitting ? <Loader2 className="animate-spin" size={14} /> : <Save size={14} />}
-                        Lưu Toàn Bộ Đơn
+                        保存する
                     </button>
                 </div>
             </div>
@@ -126,22 +143,22 @@ export function OrderFormClient({ customers }: OrderFormClientProps) {
                     {/* Header Card */}
                     <div className="bg-white border border-teal-200 shadow-sm rounded-lg p-4">
                         <h3 className="text-sm font-bold text-teal-800 mb-3 flex items-center gap-2 border-b border-teal-100 pb-2">
-                            🏷️ Thông Tin Chung (Header)
+                            🏷️ 注文ヘッダー (Thông Tin Chung)
                         </h3>
 
                         <div className="grid grid-cols-5 gap-4">
                             <div className="col-span-1 flex flex-col gap-1">
-                                <label className="text-[12px] font-bold text-teal-900 shadow-black">伝票/LOT No.</label>
-                                <input value={slipNo} onChange={e => setSlipNo(e.target.value)} type="text" className="w-full h-[34px] font-mono text-sm border-teal-200 focus:border-teal-500 focus:ring-1 focus:ring-teal-500 rounded px-2" placeholder="Ví dụ: 263090" />
+                                <label className="text-[12px] font-bold text-teal-900 shadow-black">伝票/LOT No. (Số phiếu)</label>
+                                <input value={slipNo} onChange={e => setSlipNo(e.target.value)} type="text" className="w-full h-[34px] font-mono text-sm border-teal-200 focus:border-teal-500 focus:ring-1 focus:ring-teal-500 rounded px-2" placeholder="例: 263090" />
                             </div>
 
                             <div className="col-span-1 flex flex-col gap-1">
-                                <label className="text-[12px] font-bold text-teal-900">Ngày phát hành (発注日) <span className="text-red-500">*</span></label>
+                                <label className="text-[12px] font-bold text-teal-900">発注日 (Ngày phát hành) <span className="text-red-500">*</span></label>
                                 <input value={orderDate} onChange={e => setOrderDate(e.target.value)} type="date" required className="w-full h-[34px] text-sm border-teal-200 focus:border-teal-500 focus:ring-1 focus:ring-teal-500 rounded px-2" />
                             </div>
 
                             <div className="col-span-1 flex flex-col gap-1">
-                                <label className="text-[12px] font-bold text-teal-900">Loại đơn (Order Type) <span className="text-red-500">*</span></label>
+                                <label className="text-[12px] font-bold text-teal-900">注文タイプ (Loại đơn) <span className="text-red-500">*</span></label>
                                 <select value={orderType} onChange={e => setOrderType(e.target.value as any)} className="w-full h-[34px] text-[13px] border-teal-200 focus:border-teal-500 focus:ring-1 focus:ring-teal-500 rounded px-2 bg-white cursor-pointer hover:bg-gray-50">
                                     <option value="molding">Molding (Đúc khuôn)</option>
                                     <option value="outsource">Outsource (Thuê ngoài)</option>
@@ -150,33 +167,40 @@ export function OrderFormClient({ customers }: OrderFormClientProps) {
                             </div>
 
                             <div className="col-span-1 flex flex-col gap-1">
-                                <label className="text-[12px] font-bold text-teal-900">Khách Hàng (Customer) <span className="text-red-500">*</span></label>
-                                <select value={customerId} onChange={e => setCustomerId(e.target.value)} required className="w-full h-[34px] font-mono text-sm border-teal-200 focus:border-teal-500 focus:ring-1 focus:ring-teal-500 rounded px-2 bg-white cursor-pointer hover:bg-gray-50">
-                                    <option value="">-- Chọn Khách Hàng --</option>
-                                    {customers.map(c => (
-                                        <option key={c.id} value={c.id}>{c.customer_code} - {c.delivery_name || 'No Name'}</option>
-                                    ))}
-                                </select>
+                                <label className="text-[12px] font-bold text-teal-900">得意先 (Khách hàng) <span className="text-red-500">*</span></label>
+                                <CustomerSearchInput
+                                    onSelect={(cust) => {
+                                        if (cust) {
+                                            setCustomerId(cust.id);
+                                            setSelectedCustomer(cust);
+                                            if (cust.contact_person) setRecipientName(cust.contact_person);
+                                        } else {
+                                            setCustomerId('');
+                                            setSelectedCustomer(null);
+                                            setRecipientName('');
+                                        }
+                                    }}
+                                />
+                                {selectedCustomer && (
+                                    <div className="text-[10px] text-[var(--mcs-primary)] mt-0.5 truncate bg-teal-50 px-1 py-0.5 rounded border border-teal-100" title={selectedCustomer.delivery_address || ''}>
+                                        📍 Giao tới: {selectedCustomer.delivery_address || 'Chưa có địa chỉ'}
+                                    </div>
+                                )}
                             </div>
 
                             <div className="col-span-1 flex flex-col gap-1">
-                                <label className="text-[12px] font-bold text-teal-900">Mã chi nhánh nhận (納品先)</label>
-                                <input value={deliverySite} onChange={e => setDeliverySite(e.target.value)} type="text" className="w-full h-[34px] font-mono text-sm border-teal-200 focus:border-teal-500 focus:ring-1 focus:ring-teal-500 rounded px-2" placeholder="Ví dụ: KSP3" />
+                                <label className="text-[12px] font-bold text-teal-900">納入先担当者 (Người nhận)</label>
+                                <input value={recipientName} onChange={e => setRecipientName(e.target.value)} type="text" className="w-full h-[34px] text-sm border-teal-200 focus:border-teal-500 focus:ring-1 focus:ring-teal-500 rounded px-2" placeholder="例: 延澤 様" />
                             </div>
 
                             <div className="col-span-1 flex flex-col gap-1">
-                                <label className="text-[12px] font-bold text-teal-900">Yêu cầu từ (依頼元)</label>
-                                <input value={requesterCode} onChange={e => setRequesterCode(e.target.value)} type="text" className="w-full h-[34px] font-mono text-sm border-teal-200 focus:border-teal-500 focus:ring-1 focus:ring-teal-500 rounded px-2" placeholder="Ví dụ: KBY01" />
-                            </div>
-
-                            <div className="col-span-1 flex flex-col gap-1">
-                                <label className="text-[12px] font-bold text-teal-900">PIC Nội bộ (担当)</label>
-                                <input value={handlerName} onChange={e => setHandlerName(e.target.value)} type="text" className="w-full h-[34px] text-sm border-teal-200 focus:border-teal-500 focus:ring-1 focus:ring-teal-500 rounded px-2" placeholder="Ví dụ: 桜井" />
+                                <label className="text-[12px] font-bold text-teal-900">担当 (PIC Lập đơn)</label>
+                                <input value={handlerName} onChange={e => setHandlerName(e.target.value)} type="text" className="w-full h-[34px] text-sm border-teal-200 focus:border-teal-500 focus:ring-1 focus:ring-teal-500 rounded px-2" placeholder="例: 桜井" />
                             </div>
 
                             <div className="col-span-3 flex flex-col gap-1">
-                                <label className="text-[12px] font-bold text-teal-900">Ghi chú chung toàn phiếu (注意事項)</label>
-                                <input value={internalNotes} onChange={e => setInternalNotes(e.target.value)} type="text" className="w-full h-[34px] text-sm border-teal-200 focus:border-teal-500 focus:ring-1 focus:ring-teal-500 rounded px-2" placeholder="Nhập ghi chú chung..." />
+                                <label className="text-[12px] font-bold text-teal-900">注意事項 (Ghi chú chung)</label>
+                                <textarea value={internalNotes} onChange={e => setInternalNotes(e.target.value)} className="w-full text-sm border-teal-200 focus:border-teal-500 focus:ring-1 focus:ring-teal-500 rounded p-2 min-h-[60px]" placeholder="注意事項を入力..." />
                             </div>
                         </div>
                     </div>
@@ -185,6 +209,16 @@ export function OrderFormClient({ customers }: OrderFormClientProps) {
                         <OrderItemsGrid items={items} onChange={setItems} />
                     </div>
 
+                    <OrderPreviewPanel
+                        slipNo={slipNo}
+                        orderDate={orderDate}
+                        selectedCustomer={selectedCustomer}
+                        requesterCode={selectedCustomer?.requester_code || ''}
+                        handlerName={handlerName}
+                        recipientName={recipientName}
+                        internalNotes={internalNotes}
+                        items={items}
+                    />
                 </div>
             </div>
         </form>

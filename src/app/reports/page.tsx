@@ -34,6 +34,15 @@ export default function ReportsPage() {
             accent: 'red',
             stats: ['Reorder Alert', 'Multi-level', 'Real-time'],
         },
+        {
+            href: '/reports/production',
+            icon: BarChart3,
+            titleJA: '生産・稼働レポート',
+            titleVI: 'Báo cáo Sản Xuất',
+            description: 'Thống kê sản lượng thực tế máy đúc, phân tích phế liệu và so sánh với Kế hoạch. Cung cấp chức năng tải Report CSV.',
+            accent: 'teal',
+            stats: ['Nhật ký Sản xuất', 'KPI Năng suất', 'Export CSV'],
+        },
     ]
 
     const accentMap: Record<string, { border: string; bg: string; text: string; hoverBg: string; iconBg: string }> = {

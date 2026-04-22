@@ -2,6 +2,9 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { Plus, Search, FileText } from 'lucide-react'
 import { OrderWithCustomer } from '@/types/orders'
+import { OrderListActions } from '@/components/order/OrderListActions'
+
+export const dynamic = 'force-dynamic';
 
 export default async function OrderPage() {
     const supabase = await createClient()
@@ -10,7 +13,23 @@ export default async function OrderPage() {
         .from('orders')
         .select(`
       *,
-      customers (customer_code, delivery_name)
+      customers (customer_code, delivery_name),
+      order_items (
+          id,
+          product_pn_raw,
+          delivery_date,
+          delivery_date_end,
+          product_master (
+              code,
+              name,
+              customer_code,
+              product_mold_map (
+                  mold_design_revision (
+                      mold_physical ( physical_code )
+                  )
+              )
+          )
+      )
     `)
         .order('created_at', { ascending: false })
 
@@ -30,7 +49,7 @@ export default async function OrderPage() {
                 <div className="flex items-center gap-2">
                     <FileText size={20} className="text-teal-700" />
                     <h2 className="text-[14px] font-bold text-teal-900 flex flex-col">
-                        <span className="ja">指示書・受注管理 (Order Management)</span>
+                        <span className="ja">指示書・受注管理 [SYNCED]</span>
                         <span className="vi font-normal text-teal-700 mt-[-2px] text-xs">Quản lý Đơn hàng / Chỉ thị SX</span>
                     </h2>
                 </div>
@@ -61,39 +80,101 @@ export default async function OrderPage() {
                 <table className="w-full text-left border-collapse min-w-[800px]">
                     <thead className="bg-slate-50 sticky top-0 z-10 shadow-[0_1px_0_var(--mcs-border)] text-xs text-slate-500 whitespace-nowrap">
                         <tr>
-                            <th className="p-3 font-bold w-[120px]">
-                                <span className="ja">Mã LOT / 伝票番号</span>
+                            <th className="p-3 font-bold w-[110px]">
+                                <span className="ja">伝票番号 (Mã LOT)</span>
                             </th>
                             <th className="p-3 font-bold w-[100px]">
-                                <span className="ja">Ngày(発注日)</span>
+                                <span className="ja">発注日 (Ngày Đặt)</span>
                             </th>
-                            <th className="p-3 font-bold w-[150px]">
-                                <span className="ja">Khách hàng</span>
+                            <th className="p-3 font-bold w-[140px]">
+                                <span className="ja">得意先 (Khách hàng)</span>
+                            </th>
+                            <th className="p-3 font-bold w-[180px]">
+                                <span className="ja">品番 (Mã khay)</span>
                             </th>
                             <th className="p-3 font-bold w-[100px]">
-                                <span className="ja">Phân loại</span>
+                                <span className="ja">金型 (Mã khuôn)</span>
                             </th>
-                            <th className="p-3 font-bold w-[120px] text-center">
-                                <span className="ja">Trạng thái</span>
+                            <th className="p-3 font-bold w-[80px] text-center border-l border-gray-200">
+                                <span className="ja text-[11px]">出荷日</span>
+                            </th>
+                            <th className="p-3 font-bold w-[80px] text-center border-r border-gray-200">
+                                <span className="ja text-[11px]">着日</span>
+                            </th>
+                            <th className="p-3 font-bold w-[100px] text-center">
+                                <span className="ja">状態 (Status)</span>
+                            </th>
+                            <th className="p-3 font-bold w-[80px]">
+                                <span className="ja">担当 (PIC)</span>
                             </th>
                             <th className="p-3 font-bold">
-                                <span className="ja">PIC(担当)</span>
+                                <span className="ja">事項 (Ghi chú)</span>
                             </th>
-                            <th className="p-3 font-bold">
-                                <span className="ja">Ghi chú(事項)</span>
+                            <th className="p-3 font-bold text-center w-[80px]">
+                                <span className="ja">操作 (Xử lý)</span>
                             </th>
                         </tr>
                     </thead>
                     <tbody className="text-[12px]">
-                        {orders?.map((item: OrderWithCustomer) => (
+                        {orders?.map((item: any) => (
                             <tr key={item.id} className="border-b border-[#e0e0e0] hover:bg-teal-50/30 group transition-colors cursor-pointer">
-                                <td className="p-3 font-mono font-bold text-teal-800 text-sm">{item.slip_no || '-'}</td>
-                                <td className="p-3 text-slate-600 font-mono">{item.order_date.substring(0, 10)}</td>
-                                <td className="p-3 font-bold text-slate-700">{item.customers?.customer_code} {item.customers?.delivery_name ? `(${item.customers.delivery_name})` : ''}</td>
-                                <td className="p-3 capitalize">{item.order_type}</td>
-                                <td className="p-3 text-center">{getStatusBadge(item.status)}</td>
-                                <td className="p-3">{item.handler_name || '-'}</td>
-                                <td className="p-3 text-slate-500 overflow-hidden text-ellipsis max-w-[200px] whitespace-nowrap">{item.internal_notes || '-'}</td>
+                                <td className="p-3 font-mono font-bold text-teal-800 text-[13px] align-top relative">
+                                    {item.order_type === 'outsource' && <div className="absolute top-0 right-0 w-2 h-2 bg-purple-500 rounded-bl" title="Outsource"></div>}
+                                    {item.slip_no || '-'}
+                                </td>
+                                <td className="p-3 text-slate-600 font-mono align-top text-[12px]">{item.order_date.substring(0, 10).replace(/-/g, '/')}</td>
+                                <td className="p-3 font-bold text-slate-700 align-top text-[12px] break-words">{item.customers?.customer_code} {item.customers?.delivery_name ? <span className="block text-[10px] text-gray-500 italic mt-0.5">{item.customers.delivery_name}</span> : ''}</td>
+
+                                <td className="p-0 border-l border-gray-50 align-top">
+                                    {item.order_items?.map((oi: any) => {
+                                        const pm = oi.product_master;
+                                        const mainText = pm?.customer_code || pm?.name || pm?.code || oi.product_pn_raw || '-';
+                                        
+                                        const subTextParts = [];
+                                        if (pm?.customer_code && pm.name && pm.name !== pm.customer_code) subTextParts.push(pm.name);
+                                        if (pm?.code && pm.code !== mainText && pm.code !== pm?.name) subTextParts.push(pm.code);
+                                        
+                                        const subText = subTextParts.filter(Boolean).join(' / ');
+
+                                        return (
+                                            <div key={oi.id} className="p-3 text-emerald-800 font-mono font-bold text-[12px] border-b border-gray-100 last:border-b-0 break-words flex flex-col gap-0.5">
+                                                <span>{mainText}</span>
+                                                {subText && (
+                                                    <span className="text-[10px] text-gray-500 italic opacity-80 whitespace-normal leading-tight">
+                                                        {subText}
+                                                    </span>
+                                                )}
+                                            </div>
+                                        );
+                                    })}
+                                </td>
+
+                                <td className="p-0 border-l border-gray-50 align-top bg-slate-50/50">
+                                    {item.order_items?.map((oi: any) => {
+                                        const physicals = oi.product_master?.product_mold_map?.[0]?.mold_design_revision?.mold_physical;
+                                        const moldCode = Array.isArray(physicals) ? physicals?.[0]?.physical_code : physicals?.physical_code;
+                                        return <div key={oi.id} className="p-3 text-slate-600 font-mono text-[11px] border-b border-gray-100 last:border-b-0 truncate">{moldCode || <span className="text-gray-300">-</span>}</div>
+                                    })}
+                                </td>
+
+                                <td className="p-0 align-top text-center border-l border-dashed border-gray-200">
+                                    {item.order_items?.map((oi: any) => (
+                                        <div key={oi.id} className="p-3 text-teal-700 font-mono text-[12px] border-b border-gray-100 last:border-b-0">{oi.delivery_date ? oi.delivery_date.substring(5, 10).replace('-', '/') : '-'}</div>
+                                    ))}
+                                </td>
+
+                                <td className="p-0 align-top text-center border-r border-dashed border-gray-200">
+                                    {item.order_items?.map((oi: any) => (
+                                        <div key={oi.id} className="p-3 text-orange-700 font-mono text-[12px] border-b border-gray-100 last:border-b-0">{oi.delivery_date_end ? oi.delivery_date_end.substring(5, 10).replace('-', '/') : '-'}</div>
+                                    ))}
+                                </td>
+
+                                <td className="p-3 text-center align-top">{getStatusBadge(item.status)}</td>
+                                <td className="p-3 align-top text-[12px]">{item.handler_name || '-'}</td>
+                                <td className="p-3 text-slate-500 min-w-[150px] align-top whitespace-pre-wrap leading-relaxed text-[11px] border-l border-gray-50">{item.internal_notes || '-'}</td>
+                                <td className="p-3 text-center align-top">
+                                    <OrderListActions orderId={item.id} status={item.status} />
+                                </td>
                             </tr>
                         ))}
                     </tbody>

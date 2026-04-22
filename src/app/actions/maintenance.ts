@@ -103,15 +103,19 @@ export async function addMaintenanceLog(logData: {
 }) {
     const supabase = await createClient()
 
-    const { error } = await supabase
-        .from('mold_maintenance_log')
-        .insert([logData])
+    const { error } = await supabase.rpc('record_maintenance_and_reset', {
+        p_physical_id: logData.mold_physical_id,
+        p_performed_by: logData.performed_by,
+        p_maintenance_type: logData.maintenance_type,
+        p_action_taken: logData.action_taken,
+        p_cost: logData.cost
+    })
 
     if (error) {
-        console.error('Lỗi thêm Maintenance Log:', error.message)
+        console.error('Lỗi khi chạy RPC record_maintenance_and_reset:', error.message)
         throw new Error(error.message)
     }
 
     revalidatePath('/maintenance')
-    revalidatePath('/maintenance/log')
+    revalidatePath('/dashboard')
 }
