@@ -5,13 +5,12 @@ import ExcelPlanGridView from './ExcelPlanGridView-v8.5.2-1'
 import { LayoutGrid, List } from 'lucide-react'
 
 // Container wrapper xử lý chuyển đổi giữa List View và Excel View
-export default function DayPlanContainer({ plans, machines, dateStr }: { plans: any[], machines: any[], dateStr: string }) {
+export default function DayPlanContainer({ plans, machines, dateStr, daysCount = 7 }: { plans: any[], machines: any[], dateStr: string, daysCount?: number }) {
     const [viewMode, setViewMode] = useState<'LIST' | 'EXCEL'>('EXCEL') // Mặc định mở luôn dạng Excel cho Sếp xem trải nghiệm
 
     return (
-        <div className="flex flex-col h-full w-full bg-[var(--mcs-surface)] rounded-[6px] border border-[var(--mcs-border)] shadow-sm overflow-hidden relative">
-
-            {/* Control Bar */}
+        <div className="flex flex-col h-full w-full bg-[var(--mcs-surface)] rounded-none border-0 overflow-hidden relative">
+            {/* Control Bar was moved to CompactPlanningToolbar */}
             <div className="absolute top-[8px] right-[8px] z-20 flex bg-[var(--mcs-surface-3)] border border-[var(--mcs-border-strong)] p-[2px] rounded shadow-sm">
                 <button
                     onClick={() => setViewMode('LIST')}

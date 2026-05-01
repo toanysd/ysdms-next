@@ -225,7 +225,7 @@ export async function getPendingOrderItemsForPlanning() {
 export type ProductionPlanInsert = {
     order_item_id: string
     machine_instance_id: string
-    mold_physical_id: string
+    mold_physical_id?: string | null
     planned_date: string
     operator_name?: string
     notes?: string
@@ -234,6 +234,10 @@ export type ProductionPlanInsert = {
     estimated_shots?: number
     estimated_hours?: number
     shift: 'DAY' | 'NIGHT'
+    
+    quantity_note?: string
+    delivery_date?: string
+    sort_order?: number
 }
 
 // Fetch Kế hoạch theo ngày (đã loại các plan bị xoá mềm)
@@ -246,7 +250,7 @@ export async function getProductionPlansByDate(dateStr: string) {
             machine_instance!inner(id, name, internal_code),
             mold_physical(id, physical_code),
             order_items!inner(
-                product_pn_raw, delivery_date, quantity,
+                id, product_id, product_pn_raw, delivery_date, quantity,
                 orders!inner(status, slip_no),
                 product_master(code, customer_code, name)
             )
@@ -271,7 +275,7 @@ export async function getProductionPlansByDateRange(startDateStr: string, endDat
             machine_instance!inner(id, name, internal_code, status),
             mold_physical(id, physical_code, cavity),
             order_items!inner(
-                product_pn_raw, delivery_date, quantity,
+                id, product_id, product_pn_raw, delivery_date, quantity,
                 orders!inner(status, slip_no),
                 product_master(code, customer_code, name)
             )
@@ -376,7 +380,12 @@ export async function getProductPhysicalMolds(productId: string) {
     })
 
     if (molds.length > 0) return molds
+    return []
+}
 
+// Lấy toàn bộ khuôn vật lý
+export async function getAllPhysicalMolds() {
+    const supabase = await createClient()
     const { data: allMolds } = await supabase
         .from('mold_physical')
         .select('id, physical_code, status')
@@ -385,9 +394,57 @@ export async function getProductPhysicalMolds(productId: string) {
     return allMolds || []
 }
 
+// Lấy danh sách các khuôn ĐÃ BỊ CHIẾM DỤNG trong một ngày/ca cụ thể (trừ máy hiện tại)
+export async function getOccupiedMolds(dateStr: string, shift: 'DAY'|'NIGHT', excludePlanId?: string) {
+    const supabase = await createClient()
+    let query = supabase
+        .from('production_plans')
+        .select(`
+            mold_physical_id,
+            machine_instance!inner(internal_code)
+        `)
+        .eq('planned_date', dateStr)
+        .eq('shift', shift)
+        .not('mold_physical_id', 'is', null)
+        .is('deleted_at', null)
+
+    if (excludePlanId) {
+        query = query.neq('id', excludePlanId)
+    }
+
+    const { data, error } = await query
+    
+    if (error || !data) return []
+
+    // Trả về map: mold_physical_id -> tên máy đang chiếm dụng
+    const occupiedMap: Record<string, string> = {}
+    data.forEach((p: any) => {
+        if (p.mold_physical_id) {
+            occupiedMap[p.mold_physical_id] = p.machine_instance?.internal_code || 'Máy khác'
+        }
+    })
+    
+    return occupiedMap
+}
+
 // -------------------------------------------------------------
 // MUTATIONS
 // -------------------------------------------------------------
+
+export async function getOperators() {
+    const supabase = await createClient()
+    const { data, error } = await supabase
+        .from('operator_master')
+        .select('code, name, display_name')
+        .eq('is_active', true)
+        .order('code')
+
+    if (error) {
+        console.error('[API Error] getOperators:', error)
+        return []
+    }
+    return data || []
+}
 
 export async function createProductionPlanAction(payload: ProductionPlanInsert) {
     const supabase = await createClient()
