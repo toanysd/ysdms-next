@@ -78,7 +78,7 @@ export default function ProductionOverview({ monthlyData, trendData }: Props) {
           Monthly Production Volume
         </h3>
         <div className="h-[350px] w-full">
-          <ResponsiveContainer width="100%" height="100%">
+          <ResponsiveContainer width="100%" height="100%" minHeight={0}>
             <BarChart data={monthlyData} margin={{ top: 10, right: 10, left: 20, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" strokeOpacity={0.5} />
               <XAxis 
@@ -119,7 +119,7 @@ export default function ProductionOverview({ monthlyData, trendData }: Props) {
         <div className="lg:col-span-2 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border border-slate-200/60 dark:border-slate-700/60 p-6 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300">
           <h3 className="text-lg font-black text-slate-800 dark:text-slate-100 mb-6">30-Day Production Trend</h3>
           <div className="h-[250px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer width="100%" height="100%" minHeight={0}>
               <LineChart data={trendData} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" strokeOpacity={0.5} />
                 <XAxis dataKey="order_date" hide />
@@ -146,7 +146,7 @@ export default function ProductionOverview({ monthlyData, trendData }: Props) {
         <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border border-slate-200/60 dark:border-slate-700/60 p-6 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300">
           <h3 className="text-lg font-black text-slate-800 dark:text-slate-100 mb-4">Customer Distribution</h3>
           <div className="h-[250px] w-full flex items-center justify-center">
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer width="100%" height="100%" minHeight={0}>
               <PieChart>
                 <Pie
                   data={customerDonutData}

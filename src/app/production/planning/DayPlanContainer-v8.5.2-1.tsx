@@ -37,7 +37,7 @@ export default function DayPlanContainer({ plans, machines, dateStr }: { plans: 
                     </div>
                 ) : (
                     <div className="pt-[40px] h-full bg-[var(--mcs-surface-2)]">
-                        <ExcelPlanGridView plans={plans} />
+                        <ExcelPlanGridView plans={plans} machines={machines} startDateStr={dateStr} />
                     </div>
                 )}
             </div>

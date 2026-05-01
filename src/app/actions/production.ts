@@ -184,33 +184,42 @@ export async function getPendingOrderItemsForPlanning() {
 
     const itemIds = progressList.map(p => p.order_item_id)
 
-    const { data: itemsDetails, error: detailsErr } = await supabase
-        .from('order_items')
-        .select(`
-             id,
-             product_id,
-             product_pn_raw,
-             quantity,
-             delivery_date,
-             orders!inner(slip_no, order_date, status),
-             product_master ( code, customer_code, name )
-        `)
-        .in('id', itemIds)
-        .in('orders.status', ['confirmed', 'in_production'])
+    const chunkSize = 150
+    let itemsDetails: any[] = []
 
-    if (detailsErr || !itemsDetails) {
-        console.error('[API Error] getPendingOrderItemsForPlanning (details):', detailsErr)
-        return []
+    for (let i = 0; i < itemIds.length; i += chunkSize) {
+        const chunk = itemIds.slice(i, i + chunkSize)
+        const { data: chunkData, error: chunkErr } = await supabase
+            .from('order_items')
+            .select(`
+                 id,
+                 product_id,
+                 product_pn_raw,
+                 quantity,
+                 delivery_date,
+                 orders!inner(slip_no, order_date, status),
+                 product_master ( code, customer_code, name )
+            `)
+            .in('id', chunk)
+            .in('orders.status', ['draft', 'confirmed', 'in_production'])
+
+        if (chunkErr || !chunkData) {
+            console.error('[API Error] getPendingOrderItemsForPlanning (details chunk):', chunkErr)
+            return []
+        }
+        itemsDetails.push(...chunkData)
     }
 
-    // Ghép Detail với Progress
-    return progressList.map(p => {
+    // Ghép Detail với Progress và lọc bỏ các item không có detail
+    const merged = progressList.map(p => {
         const detail = itemsDetails.find(d => d.id === p.order_item_id)
         return {
             ...p,
             detail
         }
     })
+    
+    return merged.filter(p => p.detail)
 }
 
 export type ProductionPlanInsert = {
@@ -234,9 +243,9 @@ export async function getProductionPlansByDate(dateStr: string) {
         .select(`
             *,
             machine_instance!inner(id, name, internal_code),
-            mold_physical!inner(id, physical_code),
+            mold_physical(id, physical_code),
             order_items!inner(
-                product_pn_raw, delivery_date,
+                product_pn_raw, delivery_date, quantity,
                 orders!inner(status, slip_no),
                 product_master(code, customer_code, name)
             )
@@ -247,6 +256,31 @@ export async function getProductionPlansByDate(dateStr: string) {
 
     if (error) {
         console.error('[API Error] getProductionPlansByDate:', error)
+        return []
+    }
+    return data
+}
+
+export async function getProductionPlansByDateRange(startDateStr: string, endDateStr: string) {
+    const supabase = await createClient()
+    const { data, error } = await supabase
+        .from('production_plans')
+        .select(`
+            *,
+            machine_instance!inner(id, name, internal_code, status),
+            mold_physical(id, physical_code, cavity),
+            order_items!inner(
+                product_pn_raw, delivery_date, quantity,
+                orders!inner(status, slip_no),
+                product_master(code, customer_code, name)
+            )
+        `)
+        .gte('planned_date', startDateStr)
+        .lte('planned_date', endDateStr)
+        .is('deleted_at', null)
+
+    if (error) {
+        console.error('[API Error] getProductionPlansByDateRange:', error)
         return []
     }
     return data

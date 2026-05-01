@@ -120,7 +120,11 @@ export async function getMachineEffectiveSpecs() {
     return []
   }
 
-  return data
+  return data.map(m => ({
+    ...m,
+    id: m.instance_id,
+    name: m.machine_name
+  }))
 }
 
 /**
