@@ -36,7 +36,7 @@ export default function PlanningDndWrapper({ children, pendingItems, machines }:
     const activeOrder = activeId ? pendingItems.find(o => o.order_item_id === activeId) : null
 
     return (
-        <DndContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+        <DndContext id="planning-board-dnd" onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
             {children}
 
             <DragOverlay dropAnimation={{ duration: 250, easing: 'cubic-bezier(0.18, 0.67, 0.6, 1.22)' }}>
@@ -70,11 +70,10 @@ function ConfirmModal({ data, onClose, onSuccess }: { data: any, onClose: () => 
     React.useEffect(() => {
         const fetchMolds = async () => {
             try {
-                if (data.order.detail?.product_id) {
-                    const res = await getProductPhysicalMolds(data.order.detail.product_id)
-                    setMolds(res)
-                    if (res.length > 0) setSelectedMold(res[0].id)
-                }
+                // Fetch molds regardless of product_id for now (Phase B fallback)
+                const res = await getProductPhysicalMolds(data.order.detail?.product_id || '')
+                setMolds(res)
+                if (res.length > 0) setSelectedMold(res[0].id)
             } catch (err) {}
         }
         fetchMolds()
@@ -94,6 +93,7 @@ function ConfirmModal({ data, onClose, onSuccess }: { data: any, onClose: () => 
                 planned_date: data.dateStr,
                 planned_quantity: qty,
                 operator_name: fd.get('operator') as string || undefined,
+                shift: data.shift,
             })
             onSuccess()
         } catch (err: any) {
@@ -123,6 +123,7 @@ function ConfirmModal({ data, onClose, onSuccess }: { data: any, onClose: () => 
                                 value={selectedMold} 
                                 onChange={e => setSelectedMold(e.target.value)}
                                 className="w-full bg-[var(--mcs-surface)] border border-[var(--mcs-border)] rounded px-3 py-2 text-sm"
+                                required
                             >
                                 <option value="">--- Chọn khuôn (Chưa xác định) ---</option>
                                 {molds.map(m => (

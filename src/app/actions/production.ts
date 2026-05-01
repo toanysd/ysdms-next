@@ -233,6 +233,7 @@ export type ProductionPlanInsert = {
     planned_quantity: number
     estimated_shots?: number
     estimated_hours?: number
+    shift: 'DAY' | 'NIGHT'
 }
 
 // Fetch Kế hoạch theo ngày (đã loại các plan bị xoá mềm)
@@ -390,7 +391,7 @@ export async function getProductPhysicalMolds(productId: string) {
 
 export async function createProductionPlanAction(payload: ProductionPlanInsert) {
     const supabase = await createClient()
-    const finalPayload = { ...payload, shift: 'DAY' }
+    const finalPayload = { ...payload }
 
     const { data, error } = await supabase
         .from('production_plans')
