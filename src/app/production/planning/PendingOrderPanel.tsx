@@ -85,11 +85,11 @@ export default function PendingOrderPanel({
                                     className="mt-1 w-4 h-4 text-[var(--mcs-primary)] rounded border-gray-300 focus:ring-[var(--mcs-primary)]"
                                 />
                                 <div className="flex-1 min-w-0">
-                                    <div className="flex justify-between items-baseline mb-1">
-                                        <div className="font-bold text-sm text-[var(--mcs-text)] truncate" title={slipNo}>{slipNo}</div>
-                                        <div className="text-[11px] font-mono text-gray-500 bg-gray-100 px-1 rounded whitespace-nowrap ml-2">Qty: {qty.toLocaleString()}</div>
+                                    <div className="flex justify-between items-baseline mb-0.5">
+                                        <div className="font-bold text-[16px] text-[var(--mcs-primary)] truncate" title={pnRaw}>{pnRaw}</div>
+                                        <div className="text-[11px] font-mono text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded whitespace-nowrap ml-2 border border-gray-200">Qty: {qty.toLocaleString()}</div>
                                     </div>
-                                    <div className="text-[12px] font-bold text-[var(--mcs-primary)] truncate" title={pnRaw}>{pnRaw}</div>
+                                    <div className="text-[11px] font-normal text-gray-400 truncate opacity-70" title={slipNo}>{slipNo}</div>
                                 </div>
                             </div>
                         )

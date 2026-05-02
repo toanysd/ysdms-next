@@ -187,6 +187,11 @@ export async function getPendingOrderItemsForPlanning() {
     const chunkSize = 150
     let itemsDetails: any[] = []
 
+    // Lấy mốc thời gian 60 ngày tới
+    const futureDate = new Date()
+    futureDate.setDate(futureDate.getDate() + 60)
+    const limitDateStr = futureDate.toISOString().split('T')[0]
+
     for (let i = 0; i < itemIds.length; i += chunkSize) {
         const chunk = itemIds.slice(i, i + chunkSize)
         const { data: chunkData, error: chunkErr } = await supabase
@@ -198,10 +203,11 @@ export async function getPendingOrderItemsForPlanning() {
                  quantity,
                  delivery_date,
                  orders!inner(slip_no, order_date, status),
-                 product_master ( code, customer_code, name )
+                 product_master ( code, customer_code, name, material, thickness, p_length, p_width )
             `)
             .in('id', chunk)
             .in('orders.status', ['draft', 'confirmed', 'in_production'])
+            .or(`delivery_date.lte.${limitDateStr},delivery_date.is.null`)
 
         if (chunkErr || !chunkData) {
             console.error('[API Error] getPendingOrderItemsForPlanning (details chunk):', chunkErr)
@@ -458,6 +464,25 @@ export async function createProductionPlanAction(payload: ProductionPlanInsert) 
 
     if (error) {
         console.error('[API Error] createProductionPlanAction:', error)
+        throw new Error(error.message)
+    }
+
+    revalidatePath('/production/planning')
+    revalidatePath('/order')
+    revalidatePath('/production')
+    return data
+}
+
+export async function createProductionPlansBatchAction(payloads: ProductionPlanInsert[]) {
+    const supabase = await createClient()
+
+    const { data, error } = await supabase
+        .from('production_plans')
+        .insert(payloads)
+        .select('id')
+
+    if (error) {
+        console.error('[API Error] createProductionPlansBatchAction:', error)
         throw new Error(error.message)
     }
 

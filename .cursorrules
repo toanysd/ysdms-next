@@ -1,0 +1,6 @@
+# YSDMS-NextGen Project Rules
+
+## BILINGUAL / LANGUAGE RULE (LUẬT NGÔN NGỮ CHÍNH)
+1. BẮT BUỘC NGÔN NGỮ CHÍNH CỦA DỰ ÁN LÀ TIẾNG NHẬT (JAPANESE). Mọi thông báo, nút bấm, label, placeholder, cảnh báo, alert dialog đều phải được viết bằng tiếng Nhật trước tiên.
+2. BỔ SUNG SONG NGỮ: Nếu không gian UI cho phép (VD: không làm vỡ layout, tràn chữ trên mobile), luôn ưu tiên kết hợp song ngữ (Nhật - Việt) theo định dạng: `Tiếng Nhật (Tiếng Việt)`. Ví dụ: `保存 (Lưu)`, `完了 (Hoàn thành)`.
+3. LUẬT NÀY PHẢI ĐƯỢC TUÂN THỦ NGHIÊM NGẶT TRONG MỌI FILE MÃ NGUỒN (HTML, JS, CSS, TSX, v.v.). Không được để lọt bất kỳ text nào chỉ có tiếng Việt trên giao diện người dùng.

@@ -5,11 +5,11 @@ import PlanningClickWrapper from './PlanningClickWrapper'
 import ExcelPlanGridView from './ExcelPlanGridView-v8.5.2-1'
 import DayPlanGrid from './DayPlanGrid'
 import CompactPlanningToolbar from './CompactPlanningToolbar'
-import { format, addDays, startOfMonth, endOfMonth, parseISO } from 'date-fns'
+import { format, addDays, startOfMonth, endOfMonth, parseISO, startOfWeek } from 'date-fns'
 
 export const dynamic = 'force-dynamic'
 
-export default async function ProductionPlanningPage(props: { searchParams: Promise<{ date?: string, view?: string, display?: string }> }) {
+export default async function ProductionPlanningPage(props: { searchParams: Promise<{ date?: string, endDate?: string, view?: string, display?: string }> }) {
     const searchParams = await props.searchParams
     const dateParam = searchParams.date || new Date().toISOString().split('T')[0]
     const viewMode = (searchParams.view as any) || 'week1'
@@ -20,18 +20,24 @@ export default async function ProductionPlanningPage(props: { searchParams: Prom
     let endDate = currentDate
     let daysCount = 7
 
-    if (viewMode === 'day') {
-        endDate = currentDate
-        daysCount = 1
-    } else if (viewMode === 'week1') {
-        endDate = addDays(currentDate, 6)
-        daysCount = 7
-    } else if (viewMode === 'week2') {
-        endDate = addDays(currentDate, 13)
-        daysCount = 14
-    } else if (viewMode === 'month') {
-        endDate = endOfMonth(currentDate)
+    if (viewMode === 'custom' && searchParams.endDate) {
+        endDate = parseISO(searchParams.endDate)
         daysCount = Math.round((endDate.getTime() - currentDate.getTime()) / (1000 * 3600 * 24)) + 1
+        if (daysCount < 1) daysCount = 1
+    } else {
+        if (viewMode === 'day') {
+            endDate = currentDate
+            daysCount = 1
+        } else if (viewMode === 'week1') {
+            endDate = addDays(currentDate, 6)
+            daysCount = 7
+        } else if (viewMode === 'week2') {
+            endDate = addDays(currentDate, 13)
+            daysCount = 14
+        } else if (viewMode === 'month') {
+            endDate = addDays(currentDate, 29)
+            daysCount = 30
+        }
     }
     const endDateStr = format(endDate, 'yyyy-MM-dd')
 
@@ -46,6 +52,7 @@ export default async function ProductionPlanningPage(props: { searchParams: Prom
         <div className="flex flex-col h-[calc(100vh-48px)] bg-[var(--mcs-bg)] text-[var(--mcs-text)] font-sans">
             <CompactPlanningToolbar 
                 currentDate={dateParam}
+                endDate={endDateStr}
                 viewMode={viewMode}
                 activeView={displayMode}
             />

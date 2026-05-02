@@ -1,48 +1,59 @@
 'use client'
 
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { format, parseISO, addDays, addMonths, startOfMonth, endOfMonth, subDays, subMonths } from 'date-fns'
-import { LayoutGrid, List, ChevronLeft, ChevronRight } from 'lucide-react'
+import { format, parseISO, addDays, addMonths, startOfMonth, endOfMonth, subDays, subMonths, startOfWeek } from 'date-fns'
+import { LayoutGrid, List, ChevronLeft, ChevronRight, Calendar as CalendarIcon } from 'lucide-react'
 
 type ViewMode = 'day' | 'week1' | 'week2' | 'month'
 
 export default function CompactPlanningToolbar({
     currentDate,
+    endDate,
     viewMode,
     activeView
 }: {
     currentDate: string
-    viewMode: ViewMode
+    endDate: string
+    viewMode: ViewMode | 'custom'
     activeView: 'grid' | 'list'
 }) {
     const router = useRouter()
     const current = parseISO(currentDate)
 
+    const [localStart, setLocalStart] = useState(currentDate)
+    const [localEnd, setLocalEnd] = useState(endDate)
+
+    useEffect(() => { setLocalStart(currentDate) }, [currentDate])
+    useEffect(() => { setLocalEnd(endDate) }, [endDate])
+
     const handleNavigate = (direction: 'prev' | 'next' | 'today') => {
-        let newDate = current
+        let newStart = current
+        let newEnd = parseISO(endDate)
+        const duration = Math.round((newEnd.getTime() - newStart.getTime()) / (1000 * 3600 * 24)) + 1
+
         if (direction === 'today') {
-            newDate = new Date()
+            newStart = new Date()
+            newEnd = addDays(newStart, duration - 1)
         } else {
             const isNext = direction === 'next'
-            switch (viewMode) {
-                case 'day':
-                    newDate = isNext ? addDays(current, 1) : subDays(current, 1)
-                    break
-                case 'week1':
-                    newDate = isNext ? addDays(current, 7) : subDays(current, 7)
-                    break
-                case 'week2':
-                    newDate = isNext ? addDays(current, 14) : subDays(current, 14)
-                    break
-                case 'month':
-                    newDate = isNext ? addMonths(current, 1) : subMonths(current, 1)
-                    newDate = startOfMonth(newDate) // always go to start of that month
-                    break
+            if (viewMode === 'month') {
+                newStart = isNext ? addMonths(current, 1) : subMonths(current, 1)
+                newEnd = isNext ? addMonths(parseISO(endDate), 1) : subMonths(parseISO(endDate), 1)
+            } else {
+                newStart = isNext ? addDays(current, duration) : subDays(current, duration)
+                newEnd = isNext ? addDays(parseISO(endDate), duration) : subDays(parseISO(endDate), duration)
             }
         }
         
-        router.push(`?date=${format(newDate, 'yyyy-MM-dd')}&view=${viewMode}&display=${activeView}`)
+        router.push(`?date=${format(newStart, 'yyyy-MM-dd')}&endDate=${format(newEnd, 'yyyy-MM-dd')}&view=${viewMode}&display=${activeView}`)
+    }
+
+    const commitDateChange = (type: 'start' | 'end') => {
+        const newStart = type === 'start' ? localStart : currentDate
+        const newEnd = type === 'end' ? localEnd : endDate
+        if (newStart === currentDate && newEnd === endDate) return;
+        router.push(`?date=${newStart}&endDate=${newEnd}&view=custom&display=${activeView}`)
     }
 
     const handleChangeViewMode = (mode: ViewMode) => {
@@ -53,19 +64,8 @@ export default function CompactPlanningToolbar({
         router.push(`?date=${currentDate}&view=${viewMode}&display=${display}`)
     }
 
-    // Format date text based on viewMode
-    let dateText = ''
-    if (viewMode === 'day') {
-        dateText = format(current, 'yyyy年MM月dd日')
-    } else if (viewMode === 'week1') {
-        dateText = `${format(current, 'yyyy年MM月dd日')} 〜 ${format(addDays(current, 6), 'MM月dd日')}`
-    } else if (viewMode === 'week2') {
-        dateText = `${format(current, 'yyyy年MM月dd日')} 〜 ${format(addDays(current, 13), 'MM月dd日')}`
-    } else if (viewMode === 'month') {
-        const start = startOfMonth(current)
-        const end = endOfMonth(current)
-        dateText = `${format(start, 'yyyy年MM月')} (${format(start, 'dd')} 〜 ${format(end, 'dd')})`
-    }
+    // We do not need endDateText anymore because we show the input
+    // but we can keep it empty or remove it.
 
     return (
         <div className="flex h-[44px] items-center px-3 gap-2 bg-[var(--mcs-surface)] border-b border-[var(--mcs-border-strong)] shadow-sm shrink-0">
@@ -80,8 +80,24 @@ export default function CompactPlanningToolbar({
                     <button onClick={() => handleNavigate('prev')} className="p-1.5 hover:bg-[var(--mcs-surface-hover)] text-gray-500 hover:text-gray-800 transition-colors border-r border-[var(--mcs-border)]">
                         <ChevronLeft size={16} />
                     </button>
-                    <div className="px-3 py-1 font-bold text-[13px] text-[var(--mcs-primary)] min-w-[140px] text-center font-mono">
-                        {dateText}
+                    <div className="px-2 py-0.5 font-bold text-[13px] text-[var(--mcs-primary)] text-center font-mono flex items-center justify-center gap-1">
+                        <input 
+                            type="date" 
+                            value={localStart}
+                            onChange={(e) => setLocalStart(e.target.value)}
+                            onBlur={() => commitDateChange('start')}
+                            onKeyDown={(e) => { if (e.key === 'Enter') commitDateChange('start') }}
+                            className="bg-transparent border border-transparent hover:border-gray-300 focus:border-[var(--mcs-primary)] focus:bg-white rounded px-1.5 py-1 outline-none cursor-text transition-colors"
+                        />
+                        <span className="text-gray-500">〜</span>
+                        <input 
+                            type="date" 
+                            value={localEnd}
+                            onChange={(e) => setLocalEnd(e.target.value)}
+                            onBlur={() => commitDateChange('end')}
+                            onKeyDown={(e) => { if (e.key === 'Enter') commitDateChange('end') }}
+                            className="bg-transparent border border-transparent hover:border-gray-300 focus:border-[var(--mcs-primary)] focus:bg-white rounded px-1.5 py-1 outline-none cursor-text transition-colors"
+                        />
                     </div>
                     <button onClick={() => handleNavigate('next')} className="p-1.5 hover:bg-[var(--mcs-surface-hover)] text-gray-500 hover:text-gray-800 transition-colors border-l border-[var(--mcs-border)]">
                         <ChevronRight size={16} />

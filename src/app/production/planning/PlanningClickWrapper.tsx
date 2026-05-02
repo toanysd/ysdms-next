@@ -2,9 +2,9 @@
 
 import React, { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import PendingOrderPanel from './PendingOrderPanel'
+import OrderSelectionModal from './OrderSelectionModal'
 import EditModal from './EditModal'
-import { createProductionPlanAction, getProductPhysicalMolds } from '@/app/actions/production'
+import { createProductionPlansBatchAction, getProductPhysicalMolds } from '@/app/actions/production'
 
 export const PlanningContext = React.createContext<{
     onCellClick: (machineId: string, dateStr: string, shift: 'DAY'|'NIGHT') => void
@@ -61,15 +61,16 @@ export default function PlanningClickWrapper({
         
         setIsSubmitting(true)
         try {
+            const payloads = []
             for (const orderId of selectedOrders) {
                 const item = pendingItems.find(p => p.order_item_id === orderId)
                 if (!item) continue
                 
-                // Fetch khuôn để gợi ý (không bắt buộc)
+                // Lấy default mold nếu có
                 const molds = await getProductPhysicalMolds(item.detail?.product_id || '')
                 const defaultMoldId = molds && molds.length > 0 ? molds[0].id : null
 
-                await createProductionPlanAction({
+                payloads.push({
                     order_item_id: orderId,
                     machine_instance_id: selectedCell.machineId,
                     mold_physical_id: defaultMoldId,
@@ -77,6 +78,10 @@ export default function PlanningClickWrapper({
                     planned_quantity: item.total_requested_qty - item.total_planned_qty,
                     shift: selectedCell.shift,
                 })
+            }
+            
+            if (payloads.length > 0) {
+                await createProductionPlansBatchAction(payloads)
             }
             
             setPanelOpen(false)
@@ -104,9 +109,9 @@ export default function PlanningClickWrapper({
                     {children}
                 </div>
 
-                {/* Panel Bên Phải */}
+                {/* Modal Chọn Đơn Hàng */}
                 {panelOpen && (
-                    <PendingOrderPanel 
+                    <OrderSelectionModal 
                         pendingItems={pendingItems}
                         selectedOrders={selectedOrders}
                         selectedCell={selectedCell}

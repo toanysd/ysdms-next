@@ -35,3 +35,32 @@ export interface MoldPhysical {
   physical_code: string
   cavity: number
 }
+
+export interface EnrichedPendingItem {
+  order_item_id: string
+  total_requested_qty: number
+  total_planned_qty: number
+  plan_coverage_pct: number
+  detail: {
+    id: string
+    product_id: string
+    product_pn_raw: string
+    quantity: number
+    delivery_date: string | null
+    orders: {
+      slip_no: string
+      order_date: string | null
+      status: string
+      customers?: { name: string } | null
+    }
+    product_master: {
+      code: string
+      customer_code: string
+      name: string
+      material?: string | null
+      thickness?: number | null
+      p_length?: number | null
+      p_width?: number | null
+    }
+  }
+}

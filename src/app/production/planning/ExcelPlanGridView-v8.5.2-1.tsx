@@ -4,7 +4,7 @@ import { addDays, parseISO, format } from 'date-fns'
 import { PlanningContext } from './PlanningClickWrapper'
 
 export default function ExcelPlanGridView({ plans, machines, startDateStr, daysCount = 7 }: { plans: any[], machines: any[], startDateStr: string, daysCount?: number }) {
-    const { onCellClick, onPlanClick, selectedOrders } = useContext(PlanningContext)
+    const { onCellClick, onPlanClick, selectedOrders, selectedCell } = useContext(PlanningContext)
 
     // Prepare rows based on daysCount (DAY/NIGHT shifts)
     const start = parseISO(startDateStr)
@@ -66,12 +66,13 @@ export default function ExcelPlanGridView({ plans, machines, startDateStr, daysC
                                 
                                 const totalHours = cellPlans.reduce((sum, p) => sum + (Number(p.estimated_hours) || 0), 0)
                                 const operatorName = cellPlans.find(p => p.operator_name)?.operator_name || ''
+                                const isSelected = selectedCell?.machineId === m.id && selectedCell?.dateStr === row.dateStr && selectedCell?.shift === row.shift
 
                                 return (
                                     <div 
                                         key={cellId} 
-                                        onClick={() => { if (!isDown) onCellClick(m.id, row.dateStr, row.shift) }}
-                                        className={`group w-[340px] shrink-0 border-r border-[var(--mcs-border)] flex items-start justify-center transition-colors min-h-[100px] p-1 ${!isDown ? 'cursor-pointer hover:bg-gray-50' : ''}`}
+                                        className={`group w-[340px] shrink-0 border-r border-[var(--mcs-border)] flex items-start justify-center transition-all min-h-[100px] p-1 relative ${!isDown ? 'hover:bg-gray-50/50' : ''}`}
+                                        style={isSelected ? { outline: '2px solid #0d9488', outlineOffset: '-2px', backgroundColor: 'rgba(20, 184, 166, 0.1)', boxShadow: 'inset 0 0 15px rgba(20, 184, 166, 0.15)', zIndex: 10 } : {}}
                                     >
                                         {isDown && cellPlans.length === 0 ? (
                                             <div className="w-full h-full flex items-center justify-center opacity-30">
@@ -154,9 +155,12 @@ export default function ExcelPlanGridView({ plans, machines, startDateStr, daysC
                                                 </div>
                                                 
                                                 {/* Add Order Hint */}
-                                                <div className="mt-1 flex items-center justify-center p-1 rounded border border-dashed border-transparent hover:border-gray-300 hover:bg-gray-50 text-gray-400 opacity-0 group-hover:opacity-100 transition-all cursor-pointer">
-                                                    <span className="text-[10px] font-bold">+ 注文を追加 <span className="font-normal">(Thêm Kế hoạch)</span></span>
-                                                </div>
+                                                <button 
+                                                    onClick={(e) => { e.stopPropagation(); if (!isDown) onCellClick(m.id, row.dateStr, row.shift); }}
+                                                    className="w-full mt-1 flex items-center justify-center p-1.5 rounded border border-dashed border-gray-300 bg-gray-50 text-[var(--mcs-primary)] opacity-0 group-hover:opacity-100 transition-all cursor-pointer hover:bg-teal-50 hover:border-teal-400 focus:outline-none"
+                                                >
+                                                    <span className="text-[11px] font-bold">+ 計画追加 <span className="font-normal text-[10px] ml-1">(Thêm)</span></span>
+                                                </button>
                                             </div>
                                         )}
                                     </div>
