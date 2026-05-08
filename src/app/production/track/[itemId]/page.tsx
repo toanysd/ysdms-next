@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { startProductionLog, completeProductionLog } from '@/app/actions/production'
+import { recordTrayIn } from '@/app/actions/inventory'
 import { ChevronLeft, Play, CheckCircle, Factory, User, Wrench } from 'lucide-react'
 
 // Props for app router
@@ -52,11 +53,35 @@ export default async function ProductionTrackPage({
             'use server'
             const producedQty = Number(formData.get('produced_qty')) || 0
             const scrapQty = Number(formData.get('scrap_qty')) || 0
-            await completeProductionLog({
-                log_id: logId,
-                produced_qty: producedQty,
-                scrap_qty: scrapQty
-            })
+            const doInventoryIn = formData.get('do_inventory_in') === 'on'
+            const lotNo = formData.get('lot_no') as string
+
+            try {
+                await completeProductionLog({
+                    log_id: logId,
+                    produced_qty: producedQty,
+                    scrap_qty: scrapQty
+                })
+            } catch (err: any) {
+                redirect('/production/track/' + itemId + '?logId=' + logId + '&error=complete_failed')
+            }
+
+            const goodQty = producedQty - scrapQty
+            
+            if (doInventoryIn && goodQty > 0) {
+                const invResult = await recordTrayIn({
+                    product_id: itemData.product_id,
+                    production_log_id: logId,
+                    quantity: goodQty,
+                    lot_no: lotNo || null,
+                    operator_name: logData.operator_name || null
+                })
+                
+                if (!invResult?.success) {
+                    redirect('/production?warning=inventory_failed')
+                }
+            }
+
             redirect('/production')
         }
 
@@ -101,6 +126,33 @@ export default async function ProductionTrackPage({
                             min="0"
                             className="w-full p-4 text-xl font-bold bg-[var(--mcs-surface)] border-2 border-[var(--mcs-border)] focus:border-red-500 rounded-md text-[var(--mcs-text)]"
                         />
+                    </div>
+                    
+                    <div className="bg-[var(--mcs-primary-light)] p-4 rounded-md border border-[var(--mcs-primary)] mt-4">
+                        <label className="flex items-start gap-3 cursor-pointer">
+                            <input 
+                                type="checkbox" 
+                                name="do_inventory_in" 
+                                defaultChecked 
+                                className="w-5 h-5 mt-0.5 rounded text-[var(--mcs-primary)] focus:ring-[var(--mcs-primary)]"
+                            />
+                            <div>
+                                <span className="block text-sm font-bold text-[var(--mcs-primary-hover)]">在庫に入庫する / Nhập thẳng vào Kho (IN)</span>
+                                <span className="block text-xs text-gray-600 mt-1">Bỏ tick nếu hàng bị giữ lại QC (QC Hold) chưa được nhập kho. Số lượng nhập = Thành phẩm - Phế phẩm.</span>
+                            </div>
+                        </label>
+                        
+                        <div className="mt-3 pl-8">
+                            <label className="block text-xs font-bold text-gray-600 mb-1">ロット番号 / Số Lô (Lot No.)</label>
+                            <input 
+                                type="text" 
+                                name="lot_no"
+                                defaultValue={itemData.orders?.slip_no || ''} 
+                                placeholder="VD: 263090..."
+                                className="w-full p-2 text-sm bg-white border border-[var(--mcs-border)] rounded focus:border-[var(--mcs-primary)]"
+                            />
+                            <span className="text-[10px] text-gray-500 mt-1 block">Mặc định lấy theo Slip No. của Đơn hàng</span>
+                        </div>
                     </div>
                     <button type="submit" className="w-full h-16 text-xl font-bold bg-emerald-500 hover:bg-emerald-600 text-white rounded-md flex items-center justify-center gap-2 transition-colors shadow-lg">
                         <CheckCircle size={24} /> 完了報告する (BÁO CÁO HOÀN THÀNH)

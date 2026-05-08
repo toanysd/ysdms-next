@@ -31,3 +31,154 @@ export async function createInboundTxnAction(data: {
     revalidatePath('/inventory')
     revalidatePath('/inventory/history')
 }
+
+// ============================================================
+// YSDMS-NEXT | Server Actions — Tray Inventory
+// ============================================================
+
+export interface TrayInPayload {
+    product_id: string
+    production_log_id?: string | null
+    quantity: number
+    lot_no?: string | null
+    operator_name?: string | null
+    notes?: string | null
+}
+
+export interface TrayOutPayload {
+    product_id: string
+    order_item_id: string
+    quantity: number
+    lot_no?: string | null
+    operator_name?: string | null
+    notes?: string | null
+}
+
+export interface TrayAdjustPayload {
+    product_id: string
+    actual_quantity: number
+    operator_name?: string | null
+    notes?: string | null
+}
+
+/**
+ * 1. recordTrayIn
+ * Ghi nhận nhập kho thành phẩm từ xưởng sản xuất (hoặc nhập bù).
+ */
+export async function recordTrayIn(payload: TrayInPayload) {
+    if (!Number.isInteger(payload.quantity) || payload.quantity <= 0) {
+        return { success: false, error: 'Quantity must be a positive integer for IN transactions.' }
+    }
+
+    const supabase = await createClient()
+
+    const { data, error } = await supabase
+        .from('tray_inventory_txn')
+        .insert({
+            txn_type: 'IN',
+            product_id: payload.product_id,
+            production_log_id: payload.production_log_id || null,
+            quantity: payload.quantity,
+            lot_no: payload.lot_no || null,
+            operator_name: payload.operator_name || null,
+            notes: payload.notes || 'Nhập kho thành phẩm'
+        })
+        .select()
+        .single()
+
+    if (error) {
+        console.error('[API Error] recordTrayIn:', error)
+        return { success: false, error: error.message }
+    }
+
+    revalidatePath('/production/inventory')
+    revalidatePath('/production')
+    return { success: true, txn: data }
+}
+
+/**
+ * 2. recordTrayOut
+ * Xuất kho thành phẩm để giao cho khách hàng (Gắn với order_item).
+ * Có validate chặn xuất âm kho.
+ */
+export async function recordTrayOut(payload: TrayOutPayload) {
+    if (!Number.isInteger(payload.quantity) || payload.quantity <= 0) {
+        return { success: false, error: 'Quantity must be a positive integer for OUT transactions.' }
+    }
+
+    const supabase = await createClient()
+
+    // Sử dụng RPC "record_tray_out_safe" để tránh Race Condition
+    // RPC tự lock table row, check stock, và insert atomic
+    const { data, error } = await supabase.rpc('record_tray_out_safe', {
+        p_product_id: payload.product_id,
+        p_order_item_id: payload.order_item_id,
+        p_quantity: payload.quantity,
+        p_lot_no: payload.lot_no || null,
+        p_operator_name: payload.operator_name || null,
+        p_notes: payload.notes || 'Xuất kho giao hàng'
+    })
+
+    if (error) {
+        console.error('[API Error] recordTrayOut RPC:', error)
+        return { success: false, error: error.message }
+    }
+
+    revalidatePath('/production/inventory')
+    revalidatePath('/production')
+    return { success: true, txn: data }
+}
+
+/**
+ * 3. recordTrayAdjust
+ * Kiểm kê định kỳ. Nhập vào số đếm thực tế (actual_quantity), 
+ * hệ thống tự tính Delta (độ lệch) và ghi log ADJUST.
+ */
+export async function recordTrayAdjust(payload: TrayAdjustPayload) {
+    if (!Number.isInteger(payload.actual_quantity) || payload.actual_quantity < 0) {
+        return { success: false, error: 'Số lượng kiểm kê thực tế phải là số nguyên không âm.' }
+    }
+
+    const supabase = await createClient()
+
+    // Lấy tồn kho hiện tại
+    const { data: stockData, error: stockErr } = await supabase
+        .from('tray_stock_summary')
+        .select('current_stock')
+        .eq('product_id', payload.product_id)
+        .single()
+
+    if (stockErr && stockErr.code !== 'PGRST116') {
+        console.error('[API Error] recordTrayAdjust (stock check):', stockErr)
+        return { success: false, error: 'Lỗi kiểm tra tồn kho hiện hành.' }
+    }
+
+    const currentStock = stockData?.current_stock || 0
+    const delta = payload.actual_quantity - currentStock
+
+    if (delta === 0) {
+        return { success: true, note: 'Khớp số liệu, không cần điều chỉnh.', delta: 0 }
+    }
+
+    // Tiến hành ghi ADJUST
+    const { data, error } = await supabase
+        .from('tray_inventory_txn')
+        .insert({
+            txn_type: 'ADJUST',
+            product_id: payload.product_id,
+            quantity: delta, // Delta có thể âm (-) hoặc dương (+) đúng theo thiết kế
+            operator_name: payload.operator_name || null,
+            notes: payload.notes || `Kiểm kê kho. Tồn hệ thống: ${currentStock} -> Thực tế đếm: ${payload.actual_quantity} (Lệch: ${delta})`
+        })
+        .select()
+        .single()
+
+    if (error) {
+        console.error('[API Error] recordTrayAdjust:', error)
+        return { success: false, error: error.message }
+    }
+
+    revalidatePath('/production/inventory')
+    revalidatePath('/production')
+    return { success: true, txn: data, delta }
+}
