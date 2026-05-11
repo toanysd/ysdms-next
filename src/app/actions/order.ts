@@ -105,3 +105,34 @@ export async function updateOrderStatusAction(
 
     return { deductResult }
 }
+
+export async function shipOrderItemsAction(
+    orderId: string,
+    items: { order_item_id: string, product_id: string, quantity: number, lot_no: string, operator_name: string }[],
+    notes: string
+) {
+    const supabase = await createClient()
+
+    // Lấy thông tin session hiện tại để gán cho operator_name nếu ko có? 
+    // Theo schema có thể để string tĩnh hoặc truyền từ frontend.
+
+    const { data, error } = await supabase.rpc('ship_order_items', {
+        p_order_id: orderId,
+        p_items: items,
+        p_notes: notes
+    })
+
+    if (error) {
+        console.error('Lỗi khi xuất kho:', error)
+        throw new Error(error.message)
+    }
+
+    if (!data.success) {
+        throw new Error(data.message || data.error_code || 'Unknown error during shipping')
+    }
+
+    revalidatePath('/order')
+    revalidatePath('/production/inventory')
+    
+    return data
+}

@@ -1,9 +1,11 @@
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
-import { ChevronLeft, Package, History, AlertTriangle } from 'lucide-react'
+import { ChevronLeft, Package, History, AlertTriangle, Warehouse } from 'lucide-react'
 import StockTable from './StockTable'
 import TxnHistoryTab from './TxnHistoryTab'
 import LowStockAlert from './LowStockAlert'
+import InventoryKPIRow from './InventoryKPIRow'
+import CustomerBento from './CustomerBento'
 
 export const dynamic = 'force-dynamic'
 
@@ -13,6 +15,11 @@ export default async function InventoryDashboardPage(props: {
     const searchParams = await props.searchParams
     const { tab = 'overview' } = searchParams
     const supabase = await createClient()
+
+    // Fetch KPI data
+    let kpiData: any = null
+    const { data: kpiResult } = await supabase.rpc('get_inventory_dashboard_kpis')
+    kpiData = kpiResult
 
     // Fetch Stock Summary (used by Overview and Alerts tabs)
     let stockData: any[] = []
@@ -24,45 +31,71 @@ export default async function InventoryDashboardPage(props: {
         stockData = data || []
     }
 
+    const tabs = [
+        { key: 'overview', label: '在庫概要 / Tổng Quan', icon: <Package size={18} />, color: 'var(--mcs-primary)' },
+        { key: 'history', label: '取引履歴 / Lịch Sử', icon: <History size={18} />, color: 'var(--mcs-info)' },
+        { key: 'alerts', label: '在庫警告 / Cảnh Báo', icon: <AlertTriangle size={18} />, color: 'var(--mcs-error)' },
+    ]
+
     return (
-        <div className="p-6 max-w-6xl mx-auto bg-[var(--mcs-surface)] min-h-screen">
-            <div className="flex justify-between items-center mb-6">
-                <Link href="/production" className="flex items-center gap-2 text-[var(--mcs-primary)] font-bold">
-                    <ChevronLeft /> Kanbanへ戻る (Quay lại Kanban)
-                </Link>
-                <h1 className="text-2xl font-bold flex items-center gap-2 text-[var(--mcs-text)]">
-                    <Package className="text-[var(--mcs-primary)]" />
-                    完成品在庫管理 (Quản Lý Kho Thành Phẩm)
-                </h1>
+        <div className="min-h-screen" style={{ background: 'var(--mcs-bg)' }}>
+            {/* Sticky Header */}
+            <div className="sticky top-0 z-30 border-b shadow-sm" 
+                 style={{ 
+                     background: 'linear-gradient(135deg, #0d7a7a 0%, #0a6262 100%)',
+                     borderColor: 'var(--mcs-primary-active)' 
+                 }}>
+                <div className="max-w-7xl mx-auto px-4 sm:px-6">
+                    <div className="flex justify-between items-center h-14">
+                        <Link href="/production" className="flex items-center gap-2 text-white/80 hover:text-white text-sm font-medium transition-colors">
+                            <ChevronLeft size={18} /> Kanbanへ戻る
+                        </Link>
+                        <h1 className="text-base sm:text-lg font-bold flex items-center gap-2 text-white tracking-wide">
+                            <Warehouse size={22} className="text-teal-200" />
+                            完成品在庫管理
+                            <span className="text-xs font-normal text-teal-200 hidden sm:inline">/ Kho Sản Phẩm Tray</span>
+                        </h1>
+                        <div className="text-xs text-teal-100 hidden md:block">
+                            {new Date().toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric' })}
+                        </div>
+                    </div>
+                </div>
             </div>
 
-            {/* Tabs */}
-            <div className="flex border-b border-[var(--mcs-border)] mb-6">
-                <Link 
-                    href="/production/inventory?tab=overview" 
-                    className={`px-6 py-3 font-bold flex items-center gap-2 transition-colors ${tab === 'overview' ? 'border-b-2 border-[var(--mcs-primary)] text-[var(--mcs-primary)]' : 'text-gray-500 hover:bg-gray-50'}`}
-                >
-                    <Package size={18} /> 在庫概要 / Tổng Quan
-                </Link>
-                <Link 
-                    href="/production/inventory?tab=history" 
-                    className={`px-6 py-3 font-bold flex items-center gap-2 transition-colors ${tab === 'history' ? 'border-b-2 border-[var(--mcs-primary)] text-[var(--mcs-primary)]' : 'text-gray-500 hover:bg-gray-50'}`}
-                >
-                    <History size={18} /> 取引履歴 / Lịch Sử
-                </Link>
-                <Link 
-                    href="/production/inventory?tab=alerts" 
-                    className={`px-6 py-3 font-bold flex items-center gap-2 transition-colors ${tab === 'alerts' ? 'border-b-2 border-red-500 text-red-600' : 'text-gray-500 hover:bg-gray-50'}`}
-                >
-                    <AlertTriangle size={18} /> 在庫警告 / Cảnh Báo
-                </Link>
-            </div>
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 py-5">
+                {/* KPI Cards */}
+                <InventoryKPIRow kpi={kpiData} />
 
-            {/* Content */}
-            <div className="bg-[var(--mcs-surface)] rounded-md border border-[var(--mcs-border)] shadow-sm overflow-hidden">
-                {tab === 'overview' && <StockTable initialData={stockData} />}
-                {tab === 'history' && <TxnHistoryTab currentParams={searchParams} />}
-                {tab === 'alerts' && <LowStockAlert data={stockData} />}
+                {/* Customer Bento (Top 5 today) */}
+                {kpiData?.top_customers?.length > 0 && (
+                    <CustomerBento customers={kpiData.top_customers} />
+                )}
+
+                {/* Tabs */}
+                <div className="flex gap-1 mt-6 mb-4 border-b" style={{ borderColor: 'var(--mcs-border)' }}>
+                    {tabs.map(t => (
+                        <Link
+                            key={t.key}
+                            href={`/production/inventory?tab=${t.key}`}
+                            className="relative px-4 py-3 text-sm font-bold flex items-center gap-2 transition-all rounded-t-lg"
+                            style={{
+                                color: tab === t.key ? t.color : 'var(--mcs-text-muted)',
+                                background: tab === t.key ? 'var(--mcs-surface)' : 'transparent',
+                                borderBottom: tab === t.key ? `3px solid ${t.color}` : '3px solid transparent'
+                            }}
+                        >
+                            {t.icon} {t.label}
+                        </Link>
+                    ))}
+                </div>
+
+                {/* Content Panel */}
+                <div className="rounded-lg border shadow-sm overflow-hidden"
+                     style={{ background: 'var(--mcs-surface)', borderColor: 'var(--mcs-border)' }}>
+                    {tab === 'overview' && <StockTable initialData={stockData} />}
+                    {tab === 'history' && <TxnHistoryTab currentParams={searchParams} />}
+                    {tab === 'alerts' && <LowStockAlert data={stockData} />}
+                </div>
             </div>
         </div>
     )

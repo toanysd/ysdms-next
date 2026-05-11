@@ -16,10 +16,13 @@ export default async function OrderPage() {
       customers (customer_code, delivery_name),
       order_items (
           id,
+          product_id,
           product_pn_raw,
+          quantity,
           delivery_date,
           delivery_date_end,
           product_master (
+              id,
               code,
               name,
               customer_code,
@@ -173,7 +176,12 @@ export default async function OrderPage() {
                                 <td className="p-3 align-top text-[12px]">{item.handler_name || '-'}</td>
                                 <td className="p-3 text-slate-500 min-w-[150px] align-top whitespace-pre-wrap leading-relaxed text-[11px] border-l border-gray-50">{item.internal_notes || '-'}</td>
                                 <td className="p-3 text-center align-top">
-                                    <OrderListActions orderId={item.id} status={item.status} />
+                                    <OrderListActions 
+                                        orderId={item.id} 
+                                        status={item.status} 
+                                        slipNo={item.slip_no} 
+                                        orderItems={item.order_items} 
+                                    />
                                 </td>
                             </tr>
                         ))}

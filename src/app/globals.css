@@ -3,6 +3,9 @@
 @tailwind utilities;
 
 :root {
+  --font-jp: 'Noto Sans JP', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', sans-serif;
+  --font-vi: 'Inter', 'Be Vietnam Pro', system-ui, sans-serif;
+
   /* ── Nền & Bề mặt ─────────────────────────────── */
   --mcs-bg:              #f5f6f8;   /* Nền toàn trang */
   --mcs-surface:         #ffffff;   /* Card, panel, modal */
@@ -53,6 +56,9 @@
   --mcs-neutral-hover:   #7f8c8d;
   --mcs-neutral-light:   #f2f3f4;
   --mcs-neutral-text:    #515a5a;
+
+  --mcs-returned:        #f97316;
+
 }
 
 body {

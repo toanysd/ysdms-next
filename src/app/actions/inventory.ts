@@ -182,3 +182,44 @@ export async function recordTrayAdjust(payload: TrayAdjustPayload) {
     revalidatePath('/production')
     return { success: true, txn: data, delta }
 }
+
+/**
+ * 4. getRecentTrayTxns
+ * Hotfix Modal: Fetch lịch sử chi tiết bypass RLS bằng Server Action
+ */
+export async function getRecentTrayTxns(productId: string) {
+    const supabase = await createClient()
+    const { data, error } = await supabase
+        .from('tray_inventory_txn')
+        .select(`
+            id, txn_type, quantity, lot_no, txn_date, operator_name, notes,
+            created_at
+        `)
+        .eq('product_id', productId)
+        .order('created_at', { ascending: false })
+        .limit(10)
+
+    if (error) {
+        console.error('[API Error] getRecentTrayTxns:', error)
+        return { success: false, data: [] }
+    }
+    return { success: true, data }
+}
+
+/**
+ * 5. getStockForProducts
+ * Lấy tồn kho hiện hành (current_stock) cho danh sách product_ids.
+ */
+export async function getStockForProducts(productIds: string[]) {
+    const supabase = await createClient()
+    const { data, error } = await supabase
+        .from('tray_stock_summary')
+        .select('product_id, current_stock')
+        .in('product_id', productIds)
+
+    if (error) {
+        console.error('[API Error] getStockForProducts:', error)
+        return { success: false, data: [] }
+    }
+    return { success: true, data }
+}

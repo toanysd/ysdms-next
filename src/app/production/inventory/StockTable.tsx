@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react'
 import { Search, Eye, X, ArrowUpRight, ArrowDownRight, RefreshCcw } from 'lucide-react'
-import { createClient } from '@/lib/supabase/client'
+import { getRecentTrayTxns } from '@/app/actions/inventory'
 
 export default function StockTable({ initialData }: { initialData: any[] }) {
     const [search, setSearch] = useState('')
@@ -13,7 +13,7 @@ export default function StockTable({ initialData }: { initialData: any[] }) {
     const filteredData = initialData.filter(item => {
         if (!search) return true
         const s = search.toLowerCase()
-        return item.product_code?.toLowerCase().includes(s) || item.product_name?.toLowerCase().includes(s)
+        return item.product_code?.toLowerCase().includes(s) || item.product_name?.toLowerCase().includes(s) || item.customer_code?.toLowerCase().includes(s)
     })
 
     const handleOpenModal = async (product: any) => {
@@ -21,16 +21,10 @@ export default function StockTable({ initialData }: { initialData: any[] }) {
         setIsLoadingModal(true)
         setSelectedTxns([])
 
-        const supabase = createClient()
-        const { data } = await supabase
-            .from('tray_inventory_txn')
-            .select('*')
-            .eq('product_id', product.product_id)
-            .order('txn_date', { ascending: false })
-            .order('created_at', { ascending: false })
-            .limit(10)
-        
-        if (data) setSelectedTxns(data)
+        const result = await getRecentTrayTxns(product.product_id)
+        if (result.success && result.data) {
+            setSelectedTxns(result.data)
+        }
         setIsLoadingModal(false)
     }
 
@@ -55,23 +49,32 @@ export default function StockTable({ initialData }: { initialData: any[] }) {
                         <tr>
                             <th className="px-4 py-3">品番 (Mã)</th>
                             <th className="px-4 py-3">品名 (Tên Khay)</th>
+                            <th className="px-4 py-3">顧客 (KH)</th>
                             <th className="px-4 py-3 text-right">入庫 (Tổng Nhập)</th>
                             <th className="px-4 py-3 text-right">出庫 (Tổng Xuất)</th>
                             <th className="px-4 py-3 text-right">調整 (Kiểm Kê)</th>
                             <th className="px-4 py-3 text-right text-[var(--mcs-primary)]">現在庫 (Tồn Hiện Tại)</th>
                             <th className="px-4 py-3 text-center">操作 (Thao tác)</th>
                         </tr>
+                        {/* 8 columns total */}
                     </thead>
                     <tbody>
                         {filteredData.length === 0 ? (
                             <tr>
-                                <td colSpan={7} className="text-center py-10 text-gray-500">データがありません (Không có dữ liệu)</td>
+                                <td colSpan={8} className="text-center py-10 text-gray-500">データがありません (Không có dữ liệu)</td>
                             </tr>
                         ) : (
                             filteredData.map(item => (
                                 <tr key={item.product_id} className="border-b border-[var(--mcs-border)] hover:bg-blue-50/50 transition-colors">
                                     <td className="px-4 py-3 font-bold text-[var(--mcs-text)]">{item.product_code}</td>
                                     <td className="px-4 py-3 text-gray-600">{item.product_name}</td>
+                                    <td className="px-4 py-3">
+                                        {item.customer_code && (
+                                            <span className="inline-block px-2 py-0.5 text-[11px] font-bold rounded" style={{ background: 'var(--mcs-primary-light)', color: 'var(--mcs-primary)' }}>
+                                                {item.customer_code}
+                                            </span>
+                                        )}
+                                    </td>
                                     <td className="px-4 py-3 text-right font-mono text-emerald-600">{item.total_in.toLocaleString()}</td>
                                     <td className="px-4 py-3 text-right font-mono text-blue-600">{item.total_out.toLocaleString()}</td>
                                     <td className="px-4 py-3 text-right font-mono text-amber-600">{item.total_adjust.toLocaleString()}</td>

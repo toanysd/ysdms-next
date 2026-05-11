@@ -47,7 +47,7 @@ try {
     execSync('git add .', { cwd: syncDir, stdio: 'inherit' });
     
     try {
-        execSync(`git commit -m "chore: release ${versionTag} - Planning UI Fixes & Stabilizations"`, { cwd: syncDir, stdio: 'inherit' });
+        execSync(`git commit -m "chore: release ${versionTag} - Phase 5C & 5D (Teflon, ShipLog, CheckInOut Modal)"`, { cwd: syncDir, stdio: 'inherit' });
     } catch (e) {
         console.log("No changes to commit.");
     }
