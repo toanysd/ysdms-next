@@ -38,12 +38,37 @@ def import_lookups(supabase, registry: IdRegistry):
 
     # 3. processing_statuses
     df = clean_dataframe(read_csv_safe(CSV_DIR / 'processingstatus.csv'))
+    
+    clean_status_map = {
+        1: {'code': '0.未確認', 'vi': '0.Chưa xác nhận'},
+        2: {'code': '1.予定', 'vi': '1.Kế hoạch'},
+        3: {'code': '2.図面・プログラム', 'vi': '2.Bản vẽ/Lập trình'},
+        4: {'code': '3.材料', 'vi': '3.Nguyên liệu'},
+        5: {'code': '4.加工中', 'vi': '4.Gia công'},
+        6: {'code': '5.仕上げ', 'vi': '5.Hoàn thiện'},
+        7: {'code': '6.検査', 'vi': '6.Kiểm tra'},
+        8: {'code': 'F.完了', 'vi': 'F.Hoàn thành'},
+        9: {'code': 'N.進行中', 'vi': 'N.Đang chạy'},
+        10: {'code': 'R.REQUEST', 'vi': 'R.Yêu cầu'},
+        11: {'code': 'ZF.材料完了', 'vi': 'ZF.Nguyên liệu xong'},
+        12: {'code': 'ZN.材料手配中', 'vi': 'ZN.Đang chuẩn bị NL'},
+        13: {'code': 'ZR.材料 Request', 'vi': 'ZR.Yêu cầu nguyên liệu'}
+    }
+
     records = []
     for _, row in df.iterrows():
+        try:
+            status_id = int(float(row['ProcessingStatusID']))
+        except (ValueError, TypeError):
+            continue
+        status_data = clean_status_map.get(status_id, {
+            'code': str(row['ProcessingStatus']) if row['ProcessingStatus'] else str(status_id),
+            'vi': str(row['TinhTrangGiaCong']) if row['TinhTrangGiaCong'] else None
+        })
         records.append({
-            'status_id': str(row['ProcessingStatusID']),
-            'status_code': str(row['ProcessingStatus']) if row['ProcessingStatus'] else str(row['ProcessingStatusID']),
-            'status_name_vi': str(row['TinhTrangGiaCong']) if row['TinhTrangGiaCong'] else None
+            'status_id': str(status_id),
+            'status_code': status_data['code'],
+            'status_name_vi': status_data['vi']
         })
     if records:
         supabase.table('processing_statuses').upsert(records).execute()

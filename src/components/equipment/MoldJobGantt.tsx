@@ -68,6 +68,59 @@ const STATUS_LOCALE: Record<string, string> = {
   CANCELLED: 'キャンセル',
 }
 
+function getDelayColor(
+  deadlineStr: string | null | undefined,
+  endDateStr: string | null | undefined | Date,
+  isCompleted: boolean
+): { color: string; bg: string; label: string } | null {
+  if (!deadlineStr) return null;
+  
+  const deadline = new Date(deadlineStr);
+  deadline.setHours(0,0,0,0);
+  if (isNaN(deadline.getTime())) return null;
+  
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  
+  if (isCompleted) {
+    if (endDateStr) {
+      const end = new Date(endDateStr);
+      end.setHours(0,0,0,0);
+      if (!isNaN(end.getTime())) {
+        if (end <= deadline) {
+          // Completed on time -> green (teal badge)
+          return { color: '#0f766e', bg: '#ccfbf1', label: 'ON_TIME' }; 
+        } else {
+          // Completed after deadline -> blue (slate blue badge showing it was once late)
+          return { color: '#1d4ed8', bg: '#dbeafe', label: 'LATE_COMPLETED' }; 
+        }
+      }
+    }
+    return { color: '#0f766e', bg: '#ccfbf1', label: 'ON_TIME' };
+  } else {
+    const diffTime = deadline.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays < 0) {
+      // Overdue -> Dark Red badge
+      return { color: '#7f1d1d', bg: '#fecaca', label: 'OVERDUE' };
+    } else if (diffDays === 0) {
+      // Due today -> Red badge
+      return { color: '#b91c1c', bg: '#fee2e2', label: 'DUE_TODAY' };
+    } else if (diffDays === 1) {
+      // 1 day left -> Dark Orange badge
+      return { color: '#c2410c', bg: '#ffedd5', label: 'DUE_1_DAY' };
+    } else if (diffDays === 2) {
+      // 2 days left -> Orange badge
+      return { color: '#ea580c', bg: '#fff7ed', label: 'DUE_2_DAYS' };
+    } else if (diffDays <= 5) {
+      // 3-5 days left -> Lighter Orange/Peach badge
+      return { color: '#f97316', bg: '#fffbeb', label: 'DUE_5_DAYS' };
+    }
+  }
+  return null;
+}
+
 function formatStatusText(code?: string) {
   if (!code) return STATUS_LOCALE['NEW'];
   return STATUS_LOCALE[code] || code;
@@ -120,10 +173,11 @@ interface HeaderProps {
 }
 
 const CustomTaskListHeader = React.memo(function CustomTaskListHeader({
-  headerHeight, fontFamily, isPanelExpanded, gridTemplate, onExpandAll, onCollapseAll,
-}: HeaderProps) {
+  headerHeight, fontFamily, isPanelExpanded, gridTemplate, onExpandAll, onCollapseAll, showDates,
+}: HeaderProps & { showDates?: boolean }) {
   const hStyle: React.CSSProperties = { textOverflow: 'ellipsis', whiteSpace: 'nowrap', overflow: 'hidden', textTransform: 'uppercase', letterSpacing: '0.05em' }
   const hHide: React.CSSProperties = { ...hStyle, display: isPanelExpanded ? 'block' : 'none' }
+  const hDateHide: React.CSSProperties = { ...hStyle, display: isPanelExpanded && showDates ? 'block' : 'none' }
   return (
     <div style={{ height: headerHeight, fontFamily, fontSize: 10, display: 'grid', gridTemplateColumns: gridTemplate, alignItems: 'center', padding: '0 4px', borderBottom: '1px solid var(--border-default)', fontWeight: 600, color: 'var(--text-muted)', backgroundColor: 'var(--bg-surface)' }}>
       <div style={{ ...hStyle, display: 'flex', alignItems: 'center', gap: '4px' }}>
@@ -137,8 +191,8 @@ const CustomTaskListHeader = React.memo(function CustomTaskListHeader({
       <div style={{ ...hHide, textAlign: 'center' }} title="予定時間">予定H</div>
       <div style={{ ...hHide, textAlign: 'center' }} title="実績時間">実績H</div>
       <div style={{ ...hHide, textAlign: 'center' }}>状態</div>
-      <div style={{ ...hHide, textAlign: 'center' }}>開始</div>
-      <div style={{ ...hHide, textAlign: 'center' }}>終了</div>
+      <div style={{ ...hDateHide, textAlign: 'center' }}>開始</div>
+      <div style={{ ...hDateHide, textAlign: 'center' }}>終了</div>
       <div style={{ ...hHide, textAlign: 'center' }}>期限</div>
     </div>
   )
@@ -172,7 +226,7 @@ interface TableProps {
 const TaskRow = React.memo(function TaskRow({
   t, index, rowHeight, rowWidth, gridTemplate, isPanelExpanded,
   isExpanded, currentStepData, machOptions, empOptions, expandedTracks,
-  onExpanderClick, onScrollToDate, onEditStep, onUpdateLocalStep, onOpenQuickView, selectedJobId, onSelectJob
+  onExpanderClick, onScrollToDate, onEditStep, onUpdateLocalStep, onOpenQuickView, selectedJobId, onSelectJob, showDates
 }: any) {
   let expanderSymbol = ""
   if (t.type === 'project') {
@@ -192,6 +246,33 @@ const TaskRow = React.memo(function TaskRow({
     statusText = formatStatusText(t.originalStep?.processing_statuses?.status_code || t.originalStep?.step_status || 'PENDING')
     if (statusText === '完了' || statusText.includes('完了')) statusColor = 'var(--status-success)'
     else if (statusText === '進行中' || statusText.includes('進行中') || statusText.match(/^[1-6]\./) || statusText.includes('材料')) statusColor = 'var(--status-warning)'
+  }
+
+  const isTrack = t.isTrackHeader === true
+  const isTrackCompleted = isTrack && ((t as any).trackStatus === 'COMPLETED' || (t as any).trackStatus?.includes('完了'))
+  
+  // Calculate delay color highlighting
+  const delayInfo = getDelayColor(
+    t.type === 'project' 
+      ? (t.originalJob?.mold_deadline || t.originalJob?.deadline)
+      : (isTrack 
+          ? t.trackDeadline 
+          : currentStepData?.deadline),
+    t.type === 'project'
+      ? (t.originalJob?.job_status === 'COMPLETED' ? (t.originalJob?.ship_date || t.end) : null)
+      : (isTrack
+          ? (isTrackCompleted ? t.end : null)
+          : ((currentStepData?.step_status === 'COMPLETED' || currentStepData?.processing_statuses?.status_code?.includes('完了')) ? (currentStepData?.actual_end || t.end) : null)),
+    t.type === 'project'
+      ? t.originalJob?.job_status === 'COMPLETED'
+      : (isTrack
+          ? isTrackCompleted
+          : (currentStepData?.step_status === 'COMPLETED' || currentStepData?.processing_statuses?.status_code?.includes('完了')))
+  );
+
+  // If delayInfo exists, override the color
+  if (delayInfo) {
+    statusColor = delayInfo.color;
   }
 
   const isTask = t.type === 'task'
@@ -224,7 +305,6 @@ const TaskRow = React.memo(function TaskRow({
     FINISH:             { badge: 'F', color: '#1b5e20', bg: '#e8f5e9', label: '仕上げ' },
   }
 
-  const isTrack = t.isTrackHeader === true
   const trackMeta = isTrack
     ? (TRACK_META[t.trackCode || ''] || { badge: '?', color: 'var(--accent)', bg: 'var(--accent-light)', label: t.trackCode || 'OTHER' })
     : null
@@ -307,14 +387,28 @@ const TaskRow = React.memo(function TaskRow({
         )}
         {/* status: text + progress % */}
         {isPanelExpanded && (
-          <div style={{ fontSize: 10, fontWeight: 700, color: trackStatusColor, textAlign: 'center', display: 'flex', flexDirection: 'column', justifyContent: 'center', lineHeight: 1.2 }}>
-            <span>{trackStatusText}</span>
-            <span style={{ fontSize: 8, opacity: 0.8 }}>{prog}%</span>
+          <div style={{ fontSize: 10, textAlign: 'center', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', lineHeight: 1.2 }}>
+            {delayInfo ? (
+              <span style={{
+                color: delayInfo.color,
+                backgroundColor: delayInfo.bg,
+                padding: '2px 6px',
+                borderRadius: '4px',
+                fontWeight: 700,
+                fontSize: 9,
+                whiteSpace: 'nowrap'
+              }}>
+                {trackStatusText}
+              </span>
+            ) : (
+              <span style={{ fontWeight: 700, color: trackStatusColor }}>{trackStatusText}</span>
+            )}
+            <span style={{ fontSize: 8, opacity: 0.8, color: 'var(--text-muted)' }}>{prog}%</span>
           </div>
         )}
         {/* start: show track start date */}
         {isPanelExpanded && (
-          <div style={{ fontSize: 10, textAlign: 'center', minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+          <div style={{ fontSize: 10, textAlign: 'center', minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', display: showDates ? 'block' : 'none' }}>
             {t.start && !(t.styles?.backgroundColor === 'transparent') ? (
               <span 
                 style={{ cursor: 'pointer', color: 'var(--text-muted)', textDecoration: 'underline', textDecorationStyle: 'dotted' }}
@@ -328,7 +422,7 @@ const TaskRow = React.memo(function TaskRow({
         )}
         {/* end: show track end date */}
         {isPanelExpanded && (
-          <div style={{ fontSize: 10, textAlign: 'center', minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+          <div style={{ fontSize: 10, textAlign: 'center', minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', display: showDates ? 'block' : 'none' }}>
             {t.end && !(t.styles?.backgroundColor === 'transparent') ? (
               <span 
                 style={{ cursor: 'pointer', color: 'var(--text-muted)', textDecoration: 'underline', textDecorationStyle: 'dotted' }}
@@ -342,16 +436,26 @@ const TaskRow = React.memo(function TaskRow({
         )}
         {/* deadline */}
         {isPanelExpanded && (
-          <div style={{ fontSize: 10, textAlign: 'center', minWidth: 0 }}>
+          <div style={{ fontSize: 9.5, minWidth: 0, display: 'flex', justifyContent: 'flex-start', alignItems: 'center', paddingLeft: '14px' }}>
             {deadline ? (
-              <span
-                style={{ cursor: 'pointer', color: isOverdue ? 'var(--status-error)' : 'var(--text-muted)', fontWeight: isOverdue ? 700 : 400, textDecoration: 'underline', textDecorationStyle: 'dotted' }}
-                onClick={(e) => { e.stopPropagation(); onScrollToDate(deadline, index, deadline) }}
-                title="期限日にスクロール / Cuộn đến ngày kỳ hạn"
-              >
-                {formatShortDateWithDay(deadline)}
-              </span>
-            ) : <span style={{ color: 'var(--text-muted)' }}>—</span>}
+              delayInfo ? (
+                <span
+                  style={{ cursor: 'pointer', color: delayInfo.color, backgroundColor: delayInfo.bg, padding: '1.5px 5px', borderRadius: '3px', fontWeight: 600, textDecoration: 'underline', textDecorationStyle: 'dotted', whiteSpace: 'nowrap', opacity: 0.9 }}
+                  onClick={(e) => { e.stopPropagation(); onScrollToDate(deadline, index, deadline) }}
+                  title="期限日にスクロール / Cuộn đến ngày kỳ hạn"
+                >
+                  {formatShortDateWithDay(deadline)}
+                </span>
+              ) : (
+                <span
+                  style={{ cursor: 'pointer', color: isOverdue ? 'var(--status-error)' : 'var(--text-muted)', fontWeight: 600, textDecoration: 'underline', textDecorationStyle: 'dotted', whiteSpace: 'nowrap', opacity: 0.9 }}
+                  onClick={(e) => { e.stopPropagation(); onScrollToDate(deadline, index, deadline) }}
+                  title="期限日にスクロール / Cuộn đến ngày kỳ hạn"
+                >
+                  {formatShortDateWithDay(deadline)}
+                </span>
+              )
+            ) : <span style={{ color: 'var(--text-muted)', whiteSpace: 'nowrap', paddingLeft: '8px' }}>—</span>}
           </div>
         )}
       </div>
@@ -403,9 +507,10 @@ const TaskRow = React.memo(function TaskRow({
                       if (!earliestStart || sd < earliestStart) earliestStart = sd;
                     }
                   });
-                  const targetDate = t.originalJob?.mold_deadline ? new Date(t.originalJob.mold_deadline) : (earliestStart || new Date());
+                  const dl = t.originalJob?.mold_deadline || t.originalJob?.deadline;
+                  const targetDate = dl ? new Date(dl) : (earliestStart || new Date());
                   onSelectJob(t.id);
-                  onScrollToDate(targetDate.toISOString(), index, t.originalJob?.mold_deadline);
+                  onScrollToDate(targetDate.toISOString(), index, dl);
                 }}
                 style={{ background: 'var(--bg-surface-2)', border: '1px solid var(--border-default)', borderRadius: '4px', cursor: 'pointer', color: 'var(--accent)', padding: '2px 4px', display: 'flex', alignItems: 'center', gap: '4px', lineHeight: 1, flexShrink: 0 }}
                 title="ジョブ位置へ移動 / Cuộn đến vị trí Job"
@@ -519,11 +624,29 @@ const TaskRow = React.memo(function TaskRow({
             ) : null}
           </div>
 
-          <div style={{ textAlign: 'center', fontSize: 10, color: statusColor, fontWeight: 500, minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-            {t.isDisabled ? '' : statusText}
+          <div style={{ textAlign: 'center', fontSize: 10, minWidth: 0, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+            {t.isDisabled ? '' : (
+              delayInfo ? (
+                <span style={{
+                  color: delayInfo.color,
+                  backgroundColor: delayInfo.bg,
+                  padding: '2px 6px',
+                  borderRadius: '4px',
+                  fontWeight: 700,
+                  fontSize: 9,
+                  whiteSpace: 'nowrap'
+                }}>
+                  {statusText}
+                </span>
+              ) : (
+                <span style={{ color: statusColor, fontWeight: 500, whiteSpace: 'nowrap' }}>
+                  {statusText}
+                </span>
+              )
+            )}
           </div>
 
-          <div style={{ textAlign: 'center', fontSize: 10, minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+          <div style={{ textAlign: 'center', fontSize: 10, minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', display: showDates ? 'block' : 'none' }}>
             {t.isDisabled ? '' : (
               <span 
                 style={{ cursor: 'pointer', textDecoration: 'underline', textDecorationStyle: 'dotted', color: statusColor }}
@@ -535,7 +658,7 @@ const TaskRow = React.memo(function TaskRow({
             )}
           </div>
           
-          <div style={{ textAlign: 'center', fontSize: 10, minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+          <div style={{ textAlign: 'center', fontSize: 10, minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', display: showDates ? 'block' : 'none' }}>
             {t.isDisabled ? '' : (
               <span 
                 style={{ cursor: 'pointer', textDecoration: 'underline', textDecorationStyle: 'dotted', color: statusColor }}
@@ -547,33 +670,53 @@ const TaskRow = React.memo(function TaskRow({
             )}
           </div>
 
-          <div style={{ padding: '0 2px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2, minWidth: 0 }}>
-            {!isTask && t.originalJob?.mold_deadline ? (
-              <span 
-                style={{ fontSize: 10, color: statusColor, cursor: 'pointer', textDecoration: 'underline', textDecorationStyle: 'dotted' }}
-                onClick={(e) => { e.stopPropagation(); onScrollToDate(t.originalJob?.mold_deadline, index, t.originalJob?.mold_deadline) }}
-                title="金型納期にスクロール / Cuộn đến hạn chót khuôn"
-              >
-                {formatShortDateWithDay(t.originalJob.mold_deadline)}
-              </span>
+          <div style={{ padding: '0 2px', display: 'flex', alignItems: 'center', justifyContent: isTask ? 'flex-start' : 'center', paddingLeft: isTask ? '28px' : '0px', gap: 2, minWidth: 0 }}>
+            {!isTask && (t.originalJob?.mold_deadline || t.originalJob?.deadline) ? (
+              delayInfo ? (
+                <span 
+                  style={{ fontSize: 11, color: delayInfo.color, backgroundColor: delayInfo.bg, padding: '2.5px 7px', borderRadius: '4px', fontWeight: 800, cursor: 'pointer', textDecoration: 'underline', textDecorationStyle: 'dotted', whiteSpace: 'nowrap' }}
+                  onClick={(e) => { e.stopPropagation(); onScrollToDate(t.originalJob?.mold_deadline || t.originalJob?.deadline, index, t.originalJob?.mold_deadline || t.originalJob?.deadline) }}
+                  title="納期にスクロール / Cuộn đến hạn chót"
+                >
+                  {formatShortDateWithDay(t.originalJob.mold_deadline || t.originalJob.deadline)}
+                </span>
+              ) : (
+                <span 
+                  style={{ fontSize: 11, color: statusColor, cursor: 'pointer', textDecoration: 'underline', textDecorationStyle: 'dotted', whiteSpace: 'nowrap', fontWeight: 800 }}
+                  onClick={(e) => { e.stopPropagation(); onScrollToDate(t.originalJob?.mold_deadline || t.originalJob?.deadline, index, t.originalJob?.mold_deadline || t.originalJob?.deadline) }}
+                  title="納期にスクロール / Cuộn đến hạn chót"
+                >
+                  {formatShortDateWithDay(t.originalJob.mold_deadline || t.originalJob.deadline)}
+                </span>
+              )
             ) : isTask && currentStepData?.deadline ? (
-              <span 
-                style={{ fontSize: 10, color: statusColor, cursor: 'pointer', textDecoration: 'underline', textDecorationStyle: 'dotted' }}
-                onClick={(e) => { e.stopPropagation(); onScrollToDate(currentStepData.deadline, index, currentStepData.deadline) }}
-                title="期限日にスクロール / Cuộn đến ngày kỳ hạn"
-              >
-                {formatShortDateWithDay(currentStepData.deadline)}
-              </span>
+              delayInfo ? (
+                <span 
+                  style={{ fontSize: 9, color: delayInfo.color, backgroundColor: delayInfo.bg, padding: '1px 4px', borderRadius: '3px', fontWeight: 400, cursor: 'pointer', textDecoration: 'underline', textDecorationStyle: 'dotted', whiteSpace: 'nowrap', opacity: 0.8 }}
+                  onClick={(e) => { e.stopPropagation(); onScrollToDate(currentStepData.deadline, index, currentStepData.deadline) }}
+                  title="期限日にスクロール / Cuộn đến ngày kỳ hạn"
+                >
+                  {formatShortDateWithDay(currentStepData.deadline)}
+                </span>
+              ) : (
+                <span 
+                  style={{ fontSize: 9, color: statusColor, cursor: 'pointer', textDecoration: 'underline', textDecorationStyle: 'dotted', whiteSpace: 'nowrap', fontWeight: 400, opacity: 0.8 }}
+                  onClick={(e) => { e.stopPropagation(); onScrollToDate(currentStepData.deadline, index, currentStepData.deadline) }}
+                  title="期限日にスクロール / Cuộn đến ngày kỳ hạn"
+                >
+                  {formatShortDateWithDay(currentStepData.deadline)}
+                </span>
+              )
             ) : isTask && currentStepData?.planned_end ? (
               <span 
-                style={{ fontSize: 10, color: 'var(--accent)', cursor: 'pointer', textDecoration: 'underline', textDecorationStyle: 'dotted' }}
+                style={{ fontSize: 9, color: 'var(--accent)', cursor: 'pointer', textDecoration: 'underline', textDecorationStyle: 'dotted', whiteSpace: 'nowrap', fontWeight: 400, opacity: 0.8 }}
                 onClick={(e) => { e.stopPropagation(); onScrollToDate(currentStepData?.planned_end, index, currentStepData?.planned_end) }}
                 title="予定完了日にスクロール / Cuộn đến ngày hoàn thành dự kiến"
               >
                 {formatFullDateWithDay(currentStepData?.planned_end)}
               </span>
             ) : (
-              <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>-</span>
+              <span style={{ fontSize: 9, color: 'var(--text-muted)', whiteSpace: 'nowrap', opacity: 0.8 }}>-</span>
             )}
           </div>
         </>
@@ -586,8 +729,8 @@ const CustomTaskListTable = React.memo(function CustomTaskListTable({
   rowHeight, rowWidth, tasks: currentTasks, fontFamily, onExpanderClick,
   isPanelExpanded, gridTemplate, expandedJobs, expandedTracks, localSteps,
   machOptions, empOptions, compareMode, originalTasks,
-  onScrollToDate, onEditStep, onUpdateLocalStep, onOpenQuickView, selectedJobId, onSelectJob,
-}: TableProps) {
+  onScrollToDate, onEditStep, onUpdateLocalStep, onOpenQuickView, selectedJobId, onSelectJob, showDates,
+}: TableProps & { showDates?: boolean }) {
   return (
     <div style={{ fontFamily, fontSize: 10, color: 'var(--text-primary)', borderRight: '1px solid var(--border-default)' }}>
       {currentTasks.map((t: ExtendedTask, index: number) => {
@@ -616,6 +759,7 @@ const CustomTaskListTable = React.memo(function CustomTaskListTable({
             onOpenQuickView={onOpenQuickView}
             selectedJobId={selectedJobId}
             onSelectJob={onSelectJob}
+            showDates={showDates}
           />
         )
       })}
@@ -632,6 +776,7 @@ const StaticHeaderComponent = React.memo(function StaticHeaderComponent(props: a
       gridTemplate={ctx.gridTemplate}
       onExpandAll={ctx.onExpandAll}
       onCollapseAll={ctx.onCollapseAll}
+      showDates={ctx.showDates}
     />
   )
 })
@@ -659,6 +804,7 @@ const StaticTableComponent = React.memo(function StaticTableComponent(props: any
       selectedJobId={data.selectedJobId}
       onSelectJob={ctx.onSelectJob}
       originalTasks={data.originalTasks}
+      showDates={ctx.showDates}
     />
   )
 })
@@ -688,6 +834,22 @@ export default function MoldJobGantt({ jobs, employees = [], machines = [], init
 
   const wrapperRef = useRef<HTMLDivElement>(null)
   const [ganttHeight, setGanttHeight] = useState(600)
+  const [showDates, setShowDates] = useState(false)
+
+  // Dynamically calculate gantt height based on container height (Vấn đề 2)
+  useEffect(() => {
+    if (!wrapperRef.current) return
+    const resizeObserver = new ResizeObserver((entries) => {
+      for (let entry of entries) {
+        const height = entry.contentRect.height
+        if (height > 0) {
+          setGanttHeight(height)
+        }
+      }
+    })
+    resizeObserver.observe(wrapperRef.current)
+    return () => resizeObserver.disconnect()
+  }, [])
 
   // Local state for edits
   const [localSteps, setLocalSteps] = useState<Record<string, Partial<JobStepRow>>>({})
@@ -875,8 +1037,9 @@ export default function MoldJobGantt({ jobs, employees = [], machines = [], init
       })
 
       if (!hasValidSteps) {
-        if (job.mold_deadline) {
-            projEnd = new Date(job.mold_deadline)
+        const targetDl = job.mold_deadline || job.deadline
+        if (targetDl) {
+            projEnd = new Date(targetDl)
             projStart = new Date(projEnd)
             projStart.setDate(projStart.getDate() - 3)
         } else {
@@ -961,7 +1124,7 @@ export default function MoldJobGantt({ jobs, employees = [], machines = [], init
           }
         })
         if (!trackDeadline && (trackCode === 'MOLD' || trackCode === 'FINISH')) {
-          trackDeadline = job.mold_deadline || null
+          trackDeadline = job.mold_deadline || job.deadline || null
         }
 
         // ── Compute track bar span from ALL sources (Vấn đề 3) ──
@@ -1035,9 +1198,11 @@ export default function MoldJobGantt({ jobs, employees = [], machines = [], init
                 });
             });
 
-            if (totalLogs > 0 && finishedLogs === totalLogs) {
+            if (trackSteps.length > 0 && completedCount === trackSteps.length) {
                 finalTrackStatus = 'COMPLETED';
-            } else if (finishedLogs > 0 || hasHours || trackTotalActualHours > 0) {
+            } else if (totalLogs > 0 && finishedLogs === totalLogs) {
+                finalTrackStatus = 'COMPLETED';
+            } else if (completedCount > 0 || finishedLogs > 0 || hasHours || trackTotalActualHours > 0) {
                 finalTrackStatus = 'IN_PROGRESS';
             } else {
                 finalTrackStatus = 'NEW';
@@ -1304,8 +1469,9 @@ export default function MoldJobGantt({ jobs, employees = [], machines = [], init
         
         // Include deadlines from jobs (may extend beyond task dates)
         jobs.forEach((job: any) => {
-          if (job.mold_deadline) {
-            const dl = new Date(job.mold_deadline)
+          const dlStr = job.mold_deadline || job.deadline
+          if (dlStr) {
+            const dl = new Date(dlStr)
             if (!isNaN(dl.getTime())) {
               if (dl < gridMin) gridMin = new Date(dl)
               // Extend 2 weeks after latest deadline to give visual room
@@ -1449,28 +1615,70 @@ export default function MoldJobGantt({ jobs, employees = [], machines = [], init
 
   useEffect(() => {
     if (!wrapperRef.current) return;
+    let timeoutId: NodeJS.Timeout;
+    
     const observer = new ResizeObserver((entries) => {
       for (let entry of entries) {
-        setGanttHeight(Math.floor(entry.contentRect.height) - 58);
+        const newHeight = Math.floor(entry.contentRect.height) - 58;
+        // Debounce to prevent layout thrashing infinite loops
+        clearTimeout(timeoutId);
+        timeoutId = setTimeout(() => {
+          setGanttHeight(prev => {
+            // Only update if difference is significant to avoid sub-pixel loops
+            if (Math.abs(prev - newHeight) > 2) {
+              return newHeight;
+            }
+            return prev;
+          });
+        }, 50);
       }
     });
     observer.observe(wrapperRef.current);
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+      clearTimeout(timeoutId);
+    };
   }, []);
 
-  // Fix for gantt-task-react scroll bouncing / infinite loop bug
-  // We stop the 'wheel' event in the capture phase so gantt-task-react 
-  // does not trigger its buggy manual handleWheel logic which fights with native scroll.
+  // Hybrid Wheel Clamping to prevent loop at boundaries while preserving smooth scrolling
   useEffect(() => {
     const container = wrapperRef.current;
     if (!container) return;
-    
-    const stopWheel = (e: WheelEvent) => {
-      e.stopPropagation();
+
+    const handleWheelCapture = (e: WheelEvent) => {
+      const verticalScrollContainer = container.querySelector('._1eT-t') as HTMLElement;
+      if (!verticalScrollContainer) return;
+
+      if (!e.shiftKey && e.deltaY !== 0) {
+        const maxScroll = verticalScrollContainer.scrollHeight - verticalScrollContainer.clientHeight;
+        const currentScroll = verticalScrollContainer.scrollTop;
+        
+        const isScrollingDown = e.deltaY > 0;
+        const isScrollingUp = e.deltaY < 0;
+        
+        // 5px tolerance range for boundary detection
+        const nearTop = currentScroll <= 5;
+        const nearBottom = currentScroll >= maxScroll - 5;
+        
+        if ((nearTop && isScrollingUp) || (nearBottom && isScrollingDown)) {
+          // Block the event to prevent the library from calculating and looping
+          e.stopPropagation();
+          e.preventDefault();
+          
+          // Snap strictly to boundary
+          if (isScrollingUp) {
+            verticalScrollContainer.scrollTop = 0;
+          } else {
+            verticalScrollContainer.scrollTop = maxScroll;
+          }
+        }
+      }
     };
-    
-    container.addEventListener('wheel', stopWheel, { capture: true, passive: false });
-    return () => container.removeEventListener('wheel', stopWheel, { capture: true });
+
+    container.addEventListener('wheel', handleWheelCapture, { capture: true, passive: false });
+    return () => {
+      container.removeEventListener('wheel', handleWheelCapture, { capture: true });
+    };
   }, []);
 
   const updateLocalStep = useCallback((stepId: string, updates: Partial<JobStepRow>) => {
@@ -1915,7 +2123,9 @@ export default function MoldJobGantt({ jobs, employees = [], machines = [], init
   }, [searchParams, initialFromDate, initialToDate, tasks, handleScrollToDate])
 
   // Removed 担当者 (nhân công) column — now 8 cols instead of 9
-  const GRID_TEMPLATE = isPanelExpanded ? '160px 90px 45px 45px 55px 65px 65px 85px' : '200px 0 0 0 0 0 0 0'
+  const GRID_TEMPLATE = isPanelExpanded 
+    ? (showDates ? '160px 90px 45px 45px 55px 65px 65px 85px' : '220px 90px 45px 45px 95px 0 0 115px') 
+    : '200px 0 0 0 0 0 0 0'
 
   // Stable context: only handlers and options — does NOT include localSteps or expandedJobs
   // This means editing a step does NOT cause StaticHeaderComponent to re-render
@@ -1933,7 +2143,8 @@ export default function MoldJobGantt({ jobs, employees = [], machines = [], init
     onCollapseAll: handleCollapseAll,
     onOpenQuickView: setQuickViewJob,
     onSelectJob: setSelectedJobId,
-  }), [isPanelExpanded, GRID_TEMPLATE, machOptions, empOptions, compareMode, handleScrollToDate, handleEditStep, updateLocalStep, handleExpandAll, handleCollapseAll])
+    showDates,
+  }), [isPanelExpanded, GRID_TEMPLATE, machOptions, empOptions, compareMode, handleScrollToDate, handleEditStep, updateLocalStep, handleExpandAll, handleCollapseAll, showDates])
 
   // Volatile context: changes frequently (on every edit/expand)
   // Only StaticTableComponent subscribes to this
@@ -2044,6 +2255,16 @@ export default function MoldJobGantt({ jobs, employees = [], machines = [], init
             <button className={`px-5 py-1.5 font-medium rounded-sm border transition-all ${compareMode === 'ACTUAL' ? activeFilterCls : inactiveCls}`} onClick={() => setCompareMode('ACTUAL')}>実績</button>
             <button className={`px-5 py-1.5 font-medium rounded-sm border transition-all ${compareMode === 'COMPARE' ? activeFilterCls : inactiveCls}`} onClick={() => setCompareMode('COMPARE')}>予実比較</button>
           </div>
+
+          <div className="flex p-1 rounded border text-[11px] shadow-sm items-center gap-1.5" style={{ backgroundColor: 'var(--bg-surface-2)', borderColor: 'var(--border-default)' }}>
+            <span className="text-[10px] font-semibold" style={{ color: 'var(--text-secondary)' }}>開始/終了日</span>
+            <button 
+              className={`relative inline-flex h-3.5 w-6 items-center rounded-full transition-colors ${showDates ? 'bg-[var(--accent)]' : 'bg-[var(--bg-surface-3)]'}`}
+              onClick={() => setShowDates(!showDates)}
+            >
+              <span className={`inline-block h-2.5 w-2.5 transform rounded-full bg-white transition-transform ${showDates ? 'translate-x-3' : 'translate-x-0.5'}`} />
+            </button>
+          </div>
         </div>
 
         <div className="flex items-center gap-1.5">
@@ -2129,13 +2350,19 @@ export default function MoldJobGantt({ jobs, employees = [], machines = [], init
           .animate-pulse-locate {
             animation: locate-pulse 3s ease-out forwards;
           }
+
+          /* Force auto scroll behavior and no overscroll to prevent infinite scroll loops at boundaries */
+          ._1eT-t {
+            scroll-behavior: auto !important;
+            overscroll-behavior: none !important;
+          }
         `}} />
         <Gantt
           tasks={tasks}
           viewMode={viewMode}
           locale="ja"
           headerHeight={40}
-          ganttHeight={ganttHeight}
+          ganttHeight={Math.max(0, Math.min(ganttHeight, tasks.length * (compareMode === 'COMPARE' ? 44 : 26)))}
           onDateChange={handleTaskChange}
           onProgressChange={handleTaskChange}
           onDoubleClick={handleTaskDoubleClick}

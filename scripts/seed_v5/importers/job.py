@@ -102,6 +102,24 @@ def import_jobs(supabase, registry: IdRegistry):
                 proc_status_id = int(float(row['ProcessingStatusID']))
             except (ValueError, TypeError):
                 pass
+
+        # Determine step_status based on proc_status_id
+        status_mapping = {
+            1: 'PENDING',        # 0.未確認
+            2: 'IN_PROGRESS',    # 1.予定
+            3: 'IN_PROGRESS',    # 2.図面・プログラム
+            4: 'IN_PROGRESS',    # 3.材料
+            5: 'IN_PROGRESS',    # 4.加工中
+            6: 'IN_PROGRESS',    # 5.仕上げ
+            7: 'IN_PROGRESS',    # 6.検査
+            8: 'COMPLETED',      # F.完了
+            9: 'IN_PROGRESS',    # N.進行中
+            10: 'IN_PROGRESS',   # R.REQUEST
+            11: 'COMPLETED',     # ZF.材料完了
+            12: 'IN_PROGRESS',   # ZN.材料手配中
+            13: 'IN_PROGRESS'    # ZR.材料 Request
+        }
+        step_status = status_mapping.get(proc_status_id, 'PENDING') if proc_status_id is not None else 'PENDING'
         
         step_records.append({
             'step_id': new_uuid,
@@ -111,6 +129,7 @@ def import_jobs(supabase, registry: IdRegistry):
             'track': track,
             'item_type_id': item_type_id,
             'processing_status_id': proc_status_id,
+            'step_status': step_status,
             'outsource_company': registry.resolve('machining_customers', row['MachiningCustomerID']) if 'MachiningCustomerID' in row else None,
             'estimated_hours': float(row['EstimatedHours']) if 'EstimatedHours' in row and str(row['EstimatedHours']).replace('.','',1).isdigit() else 0,
             'set_info': str(row['Set']) if 'Set' in row and row['Set'] else None,
@@ -127,6 +146,19 @@ def import_jobs(supabase, registry: IdRegistry):
 
     # 3. work_logs
     df_logs = clean_dataframe(read_csv_safe(CSV_DIR / 'worklog.csv'))
+    
+    # Build a set of completed step legacy IDs to mark their work logs as finished
+    completed_step_ids = set()
+    for _, row in df_steps.iterrows():
+        try:
+            proc_status_id = int(float(row['ProcessingStatusID'])) if 'ProcessingStatusID' in row and not _pd.isna(row['ProcessingStatusID']) else None
+            if proc_status_id in [8, 11]:
+                sid = str(row['ProcessingDeadlineID'])
+                if sid.endswith('.0'): sid = sid[:-2]
+                completed_step_ids.add(sid)
+        except:
+            pass
+
     log_records = []
     for _, row in df_logs.iterrows():
         new_uuid = str(uuid.uuid4())
@@ -134,16 +166,24 @@ def import_jobs(supabase, registry: IdRegistry):
         registry.register('work_logs', legacy_id, new_uuid)
         
         # worklog doesn't have JobID directly in legacy sometimes, but it has ProcessingDeadlineID which links to job
-        step_uuid = registry.resolve('job_steps', row['ProcessingDeadlineID']) if 'ProcessingDeadlineID' in row else None
+        step_legacy_id = str(row['ProcessingDeadlineID']) if 'ProcessingDeadlineID' in row else ''
+        if step_legacy_id.endswith('.0'): step_legacy_id = step_legacy_id[:-2]
         
+        step_uuid = registry.resolve('job_steps', step_legacy_id) if step_legacy_id else None
         comp_uuid = registry.resolve('customers', row['CompanyID']) if 'CompanyID' in row else None
         emp_uuid = registry.resolve('employees', row['EmployeeID']) if 'EmployeeID' in row else None
-        
-        job_uuid = registry.resolve('step_to_job', row['ProcessingDeadlineID']) if 'ProcessingDeadlineID' in row else None
+        job_uuid = registry.resolve('step_to_job', step_legacy_id) if step_legacy_id else None
         
         if not job_uuid:
             continue
             
+        # If the parent step is completed, force all its work logs to finished = True
+        is_finished = False
+        if step_legacy_id in completed_step_ids:
+            is_finished = True
+        elif 'Finished' in row and str(row['Finished']).lower() in ['true', '1', 'yes']:
+            is_finished = True
+
         log_records.append({
             'log_id': new_uuid,
             'job_step_id': step_uuid,
@@ -151,10 +191,10 @@ def import_jobs(supabase, registry: IdRegistry):
             'employee_id': emp_uuid,
             'company_id': comp_uuid,
             'work_date': str(row['ProcessingDate']) if 'ProcessingDate' in row and row['ProcessingDate'] else '2000-01-01',
-            'processing_code_id': int(float(row['ProcessingCodeID'])) if 'ProcessingCodeID' in row and pd.notna(row['ProcessingCodeID']) and str(row['ProcessingCodeID']).replace('.','',1).isdigit() else None,
-            'hours_spent': float(row['ProcessingTime']) if 'ProcessingTime' in row and pd.notna(row['ProcessingTime']) and str(row['ProcessingTime']).replace('.','',1).isdigit() else 0,
+            'processing_code_id': int(float(row['ProcessingCodeID'])) if 'ProcessingCodeID' in row and _pd.notna(row['ProcessingCodeID']) and str(row['ProcessingCodeID']).replace('.','',1).isdigit() else None,
+            'hours_spent': float(row['ProcessingTime']) if 'ProcessingTime' in row and _pd.notna(row['ProcessingTime']) and str(row['ProcessingTime']).replace('.','',1).isdigit() else 0,
             'quantity_done': int(row['ProcessingNumbers']) if 'ProcessingNumbers' in row and str(row['ProcessingNumbers']).isdigit() else 0,
-            'is_finished': True if 'Finished' in row and str(row['Finished']).lower() in ['true', '1', 'yes'] else False,
+            'is_finished': is_finished,
             'notes': str(row['ProcessingNotes']) if 'ProcessingNotes' in row and row['ProcessingNotes'] else None,
             'contact_content': str(row['Noidunglienlac']) if 'Noidunglienlac' in row and row['Noidunglienlac'] else None
         })
