@@ -190,6 +190,7 @@ const CustomTaskListHeader = React.memo(function CustomTaskListHeader({
       <div style={hHide}>設備</div>
       <div style={{ ...hHide, textAlign: 'center' }} title="予定時間">予定H</div>
       <div style={{ ...hHide, textAlign: 'center' }} title="実績時間">実績H</div>
+      <div style={{ ...hHide, textAlign: 'center' }} title="実績日 (Ngày thực hiện)">実績日</div>
       <div style={{ ...hHide, textAlign: 'center' }}>状態</div>
       <div style={{ ...hDateHide, textAlign: 'center' }}>開始</div>
       <div style={{ ...hDateHide, textAlign: 'center' }}>終了</div>
@@ -373,7 +374,7 @@ const TaskRow = React.memo(function TaskRow({
             {doneCount}/{stepCount} 工程
           </div>
         )}
-        {/* planned H: aggregate from worklogs */}
+        {/* actual H: aggregate from worklogs */}
         {isPanelExpanded && (
           <div style={{ fontSize: 10, fontFamily: 'monospace', color: 'var(--text-muted)', textAlign: 'center' }}>
             {(t as any).trackTotalPlannedHours ? `${(t as any).trackTotalPlannedHours}H` : '-'}
@@ -383,6 +384,12 @@ const TaskRow = React.memo(function TaskRow({
         {isPanelExpanded && (
           <div style={{ fontSize: 10, fontWeight: 700, color: trackStatusColor, textAlign: 'center', fontFamily: 'monospace' }}>
             {(t as any).trackTotalActualHours ? `${(t as any).trackTotalActualHours}H` : '-'}
+          </div>
+        )}
+        {/* actual date: blank for track header */}
+        {isPanelExpanded && (
+          <div style={{ fontSize: 10, textAlign: 'center', minWidth: 0, color: 'var(--text-muted)' }}>
+            -
           </div>
         )}
         {/* status: text + progress % */}
@@ -624,6 +631,33 @@ const TaskRow = React.memo(function TaskRow({
             ) : null}
           </div>
 
+          {/* 実績日 (Ngày thực hiện) */}
+          <div style={{ padding: '0 4px', textAlign: 'center', minWidth: 0, fontSize: 10, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+            {isTask ? (
+              t.originalWorkLog?.work_date ? (
+                <span 
+                  style={{ cursor: 'pointer', textDecoration: 'underline', textDecorationStyle: 'dotted', color: 'var(--text-primary)', whiteSpace: 'nowrap' }}
+                  onClick={(e) => { e.stopPropagation(); onScrollToDate(t.originalWorkLog.work_date, index, t.originalWorkLog.work_date) }}
+                  title="作業日にスクロール"
+                >
+                  {formatShortDateWithDay(t.originalWorkLog.work_date)}
+                </span>
+              ) : t.originalStep?.actual_start || t.originalStep?.actual_end ? (
+                <span 
+                  style={{ cursor: 'pointer', textDecoration: 'underline', textDecorationStyle: 'dotted', color: 'var(--text-primary)', whiteSpace: 'nowrap' }}
+                  onClick={(e) => { e.stopPropagation(); onScrollToDate(t.originalStep.actual_start || t.originalStep.actual_end, index, t.originalStep.actual_start || t.originalStep.actual_end) }}
+                  title="実績日にスクロール"
+                >
+                  {formatShortDateWithDay(t.originalStep.actual_start || t.originalStep.actual_end)}
+                </span>
+              ) : (
+                <span style={{ color: 'var(--text-muted)' }}>-</span>
+              )
+            ) : (
+              <span style={{ color: 'var(--text-muted)' }}>-</span>
+            )}
+          </div>
+
           <div style={{ textAlign: 'center', fontSize: 10, minWidth: 0, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
             {t.isDisabled ? '' : (
               delayInfo ? (
@@ -689,35 +723,7 @@ const TaskRow = React.memo(function TaskRow({
                   {formatShortDateWithDay(t.originalJob.mold_deadline || t.originalJob.deadline)}
                 </span>
               )
-            ) : isTask && currentStepData?.deadline ? (
-              delayInfo ? (
-                <span 
-                  style={{ fontSize: 9, color: delayInfo.color, backgroundColor: delayInfo.bg, padding: '1px 4px', borderRadius: '3px', fontWeight: 400, cursor: 'pointer', textDecoration: 'underline', textDecorationStyle: 'dotted', whiteSpace: 'nowrap', opacity: 0.8 }}
-                  onClick={(e) => { e.stopPropagation(); onScrollToDate(currentStepData.deadline, index, currentStepData.deadline) }}
-                  title="期限日にスクロール / Cuộn đến ngày kỳ hạn"
-                >
-                  {formatShortDateWithDay(currentStepData.deadline)}
-                </span>
-              ) : (
-                <span 
-                  style={{ fontSize: 9, color: statusColor, cursor: 'pointer', textDecoration: 'underline', textDecorationStyle: 'dotted', whiteSpace: 'nowrap', fontWeight: 400, opacity: 0.8 }}
-                  onClick={(e) => { e.stopPropagation(); onScrollToDate(currentStepData.deadline, index, currentStepData.deadline) }}
-                  title="期限日にスクロール / Cuộn đến ngày kỳ hạn"
-                >
-                  {formatShortDateWithDay(currentStepData.deadline)}
-                </span>
-              )
-            ) : isTask && currentStepData?.planned_end ? (
-              <span 
-                style={{ fontSize: 9, color: 'var(--accent)', cursor: 'pointer', textDecoration: 'underline', textDecorationStyle: 'dotted', whiteSpace: 'nowrap', fontWeight: 400, opacity: 0.8 }}
-                onClick={(e) => { e.stopPropagation(); onScrollToDate(currentStepData?.planned_end, index, currentStepData?.planned_end) }}
-                title="予定完了日にスクロール / Cuộn đến ngày hoàn thành dự kiến"
-              >
-                {formatFullDateWithDay(currentStepData?.planned_end)}
-              </span>
-            ) : (
-              <span style={{ fontSize: 9, color: 'var(--text-muted)', whiteSpace: 'nowrap', opacity: 0.8 }}>-</span>
-            )}
+            ) : null}
           </div>
         </>
       )}
@@ -2122,10 +2128,10 @@ export default function MoldJobGantt({ jobs, employees = [], machines = [], init
     }
   }, [searchParams, initialFromDate, initialToDate, tasks, handleScrollToDate])
 
-  // Removed 担当者 (nhân công) column — now 8 cols instead of 9
+  // Updated with 実績日 (Execution Date) column — now 9 cols
   const GRID_TEMPLATE = isPanelExpanded 
-    ? (showDates ? '160px 90px 45px 45px 55px 65px 65px 85px' : '220px 90px 45px 45px 95px 0 0 115px') 
-    : '200px 0 0 0 0 0 0 0'
+    ? (showDates ? '160px 90px 45px 45px 75px 55px 65px 65px 90px' : '220px 90px 45px 45px 75px 85px 0 0 90px') 
+    : '200px 0 0 0 0 0 0 0 0'
 
   // Stable context: only handlers and options — does NOT include localSteps or expandedJobs
   // This means editing a step does NOT cause StaticHeaderComponent to re-render
