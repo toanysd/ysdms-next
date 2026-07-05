@@ -1,0 +1,4270 @@
+{
+  "aluminum_blanks": [
+    {
+      "name": "blank_type",
+      "type": "string | null"
+    },
+    {
+      "name": "created_at",
+      "type": "string | null"
+    },
+    {
+      "name": "id",
+      "type": "string"
+    },
+    {
+      "name": "length_mm",
+      "type": "number"
+    },
+    {
+      "name": "material_grade",
+      "type": "string | null"
+    },
+    {
+      "name": "mold_id",
+      "type": "string | null"
+    },
+    {
+      "name": "notes",
+      "type": "string | null"
+    },
+    {
+      "name": "ordered_date",
+      "type": "string | null"
+    },
+    {
+      "name": "received_date",
+      "type": "string | null"
+    },
+    {
+      "name": "status",
+      "type": "string | null"
+    },
+    {
+      "name": "supplier_id",
+      "type": "string | null"
+    },
+    {
+      "name": "thickness_mm",
+      "type": "number"
+    },
+    {
+      "name": "updated_at",
+      "type": "string | null"
+    },
+    {
+      "name": "width_mm",
+      "type": "number"
+    }
+  ],
+  "asset_custody_certificates": [
+    {
+      "name": "certificate_file",
+      "type": "string | null"
+    },
+    {
+      "name": "certificate_id",
+      "type": "string"
+    },
+    {
+      "name": "created_at",
+      "type": "string | null"
+    },
+    {
+      "name": "deadline",
+      "type": "string | null"
+    },
+    {
+      "name": "fiscal_year",
+      "type": "number | null"
+    },
+    {
+      "name": "issued_by",
+      "type": "string | null"
+    },
+    {
+      "name": "issued_date",
+      "type": "string | null"
+    },
+    {
+      "name": "mold_owner_id",
+      "type": "string | null"
+    },
+    {
+      "name": "notes",
+      "type": "string | null"
+    },
+    {
+      "name": "requested_date",
+      "type": "string | null"
+    },
+    {
+      "name": "status",
+      "type": "string | null"
+    }
+  ],
+  "asset_location_logs": [
+    {
+      "name": "asset_id",
+      "type": "string"
+    },
+    {
+      "name": "asset_type",
+      "type": "Database[\"public\"][\"Enums\"][\"asset_type\"]"
+    },
+    {
+      "name": "id",
+      "type": "string"
+    },
+    {
+      "name": "moved_at",
+      "type": "string | null"
+    },
+    {
+      "name": "moved_by",
+      "type": "string | null"
+    },
+    {
+      "name": "new_rack_layer_id",
+      "type": "string | null"
+    },
+    {
+      "name": "notes",
+      "type": "string | null"
+    },
+    {
+      "name": "old_rack_layer_id",
+      "type": "string | null"
+    }
+  ],
+  "audit_logs": [
+    {
+      "name": "action",
+      "type": "string"
+    },
+    {
+      "name": "changed_at",
+      "type": "string | null"
+    },
+    {
+      "name": "changed_by",
+      "type": "string | null"
+    },
+    {
+      "name": "log_id",
+      "type": "string"
+    },
+    {
+      "name": "new_data",
+      "type": "Json | null"
+    },
+    {
+      "name": "old_data",
+      "type": "Json | null"
+    },
+    {
+      "name": "record_id",
+      "type": "string | null"
+    },
+    {
+      "name": "table_name",
+      "type": "string"
+    }
+  ],
+  "auxiliary_equipments": [
+    {
+      "name": "created_at",
+      "type": "string | null"
+    },
+    {
+      "name": "current_rack_layer_id",
+      "type": "string | null"
+    },
+    {
+      "name": "equipment_code",
+      "type": "string"
+    },
+    {
+      "name": "id",
+      "type": "string"
+    },
+    {
+      "name": "item_type_id",
+      "type": "number | null"
+    },
+    {
+      "name": "name",
+      "type": "string"
+    },
+    {
+      "name": "notes",
+      "type": "string | null"
+    },
+    {
+      "name": "status",
+      "type": "Database[\"public\"][\"Enums\"][\"equipment_status\"] | null"
+    }
+  ],
+  "cav_types": [
+    {
+      "name": "alias_cav_code",
+      "type": "string | null"
+    },
+    {
+      "name": "cav_code",
+      "type": "string"
+    },
+    {
+      "name": "cav_length_mm",
+      "type": "number"
+    },
+    {
+      "name": "cav_series",
+      "type": "string | null"
+    },
+    {
+      "name": "cav_type_id",
+      "type": "string"
+    },
+    {
+      "name": "cav_width_mm",
+      "type": "number"
+    },
+    {
+      "name": "created_at",
+      "type": "string | null"
+    },
+    {
+      "name": "is_active",
+      "type": "boolean | null"
+    },
+    {
+      "name": "machine_group",
+      "type": "string"
+    },
+    {
+      "name": "notes",
+      "type": "string | null"
+    },
+    {
+      "name": "updated_at",
+      "type": "string | null"
+    }
+  ],
+  "certificate_items": [
+    {
+      "name": "asset_code",
+      "type": "string | null"
+    },
+    {
+      "name": "asset_name",
+      "type": "string | null"
+    },
+    {
+      "name": "certificate_id",
+      "type": "string"
+    },
+    {
+      "name": "certificate_type",
+      "type": "string"
+    },
+    {
+      "name": "confirmed_date",
+      "type": "string | null"
+    },
+    {
+      "name": "is_confirmed",
+      "type": "boolean | null"
+    },
+    {
+      "name": "item_id",
+      "type": "string"
+    },
+    {
+      "name": "keeper_company_id",
+      "type": "string | null"
+    },
+    {
+      "name": "notes",
+      "type": "string | null"
+    },
+    {
+      "name": "photo_path",
+      "type": "string | null"
+    },
+    {
+      "name": "physical_mold_id",
+      "type": "string | null"
+    },
+    {
+      "name": "storage_location",
+      "type": "string | null"
+    }
+  ],
+  "companies": [
+    {
+      "name": "address",
+      "type": "string | null"
+    },
+    {
+      "name": "cad_folder_path",
+      "type": "string | null"
+    },
+    {
+      "name": "company_code",
+      "type": "string"
+    },
+    {
+      "name": "company_id",
+      "type": "string"
+    },
+    {
+      "name": "company_name",
+      "type": "string"
+    },
+    {
+      "name": "company_name_romaji",
+      "type": "string | null"
+    },
+    {
+      "name": "company_type",
+      "type": "string[] | null"
+    },
+    {
+      "name": "created_at",
+      "type": "string | null"
+    },
+    {
+      "name": "fax",
+      "type": "string | null"
+    },
+    {
+      "name": "is_active",
+      "type": "boolean | null"
+    },
+    {
+      "name": "legacy_id",
+      "type": "string | null"
+    },
+    {
+      "name": "legacy_specs",
+      "type": "Json | null"
+    },
+    {
+      "name": "notes",
+      "type": "string | null"
+    },
+    {
+      "name": "order_folder_path",
+      "type": "string | null"
+    },
+    {
+      "name": "parent_company_id",
+      "type": "string | null"
+    },
+    {
+      "name": "tel",
+      "type": "string | null"
+    },
+    {
+      "name": "updated_at",
+      "type": "string | null"
+    },
+    {
+      "name": "updated_by",
+      "type": "string | null"
+    }
+  ],
+  "company_contacts": [
+    {
+      "name": "company_id",
+      "type": "string"
+    },
+    {
+      "name": "contact_email",
+      "type": "string | null"
+    },
+    {
+      "name": "contact_id",
+      "type": "string"
+    },
+    {
+      "name": "contact_name",
+      "type": "string"
+    },
+    {
+      "name": "contact_role",
+      "type": "string | null"
+    },
+    {
+      "name": "contact_tel",
+      "type": "string | null"
+    },
+    {
+      "name": "created_at",
+      "type": "string | null"
+    },
+    {
+      "name": "is_primary",
+      "type": "boolean | null"
+    },
+    {
+      "name": "updated_at",
+      "type": "string | null"
+    }
+  ],
+  "cutter_masters": [
+    {
+      "name": "company_id",
+      "type": "string | null"
+    },
+    {
+      "name": "created_at",
+      "type": "string | null"
+    },
+    {
+      "name": "cutter_master_code",
+      "type": "string"
+    },
+    {
+      "name": "cutter_master_id",
+      "type": "string"
+    },
+    {
+      "name": "cutter_master_name",
+      "type": "string"
+    },
+    {
+      "name": "legacy_id",
+      "type": "string | null"
+    },
+    {
+      "name": "legacy_specs",
+      "type": "Json | null"
+    },
+    {
+      "name": "mold_master_id",
+      "type": "string | null"
+    },
+    {
+      "name": "status",
+      "type": "string | null"
+    },
+    {
+      "name": "updated_at",
+      "type": "string | null"
+    }
+  ],
+  "cutter_orders": [
+    {
+      "name": "actual_delivery",
+      "type": "string | null"
+    },
+    {
+      "name": "aluminum_base",
+      "type": "boolean | null"
+    },
+    {
+      "name": "base_completed",
+      "type": "string | null"
+    },
+    {
+      "name": "base_qty",
+      "type": "number | null"
+    },
+    {
+      "name": "created_at",
+      "type": "string | null"
+    },
+    {
+      "name": "cutter_id",
+      "type": "string | null"
+    },
+    {
+      "name": "delivery_destination",
+      "type": "string | null"
+    },
+    {
+      "name": "design_file",
+      "type": "string | null"
+    },
+    {
+      "name": "designed_by",
+      "type": "string | null"
+    },
+    {
+      "name": "estimated_delivery",
+      "type": "string | null"
+    },
+    {
+      "name": "is_movable",
+      "type": "boolean | null"
+    },
+    {
+      "name": "notes",
+      "type": "string | null"
+    },
+    {
+      "name": "order_id",
+      "type": "string"
+    },
+    {
+      "name": "order_type",
+      "type": "string | null"
+    },
+    {
+      "name": "ordered_by",
+      "type": "string | null"
+    },
+    {
+      "name": "ordered_date",
+      "type": "string | null"
+    },
+    {
+      "name": "product_code",
+      "type": "string | null"
+    },
+    {
+      "name": "reuse_cutter_id",
+      "type": "string | null"
+    },
+    {
+      "name": "status",
+      "type": "string | null"
+    },
+    {
+      "name": "supplier_id",
+      "type": "string | null"
+    }
+  ],
+  "cutters": [
+    {
+      "name": "base_type",
+      "type": "string | null"
+    },
+    {
+      "name": "cavity_count",
+      "type": "string | null"
+    },
+    {
+      "name": "chamfer_c",
+      "type": "string | null"
+    },
+    {
+      "name": "company_id",
+      "type": "string | null"
+    },
+    {
+      "name": "corner_r",
+      "type": "string | null"
+    },
+    {
+      "name": "created_at",
+      "type": "string | null"
+    },
+    {
+      "name": "current_rack_layer_id",
+      "type": "string | null"
+    },
+    {
+      "name": "cutline_length",
+      "type": "number | null"
+    },
+    {
+      "name": "cutline_width",
+      "type": "number | null"
+    },
+    {
+      "name": "cutter_design_code",
+      "type": "string | null"
+    },
+    {
+      "name": "cutter_height_mm",
+      "type": "number | null"
+    },
+    {
+      "name": "cutter_id",
+      "type": "string"
+    },
+    {
+      "name": "cutter_length_mm",
+      "type": "number | null"
+    },
+    {
+      "name": "cutter_master_id",
+      "type": "string | null"
+    },
+    {
+      "name": "cutter_name",
+      "type": "string"
+    },
+    {
+      "name": "cutter_no",
+      "type": "string"
+    },
+    {
+      "name": "cutter_presence",
+      "type": "boolean | null"
+    },
+    {
+      "name": "cutter_type",
+      "type": "string | null"
+    },
+    {
+      "name": "cutter_width_mm",
+      "type": "number | null"
+    },
+    {
+      "name": "date_entry",
+      "type": "string | null"
+    },
+    {
+      "name": "design_revision_id",
+      "type": "string | null"
+    },
+    {
+      "name": "item_type_id",
+      "type": "number | null"
+    },
+    {
+      "name": "keeper_company_id",
+      "type": "string | null"
+    },
+    {
+      "name": "legacy_id",
+      "type": "string | null"
+    },
+    {
+      "name": "legacy_specs",
+      "type": "Json | null"
+    },
+    {
+      "name": "manufacture_date",
+      "type": "string | null"
+    },
+    {
+      "name": "notes",
+      "type": "string | null"
+    },
+    {
+      "name": "pitch_mm",
+      "type": "number | null"
+    },
+    {
+      "name": "plastic_cut_type",
+      "type": "string | null"
+    },
+    {
+      "name": "post_cut_length",
+      "type": "number | null"
+    },
+    {
+      "name": "post_cut_width",
+      "type": "number | null"
+    },
+    {
+      "name": "qr_uuid",
+      "type": "string | null"
+    },
+    {
+      "name": "storage_company_id",
+      "type": "string | null"
+    },
+    {
+      "name": "updated_at",
+      "type": "string | null"
+    },
+    {
+      "name": "updated_by",
+      "type": "string | null"
+    },
+    {
+      "name": "usage_status",
+      "type": "string | null"
+    }
+  ],
+  "defect_reports": [
+    {
+      "name": "approved_by",
+      "type": "string | null"
+    },
+    {
+      "name": "approved_date",
+      "type": "string | null"
+    },
+    {
+      "name": "company_notified",
+      "type": "boolean | null"
+    },
+    {
+      "name": "company_response",
+      "type": "string | null"
+    },
+    {
+      "name": "corrective_action",
+      "type": "string | null"
+    },
+    {
+      "name": "created_at",
+      "type": "string | null"
+    },
+    {
+      "name": "defect_description",
+      "type": "string | null"
+    },
+    {
+      "name": "defect_type",
+      "type": "string | null"
+    },
+    {
+      "name": "mold_code",
+      "type": "string | null"
+    },
+    {
+      "name": "notes",
+      "type": "string | null"
+    },
+    {
+      "name": "preventive_action",
+      "type": "string | null"
+    },
+    {
+      "name": "product_id",
+      "type": "string | null"
+    },
+    {
+      "name": "report_code",
+      "type": "string"
+    },
+    {
+      "name": "report_file",
+      "type": "string | null"
+    },
+    {
+      "name": "report_id",
+      "type": "string"
+    },
+    {
+      "name": "report_type",
+      "type": "string"
+    },
+    {
+      "name": "reported_by",
+      "type": "string | null"
+    },
+    {
+      "name": "reported_date",
+      "type": "string | null"
+    },
+    {
+      "name": "root_cause",
+      "type": "string | null"
+    },
+    {
+      "name": "root_cause_analysis",
+      "type": "string | null"
+    },
+    {
+      "name": "severity",
+      "type": "string | null"
+    },
+    {
+      "name": "status",
+      "type": "string | null"
+    },
+    {
+      "name": "translated_language",
+      "type": "string | null"
+    },
+    {
+      "name": "translation_confirmed",
+      "type": "boolean | null"
+    },
+    {
+      "name": "translation_confirmed_by",
+      "type": "string | null"
+    }
+  ],
+  "delivery_notes": [
+    {
+      "name": "certificate_type",
+      "type": "string | null"
+    },
+    {
+      "name": "company_confirmed",
+      "type": "boolean | null"
+    },
+    {
+      "name": "confirmed_date",
+      "type": "string | null"
+    },
+    {
+      "name": "created_at",
+      "type": "string | null"
+    },
+    {
+      "name": "file_path",
+      "type": "string | null"
+    },
+    {
+      "name": "issued_by",
+      "type": "string | null"
+    },
+    {
+      "name": "issued_date",
+      "type": "string | null"
+    },
+    {
+      "name": "note_id",
+      "type": "string"
+    },
+    {
+      "name": "notes",
+      "type": "string | null"
+    },
+    {
+      "name": "shipment_id",
+      "type": "string | null"
+    }
+  ],
+  "delivery_sites": [
+    {
+      "name": "company_id",
+      "type": "string"
+    },
+    {
+      "name": "contact_email",
+      "type": "string | null"
+    },
+    {
+      "name": "contact_person",
+      "type": "string | null"
+    },
+    {
+      "name": "created_at",
+      "type": "string | null"
+    },
+    {
+      "name": "delivery_notes",
+      "type": "string | null"
+    },
+    {
+      "name": "is_active",
+      "type": "boolean | null"
+    },
+    {
+      "name": "site_address",
+      "type": "string | null"
+    },
+    {
+      "name": "site_code",
+      "type": "string"
+    },
+    {
+      "name": "site_fax",
+      "type": "string | null"
+    },
+    {
+      "name": "site_id",
+      "type": "string"
+    },
+    {
+      "name": "site_name",
+      "type": "string"
+    },
+    {
+      "name": "site_tel",
+      "type": "string | null"
+    },
+    {
+      "name": "updated_at",
+      "type": "string | null"
+    }
+  ],
+  "design_revisions": [
+    {
+      "name": "approved_date",
+      "type": "string | null"
+    },
+    {
+      "name": "cad_folder_path",
+      "type": "string | null"
+    },
+    {
+      "name": "cav_type_id",
+      "type": "string | null"
+    },
+    {
+      "name": "cavity_count",
+      "type": "number | null"
+    },
+    {
+      "name": "chamfer_c",
+      "type": "string | null"
+    },
+    {
+      "name": "company_id",
+      "type": "string | null"
+    },
+    {
+      "name": "corner_r",
+      "type": "string | null"
+    },
+    {
+      "name": "created_at",
+      "type": "string | null"
+    },
+    {
+      "name": "customer_drawing_no",
+      "type": "string | null"
+    },
+    {
+      "name": "customer_equipment_no",
+      "type": "string | null"
+    },
+    {
+      "name": "customer_tray_name",
+      "type": "string | null"
+    },
+    {
+      "name": "cutline_length",
+      "type": "number | null"
+    },
+    {
+      "name": "cutline_width",
+      "type": "number | null"
+    },
+    {
+      "name": "data_input_date",
+      "type": "string | null"
+    },
+    {
+      "name": "design_code",
+      "type": "string"
+    },
+    {
+      "name": "design_date",
+      "type": "string | null"
+    },
+    {
+      "name": "design_depth",
+      "type": "number | null"
+    },
+    {
+      "name": "design_height",
+      "type": "number | null"
+    },
+    {
+      "name": "design_length",
+      "type": "number | null"
+    },
+    {
+      "name": "design_weight",
+      "type": "string | null"
+    },
+    {
+      "name": "design_width",
+      "type": "number | null"
+    },
+    {
+      "name": "designer",
+      "type": "string | null"
+    },
+    {
+      "name": "designer_id",
+      "type": "string | null"
+    },
+    {
+      "name": "draft_angle",
+      "type": "string | null"
+    },
+    {
+      "name": "drawing_pdf_path",
+      "type": "string | null"
+    },
+    {
+      "name": "has_plug",
+      "type": "boolean | null"
+    },
+    {
+      "name": "has_separate_cutter",
+      "type": "boolean | null"
+    },
+    {
+      "name": "legacy_id",
+      "type": "string | null"
+    },
+    {
+      "name": "legacy_specs",
+      "type": "Json | null"
+    },
+    {
+      "name": "mold_master_id",
+      "type": "string | null"
+    },
+    {
+      "name": "orientation",
+      "type": "string | null"
+    },
+    {
+      "name": "pitch_mm",
+      "type": "number | null"
+    },
+    {
+      "name": "plastic_type_designed",
+      "type": "string | null"
+    },
+    {
+      "name": "pocket_numbers",
+      "type": "number | null"
+    },
+    {
+      "name": "revision_id",
+      "type": "string"
+    },
+    {
+      "name": "revision_number",
+      "type": "number | null"
+    },
+    {
+      "name": "setup_type",
+      "type": "string | null"
+    },
+    {
+      "name": "status",
+      "type": "string | null"
+    },
+    {
+      "name": "step_3d_path",
+      "type": "string | null"
+    },
+    {
+      "name": "text_content",
+      "type": "string | null"
+    },
+    {
+      "name": "tray_info",
+      "type": "string | null"
+    },
+    {
+      "name": "under_depth",
+      "type": "string | null"
+    },
+    {
+      "name": "undercut_spec",
+      "type": "string | null"
+    },
+    {
+      "name": "updated_at",
+      "type": "string | null"
+    },
+    {
+      "name": "updated_by",
+      "type": "string | null"
+    },
+    {
+      "name": "version_note",
+      "type": "string | null"
+    }
+  ],
+  "destinations": [
+    {
+      "name": "destination_id",
+      "type": "string"
+    },
+    {
+      "name": "destination_name",
+      "type": "string"
+    },
+    {
+      "name": "destination_type",
+      "type": "string | null"
+    },
+    {
+      "name": "is_active",
+      "type": "boolean | null"
+    }
+  ],
+  "employees": [
+    {
+      "name": "company_id",
+      "type": "string | null"
+    },
+    {
+      "name": "created_at",
+      "type": "string | null"
+    },
+    {
+      "name": "department",
+      "type": "string | null"
+    },
+    {
+      "name": "employee_code",
+      "type": "string"
+    },
+    {
+      "name": "employee_id",
+      "type": "string"
+    },
+    {
+      "name": "employee_name",
+      "type": "string"
+    },
+    {
+      "name": "employee_name_short",
+      "type": "string | null"
+    },
+    {
+      "name": "is_active",
+      "type": "boolean | null"
+    },
+    {
+      "name": "joining_date",
+      "type": "string | null"
+    },
+    {
+      "name": "legacy_id",
+      "type": "string | null"
+    },
+    {
+      "name": "order_code",
+      "type": "string | null"
+    },
+    {
+      "name": "role",
+      "type": "string | null"
+    },
+    {
+      "name": "updated_at",
+      "type": "string | null"
+    }
+  ],
+  "equipment_ship_logs": [
+    {
+      "name": "company_id",
+      "type": "string | null"
+    },
+    {
+      "name": "created_at",
+      "type": "string | null"
+    },
+    {
+      "name": "cutter_id",
+      "type": "string | null"
+    },
+    {
+      "name": "from_company_id",
+      "type": "string | null"
+    },
+    {
+      "name": "item_type_id",
+      "type": "number | null"
+    },
+    {
+      "name": "notes",
+      "type": "string | null"
+    },
+    {
+      "name": "physical_mold_id",
+      "type": "string | null"
+    },
+    {
+      "name": "ship_date",
+      "type": "string | null"
+    },
+    {
+      "name": "ship_id",
+      "type": "string"
+    },
+    {
+      "name": "ship_item_name",
+      "type": "string | null"
+    },
+    {
+      "name": "ship_status",
+      "type": "string | null"
+    },
+    {
+      "name": "to_company_id",
+      "type": "string | null"
+    }
+  ],
+  "equipment_status_logs": [
+    {
+      "name": "cutter_id",
+      "type": "string | null"
+    },
+    {
+      "name": "destination_id",
+      "type": "string | null"
+    },
+    {
+      "name": "employee_id",
+      "type": "string | null"
+    },
+    {
+      "name": "item_type_id",
+      "type": "number | null"
+    },
+    {
+      "name": "log_id",
+      "type": "string"
+    },
+    {
+      "name": "logged_at",
+      "type": "string | null"
+    },
+    {
+      "name": "notes",
+      "type": "string | null"
+    },
+    {
+      "name": "physical_mold_id",
+      "type": "string | null"
+    },
+    {
+      "name": "session_id",
+      "type": "string | null"
+    },
+    {
+      "name": "session_name",
+      "type": "string | null"
+    },
+    {
+      "name": "status",
+      "type": "string | null"
+    }
+  ],
+  "forming_conditions": [
+    {
+      "name": "cav_type_id",
+      "type": "string | null"
+    },
+    {
+      "name": "condition_id",
+      "type": "string"
+    },
+    {
+      "name": "cooling_base_type",
+      "type": "string | null"
+    },
+    {
+      "name": "created_at",
+      "type": "string | null"
+    },
+    {
+      "name": "cutter_code",
+      "type": "string | null"
+    },
+    {
+      "name": "f2_heater_zones",
+      "type": "Json | null"
+    },
+    {
+      "name": "f3_timing",
+      "type": "Json | null"
+    },
+    {
+      "name": "f4_process",
+      "type": "Json | null"
+    },
+    {
+      "name": "f5_extra",
+      "type": "Json | null"
+    },
+    {
+      "name": "frame_type",
+      "type": "string | null"
+    },
+    {
+      "name": "heater_position",
+      "type": "number | null"
+    },
+    {
+      "name": "is_verified",
+      "type": "boolean | null"
+    },
+    {
+      "name": "last_used_date",
+      "type": "string | null"
+    },
+    {
+      "name": "machine_id",
+      "type": "string"
+    },
+    {
+      "name": "notes",
+      "type": "string | null"
+    },
+    {
+      "name": "plug_used",
+      "type": "boolean | null"
+    },
+    {
+      "name": "product_id",
+      "type": "string"
+    },
+    {
+      "name": "stacking_lower",
+      "type": "string | null"
+    },
+    {
+      "name": "stacking_upper",
+      "type": "string | null"
+    },
+    {
+      "name": "updated_at",
+      "type": "string | null"
+    }
+  ],
+  "inspections": [
+    {
+      "name": "created_at",
+      "type": "string | null"
+    },
+    {
+      "name": "file_path",
+      "type": "string | null"
+    },
+    {
+      "name": "inspection_date",
+      "type": "string"
+    },
+    {
+      "name": "inspection_id",
+      "type": "string"
+    },
+    {
+      "name": "inspector_id",
+      "type": "string | null"
+    },
+    {
+      "name": "lot_id",
+      "type": "string | null"
+    },
+    {
+      "name": "notes",
+      "type": "string | null"
+    },
+    {
+      "name": "po_id",
+      "type": "string | null"
+    },
+    {
+      "name": "result",
+      "type": "string | null"
+    },
+    {
+      "name": "updated_at",
+      "type": "string | null"
+    }
+  ],
+  "inventory_schedules": [
+    {
+      "name": "assigned_to",
+      "type": "string | null"
+    },
+    {
+      "name": "is_active",
+      "type": "boolean | null"
+    },
+    {
+      "name": "last_completed",
+      "type": "string | null"
+    },
+    {
+      "name": "mold_owner_id",
+      "type": "string | null"
+    },
+    {
+      "name": "month_of_year",
+      "type": "number | null"
+    },
+    {
+      "name": "next_due",
+      "type": "string | null"
+    },
+    {
+      "name": "notes",
+      "type": "string | null"
+    },
+    {
+      "name": "reminder_days",
+      "type": "number | null"
+    },
+    {
+      "name": "schedule_id",
+      "type": "string"
+    },
+    {
+      "name": "schedule_type",
+      "type": "string | null"
+    }
+  ],
+  "item_types": [
+    {
+      "name": "item_type_code",
+      "type": "string"
+    },
+    {
+      "name": "item_type_id",
+      "type": "number"
+    },
+    {
+      "name": "item_type_name_ja",
+      "type": "string"
+    },
+    {
+      "name": "item_type_name_vi",
+      "type": "string | null"
+    }
+  ],
+  "job_steps": [
+    {
+      "name": "actual_hours",
+      "type": "number | null"
+    },
+    {
+      "name": "assigned_to",
+      "type": "string | null"
+    },
+    {
+      "name": "created_at",
+      "type": "string | null"
+    },
+    {
+      "name": "deadline",
+      "type": "string | null"
+    },
+    {
+      "name": "drawing_receipt_date",
+      "type": "string | null"
+    },
+    {
+      "name": "estimated_hours",
+      "type": "number | null"
+    },
+    {
+      "name": "is_overtime",
+      "type": "boolean | null"
+    },
+    {
+      "name": "job_id",
+      "type": "string"
+    },
+    {
+      "name": "machine_id",
+      "type": "string | null"
+    },
+    {
+      "name": "machining_location",
+      "type": "string | null"
+    },
+    {
+      "name": "notes",
+      "type": "string | null"
+    },
+    {
+      "name": "outsource_company",
+      "type": "string | null"
+    },
+    {
+      "name": "planned_end",
+      "type": "string | null"
+    },
+    {
+      "name": "planned_hours",
+      "type": "number | null"
+    },
+    {
+      "name": "planned_start",
+      "type": "string | null"
+    },
+    {
+      "name": "processing_item_id",
+      "type": "number | null"
+    },
+    {
+      "name": "processing_status_id",
+      "type": "number | null"
+    },
+    {
+      "name": "set_info",
+      "type": "string | null"
+    },
+    {
+      "name": "step_id",
+      "type": "string"
+    },
+    {
+      "name": "step_name",
+      "type": "string"
+    },
+    {
+      "name": "step_no",
+      "type": "number"
+    },
+    {
+      "name": "step_status",
+      "type": "string | null"
+    },
+    {
+      "name": "tehai_info",
+      "type": "string | null"
+    },
+    {
+      "name": "track",
+      "type": "string | null"
+    },
+    {
+      "name": "updated_at",
+      "type": "string | null"
+    }
+  ],
+  "job_types": [
+    {
+      "name": "category",
+      "type": "string | null"
+    },
+    {
+      "name": "description",
+      "type": "string | null"
+    },
+    {
+      "name": "job_type_id",
+      "type": "string"
+    },
+    {
+      "name": "job_type_name_ja",
+      "type": "string"
+    },
+    {
+      "name": "job_type_name_vi",
+      "type": "string"
+    },
+    {
+      "name": "sort_order",
+      "type": "number | null"
+    }
+  ],
+  "jobs": [
+    {
+      "name": "approved",
+      "type": "boolean | null"
+    },
+    {
+      "name": "company_id",
+      "type": "string | null"
+    },
+    {
+      "name": "completed_date",
+      "type": "string | null"
+    },
+    {
+      "name": "created_at",
+      "type": "string | null"
+    },
+    {
+      "name": "deadline",
+      "type": "string | null"
+    },
+    {
+      "name": "design_revision_id",
+      "type": "string | null"
+    },
+    {
+      "name": "estimated_hours",
+      "type": "number | null"
+    },
+    {
+      "name": "has_plug",
+      "type": "boolean | null"
+    },
+    {
+      "name": "job_code",
+      "type": "string"
+    },
+    {
+      "name": "job_id",
+      "type": "string"
+    },
+    {
+      "name": "job_name",
+      "type": "string"
+    },
+    {
+      "name": "job_status",
+      "type": "string | null"
+    },
+    {
+      "name": "job_type_id",
+      "type": "string"
+    },
+    {
+      "name": "mold_deadline",
+      "type": "string | null"
+    },
+    {
+      "name": "mold_master_id",
+      "type": "string | null"
+    },
+    {
+      "name": "mold_track_status",
+      "type": "string | null"
+    },
+    {
+      "name": "month_period",
+      "type": "number | null"
+    },
+    {
+      "name": "notes",
+      "type": "string | null"
+    },
+    {
+      "name": "outsource_company",
+      "type": "string | null"
+    },
+    {
+      "name": "overall_progress",
+      "type": "number | null"
+    },
+    {
+      "name": "physical_mold_id",
+      "type": "string | null"
+    },
+    {
+      "name": "plug_track_status",
+      "type": "string | null"
+    },
+    {
+      "name": "priority",
+      "type": "number | null"
+    },
+    {
+      "name": "production_order_id",
+      "type": "string | null"
+    },
+    {
+      "name": "responsible_id",
+      "type": "string | null"
+    },
+    {
+      "name": "ship_date",
+      "type": "string | null"
+    },
+    {
+      "name": "start_date",
+      "type": "string | null"
+    },
+    {
+      "name": "updated_at",
+      "type": "string | null"
+    },
+    {
+      "name": "updated_by",
+      "type": "string | null"
+    },
+    {
+      "name": "year_period",
+      "type": "number | null"
+    }
+  ],
+  "machine_cav_compatibility": [
+    {
+      "name": "cav_type_id",
+      "type": "string"
+    },
+    {
+      "name": "compat_id",
+      "type": "string"
+    },
+    {
+      "name": "is_preferred",
+      "type": "boolean | null"
+    },
+    {
+      "name": "machine_id",
+      "type": "string"
+    },
+    {
+      "name": "notes",
+      "type": "string | null"
+    }
+  ],
+  "machine_schedules": [
+    {
+      "name": "actual_end",
+      "type": "string | null"
+    },
+    {
+      "name": "actual_start",
+      "type": "string | null"
+    },
+    {
+      "name": "created_at",
+      "type": "string | null"
+    },
+    {
+      "name": "id",
+      "type": "string"
+    },
+    {
+      "name": "job_step_id",
+      "type": "string | null"
+    },
+    {
+      "name": "machine_id",
+      "type": "string"
+    },
+    {
+      "name": "notes",
+      "type": "string | null"
+    },
+    {
+      "name": "planned_end",
+      "type": "string"
+    },
+    {
+      "name": "planned_start",
+      "type": "string"
+    },
+    {
+      "name": "status",
+      "type": "string | null"
+    }
+  ],
+  "machines": [
+    {
+      "name": "created_at",
+      "type": "string | null"
+    },
+    {
+      "name": "is_active",
+      "type": "boolean | null"
+    },
+    {
+      "name": "location",
+      "type": "string | null"
+    },
+    {
+      "name": "machine_code",
+      "type": "string"
+    },
+    {
+      "name": "machine_group",
+      "type": "string | null"
+    },
+    {
+      "name": "machine_id",
+      "type": "string"
+    },
+    {
+      "name": "machine_name",
+      "type": "string"
+    },
+    {
+      "name": "machine_type",
+      "type": "string"
+    },
+    {
+      "name": "manufacturer",
+      "type": "string | null"
+    },
+    {
+      "name": "max_mold_length",
+      "type": "number | null"
+    },
+    {
+      "name": "max_mold_width",
+      "type": "number | null"
+    },
+    {
+      "name": "max_sheet_width",
+      "type": "number | null"
+    },
+    {
+      "name": "model",
+      "type": "string | null"
+    },
+    {
+      "name": "notes",
+      "type": "string | null"
+    },
+    {
+      "name": "updated_at",
+      "type": "string | null"
+    }
+  ],
+  "material_change_logs": [
+    {
+      "name": "approved_by",
+      "type": "string | null"
+    },
+    {
+      "name": "approved_date",
+      "type": "string | null"
+    },
+    {
+      "name": "change_id",
+      "type": "string"
+    },
+    {
+      "name": "created_at",
+      "type": "string | null"
+    },
+    {
+      "name": "new_material_id",
+      "type": "string | null"
+    },
+    {
+      "name": "notes",
+      "type": "string | null"
+    },
+    {
+      "name": "old_material_id",
+      "type": "string | null"
+    },
+    {
+      "name": "product_id",
+      "type": "string | null"
+    },
+    {
+      "name": "reason",
+      "type": "string | null"
+    },
+    {
+      "name": "requires_mold_mod",
+      "type": "boolean | null"
+    },
+    {
+      "name": "requires_new_cutter",
+      "type": "boolean | null"
+    },
+    {
+      "name": "status",
+      "type": "string | null"
+    },
+    {
+      "name": "trial_job_id",
+      "type": "string | null"
+    }
+  ],
+  "material_inventory": [
+    {
+      "name": "inventory_id",
+      "type": "string"
+    },
+    {
+      "name": "last_counted",
+      "type": "string | null"
+    },
+    {
+      "name": "location",
+      "type": "string | null"
+    },
+    {
+      "name": "material_id",
+      "type": "string"
+    },
+    {
+      "name": "quantity_kg",
+      "type": "number | null"
+    },
+    {
+      "name": "quantity_meters",
+      "type": "number | null"
+    },
+    {
+      "name": "quantity_rolls",
+      "type": "number | null"
+    },
+    {
+      "name": "updated_at",
+      "type": "string | null"
+    }
+  ],
+  "material_transactions": [
+    {
+      "name": "created_at",
+      "type": "string | null"
+    },
+    {
+      "name": "employee_id",
+      "type": "string | null"
+    },
+    {
+      "name": "material_id",
+      "type": "string"
+    },
+    {
+      "name": "notes",
+      "type": "string | null"
+    },
+    {
+      "name": "quantity",
+      "type": "number | null"
+    },
+    {
+      "name": "reference_id",
+      "type": "string | null"
+    },
+    {
+      "name": "reference_type",
+      "type": "string | null"
+    },
+    {
+      "name": "transaction_id",
+      "type": "string"
+    },
+    {
+      "name": "transaction_type",
+      "type": "string"
+    },
+    {
+      "name": "unit",
+      "type": "string | null"
+    }
+  ],
+  "materials": [
+    {
+      "name": "color",
+      "type": "string | null"
+    },
+    {
+      "name": "conductivity_type",
+      "type": "string | null"
+    },
+    {
+      "name": "created_at",
+      "type": "string | null"
+    },
+    {
+      "name": "has_silicone",
+      "type": "boolean | null"
+    },
+    {
+      "name": "is_active",
+      "type": "boolean | null"
+    },
+    {
+      "name": "is_antistatic",
+      "type": "boolean | null"
+    },
+    {
+      "name": "is_conductive",
+      "type": "boolean | null"
+    },
+    {
+      "name": "manufacturer",
+      "type": "string | null"
+    },
+    {
+      "name": "material_code",
+      "type": "string"
+    },
+    {
+      "name": "material_grade",
+      "type": "string | null"
+    },
+    {
+      "name": "material_id",
+      "type": "string"
+    },
+    {
+      "name": "material_type",
+      "type": "string"
+    },
+    {
+      "name": "notes",
+      "type": "string | null"
+    },
+    {
+      "name": "supplier_id",
+      "type": "string | null"
+    },
+    {
+      "name": "thickness_mm",
+      "type": "number | null"
+    },
+    {
+      "name": "unit_price",
+      "type": "number | null"
+    },
+    {
+      "name": "updated_at",
+      "type": "string | null"
+    },
+    {
+      "name": "width_mm",
+      "type": "number | null"
+    }
+  ],
+  "mold_design_cutters": [
+    {
+      "name": "cutter_id",
+      "type": "string"
+    },
+    {
+      "name": "date_entry",
+      "type": "string | null"
+    },
+    {
+      "name": "id",
+      "type": "string"
+    },
+    {
+      "name": "mold_design_id",
+      "type": "string"
+    },
+    {
+      "name": "notes",
+      "type": "string | null"
+    }
+  ],
+  "mold_disposal_logs": [
+    {
+      "name": "certificate_file",
+      "type": "string | null"
+    },
+    {
+      "name": "certificate_no",
+      "type": "string | null"
+    },
+    {
+      "name": "certificate_sent",
+      "type": "boolean | null"
+    },
+    {
+      "name": "created_at",
+      "type": "string | null"
+    },
+    {
+      "name": "disposal_fee",
+      "type": "number | null"
+    },
+    {
+      "name": "disposal_id",
+      "type": "string"
+    },
+    {
+      "name": "disposal_no",
+      "type": "string | null"
+    },
+    {
+      "name": "disposal_type",
+      "type": "string | null"
+    },
+    {
+      "name": "disposed_by",
+      "type": "string | null"
+    },
+    {
+      "name": "disposed_date",
+      "type": "string | null"
+    },
+    {
+      "name": "mold_code",
+      "type": "string | null"
+    },
+    {
+      "name": "notes",
+      "type": "string | null"
+    },
+    {
+      "name": "permission_by",
+      "type": "string | null"
+    },
+    {
+      "name": "permission_date",
+      "type": "string | null"
+    },
+    {
+      "name": "photo_after",
+      "type": "string | null"
+    },
+    {
+      "name": "photo_before",
+      "type": "string | null"
+    },
+    {
+      "name": "physical_mold_id",
+      "type": "string | null"
+    },
+    {
+      "name": "registered_by",
+      "type": "string | null"
+    },
+    {
+      "name": "registered_date",
+      "type": "string | null"
+    },
+    {
+      "name": "requested_by_company",
+      "type": "string | null"
+    },
+    {
+      "name": "requested_date",
+      "type": "string | null"
+    },
+    {
+      "name": "status",
+      "type": "string | null"
+    }
+  ],
+  "mold_inventory_checks": [
+    {
+      "name": "check_code",
+      "type": "string"
+    },
+    {
+      "name": "check_id",
+      "type": "string"
+    },
+    {
+      "name": "check_type",
+      "type": "string | null"
+    },
+    {
+      "name": "completed_by",
+      "type": "string | null"
+    },
+    {
+      "name": "completed_date",
+      "type": "string | null"
+    },
+    {
+      "name": "confirmed_count",
+      "type": "number | null"
+    },
+    {
+      "name": "created_at",
+      "type": "string | null"
+    },
+    {
+      "name": "deadline",
+      "type": "string | null"
+    },
+    {
+      "name": "missing_count",
+      "type": "number | null"
+    },
+    {
+      "name": "mold_owner_id",
+      "type": "string | null"
+    },
+    {
+      "name": "notes",
+      "type": "string | null"
+    },
+    {
+      "name": "report_file",
+      "type": "string | null"
+    },
+    {
+      "name": "reported_date",
+      "type": "string | null"
+    },
+    {
+      "name": "requested_by",
+      "type": "string | null"
+    },
+    {
+      "name": "requested_date",
+      "type": "string | null"
+    },
+    {
+      "name": "status",
+      "type": "string | null"
+    },
+    {
+      "name": "total_molds",
+      "type": "number | null"
+    }
+  ],
+  "mold_inventory_items": [
+    {
+      "name": "check_id",
+      "type": "string"
+    },
+    {
+      "name": "confirmed_by",
+      "type": "string | null"
+    },
+    {
+      "name": "confirmed_date",
+      "type": "string | null"
+    },
+    {
+      "name": "is_confirmed",
+      "type": "boolean | null"
+    },
+    {
+      "name": "item_id",
+      "type": "string"
+    },
+    {
+      "name": "keeper_company_id",
+      "type": "string | null"
+    },
+    {
+      "name": "mold_code",
+      "type": "string | null"
+    },
+    {
+      "name": "notes",
+      "type": "string | null"
+    },
+    {
+      "name": "photo_path",
+      "type": "string | null"
+    },
+    {
+      "name": "physical_mold_id",
+      "type": "string | null"
+    },
+    {
+      "name": "storage_location",
+      "type": "string | null"
+    }
+  ],
+  "mold_loan_certificates": [
+    {
+      "name": "certificate_file",
+      "type": "string | null"
+    },
+    {
+      "name": "certificate_id",
+      "type": "string"
+    },
+    {
+      "name": "certificate_no",
+      "type": "string | null"
+    },
+    {
+      "name": "created_at",
+      "type": "string | null"
+    },
+    {
+      "name": "issued_by",
+      "type": "string | null"
+    },
+    {
+      "name": "issued_date",
+      "type": "string | null"
+    },
+    {
+      "name": "mold_owner_id",
+      "type": "string | null"
+    },
+    {
+      "name": "notes",
+      "type": "string | null"
+    },
+    {
+      "name": "prepared_by",
+      "type": "string | null"
+    },
+    {
+      "name": "requested_date",
+      "type": "string | null"
+    },
+    {
+      "name": "status",
+      "type": "string | null"
+    }
+  ],
+  "mold_location_history": [
+    {
+      "name": "location_log_id",
+      "type": "string"
+    },
+    {
+      "name": "moved_at",
+      "type": "string | null"
+    },
+    {
+      "name": "moved_by",
+      "type": "string | null"
+    },
+    {
+      "name": "new_rack_layer_id",
+      "type": "string | null"
+    },
+    {
+      "name": "notes",
+      "type": "string | null"
+    },
+    {
+      "name": "old_rack_layer_id",
+      "type": "string | null"
+    },
+    {
+      "name": "physical_mold_id",
+      "type": "string"
+    }
+  ],
+  "mold_maintenance": [
+    {
+      "name": "completed_date",
+      "type": "string | null"
+    },
+    {
+      "name": "cost",
+      "type": "number | null"
+    },
+    {
+      "name": "created_at",
+      "type": "string | null"
+    },
+    {
+      "name": "employee_id",
+      "type": "string | null"
+    },
+    {
+      "name": "maintenance_id",
+      "type": "string"
+    },
+    {
+      "name": "maintenance_type",
+      "type": "string"
+    },
+    {
+      "name": "notes",
+      "type": "string | null"
+    },
+    {
+      "name": "physical_mold_id",
+      "type": "string"
+    },
+    {
+      "name": "reason",
+      "type": "string | null"
+    },
+    {
+      "name": "request_date",
+      "type": "string | null"
+    },
+    {
+      "name": "result",
+      "type": "string | null"
+    },
+    {
+      "name": "status",
+      "type": "string | null"
+    },
+    {
+      "name": "updated_at",
+      "type": "string | null"
+    },
+    {
+      "name": "vendor_id",
+      "type": "string | null"
+    }
+  ],
+  "mold_masters": [
+    {
+      "name": "cad_folder_path",
+      "type": "string | null"
+    },
+    {
+      "name": "company_id",
+      "type": "string"
+    },
+    {
+      "name": "created_at",
+      "type": "string | null"
+    },
+    {
+      "name": "designer_id",
+      "type": "string | null"
+    },
+    {
+      "name": "legacy_id",
+      "type": "string | null"
+    },
+    {
+      "name": "legacy_specs",
+      "type": "Json | null"
+    },
+    {
+      "name": "mold_class",
+      "type": "string | null"
+    },
+    {
+      "name": "mold_master_code",
+      "type": "string"
+    },
+    {
+      "name": "mold_master_id",
+      "type": "string"
+    },
+    {
+      "name": "mold_master_name",
+      "type": "string"
+    },
+    {
+      "name": "mold_source",
+      "type": "string | null"
+    },
+    {
+      "name": "notes",
+      "type": "string | null"
+    },
+    {
+      "name": "product_id",
+      "type": "string | null"
+    },
+    {
+      "name": "status",
+      "type": "string | null"
+    },
+    {
+      "name": "updated_at",
+      "type": "string | null"
+    },
+    {
+      "name": "updated_by",
+      "type": "string | null"
+    }
+  ],
+  "mold_material_bom": [
+    {
+      "name": "bom_id",
+      "type": "string"
+    },
+    {
+      "name": "component_name",
+      "type": "string | null"
+    },
+    {
+      "name": "created_at",
+      "type": "string | null"
+    },
+    {
+      "name": "material_id",
+      "type": "string | null"
+    },
+    {
+      "name": "mold_master_id",
+      "type": "string | null"
+    },
+    {
+      "name": "notes",
+      "type": "string | null"
+    },
+    {
+      "name": "quantity_per_shot",
+      "type": "number | null"
+    }
+  ],
+  "mold_measurements": [
+    {
+      "name": "created_at",
+      "type": "string | null"
+    },
+    {
+      "name": "measured_by",
+      "type": "string | null"
+    },
+    {
+      "name": "measured_date",
+      "type": "string | null"
+    },
+    {
+      "name": "measurement_id",
+      "type": "string"
+    },
+    {
+      "name": "mold_height_mm",
+      "type": "number | null"
+    },
+    {
+      "name": "mold_length_mm",
+      "type": "number | null"
+    },
+    {
+      "name": "mold_weight_kg",
+      "type": "number | null"
+    },
+    {
+      "name": "mold_width_mm",
+      "type": "number | null"
+    },
+    {
+      "name": "notes",
+      "type": "string | null"
+    },
+    {
+      "name": "physical_mold_id",
+      "type": "string | null"
+    },
+    {
+      "name": "purpose",
+      "type": "string | null"
+    },
+    {
+      "name": "requested_by",
+      "type": "string | null"
+    }
+  ],
+  "mold_name_history": [
+    {
+      "name": "change_reason",
+      "type": "string | null"
+    },
+    {
+      "name": "changed_at",
+      "type": "string | null"
+    },
+    {
+      "name": "changed_by",
+      "type": "string | null"
+    },
+    {
+      "name": "history_id",
+      "type": "string"
+    },
+    {
+      "name": "new_physical_stamp",
+      "type": "string | null"
+    },
+    {
+      "name": "new_system_code",
+      "type": "string"
+    },
+    {
+      "name": "old_physical_stamp",
+      "type": "string | null"
+    },
+    {
+      "name": "old_system_code",
+      "type": "string | null"
+    },
+    {
+      "name": "physical_mold_id",
+      "type": "string"
+    }
+  ],
+  "mold_owner_qr_labels": [
+    {
+      "name": "applied_by",
+      "type": "string | null"
+    },
+    {
+      "name": "applied_date",
+      "type": "string | null"
+    },
+    {
+      "name": "created_at",
+      "type": "string | null"
+    },
+    {
+      "name": "is_active",
+      "type": "boolean | null"
+    },
+    {
+      "name": "label_id",
+      "type": "string"
+    },
+    {
+      "name": "label_type",
+      "type": "string | null"
+    },
+    {
+      "name": "mold_owner_id",
+      "type": "string | null"
+    },
+    {
+      "name": "notes",
+      "type": "string | null"
+    },
+    {
+      "name": "photo_path",
+      "type": "string | null"
+    },
+    {
+      "name": "physical_mold_id",
+      "type": "string | null"
+    },
+    {
+      "name": "qr_code",
+      "type": "string | null"
+    }
+  ],
+  "mold_owners": [
+    {
+      "name": "company_id",
+      "type": "string | null"
+    },
+    {
+      "name": "created_at",
+      "type": "string | null"
+    },
+    {
+      "name": "is_active",
+      "type": "boolean | null"
+    },
+    {
+      "name": "notes",
+      "type": "string | null"
+    },
+    {
+      "name": "owner_code",
+      "type": "string"
+    },
+    {
+      "name": "owner_id",
+      "type": "string"
+    },
+    {
+      "name": "owner_name_ja",
+      "type": "string"
+    },
+    {
+      "name": "owner_name_kana",
+      "type": "string | null"
+    },
+    {
+      "name": "owner_name_romaji",
+      "type": "string | null"
+    },
+    {
+      "name": "updated_at",
+      "type": "string | null"
+    },
+    {
+      "name": "updated_by",
+      "type": "string | null"
+    }
+  ],
+  "mold_photos": [
+    {
+      "name": "created_at",
+      "type": "string | null"
+    },
+    {
+      "name": "file_path",
+      "type": "string"
+    },
+    {
+      "name": "notes",
+      "type": "string | null"
+    },
+    {
+      "name": "photo_id",
+      "type": "string"
+    },
+    {
+      "name": "photo_type",
+      "type": "string | null"
+    },
+    {
+      "name": "physical_mold_id",
+      "type": "string | null"
+    },
+    {
+      "name": "taken_by",
+      "type": "string | null"
+    },
+    {
+      "name": "taken_date",
+      "type": "string | null"
+    }
+  ],
+  "mold_return_logs": [
+    {
+      "name": "created_at",
+      "type": "string | null"
+    },
+    {
+      "name": "deadline",
+      "type": "string | null"
+    },
+    {
+      "name": "disposal_request_no",
+      "type": "string | null"
+    },
+    {
+      "name": "drawing_no",
+      "type": "string | null"
+    },
+    {
+      "name": "includes_drawing",
+      "type": "boolean | null"
+    },
+    {
+      "name": "includes_parts",
+      "type": "boolean | null"
+    },
+    {
+      "name": "includes_receipt",
+      "type": "boolean | null"
+    },
+    {
+      "name": "mold_code",
+      "type": "string | null"
+    },
+    {
+      "name": "notes",
+      "type": "string | null"
+    },
+    {
+      "name": "physical_mold_id",
+      "type": "string | null"
+    },
+    {
+      "name": "prepared_by",
+      "type": "string | null"
+    },
+    {
+      "name": "requested_by_company",
+      "type": "string | null"
+    },
+    {
+      "name": "requested_date",
+      "type": "string | null"
+    },
+    {
+      "name": "return_id",
+      "type": "string"
+    },
+    {
+      "name": "shipped_date",
+      "type": "string | null"
+    },
+    {
+      "name": "shipping_cost",
+      "type": "number | null"
+    },
+    {
+      "name": "shipping_slip_no",
+      "type": "string | null"
+    },
+    {
+      "name": "status",
+      "type": "string | null"
+    }
+  ],
+  "mold_revisions": [
+    {
+      "name": "created_at",
+      "type": "string | null"
+    },
+    {
+      "name": "design_revision_id",
+      "type": "string | null"
+    },
+    {
+      "name": "effective_date",
+      "type": "string | null"
+    },
+    {
+      "name": "is_active",
+      "type": "boolean | null"
+    },
+    {
+      "name": "legacy_id",
+      "type": "string | null"
+    },
+    {
+      "name": "legacy_specs",
+      "type": "Json | null"
+    },
+    {
+      "name": "mold_master_id",
+      "type": "string"
+    },
+    {
+      "name": "revision_code",
+      "type": "string | null"
+    },
+    {
+      "name": "revision_id",
+      "type": "string"
+    },
+    {
+      "name": "revision_name",
+      "type": "string"
+    },
+    {
+      "name": "revision_reason",
+      "type": "string | null"
+    },
+    {
+      "name": "updated_at",
+      "type": "string | null"
+    },
+    {
+      "name": "updated_by",
+      "type": "string | null"
+    }
+  ],
+  "omni_custom_cards": [
+    {
+      "name": "created_at",
+      "type": "string | null"
+    },
+    {
+      "name": "id",
+      "type": "string"
+    },
+    {
+      "name": "meaning",
+      "type": "string | null"
+    },
+    {
+      "name": "reading",
+      "type": "string | null"
+    },
+    {
+      "name": "user_id",
+      "type": "string | null"
+    },
+    {
+      "name": "word",
+      "type": "string"
+    }
+  ],
+  "omni_fsrs_cards": [
+    {
+      "name": "card_id",
+      "type": "string"
+    },
+    {
+      "name": "difficulty",
+      "type": "number | null"
+    },
+    {
+      "name": "due",
+      "type": "string | null"
+    },
+    {
+      "name": "reps",
+      "type": "number | null"
+    },
+    {
+      "name": "stability",
+      "type": "number | null"
+    },
+    {
+      "name": "state",
+      "type": "number | null"
+    },
+    {
+      "name": "updated_at",
+      "type": "string | null"
+    },
+    {
+      "name": "user_id",
+      "type": "string"
+    }
+  ],
+  "omni_master_grammar": [
+    {
+      "name": "examples",
+      "type": "Json | null"
+    },
+    {
+      "name": "explanation",
+      "type": "string | null"
+    },
+    {
+      "name": "formation",
+      "type": "string | null"
+    },
+    {
+      "name": "id",
+      "type": "string"
+    },
+    {
+      "name": "level",
+      "type": "string | null"
+    },
+    {
+      "name": "meaning",
+      "type": "string | null"
+    },
+    {
+      "name": "note",
+      "type": "string | null"
+    },
+    {
+      "name": "pattern",
+      "type": "string"
+    },
+    {
+      "name": "updated_at",
+      "type": "string | null"
+    },
+    {
+      "name": "usage",
+      "type": "string | null"
+    },
+    {
+      "name": "vi",
+      "type": "string | null"
+    }
+  ],
+  "omni_master_kanji": [
+    {
+      "name": "id",
+      "type": "string"
+    },
+    {
+      "name": "kanji",
+      "type": "string"
+    },
+    {
+      "name": "kunyomi",
+      "type": "string | null"
+    },
+    {
+      "name": "level",
+      "type": "string | null"
+    },
+    {
+      "name": "meanings",
+      "type": "string | null"
+    },
+    {
+      "name": "onyomi",
+      "type": "string | null"
+    },
+    {
+      "name": "strokes",
+      "type": "number | null"
+    },
+    {
+      "name": "updated_at",
+      "type": "string | null"
+    }
+  ],
+  "omni_master_shadowing": [
+    {
+      "name": "cat",
+      "type": "string | null"
+    },
+    {
+      "name": "id",
+      "type": "string"
+    },
+    {
+      "name": "jp",
+      "type": "string"
+    },
+    {
+      "name": "level",
+      "type": "string | null"
+    },
+    {
+      "name": "point",
+      "type": "string | null"
+    },
+    {
+      "name": "romaji",
+      "type": "string | null"
+    },
+    {
+      "name": "updated_at",
+      "type": "string | null"
+    },
+    {
+      "name": "vi",
+      "type": "string | null"
+    }
+  ],
+  "omni_master_vocab": [
+    {
+      "name": "id",
+      "type": "string"
+    },
+    {
+      "name": "level",
+      "type": "string | null"
+    },
+    {
+      "name": "reading",
+      "type": "string | null"
+    },
+    {
+      "name": "type",
+      "type": "string | null"
+    },
+    {
+      "name": "updated_at",
+      "type": "string | null"
+    },
+    {
+      "name": "vi",
+      "type": "string | null"
+    },
+    {
+      "name": "word",
+      "type": "string"
+    }
+  ],
+  "omni_profiles": [
+    {
+      "name": "current_level",
+      "type": "string | null"
+    },
+    {
+      "name": "current_phase",
+      "type": "number | null"
+    },
+    {
+      "name": "id",
+      "type": "string"
+    },
+    {
+      "name": "target_level",
+      "type": "string | null"
+    },
+    {
+      "name": "updated_at",
+      "type": "string | null"
+    }
+  ],
+  "omni_streaks": [
+    {
+      "name": "last_date",
+      "type": "string | null"
+    },
+    {
+      "name": "streak_count",
+      "type": "number | null"
+    },
+    {
+      "name": "updated_at",
+      "type": "string | null"
+    },
+    {
+      "name": "user_id",
+      "type": "string"
+    }
+  ],
+  "order_lines": [
+    {
+      "name": "charge_type",
+      "type": "string | null"
+    },
+    {
+      "name": "created_at",
+      "type": "string | null"
+    },
+    {
+      "name": "delivery_site_id",
+      "type": "string | null"
+    },
+    {
+      "name": "due_date",
+      "type": "string | null"
+    },
+    {
+      "name": "is_free_sample",
+      "type": "boolean | null"
+    },
+    {
+      "name": "line_id",
+      "type": "string"
+    },
+    {
+      "name": "line_no",
+      "type": "number"
+    },
+    {
+      "name": "line_status",
+      "type": "string | null"
+    },
+    {
+      "name": "material_spec_id",
+      "type": "string | null"
+    },
+    {
+      "name": "notes",
+      "type": "string | null"
+    },
+    {
+      "name": "order_id",
+      "type": "string"
+    },
+    {
+      "name": "priority",
+      "type": "number | null"
+    },
+    {
+      "name": "product_id",
+      "type": "string"
+    },
+    {
+      "name": "quantity",
+      "type": "number"
+    },
+    {
+      "name": "unit",
+      "type": "string | null"
+    },
+    {
+      "name": "updated_at",
+      "type": "string | null"
+    }
+  ],
+  "orders": [
+    {
+      "name": "company_id",
+      "type": "string"
+    },
+    {
+      "name": "company_po",
+      "type": "string | null"
+    },
+    {
+      "name": "created_at",
+      "type": "string | null"
+    },
+    {
+      "name": "customer_order_no",
+      "type": "string | null"
+    },
+    {
+      "name": "customer_product_code",
+      "type": "string | null"
+    },
+    {
+      "name": "legacy_id",
+      "type": "string | null"
+    },
+    {
+      "name": "mold_code_ref",
+      "type": "string | null"
+    },
+    {
+      "name": "notes",
+      "type": "string | null"
+    },
+    {
+      "name": "order_date",
+      "type": "string"
+    },
+    {
+      "name": "order_id",
+      "type": "string"
+    },
+    {
+      "name": "order_no",
+      "type": "string"
+    },
+    {
+      "name": "order_source",
+      "type": "string | null"
+    },
+    {
+      "name": "order_status",
+      "type": "string | null"
+    },
+    {
+      "name": "order_type",
+      "type": "string | null"
+    },
+    {
+      "name": "recipient_name",
+      "type": "string | null"
+    },
+    {
+      "name": "requested_delivery",
+      "type": "string | null"
+    },
+    {
+      "name": "updated_at",
+      "type": "string | null"
+    },
+    {
+      "name": "updated_by",
+      "type": "string | null"
+    }
+  ],
+  "physical_molds": [
+    {
+      "name": "actual_height_mm",
+      "type": "string | null"
+    },
+    {
+      "name": "actual_length_mm",
+      "type": "string | null"
+    },
+    {
+      "name": "actual_weight",
+      "type": "string | null"
+    },
+    {
+      "name": "actual_width_mm",
+      "type": "string | null"
+    },
+    {
+      "name": "cav_type_id",
+      "type": "string | null"
+    },
+    {
+      "name": "copy_number",
+      "type": "number | null"
+    },
+    {
+      "name": "created_at",
+      "type": "string | null"
+    },
+    {
+      "name": "current_rack_layer_id",
+      "type": "string | null"
+    },
+    {
+      "name": "device_status",
+      "type": "string | null"
+    },
+    {
+      "name": "display_name",
+      "type": "string"
+    },
+    {
+      "name": "disposed_date",
+      "type": "string | null"
+    },
+    {
+      "name": "keeper_company_id",
+      "type": "string | null"
+    },
+    {
+      "name": "legacy_id",
+      "type": "string | null"
+    },
+    {
+      "name": "legacy_specs",
+      "type": "Json | null"
+    },
+    {
+      "name": "mold_entry_date",
+      "type": "string | null"
+    },
+    {
+      "name": "mold_revision_id",
+      "type": "string"
+    },
+    {
+      "name": "mold_type",
+      "type": "string | null"
+    },
+    {
+      "name": "notes",
+      "type": "string | null"
+    },
+    {
+      "name": "on_checklist",
+      "type": "boolean | null"
+    },
+    {
+      "name": "physical_mold_id",
+      "type": "string"
+    },
+    {
+      "name": "physical_stamp",
+      "type": "string | null"
+    },
+    {
+      "name": "piece_count",
+      "type": "number | null"
+    },
+    {
+      "name": "qr_uuid",
+      "type": "string | null"
+    },
+    {
+      "name": "returned_date",
+      "type": "string | null"
+    },
+    {
+      "name": "system_code",
+      "type": "string"
+    },
+    {
+      "name": "updated_at",
+      "type": "string | null"
+    },
+    {
+      "name": "updated_by",
+      "type": "string | null"
+    },
+    {
+      "name": "usage_status",
+      "type": "string | null"
+    }
+  ],
+  "plugs": [
+    {
+      "name": "created_at",
+      "type": "string | null"
+    },
+    {
+      "name": "current_rack_layer_id",
+      "type": "string | null"
+    },
+    {
+      "name": "material",
+      "type": "string | null"
+    },
+    {
+      "name": "mold_master_id",
+      "type": "string | null"
+    },
+    {
+      "name": "notes",
+      "type": "string | null"
+    },
+    {
+      "name": "plug_code",
+      "type": "string"
+    },
+    {
+      "name": "plug_id",
+      "type": "string"
+    },
+    {
+      "name": "plug_name",
+      "type": "string"
+    },
+    {
+      "name": "status",
+      "type": "string | null"
+    },
+    {
+      "name": "updated_at",
+      "type": "string | null"
+    }
+  ],
+  "processing_codes": [
+    {
+      "name": "category",
+      "type": "string | null"
+    },
+    {
+      "name": "created_at",
+      "type": "string | null"
+    },
+    {
+      "name": "is_active",
+      "type": "boolean | null"
+    },
+    {
+      "name": "processing_code_id",
+      "type": "number"
+    },
+    {
+      "name": "processing_name",
+      "type": "string"
+    },
+    {
+      "name": "sort_note",
+      "type": "number | null"
+    },
+    {
+      "name": "updated_at",
+      "type": "string | null"
+    }
+  ],
+  "processing_items": [
+    {
+      "name": "description",
+      "type": "string | null"
+    },
+    {
+      "name": "item_name",
+      "type": "string"
+    },
+    {
+      "name": "notes",
+      "type": "string | null"
+    },
+    {
+      "name": "processing_item_id",
+      "type": "number"
+    }
+  ],
+  "processing_statuses": [
+    {
+      "name": "status_code",
+      "type": "string"
+    },
+    {
+      "name": "status_id",
+      "type": "number"
+    },
+    {
+      "name": "status_name_vi",
+      "type": "string | null"
+    }
+  ],
+  "product_material_specs": [
+    {
+      "name": "coating",
+      "type": "string | null"
+    },
+    {
+      "name": "component_name",
+      "type": "string | null"
+    },
+    {
+      "name": "created_at",
+      "type": "string | null"
+    },
+    {
+      "name": "handling_notes",
+      "type": "string | null"
+    },
+    {
+      "name": "is_default",
+      "type": "boolean | null"
+    },
+    {
+      "name": "material_grade",
+      "type": "string | null"
+    },
+    {
+      "name": "material_type",
+      "type": "string"
+    },
+    {
+      "name": "notes",
+      "type": "string | null"
+    },
+    {
+      "name": "product_id",
+      "type": "string"
+    },
+    {
+      "name": "sheet_width_mm",
+      "type": "number | null"
+    },
+    {
+      "name": "silicone",
+      "type": "string | null"
+    },
+    {
+      "name": "spec_id",
+      "type": "string"
+    },
+    {
+      "name": "static_charge",
+      "type": "string | null"
+    },
+    {
+      "name": "thickness_mm",
+      "type": "number | null"
+    },
+    {
+      "name": "updated_at",
+      "type": "string | null"
+    }
+  ],
+  "production_logs": [
+    {
+      "name": "created_at",
+      "type": "string | null"
+    },
+    {
+      "name": "defect_quantity",
+      "type": "number | null"
+    },
+    {
+      "name": "end_time",
+      "type": "string | null"
+    },
+    {
+      "name": "forming_params_json",
+      "type": "Json | null"
+    },
+    {
+      "name": "log_date",
+      "type": "string"
+    },
+    {
+      "name": "log_id",
+      "type": "string"
+    },
+    {
+      "name": "lot_id",
+      "type": "string | null"
+    },
+    {
+      "name": "machine_id",
+      "type": "string | null"
+    },
+    {
+      "name": "notes",
+      "type": "string | null"
+    },
+    {
+      "name": "operator_id",
+      "type": "string | null"
+    },
+    {
+      "name": "output_quantity",
+      "type": "number | null"
+    },
+    {
+      "name": "po_id",
+      "type": "string | null"
+    },
+    {
+      "name": "start_time",
+      "type": "string | null"
+    }
+  ],
+  "production_lots": [
+    {
+      "name": "created_at",
+      "type": "string | null"
+    },
+    {
+      "name": "end_time",
+      "type": "string | null"
+    },
+    {
+      "name": "good_quantity",
+      "type": "number | null"
+    },
+    {
+      "name": "input_quantity",
+      "type": "number | null"
+    },
+    {
+      "name": "lot_id",
+      "type": "string"
+    },
+    {
+      "name": "lot_no",
+      "type": "string"
+    },
+    {
+      "name": "lot_status",
+      "type": "string | null"
+    },
+    {
+      "name": "machine_id",
+      "type": "string | null"
+    },
+    {
+      "name": "ng_quantity",
+      "type": "number | null"
+    },
+    {
+      "name": "notes",
+      "type": "string | null"
+    },
+    {
+      "name": "operator_id",
+      "type": "string | null"
+    },
+    {
+      "name": "package_spec",
+      "type": "string | null"
+    },
+    {
+      "name": "po_id",
+      "type": "string"
+    },
+    {
+      "name": "scrap_quantity",
+      "type": "number | null"
+    },
+    {
+      "name": "ship_date",
+      "type": "string | null"
+    },
+    {
+      "name": "start_time",
+      "type": "string | null"
+    },
+    {
+      "name": "updated_at",
+      "type": "string | null"
+    }
+  ],
+  "production_orders": [
+    {
+      "name": "actual_end",
+      "type": "string | null"
+    },
+    {
+      "name": "actual_quantity",
+      "type": "number | null"
+    },
+    {
+      "name": "actual_start",
+      "type": "string | null"
+    },
+    {
+      "name": "created_at",
+      "type": "string | null"
+    },
+    {
+      "name": "cutter_id",
+      "type": "string | null"
+    },
+    {
+      "name": "forming_location",
+      "type": "string | null"
+    },
+    {
+      "name": "machine_id",
+      "type": "string | null"
+    },
+    {
+      "name": "material_thickness",
+      "type": "number | null"
+    },
+    {
+      "name": "material_type",
+      "type": "string | null"
+    },
+    {
+      "name": "material_width",
+      "type": "number | null"
+    },
+    {
+      "name": "notes",
+      "type": "string | null"
+    },
+    {
+      "name": "order_line_id",
+      "type": "string | null"
+    },
+    {
+      "name": "physical_mold_id",
+      "type": "string | null"
+    },
+    {
+      "name": "planned_end",
+      "type": "string | null"
+    },
+    {
+      "name": "planned_quantity",
+      "type": "number | null"
+    },
+    {
+      "name": "planned_start",
+      "type": "string | null"
+    },
+    {
+      "name": "po_code",
+      "type": "string"
+    },
+    {
+      "name": "po_id",
+      "type": "string"
+    },
+    {
+      "name": "po_status",
+      "type": "string | null"
+    },
+    {
+      "name": "priority",
+      "type": "number | null"
+    },
+    {
+      "name": "updated_at",
+      "type": "string | null"
+    },
+    {
+      "name": "updated_by",
+      "type": "string | null"
+    }
+  ],
+  "production_schedules": [
+    {
+      "name": "created_at",
+      "type": "string | null"
+    },
+    {
+      "name": "machine_id",
+      "type": "string"
+    },
+    {
+      "name": "mold_id",
+      "type": "string | null"
+    },
+    {
+      "name": "notes",
+      "type": "string | null"
+    },
+    {
+      "name": "planned_quantity",
+      "type": "number | null"
+    },
+    {
+      "name": "product_id",
+      "type": "string | null"
+    },
+    {
+      "name": "schedule_date",
+      "type": "string"
+    },
+    {
+      "name": "schedule_id",
+      "type": "string"
+    },
+    {
+      "name": "shift",
+      "type": "string | null"
+    },
+    {
+      "name": "status",
+      "type": "string | null"
+    },
+    {
+      "name": "updated_at",
+      "type": "string | null"
+    }
+  ],
+  "products": [
+    {
+      "name": "box_spec",
+      "type": "string | null"
+    },
+    {
+      "name": "company_id",
+      "type": "string"
+    },
+    {
+      "name": "company_pn",
+      "type": "string | null"
+    },
+    {
+      "name": "created_at",
+      "type": "string | null"
+    },
+    {
+      "name": "date_entry",
+      "type": "string | null"
+    },
+    {
+      "name": "legacy_id",
+      "type": "string | null"
+    },
+    {
+      "name": "legacy_specs",
+      "type": "Json | null"
+    },
+    {
+      "name": "mold_master_id",
+      "type": "string | null"
+    },
+    {
+      "name": "notes",
+      "type": "string | null"
+    },
+    {
+      "name": "pieces_per_box",
+      "type": "number | null"
+    },
+    {
+      "name": "pocket_count",
+      "type": "number | null"
+    },
+    {
+      "name": "product_code",
+      "type": "string"
+    },
+    {
+      "name": "product_id",
+      "type": "string"
+    },
+    {
+      "name": "product_name",
+      "type": "string | null"
+    },
+    {
+      "name": "product_name_en",
+      "type": "string | null"
+    },
+    {
+      "name": "product_name_internal",
+      "type": "string | null"
+    },
+    {
+      "name": "product_status",
+      "type": "string | null"
+    },
+    {
+      "name": "updated_at",
+      "type": "string | null"
+    },
+    {
+      "name": "updated_by",
+      "type": "string | null"
+    }
+  ],
+  "quotations": [
+    {
+      "name": "company_id",
+      "type": "string"
+    },
+    {
+      "name": "created_at",
+      "type": "string | null"
+    },
+    {
+      "name": "file_path",
+      "type": "string | null"
+    },
+    {
+      "name": "notes",
+      "type": "string | null"
+    },
+    {
+      "name": "quotation_id",
+      "type": "string"
+    },
+    {
+      "name": "quotation_no",
+      "type": "string"
+    },
+    {
+      "name": "quote_date",
+      "type": "string"
+    },
+    {
+      "name": "status",
+      "type": "string | null"
+    },
+    {
+      "name": "total_amount",
+      "type": "number | null"
+    },
+    {
+      "name": "updated_at",
+      "type": "string | null"
+    },
+    {
+      "name": "valid_until",
+      "type": "string | null"
+    }
+  ],
+  "rack_layers": [
+    {
+      "name": "id",
+      "type": "string"
+    },
+    {
+      "name": "layer_code",
+      "type": "string"
+    },
+    {
+      "name": "layer_number",
+      "type": "number"
+    },
+    {
+      "name": "legacy_id",
+      "type": "string | null"
+    },
+    {
+      "name": "notes",
+      "type": "string | null"
+    },
+    {
+      "name": "rack_id",
+      "type": "string | null"
+    }
+  ],
+  "racks": [
+    {
+      "name": "created_at",
+      "type": "string | null"
+    },
+    {
+      "name": "id",
+      "type": "string"
+    },
+    {
+      "name": "legacy_id",
+      "type": "string | null"
+    },
+    {
+      "name": "location_in_factory",
+      "type": "string | null"
+    },
+    {
+      "name": "notes",
+      "type": "string | null"
+    },
+    {
+      "name": "rack_code",
+      "type": "string"
+    },
+    {
+      "name": "rack_name",
+      "type": "string | null"
+    }
+  ],
+  "sample_submissions": [
+    {
+      "name": "company_result",
+      "type": "string | null"
+    },
+    {
+      "name": "created_at",
+      "type": "string | null"
+    },
+    {
+      "name": "delivery_company",
+      "type": "string | null"
+    },
+    {
+      "name": "feedback_date",
+      "type": "string | null"
+    },
+    {
+      "name": "feedback_notes",
+      "type": "string | null"
+    },
+    {
+      "name": "free_quantity",
+      "type": "number | null"
+    },
+    {
+      "name": "job_id",
+      "type": "string | null"
+    },
+    {
+      "name": "mass_production_hold",
+      "type": "boolean | null"
+    },
+    {
+      "name": "mass_production_released",
+      "type": "string | null"
+    },
+    {
+      "name": "materials_json",
+      "type": "Json | null"
+    },
+    {
+      "name": "mold_owner_id",
+      "type": "string | null"
+    },
+    {
+      "name": "notes",
+      "type": "string | null"
+    },
+    {
+      "name": "office_quantity",
+      "type": "number | null"
+    },
+    {
+      "name": "product_id",
+      "type": "string | null"
+    },
+    {
+      "name": "sample_quantity",
+      "type": "number | null"
+    },
+    {
+      "name": "sample_type",
+      "type": "string | null"
+    },
+    {
+      "name": "shipped_date",
+      "type": "string | null"
+    },
+    {
+      "name": "submission_id",
+      "type": "string"
+    },
+    {
+      "name": "tracking_no",
+      "type": "string | null"
+    }
+  ],
+  "shipments": [
+    {
+      "name": "created_at",
+      "type": "string | null"
+    },
+    {
+      "name": "delivery_method",
+      "type": "string | null"
+    },
+    {
+      "name": "delivery_note_no",
+      "type": "string | null"
+    },
+    {
+      "name": "delivery_site_id",
+      "type": "string | null"
+    },
+    {
+      "name": "invoice_no",
+      "type": "string | null"
+    },
+    {
+      "name": "notes",
+      "type": "string | null"
+    },
+    {
+      "name": "order_id",
+      "type": "string | null"
+    },
+    {
+      "name": "ship_date",
+      "type": "string"
+    },
+    {
+      "name": "shipment_id",
+      "type": "string"
+    },
+    {
+      "name": "shipped_by",
+      "type": "string | null"
+    },
+    {
+      "name": "status",
+      "type": "string | null"
+    },
+    {
+      "name": "tracking_no",
+      "type": "string | null"
+    },
+    {
+      "name": "updated_at",
+      "type": "string | null"
+    }
+  ],
+  "standard_process_times": [
+    {
+      "name": "default_hours",
+      "type": "number"
+    },
+    {
+      "name": "default_hours_trial",
+      "type": "number | null"
+    },
+    {
+      "name": "id",
+      "type": "string"
+    },
+    {
+      "name": "is_active",
+      "type": "boolean | null"
+    },
+    {
+      "name": "machine_type_required",
+      "type": "string | null"
+    },
+    {
+      "name": "notes",
+      "type": "string | null"
+    },
+    {
+      "name": "process_code",
+      "type": "string"
+    },
+    {
+      "name": "process_name_ja",
+      "type": "string"
+    },
+    {
+      "name": "process_name_vi",
+      "type": "string | null"
+    },
+    {
+      "name": "sort_order",
+      "type": "number"
+    },
+    {
+      "name": "track",
+      "type": "string"
+    }
+  ],
+  "tray_inspections": [
+    {
+      "name": "certificate_file",
+      "type": "string | null"
+    },
+    {
+      "name": "certificate_no",
+      "type": "string | null"
+    },
+    {
+      "name": "certificate_type",
+      "type": "string | null"
+    },
+    {
+      "name": "company_approved",
+      "type": "boolean | null"
+    },
+    {
+      "name": "company_approved_date",
+      "type": "string | null"
+    },
+    {
+      "name": "created_at",
+      "type": "string | null"
+    },
+    {
+      "name": "inspected_by",
+      "type": "string | null"
+    },
+    {
+      "name": "inspected_date",
+      "type": "string | null"
+    },
+    {
+      "name": "inspection_id",
+      "type": "string"
+    },
+    {
+      "name": "inspection_stage",
+      "type": "string | null"
+    },
+    {
+      "name": "inspection_type",
+      "type": "string"
+    },
+    {
+      "name": "issued_by",
+      "type": "string | null"
+    },
+    {
+      "name": "issued_date",
+      "type": "string | null"
+    },
+    {
+      "name": "job_id",
+      "type": "string | null"
+    },
+    {
+      "name": "measurement_data",
+      "type": "Json | null"
+    },
+    {
+      "name": "notes",
+      "type": "string | null"
+    },
+    {
+      "name": "pass_fail",
+      "type": "string | null"
+    },
+    {
+      "name": "product_id",
+      "type": "string | null"
+    },
+    {
+      "name": "tolerance_data",
+      "type": "Json | null"
+    }
+  ],
+  "tray_samples": [
+    {
+      "name": "created_at",
+      "type": "string | null"
+    },
+    {
+      "name": "current_rack_layer_id",
+      "type": "string | null"
+    },
+    {
+      "name": "id",
+      "type": "string"
+    },
+    {
+      "name": "is_approved",
+      "type": "boolean | null"
+    },
+    {
+      "name": "job_id",
+      "type": "string | null"
+    },
+    {
+      "name": "measured_weight_g",
+      "type": "number | null"
+    },
+    {
+      "name": "measurement_data",
+      "type": "Json | null"
+    },
+    {
+      "name": "product_id",
+      "type": "string | null"
+    },
+    {
+      "name": "taken_by",
+      "type": "string | null"
+    }
+  ],
+  "work_logs": [
+    {
+      "name": "company_id",
+      "type": "string | null"
+    },
+    {
+      "name": "contact_content",
+      "type": "string | null"
+    },
+    {
+      "name": "created_at",
+      "type": "string | null"
+    },
+    {
+      "name": "description",
+      "type": "string | null"
+    },
+    {
+      "name": "employee_id",
+      "type": "string | null"
+    },
+    {
+      "name": "hours_spent",
+      "type": "number | null"
+    },
+    {
+      "name": "is_finished",
+      "type": "boolean | null"
+    },
+    {
+      "name": "job_id",
+      "type": "string"
+    },
+    {
+      "name": "job_step_id",
+      "type": "string | null"
+    },
+    {
+      "name": "log_id",
+      "type": "string"
+    },
+    {
+      "name": "notes",
+      "type": "string | null"
+    },
+    {
+      "name": "processing_code_id",
+      "type": "number | null"
+    },
+    {
+      "name": "quantity_done",
+      "type": "number | null"
+    },
+    {
+      "name": "work_date",
+      "type": "string | null"
+    },
+    {
+      "name": "machine_id",
+      "type": "string | null"
+    },
+    {
+      "name": "planned_date",
+      "type": "string | null"
+    },
+    {
+      "name": "planned_hours",
+      "type": "number | null"
+    }
+  ]
+}

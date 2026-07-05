@@ -1,0 +1,225 @@
+'use client'
+
+import { CheckCircle2, Circle, Clock, ArrowUp, ArrowDown, ArrowUpDown, Pencil, Trash2, Plus } from 'lucide-react'
+import { useState } from 'react'
+import { createClient } from '@/lib/supabase/client'
+import { EditStepModal } from './EditStepModal'
+
+const STEP_STATUS_MAP: Record<string, { ja: string; color: string }> = {
+  PENDING:     { ja: '未着手', color: 'var(--text-muted)' },
+  IN_PROGRESS: { ja: '進行中', color: 'var(--status-warning)' },
+  COMPLETED:   { ja: '完了',   color: 'var(--status-success)' },
+}
+
+export function StepsTab({ job, onRefresh }: { job: any; onRefresh?: () => void }) {
+  const steps = [...(job.job_steps || [])].sort((a: any, b: any) => a.step_no - b.step_no)
+  const supabase = createClient()
+
+  const [sortCol, setSortCol] = useState('step_no')
+  const [sortDir, setSortDir] = useState<'asc'|'desc'>('asc')
+  
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [activeStep, setActiveStep] = useState<any | null>(null)
+  const [deleting, setDeleting] = useState<string | null>(null)
+
+  const handleSort = (col: string) => {
+    if (sortCol === col) {
+      setSortDir(prev => prev === 'asc' ? 'desc' : 'asc')
+    } else {
+      setSortCol(col)
+      setSortDir('asc')
+    }
+  }
+
+  const sortedSteps = [...steps].sort((a: any, b: any) => {
+    const av = a[sortCol]
+    const bv = b[sortCol]
+    if (av == null && bv == null) return 0
+    if (av == null) return 1
+    if (bv == null) return -1
+    const cmp = av < bv ? -1 : av > bv ? 1 : 0
+    return sortDir === 'asc' ? cmp : -cmp
+  })
+
+  const SortIcon = ({ col }: { col: string }) => {
+    if (sortCol !== col) return <ArrowUpDown size={11} style={{ color: 'var(--text-muted)', opacity: 0.5 }} />
+    return sortDir === 'asc' ? <ArrowUp size={11} /> : <ArrowDown size={11} />
+  }
+
+  const SortTh = ({ col, ja, vi, style }: { col: string; ja: string; vi: string; style?: React.CSSProperties }) => (
+    <th style={{ ...style, cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSort(col)}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+        <div>
+          <span className="ja">{ja}</span>
+          <span className="vi">{vi}</span>
+        </div>
+        <SortIcon col={col} />
+      </div>
+    </th>
+  )
+
+  const openCreateModal = () => {
+    setActiveStep(null)
+    setIsModalOpen(true)
+  }
+
+  const openEditModal = (step: any) => {
+    setActiveStep(step)
+    setIsModalOpen(true)
+  }
+
+  const handleDelete = async (e: React.MouseEvent, stepId: string, stepName: string) => {
+    e.stopPropagation()
+    if (!window.confirm(`「${stepName}」を削除してもよろしいですか？\nBạn có chắc chắn muốn xóa công đoạn này?`)) {
+      return
+    }
+    
+    setDeleting(stepId)
+    const { error } = await supabase.from('job_steps').delete().eq('step_id', stepId)
+    setDeleting(null)
+    
+    if (error) {
+      alert('削除に失敗しました / Xóa thất bại: ' + error.message)
+    } else {
+      onRefresh?.()
+    }
+  }
+
+  const handleStepSaved = () => {
+    setIsModalOpen(false)
+    onRefresh?.()
+  }
+
+  const nextStepNo = steps.length > 0 ? Math.max(...steps.map(s => s.step_no)) + 1 : 1
+
+  return (
+    <>
+      <div className="card-flat" style={{ padding: 0, overflow: 'hidden' }}>
+        <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-default)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 6 }}>
+            <Clock size={16} style={{ color: 'var(--accent)' }} />
+            <span className="ja">工程一覧</span>
+            <span className="vi" style={{ marginLeft: 4 }}>Danh sách công đoạn</span>
+          </h3>
+          <button className="btn btn-primary text-xs" onClick={openCreateModal}>
+            <Plus size={14} />
+            <span className="ja">新規工程</span>
+            <span className="vi">Thêm công đoạn</span>
+          </button>
+        </div>
+        
+        <div style={{ overflowX: 'auto' }}>
+          <table className="data-table">
+            <thead>
+              <tr>
+                <SortTh col="step_no" ja="No." vi="STT" style={{ width: 55, textAlign: 'center' }} />
+                <SortTh col="step_name" ja="工程名" vi="Tên công đoạn" style={{ width: 180 }} />
+                <th style={{ width: 80 }}>
+                  <span className="ja">トラック</span>
+                  <span className="vi">Track</span>
+                </th>
+                <SortTh col="step_status" ja="状態" vi="Trạng thái" style={{ width: 100 }} />
+                <SortTh col="planned_start" ja="予定開始" vi="Bắt đầu DK" style={{ width: 110 }} />
+                <SortTh col="planned_end" ja="予定終了" vi="Kết thúc DK" style={{ width: 110 }} />
+                <SortTh col="planned_hours" ja="予定時間" vi="Giờ DK" style={{ width: 80 }} />
+                <SortTh col="actual_hours" ja="実績時間" vi="Giờ TT" style={{ width: 80 }} />
+                <SortTh col="deadline" ja="期限" vi="Hạn" style={{ width: 100 }} />
+                <th style={{ width: 70 }}></th>
+              </tr>
+            </thead>
+            <tbody>
+              {sortedSteps.length === 0 ? (
+                <tr>
+                  <td colSpan={10} style={{ padding: 40, textAlign: 'center', color: 'var(--text-muted)' }}>
+                    工程がありません / Không có công đoạn nào.
+                  </td>
+                </tr>
+              ) : (
+                sortedSteps.map((step: any) => {
+                  const isCompleted = step.step_status === 'COMPLETED'
+                  const isRunning = step.step_status === 'IN_PROGRESS'
+                  const stLabel = STEP_STATUS_MAP[step.step_status || ''] || STEP_STATUS_MAP['PENDING']
+                  
+                  return (
+                    <tr
+                      key={step.step_id}
+                      style={{ cursor: 'pointer', opacity: deleting === step.step_id ? 0.5 : 1 }}
+                      onClick={() => openEditModal(step)}
+                      title="クリックして編集 / Bấm để chỉnh sửa"
+                    >
+                      <td style={{ textAlign: 'center', color: 'var(--text-muted)' }}>{step.step_no}</td>
+                      <td style={{ fontWeight: 600 }}>{step.step_name}</td>
+                      <td>
+                        <span className="badge" style={{ backgroundColor: 'var(--bg-surface-3)', color: 'var(--text-primary)' }}>
+                          {step.track || '—'}
+                        </span>
+                      </td>
+                      <td>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: stLabel.color }}>
+                          {isCompleted ? <CheckCircle2 size={14} /> : <Circle size={14} />}
+                          <span style={{ fontWeight: isCompleted || isRunning ? 600 : 400 }}>
+                            {step.processing_statuses?.status_code || stLabel.ja}
+                          </span>
+                        </div>
+                      </td>
+                      <td>
+                        {step.planned_start ? new Date(step.planned_start).toLocaleDateString('ja-JP') : '—'}
+                      </td>
+                      <td>
+                        {step.planned_end ? new Date(step.planned_end).toLocaleDateString('ja-JP') : '—'}
+                      </td>
+                      <td style={{ fontFamily: 'monospace' }}>
+                        {step.planned_hours != null ? (
+                          `${step.planned_hours}h`
+                        ) : step.estimated_hours != null ? (
+                          <span style={{ color: 'var(--text-muted)', fontStyle: 'italic', opacity: 0.7 }}>({step.estimated_hours}h)</span>
+                        ) : '—'}
+                      </td>
+                      <td style={{ fontFamily: 'monospace' }}>
+                        {step.actual_hours != null ? `${step.actual_hours}h` : '—'}
+                      </td>
+                      <td>
+                        {step.deadline ? new Date(step.deadline).toLocaleDateString('ja-JP') : '—'}
+                      </td>
+                      <td>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 4, justifyContent: 'flex-end' }}>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); openEditModal(step) }}
+                            className="btn-icon"
+                            style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: 4 }}
+                            title="編集 / Sửa"
+                          >
+                            <Pencil size={14} />
+                          </button>
+                          <button
+                            onClick={(e) => handleDelete(e, step.step_id, step.step_name)}
+                            className="btn-icon hover-danger"
+                            style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: 4 }}
+                            title="削除 / Xóa"
+                            disabled={deleting === step.step_id}
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {isModalOpen && (
+        <EditStepModal
+          step={activeStep}
+          jobId={job.job_id}
+          nextStepNo={nextStepNo}
+          onClose={() => setIsModalOpen(false)}
+          onSaved={handleStepSaved}
+        />
+      )}
+    </>
+  )
+}

@@ -1,0 +1,408 @@
+'use client'
+
+import { useState, useEffect, useCallback } from 'react'
+import { createClient } from '@/lib/supabase/client'
+import { upsertUnifiedMold, type UnifiedMoldPayload } from '@/app/actions/mold'
+import { CustomerSearchInput } from '@/components/order/CustomerSearchInput'
+
+type Section = 'BASE' | 'DESIGN' | 'PHYSICAL'
+
+interface Props {
+  isOpen: boolean
+  onClose: () => void
+  editPhysicalId?: string | null
+  customers: any[]
+  itemTypes: any[]
+  racks: any[]
+  allLayers: any[]
+}
+
+const SECTIONS: { id: Section; jp: string; vi: string; icon: string }[] = [
+  { id: 'BASE', jp: '基本情報', vi: 'Thông tin gốc', icon: '🏭' },
+  { id: 'DESIGN', jp: '設計仕様', vi: 'Thiết kế', icon: '📐' },
+  { id: 'PHYSICAL', jp: '物理資産', vi: 'Tài sản', icon: '📦' },
+]
+
+const inputCls = 'w-full min-h-[40px] px-3 border border-slate-300 rounded-lg bg-white text-sm focus:border-teal-500 focus:ring-1 focus:ring-teal-500 outline-none transition-colors'
+const labelCls = 'text-xs font-bold text-slate-500 mb-1 flex items-baseline gap-1'
+
+export default function UnifiedMoldDrawer({ isOpen, onClose, editPhysicalId, customers, itemTypes, racks, allLayers }: Props) {
+  const [activeSection, setActiveSection] = useState<Section>('BASE')
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [createNewRevision, setCreateNewRevision] = useState(false)
+
+  // Form state
+  const [form, setForm] = useState<UnifiedMoldPayload>({
+    code: '', name: '', company_id: '', mold_class: '', base_notes: '',
+    design_for_plastic_type: '', cutline_x: null, cutline_y: null, corner_r: '', chamfer_c: '',
+    pocket_numbers: null, pitch: null, under_depth: null, under_angle: '', draft_angle: '',
+    mold_orientation: '', mold_setup_type: '', separate_cutter: false, plug: false,
+    customer_drawing_no: '', customer_equipment_no: '', customer_tray_name: '', tray_info: '',
+    design_length: null, design_width: null, design_height: null, design_depth: null,
+    design_weight: null, piece_count: null, cavid: '', data_input: '', text_content: '',
+    physical_code: '', cavity: 1, item_type_id: '', rack_layer_id: '', status: 'ACTIVE',
+    keeper_company: '', physical_notes: '',
+  })
+
+  const [selectedRackId, setSelectedRackId] = useState('')
+  const filteredLayers = allLayers.filter(l => l.rack_id === selectedRackId)
+
+  const isEditMode = !!editPhysicalId
+
+  // Load existing data for edit
+  useEffect(() => {
+    if (!isOpen || !editPhysicalId) return
+    setLoading(true)
+    const supabase = createClient()
+    supabase.from('physical_molds').select(`*, mold_revisions (*, products (*)), cav_types (id, cav_name), rack_layers (id, code, label, rack_id)`)
+      .eq('physical_mold_id', editPhysicalId).single()
+      .then(({ data }) => {
+        if (!data) { setLoading(false); return }
+        const rev = Array.isArray(data.mold_revisions) ? data.mold_revisions[0] : data.mold_revisions
+        const base = rev?.products
+        const rl = Array.isArray(data.rack_layers) ? data.rack_layers[0] : data.rack_layers
+
+        setForm({
+          code: base?.product_code || '', name: base?.product_name_internal || '', company_id: base?.company_id || '',
+          mold_class: base?.mold_class || '', base_notes: base?.notes || '',
+          design_for_plastic_type: rev?.design_for_plastic_type || '',
+          cutline_x: rev?.cutline_x, cutline_y: rev?.cutline_y,
+          corner_r: rev?.corner_r || '', chamfer_c: rev?.chamfer_c || '',
+          pocket_numbers: rev?.pocket_numbers, pitch: rev?.pitch, under_depth: rev?.under_depth,
+          under_angle: rev?.under_angle || '', draft_angle: rev?.draft_angle || '',
+          mold_orientation: rev?.mold_orientation || '', mold_setup_type: rev?.mold_setup_type || '',
+          separate_cutter: rev?.separate_cutter || false, plug: rev?.plug || false,
+          customer_drawing_no: rev?.customer_drawing_no || '', customer_equipment_no: rev?.customer_equipment_no || '',
+          customer_tray_name: rev?.customer_tray_name || '', tray_info: rev?.tray_info || '',
+          design_length: rev?.design_length, design_width: rev?.design_width,
+          design_height: rev?.design_height, design_depth: rev?.design_depth,
+          design_weight: rev?.design_weight, piece_count: rev?.piece_count,
+          cavid: rev?.cavid || '', data_input: rev?.data_input || '', text_content: rev?.text_content || '',
+          physical_code: data.system_code || '', cavity: 1,
+          item_type_id: data.cav_type_id || '', rack_layer_id: data.current_rack_layer_id || '',
+          status: data.device_status || 'ACTIVE', keeper_company: data.keeper_company_id || '',
+          physical_notes: data.notes || '',
+          existing_base_id: base?.product_id, existing_revision_id: rev?.revision_id, existing_physical_id: data.physical_mold_id,
+        })
+        if (rl?.rack_id) setSelectedRackId(rl.rack_id)
+        setLoading(false)
+      })
+  }, [isOpen, editPhysicalId])
+
+  // Reset on close
+  useEffect(() => {
+    if (!isOpen) {
+      setActiveSection('BASE')
+      setError(null)
+      setSuccess(false)
+      setCreateNewRevision(false)
+      setSelectedRackId('')
+      setForm({ code: '', name: '', company_id: '', mold_class: '', base_notes: '',
+        design_for_plastic_type: '', cutline_x: null, cutline_y: null, corner_r: '', chamfer_c: '',
+        pocket_numbers: null, pitch: null, under_depth: null, under_angle: '', draft_angle: '',
+        mold_orientation: '', mold_setup_type: '', separate_cutter: false, plug: false,
+        customer_drawing_no: '', customer_equipment_no: '', customer_tray_name: '', tray_info: '',
+        design_length: null, design_width: null, design_height: null, design_depth: null,
+        design_weight: null, piece_count: null, cavid: '', data_input: '', text_content: '',
+        physical_code: '', cavity: 1, item_type_id: '', rack_layer_id: '', status: 'ACTIVE',
+        keeper_company: '', physical_notes: '' })
+    }
+  }, [isOpen])
+
+  const updateField = useCallback((field: string, value: any) => {
+    setForm(prev => ({ ...prev, [field]: value }))
+  }, [])
+
+  const handleSubmit = async () => {
+    if (!form.code.trim()) { setError('Mã khuôn (コード) là bắt buộc'); setActiveSection('BASE'); return }
+    setIsSubmitting(true)
+    setError(null)
+    const result = await upsertUnifiedMold({ ...form, create_new_revision: createNewRevision })
+    setIsSubmitting(false)
+    if (result.success) {
+      setSuccess(true)
+      setTimeout(() => onClose(), 1200)
+    } else {
+      setError(result.error || 'Lỗi không xác định')
+    }
+  }
+
+  // Escape key
+  useEffect(() => {
+    const h = (e: KeyboardEvent) => { if (e.key === 'Escape' && !isSubmitting) onClose() }
+    if (isOpen) window.addEventListener('keydown', h)
+    return () => window.removeEventListener('keydown', h)
+  }, [isOpen, isSubmitting, onClose])
+
+  if (!isOpen) return null
+
+  const renderNumInput = (label: string, jp: string, field: string, unit?: string) => (
+    <div className="flex flex-col">
+      <label className={labelCls}><span>{jp}</span><span className="text-[10px] opacity-60">{label}</span></label>
+      <div className="relative">
+        <input type="number" step="any" value={(form as any)[field] ?? ''} onChange={e => updateField(field, e.target.value === '' ? null : Number(e.target.value))} className={inputCls} disabled={isSubmitting} />
+        {unit && <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400">{unit}</span>}
+      </div>
+    </div>
+  )
+
+  const renderTextInput = (label: string, jp: string, field: string, required?: boolean) => (
+    <div className="flex flex-col">
+      <label className={labelCls}><span>{jp}{required ? ' *' : ''}</span><span className="text-[10px] opacity-60">{label}</span></label>
+      <input type="text" value={(form as any)[field] || ''} onChange={e => updateField(field, e.target.value)} className={inputCls} disabled={isSubmitting} />
+    </div>
+  )
+
+  return (
+    <>
+      <div className="fixed inset-0 bg-slate-900/50 z-40 backdrop-blur-sm" onClick={onClose} />
+
+      <div className="fixed inset-y-0 right-0 z-50 w-full md:w-[700px] bg-white shadow-2xl flex flex-col border-l border-slate-200">
+        {/* Header */}
+        <div className="bg-gradient-to-r from-teal-700 to-teal-600 text-white p-4 flex items-center justify-between shadow-lg">
+          <div>
+            <div className="text-teal-200 text-[10px] font-bold tracking-widest mb-0.5">
+              {isEditMode ? '金型編集 / CHỈNH SỬA KHUÔN' : '金型登録 / TẠO KHUÔN MỚI'}
+            </div>
+            <h2 className="text-lg font-bold">{form.code || '新規 (Mới)'}</h2>
+          </div>
+          <button onClick={onClose} className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-white/20 transition-colors text-lg">✕</button>
+        </div>
+
+        {/* Section Nav */}
+        <div className="flex border-b border-slate-200 bg-slate-50 shrink-0">
+          {SECTIONS.map((s, i) => (
+            <button key={s.id} onClick={() => setActiveSection(s.id)}
+              className={`flex-1 py-2.5 flex flex-col items-center gap-0.5 border-b-2 transition-all ${
+                activeSection === s.id ? 'border-teal-600 bg-white text-teal-700' : 'border-transparent text-slate-500 hover:bg-slate-100'
+              }`}>
+              <span className="text-base">{s.icon}</span>
+              <span className="text-[10px] font-bold">{s.jp}</span>
+              <span className="text-[9px] opacity-60">{s.vi}</span>
+            </button>
+          ))}
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto p-5 bg-slate-50/80">
+          {loading ? (
+            <div className="flex items-center justify-center h-40 text-slate-400 text-sm">読み込み中... Đang tải...</div>
+          ) : (
+            <>
+              {/* SECTION: BASE */}
+              {activeSection === 'BASE' && (
+                <div className="space-y-4">
+                  <SectionHeader jp="基本情報" vi="Thông tin gốc" />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {renderTextInput('Mã khuôn', 'コード', 'code', true)}
+                    {renderTextInput('Tên khuôn', '名前', 'name')}
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="flex flex-col">
+                      <label className={labelCls}><span>顧客</span><span className="text-[10px] opacity-60">Khách hàng</span></label>
+                      {(() => {
+                        const cust = customers.find((c: any) => c.company_id === form.company_id);
+                        const defaultVal = cust ? `${cust.company_code} - ${cust.company_name || ''}` : '';
+                        return (
+                          <div className={isSubmitting ? "pointer-events-none opacity-50" : ""}>
+                            <CustomerSearchInput 
+                              defaultValue={defaultVal}
+                              onSelect={(customer) => updateField('company_id', customer ? customer.company_id : '')} 
+                            />
+                          </div>
+                        );
+                      })()}
+                    </div>
+                    {renderTextInput('Phân loại', '分類', 'mold_class')}
+                  </div>
+                  <div className="flex flex-col">
+                    <label className={labelCls}><span>メモ</span><span className="text-[10px] opacity-60">Ghi chú</span></label>
+                    <textarea value={form.base_notes || ''} onChange={e => updateField('base_notes', e.target.value)} rows={2} className={inputCls + ' resize-none'} disabled={isSubmitting} />
+                  </div>
+                </div>
+              )}
+
+              {/* SECTION: DESIGN */}
+              {activeSection === 'DESIGN' && (
+                <div className="space-y-5">
+                  <SectionHeader jp="設計仕様" vi="Thông số thiết kế" />
+
+                  {isEditMode && (
+                    <div className="flex items-center gap-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                      <input type="checkbox" checked={createNewRevision} onChange={e => setCreateNewRevision(e.target.checked)} className="w-4 h-4 accent-amber-600" />
+                      <div>
+                        <div className="text-xs font-bold text-amber-800">新しいリビジョンを作成 / Tạo Phiên bản mới</div>
+                        <div className="text-[10px] text-amber-600">Thay đổi sẽ tạo revision mới (VD: R2), giữ nguyên thiết kế cũ.</div>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="bg-white rounded-lg border border-slate-200 p-4 space-y-3">
+                    <div className="text-xs font-bold text-slate-600 border-b border-slate-100 pb-2">寸法 / Kích thước</div>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                      {renderNumInput('Dài', '長さ', 'design_length', 'mm')}
+                      {renderNumInput('Rộng', '幅', 'design_width', 'mm')}
+                      {renderNumInput('Cao', '高さ', 'design_height', 'mm')}
+                      {renderNumInput('Sâu', '深さ', 'design_depth', 'mm')}
+                      {renderNumInput('Nặng', '重量', 'design_weight', 'kg')}
+                      {renderNumInput('Số miếng', '個数', 'piece_count')}
+                    </div>
+                  </div>
+
+                  <div className="bg-white rounded-lg border border-slate-200 p-4 space-y-3">
+                    <div className="text-xs font-bold text-slate-600 border-b border-slate-100 pb-2">カットライン / Đường cắt</div>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                      {renderNumInput('Cắt X', 'X', 'cutline_x', 'mm')}
+                      {renderNumInput('Cắt Y', 'Y', 'cutline_y', 'mm')}
+                      {renderTextInput('Góc R', 'コーナーR', 'corner_r')}
+                      {renderTextInput('Vát C', '面取りC', 'chamfer_c')}
+                      {renderNumInput('Số túi', 'ポケット', 'pocket_numbers')}
+                      {renderNumInput('Bước', 'ピッチ', 'pitch', 'mm')}
+                    </div>
+                  </div>
+
+                  <div className="bg-white rounded-lg border border-slate-200 p-4 space-y-3">
+                    <div className="text-xs font-bold text-slate-600 border-b border-slate-100 pb-2">金型設定 / Cài đặt khuôn</div>
+                    <div className="grid grid-cols-2 gap-3">
+                      {renderTextInput('Hướng khuôn', '向き', 'mold_orientation')}
+                      {renderTextInput('Kiểu lắp', 'セットアップ', 'mold_setup_type')}
+                      {renderTextInput('Góc undercut', 'アンダー角', 'under_angle')}
+                      {renderNumInput('Sâu undercut', 'アンダー深', 'under_depth', 'mm')}
+                      {renderTextInput('Góc thoát', '抜き角', 'draft_angle')}
+                      {renderTextInput('Loại nhựa', 'プラ種類', 'design_for_plastic_type')}
+                    </div>
+                    <div className="flex gap-6 pt-2">
+                      <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={form.separate_cutter || false} onChange={e => updateField('separate_cutter', e.target.checked)} className="w-4 h-4 accent-teal-600" /><span className="text-xs text-slate-700">別カッター <span className="opacity-60">(Dao riêng)</span></span></label>
+                      <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={form.plug || false} onChange={e => updateField('plug', e.target.checked)} className="w-4 h-4 accent-teal-600" /><span className="text-xs text-slate-700">プラグ <span className="opacity-60">(Plug)</span></span></label>
+                    </div>
+                  </div>
+
+                  <div className="bg-white rounded-lg border border-slate-200 p-4 space-y-3">
+                    <div className="text-xs font-bold text-slate-600 border-b border-slate-100 pb-2">🥡 トレイ情報 / Thông tin Khay</div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {renderTextInput('Tên khay KH', '顧客トレイ名', 'customer_tray_name')}
+                      {renderTextInput('Chi tiết khay', 'トレイ情報', 'tray_info')}
+                    </div>
+                  </div>
+
+                  <div className="bg-white rounded-lg border border-slate-200 p-4 space-y-3">
+                    <div className="text-xs font-bold text-slate-600 border-b border-slate-100 pb-2">図面 / Bản vẽ</div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {renderTextInput('Số bản vẽ KH', '顧客図面No', 'customer_drawing_no')}
+                      {renderTextInput('Số thiết bị KH', '顧客設備No', 'customer_equipment_no')}
+                      {renderTextInput('CAVID', 'CAVID', 'cavid')}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* SECTION: PHYSICAL */}
+              {activeSection === 'PHYSICAL' && (
+                <div className="space-y-4">
+                  <SectionHeader jp="物理資産" vi="Tài sản khuôn vật lý" />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {renderTextInput('Mã khắc', '刻印コード', 'physical_code')}
+                    {renderNumInput('Cavity', 'キャビティ', 'cavity')}
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="flex flex-col">
+                      <label className={labelCls}><span>種類</span><span className="text-[10px] opacity-60">Loại</span></label>
+                      <select value={form.item_type_id || ''} onChange={e => updateField('item_type_id', e.target.value)} className={inputCls} disabled={isSubmitting}>
+                        <option value="">-- 選択 --</option>
+                        {itemTypes.map((it: any) => <option key={it.id} value={it.id}>{it.name}</option>)}
+                      </select>
+                    </div>
+                    <div className="flex flex-col">
+                      <label className={labelCls}><span>状態</span><span className="text-[10px] opacity-60">Trạng thái</span></label>
+                      <select value={form.status || 'ACTIVE'} onChange={e => updateField('status', e.target.value)} className={inputCls} disabled={isSubmitting}>
+                        <option value="ACTIVE">ACTIVE (Hoạt động)</option>
+                        <option value="REPAIR">REPAIR (Sửa chữa)</option>
+                        <option value="DISPOSED">DISPOSED (Thanh lý)</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div className="bg-white rounded-lg border border-slate-200 p-4 space-y-3">
+                    <div className="text-xs font-bold text-slate-600 border-b border-slate-100 pb-2">保管場所 / Vị trí kho</div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div className="flex flex-col">
+                        <label className={labelCls}><span>ラック</span><span className="text-[10px] opacity-60">Giá kệ</span></label>
+                        <select value={selectedRackId} onChange={e => { setSelectedRackId(e.target.value); updateField('rack_layer_id', '') }} className={inputCls} disabled={isSubmitting}>
+                          <option value="">-- 選択 --</option>
+                          {racks.map((r: any) => <option key={r.id} value={r.id}>{r.code} - {r.name}</option>)}
+                        </select>
+                      </div>
+                      <div className="flex flex-col">
+                        <label className={labelCls}><span>レイヤー</span><span className="text-[10px] opacity-60">Tầng</span></label>
+                        <select value={form.rack_layer_id || ''} onChange={e => updateField('rack_layer_id', e.target.value)} className={inputCls} disabled={!selectedRackId || isSubmitting}>
+                          <option value="">-- 選択 --</option>
+                          {filteredLayers.map((l: any) => <option key={l.id} value={l.id}>{l.code} - {l.label}</option>)}
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="flex flex-col">
+                      <label className={labelCls}><span>保管会社</span><span className="text-[10px] opacity-60">Công ty giữ</span></label>
+                      {(() => {
+                        const keeperCust = customers.find((c: any) => c.company_id === form.keeper_company);
+                        const defaultVal = keeperCust ? `${keeperCust.company_code} - ${keeperCust.company_name || ''}` : '';
+                        return (
+                          <div className={isSubmitting ? "pointer-events-none opacity-50" : ""}>
+                            <CustomerSearchInput 
+                              defaultValue={defaultVal}
+                              onSelect={(customer) => updateField('keeper_company', customer ? customer.company_id : '')} 
+                            />
+                          </div>
+                        );
+                      })()}
+                    </div>
+                  </div>
+                  <div className="flex flex-col">
+                    <label className={labelCls}><span>メモ</span><span className="text-[10px] opacity-60">Ghi chú vật lý</span></label>
+                    <textarea value={form.physical_notes || ''} onChange={e => updateField('physical_notes', e.target.value)} rows={2} className={inputCls + ' resize-none'} disabled={isSubmitting} />
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="p-4 bg-white border-t border-slate-200 shrink-0 space-y-2">
+          {error && <div className="p-2 bg-red-50 border border-red-200 rounded-lg text-red-700 text-xs font-medium">⚠️ {error}</div>}
+          {success && <div className="p-2 bg-emerald-50 border border-emerald-200 rounded-lg text-emerald-700 text-xs font-bold text-center">✅ 保存完了 / Lưu thành công!</div>}
+          <div className="flex gap-3">
+            <button onClick={onClose} disabled={isSubmitting} className="flex-1 min-h-[44px] bg-white text-slate-600 border border-slate-300 hover:bg-slate-50 rounded-lg font-bold text-sm transition-colors disabled:opacity-50">
+              キャンセル (Hủy)
+            </button>
+            <button onClick={handleSubmit} disabled={isSubmitting || success} className="flex-1 min-h-[44px] bg-gradient-to-r from-teal-600 to-teal-500 text-white hover:from-teal-700 hover:to-teal-600 rounded-lg font-bold text-sm transition-all disabled:from-slate-300 disabled:to-slate-300 disabled:text-slate-500 flex items-center justify-center gap-2 shadow-sm">
+              {isSubmitting ? (<><Spinner /> 処理中...</>) : success ? '✅ 完了' : '保存 (Lưu) →'}
+            </button>
+          </div>
+        </div>
+      </div>
+    </>
+  )
+}
+
+function SectionHeader({ jp, vi }: { jp: string; vi: string }) {
+  return (
+    <div className="flex items-center gap-2 mb-1">
+      <span className="w-1 h-5 bg-teal-500 rounded-full" />
+      <span className="font-bold text-sm text-slate-700">{jp}</span>
+      <span className="text-xs text-slate-400">/ {vi}</span>
+    </div>
+  )
+}
+
+function Spinner() {
+  return (
+    <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+    </svg>
+  )
+}

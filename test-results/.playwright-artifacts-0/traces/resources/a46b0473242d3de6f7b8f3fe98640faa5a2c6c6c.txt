@@ -1,0 +1,1 @@
+[{"customer_code":"CUST-E2E-mpt1vvws","delivery_name":"Delivery E2E","customer_name_jp":"Customer Name JP E2E","delivery_address":"","contact_person":"","phone":"","fax":"","notes":"","parent_code":"","customer_type":"hq","requester_code":"","requester_name":"","is_active":true}]

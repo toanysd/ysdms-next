@@ -1,0 +1,30 @@
+{
+  "job": {
+    "job_id": "e7af1c5a-e551-4e47-a527-16294afef7aa",
+    "job_code": "IRI012",
+    "job_name": "IRI-012"
+  },
+  "steps": [
+    {
+      "step_id": "21cecafe-484d-44f3-8e19-067baf7738e3",
+      "step_no": 1,
+      "step_name": "General",
+      "item_type_id": null,
+      "step_status": "PENDING"
+    },
+    {
+      "step_id": "e76c6da3-cd21-4189-a086-90bd77193212",
+      "step_no": 2,
+      "step_name": "General",
+      "item_type_id": null,
+      "step_status": "PENDING"
+    },
+    {
+      "step_id": "66eae1b9-47f6-43d3-9f41-42dd2253402f",
+      "step_no": 3,
+      "step_name": "General",
+      "item_type_id": null,
+      "step_status": "PENDING"
+    }
+  ]
+}

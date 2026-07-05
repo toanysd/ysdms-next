@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "deny": [
+      "Read(.agents/**)",
+      "Read(temp_ai/**)",
+      "Read(scratch/**)",
+      "Read(tham_khao/**)",
+      "Read(source_data/**)",
+      "Read(business_docs/**)",
+      "Read(_trash_node_modules/**)",
+      "Read(node_modules/**)",
+      "Read(.next/**)",
+      "Read(.turbo/**)",
+      "Read(release/**)",
+      "Read(supabase/migrations/archived/**)",
+      "Read(supabase/migrations/20260606000000_999_seed_legacy_data_v2.sql)",
+      "Read(supabase/migrations/20260612000002_068_seed_legacy_v3.sql)",
+      "Read(temp_types.ts)",
+      "Read(*.rar)"
+    ]
+  }
+}
