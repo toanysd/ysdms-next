@@ -1458,6 +1458,21 @@ export default function MoldJobGantt({ jobs, employees = [], machines = [], init
     return () => observer.disconnect();
   }, []);
 
+  // Fix for gantt-task-react scroll bouncing / infinite loop bug
+  // We stop the 'wheel' event in the capture phase so gantt-task-react 
+  // does not trigger its buggy manual handleWheel logic which fights with native scroll.
+  useEffect(() => {
+    const container = wrapperRef.current;
+    if (!container) return;
+    
+    const stopWheel = (e: WheelEvent) => {
+      e.stopPropagation();
+    };
+    
+    container.addEventListener('wheel', stopWheel, { capture: true, passive: false });
+    return () => container.removeEventListener('wheel', stopWheel, { capture: true });
+  }, []);
+
   const updateLocalStep = useCallback((stepId: string, updates: Partial<JobStepRow>) => {
     setLocalSteps(prev => ({
       ...prev,
