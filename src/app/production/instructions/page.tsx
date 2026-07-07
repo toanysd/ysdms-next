@@ -17,6 +17,11 @@ export default function ProductionOrdersPage() {
   const [molds, setMolds] = useState<any[]>([]);
   const [cutters, setCutters] = useState<any[]>([]);
   const [employees, setEmployees] = useState<any[]>([]);
+  const [activeTab, setActiveTab] = useState<'order' | 'product'>('order');
+  const [productsList, setProductsList] = useState<any[]>([]);
+  const [selectedProductId, setSelectedProductId] = useState('');
+  const [plannedQuantity, setPlannedQuantity] = useState(1000);
+  const [linkedJobId, setLinkedJobId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
 
@@ -124,6 +129,13 @@ export default function ProductionOrdersPage() {
       setCutters(cutData || []);
       setEmployees(empData || []);
 
+      // Fetch active products list
+      const { data: prodData } = await supabase
+        .from('products')
+        .select('*, companies(company_id, company_name, company_code), design_revisions(*)')
+        .order('product_code');
+      setProductsList(prodData || []);
+
       if (poData && poData.length > 0) {
         // If there was a selected PO, keep it selected, else select first
         const currentSelected = selectedPo ? poData.find(p => p.po_id === selectedPo.po_id) : null;
@@ -188,6 +200,8 @@ export default function ProductionOrdersPage() {
       .eq('production_order_id', po.po_id)
       .maybeSingle();
 
+    setLinkedJobId(jobData?.job_id || null);
+
     if (jobData) {
       setActualMoldingDate(jobData.deadline ? jobData.deadline.split('T')[0] : null);
       setActualMoldDate(jobData.mold_deadline ? jobData.mold_deadline.split('T')[0] : null);
@@ -233,6 +247,9 @@ export default function ProductionOrdersPage() {
     setLoadingPending(true);
     setShowCreateModal(true);
     setSelectedLineId('');
+    setSelectedProductId('');
+    setPlannedQuantity(1000);
+    setActiveTab('order');
     setMoldSetsToMake(1);
     setCavitiesPerMold(1);
     setReqAluminumDate('');
@@ -302,26 +319,84 @@ export default function ProductionOrdersPage() {
   };
 
   const handleCreateInstruction = async () => {
-    if (!selectedLineId) return;
+    if (activeTab === 'order' && !selectedLineId) return;
+    if (activeTab === 'product' && !selectedProductId) return;
     setSaving(true);
     
     try {
-      const line = pendingOrderLines.find(l => l.line_id === selectedLineId);
-      const product = line.products;
-      const materials = product.product_material_specs?.[0] || {};
+      let lineIdToUse = selectedLineId;
+      let finalProduct = null;
+      let finalCompanyId = null;
+      let finalPlannedQty = 0;
+      let finalMaterialType = 'PS黒';
+      let finalMaterialThickness = 0.8;
+      let finalMaterialWidth = 520;
+      let finalPoCode = '';
+
+      if (activeTab === 'product') {
+        const product = productsList.find(p => p.product_id === selectedProductId);
+        if (!product) throw new Error("Sản phẩm không hợp lệ");
+        finalProduct = product;
+        finalCompanyId = product.company_id;
+        finalPlannedQty = plannedQuantity;
+
+        // Auto create placeholder order
+        const tempOrderNo = `TEMP-PO-${product.product_code}-${Date.now().toString().slice(-4)}`;
+        const { data: tempOrder, error: orderErr } = await supabase
+          .from('orders')
+          .insert({
+            order_no: tempOrderNo,
+            company_id: product.company_id,
+            order_status: 'APPROVED',
+            order_date: new Date().toISOString(),
+            order_type: 'MOLD_ONLY',
+            notes: '自動作成された金型起工用暫定受注 / Đơn tạm sinh cho thiết kế khuôn'
+          })
+          .select('order_id')
+          .single();
+        if (orderErr) throw orderErr;
+
+        // Auto create placeholder line
+        const { data: tempLine, error: lineErr } = await supabase
+          .from('order_lines')
+          .insert({
+            order_id: tempOrder.order_id,
+            product_id: product.product_id,
+            quantity: plannedQuantity,
+            line_no: 1,
+            due_date: reqMoldingDate || null,
+            notes: '自動作成された暫定明細'
+          })
+          .select('line_id')
+          .single();
+        if (lineErr) throw lineErr;
+
+        lineIdToUse = tempLine.line_id;
+        finalPoCode = `PO-${tempOrderNo}-1`;
+      } else {
+        const line = pendingOrderLines.find(l => l.line_id === selectedLineId);
+        if (!line) throw new Error("Đơn hàng không hợp lệ");
+        finalProduct = line.products;
+        finalCompanyId = line.orders.companies.company_id;
+        finalPlannedQty = line.quantity;
+        const materials = finalProduct.product_material_specs?.[0] || {};
+        finalMaterialType = materials.material_type || 'PS黒';
+        finalMaterialThickness = materials.thickness_mm || 0.8;
+        finalMaterialWidth = materials.sheet_width_mm || 520;
+        finalPoCode = `PO-${line.orders.order_no}-${line.line_no}`;
+      }
 
       // 1. Insert Production Order
-      const poCode = `PO-${line.orders.order_no}-${line.line_no}`;
       const { data: newPo, error: poErr } = await supabase
         .from('production_orders')
         .insert({
-          po_code: poCode,
-          order_line_id: selectedLineId,
-          planned_quantity: line.quantity,
+          po_code: finalPoCode,
+          order_line_id: lineIdToUse,
+          planned_quantity: finalPlannedQty,
           po_status: 'PLANNED',
-          material_type: materials.material_type || 'PS黒',
-          material_thickness: materials.thickness_mm || 0.8,
-          material_width: materials.sheet_width_mm || 520,
+          material_type: finalMaterialType,
+          material_thickness: finalMaterialThickness,
+          material_width: finalMaterialWidth,
           mold_sets_to_make: moldSetsToMake,
           cavities_per_mold: cavitiesPerMold,
           req_aluminum_date: reqAluminumDate || null,
@@ -348,12 +423,12 @@ export default function ProductionOrdersPage() {
       const { data: newJob, error: jobErr } = await supabase
         .from('jobs')
         .insert({
-          job_code: `JOB-${product.product_code}`,
-          job_name: `Mold Making ${product.product_name_internal}`,
+          job_code: `JOB-${finalProduct.product_code}`,
+          job_name: `Mold Making ${finalProduct.product_name_internal}`,
           job_type_id: jobTypeId,
           production_order_id: newPo.po_id,
-          company_id: line.orders.companies.company_id,
-          product_id: product.product_id,
+          company_id: finalCompanyId,
+          product_id: finalProduct.product_id,
           deadline: reqMoldingDate ? `${reqMoldingDate}T12:00:00Z` : null,
           mold_deadline: reqMoldDate ? `${reqMoldDate}T12:00:00Z` : null,
           job_status: 'NEW'
@@ -668,6 +743,26 @@ export default function ProductionOrdersPage() {
                   <Save className="w-3.5 h-3.5" /> <span>{saving ? '保存中...' : '変更保存'}</span>
                 </button>
               </div>
+            </div>
+
+            {/* Workflow Links Bar */}
+            <div className="flex items-center gap-4 py-1.5 px-4 bg-slate-50 border-b border-[var(--border-default)] text-[11px] text-slate-600 shrink-0 select-none">
+              <span className="font-bold text-slate-500">関連リンク / Liên kết nhanh:</span>
+              {selectedPo.order_lines?.orders && (
+                <a href={`/orders/${selectedPo.order_lines.orders.order_id}`} className="hover:text-blue-600 font-semibold text-blue-500 underline">
+                  受注: {selectedPo.order_lines.orders.order_no}
+                </a>
+              )}
+              {selectedPo.order_lines?.products && (
+                <a href={`/master/products/${selectedPo.order_lines.products.product_id}`} className="hover:text-blue-600 font-semibold text-blue-500 underline">
+                  製品: {selectedPo.order_lines.products.product_name_internal}
+                </a>
+              )}
+              {linkedJobId && (
+                <a href={`/equipment/jobs?search=${selectedPo.order_lines.products.product_code}`} className="hover:text-blue-600 font-semibold text-blue-500 underline">
+                  Gantt / Job: {selectedPo.order_lines.products.product_code}
+                </a>
+              )}
             </div>
 
             {/* Notification message */}
