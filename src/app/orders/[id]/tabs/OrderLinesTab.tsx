@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import type { OrderDetailData } from '../page'
 
 export function OrderLinesTab({ order }: { order: OrderDetailData }) {
@@ -30,8 +31,14 @@ export function OrderLinesTab({ order }: { order: OrderDetailData }) {
               <td style={{ textAlign: 'center', color: 'var(--text-muted)', fontFamily: 'monospace' }}>
                 {line.line_no}
               </td>
-              <td style={{ fontFamily: 'monospace', fontWeight: 600, color: 'var(--text-primary)' }}>
-                {line.products?.product_code || '—'}
+              <td style={{ fontFamily: 'monospace', fontWeight: 700 }}>
+                {line.products?.product_id ? (
+                  <Link href={`/master/products/${line.products.product_id}`} className="hover:underline" style={{ color: 'var(--accent)' }}>
+                    {line.products.product_code}
+                  </Link>
+                ) : (
+                  line.products?.product_code || '—'
+                )}
               </td>
               <td>
                 {line.products?.product_name || '—'}

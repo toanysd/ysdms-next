@@ -9,6 +9,7 @@ import Link from 'next/link'
 import { ProductDetailHeader } from './ProductDetailHeader'
 import { ProductTabNavigation, type TabId } from './ProductTabNavigation'
 import { OverviewTab } from './tabs/OverviewTab'
+import { OrdersTab } from './tabs/OrdersTab'
 
 export type ProductDetailData = {
   product_id: string
@@ -76,7 +77,7 @@ function TabContent({
     case 'overview':
       return <OverviewTab product={product} isEditing={isEditing} formData={formData} setFormData={setFormData} companies={companies} />
     case 'orders':
-      return <PlaceholderTab name="注文履歴 / Đơn hàng" />
+      return <OrdersTab productId={product.product_id} />
     case 'designs':
       return <PlaceholderTab name="設計一覧 / Thiết kế" />
     default:

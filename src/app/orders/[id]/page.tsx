@@ -21,7 +21,7 @@ export type OrderLineDetail = {
   status: string
   line_no: number
   is_free_sample: boolean
-  products: { product_code: string; product_name: string | null } | null
+  products: { product_id: string; product_code: string; product_name: string | null } | null
 }
 
 export type OrderDetailData = {
@@ -96,7 +96,7 @@ export default function OrderDetailPage() {
         companies(company_name, company_code),
         order_lines(
           *,
-          products(product_code, product_name)
+          products(product_id, product_code, product_name)
         )
       `)
       .eq('order_id', orderId)
