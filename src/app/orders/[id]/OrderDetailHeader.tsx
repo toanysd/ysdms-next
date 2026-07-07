@@ -1,4 +1,5 @@
 import { Edit } from 'lucide-react'
+import Link from 'next/link'
 import type { OrderDetailData } from './page'
 
 const STATUS_CONFIG: Record<string, { label: string; labelVi: string; badgeClass: string }> = {
@@ -13,7 +14,7 @@ const STATUS_CONFIG: Record<string, { label: string; labelVi: string; badgeClass
 export function OrderDetailHeader({
   order,
   isEditing,
-  setIsEditing
+  setIsEditing,
 }: {
   order: OrderDetailData
   isEditing: boolean
@@ -37,7 +38,14 @@ export function OrderDetailHeader({
           </span>
         </div>
         <div style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
-          得意先: <span style={{ fontWeight: 600 }}>{order.companies?.company_name || '—'}</span> 
+          得意先: {' '}
+          {order.company_id ? (
+            <Link href={`/master/customers/${order.company_id}`} className="hover:underline font-bold" style={{ color: 'var(--accent)' }}>
+              {order.companies?.company_name || '—'}
+            </Link>
+          ) : (
+            <span style={{ fontWeight: 600 }}>{order.companies?.company_name || '—'}</span>
+          )}
           {order.companies?.company_code && <span style={{ marginLeft: 6, fontSize: 11, fontFamily: 'monospace', color: 'var(--text-muted)' }}>({order.companies.company_code})</span>}
         </div>
       </div>

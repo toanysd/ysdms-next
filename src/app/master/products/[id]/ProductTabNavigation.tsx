@@ -14,8 +14,8 @@ export type TabDef = {
 
 export const TABS: TabDef[] = [
   { id: 'overview',    labelJa: '概要',       labelVi: 'Tổng quan',    icon: FileText,      enabled: true },
-  { id: 'orders',      labelJa: '注文履歴',   labelVi: 'Đơn hàng',     icon: ShoppingCart,  enabled: false },
-  { id: 'designs',    labelJa: '設計一覧',   labelVi: 'Thiết kế',     icon: Layers,        enabled: false },
+  { id: 'orders',      labelJa: '注文履歴',   labelVi: 'Đơn hàng',     icon: ShoppingCart,  enabled: true },
+  { id: 'designs',    labelJa: '設計一覧',   labelVi: 'Thiết kế',     icon: Layers,        enabled: true },
 ]
 
 export function ProductTabNavigation({
