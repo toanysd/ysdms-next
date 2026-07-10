@@ -246,7 +246,7 @@ export async function upsertUnifiedMold(payload: UnifiedMoldPayload): Promise<{ 
       corner_r: payload.corner_r || null,
       chamfer_c: payload.chamfer_c || null,
       pocket_numbers: payload.pocket_numbers ?? null,
-      pitch_mm: payload.pitch ?? null,
+      cavity_pitch_mm: payload.pitch ?? null,
       under_angle: payload.under_angle || null,
       mold_orientation: payload.mold_orientation || null,
       mold_setup_type: payload.mold_setup_type || null,

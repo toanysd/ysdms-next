@@ -1,4 +1,4 @@
-export type TabId = 'overview' | 'order_lines' | 'shipments'
+export type TabId = 'overview' | 'order_lines' | 'production_instructions' | 'shipments'
 
 type Props = {
   activeTab: TabId
@@ -7,7 +7,8 @@ type Props = {
 
 const TABS: { id: TabId; label: string; vi: string }[] = [
   { id: 'overview', label: '基本情報', vi: 'Tổng quan' },
-  { id: 'order_lines', label: '注文明細', vi: 'Chi tiết sản phẩm' },
+  { id: 'order_lines', label: '受注明細', vi: 'Chi tiết đơn hàng' },
+  { id: 'production_instructions', label: '製造指示', vi: 'Chỉ thị sản xuất' },
   { id: 'shipments', label: '出荷履歴', vi: 'Lịch sử giao hàng' }
 ]
 

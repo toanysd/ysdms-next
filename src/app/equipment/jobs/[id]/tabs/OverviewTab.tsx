@@ -273,7 +273,7 @@ export function OverviewTab({ job, onRefresh }: { job: any; onRefresh?: () => vo
                   {job.design_revisions.cavity_count && (
                     <InfoRow ja="キャビティ" vi="Cavity" value={
                       <span style={{ fontFamily: 'monospace' }}>
-                        {job.design_revisions.cavity_count} 面{job.design_revisions.pocket_numbers ? ` / ポケット ${job.design_revisions.pocket_numbers}` : ''}{job.design_revisions.pitch_mm ? ` / ピッチ ${job.design_revisions.pitch_mm}mm` : ''}
+                        {job.design_revisions.cavity_count} 面{job.design_revisions.pocket_numbers ? ` / ポケット ${job.design_revisions.pocket_numbers}` : ''}{job.design_revisions.cavity_pitch_mm ? ` / ピッチ ${job.design_revisions.cavity_pitch_mm}mm` : ''}
                       </span>
                     } />
                   )}

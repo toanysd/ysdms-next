@@ -142,7 +142,8 @@ export function OverviewTab({
                 <EditRow labelJa="切断線 W" labelVi="Cutline W (mm)" type="number" value={formData?.cutline_width} onChange={v => handleChange('cutline_width', v)} />
                 <EditRow labelJa="キャビティ数" labelVi="Cavity" type="number" value={formData?.cavity_count} onChange={v => handleChange('cavity_count', v)} />
                 <EditRow labelJa="ポケット数" labelVi="Pocket" type="number" value={formData?.pocket_numbers} onChange={v => handleChange('pocket_numbers', v)} />
-                <EditRow labelJa="ピッチ" labelVi="Pitch (mm)" type="number" value={formData?.pitch_mm} onChange={v => handleChange('pitch_mm', v)} />
+                <EditRow labelJa="歩み（ピッチ）" labelVi="Cavity Pitch (mm)" type="number" value={formData?.cavity_pitch_mm} onChange={v => handleChange('cavity_pitch_mm', v)} />
+                <EditRow labelJa="送り" labelVi="Feed Pitch (mm)" type="number" value={formData?.machine_feed_pitch_mm} onChange={v => handleChange('machine_feed_pitch_mm', v)} />
               </>
             ) : (
               <>
@@ -155,7 +156,8 @@ export function OverviewTab({
                 <InfoRow labelJa="切断線 W" labelVi="Cutline W" value={rev.cutline_width ? `${rev.cutline_width} mm` : null} />
                 <InfoRow labelJa="キャビティ数" labelVi="Cavity" value={rev.cavity_count} />
                 <InfoRow labelJa="ポケット数" labelVi="Pocket" value={rev.pocket_numbers} />
-                <InfoRow labelJa="ピッチ" labelVi="Pitch" value={rev.pitch_mm ? `${rev.pitch_mm} mm` : null} />
+                <InfoRow labelJa="歩み（ピッチ）" labelVi="Cavity Pitch" value={rev.cavity_pitch_mm ? `${rev.cavity_pitch_mm} mm` : null} />
+                <InfoRow labelJa="送り" labelVi="Feed Pitch" value={rev.machine_feed_pitch_mm ? `${rev.machine_feed_pitch_mm} mm` : null} />
               </>
             )}
             

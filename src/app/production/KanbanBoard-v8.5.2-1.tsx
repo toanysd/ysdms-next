@@ -122,8 +122,8 @@ export default function KanbanBoard({ initialPending, initialActive, initialComp
                                                 Cần sx: {plan.planned_quantity?.toLocaleString()} khay
                                             </div>
                                             <div className="text-[11px] text-[var(--mcs-text-muted)] flex items-center gap-2 flex-wrap">
-                                                <span className="bg-[var(--mcs-surface-2)] px-1.5 py-0.5 rounded">Máy: {plan.machine_instance.internal_code}</span>
-                                                <span className="bg-[var(--mcs-surface-2)] px-1.5 py-0.5 rounded">Khuôn: {plan.mold_physical.physical_code}</span>
+                                                <span className="bg-[var(--mcs-surface-2)] px-1.5 py-0.5 rounded">Máy: {plan.machine_instance?.internal_code || 'Chưa xếp'}</span>
+                                                <span className="bg-[var(--mcs-surface-2)] px-1.5 py-0.5 rounded">Khuôn: {plan.mold_physical?.physical_code || plan.physical_molds?.system_code || 'Chưa gán'}</span>
                                                 {plan.operator_name && <span>Thợ: {plan.operator_name}</span>}
                                             </div>
                                         </div>

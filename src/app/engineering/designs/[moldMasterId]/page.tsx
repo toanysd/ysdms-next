@@ -57,7 +57,8 @@ type DesignRevision = {
   cutline_width: number | null
   cavity_count: number | null
   pocket_numbers: number | null
-  pitch_mm: number | null
+  cavity_pitch_mm: number | null
+  machine_feed_pitch_mm: number | null
   corner_r: string | null
   chamfer_c: string | null
   draft_angle: string | null
@@ -99,7 +100,8 @@ type FormData = {
   cutline_width: string
   cavity_count: string
   pocket_numbers: string
-  pitch_mm: string
+  cavity_pitch_mm: string
+  machine_feed_pitch_mm: string
   corner_r: string
   chamfer_c: string
   draft_angle: string
@@ -141,7 +143,7 @@ const EMPTY_FORM: FormData = {
   designer_id: '', design_date: '', approved_date: '',
   design_length: '', design_width: '', design_height: '', design_depth: '',
   design_weight: '', cutline_length: '', cutline_width: '',
-  cavity_count: '', pocket_numbers: '', pitch_mm: '',
+  cavity_count: '', pocket_numbers: '', cavity_pitch_mm: '', machine_feed_pitch_mm: '',
   corner_r: '', chamfer_c: '', draft_angle: '',
   under_depth: '', undercut_spec: '', orientation: '', setup_type: '',
   plug_type: 'NONE', has_separate_cutter: false, plastic_type_designed: '',
@@ -284,7 +286,8 @@ export default function MoldMasterDesignsPage() {
     cutline_width: r.cutline_width?.toString() ?? '',
     cavity_count: r.cavity_count?.toString() ?? '',
     pocket_numbers: r.pocket_numbers?.toString() ?? '',
-    pitch_mm: r.pitch_mm?.toString() ?? '',
+    cavity_pitch_mm: r.cavity_pitch_mm?.toString() ?? '',
+    machine_feed_pitch_mm: r.machine_feed_pitch_mm?.toString() ?? '',
     corner_r: r.corner_r ?? '',
     chamfer_c: r.chamfer_c ?? '',
     draft_angle: r.draft_angle ?? '',
@@ -322,7 +325,8 @@ export default function MoldMasterDesignsPage() {
     cutline_width: numOrNull(form.cutline_width),
     cavity_count: numOrNull(form.cavity_count) as number | null,
     pocket_numbers: numOrNull(form.pocket_numbers) as number | null,
-    pitch_mm: numOrNull(form.pitch_mm),
+    cavity_pitch_mm: numOrNull(form.cavity_pitch_mm),
+    machine_feed_pitch_mm: numOrNull(form.machine_feed_pitch_mm),
     corner_r: strOrNull(form.corner_r),
     chamfer_c: strOrNull(form.chamfer_c),
     draft_angle: strOrNull(form.draft_angle),
@@ -977,10 +981,17 @@ export default function MoldMasterDesignsPage() {
                     </div>
                     <div className="form-field">
                       <label className="form-label">
-                        <span className="label-ja">ピッチ</span>
-                        <span className="label-vi">Pitch (mm)</span>
+                        <span className="label-ja">歩み（ピッチ）</span>
+                        <span className="label-vi">Cavity Pitch (mm)</span>
                       </label>
-                      <input type="number" step="any" className="form-input" value={form.pitch_mm} onChange={e => setField('pitch_mm', e.target.value)} placeholder="mm" />
+                      <input type="number" step="any" className="form-input" value={form.cavity_pitch_mm} onChange={e => setField('cavity_pitch_mm', e.target.value)} placeholder="mm" />
+                    </div>
+                    <div className="form-field">
+                      <label className="form-label">
+                        <span className="label-ja">送り</span>
+                        <span className="label-vi">Feed Pitch (mm)</span>
+                      </label>
+                      <input type="number" step="any" className="form-input" value={form.machine_feed_pitch_mm} onChange={e => setField('machine_feed_pitch_mm', e.target.value)} placeholder="mm" />
                     </div>
                   </div>
                 </div>

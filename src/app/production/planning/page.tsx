@@ -42,7 +42,17 @@ export default async function ProductionPlanningPage(props: { searchParams: Prom
     const endDateStr = format(endDate, 'yyyy-MM-dd')
 
     const allMachines = await getMachineEffectiveSpecs()
-    const machines = allMachines.filter(m => m.type_code === 'THERMOFORM')
+    const customOrder = ['8号機', '台湾機', '6号機', '7号機', '5号機', '4号機']
+    const machines = allMachines
+        .filter(m => m.type_code === 'THERMOFORM' || m.type_code === '成形')
+        .sort((a, b) => {
+            const indexA = customOrder.indexOf(a.internal_code)
+            const indexB = customOrder.indexOf(b.internal_code)
+            if (indexA !== -1 && indexB !== -1) return indexA - indexB
+            if (indexA !== -1) return -1
+            if (indexB !== -1) return 1
+            return a.internal_code.localeCompare(b.internal_code)
+        })
 
     const pendingItems = await getPendingOrderItemsForPlanning()
     const plans = await getProductionPlansByDateRange(dateParam, endDateStr)

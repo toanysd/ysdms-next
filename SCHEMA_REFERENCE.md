@@ -1,7 +1,7 @@
 # YSDMS NextGen — Database Schema Reference
 > **AI AGENT: Đọc file này TRƯỚC KHI viết bất kỳ Supabase query nào.**
 > Đây là nguồn duy nhất (single source of truth) về cấu trúc DB.
-> **Cập nhật lần cuối: 2026-07-02** — Bổ sung manufacturing_date (physical_molds), plastic_type_designed/tray_info (design_revisions), plug_type refactoring.
+> **Cập nhật lần cuối: 2026-07-09** — Thêm design_revision_id (nullable FK) vào order_lines. Bổ sung lot_no (orders), ship_date/packing_style/shipping_notes (order_lines).
 
 ---
 
@@ -71,7 +71,7 @@ FK:  company_id     UUID → companies(company_id) NOT NULL
 ```
 PK:  site_id        UUID
 FK:  company_id     UUID → companies(company_id) NOT NULL
-     site_code      TEXT NOT NULL
+     site_code      TEXT NOT NULL           ← UNIQUE(company_id, site_code)
      site_name      TEXT NOT NULL
      site_address   TEXT
      site_tel       TEXT
@@ -138,7 +138,8 @@ FK:  company_id         UUID → companies(company_id)   ← ĐÚNG, KHÔNG ph�
      requested_delivery DATE
      order_status       TEXT  ('NEW' | 'CONFIRMED' | 'IN_PRODUCTION' | 'SHIPPED' | 'CANCELLED')
      order_type         TEXT
-     customer_order_no  TEXT    ← Số PO phía khách hàng
+     customer_order_no  TEXT    ← Số PO / 要求No. phía khách hàng (VD: IP0000153229)
+     lot_no             TEXT    ← 伝票/LOT No. — Mã phiếu xuất hàng
      notes              TEXT
 ```
 
@@ -153,13 +154,23 @@ FK:  company_id         UUID → companies(company_id)   ← ĐÚNG, KHÔNG ph�
 PK:  line_id          UUID
 FK:  order_id         UUID → orders(order_id) ON DELETE CASCADE
 FK:  product_id       UUID → products(product_id)
+FK:  design_revision_id UUID → design_revisions(revision_id) ← NULLABLE, chỉ định khi cần
 FK:  delivery_site_id UUID → delivery_sites(site_id)
      line_no          INTEGER
      quantity         INTEGER
      unit             TEXT  (default 'PCS')
-     due_date         DATE
+     due_date         DATE       ← Ngày nhận hàng (dòng 2 trong ô 納期)
+     ship_date        DATE       ← 出荷日 — Ngày xuất hàng (dòng 1 trong ô 納期)
+     is_free_sample   BOOLEAN    ← Miễn phí? (無償)
+     charge_type      TEXT       ← Loại phí (FREE/PAID/OFFICE_SAMPLE)
+     packing_style    TEXT       ← 荷姿 — Quy cách đóng gói
+     shipping_notes   TEXT       ← Ghi chú đóng gói đặc biệt
      line_status      TEXT
 ```
+
+> [!IMPORTANT]
+> `design_revision_id` **NULLABLE** — Mặc định NULL = tự lấy revision mới nhất từ product.
+> Chỉ chỉ định khi có nhiều revision cùng active (VD: 2 phiên bản cho 2 loại nhựa khác nhau).
 
 ---
 
@@ -212,7 +223,8 @@ FK:  shared_plug_from_design_id UUID → design_revisions(revision_id)
      corner_r          TEXT
      chamfer_c         TEXT
      draft_angle       TEXT
-     pitch_mm          NUMERIC
+     cavity_pitch_mm   NUMERIC       ← Bước khuôn (Khoảng cách giữa các cavity)
+     machine_feed_pitch_mm NUMERIC   ← Bước tiến nhựa (送り) - Dùng tính hao phí vật liệu
      orientation       TEXT
      setup_type        TEXT
      plug_type         TEXT          ← ['NONE', 'OWNED', 'SHARED']
@@ -423,3 +435,66 @@ supabase.from('delivery_sites').select('*').eq('company_id', companyId)
 | `cutter_master` | `cutter_masters` (có s) | Tên bảng số nhiều |
 | `physical_molds.id` | `physical_molds.physical_mold_id` | PK đúng |
 | `cutters.id` | `cutters.cutter_id` | PK đúng |
+
+---
+
+## 🔑 Bảng `departments` — Phòng ban (Phase 2 WMS)
+
+```
+PK:  id             UUID
+     code           TEXT UNIQUE    ← MOLDING, CUTTING, RECYCLING, OFFICE...
+     name           TEXT           ← Tên hiển thị
+     description    TEXT
+     is_active      BOOLEAN
+```
+
+*(Note: `department_id` được thêm vào `jobs` và `job_steps`)*
+
+---
+
+## 🔑 Bảng Kho Nhựa (Plastic WMS Phase 2)
+
+**`plastic_master`** — Cấu hình vật tư nhựa
+```
+PK:  plastic_id       UUID
+     plastic_code     TEXT UNIQUE
+     plastic_family   TEXT
+     plastic_subtype  TEXT
+     thickness_mm     NUMERIC
+     width_mm         INTEGER
+     ...
+```
+
+**`plastic_receipt`** — Phiếu nhập kho nhựa
+```
+PK:  id             UUID
+FK:  supplier_id    UUID → suppliers(supplier_id)
+     receipt_no     TEXT UNIQUE
+     receipt_date   DATE
+     note           TEXT
+```
+
+**`plastic_receipt_roll`** — Cuộn nhựa (Roll)
+```
+PK:  id                UUID
+     roll_barcode      TEXT UNIQUE
+FK:  receipt_id        UUID → plastic_receipt(id)
+FK:  plastic_id        UUID → plastic_master(plastic_id)
+FK:  branch_id         UUID → companies(company_id)   ← Nơi đang lưu trữ (Aomori, Honsha...)
+     nominal_length_m  NUMERIC
+     received_length_m NUMERIC
+     current_length_m  NUMERIC
+     status            TEXT   ← 'in_stock', 'in_use', 'empty', 'returned'
+     location          TEXT
+```
+
+**`plastic_adjustment_log`** — Lịch sử xuất/nhập/hao hụt cuộn nhựa
+```
+PK:  id                UUID
+FK:  roll_id           UUID → plastic_receipt_roll(id)
+     change_length_m   NUMERIC
+     action_type       TEXT   ← 'PRODUCTION', 'ADJUSTMENT', 'RETURN'
+FK:  work_log_id       UUID → work_logs(id)
+     operator_name     TEXT
+     note              TEXT
+```

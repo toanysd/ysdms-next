@@ -68,12 +68,12 @@ export default function PlanningClickWrapper({
                 
                 // Lấy default mold nếu có
                 const molds = await getProductPhysicalMolds(item.detail?.product_id || '')
-                const defaultMoldId = molds && molds.length > 0 ? molds[0].physical_mold_id : null
+                const defaultMoldId = molds && molds.length > 0 ? molds[0].id : null
 
                 payloads.push({
                     order_item_id: orderId,
                     machine_instance_id: selectedCell.machineId,
-                    physical_mold_id: defaultMoldId,
+                    mold_physical_id: defaultMoldId,
                     planned_date: selectedCell.dateStr,
                     planned_quantity: item.total_requested_qty - item.total_planned_qty,
                     shift: selectedCell.shift,

@@ -219,7 +219,7 @@ export default function ShipmentsPage() {
       <div className="form-section" style={{ flexShrink: 0, marginBottom: 0 }}>
         <div className="form-section-header">
           <Filter className="section-icon" />
-          <span>検索条件 / Bộ lọc</span>
+          <span>検索条件</span>
         </div>
         <div className="form-section-body">
           <div className="form-grid-4">
@@ -272,11 +272,11 @@ export default function ShipmentsPage() {
       <div className="card-flat" style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}>
         {loading ? (
           <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)', fontSize: 12 }}>
-            読み込み中... / Đang tải dữ liệu...
+            読み込み中...
           </div>
         ) : error ? (
           <div style={{ padding: 16, color: 'var(--status-error)', fontSize: 12 }}>
-            エラー / Lỗi: {error}
+            エラー: {error}
           </div>
         ) : (
           <>
@@ -323,7 +323,7 @@ export default function ShipmentsPage() {
                   {filtered.length === 0 ? (
                     <tr>
                       <td colSpan={9} style={{ textAlign: 'center', padding: '32px 0', color: 'var(--text-muted)' }}>
-                        データがありません / Không có dữ liệu
+                        データがありません
                       </td>
                     </tr>
                   ) : (
@@ -373,14 +373,14 @@ export default function ShipmentsPage() {
                               <button
                                 onClick={() => openEdit(s)}
                                 style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', padding: 4 }}
-                                title="編集 / Chỉnh sửa"
+                                title="編集"
                               >
                                 <Edit2 size={14} />
                               </button>
                               <button
                                 onClick={() => setDeleteId(s.shipment_id)}
                                 style={{ background: 'none', border: 'none', color: 'var(--status-error)', cursor: 'pointer', padding: 4 }}
-                                title="削除 / Xoá"
+                                title="削除"
                               >
                                 <Trash2 size={14} />
                               </button>
@@ -492,7 +492,7 @@ export default function ShipmentsPage() {
               <button type="button" className="btn btn-secondary" onClick={() => setModalOpen(false)} disabled={saving}>キャンセル</button>
               <button type="button" className="btn btn-primary" onClick={handleSave} disabled={saving || !form.ship_date}>
                 {saving && <Loader2 size={12} className="animate-spin" style={{ marginRight: 4 }} />}
-                {editingId ? '更新する' : '登録する / Lưu'}
+                {editingId ? '更新する' : '登録する'}
               </button>
             </div>
           </div>

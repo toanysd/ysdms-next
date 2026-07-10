@@ -73,7 +73,7 @@ function ConfirmModal({ data, onClose, onSuccess }: { data: any, onClose: () => 
                 // Fetch molds regardless of product_id for now (Phase B fallback)
                 const res = await getProductPhysicalMolds(data.order.detail?.product_id || '')
                 setMolds(res)
-                if (res.length > 0) setSelectedMold(res[0].mold_physical_id)
+                if (res.length > 0) setSelectedMold(res[0].id)
             } catch (err) {}
         }
         fetchMolds()
@@ -127,7 +127,7 @@ function ConfirmModal({ data, onClose, onSuccess }: { data: any, onClose: () => 
                             >
                                 <option value="">--- Chọn khuôn (Chưa xác định) ---</option>
                                 {molds.map(m => (
-                                    <option key={m.mold_physical_id} value={m.mold_physical_id}>{m.system_code} {m.device_status !== 'ACTIVE' ? '(⚠️ Bảo trì)' : ''}</option>
+                                    <option key={m.id} value={m.id}>{m.physical_code} {m.status !== 'ACTIVE' ? '(⚠️ Bảo trì)' : ''}</option>
                                 ))}
                             </select>
                         </div>

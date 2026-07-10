@@ -30,12 +30,15 @@ export function SearchBox({
       const params = new URLSearchParams(searchParams.toString())
       if (query) {
         params.set('q', query)
+        // Reset page về 1 khi search query thay đổi — tránh lỗi range 416
+        params.delete('page')
         // Add to history when searching (if historyKey is provided and query is valid)
         if (historyKey && query.trim().length >= 2) {
           addToHistory(query.trim())
         }
       } else {
         params.delete('q')
+        params.delete('page')
       }
       const newQueryString = params.toString()
       if (newQueryString !== searchParams.toString()) {

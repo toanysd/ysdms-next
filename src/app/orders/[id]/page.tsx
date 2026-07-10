@@ -10,6 +10,9 @@ import { OrderDetailHeader } from './OrderDetailHeader'
 import { OrderTabNavigation, type TabId } from './OrderTabNavigation'
 import { OverviewTab } from './tabs/OverviewTab'
 import { OrderLinesTab } from './tabs/OrderLinesTab'
+import { ProductionInstructionsTab } from './tabs/ProductionInstructionsTab'
+import { OrderForm } from '../_components/OrderForm'
+import { OrderHeaderInput, OrderLineInput } from '@/app/actions/orders'
 
 export type OrderLineDetail = {
   line_id: string
@@ -31,6 +34,9 @@ export type OrderDetailData = {
   quote_id: string | null
   order_date: string | null
   requested_delivery: string | null
+  order_type: string | null
+  customer_order_no: string | null
+  lot_no: string | null
   order_status: string
   notes: string | null
   created_at: string
@@ -38,7 +44,7 @@ export type OrderDetailData = {
     company_name: string
     company_code: string
   } | null
-  order_lines: OrderLineDetail[]
+  order_lines: (OrderLineDetail & OrderLineInput)[]
 }
 
 function TabContent({ 
@@ -52,7 +58,8 @@ function TabContent({
   switch (tab) {
     case 'overview':  return <OverviewTab order={order} isEditing={isEditing} formData={formData} setFormData={setFormData} />
     case 'order_lines': return <OrderLinesTab order={order} />
-    case 'shipments': return <PlaceholderTab name="出荷履歴 / Lịch sử giao hàng" />
+    case 'production_instructions': return <ProductionInstructionsTab order={order} />
+    case 'shipments': return <PlaceholderTab name="出荷履歴" />
     default:          return null
   }
 }
@@ -66,7 +73,7 @@ function PlaceholderTab({ name }: { name: string }) {
         {name}
       </div>
       <div style={{ fontSize: 11 }}>
-        開発中 / Đang phát triển...
+        開発中
       </div>
     </div>
   )
@@ -113,30 +120,10 @@ export default function OrderDetailPage() {
 
   useEffect(() => { fetchOrder() }, [fetchOrder])
 
-  const handleSave = async () => {
-    if (!order) return
-    
-    const fieldsToUpdate = {
-      order_no: formData.order_no,
-      order_status: formData.order_status,
-      company_id: formData.company_id,
-      order_date: formData.order_date || null,
-      requested_delivery: formData.requested_delivery || null,
-      notes: formData.notes,
-    }
-
-    const { error: updateErr } = await supabase
-      .from('orders')
-      .update(fieldsToUpdate as any)
-      .eq('order_id', order.order_id)
-
-    if (!updateErr) {
-      setIsEditing(false)
-      fetchOrder()
-    } else {
-      console.error(updateErr)
-      alert("Failed to save: " + updateErr.message)
-    }
+  // handleSave is now handled by OrderForm, we just need to refresh when done
+  const handleEditSuccess = () => {
+    setIsEditing(false)
+    fetchOrder()
   }
 
   if (loading) {
@@ -153,7 +140,7 @@ export default function OrderDetailPage() {
       <div className="card-flat" style={{ padding: 20, textAlign: 'center' }}>
         <AlertTriangle size={24} style={{ color: 'var(--status-error)', marginBottom: 8, marginInline: 'auto' }} />
         <div style={{ fontSize: 13, color: 'var(--status-error)', fontWeight: 600 }}>
-          {error || '受注が見つかりません / Không tìm thấy đơn hàng'}
+          {error || '受注が見つかりません'}
         </div>
         <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>
           ID: {orderId}
@@ -163,36 +150,68 @@ export default function OrderDetailPage() {
   }
 
   return (
-    <div className="flex flex-col gap-3 relative" style={{ height: '100%', paddingBottom: isEditing ? 80 : 0 }}>
-      <OrderBackButton />
+    <div className="flex flex-col gap-3 relative" style={{ height: '100%', paddingBottom: isEditing ? 0 : 0 }}>
+      {!isEditing && <OrderBackButton />}
 
-      <OrderDetailHeader 
-        order={order} 
-        isEditing={isEditing} 
-        setIsEditing={setIsEditing}
-      />
-
-      <OrderTabNavigation activeTab={activeTab} onTabChange={setActiveTab} />
-
-      <div style={{ marginTop: 16 }}>
-        <TabContent 
-          tab={activeTab} 
-          order={order} 
-          isEditing={isEditing} 
-          formData={formData} 
-          setFormData={setFormData} 
-        />
-      </div>
+      {!isEditing && (
+        <>
+          <OrderDetailHeader 
+            order={order} 
+            isEditing={isEditing} 
+            setIsEditing={setIsEditing}
+          />
+          <OrderTabNavigation activeTab={activeTab} onTabChange={setActiveTab} />
+          
+          <div style={{ marginTop: 16 }}>
+            <TabContent 
+              tab={activeTab} 
+              order={order} 
+              isEditing={isEditing} 
+              formData={formData} 
+              setFormData={setFormData} 
+            />
+          </div>
+        </>
+      )}
 
       {isEditing && (
-        <div className="card-flat sticky bottom-0 z-10 flex justify-end gap-2 p-3 mt-4" style={{ backgroundColor: 'var(--bg-surface)' }}>
-          <button className="btn btn-secondary" onClick={() => { setIsEditing(false); setFormData(order) }}>
-            キャンセル / Huỷ
-          </button>
-          <button className="btn btn-primary" onClick={handleSave}>
-            <Save size={16} />
-            保存 / Lưu
-          </button>
+        <div style={{ marginTop: 16 }}>
+          <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 16 }}>受注編集</h2>
+          <OrderForm 
+            isEditing={true}
+            initialOrder={{
+              header: {
+                order_id: order.order_id,
+                company_id: order.company_id || '',
+                order_no: order.order_no,
+                order_date: order.order_date,
+                requested_delivery: order.requested_delivery,
+                order_type: order.order_type,
+                customer_order_no: order.customer_order_no,
+                lot_no: order.lot_no,
+                notes: order.notes,
+                order_status: order.order_status
+              },
+              lines: order.order_lines.map(l => ({
+                line_id: l.line_id,
+                order_id: l.order_id,
+                product_id: l.product_id,
+                delivery_site_id: l.delivery_site_id || null,
+                line_no: l.line_no,
+                quantity: l.quantity,
+                unit: l.unit,
+                due_date: l.due_date,
+                ship_date: l.ship_date,
+                is_free_sample: l.is_free_sample,
+                charge_type: l.charge_type,
+                packing_style: l.packing_style,
+                shipping_notes: l.shipping_notes,
+                line_status: l.line_status
+              }))
+            }}
+            onCancel={() => setIsEditing(false)}
+            onSuccess={handleEditSuccess}
+          />
         </div>
       )}
     </div>

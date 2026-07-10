@@ -10,7 +10,7 @@ export default function QuotationsPage() {
         <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>Báo giá (Quotation)</span>
       </div>
       <div className="card-flat px-4 py-8 text-center">
-        <p className="text-[13px]" style={{ color: 'var(--text-muted)' }}>🚧 このモジュールは開発中です / Module đang phát triển</p>
+        <p className="text-[13px]" style={{ color: 'var(--text-muted)' }}>🚧 このモジュールは開発中です</p>
       </div>
     </div>
   )

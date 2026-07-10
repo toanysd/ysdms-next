@@ -17,7 +17,7 @@ export default function ExcelPlanGridView({ plans, machines, startDateStr, daysC
 
     // We only want active machines or machines that have plans
     const activeMachines = machines.filter(m => {
-        const s = m.status?.toLowerCase();
+        const s = (m.status || 'active').toLowerCase();
         return s === 'active' || s === 'running' || plans.some(p => p.machine_instance_id === m.id);
     })
 
@@ -136,7 +136,7 @@ export default function ExcelPlanGridView({ plans, machines, startDateStr, daysC
                                                                 className={`group relative hover:border-[var(--mcs-primary)] hover:shadow-md transition-all rounded-[3px] p-1 grid grid-cols-[95px_50px_1fr_45px_35px] gap-1 items-center text-[12px] cursor-pointer ${planClasses}`}
                                                             >
                                                                 <div className="font-bold text-[var(--mcs-primary)] truncate flex items-center gap-1" title={plan.order_items?.product_pn_raw}>
-                                                                    {!plan.physical_mold_id && (
+                                                                    {!plan.mold_physical_id && (
                                                                         <span title="金型未設定 (Chưa gán khuôn)" className="text-amber-500 text-[10px] shrink-0">⚠️</span>
                                                                     )}
                                                                     <span className="truncate">{plan.order_items?.product_pn_raw}</span>

@@ -332,7 +332,7 @@ export async function getJobsForGantt(searchQuery?: string, fromDate?: string, t
     // Sort job_steps by step_no on client side
     const processedJobs = finalData.map(job => ({
         ...job,
-        job_steps: (job.job_steps || []).sort((a, b) => a.step_no - b.step_no)
+        job_steps: (job.job_steps || []).sort((a: any, b: any) => a.step_no - b.step_no)
     }))
     
     return { data: processedJobs as any as JobForGantt[], count: count || 0 }

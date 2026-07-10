@@ -47,9 +47,34 @@ export default async function CustomersPage(props: {
     dbQuery = dbQuery.or(`company_code.ilike.%${query}%,company_name.ilike.%${query}%,company_name_romaji.ilike.%${query}%`)
   }
 
-  const { data: companies, count, error } = await dbQuery
+  let { data: companies, count, error } = await dbQuery
     .order('company_code', { ascending: true })
     .range(from, to)
+
+  // Fix: Nếu range vượt quá kết quả (lỗi 416), retry với page 1
+  if (error?.message?.includes('range not satisfiable') || error?.code === 'PGRST103') {
+    const retryResult = await supabase
+      .from('companies')
+      .select('company_id, company_code, company_name, company_name_romaji, company_type, tel, is_active, parent_company_id, legacy_id', { count: 'exact' })
+    let retryQuery = retryResult
+    // Re-apply filters on a new query
+    const retryDbQuery = supabase
+      .from('companies')
+      .select('company_id, company_code, company_name, company_name_romaji, company_type, tel, is_active, parent_company_id, legacy_id', { count: 'exact' })
+    let finalQuery = retryDbQuery
+    if (!showAll) {
+      finalQuery = finalQuery.contains('company_type', [typeFilter])
+    }
+    if (query) {
+      finalQuery = finalQuery.or(`company_code.ilike.%${query}%,company_name.ilike.%${query}%,company_name_romaji.ilike.%${query}%`)
+    }
+    const retryRes = await finalQuery
+      .order('company_code', { ascending: true })
+      .range(0, PAGE_SIZE - 1)
+    companies = retryRes.data
+    count = retryRes.count
+    error = retryRes.error
+  }
 
   const totalRecords = count ?? 0
 
@@ -66,7 +91,7 @@ export default async function CustomersPage(props: {
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <Suspense fallback={<div style={{ width: 250, height: 36, background: 'var(--bg-surface-2)', borderRadius: 4 }} />}>
-            <SearchBox placeholder="Tìm mã hoặc tên KH..." historyKey='search_customers' />
+            <SearchBox placeholder="コード・名称で検索..." historyKey='search_customers' />
           </Suspense>
           <Link href="/master/customers/new">
             <button className="btn btn-primary">

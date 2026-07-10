@@ -43,7 +43,7 @@ export default function EditModal({
                 setStandardMolds(res)
                 
                 const hasSelectedMold = !!planData.mold_physical_id
-                const isSelectedStandard = res.some(m => m.mold_physical_id === planData.mold_physical_id)
+                const isSelectedStandard = res.some(m => m.id === planData.mold_physical_id)
                 
                 if (hasSelectedMold && !isSelectedStandard) {
                     const allRes = await getAllPhysicalMolds()
@@ -52,7 +52,7 @@ export default function EditModal({
                 }
 
                 if (res.length > 0 && !selectedMold) {
-                    setSelectedMold(res[0].mold_physical_id)
+                    setSelectedMold(res[0].id)
                 }
             } catch (err) {}
         }
@@ -73,15 +73,15 @@ export default function EditModal({
 
     useEffect(() => {
         if (selectedMold && !showMoldDropdown) {
-            const obj = activeMoldsList.find(m => m.mold_physical_id === selectedMold)
-            if (obj) setMoldSearch(obj.system_code)
+            const obj = activeMoldsList.find(m => m.id === selectedMold)
+            if (obj) setMoldSearch(obj.physical_code)
         }
     }, [selectedMold, activeMoldsList, showMoldDropdown])
 
     const filteredMolds = activeMoldsList.filter(m => {
         if (!moldSearch) return true
         const search = moldSearch.toLowerCase().replace(/[- ]/g, '')
-        const code = m.system_code.toLowerCase().replace(/[- ]/g, '')
+        const code = m.physical_code.toLowerCase().replace(/[- ]/g, '')
         return code.includes(search)
     })
 
@@ -96,7 +96,7 @@ export default function EditModal({
         if (e.key === 'Enter') {
             e.preventDefault()
             if (filteredMolds.length > 0) {
-                handleMoldSelect(filteredMolds[0].mold_physical_id, filteredMolds[0].system_code)
+                handleMoldSelect(filteredMolds[0].id, filteredMolds[0].physical_code)
             }
         }
     }
@@ -208,9 +208,9 @@ export default function EditModal({
                                             setShowMoldDropdown(true)
                                             
                                             // Reset selectedMold if typing. Auto-select only if exact match.
-                                            const exact = activeMoldsList.find(m => m.system_code.toLowerCase().replace(/[- ]/g, '') === val.toLowerCase().replace(/[- ]/g, ''))
+                                            const exact = activeMoldsList.find(m => m.physical_code.toLowerCase().replace(/[- ]/g, '') === val.toLowerCase().replace(/[- ]/g, ''))
                                             if (exact) {
-                                                setSelectedMold(exact.mold_physical_id)
+                                                setSelectedMold(exact.id)
                                             } else {
                                                 setSelectedMold('')
                                             }
@@ -228,28 +228,28 @@ export default function EditModal({
                                     <div className="absolute z-10 w-full mt-1 bg-white border border-[var(--mcs-border-strong)] rounded shadow-lg max-h-48 overflow-y-auto">
                                         {filteredMolds.map(m => (
                                             <div 
-                                                key={m.mold_physical_id}
+                                                key={m.id}
                                                 onMouseDown={(e) => {
                                                     e.preventDefault() // prevent blur
-                                                    handleMoldSelect(m.mold_physical_id, m.system_code)
+                                                    handleMoldSelect(m.id, m.physical_code)
                                                 }}
-                                                className={`px-3 py-2 text-sm cursor-pointer hover:bg-[var(--mcs-primary-light)] flex justify-between items-center ${selectedMold === m.mold_physical_id ? 'bg-[var(--mcs-primary-light)] font-bold text-[var(--mcs-primary)]' : ''}`}
+                                                className={`px-3 py-2 text-sm cursor-pointer hover:bg-[var(--mcs-primary-light)] flex justify-between items-center ${selectedMold === m.id ? 'bg-[var(--mcs-primary-light)] font-bold text-[var(--mcs-primary)]' : ''}`}
                                             >
                                                 <span>
-                                                    {m.system_code} 
-                                                    {m.device_status !== 'ACTIVE' && <span className="text-amber-600 ml-1">(⚠️ Bảo trì)</span>}
+                                                    {m.physical_code} 
+                                                    {m.status !== 'ACTIVE' && <span className="text-amber-600 ml-1">(⚠️ Bảo trì)</span>}
                                                 </span>
-                                                {occupiedMolds[m.mold_physical_id] && (
-                                                    <span className="text-red-600 text-[11px] font-bold bg-red-50 px-1.5 py-0.5 rounded border border-red-100">🔒 Đang chạy ở {occupiedMolds[m.mold_physical_id]}</span>
+                                                {occupiedMolds[m.id] && (
+                                                    <span className="text-red-600 text-[11px] font-bold bg-red-50 px-1.5 py-0.5 rounded border border-red-100">🔒 Đang chạy ở {occupiedMolds[m.id]}</span>
                                                 )}
                                             </div>
                                         ))}
                                     </div>
                                 )}
                                 
-                                {selectedMold && !standardMolds.some(m => m.mold_physical_id === selectedMold) && !occupiedMolds[selectedMold] && (
+                                {selectedMold && !standardMolds.some(m => m.id === selectedMold) && !occupiedMolds[selectedMold] && (
                                     <div className="mt-2 text-[12px] font-bold text-red-600 bg-red-50 p-2 rounded border border-red-200">
-                                        ⚠️ 警告: 選択した金型（{activeMoldsList.find(m=>m.mold_physical_id === selectedMold)?.system_code}）は、製品（{orderItem?.product_pn_raw}）の標準金型ではありません。本当によろしいですか？
+                                        ⚠️ 警告: 選択した金型（{activeMoldsList.find(m=>m.id === selectedMold)?.physical_code}）は、製品（{orderItem?.product_pn_raw}）の標準金型ではありません。本当によろしいですか？
                                         <div className="text-[10px] font-normal mt-0.5">(Cảnh báo: Khuôn đã chọn khác với mã khay chuẩn. Bạn có chắc chắn không?)</div>
                                     </div>
                                 )}

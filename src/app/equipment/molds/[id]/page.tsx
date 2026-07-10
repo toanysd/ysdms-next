@@ -40,6 +40,8 @@ export type MoldDetailData = {
   keeper_company_id: string | null
   current_rack_layer_id: string | null
   mold_revision_id: string
+  photo_url: string | null
+  last_inventory_date: string | null
   created_at: string | null
   updated_at: string | null
 
@@ -249,6 +251,8 @@ export default function MoldDetailPage() {
       mold_type: formData.mold_type,
       piece_count: formData.piece_count ? Number(formData.piece_count) : null,
       notes: formData.notes,
+      photo_url: formData.photo_url,
+      last_inventory_date: formData.last_inventory_date,
     }
 
     const { error: updateErr } = await supabase

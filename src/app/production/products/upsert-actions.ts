@@ -76,7 +76,7 @@ export async function upsertUnifiedTray(payload: UnifiedTrayPayload): Promise<{ 
         cutline_width: payload.cutline_y ?? null,
         cavity_count: payload.cavity ?? null,
         pocket_numbers: payload.pocket_numbers ?? null,
-        pitch_mm: payload.pitch ?? null,
+        cavity_pitch_mm: payload.pitch ?? null,
         design_code: `${payload.mold_code}-DR`
       }
 

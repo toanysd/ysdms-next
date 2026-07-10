@@ -878,6 +878,12 @@ export default function MoldJobGantt({ jobs, employees = [], machines = [], init
   const compareModeRef = useRef(compareMode)
   const tasksRef = useRef<ExtendedTask[]>([])
   const localStepsRef = useRef(localSteps)
+  const processedLocateRef = useRef<string | null>(null)
+  const handleScrollToDateRef = useRef<(
+    targetDateString: string | null | undefined,
+    rowIndex?: number,
+    highlightDateString?: string | null
+  ) => boolean>(() => false)
   useEffect(() => { fromDateRef.current = fromDate }, [fromDate])
   useEffect(() => { toDateRef.current = toDate }, [toDate])
   useEffect(() => { viewModeRef.current = viewMode }, [viewMode])
@@ -896,13 +902,14 @@ export default function MoldJobGantt({ jobs, employees = [], machines = [], init
     
     // Guess the preset if from/to are set
     if (updated && s && e) {
-       const ds = new Date(s);
-       const de = new Date(e);
-       const diffDays = Math.round((de.getTime() - ds.getTime()) / (1000 * 3600 * 24));
-       if (diffDays === 6 || diffDays === 7) setActivePreset('WEEK');
-       else if (diffDays >= 28 && diffDays <= 31) setActivePreset('MONTH');
-       else setActivePreset('DAY');
-    }
+        const ds = new Date(s);
+        const de = new Date(e);
+        const diffDays = Math.round((de.getTime() - ds.getTime()) / (1000 * 3600 * 24)) + 1;
+        if (diffDays >= 13 && diffDays <= 15) setActivePreset('2W');
+        else if (diffDays >= 28 && diffDays <= 32) setActivePreset('1M');
+        else if (diffDays >= 88 && diffDays <= 93) setActivePreset('3M');
+        else setActivePreset('');
+     }
   }, [searchParams]);
 
   const handleApplyDateFilter = useCallback((startStr?: string, endStr?: string) => {
@@ -916,26 +923,25 @@ export default function MoldJobGantt({ jobs, employees = [], machines = [], init
     router.push(`?${params.toString()}`);
   }, [router]);
 
-  // Unified view range
-  const setViewRange = useCallback((range: 'DAY' | 'WEEK' | 'MONTH') => {
+  // Unified view range (data fetch range)
+  const setViewRange = useCallback((range: '2W' | '1M' | '3M') => {
     const today = new Date()
     today.setHours(0, 0, 0, 0)
     let start = new Date(today)
     let end = new Date(today)
 
-    if (range === 'DAY') {
-      setViewMode(ViewMode.Day)
-    } else if (range === 'WEEK') {
-      setViewMode(ViewMode.Day)
+    if (range === '2W') {
       const day = today.getDay()
       const diffToMonday = today.getDate() - day + (day === 0 ? -6 : 1)
       start.setDate(diffToMonday)
       end = new Date(start)
-      end.setDate(end.getDate() + 6)
-    } else {
-      setViewMode(ViewMode.Day)
+      end.setDate(end.getDate() + 13) // 14 days total (this week + next week)
+    } else if (range === '1M') {
       start = new Date(today.getFullYear(), today.getMonth(), 1)
       end = new Date(today.getFullYear(), today.getMonth() + 1, 0)
+    } else if (range === '3M') {
+      start = new Date(today.getFullYear(), today.getMonth(), 1)
+      end = new Date(today.getFullYear(), today.getMonth() + 3, 0)
     }
 
     setActivePreset(range)
@@ -946,23 +952,66 @@ export default function MoldJobGantt({ jobs, employees = [], machines = [], init
     handleApplyDateFilter(sStr, eStr)
   }, [handleApplyDateFilter])
 
-  const handleTodayClick = useCallback(() => setViewRange('WEEK'), [setViewRange])
+  // Custom Today click handler: fast scrolls if today is in bounds, reloads with default range if out of bounds
+  const handleTodayClick = useCallback(() => {
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    const todayMs = today.getTime()
+    
+    const s = fromDateRef.current ? new Date(fromDateRef.current).getTime() : 0
+    const e = toDateRef.current ? new Date(toDateRef.current).getTime() : 0
+    
+    // Check if today is within the loaded range
+    if (todayMs >= s && todayMs <= e) {
+      const todayStr = today.toISOString().split('T')[0]
+      // Assuming onScrollToDate is defined elsewhere in the main component
+      handleScrollToDateRef.current(todayStr, undefined, todayStr)
+    } else {
+      // Out of bounds -> reset query range to the default 2 weeks containing today,
+      // and append locateDate params to trigger auto-scroll on page reload.
+      const day = today.getDay()
+      const diffToMonday = today.getDate() - day + (day === 0 ? -6 : 1)
+      const start = new Date(today)
+      start.setDate(diffToMonday)
+      const end = new Date(start)
+      end.setDate(end.getDate() + 13)
+      
+      const sStr = start.toISOString().split('T')[0]
+      const eStr = end.toISOString().split('T')[0]
+      
+      const params = new URLSearchParams(window.location.search)
+      params.set('from', sStr)
+      params.set('to', eStr)
+      params.set('locateDate', today.toISOString().split('T')[0])
+      params.set('highlightDate', today.toISOString().split('T')[0])
+      
+      setActivePreset('2W')
+      setFromDate(sStr)
+      setToDate(eStr)
+      processedLocateRef.current = null // Reset so scroll effect fires upon reload
+      router.push(`?${params.toString()}`)
+    }
+  }, [router])
 
   const shiftDateRange = useCallback((direction: 1 | -1) => {
     const s = fromDateRef.current ? new Date(fromDateRef.current) : new Date()
     const e = toDateRef.current ? new Date(toDateRef.current) : new Date()
     
-    if (activePreset === 'MONTH') {
+    if (activePreset === '1M') {
        s.setMonth(s.getMonth() + direction)
-       e.setMonth(e.getMonth() + direction)
-       const lastDay = new Date(e.getFullYear(), e.getMonth() + 1, 0)
+       const lastDay = new Date(s.getFullYear(), s.getMonth() + 1, 0)
+       e.setFullYear(s.getFullYear())
+       e.setMonth(s.getMonth())
        e.setDate(lastDay.getDate())
-    } else if (activePreset === 'WEEK') {
-       s.setDate(s.getDate() + direction * 7)
-       e.setDate(e.getDate() + direction * 7)
-    } else if (activePreset === 'DAY') {
-       s.setDate(s.getDate() + direction * 1)
-       e.setDate(e.getDate() + direction * 1)
+    } else if (activePreset === '3M') {
+       s.setMonth(s.getMonth() + direction * 3)
+       const lastDay = new Date(s.getFullYear(), s.getMonth() + 3, 0)
+       e.setFullYear(s.getFullYear())
+       e.setMonth(s.getMonth() + 2)
+       e.setDate(lastDay.getDate())
+    } else if (activePreset === '2W') {
+       s.setDate(s.getDate() + direction * 14)
+       e.setDate(e.getDate() + direction * 14)
     } else {
        const diffTime = Math.abs(e.getTime() - s.getTime())
        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1
@@ -1782,10 +1831,23 @@ export default function MoldJobGantt({ jobs, employees = [], machines = [], init
 
   const handleExpandAll = useCallback(() => {
     setExpandedJobs(new Set(jobs.map(j => j.job_id)))
+    // Also expand all tracks (MOLD, PLUG, FINISH, CUTTER, etc.)
+    const allTrackIds = new Set<string>()
+    jobs.forEach(j => {
+      const tracks = new Set<string>()
+      j.job_steps?.forEach((s: any) => {
+        tracks.add((s.track || 'MOLD').toUpperCase())
+      })
+      tracks.forEach(trackCode => {
+        allTrackIds.add(`${j.job_id}_track_${trackCode}`)
+      })
+    })
+    setExpandedTracks(allTrackIds)
   }, [jobs])
 
   const handleCollapseAll = useCallback(() => {
     setExpandedJobs(new Set())
+    setExpandedTracks(new Set())
   }, [])
 
   const handleEditStep = useCallback((task: ExtendedTask) => {
@@ -1840,16 +1902,28 @@ export default function MoldJobGantt({ jobs, employees = [], machines = [], init
     const currentViewMode = viewModeRef.current
     const currentCompareMode = compareModeRef.current
     
-    // Find the correct native scrollbar elements using style detection first
-    let horizontalScrollContainer = ganttEl.querySelector('div[style*="overflow-x"]') as HTMLElement;
-    let verticalScrollContainer = ganttEl.querySelector('div[style*="overflow-y"]') as HTMLElement;
-
-    // Fallback to known class names if detection failed
+    // gantt-task-react DOM structure:
+    //   ._CZjuD (ganttVerticalContainer) → controls scrollLeft (horizontal chart scroll)
+    //     └── svg (calendar header)
+    //     └── ._2B2zv (horizontalContainer) → controls scrollTop (vertical chart scroll)
+    //          └── svg (chart body with bars)
+    //   ._1eT-t (VerticalScroll) → scrollbar rail on the right, synced via onScroll
+    //   ._2k9Ys (HorizontalScroll) → scrollbar rail at the bottom, synced via onScroll
+    
+    // For horizontal scrolling: use the bottom scrollbar (._2k9Ys) which fires onScroll
+    // and the library syncs ._CZjuD.scrollLeft automatically
+    let horizontalScrollContainer = ganttEl.querySelector('._2k9Ys') as HTMLElement;
+    
+    // For vertical scrolling: use the right scrollbar (._1eT-t) which fires onScroll  
+    // and the library syncs ._2B2zv.scrollTop automatically
+    let verticalScrollContainer = ganttEl.querySelector('._1eT-t') as HTMLElement;
+    
+    // Fallback: if scrollbar elements not found, try the actual chart containers directly
     if (!horizontalScrollContainer) {
-      horizontalScrollContainer = ganttEl.querySelector('._2k9Ys') as HTMLElement;
+      horizontalScrollContainer = ganttEl.querySelector('._CZjuD') as HTMLElement;
     }
     if (!verticalScrollContainer) {
-      verticalScrollContainer = ganttEl.querySelector('._1eT-t') as HTMLElement;
+      verticalScrollContainer = ganttEl.querySelector('._2B2zv') as HTMLElement;
     }
 
     const targetMs = targetDate.getTime()
@@ -1916,22 +1990,31 @@ export default function MoldJobGantt({ jobs, employees = [], machines = [], init
       return dates
     }
 
-    // Filter visible tasks (excluding collapsed ones)
-    const visibleTasks = tasksRef.current.filter(t => {
-      if (t.type === 'project') return true
-      if (t.project) {
-        const parent = tasksRef.current.find(pt => pt.id === t.project)
-        return parent ? !parent.hideChildren : true
-      }
-      return true
-    })
-
     if (tasksRef.current.length === 0) return false
 
-    // Find the bounds of ALL tasks to determine the grid range exactly like gantt-task-react
-    let minTaskDate = tasksRef.current[0].start
-    let maxTaskDate = tasksRef.current[0].end
-    tasksRef.current.forEach(t => {
+    // Filter visible tasks (excluding collapsed ones) exactly like gantt-task-react does
+    const getChildren = (taskList: ExtendedTask[], task: ExtendedTask) => {
+      return taskList.filter(t => t.project === task.id)
+    }
+
+    const removeHiddenTasks = (taskList: ExtendedTask[]) => {
+      let filtered = [...taskList]
+      const groupedTasks = filtered.filter(t => t.hideChildren && t.type === 'project')
+      for (let i = 0; i < groupedTasks.length; i++) {
+        const groupedTask = groupedTasks[i]
+        const children = getChildren(filtered, groupedTask)
+        filtered = filtered.filter(t => children.indexOf(t) === -1)
+      }
+      return filtered
+    }
+
+    const visibleTasks = removeHiddenTasks(tasksRef.current)
+    if (visibleTasks.length === 0) return false
+
+    // Find the bounds of visible tasks to determine the grid range exactly like gantt-task-react
+    let minTaskDate = visibleTasks[0].start
+    let maxTaskDate = visibleTasks[0].start
+    visibleTasks.forEach(t => {
       if (t.start < minTaskDate) minTaskDate = t.start
       if (t.end > maxTaskDate) maxTaskDate = t.end
     })
@@ -1993,23 +2076,38 @@ export default function MoldJobGantt({ jobs, employees = [], machines = [], init
     const viewportHeight = verticalScrollContainer ? verticalScrollContainer.clientHeight : 600
     const scrollToTop = rowIndex !== undefined ? Math.max(0, (rowIndex * rHeight) - (viewportHeight / 2)) : 0
 
+    // =====================================================================
+    // STEP 1: SCROLL — use ._2k9Ys (horizontal) and ._1eT-t (vertical)
+    // These are the only elements with real overflow that fire onScroll.
+    // The library syncs chart body containers via React state.
+    // We use behavior: 'auto' (instant) here to make it extremely responsive
+    // and avoid any visual scroll animation lag.
+    // =====================================================================
     requestAnimationFrame(() => {
       if (horizontalScrollContainer) {
-        horizontalScrollContainer.scrollTo({ left: scrollToLeft, behavior: 'smooth' })
+        horizontalScrollContainer.scrollTo({ left: scrollToLeft, behavior: 'auto' })
       }
       if (verticalScrollContainer) {
-        verticalScrollContainer.scrollTo({ top: scrollToTop, behavior: 'smooth' })
+        verticalScrollContainer.scrollTo({ top: scrollToTop, behavior: 'auto' })
       }
     })
 
-    // Find the main chart body SVG
-    let chartSvg: SVGSVGElement | null = null;
-    if (horizontalScrollContainer) {
-      chartSvg = horizontalScrollContainer.querySelector('svg');
-    }
-    
-    // Fallback if not found in scroll container
-    if (!chartSvg) {
+    // =====================================================================
+    // STEP 2: DRAW RED LINE — delayed to run AFTER scroll completes
+    // 
+    // WHY the delay is critical:
+    // scroll → fires onScroll event → library calls setScrollX/Y
+    // → React re-render → SVG DOM may be recreated
+    // → any elements appended to old SVG are lost
+    //
+    // By waiting 100ms (almost instant to human eye), we ensure React
+    // has finished re-rendering, and we find the FRESH SVG element.
+    // =====================================================================
+    const drawRedLineIndicators = () => {
+      if (!ganttEl) return
+
+      // Find chart body SVG fresh — always search from ganttEl, never cache
+      let chartSvg: SVGSVGElement | null = null;
       const svgs = ganttEl.querySelectorAll('svg');
       let svgCount = 0;
       for (let i = 0; i < svgs.length; i++) {
@@ -2029,71 +2127,78 @@ export default function MoldJobGantt({ jobs, employees = [], machines = [], init
           }
         }
       }
-    }
 
-    ganttEl.querySelectorAll('.date-locate-pulse').forEach(el => el.remove())
-    let highlightPixel = targetPixel
-    if (highlightDateString) {
-      const hdDate = new Date(highlightDateString)
-      // Hiển thị đường đỏ ở đầu ngày theo yêu cầu của user
-      hdDate.setHours(0, 0, 0, 0)
-      const hdMs = hdDate.getTime()
-      let hdIndex = gridDates.findIndex(d => d.getTime() >= hdMs) - 1
-      if (hdIndex < 0) hdIndex = 0
-      if (hdIndex >= gridDates.length - 1) hdIndex = gridDates.length - 2
+      // Remove any existing pulse indicators
+      ganttEl.querySelectorAll('.date-locate-pulse').forEach(el => el.remove())
 
-      const hdIntervalStart = gridDates[hdIndex]
-      const hdNextIntervalStart = gridDates[hdIndex + 1]
-      if (hdIntervalStart && hdNextIntervalStart) {
-        const hdRemainderMillis = hdMs - hdIntervalStart.getTime()
-        const hdIntervalMillis = hdNextIntervalStart.getTime() - hdIntervalStart.getTime()
-        const hdPercentOfInterval = hdRemainderMillis / hdIntervalMillis
-        highlightPixel = hdIndex * colWidth + hdPercentOfInterval * colWidth
-      }
-    }
+      let highlightPixel = targetPixel
+      if (highlightDateString) {
+        const hdDate = new Date(highlightDateString)
+        hdDate.setHours(0, 0, 0, 0)
+        const hdMs = hdDate.getTime()
+        let hdIndex = gridDates.findIndex(d => d.getTime() >= hdMs) - 1
+        if (hdIndex < 0) hdIndex = 0
+        if (hdIndex >= gridDates.length - 1) hdIndex = gridDates.length - 2
 
-    if (chartSvg) {
-      if (rowIndex !== undefined && rowIndex >= 0) {
-        const hPulse = document.createElementNS('http://www.w3.org/2000/svg', 'rect')
-        hPulse.setAttribute('class', 'date-locate-pulse animate-pulse-locate')
-        hPulse.setAttribute('x', '0')
-        hPulse.setAttribute('y', String(rowTop))
-        hPulse.setAttribute('width', '100%')
-        hPulse.setAttribute('height', String(rHeight))
-        hPulse.setAttribute('fill', 'rgba(217, 48, 37, 0.15)')
-        hPulse.setAttribute('stroke', 'var(--status-error, #d93025)')
-        hPulse.setAttribute('stroke-width', '2')
-        hPulse.style.pointerEvents = 'none'
-        
-        chartSvg.appendChild(hPulse)
-        setTimeout(() => hPulse.remove(), 3500)
-
-        // Highlight the specific task bar (Job) to show selection
-        // gantt-task-react adds tabIndex="0" to every Task wrapper
-        const barWrappers = chartSvg.querySelectorAll('g[tabindex="0"]')
-        if (barWrappers && barWrappers[rowIndex]) {
-          const targetWrapper = barWrappers[rowIndex]
-          targetWrapper.classList.add('highlighted-job-bar')
-          setTimeout(() => targetWrapper.classList.remove('highlighted-job-bar'), 3500)
+        const hdIntervalStart = gridDates[hdIndex]
+        const hdNextIntervalStart = gridDates[hdIndex + 1]
+        if (hdIntervalStart && hdNextIntervalStart) {
+          const hdRemainderMillis = hdMs - hdIntervalStart.getTime()
+          const hdIntervalMillis = hdNextIntervalStart.getTime() - hdIntervalStart.getTime()
+          const hdPercentOfInterval = hdRemainderMillis / hdIntervalMillis
+          highlightPixel = hdIndex * colWidth + hdPercentOfInterval * colWidth
         }
       }
 
-      const vPulse = document.createElementNS('http://www.w3.org/2000/svg', 'line')
-      vPulse.setAttribute('class', 'date-locate-pulse animate-pulse-locate')
-      vPulse.setAttribute('x1', String(highlightPixel))
-      vPulse.setAttribute('y1', '0')
-      vPulse.setAttribute('x2', String(highlightPixel))
-      vPulse.setAttribute('y2', '100%')
-      vPulse.setAttribute('stroke', 'var(--status-error, #d93025)')
-      vPulse.setAttribute('stroke-width', '2')
-      vPulse.style.pointerEvents = 'none'
-      
-      chartSvg.appendChild(vPulse)
-      setTimeout(() => vPulse.remove(), 3500)
+      if (chartSvg) {
+        // Horizontal row highlight (red band)
+        if (rowIndex !== undefined && rowIndex >= 0) {
+          const hPulse = document.createElementNS('http://www.w3.org/2000/svg', 'rect')
+          hPulse.setAttribute('class', 'date-locate-pulse animate-pulse-locate')
+          hPulse.setAttribute('x', '0')
+          hPulse.setAttribute('y', String(rowTop))
+          hPulse.setAttribute('width', '100%')
+          hPulse.setAttribute('height', String(rHeight))
+          hPulse.setAttribute('fill', 'rgba(217, 48, 37, 0.15)')
+          hPulse.setAttribute('stroke', 'var(--status-error, #d93025)')
+          hPulse.setAttribute('stroke-width', '2')
+          hPulse.style.pointerEvents = 'none'
+          
+          chartSvg.appendChild(hPulse)
+          setTimeout(() => hPulse.remove(), 3500)
+
+          // Highlight the specific task bar (Job) to show selection
+          const barWrappers = chartSvg.querySelectorAll('g[tabindex="0"]')
+          if (barWrappers && barWrappers[rowIndex]) {
+            const targetWrapper = barWrappers[rowIndex]
+            targetWrapper.classList.add('highlighted-job-bar')
+            setTimeout(() => targetWrapper.classList.remove('highlighted-job-bar'), 3500)
+          }
+        }
+
+        // Vertical red line at target date
+        const vPulse = document.createElementNS('http://www.w3.org/2000/svg', 'line')
+        vPulse.setAttribute('class', 'date-locate-pulse animate-pulse-locate')
+        vPulse.setAttribute('x1', String(highlightPixel))
+        vPulse.setAttribute('y1', '0')
+        vPulse.setAttribute('x2', String(highlightPixel))
+        vPulse.setAttribute('y2', '100%')
+        vPulse.setAttribute('stroke', 'var(--status-error, #d93025)')
+        vPulse.setAttribute('stroke-width', '2')
+        vPulse.style.pointerEvents = 'none'
+        
+        chartSvg.appendChild(vPulse)
+        setTimeout(() => vPulse.remove(), 3500)
+      }
     }
+
+    // Delay drawing 100ms (instant to eye, but lets DOM/React sync complete)
+    setTimeout(drawRedLineIndicators, 100)
 
     return false
   }, [router])
+
+  handleScrollToDateRef.current = handleScrollToDate
 
   // Auto-scroll when navigated via locateDate URL param
   useEffect(() => {
@@ -2102,6 +2207,12 @@ export default function MoldJobGantt({ jobs, employees = [], machines = [], init
     const highlightDate = searchParams?.get('highlightDate')
     
     if (locateDate && wrapperRef.current) {
+      // Loop protection: if we've already handled this precise URL locate parameters, skip!
+      const locateKey = `${locateDate}_${locateRow || ''}_${highlightDate || ''}`
+      if (processedLocateRef.current === locateKey) {
+        return
+      }
+      
       const targetMs = new Date(locateDate).getTime()
       
       // We must wait until the Server Component has actually fetched the expanded date range
@@ -2112,6 +2223,7 @@ export default function MoldJobGantt({ jobs, employees = [], machines = [], init
       const leeway = 7 * 24 * 60 * 60 * 1000 // Add some leeway for task bounds extending beyond
       
       if (targetMs >= bStart - leeway && targetMs <= bEnd + leeway) {
+        processedLocateRef.current = locateKey // Mark as handled immediately to prevent async race
         const timer = setTimeout(() => {
           const redirected = handleScrollToDate(locateDate, locateRow ? parseInt(locateRow) : undefined, highlightDate)
           
@@ -2173,12 +2285,18 @@ export default function MoldJobGantt({ jobs, employees = [], machines = [], init
       <div className="card-flat flex flex-col h-full" style={{ overflow: 'hidden' }}>
         <div className="flex items-center justify-between border-b px-2 py-1.5 gap-2 shrink-0" style={{ borderColor: 'var(--border-default)', backgroundColor: 'var(--bg-surface)' }}>
         <div className="flex items-center gap-1.5">
-          <button className="btn btn-secondary text-[10px] px-2 py-0.5 h-5" onClick={handleTodayClick}>今日</button>
-
-          <div className="flex items-center border rounded overflow-hidden" style={{ borderColor: 'var(--border-default)' }}>
-            <button className="px-1.5 py-0.5 transition-colors flex items-center text-[10px]" style={{ color: 'var(--text-secondary)' }} onClick={() => shiftDateRange(-1)}><ChevronLeft size={11} /></button>
+          <div className="flex items-center border rounded overflow-hidden shadow-sm" style={{ borderColor: 'var(--border-default)', backgroundColor: 'var(--bg-surface-2)' }}>
+            <button className="px-2 py-0.5 transition-colors flex items-center text-[10px] hover:bg-[var(--bg-hover)] h-5" style={{ color: 'var(--text-secondary)' }} onClick={() => shiftDateRange(-1)} title="前へ / Về trước">
+              <ChevronLeft size={11} />
+            </button>
             <div style={{ width: 1, backgroundColor: 'var(--border-default)', alignSelf: 'stretch' }} />
-            <button className="px-1.5 py-0.5 transition-colors flex items-center text-[10px]" style={{ color: 'var(--text-secondary)' }} onClick={() => shiftDateRange(1)}><ChevronRight size={11} /></button>
+            <button className="px-2.5 py-0.5 transition-colors text-[10px] font-semibold hover:bg-[var(--bg-hover)] h-5 flex items-center" style={{ color: 'var(--text-primary)' }} onClick={handleTodayClick} title="今日に移動 / Về hôm nay">
+              今日
+            </button>
+            <div style={{ width: 1, backgroundColor: 'var(--border-default)', alignSelf: 'stretch' }} />
+            <button className="px-2 py-0.5 transition-colors flex items-center text-[10px] hover:bg-[var(--bg-hover)] h-5" style={{ color: 'var(--text-secondary)' }} onClick={() => shiftDateRange(1)} title="次へ / Về sau">
+              <ChevronRight size={11} />
+            </button>
           </div>
 
           <div className="flex items-center gap-2">
@@ -2250,10 +2368,22 @@ export default function MoldJobGantt({ jobs, employees = [], machines = [], init
             )}
           </div>
 
-          <div className="flex p-1 rounded border text-[11px] shadow-sm" style={{ backgroundColor: 'var(--bg-surface-2)', borderColor: 'var(--border-default)' }}>
-            <button className={`px-5 py-1.5 font-medium rounded-sm border transition-all ${activePreset === 'DAY' ? activeFilterCls : inactiveCls}`} onClick={() => setViewRange('DAY')}>日</button>
-            <button className={`px-5 py-1.5 font-medium rounded-sm border transition-all ${activePreset === 'WEEK' ? activeFilterCls : inactiveCls}`} onClick={() => setViewRange('WEEK')}>週</button>
-            <button className={`px-5 py-1.5 font-medium rounded-sm border transition-all ${activePreset === 'MONTH' ? activeFilterCls : inactiveCls}`} onClick={() => setViewRange('MONTH')}>月</button>
+          <div className="flex p-1 rounded border text-[11px] shadow-sm items-center gap-1.5" style={{ backgroundColor: 'var(--bg-surface-2)', borderColor: 'var(--border-default)' }}>
+            <span className="text-[9px] font-semibold text-[var(--text-secondary)] px-1">データ範囲</span>
+            <div className="flex gap-0.5">
+              <button className={`px-2 py-0.5 font-medium rounded-sm border transition-all text-[10px] ${activePreset === '2W' ? activeFilterCls : inactiveCls}`} onClick={() => setViewRange('2W')}>2週間</button>
+              <button className={`px-2 py-0.5 font-medium rounded-sm border transition-all text-[10px] ${activePreset === '1M' ? activeFilterCls : inactiveCls}`} onClick={() => setViewRange('1M')}>1ヶ月</button>
+              <button className={`px-2 py-0.5 font-medium rounded-sm border transition-all text-[10px] ${activePreset === '3M' ? activeFilterCls : inactiveCls}`} onClick={() => setViewRange('3M')}>3ヶ月</button>
+            </div>
+          </div>
+
+          <div className="flex p-1 rounded border text-[11px] shadow-sm items-center gap-1.5" style={{ backgroundColor: 'var(--bg-surface-2)', borderColor: 'var(--border-default)' }}>
+            <span className="text-[9px] font-semibold text-[var(--text-secondary)] px-1">表示単位</span>
+            <div className="flex gap-0.5">
+              <button className={`px-3 py-0.5 font-medium rounded-sm border transition-all text-[10px] ${viewMode === ViewMode.Day ? activeFilterCls : inactiveCls}`} onClick={() => setViewMode(ViewMode.Day)}>日</button>
+              <button className={`px-3 py-0.5 font-medium rounded-sm border transition-all text-[10px] ${viewMode === ViewMode.Week ? activeFilterCls : inactiveCls}`} onClick={() => setViewMode(ViewMode.Week)}>週</button>
+              <button className={`px-3 py-0.5 font-medium rounded-sm border transition-all text-[10px] ${viewMode === ViewMode.Month ? activeFilterCls : inactiveCls}`} onClick={() => setViewMode(ViewMode.Month)}>月</button>
+            </div>
           </div>
 
           <div className="flex p-1 rounded border text-[11px] shadow-sm" style={{ backgroundColor: 'var(--bg-surface-2)', borderColor: 'var(--border-default)' }}>

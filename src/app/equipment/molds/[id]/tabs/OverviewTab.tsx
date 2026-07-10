@@ -142,6 +142,11 @@ export function OverviewTab({
         />
         <InfoRow icon={Calendar} labelJa="入庫日" labelVi="Ngày nhập" value={mold.mold_entry_date} />
         <InfoRow icon={Calendar} labelJa="廃棄日" labelVi="Ngày thanh lý" value={mold.disposed_date} />
+        <InfoRow 
+          icon={Calendar} labelJa="最終棚卸日" labelVi="Ngày kiểm kê gần nhất" value={mold.last_inventory_date} 
+          isEditing={isEditing}
+          editNode={<input type="date" className="form-input text-xs w-full" value={formData?.last_inventory_date || ''} onChange={e => handleChange('last_inventory_date', e.target.value)} />}
+        />
 
         {(mold.notes || isEditing) && (
           <div style={{ marginTop: 10, padding: '8px 10px', borderRadius: 'var(--radius-sm)', background: 'var(--bg-surface-2)', fontSize: 11, color: 'var(--text-secondary)' }}>
@@ -261,8 +266,54 @@ export function OverviewTab({
       </div>
       </div>
 
-      {/* Sidebar: Jobs */}
+      {/* Sidebar: Photo & Jobs */}
       <div className="lg:col-span-1 flex flex-col gap-4">
+        {/* Photo Card */}
+        <div className="card-flat" style={{ padding: 16 }}>
+          <h3 style={{
+            fontSize: 12, fontWeight: 700, color: 'var(--text-primary)',
+            fontFamily: 'var(--font-jp)', margin: '0 0 10px 0',
+            borderBottom: '1px solid var(--border-default)', paddingBottom: 6,
+          }}>
+            金型写真 <span style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 400 }}>Hình ảnh hiện trạng</span>
+          </h3>
+          {isEditing ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <input 
+                type="text" 
+                className="form-input text-xs w-full" 
+                placeholder="URL hình ảnh (Photo URL)..." 
+                value={formData?.photo_url || ''} 
+                onChange={e => handleChange('photo_url', e.target.value)} 
+              />
+              {formData?.photo_url && (
+                <img 
+                  src={formData.photo_url} 
+                  alt="Current Preview" 
+                  style={{ width: '100%', maxHeight: 160, objectFit: 'contain', borderRadius: 'var(--radius-sm)', border: '1px dashed var(--border-default)', marginTop: 4 }} 
+                />
+              )}
+            </div>
+          ) : (
+            <div>
+              {mold.photo_url ? (
+                <img 
+                  src={mold.photo_url} 
+                  alt={mold.display_name} 
+                  style={{ width: '100%', maxHeight: 200, objectFit: 'contain', borderRadius: 'var(--radius-sm)' }} 
+                />
+              ) : (
+                <div style={{ 
+                  height: 120, background: 'var(--bg-surface-2)', borderRadius: 'var(--radius-sm)', 
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)', fontSize: 11 
+                }}>
+                  写真なし / Chưa có ảnh thực tế
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
         <div className="card-flat">
           <div className="flex items-center justify-between mb-3 border-b border-[var(--border-default)] pb-2">
             <h3 className="text-[12px] font-bold flex items-center gap-2" style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-jp)' }}>

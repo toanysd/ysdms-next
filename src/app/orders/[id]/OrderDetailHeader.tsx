@@ -27,7 +27,7 @@ export function OrderDetailHeader({
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: 6, textTransform: 'uppercase' }}>
           <Edit size={12} />
-          <span>受注 / ĐƠN HÀNG</span>
+          <span>受注</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <h1 style={{ fontSize: 20, margin: 0, fontFamily: 'monospace', color: 'var(--text-primary)', fontWeight: 700 }}>
@@ -52,9 +52,26 @@ export function OrderDetailHeader({
 
       <div style={{ display: 'flex', gap: 8 }}>
         {!isEditing ? (
-          <button className="btn btn-secondary" onClick={() => setIsEditing(true)}>
-            <Edit size={14} /> 編集 / Sửa
-          </button>
+          <>
+            <a 
+              href={`/api/orders/${order.order_id}/export`}
+              target="_blank" 
+              rel="noreferrer"
+              className="btn btn-secondary"
+            >
+              📊 Excel出力
+            </a>
+            <Link 
+              href={`/orders/${order.order_id}/print`}
+              target="_blank"
+              className="btn btn-secondary"
+            >
+              🖨️ 印刷
+            </Link>
+            <button className="btn btn-secondary" onClick={() => setIsEditing(true)}>
+              <Edit size={14} /> 編集
+            </button>
+          </>
         ) : null}
       </div>
     </div>

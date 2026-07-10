@@ -1,7 +1,7 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
-import { revalidatePath } from 'next/cache'
+import { revalidatePath, unstable_noStore as noStore } from 'next/cache'
 
 export interface StartProductionInput {
     order_item_id: string
@@ -232,12 +232,15 @@ export async function completeProductionLog(input: CompleteProductionInput) {
 /**
  * Lấy danh sách các đơn hàng đang chờ được KẾ HOẠCH (DRAFT).
  */
-export async function getPendingOrderItemsForPlanning() {
-    const supabase = await createClient()
+export async function getPendingOrderItemsForPlanning(limitDateStr?: string) {
+    noStore()
+    if (!limitDateStr) {
+        const futureDate = new Date()
+        futureDate.setDate(futureDate.getDate() + 60)
+        limitDateStr = futureDate.toISOString().split('T')[0]
+    }
 
-    const futureDate = new Date()
-    futureDate.setDate(futureDate.getDate() + 60)
-    const limitDateStr = futureDate.toISOString().split('T')[0]
+    const supabase = await createClient()
 
     const { data: linesData, error: linesErr } = await supabase
         .from('order_lines')
@@ -251,7 +254,7 @@ export async function getPendingOrderItemsForPlanning() {
              orders!inner(order_no, order_date, order_status),
              products!inner(product_code, product_name)
         `)
-        .in('orders.order_status', ['APPROVED', 'IN_PRODUCTION'])
+        .in('orders.order_status', ['NEW', 'APPROVED', 'IN_PRODUCTION'])
         .or(`due_date.lte.${limitDateStr},due_date.is.null`)
 
     if (linesErr || !linesData) {
@@ -836,3 +839,56 @@ export async function getProductionPlansByOrderId(orderId: string) {
         order_item_id: d.order_line_id
     }))
 }
+
+// -------------------------------------------------------------
+// PLASTIC WMS ACTIONS
+// -------------------------------------------------------------
+
+export async function consumePlasticRoll(rollBarcode: string, consumedMeters: number, workLogId?: string) {
+    const supabase = await createClient()
+
+    // 1. Fetch roll
+    const { data: roll } = await (supabase as any)
+        .from('plastic_receipt_roll')
+        .select('id, current_length_m')
+        .eq('roll_barcode', rollBarcode)
+        .single()
+
+    if (!roll) {
+        throw new Error('Không tìm thấy cuộn nhựa này.')
+    }
+
+    if (roll.current_length_m < consumedMeters) {
+        throw new Error('Số mét tồn kho không đủ để xuất.')
+    }
+
+    const newLength = roll.current_length_m - consumedMeters
+    const newStatus = newLength <= 0 ? 'empty' : 'in_use'
+
+    // 2. Insert log
+    const { error: logErr } = await (supabase as any)
+        .from('plastic_adjustment_log')
+        .insert({
+            roll_id: roll.id,
+            change_length_m: -consumedMeters,
+            action_type: 'PRODUCTION',
+            work_log_id: workLogId || null
+        })
+
+    if (logErr) throw new Error(logErr.message)
+
+    // 3. Update roll
+    const { error: rollErr } = await (supabase as any)
+        .from('plastic_receipt_roll')
+        .update({
+            current_length_m: newLength,
+            status: newStatus,
+            updated_at: new Date().toISOString()
+        })
+        .eq('id', roll.id)
+
+    if (rollErr) throw new Error(rollErr.message)
+
+    return { success: true, newLength }
+}
+

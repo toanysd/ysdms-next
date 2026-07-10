@@ -47,7 +47,6 @@ const NAV_SECTIONS: NavSection[] = [
       { href: '/orders/quotations', icon: FileSpreadsheet, labelJA: '見積書', labelVI: 'Báo giá' },
       { href: '/orders', icon: FileText, labelJA: '受注・指示書', labelVI: 'Đơn hàng' },
       { href: '/orders/shipments', icon: Truck, labelJA: '出荷・納品', labelVI: 'Xuất hàng' },
-      { href: '/production', icon: Calendar, labelJA: '生産計画', labelVI: 'Kế hoạch SX', exact: true },
       { href: '/production/mrp', icon: Calculator, labelJA: 'MRP', labelVI: 'MRP' },
       { href: '/production/instructions', icon: HardDriveDownload, labelJA: '生産指示', labelVI: 'Lệnh SX' },
     ]
@@ -82,6 +81,7 @@ const NAV_SECTIONS: NavSection[] = [
     id: 'd4', icon: Factory, labelJA: '成形部', labelVI: 'Phòng Định hình', color: '#8B5CF6',
     items: [
       { href: '/production/dashboard', icon: Home, labelJA: 'ダッシュボード', labelVI: 'Tổng quan', exact: true },
+      { href: '/production/planning', icon: Calendar, labelJA: '生産計画', labelVI: 'Kế hoạch SX' },
       { href: '/production/kanban', icon: Columns3, labelJA: '看板', labelVI: 'Kanban' },
       { href: '/production/floor', icon: Factory, labelJA: '実績入力', labelVI: 'Nhập thực tế' },
       { href: '/master/machines', icon: Server, labelJA: '機械・設備', labelVI: 'Master Máy móc' },
@@ -101,8 +101,8 @@ const NAV_SECTIONS: NavSection[] = [
     id: 'd6', icon: Package, labelJA: '資材管理', labelVI: 'Quản lý Vật tư', color: '#EAB308',
     items: [
       { href: '/materials', icon: Home, labelJA: 'ダッシュボード', labelVI: 'Tổng quan', exact: true },
-      { href: '/materials/plastics', icon: Layers, labelJA: '樹脂マスター', labelVI: 'Quản lý Nhựa' },
-      { href: '/materials/inventory', icon: Archive, labelJA: '在庫管理', labelVI: 'Kiểm kê / Tồn kho' },
+      { href: '/plastics/master', icon: Layers, labelJA: '樹脂マスター', labelVI: 'Master Nhựa' },
+      { href: '/plastics/inventory', icon: Archive, labelJA: '樹脂在庫', labelVI: 'Kiểm kê Nhựa' },
       { href: '/materials/daily', icon: ArrowDownUp, labelJA: '入出庫', labelVI: 'Nhập xuất kho' },
     ]
   },

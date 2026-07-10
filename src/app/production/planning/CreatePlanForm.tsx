@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { createProductionPlanAction, getProductPhysicalMolds, ProductionPlanInsert } from '@/app/actions/production'
-import { getMachineTrayCompatibility, getMachineEffectiveSpecs } from '@/app/actions/machine'
+import { getMachineTrayCompatibility } from '@/app/actions/machine'
 import { Loader2, X } from 'lucide-react'
 
 const planSchema = z.object({
@@ -17,8 +17,7 @@ const planSchema = z.object({
     estimated_shots: z.number().optional(),
     estimated_hours: z.number().optional(),
     operator_name: z.string().optional(),
-    notes: z.string().optional(),
-    material_feed_length_mm: z.number().optional()
+    notes: z.string().optional()
 })
 
 type PlanFormValues = z.infer<typeof planSchema>
@@ -28,24 +27,21 @@ export default function CreatePlanForm({ item, onClose }: { item: any, onClose: 
     const [machines, setMachines] = useState<any[]>([])
     const [molds, setMolds] = useState<any[]>([])
     const [isLoadingSpecs, setIsLoadingSpecs] = useState(true)
-    const [machineSpecs, setMachineSpecs] = useState<any[]>([])
 
     useEffect(() => {
         if (item?.detail?.product_id) {
             setIsLoadingSpecs(true)
             Promise.all([
                 getMachineTrayCompatibility(item.detail.product_id),
-                getProductPhysicalMolds(item.detail.product_id),
-                getMachineEffectiveSpecs()
-            ]).then(([machRes, moldRes, specsRes]) => {
+                getProductPhysicalMolds(item.detail.product_id)
+            ]).then(([machRes, moldRes]) => {
                 setMachines(machRes || [])
                 setMolds(moldRes || [])
-                setMachineSpecs(specsRes || [])
             }).finally(() => setIsLoadingSpecs(false))
         }
     }, [item])
 
-    const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<PlanFormValues>({
+    const { register, handleSubmit, formState: { errors } } = useForm<PlanFormValues>({
         resolver: zodResolver(planSchema),
         defaultValues: {
             order_item_id: item.order_item_id,
@@ -53,21 +49,6 @@ export default function CreatePlanForm({ item, onClose }: { item: any, onClose: 
             planned_date: new Date().toISOString().split('T')[0]
         }
     })
-
-    const selectedMachineId = watch('machine_instance_id')
-    useEffect(() => {
-        if (selectedMachineId && machineSpecs.length > 0) {
-            const machine = machineSpecs.find(m => m.id === selectedMachineId)
-            const specs = machine?.effective_specs
-            if (specs && specs.feed_length_mm !== undefined && specs.feed_length_mm !== null) {
-                setValue('material_feed_length_mm', Number(specs.feed_length_mm))
-            } else {
-                setValue('material_feed_length_mm', undefined)
-            }
-        }
-    }, [selectedMachineId, machineSpecs, setValue])
-
-    const feedLength = watch('material_feed_length_mm')
 
     const onSubmit = (data: PlanFormValues) => {
         startTransition(async () => {
@@ -124,8 +105,8 @@ export default function CreatePlanForm({ item, onClose }: { item: any, onClose: 
                     >
                         <option value="">-- 金型選択 (Chỉ định khuôn) --</option>
                         {molds.map((mold) => (
-                            <option key={mold.mold_physical_id} value={mold.mold_physical_id}>
-                                {mold.system_code} ({mold.device_status})
+                            <option key={mold.id} value={mold.id}>
+                                {mold.physical_code} ({mold.status})
                             </option>
                         ))}
                     </select>
@@ -140,19 +121,6 @@ export default function CreatePlanForm({ item, onClose }: { item: any, onClose: 
                     <div className="flex flex-col gap-[4px]">
                         <label className="text-[10px] text-[var(--mcs-text-secondary)] uppercase tracking-wider font-bold">予定時間 <span className="font-normal text-[9px]">(Giờ)</span></label>
                         <input type="number" step="0.1" {...register('estimated_hours', { valueAsNumber: true })} placeholder="VD: 5.5" className="w-full bg-[var(--mcs-surface)] border border-[var(--mcs-border)] rounded-[4px] px-[8px] py-[4px] text-[13px] tabular-nums text-[var(--mcs-text)] outline-none focus:border-[var(--mcs-primary)] h-[30px]" />
-                    </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-[12px]">
-                    <div className="flex flex-col gap-[4px]">
-                        <label className="text-[10px] text-[var(--mcs-text-secondary)] uppercase tracking-wider font-bold">送り長さ <span className="font-normal text-[9px]">(Chiều dài bước tiến)</span></label>
-                        <input
-                            type="number"
-                            readOnly
-                            {...register('material_feed_length_mm', { setValueAs: (v) => v === "" || Number.isNaN(Number(v)) ? undefined : Number(v) })}
-                            placeholder="-"
-                            className="w-full bg-[var(--mcs-surface-hover)] border border-[var(--mcs-border)] rounded-[4px] px-[8px] py-[4px] text-[13px] tabular-nums text-[var(--mcs-text-muted)] cursor-not-allowed h-[30px] outline-none"
-                        />
                     </div>
                 </div>
 

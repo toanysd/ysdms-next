@@ -64,7 +64,7 @@ export default function OrderSelectionModal({
             const q = normalize(searchTerm)
             const pn = normalize(item.detail?.product_pn_raw || '')
             const slip = normalize(item.detail?.orders?.slip_no || '')
-            const customer = normalize(item.detail?.orders?.customers?.name || item.detail?.product_master?.customer_part_number || '')
+            const customer = normalize(item.detail?.orders?.customers?.name || (item.detail?.product_master as any)?.customer_code || '')
             
             return pn.includes(q) || slip.includes(q) || customer.includes(q)
         })
@@ -235,7 +235,7 @@ export default function OrderSelectionModal({
                                                 
                                                 const pnRaw = item.detail?.product_pn_raw || '—'
                                                 const slipNo = item.detail?.orders?.slip_no || '—'
-                                                const customer = item.detail?.orders?.customers?.name || item.detail?.product_master?.customer_part_number || '—'
+                                                const customer = item.detail?.orders?.customers?.name || (item.detail?.product_master as any)?.customer_code || '—'
                                                 
                                                 const mat = item.detail?.product_master?.material || ''
                                                 const thick = item.detail?.product_master?.thickness || ''
@@ -317,7 +317,7 @@ export default function OrderSelectionModal({
                                 {/* Header */}
                                 <div className="border-b border-gray-200 pb-3 mb-4">
                                     <h3 className="font-bold text-[16px] text-[var(--mcs-primary)] mb-1">{activeDetailItem.detail?.product_pn_raw}</h3>
-                                    <p className="text-sm text-gray-600">得意先: <span className="font-bold">{activeDetailItem.detail?.orders?.customers?.name || activeDetailItem.detail?.product_master?.customer_part_number}</span></p>
+                                    <p className="text-sm text-gray-600">得意先: <span className="font-bold">{activeDetailItem.detail?.orders?.customers?.name || (activeDetailItem.detail?.product_master as any)?.customer_code}</span></p>
                                 </div>
 
                                 {/* Spec */}

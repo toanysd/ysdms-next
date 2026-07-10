@@ -30,7 +30,8 @@ export type DesignRevisionDetail = {
   cutline_width: number | null
   cavity_count: number | null
   pocket_numbers: number | null
-  pitch_mm: number | null
+  cavity_pitch_mm: number | null
+  machine_feed_pitch_mm: number | null
   corner_r: string | null
   chamfer_c: string | null
   draft_angle: string | null

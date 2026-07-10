@@ -126,7 +126,7 @@ export function OrderLinesManager({ orderId, companyId, initialLines }: { orderI
   }
 
   const handleDelete = async (lineId: string) => {
-    if (!confirm('削除しますか？ / Bạn có chắc muốn xoá?')) return
+    if (!confirm('削除しますか？')) return
     const { error } = await supabase.from('order_lines').delete().eq('line_id', lineId)
     if (error) alert(error.message)
     else {
@@ -141,11 +141,11 @@ export function OrderLinesManager({ orderId, companyId, initialLines }: { orderI
       <div style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border-default)', background: 'var(--bg-surface)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <PackageOpen size={16} style={{ color: 'var(--accent)' }} />
-          <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>受注明細 / Chi tiết đơn</span>
+          <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>受注明細</span>
         </div>
         <button className="btn btn-primary" onClick={handleOpenAdd}>
           <Plus size={14} />
-          <span>追加 / Thêm</span>
+          <span>追加</span>
         </button>
       </div>
 
@@ -174,7 +174,7 @@ export function OrderLinesManager({ orderId, companyId, initialLines }: { orderI
             {lines.length === 0 ? (
               <tr>
                 <td colSpan={5} style={{ textAlign: 'center', padding: '32px 0', color: 'var(--text-muted)' }}>
-                  明細がありません / Không có chi tiết
+                  明細がありません
                 </td>
               </tr>
             ) : (
@@ -293,7 +293,7 @@ export function OrderLinesManager({ orderId, companyId, initialLines }: { orderI
               <button type="button" className="btn btn-secondary" onClick={() => setModalOpen(false)} disabled={saving}>キャンセル</button>
               <button type="button" className="btn btn-primary" onClick={handleSave} disabled={saving || !form.product_id}>
                 {saving && <Loader2 size={12} className="animate-spin" style={{ marginRight: 4 }} />}
-                保存 / Lưu
+                保存
               </button>
             </div>
           </div>

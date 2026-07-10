@@ -35,6 +35,7 @@ type Order = {
   quote_id: string | null
   order_date: string | null
   requested_delivery_date: string | null
+  order_type: string | null
   status: string
   notes: string | null
   created_at: string
@@ -92,6 +93,8 @@ export default function OrdersPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [stats, setStats] = useState({ total: 0, production: 0, shipped: 0 })
+  const [selectedOrders, setSelectedOrders] = useState<string[]>([])
+  const [isApproving, setIsApproving] = useState(false)
 
   // ── Filters & Pagination ──
   const [page, setPage] = useState(1)
@@ -165,6 +168,7 @@ export default function OrdersPage() {
     } else {
       const mapped = (data || []).map(o => ({
         ...o,
+        order_type: o.order_type || 'PRODUCT',
         requested_delivery_date: o.requested_delivery,
         status: o.order_status,
         order_lines: o.order_lines || []
@@ -208,6 +212,39 @@ export default function OrdersPage() {
     fetchOrders()
   }
 
+  // ── Bulk approve handler ──
+  const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.checked) {
+      setSelectedOrders(orders.filter(o => o.status === 'NEW').map(o => o.order_id))
+    } else {
+      setSelectedOrders([])
+    }
+  }
+
+  const handleSelectRow = (id: string) => {
+    setSelectedOrders(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])
+  }
+
+  const handleBulkApprove = async () => {
+    if (selectedOrders.length === 0) return
+    if (!confirm(`選択された ${selectedOrders.length} 件の受注を承認しますか？\nBạn có chắc chắn muốn duyệt ${selectedOrders.length} đơn hàng đã chọn?`)) return
+
+    setIsApproving(true)
+    const { error: updErr } = await supabase
+      .from('orders')
+      .update({ order_status: 'APPROVED' })
+      .in('order_id', selectedOrders)
+
+    setIsApproving(false)
+    if (updErr) {
+      alert(`エラー: ${updErr.message}`)
+      return
+    }
+    
+    setSelectedOrders([])
+    fetchOrders()
+  }
+
   // ── Status badge renderer ──
   const renderStatusBadge = (status: string) => {
     const cfg = STATUS_CONFIG[status as StatusKey]
@@ -236,10 +273,22 @@ export default function OrdersPage() {
             <span className="vi" style={{ fontSize: 11 }}>Quản lý Đơn hàng</span>
           </div>
         </div>
-        <button className="btn btn-primary" onClick={() => alert('新規受注ページは開発中です / New order page is under development')}>
-          <Plus size={14} />
-          <span style={{ fontFamily: 'var(--font-jp)' }}>新規受注</span>
-        </button>
+        <div style={{ display: 'flex', gap: 12 }}>
+          {selectedOrders.length > 0 && (
+            <button 
+              className="btn btn-secondary" 
+              onClick={handleBulkApprove} 
+              disabled={isApproving}
+              style={{ borderColor: 'var(--status-success)', color: 'var(--status-success)' }}
+            >
+              {isApproving ? 'Đang duyệt...' : `一括承認${selectedOrders.length})`}
+            </button>
+          )}
+          <Link href="/orders/create" className="btn btn-primary">
+            <Plus size={14} />
+            <span style={{ fontFamily: 'var(--font-jp)' }}>新規受注</span>
+          </Link>
+        </div>
       </div>
 
       {/* ── Integrated Toolbar ── */}
@@ -293,7 +342,7 @@ export default function OrdersPage() {
               onClick={handleClearFilters}
               style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', fontSize: 11, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, padding: '4px 8px', borderRadius: '4px' }}
             >
-              <FilterX size={12} /> クリア / Xóa lọc
+              <FilterX size={12} /> クリア
             </button>
           )}
         </div>
@@ -305,7 +354,7 @@ export default function OrdersPage() {
             <Search size={14} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
             <input
               type="text"
-              placeholder="検索... / Tìm kiếm..."
+              placeholder="検索..."
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
               onFocus={() => setShowSuggestions(true)}
@@ -327,7 +376,7 @@ export default function OrdersPage() {
             <AsyncSearchableSelect
               value={filterCustomerId}
               onChange={setFilterCustomerId}
-              placeholder="得意先 / Khách hàng..."
+              placeholder="得意先..."
               fetchOptions={async (q) => {
                 const { data } = await supabase
                   .from('companies')
@@ -369,11 +418,11 @@ export default function OrdersPage() {
       <div className="card-flat" style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}>
         {loading ? (
           <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)', fontSize: 12 }}>
-            読み込み中... / Đang tải dữ liệu...
+            読み込み中...
           </div>
         ) : error ? (
           <div style={{ padding: 16, color: 'var(--status-error)', fontSize: 12 }}>
-            エラー / Lỗi: {error}
+            エラー: {error}
           </div>
         ) : (
           <React.Fragment>
@@ -381,10 +430,21 @@ export default function OrdersPage() {
               <table className="data-table">
                 <thead>
                   <tr>
-                    <th style={{ width: 40 }}></th>
+                    <th style={{ width: 40, textAlign: 'center' }}>
+                      <input 
+                        type="checkbox" 
+                        onChange={handleSelectAll}
+                        checked={orders.filter(o => o.status === 'NEW').length > 0 && selectedOrders.length === orders.filter(o => o.status === 'NEW').length}
+                        title="Chọn tất cả đơn mới"
+                      />
+                    </th>
                     <th style={{ width: 140 }}>
                       <span className="ja">受注番号</span>
                       <span className="vi">Mã đơn hàng</span>
+                    </th>
+                    <th style={{ width: 100 }}>
+                      <span className="ja">種別</span>
+                      <span className="vi">Loại ĐH</span>
                     </th>
                     <th style={{ width: 220 }}>
                       <span className="ja">得意先</span>
@@ -413,15 +473,24 @@ export default function OrdersPage() {
                   {orders.length === 0 ? (
                     <tr>
                       <td colSpan={8} style={{ textAlign: 'center', padding: '32px 0', color: 'var(--text-muted)' }}>
-                        データがありません / Không có dữ liệu
+                        データがありません
                       </td>
                     </tr>
                   ) : (
                     orders.map(order => {
                       return (
                         <tr key={order.order_id}>
-                          <td style={{ textAlign: 'center' }}>
-                            <ChevronRight size={16} />
+                          <td style={{ textAlign: 'center', cursor: 'pointer' }} onClick={(e) => { e.stopPropagation(); if(order.status === 'NEW') handleSelectRow(order.order_id); }}>
+                            {order.status === 'NEW' ? (
+                              <input 
+                                type="checkbox" 
+                                checked={selectedOrders.includes(order.order_id)}
+                                onChange={() => handleSelectRow(order.order_id)}
+                                onClick={e => e.stopPropagation()}
+                              />
+                            ) : (
+                              <ChevronRight size={16} style={{ color: 'var(--text-muted)' }} />
+                            )}
                           </td>
                           <td>
                             <Link
@@ -432,13 +501,22 @@ export default function OrdersPage() {
                             </Link>
                           </td>
                           <td>
+                            <span className={order.order_type === 'MOLD' ? 'badge badge--warning' : 'badge badge--info'}>
+                              {order.order_type === 'MOLD' ? 'MOLD' : 'PRODUCT'}
+                            </span>
+                          </td>
+                          <td>
                             {order.companies ? (
-                              <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                <span style={{ fontWeight: 600 }}>{order.companies.company_name}</span>
-                                <span style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: 'monospace' }}>
-                                  {order.companies.company_code}
-                                </span>
-                              </div>
+                              <Link href={`/master/customers/${order.company_id}`} style={{ textDecoration: 'none' }}>
+                                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                  <span style={{ fontWeight: 600, color: 'var(--accent)' }} className="hover:underline">
+                                    {order.companies.company_name}
+                                  </span>
+                                  <span style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: 'monospace' }}>
+                                    {order.companies.company_code}
+                                  </span>
+                                </div>
+                              </Link>
                             ) : (
                               <span style={{ color: 'var(--text-muted)' }}>—</span>
                             )}
@@ -459,7 +537,7 @@ export default function OrdersPage() {
                             <button 
                               onClick={(e) => { e.stopPropagation(); handleDeleteOrder(order.order_id, order.order_no); }}
                               style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: 4 }}
-                              title="削除 / Xoá"
+                              title="削除"
                             >
                               <Trash2 size={14} />
                             </button>
