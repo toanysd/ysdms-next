@@ -1,0 +1,71 @@
+Vấn đề và đề xuất cải tiến
+1. Tính nhất quán về ngôn ngữ
+Vấn đề: Giao diện hiển thị hỗn hợp tiếng Nhật, tiếng Việt và tiếng Anh.
+
+Đề xuất:
+
+Thống nhất một ngôn ngữ dựa trên lựa chọn của người dùng
+
+Đảm bảo tất cả nội dung được dịch đầy đủ
+
+Kiểm tra lại các khóa dịch trong file ngôn ngữ
+
+2. Bộ lọc chưa thống nhất
+Vấn đề: Trang Customers có bố cục bộ lọc khác so với trang Designs và Molds.
+
+Đề xuất:
+
+Đồng bộ giao diện bộ lọc giữa các trang
+
+Nâng cao trực quan cho các lựa chọn lọc theo cột (selectColumn) và giá trị (selectValue)
+
+Thêm gợi ý để hướng dẫn người dùng sử dụng bộ lọc
+
+3. Hiển thị hành động không đồng nhất
+Vấn đề: Các nút hành động có định dạng khác nhau giữa các trang.
+
+Đề xuất:
+
+Thống nhất cách hiển thị các nút hành động (hoặc nút văn bản hoặc biểu tượng)
+
+Sử dụng biểu tượng (icon) nhất quán kèm theo tooltips giải thích
+
+Thêm chỉ báo trực quan (như thay đổi con trỏ) để biểu thị các thành phần có thể tương tác
+
+4. Màu sắc và biểu thị trạng thái
+Vấn đề: Trong trang Customers, loại khách hàng ("regular", "owner") hiển thị bằng văn bản đơn giản, trong khi trang Molds hiển thị trạng thái ("active") với màu nền xanh lá.
+
+Đề xuất:
+
+Sử dụng nhất quán các Badge có màu sắc để biểu thị trạng thái hoặc loại
+
+Áp dụng mã màu có ý nghĩa (xanh lá cho active, xám cho inactive, v.v.)
+
+Đảm bảo đủ độ tương phản cho khả năng tiếp cận tốt
+
+5. Tính phản hồi (Responsive)
+Đề xuất:
+
+Kiểm tra và tối ưu hóa giao diện cho các thiết bị di động
+
+Điều chỉnh bảng để hiển thị dạng card trên màn hình nhỏ
+
+Đảm bảo các phần tử tương tác (nút, input) có kích thước phù hợp với thiết bị cảm ứng
+
+6. Trải nghiệm người dùng
+Đề xuất:
+
+Thêm hiệu ứng hover cho các hàng trong bảng
+
+Cung cấp chức năng xem nhanh (quick view) thông tin chi tiết mà không cần chuyển trang
+
+Hiển thị thông báo rõ ràng khi thực hiện các hành động
+
+7. Xử lý dữ liệu dài
+Đề xuất:
+
+Cắt ngắn nội dung dài (như địa chỉ) và hiển thị đầy đủ khi hover
+
+Giới hạn số ký tự hiển thị cho các trường như mô tả, địa chỉ
+
+Sử dụng tooltips để hiển thị nội dung đầy đủ khi cần thiết

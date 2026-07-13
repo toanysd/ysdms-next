@@ -1,0 +1,193 @@
+Phân tích và Đề xuất Thiết kế Trang Chi tiết Khuôn
+Phân tích Hiện trạng
+Dựa trên mã nguồn và cấu trúc dữ liệu, trang chi tiết khuôn hiện tại đã có một số tính năng cơ bản nhưng đang gặp một số vấn đề:
+
+Giao diện: Bố cục chưa tối ưu, các thông tin quan trọng chưa được làm nổi bật
+
+Chức năng: Đã có quản lý thông tin cơ bản, quản lý thiết bị liên quan, lịch sử vận chuyển, nhưng nhiều chức năng còn thiếu hoặc chưa được tích hợp đầy đủ
+
+Lỗi kỹ thuật: Tải ảnh, truy vấn dữ liệu từ Supabase, hiển thị icons
+
+Trải nghiệm người dùng: Còn nhiều không gian trống, các trường thông tin chưa có độ rõ nét để dễ phân biệt
+
+Đề xuất Thiết kế Tối ưu
+1. Cấu trúc Tổng thể
+Layout cải tiến:
+
+Chia 2 cột tỷ lệ 70/30
+
+Header gồm: breadcrumb, tiêu đề với mã khuôn nổi bật, các nút chức năng (Quay lại, Chỉnh sửa, Lưu, Xóa)
+
+Cột trái (70%): Chứa thông tin chi tiết và hệ thống tabs quản lý
+
+Cột phải (30%): Ảnh khuôn và các thông tin liên kết quan trọng
+
+2. Nội dung Cột Trái - Thông tin Chi tiết và Hệ thống Tabs
+Thông tin Cơ bản (Tab mặc định)
+text
+┌─────────────────────────────────────────────────────────┐
+│ Thông tin cơ bản                                        │
+├─────────────┬─────────────┬─────────────┬───────────────┤
+│ MÃ KHUÔN    │ KÍCH THƯỚC  │ VỊ TRÍ      │ SỐ MẶT KHUÔN  │
+│ [giá trị]   │ [giá trị]   │ [giá trị]   │ [giá trị]     │
+├─────────────┼─────────────┼─────────────┼───────────────┤
+│ Loại khuôn  │ Trạng thái  │ Trọng lượng │ Tình trạng mạ │
+│ [giá trị]   │ [giá trị]   │ [giá trị]   │ [giá trị]     │
+├─────────────┴─────────────┴─────────────┴───────────────┤
+│ ...thông tin khác                                       │
+└─────────────────────────────────────────────────────────┘
+Hệ thống Tabs (10 tabs)
+Tab Vị trí Lưu trữ
+
+Thông tin giá/kệ lưu trữ
+
+Các tham số vị trí với màu nổi bật
+
+Tab Vận chuyển
+
+Bảng lịch sử vận chuyển (từ bảng mold_transfer_history)
+
+Form thêm mới lịch sử vận chuyển (từ-đến, ngày, ghi chú)
+
+Tab Sửa chữa & Bảo trì
+
+Tích hợp dữ liệu từ mold_modification_history và work_logs
+
+Hiển thị ngày, loại sửa chữa, chi phí, người thực hiện
+
+Quản lý hình ảnh trước/sau sửa chữa
+
+Tab Lịch sử Định hình
+
+Tích hợp với production_logs
+
+Hiển thị thông tin: ngày, người vận hành, máy, vật liệu, số lượng, đơn hàng
+
+Biểu đồ thống kê sản xuất theo thời gian
+
+Tab Mạ khuôn
+
+Lịch sử từ teflon_coating_logs
+
+Hiển thị: ngày gửi đi, ngày nhận về, tình trạng, loại mạ, độ dày
+
+Tab Vật liệu Đã Định hình
+
+Các loại vật liệu đã dùng (plastic_materials)
+
+Thống kê sản lượng theo từng loại vật liệu
+
+Tab Vật liệu Tiêu hao
+
+Từ bảng used_consumable_materials
+
+Hiển thị loại vật liệu, số lượng, ngày sử dụng
+
+Tab Cho mượn Khuôn
+
+Quản lý từ bảng mold_loans
+
+Quản lý tài liệu/chứng nhận với hỗ trợ đa ảnh/tài liệu
+
+Quản lý ảnh kiểm kê hàng năm
+
+Tab Thiết bị Liên quan
+
+Quản lý thiết bị từ equipment_compatibility
+
+Đánh dấu thiết bị đang sử dụng
+
+Thêm/sửa/xóa liên kết thiết bị
+
+Tab Tài liệu Kỹ thuật
+
+Quản lý tài liệu từ technical_documents
+
+Tải lên, phân loại, hiển thị tài liệu
+
+3. Nội dung Cột Phải - Ảnh và Thông tin Liên kết
+text
+┌─────────────────────────────┐
+│ ┌─────────────────────────┐ │
+│ │                         │ │
+│ │         ẢNH KHUÔN       │ │
+│ │                         │ │
+│ └─────────────────────────┘ │
+│ MÃ KHUÔN: ABC123 [ACTIVE]   │
+├─────────────────────────────┤
+│ Thông tin Khách hàng        │
+│ ► CÔNG TY XYZ               │
+│   Đơn hàng gần đây: 2       │
+├─────────────────────────────┤
+│ Thông tin Thiết kế          │
+│ ► DESIGN-001 (v2.3)         │
+│   Kích thước: 150x200x50mm  │
+├─────────────────────────────┤
+│ Điều kiện Định hình         │
+│ ► Nhiệt độ: 180°C           │
+│   Thời gian hút: 6s         │
+├─────────────────────────────┤
+│ Thiết bị Liên quan          │
+│ ► Dao cắt ABC (đang dùng)   │
+│ ► Base làm mát XYZ          │
+├─────────────────────────────┤
+│ Lịch sử Sản xuất gần đây    │
+│ ► 05/04/2025: 120 khay      │
+│ ► 28/03/2025: 80 khay       │
+└─────────────────────────────┘
+4. Cải tiến Kỹ thuật
+Xử lý ảnh & tài liệu
+
+Tối ưu quy trình tải lên/xóa ảnh
+
+Hỗ trợ xem trước ảnh và tải xuống
+
+Kiểm tra loại tệp và giới hạn kích thước
+
+Tương tác dữ liệu
+
+Sử dụng combobox với chức năng tìm kiếm cho các trường liên kết
+
+Tất cả bảng dữ liệu cần có phân trang và tìm kiếm
+
+Bảo vệ tính toàn vẹn dữ liệu khi thêm/xóa/sửa
+
+Trải nghiệm người dùng
+
+Thông báo khi thao tác thành công/thất bại
+
+Lazy loading cho các tab để tối ưu hiệu suất
+
+Responsive design cho các thiết bị khác nhau
+
+5. Thay đổi Cấu trúc Supabase (nếu cần)
+Thêm trường trong bảng equipment_compatibility
+
+is_current: Boolean để đánh dấu thiết bị đang sử dụng
+
+notes: Text cho ghi chú thiết bị liên quan
+
+Tối ưu bảng mold_loans
+
+Mở rộng trường inventory_check_photos thành mảng để lưu nhiều ảnh
+
+Thêm trường quản lý nhiều tài liệu chứng nhận
+
+Cải thiện kết nối với các bảng khác
+
+Đảm bảo mối quan hệ đúng giữa molds và các bảng liên quan
+
+Thêm khóa ngoại nếu cần thiết
+
+Tính năng Nổi bật của Thiết kế Mới
+Trực quan hóa thông tin - Các thông tin quan trọng (mã khuôn, kích thước, vị trí, số mặt) được hiển thị với màu sắc nổi bật
+
+Hệ thống tabs toàn diện - Quản lý đầy đủ thông tin từ cơ bản đến chuyên sâu
+
+Sidebar thông minh - Hiển thị thông tin liên kết quan trọng nhất để tham khảo nhanh
+
+Quản lý tài liệu linh hoạt - Hỗ trợ nhiều loại tài liệu và ảnh cho mọi khía cạnh của khuôn
+
+Tương tác dữ liệu hiệu quả - Chức năng tìm kiếm, lọc và chỉnh sửa dễ sử dụng
+
+Thiết kế này tạo ra một hub thông tin tập trung về khuôn, cho phép người dùng dễ dàng quản lý mọi khía cạnh từ thông tin cơ bản đến lịch sử sử dụng, sửa chữa và các tài liệu liên quan, đồng thời tối ưu hóa trải nghiệm người dùng với giao diện hiện đại, chuyên nghiệp và dễ sử dụng.
