@@ -41,39 +41,28 @@ trong `design_revisions` với `revision_number` tăng dần.
 
 ---
 
-## SD-03: Bảng Production Instructions (Chỉ thị SX) — CẦN TẠO MỚI
-**Vấn đề:** Chưa có bảng lưu Chỉ thị Sản xuất (新規金型製造工程票).
-Hiện tại `jobs` đảm nhận một phần vai trò này nhưng không đủ trường.
+## SD-03 (REVISED): Mở rộng bảng `production_orders` cho Chỉ thị SX
+**Vấn đề:** Ban đầu định tạo bảng `production_instructions` để lưu Chỉ thị Sản xuất (新規金型製造工程票). Tuy nhiên, phân tích schema cho thấy bảng `production_orders` đã có sẵn và đóng vai trò tương tự. Bảng `jobs` và `inspections` cũng đã liên kết khóa ngoại vào bảng này.
 
-**Quyết định:** Tạo bảng `production_instructions` mới.
+**Quyết định:** 
+- KHÔNG tạo bảng mới để tránh phá vỡ khóa ngoại và luồng liên kết.
+- Tận dụng `production_orders`.
+- Dùng `ALTER TABLE` để bổ sung các cột còn thiếu cho nghiệp vụ Chỉ thị SX.
 
 ```sql
-CREATE TABLE production_instructions (
-  pi_id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  pi_code          TEXT NOT NULL UNIQUE,   -- Mã chỉ thị, ví dụ: PI-2026-001
-  order_id         UUID REFERENCES orders(order_id),
-  design_rev_id    UUID REFERENCES design_revisions(revision_id),
-  machine_id       UUID REFERENCES machines(machine_id),
-  cut_method       TEXT,   -- 'BETANUKI' (別抜き) | 'INLINE'
-  -- Phân công
-  material_mgr_id  UUID REFERENCES employees(employee_id),  -- Yoshida
-  mold_maker_id    UUID REFERENCES employees(employee_id),  -- Endo
-  forming_mgr_id   UUID REFERENCES employees(employee_id),  -- Kohi
-  -- Tiến độ
-  mold_deadline    DATE,
-  ship_deadline    DATE,
-  -- Trạng thái
-  status           TEXT DEFAULT 'DRAFT',
-  issued_by        UUID REFERENCES employees(employee_id),
-  issued_date      DATE,
-  pdf_path         TEXT,
-  notes            TEXT,
-  created_at       TIMESTAMPTZ DEFAULT NOW(),
-  updated_at       TIMESTAMPTZ DEFAULT NOW()
-);
+ALTER TABLE production_orders
+  -- Phương pháp cắt
+  ADD COLUMN IF NOT EXISTS cut_method TEXT NULL,
+  -- Ghi chú chỉ thị sản xuất chi tiết
+  ADD COLUMN IF NOT EXISTS instruction_notes TEXT NULL,
+  -- Trạng thái chỉ thị (nếu chưa có)
+  ADD COLUMN IF NOT EXISTS instruction_status TEXT NULL DEFAULT 'draft';
+
+COMMENT ON COLUMN production_orders.cut_method IS 'SD-03: Phương pháp cắt — e.g. straight_cut, contour_cut';
+COMMENT ON COLUMN production_orders.instruction_notes IS 'SD-03: Ghi chú chỉ thị sản xuất chi tiết';
 ```
 
-**Trạng thái DB:** 🔴 CHƯA TRIỂN KHAI — Chờ PE xuất Migration spec
+**Trạng thái DB:** 🟡 CẦN MIGRATION — Đã xuất file `20260713XXXXXX_sd03_extend_production_orders.sql`
 
 ---
 
