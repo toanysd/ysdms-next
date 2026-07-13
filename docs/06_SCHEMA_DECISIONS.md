@@ -85,7 +85,7 @@ ALTER TABLE order_lines
 
 **Trạng thái DB:** 🟡 CẦN MIGRATION — AN thực hiện sau khi PO phê duyệt
 
----
+
 
 ## SD-05: Packaging Instructions
 **Vấn đề:** `order_lines.packing_style` là text tự do, không validate được.
@@ -101,3 +101,21 @@ ALTER TABLE order_lines
 ```
 
 **Trạng thái DB:** 🟡 CẦN MIGRATION — AN thực hiện sau khi PO phê duyệt
+
+---
+
+## SD-06: Kiến trúc luồng Giao hàng (Shipments & Lots)
+**Vấn đề:** `shipments` thiếu phân loại QC (Good/NG) và hỗ trợ template giao hàng. `production_lots` thiếu liên kết với khuôn vật lý để phục vụ in ấn phiếu.
+
+**Quyết định:** Mở rộng bảng `shipments` và `production_lots`, đồng thời tạo bảng phụ `shipment_required_docs` để quản lý template giấy tờ.
+
+**Trạng thái DB:** 🟡 CẦN MIGRATION — Đã xuất file `20260713180900_sd06_shipments_lots.sql`
+
+---
+
+## SD-07: Kiến trúc quản lý Vật tư (Materials & BOM)
+**Vấn đề:** Cần quản lý trừ lùi vật tư, định mức nguyên liệu (BOM) và báo cáo môi trường PPWR.
+
+**Quyết định:** Mở rộng bảng `material_inventory` (thêm Reserved, Kanban Status) và `mold_material_bom`. Tạo bảng mới `material_consumption_logs` để ghi log tiêu hao. Thêm FK từ `production_orders` đến BOM reference.
+
+**Trạng thái DB:** 🟡 CẦN MIGRATION — Đã xuất file `20260713180900_sd07_materials_bom.sql`
