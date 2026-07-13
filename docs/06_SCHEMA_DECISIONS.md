@@ -62,7 +62,7 @@ COMMENT ON COLUMN production_orders.cut_method IS 'SD-03: Phương pháp cắt �
 COMMENT ON COLUMN production_orders.instruction_notes IS 'SD-03: Ghi chú chỉ thị sản xuất chi tiết';
 ```
 
-**Trạng thái DB:** 🟡 CẦN MIGRATION — Đã xuất file `20260713XXXXXX_sd03_extend_production_orders.sql`
+**Trạng thái DB:** ✅ ĐÃ TRIỂN KHAI — Đã xuất file `20260713XXXXXX_sd03_extend_production_orders.sql`
 
 ---
 
@@ -83,7 +83,7 @@ ALTER TABLE order_lines
 -- OFFICE = 事務所用
 ```
 
-**Trạng thái DB:** 🟡 CẦN MIGRATION — AN thực hiện sau khi PO phê duyệt
+**Trạng thái DB:** ✅ ĐÃ TRIỂN KHAI — Đã apply migration
 
 
 
@@ -100,7 +100,7 @@ ALTER TABLE order_lines
 -- packing_style giữ nguyên cho ghi chú tự do
 ```
 
-**Trạng thái DB:** 🟡 CẦN MIGRATION — AN thực hiện sau khi PO phê duyệt
+**Trạng thái DB:** ✅ ĐÃ TRIỂN KHAI — Đã apply migration
 
 ---
 
@@ -109,7 +109,7 @@ ALTER TABLE order_lines
 
 **Quyết định:** Mở rộng bảng `shipments` và `production_lots`, đồng thời tạo bảng phụ `shipment_required_docs` để quản lý template giấy tờ.
 
-**Trạng thái DB:** 🟡 CẦN MIGRATION — Đã xuất file `20260713180900_sd06_shipments_lots.sql`
+**Trạng thái DB:** ✅ ĐÃ TRIỂN KHAI — Đã xuất file `20260713180900_sd06_shipments_lots.sql`
 
 ---
 
@@ -118,4 +118,22 @@ ALTER TABLE order_lines
 
 **Quyết định:** Mở rộng bảng `material_inventory` (thêm Reserved, Kanban Status) và `mold_material_bom`. Tạo bảng mới `material_consumption_logs` để ghi log tiêu hao. Thêm FK từ `production_orders` đến BOM reference.
 
-**Trạng thái DB:** 🟡 CẦN MIGRATION — Đã xuất file `20260713180900_sd07_materials_bom.sql`
+**Trạng thái DB:** ✅ ĐÃ TRIỂN KHAI — Đã xuất file `20260713180900_sd07_materials_bom.sql`
+
+---
+
+## SD-08: Extend QC / Inspections
+**Vấn đề:** Bảng `inspections` hiện tại thiếu phân tách QC Split (Good Qty/NG Qty), mã lỗi có cấu trúc, và liên kết đến `production_lots`.
+
+**Quyết định:** Mở rộng bảng `inspections` và thêm bảng phụ `ng_detail_logs` để ghi chi tiết lỗi.
+
+**Trạng thái DB:** 🟡 CẦN MIGRATION — Đã xuất file `20260714090000_sd08_extend_inspections.sql`
+
+---
+
+## SD-09: Thiết kế PDF Chỉ thị Sản xuất (Tầng Ứng Dụng)
+**Vấn đề:** Cần render PDF tờ `新規金型製造工程票` dựa trên dữ liệu.
+
+**Quyết định:** Không cần migration DB mới, toàn bộ dữ liệu đã đầy đủ. Dùng JOIN query tại tầng Next.js server để pull dữ liệu từ `production_orders`, `physical_molds`, `order_lines`, `companies`, `mold_material_bom`. (Tham chiếu mapping trong `06_SCHEMA_DECISIONS.md`).
+
+**Trạng thái DB:** ✅ KHÔNG YÊU CẦU MIGRATION — Chờ frontend implementation.
