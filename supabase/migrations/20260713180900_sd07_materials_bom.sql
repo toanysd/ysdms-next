@@ -30,16 +30,16 @@ COMMENT ON COLUMN mold_material_bom.ppwr_reportable
 --    Ghi nhận tiêu hao thực tế khi máy chạy (trừ lùi từ inventory)
 CREATE TABLE IF NOT EXISTS material_consumption_logs (
   log_id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  production_lot_id TEXT NOT NULL
+  production_lot_id UUID NOT NULL
     REFERENCES production_lots(lot_id) ON DELETE CASCADE,
-  material_id      TEXT NOT NULL
+  material_id      UUID NOT NULL
     REFERENCES materials(material_id),
   consumed_qty     NUMERIC(10,3) NOT NULL,
   unit             TEXT NOT NULL DEFAULT 'kg',
   consumed_at      TIMESTAMPTZ DEFAULT now(),
-  machine_id       TEXT NULL
+  machine_id       UUID NULL
     REFERENCES machines(machine_id),
-  recorded_by      TEXT NULL
+  recorded_by      UUID NULL
     REFERENCES employees(employee_id),
   is_packaging     BOOLEAN DEFAULT false,
   notes            TEXT NULL
@@ -53,7 +53,7 @@ COMMENT ON COLUMN material_consumption_logs.is_packaging
 -- 4. Liên kết production_orders → BOM reference
 --    (bổ sung FK vào bảng đã được REVISE ở SD-03)
 ALTER TABLE production_orders
-  ADD COLUMN IF NOT EXISTS bom_reference_mold_id TEXT NULL
+  ADD COLUMN IF NOT EXISTS bom_reference_mold_id UUID NULL
     REFERENCES physical_molds(physical_mold_id) ON DELETE SET NULL;
 
 COMMENT ON COLUMN production_orders.bom_reference_mold_id

@@ -7,7 +7,7 @@
 --    và LOT NO tách biệt cho truy xuất nguồn gốc
 ALTER TABLE production_lots
   ADD COLUMN IF NOT EXISTS lot_no          TEXT NULL,
-  ADD COLUMN IF NOT EXISTS physical_mold_id TEXT NULL
+  ADD COLUMN IF NOT EXISTS physical_mold_id UUID NULL
     REFERENCES physical_molds(physical_mold_id) ON DELETE SET NULL,
   ADD COLUMN IF NOT EXISTS good_qty        INTEGER NULL DEFAULT 0,
   ADD COLUMN IF NOT EXISTS defective_qty   INTEGER NULL DEFAULT 0,
@@ -41,7 +41,7 @@ COMMENT ON COLUMN shipments.document_template
 --    (KYD: 試験成績書 | SMK: 量産検査表)
 CREATE TABLE IF NOT EXISTS shipment_required_docs (
   doc_id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  shipment_id     TEXT NOT NULL
+  shipment_id     UUID NOT NULL
     REFERENCES shipments(shipment_id) ON DELETE CASCADE,
   doc_type        TEXT NOT NULL
     CHECK (doc_type IN (
@@ -53,7 +53,7 @@ CREATE TABLE IF NOT EXISTS shipment_required_docs (
   doc_label       TEXT NULL,        -- Tên tài liệu tùy chỉnh
   is_attached     BOOLEAN DEFAULT false,
   file_path       TEXT NULL,
-  required_by     TEXT NULL REFERENCES companies(company_id) ON DELETE SET NULL, -- company_id của khách hàng yêu cầu
+  required_by     UUID NULL REFERENCES companies(company_id) ON DELETE SET NULL, -- company_id của khách hàng yêu cầu
   created_at      TIMESTAMPTZ DEFAULT now()
 );
 
