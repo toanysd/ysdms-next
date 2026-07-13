@@ -53,7 +53,8 @@ COMMENT ON COLUMN material_consumption_logs.is_packaging
 -- 4. Liên kết production_orders → BOM reference
 --    (bổ sung FK vào bảng đã được REVISE ở SD-03)
 ALTER TABLE production_orders
-  ADD COLUMN IF NOT EXISTS bom_mold_master_id TEXT NULL;
+  ADD COLUMN IF NOT EXISTS bom_reference_mold_id TEXT NULL
+    REFERENCES physical_molds(physical_mold_id) ON DELETE SET NULL;
 
-COMMENT ON COLUMN production_orders.bom_mold_master_id
-  IS 'SD-07: Tham chiếu đến mold_material_bom.mold_master_id để auto-pull định mức vật tư';
+COMMENT ON COLUMN production_orders.bom_reference_mold_id
+  IS 'SD-07: FK đến physical_molds — dùng để auto-pull BOM định mức vật tư theo khuôn';

@@ -53,7 +53,7 @@ CREATE TABLE IF NOT EXISTS shipment_required_docs (
   doc_label       TEXT NULL,        -- Tên tài liệu tùy chỉnh
   is_attached     BOOLEAN DEFAULT false,
   file_path       TEXT NULL,
-  required_by     TEXT NULL,        -- company_id của khách hàng yêu cầu
+  required_by     TEXT NULL REFERENCES companies(company_id) ON DELETE SET NULL, -- company_id của khách hàng yêu cầu
   created_at      TIMESTAMPTZ DEFAULT now()
 );
 
