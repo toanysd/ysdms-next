@@ -1,7 +1,8 @@
 # 06_SCHEMA_DECISIONS — Quyết định Thiết kế Database
 # YSDMS | YSD Manufacturing System
-**Phiên bản:** 1.0
+**Phiên bản:** 1.1
 **Ngày ban hành:** 2026-07-13
+**Cập nhật lần cuối:** 2026-07-14
 **Người phê duyệt:** Thoan (Product Owner)
 **Trạng thái:** ACTIVE
 
@@ -44,25 +45,12 @@ trong `design_revisions` với `revision_number` tăng dần.
 ## SD-03 (REVISED): Mở rộng bảng `production_orders` cho Chỉ thị SX
 **Vấn đề:** Ban đầu định tạo bảng `production_instructions` để lưu Chỉ thị Sản xuất (新規金型製造工程票). Tuy nhiên, phân tích schema cho thấy bảng `production_orders` đã có sẵn và đóng vai trò tương tự. Bảng `jobs` và `inspections` cũng đã liên kết khóa ngoại vào bảng này.
 
-**Quyết định:** 
+**Quyết định:**
 - KHÔNG tạo bảng mới để tránh phá vỡ khóa ngoại và luồng liên kết.
 - Tận dụng `production_orders`.
 - Dùng `ALTER TABLE` để bổ sung các cột còn thiếu cho nghiệp vụ Chỉ thị SX.
 
-```sql
-ALTER TABLE production_orders
-  -- Phương pháp cắt
-  ADD COLUMN IF NOT EXISTS cut_method TEXT NULL,
-  -- Ghi chú chỉ thị sản xuất chi tiết
-  ADD COLUMN IF NOT EXISTS instruction_notes TEXT NULL,
-  -- Trạng thái chỉ thị (nếu chưa có)
-  ADD COLUMN IF NOT EXISTS instruction_status TEXT NULL DEFAULT 'draft';
-
-COMMENT ON COLUMN production_orders.cut_method IS 'SD-03: Phương pháp cắt — e.g. straight_cut, contour_cut';
-COMMENT ON COLUMN production_orders.instruction_notes IS 'SD-03: Ghi chú chỉ thị sản xuất chi tiết';
-```
-
-**Trạng thái DB:** ✅ ĐÃ TRIỂN KHAI — Đã xuất file `20260713XXXXXX_sd03_extend_production_orders.sql`
+**Trạng thái DB:** ✅ ĐÃ TRIỂN KHAI — `20260713172800_sd03_extend_production_orders.sql`
 
 ---
 
@@ -72,68 +60,101 @@ không phân biệt được 4 loại mẫu theo nghiệp vụ thực tế.
 
 **Quyết định:** Thêm cột `sample_type` vào `order_lines`.
 
-```sql
-ALTER TABLE order_lines
-  ADD COLUMN sample_type TEXT
-  CHECK (sample_type IN ('FREE', 'QC_INSPECT', 'MACHINE_ADJUST', 'OFFICE', NULL));
--- NULL = không phải mẫu thử (đơn hàng sản xuất thông thường)
--- FREE = 無償サンプル
--- QC_INSPECT = 入検用
--- MACHINE_ADJUST = 設備調整用 (có phí)
--- OFFICE = 事務所用
-```
+| Giá trị | JA | Tính phí |
+|---|---|---|
+| `FREE` | 無償サンプル | Không |
+| `QC_INSPECT` | 入検用 | Không |
+| `MACHINE_ADJUST` | 設備調整用 | Có |
+| `OFFICE` | 事務所用 | Không |
+| `NULL` | — | Đơn hàng SX thường |
 
-**Trạng thái DB:** ✅ ĐÃ TRIỂN KHAI — Đã apply migration
+**Trạng thái DB:** ✅ ĐÃ TRIỂN KHAI — `20260713170500_order_lines_packaging.sql`
 
-
+---
 
 ## SD-05: Packaging Instructions
 **Vấn đề:** `order_lines.packing_style` là text tự do, không validate được.
 
-**Quyết định:** Thêm 2 cột có cấu trúc vào `order_lines`.
+**Quyết định:** Thêm 2 cột có cấu trúc vào `order_lines`: `box_type` (PLAIN/PRINTED) và `bagging_required` (boolean). `packing_style` giữ nguyên cho ghi chú tự do.
 
-```sql
-ALTER TABLE order_lines
-  ADD COLUMN box_type TEXT
-    CHECK (box_type IN ('PLAIN', 'PRINTED', NULL)),
-  ADD COLUMN bagging_required BOOLEAN DEFAULT false;
--- packing_style giữ nguyên cho ghi chú tự do
-```
-
-**Trạng thái DB:** ✅ ĐÃ TRIỂN KHAI — Đã apply migration
+**Trạng thái DB:** ✅ ĐÃ TRIỂN KHAI — `20260713170500_order_lines_packaging.sql`
 
 ---
 
 ## SD-06: Kiến trúc luồng Giao hàng (Shipments & Lots)
-**Vấn đề:** `shipments` thiếu phân loại QC (Good/NG) và hỗ trợ template giao hàng. `production_lots` thiếu liên kết với khuôn vật lý để phục vụ in ấn phiếu.
+**Vấn đề:** `shipments` thiếu phân loại loại hàng và template giấy tờ. `production_lots` thiếu liên kết khuôn vật lý cho in phiếu.
 
-**Quyết định:** Mở rộng bảng `shipments` và `production_lots`, đồng thời tạo bảng phụ `shipment_required_docs` để quản lý template giấy tờ.
+**Quyết định:** Mở rộng `shipments` (shipment_type, document_template) và `production_lots` (lot_no, physical_mold_id, good_qty, defective_qty). Tạo bảng `shipment_required_docs` cho giấy tờ bắt buộc theo khách hàng (SMK, KYD).
 
-**Trạng thái DB:** ✅ ĐÃ TRIỂN KHAI — Đã xuất file `20260713180900_sd06_shipments_lots.sql`
+**Trạng thái DB:** ✅ ĐÃ TRIỂN KHAI — `20260713180900_sd06_shipments_lots.sql`
 
 ---
 
 ## SD-07: Kiến trúc quản lý Vật tư (Materials & BOM)
-**Vấn đề:** Cần quản lý trừ lùi vật tư, định mức nguyên liệu (BOM) và báo cáo môi trường PPWR.
+**Vấn đề:** Cần quản lý trừ lùi vật tư, định mức BOM và báo cáo môi trường PPWR.
 
-**Quyết định:** Mở rộng bảng `material_inventory` (thêm Reserved, Kanban Status) và `mold_material_bom`. Tạo bảng mới `material_consumption_logs` để ghi log tiêu hao. Thêm FK từ `production_orders` đến BOM reference.
+**Quyết định:** Mở rộng `material_inventory` (quantity_reserved, min_stock_alert, kanban_status) và `mold_material_bom` (unit, ppwr_reportable). Tạo `material_consumption_logs`. Thêm `bom_reference_mold_id` vào `production_orders`.
 
-**Trạng thái DB:** ✅ ĐÃ TRIỂN KHAI — Đã xuất file `20260713180900_sd07_materials_bom.sql`
-
----
-
-## SD-08: Extend QC / Inspections
-**Vấn đề:** Bảng `inspections` hiện tại thiếu phân tách QC Split (Good Qty/NG Qty), mã lỗi có cấu trúc, và liên kết đến `production_lots`.
-
-**Quyết định:** Mở rộng bảng `inspections` và thêm bảng phụ `ng_detail_logs` để ghi chi tiết lỗi.
-
-**Trạng thái DB:** 🟡 CẦN MIGRATION — Đã xuất file `20260714090000_sd08_extend_inspections.sql`
+**Trạng thái DB:** ✅ ĐÃ TRIỂN KHAI — `20260713180900_sd07_materials_bom.sql`
 
 ---
 
-## SD-09: Thiết kế PDF Chỉ thị Sản xuất (Tầng Ứng Dụng)
-**Vấn đề:** Cần render PDF tờ `新規金型製造工程票` dựa trên dữ liệu.
+## SD-08: Mở rộng QC & Quản lý Hàng Lỗi
+**Vấn đề:** Bảng `inspections` thiếu phân tách QC Split (Good/NG), mã lỗi có cấu trúc, và liên kết `production_lots`.
 
-**Quyết định:** Không cần migration DB mới, toàn bộ dữ liệu đã đầy đủ. Dùng JOIN query tại tầng Next.js server để pull dữ liệu từ `production_orders`, `physical_molds`, `order_lines`, `companies`, `mold_material_bom`. (Tham chiếu mapping trong `06_SCHEMA_DECISIONS.md`).
+**Quyết định:** Mở rộng `inspections` thêm 6 cột mới (production_lot_id, inspected_qty, good_qty, ng_qty, ng_category, inspection_stage). Tạo bảng `ng_detail_logs` cho chi tiết từng lỗi NG kèm ảnh.
+
+**Công thức QC:** `inspected_qty = good_qty + ng_qty`
+
+**Các stage kiểm tra:**
+| Stage | Mô tả | Map với |
+|---|---|---|
+| `in_process` | Kiểm tra trong quá trình SX | — |
+| `final` | Kiểm tra thành phẩm trước giao | — |
+| `incoming` | Kiểm tra đầu vào | `sample_type = QC_INSPECT` |
+
+**Trạng thái DB:** ✅ ĐÃ TRIỂN KHAI — `20260714090000_sd08_extend_inspections.sql`
+
+---
+
+## SD-09: Xuất PDF Chỉ thị Sản xuất (Tầng Ứng Dụng)
+**Vấn đề:** Cần render PDF tờ `新規金型製造工程票` dựa trên dữ liệu từ DB.
+
+**Quyết định:** Không cần migration DB mới. Toàn bộ dữ liệu đã đầy đủ sau SD-03 đến SD-08. Thực hiện tại tầng Next.js server.
+
+**Mapping dữ liệu → PDF fields:**
+
+| Vùng trên PDF | Nguồn dữ liệu |
+|---|---|
+| Mã chỉ thị (工程票番号) | `production_orders.po_code` |
+| Tên khuôn / Mold No | `physical_molds.display_name` |
+| Ký hiệu khắc | `physical_molds.physical_stamp` |
+| Khách hàng | `companies.company_name` |
+| Phương pháp cắt | `production_orders.cut_method` |
+| Ngày yêu cầu khuôn | `production_orders.req_mold_date` |
+| Ngày yêu cầu định hình | `production_orders.req_molding_date` |
+| Vật liệu nhựa / Khổ / Dày | `mold_material_bom` qua `bom_reference_mold_id` |
+| Phụ trách phê duyệt | `approved_by_mold_shop`, `approved_by_molding_shop`... |
+| Ghi chú đặc thù | `production_orders.instruction_notes` |
+
+**Query mẫu cho PDF generation:**
+```sql
+SELECT
+  po.*,
+  pm.display_name    AS mold_display_name,
+  pm.physical_stamp  AS mold_stamp,
+  c.company_name,
+  bom.material_type, bom.width_mm, bom.thickness_mm,
+  bom.quantity_per_shot
+FROM production_orders po
+JOIN physical_molds pm      ON pm.physical_mold_id = po.bom_reference_mold_id
+JOIN order_lines ol         ON ol.order_line_id    = po.order_line_id
+JOIN orders o               ON o.order_id          = ol.order_id
+JOIN companies c            ON c.company_id        = o.company_id
+LEFT JOIN mold_material_bom bom ON bom.physical_mold_id = po.bom_reference_mold_id
+WHERE po.po_id = $1;
+```
+
+**Thư viện gợi ý:** `@react-pdf/renderer` (render tại server) hoặc `puppeteer` (HTML → PDF)
 
 **Trạng thái DB:** ✅ KHÔNG YÊU CẦU MIGRATION — Chờ frontend implementation.
