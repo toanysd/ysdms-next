@@ -7,7 +7,7 @@ import {
   AlertTriangle, Settings, RefreshCw, Layers, Sliders, MapPin, Package, DollarSign, Plus, X, Calendar, UserCheck
 } from 'lucide-react';
 
-export default function ProductionOrdersPage() {
+export default function MoldWorkOrdersPage() {
   const supabase = createClient();
   const [instructions, setInstructions] = useState<any[]>([]);
   const [selectedPo, setSelectedPo] = useState<any | null>(null);
@@ -96,7 +96,7 @@ export default function ProductionOrdersPage() {
     try {
       // 1. Fetch production orders
       const { data: poData, error: poErr } = await supabase
-        .from('production_orders')
+        .from('mold_work_orders')
         .select(`
           *,
           order_lines!inner(
@@ -138,7 +138,7 @@ export default function ProductionOrdersPage() {
 
       if (poData && poData.length > 0) {
         // If there was a selected PO, keep it selected, else select first
-        const currentSelected = selectedPo ? poData.find(p => p.po_id === selectedPo.po_id) : null;
+        const currentSelected = selectedPo ? poData.find(p => p.mwo_id === selectedPo.mwo_id) : null;
         handleSelectPo(currentSelected || poData[0]);
       }
     } catch (err: any) {
@@ -197,7 +197,7 @@ export default function ProductionOrdersPage() {
     const { data: jobData } = await supabase
       .from('jobs')
       .select('*, job_steps(*)')
-      .eq('production_order_id', po.po_id)
+      .eq('mold_work_order_id', po.mwo_id)
       .maybeSingle();
 
     setLinkedJobId(jobData?.job_id || null);
@@ -272,7 +272,7 @@ export default function ProductionOrdersPage() {
       if (error) throw error;
 
       // Filter out lines that already have instructions
-      const { data: activePos } = await supabase.from('production_orders').select('order_line_id');
+      const { data: activePos } = await supabase.from('mold_work_orders').select('order_line_id');
       const activeLineIds = new Set((activePos || []).map(p => p.order_line_id));
 
       const pending = (lines || []).filter((l: any) => !activeLineIds.has(l.line_id));
@@ -388,12 +388,12 @@ export default function ProductionOrdersPage() {
 
       // 1. Insert Production Order
       const { data: newPo, error: poErr } = await supabase
-        .from('production_orders')
+        .from('mold_work_orders')
         .insert({
-          po_code: finalPoCode,
+          mwo_code: finalPoCode,
           order_line_id: lineIdToUse,
           planned_quantity: finalPlannedQty,
-          po_status: 'PLANNED',
+          mwo_status: 'PLANNED',
           material_type: finalMaterialType,
           material_thickness: finalMaterialThickness,
           material_width: finalMaterialWidth,
@@ -426,7 +426,7 @@ export default function ProductionOrdersPage() {
           job_code: `JOB-${finalProduct.product_code}`,
           job_name: `Mold Making ${finalProduct.product_name_internal}`,
           job_type_id: jobTypeId,
-          production_order_id: newPo.po_id,
+          mold_work_order_id: newPo.mwo_id,
           company_id: finalCompanyId,
           product_id: finalProduct.product_id,
           deadline: reqMoldingDate ? `${reqMoldingDate}T12:00:00Z` : null,
@@ -491,9 +491,9 @@ export default function ProductionOrdersPage() {
         if (designErr) throw designErr;
       }
 
-      // 2. Update production_orders Target Deadlines & Stamps
+      // 2. Update mold_work_orders Target Deadlines & Stamps
       const { error: poErr } = await supabase
-        .from('production_orders')
+        .from('mold_work_orders')
         .update({
           machine_id: assignedMachine || null,
           physical_mold_id: assignedMold || null,
@@ -512,7 +512,7 @@ export default function ProductionOrdersPage() {
           approved_by_manager: stampManager || null,
           notes: `原価: ${cost}\n${selectedPo.notes || ''}`
         })
-        .eq('po_id', selectedPo.po_id);
+        .eq('mwo_id', selectedPo.mwo_id);
 
       if (poErr) throw poErr;
 
@@ -520,7 +520,7 @@ export default function ProductionOrdersPage() {
       const { data: linkedJob } = await supabase
         .from('jobs')
         .select('job_id')
-        .eq('production_order_id', selectedPo.po_id)
+        .eq('mold_work_order_id', selectedPo.mwo_id)
         .maybeSingle();
 
       if (linkedJob) {
@@ -623,7 +623,7 @@ export default function ProductionOrdersPage() {
   };
 
   const filteredInstructions = instructions.filter(po => {
-    const code = po.po_code?.toLowerCase() || '';
+    const code = po.mwo_code?.toLowerCase() || '';
     const internalName = po.order_lines?.products?.product_name_internal?.toLowerCase() || '';
     const company = po.order_lines?.orders?.companies?.company_name?.toLowerCase() || '';
     const query = searchQuery.toLowerCase();
@@ -687,12 +687,12 @@ export default function ProductionOrdersPage() {
               <div className="p-4 text-center text-[var(--text-muted)]">該当するデータがありません</div>
             ) : (
               filteredInstructions.map((po) => {
-                const isActive = selectedPo?.po_id === po.po_id;
+                const isActive = selectedPo?.mwo_id === po.mwo_id;
                 const product = po.order_lines?.products;
                 const company = po.order_lines?.orders?.companies;
                 return (
                   <div
-                    key={po.po_id}
+                    key={po.mwo_id}
                     className={`p-3 border-b border-[var(--border-subtle)] cursor-pointer transition-colors duration-150 ${
                       isActive ? 'bg-[var(--bg-selected)] border-l-4 border-l-[var(--accent)]' : 'hover:bg-[var(--bg-hover)]'
                     }`}
@@ -701,14 +701,14 @@ export default function ProductionOrdersPage() {
                     <div className="flex justify-between items-center mb-1">
                       <span className="font-bold text-[var(--text-primary)]">{product?.product_name_internal || 'N/A'}</span>
                       <span className={`badge ${
-                        po.po_status === 'COMPLETED' ? 'badge--success' : po.po_status === 'IN_PROGRESS' ? 'badge--warning' : 'badge--neutral'
+                        po.mwo_status === 'COMPLETED' ? 'badge--success' : po.mwo_status === 'IN_PROGRESS' ? 'badge--warning' : 'badge--neutral'
                       }`}>
-                        {po.po_status}
+                        {po.mwo_status}
                       </span>
                     </div>
                     <div className="text-[11px] text-[var(--text-muted)] flex justify-between">
                       <span>{company?.company_code || '---'}</span>
-                      <span>PO: {po.po_code || '---'}</span>
+                      <span>PO: {po.mwo_code || '---'}</span>
                     </div>
                   </div>
                 );

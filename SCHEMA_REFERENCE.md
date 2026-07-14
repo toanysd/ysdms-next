@@ -321,7 +321,7 @@ FK:  job_type_id         TEXT → job_types(job_type_id) NOT NULL
 FK:  mold_master_id      UUID → mold_masters(mold_master_id)
 FK:  physical_mold_id    UUID → physical_molds(physical_mold_id)
 FK:  design_revision_id  UUID → design_revisions(revision_id)
-FK:  production_order_id UUID → production_orders(po_id)
+FK:  mold_work_order_id  UUID → mold_work_orders(mwo_id)
 FK:  company_id          UUID → companies(company_id)
 FK:  responsible_id      UUID → employees(employee_id)
 FK:  outsource_company   UUID → companies(company_id)
