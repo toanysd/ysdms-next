@@ -1,0 +1,11 @@
+category,count,description
+QC_品質検査,121,品質検査・不良報告・不具合サンプル
+見積_Quote,299,見積依頼・見積書送付
+注文_Order,276,注文書・発注書・受注処理
+金型_Mold,428,金型管理・棚卸・改造依頼
+トレイ_Tray,379,トレイ製作・技術相談
+納期_Delivery,285,納期確認・出荷連絡
+請求_Invoice,53,請求書・支払処理
+中村_Nakamura,186,中村様関連 eigyo@ysd-pack.co.jp
+図面_Drawing,252,図面送付・承認図
+棚卸_Inventory,126,金型有高確認・棚卸対応
