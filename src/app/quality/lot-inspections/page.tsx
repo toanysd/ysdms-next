@@ -120,9 +120,9 @@ export default function LotInspectionsPage() {
                             value={stage}
                             onChange={(e) => setStage(e.target.value)}
                         >
+                            <option value="initial">Kiểm tra ban đầu (First-piece / Đầu chuyền)</option>
                             <option value="in_process">Trong quá trình SX (In-process)</option>
-                            <option value="final">Thành phẩm (Final)</option>
-                            <option value="incoming">Đầu vào (Incoming)</option>
+                            <option value="final">Kiểm tra toàn bộ (Final / 100% Check)</option>
                         </select>
                     </div>
                 </div>
