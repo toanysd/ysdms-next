@@ -62,8 +62,8 @@ CREATE TABLE IF NOT EXISTS mold_work_orders (
   mwo_status          TEXT NOT NULL DEFAULT 'draft'
     CHECK (mwo_status IN ('draft','in_progress','mold_done','completed')),
 
-  -- ✅ FIX #2: dùng employees thay vì profiles
-  created_by          UUID REFERENCES employees(id) ON DELETE SET NULL,
+  -- ✅ FIX #3: dùng employee_id thay vì id
+  created_by          UUID REFERENCES employees(employee_id) ON DELETE SET NULL,
   created_at          TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at          TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );

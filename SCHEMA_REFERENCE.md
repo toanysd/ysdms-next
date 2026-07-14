@@ -11,7 +11,25 @@
 2. Thư mục `migrations/archived/` chứa file cũ **KHÔNG CÒN HIỆU LỰC** — KHÔNG ĐỌC.
 3. Nguồn xác minh duy nhất: `src/types/database.types.ts` (tự sinh từ Supabase).
 4. **KHÔNG tự sáng tạo cột** — nếu không thấy cột trong file này, cột đó KHÔNG TỒN TẠI.
-5. **Bảng User là `employees`**: Bảng chứa thông tin user trong project này là `employees` (KHÔNG phải `profiles` hay `users`). Bắt buộc dùng `REFERENCES employees(id)` ở tất cả các migration tương lai.
+5. **Bảng User là `employees`**: Bảng chứa thông tin user trong project này là `employees` (KHÔNG phải `profiles` hay `users`). Bắt buộc dùng `REFERENCES employees(employee_id)` ở tất cả các migration tương lai.
+
+## ⚠️ CONVENTION CẢNH BÁO: Tên Primary Key
+
+DB này KHÔNG dùng `id` làm PK. Quy tắc: PK = `{tên_bảng_số_ít}_id`
+
+| Bảng | Primary Key |
+|---|---|
+| `order_lines` | `line_id` |  ← ngoại lệ, KHÔNG phải order_line_id
+| `employees` | `employee_id` |
+| `physical_molds` | `physical_mold_id` |
+| `orders` | `order_id` |
+| `products` | `product_id` |
+
+Khi viết FK mới: LUÔN kiểm tra bằng câu query:
+```sql
+SELECT column_name FROM information_schema.columns
+WHERE table_name = '{tên_bảng}' AND ordinal_position = 1;
+```
 
 ---
 
