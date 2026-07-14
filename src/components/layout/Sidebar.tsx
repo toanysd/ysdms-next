@@ -11,11 +11,7 @@ import {
   Building2, Users, Server, Grid3X3,
   BarChart3, Settings, ChevronRight,
   Search, GanttChart, ExternalLink, Box, Columns3, Menu, X, Pin, DatabaseZap,
-<<<<<<< HEAD
-  Briefcase, ClipboardList
-=======
-  Briefcase, ScanLine
->>>>>>> 4a149a4 (feat(sd-08): add QC lot inspection & NG dashboard)
+  Briefcase, ClipboardList, ScanLine, HardDriveDownload
 } from 'lucide-react'
 
 type NavItem = {
@@ -51,14 +47,9 @@ const NAV_SECTIONS: NavSection[] = [
       { href: '/orders/quotations', icon: FileSpreadsheet, labelJA: '見積書', labelVI: 'Báo giá' },
       { href: '/orders', icon: FileText, labelJA: '受注・指示書', labelVI: 'Đơn hàng' },
       { href: '/orders/shipments', icon: Truck, labelJA: '出荷・納品', labelVI: 'Xuất hàng' },
-      { href: '/production/mrp', icon: Calculator, labelJA: 'MRP', labelVI: 'MRP' },
-<<<<<<< HEAD
-      { href: '/production/orders', icon: ClipboardList, labelJA: '注文書／納入指示書', labelVI: 'Lệnh SX Khay' },
-      { href: '/production/mold-orders', icon: HardDriveDownload, labelJA: '金型指示書', labelVI: 'Lệnh SX Khuôn' },
-=======
-      { href: '/production/orders', icon: HardDriveDownload, labelJA: '注文書（成形）', labelVI: 'Chỉ thị Khay' },
-      { href: '/production/mold-orders', icon: Wrench, labelJA: '金型工程票', labelVI: 'Chỉ thị Khuôn' },
->>>>>>> 4a149a4 (feat(sd-08): add QC lot inspection & NG dashboard)
+      { href: '/mrp', icon: Calculator, labelJA: 'MRP', labelVI: 'MRP' },
+      { href: '/production/orders?view=office', icon: ClipboardList, labelJA: '注文書／納入指示書', labelVI: 'Lệnh SX Khay' },
+      { href: '/production/mold-orders', icon: Wrench, labelJA: '金型工程票', labelVI: 'Lệnh SX Khuôn' },
     ]
   },
   // ── 2. Phòng Thiết kế (Design Dept) ────────────────────────────────
@@ -80,8 +71,7 @@ const NAV_SECTIONS: NavSection[] = [
       { href: '/equipment/schedule', icon: GanttChart, labelJA: '工程計画', labelVI: 'Bảng Kế hoạch' },
       { href: '/equipment/cutting-dies', icon: Scissors, labelJA: '抜型', labelVI: 'Dao cắt (Die)' },
       { href: '/equipment/auxiliary', icon: Cog, labelJA: '補助設備', labelVI: 'TB phụ trợ' },
-      { href: '/equipment/outsource', icon: ExternalLink, labelJA: '外注管理', labelVI: 'Gia công ngoài' },
-      { href: '/equipment/maintenance', icon: Wrench, labelJA: '保守・メンテ', labelVI: 'Bảo dưỡng' },
+      { href: '/maintenance', icon: Wrench, labelJA: '保守・メンテ', labelVI: 'Bảo dưỡng' },
       { href: '/master/racks', icon: Grid3X3, labelJA: '棚管理', labelVI: 'Master Kệ chứa' },
       { href: '/equipment/lifecycle', icon: Archive, labelJA: '棚卸', labelVI: 'Kiểm kê' },
     ]
@@ -92,7 +82,7 @@ const NAV_SECTIONS: NavSection[] = [
     items: [
       { href: '/production/dashboard', icon: Home, labelJA: 'ダッシュボード', labelVI: 'Tổng quan', exact: true },
       { href: '/production/planning', icon: Calendar, labelJA: '生産計画', labelVI: 'Kế hoạch SX' },
-      { href: '/production/orders', icon: ClipboardList, labelJA: '注文書／納入指示書', labelVI: 'Chỉ thị Khay' },
+      { href: '/production/orders?view=factory', icon: ClipboardList, labelJA: '注文書／納入指示書', labelVI: 'Chỉ thị Khay' },
       { href: '/production/kanban', icon: Columns3, labelJA: '看板', labelVI: 'Kanban' },
       { href: '/production/floor', icon: Factory, labelJA: '実績入力', labelVI: 'Nhập thực tế' },
       { href: '/master/machines', icon: Server, labelJA: '機械・設備', labelVI: 'Master Máy móc' },
