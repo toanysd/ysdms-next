@@ -42,15 +42,16 @@ trong `design_revisions` với `revision_number` tăng dần.
 
 ---
 
-## SD-03 (REVISED): Mở rộng bảng `production_orders` cho Chỉ thị SX
-**Vấn đề:** Ban đầu định tạo bảng `production_instructions` để lưu Chỉ thị Sản xuất (新規金型製造工程票). Tuy nhiên, phân tích schema cho thấy bảng `production_orders` đã có sẵn và đóng vai trò tương tự. Bảng `jobs` và `inspections` cũng đã liên kết khóa ngoại vào bảng này.
+## SD-03 (REVISED 2): Tách biệt luồng Chỉ thị Khuôn và Chỉ thị Khay
+**Vấn đề:** Bảng `production_orders` ban đầu gộp chung 2 loại Chỉ thị: Khuôn mới (工程票) và Khay thường (注文書). Điều này sai về mặt nghiệp vụ do khác biệt về trigger (thủ công vs tự động), tần suất, và dữ liệu yêu cầu.
 
 **Quyết định:**
-- KHÔNG tạo bảng mới để tránh phá vỡ khóa ngoại và luồng liên kết.
-- Tận dụng `production_orders`.
-- Dùng `ALTER TABLE` để bổ sung các cột còn thiếu cho nghiệp vụ Chỉ thị SX.
+- Giữ `production_orders` = 注文書 (Chỉ thị Khay, tạo tự động từ order_line).
+- Tạo bảng mới `mold_work_orders` = 工程票 (Chỉ thị Khuôn mới, tạo thủ công).
+- Dọn dẹp các cột kỹ thuật khuôn (cut_method, instruction_notes, req_mold_date...) khỏi `production_orders` và đưa sang `mold_work_orders`.
+- `mold_work_orders` liên kết với `physical_molds` (chân 1) và `order_lines` (chân 2 - nullable).
 
-**Trạng thái DB:** ✅ ĐÃ TRIỂN KHAI — `20260713172800_sd03_extend_production_orders.sql`
+**Trạng thái DB:** 🟡 CẦN MIGRATION — `20260714100000_sd03_rev2_mold_work_orders.sql`
 
 ---
 
