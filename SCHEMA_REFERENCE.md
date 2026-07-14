@@ -11,6 +11,7 @@
 2. Thư mục `migrations/archived/` chứa file cũ **KHÔNG CÒN HIỆU LỰC** — KHÔNG ĐỌC.
 3. Nguồn xác minh duy nhất: `src/types/database.types.ts` (tự sinh từ Supabase).
 4. **KHÔNG tự sáng tạo cột** — nếu không thấy cột trong file này, cột đó KHÔNG TỒN TẠI.
+5. **Bảng User là `employees`**: Bảng chứa thông tin user trong project này là `employees` (KHÔNG phải `profiles` hay `users`). Bắt buộc dùng `REFERENCES employees(id)` ở tất cả các migration tương lai.
 
 ---
 
