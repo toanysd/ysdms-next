@@ -92,11 +92,7 @@ const NAV_SECTIONS: NavSection[] = [
     items: [
       { href: '/production/dashboard', icon: Home, labelJA: 'ダッシュボード', labelVI: 'Tổng quan', exact: true },
       { href: '/production/planning', icon: Calendar, labelJA: '生産計画', labelVI: 'Kế hoạch SX' },
-<<<<<<< HEAD
       { href: '/production/orders', icon: ClipboardList, labelJA: '注文書／納入指示書', labelVI: 'Chỉ thị Khay' },
-=======
-      { href: '/production/orders', icon: FileText, labelJA: '注文書（成形）', labelVI: 'Chỉ thị Khay' },
->>>>>>> 4a149a4 (feat(sd-08): add QC lot inspection & NG dashboard)
       { href: '/production/kanban', icon: Columns3, labelJA: '看板', labelVI: 'Kanban' },
       { href: '/production/floor', icon: Factory, labelJA: '実績入力', labelVI: 'Nhập thực tế' },
       { href: '/master/machines', icon: Server, labelJA: '機械・設備', labelVI: 'Master Máy móc' },
