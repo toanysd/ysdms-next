@@ -22,7 +22,7 @@ CREATE TABLE IF NOT EXISTS mold_work_orders (
 
   -- Liên kết 2 chân
   physical_mold_id    UUID NOT NULL REFERENCES physical_molds(physical_mold_id) ON DELETE RESTRICT,
-  order_line_id       UUID NULL     REFERENCES order_lines(order_line_id)       ON DELETE SET NULL,
+  order_line_id       UUID NULL     REFERENCES order_lines(line_id)       ON DELETE SET NULL,
 
   -- Thông tin kỹ thuật khuôn (phần trên form 工程票)
   material_type       TEXT,                        -- 材質 (PS(N), PP, ...)

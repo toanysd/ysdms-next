@@ -172,6 +172,9 @@ FK:  delivery_site_id UUID → delivery_sites(site_id)
 > `design_revision_id` **NULLABLE** — Mặc định NULL = tự lấy revision mới nhất từ product.
 > Chỉ chỉ định khi có nhiều revision cùng active (VD: 2 phiên bản cho 2 loại nhựa khác nhau).
 
+> [!CAUTION]
+> Bảng `order_lines` có Primary Key là `line_id` (KHÔNG PHẢI `order_line_id`). Bắt buộc dùng `REFERENCES order_lines(line_id)` khi thiết lập khóa ngoại từ các bảng khác.
+
 ---
 
 ## 🔑 Bảng `shipments` — Giao hàng
