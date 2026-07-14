@@ -123,6 +123,7 @@ export default function LotInspectionsPage() {
                             <option value="initial">Kiểm tra ban đầu (First-piece / Đầu chuyền)</option>
                             <option value="in_process">Trong quá trình SX (In-process)</option>
                             <option value="final">Kiểm tra toàn bộ (Final / 100% Check)</option>
+                            <option value="customer_complaint">Khiếu nại KH (Customer Complaint)</option>
                         </select>
                     </div>
                 </div>
