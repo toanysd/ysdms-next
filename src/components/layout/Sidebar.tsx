@@ -11,7 +11,11 @@ import {
   Building2, Users, Server, Grid3X3,
   BarChart3, Settings, ChevronRight,
   Search, GanttChart, ExternalLink, Box, Columns3, Menu, X, Pin, DatabaseZap,
+<<<<<<< HEAD
   Briefcase, ClipboardList
+=======
+  Briefcase, ScanLine
+>>>>>>> 4a149a4 (feat(sd-08): add QC lot inspection & NG dashboard)
 } from 'lucide-react'
 
 type NavItem = {
@@ -48,8 +52,13 @@ const NAV_SECTIONS: NavSection[] = [
       { href: '/orders', icon: FileText, labelJA: '受注・指示書', labelVI: 'Đơn hàng' },
       { href: '/orders/shipments', icon: Truck, labelJA: '出荷・納品', labelVI: 'Xuất hàng' },
       { href: '/production/mrp', icon: Calculator, labelJA: 'MRP', labelVI: 'MRP' },
+<<<<<<< HEAD
       { href: '/production/orders', icon: ClipboardList, labelJA: '注文書／納入指示書', labelVI: 'Lệnh SX Khay' },
       { href: '/production/mold-orders', icon: HardDriveDownload, labelJA: '金型指示書', labelVI: 'Lệnh SX Khuôn' },
+=======
+      { href: '/production/orders', icon: HardDriveDownload, labelJA: '注文書（成形）', labelVI: 'Chỉ thị Khay' },
+      { href: '/production/mold-orders', icon: Wrench, labelJA: '金型工程票', labelVI: 'Chỉ thị Khuôn' },
+>>>>>>> 4a149a4 (feat(sd-08): add QC lot inspection & NG dashboard)
     ]
   },
   // ── 2. Phòng Thiết kế (Design Dept) ────────────────────────────────
@@ -83,7 +92,11 @@ const NAV_SECTIONS: NavSection[] = [
     items: [
       { href: '/production/dashboard', icon: Home, labelJA: 'ダッシュボード', labelVI: 'Tổng quan', exact: true },
       { href: '/production/planning', icon: Calendar, labelJA: '生産計画', labelVI: 'Kế hoạch SX' },
+<<<<<<< HEAD
       { href: '/production/orders', icon: ClipboardList, labelJA: '注文書／納入指示書', labelVI: 'Chỉ thị Khay' },
+=======
+      { href: '/production/orders', icon: FileText, labelJA: '注文書（成形）', labelVI: 'Chỉ thị Khay' },
+>>>>>>> 4a149a4 (feat(sd-08): add QC lot inspection & NG dashboard)
       { href: '/production/kanban', icon: Columns3, labelJA: '看板', labelVI: 'Kanban' },
       { href: '/production/floor', icon: Factory, labelJA: '実績入力', labelVI: 'Nhập thực tế' },
       { href: '/master/machines', icon: Server, labelJA: '機械・設備', labelVI: 'Master Máy móc' },
@@ -94,8 +107,9 @@ const NAV_SECTIONS: NavSection[] = [
     id: 'd5', icon: ShieldCheck, labelJA: '品質管理部', labelVI: 'Phòng QC', color: '#EF4444',
     items: [
       { href: '/quality', icon: Home, labelJA: 'ダッシュボード', labelVI: 'Tổng quan', exact: true },
-      { href: '/quality/inspections', icon: ShieldCheck, labelJA: '検査', labelVI: 'Kiểm tra' },
-      { href: '/quality/defects', icon: AlertTriangle, labelJA: '不良報告', labelVI: 'Báo cáo lỗi' },
+      { href: '/quality/inspections', icon: ScanLine, labelJA: '寸法検査', labelVI: 'KCS Đo đạc' },
+      { href: '/quality/lot-inspections', icon: ShieldCheck, labelJA: 'ロット検査', labelVI: 'QC Lô / NG' },
+      { href: '/quality/defects', icon: AlertTriangle, labelJA: '不良ダッシュボード', labelVI: 'Dashboard Lỗi' },
     ]
   },
   // ── 6. Quản lý Vật tư (Material Dept) ─────────────────────────────
