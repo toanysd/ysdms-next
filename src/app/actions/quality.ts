@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
+import type { NGDetailLog } from '@/types/quality'
 
 export async function getInspectionsByJob(jobId: string) {
     const supabase = await createClient()
@@ -18,10 +19,9 @@ export async function getInspectionsByJob(jobId: string) {
     return data
 }
 
-export async function createInspection(payload: any) {
+export async function createInspection(payload: Record<string, unknown>) {
     const supabase = await createClient()
     
-    // Get current user id
     const { data: { user } } = await supabase.auth.getUser()
     const inspected_by = user?.id || null
 
@@ -29,8 +29,8 @@ export async function createInspection(payload: any) {
         .from('tray_inspections')
         .insert([{
             ...payload,
-            inspected_by: payload.inspected_by || inspected_by,
-            inspected_date: payload.inspected_date || new Date().toISOString()
+            inspected_by: (payload.inspected_by as string) || inspected_by,
+            inspected_date: (payload.inspected_date as string) || new Date().toISOString()
         }])
         .select()
         .single()
@@ -44,7 +44,7 @@ export async function createInspection(payload: any) {
     return { data }
 }
 
-export async function updateInspection(inspectionId: string, payload: any) {
+export async function updateInspection(inspectionId: string, payload: Record<string, unknown>) {
     const supabase = await createClient()
     
     const { data, error } = await supabase
@@ -63,27 +63,28 @@ export async function updateInspection(inspectionId: string, payload: any) {
     return { data }
 }
 
-export async function createLotInspection(payload: any, ngDetails: any[] = []) {
+export async function createLotInspection(
+    payload: Record<string, unknown>,
+    ngDetails: Array<Record<string, unknown>> = []
+) {
     const supabase = await createClient()
     
-    // Get current user id
     const { data: { user } } = await supabase.auth.getUser()
     const inspector_id = user?.id || null
 
-    // 1. Insert into inspections
     const { data: insData, error: insError } = await supabase
         .from('inspections')
         .insert({
             production_lot_id: payload.production_lot_id,
             po_id: payload.po_id,
             inspector_id: inspector_id,
-            inspection_date: payload.inspection_date || new Date().toISOString(),
-            inspection_stage: payload.inspection_stage || 'in_process',
-            inspected_qty: payload.inspected_qty || 0,
-            good_qty: payload.good_qty || 0,
-            ng_qty: payload.ng_qty || 0,
-            ng_category: payload.ng_category || null,
-            result: payload.result || (payload.ng_qty > 0 ? 'FAIL' : 'PASS'),
+            inspection_date: (payload.inspection_date as string) || new Date().toISOString(),
+            inspection_stage: (payload.inspection_stage as string) || 'in_process',
+            inspected_qty: (payload.inspected_qty as number) || 0,
+            good_qty: (payload.good_qty as number) || 0,
+            ng_qty: (payload.ng_qty as number) || 0,
+            ng_category: (payload.ng_category as string) || null,
+            result: (payload.result as string) || ((payload.ng_qty as number) > 0 ? 'FAIL' : 'PASS'),
             notes: payload.notes
         })
         .select()
@@ -94,14 +95,13 @@ export async function createLotInspection(payload: any, ngDetails: any[] = []) {
         return { error: insError.message }
     }
 
-    // 2. Insert into ng_detail_logs if ngDetails exist
     if (ngDetails && ngDetails.length > 0) {
         const ngPayloads = ngDetails.map(ng => ({
             inspection_id: insData.inspection_id,
             ng_category: ng.ng_category,
             ng_description: ng.ng_description,
-            ng_qty: ng.ng_qty || 1,
-            photo_path: ng.photo_path || null
+            ng_qty: (ng.ng_qty as number) || 1,
+            photo_path: (ng.photo_path as string) || null
         }))
 
         const { error: ngError } = await supabase
@@ -119,13 +119,18 @@ export async function createLotInspection(payload: any, ngDetails: any[] = []) {
     return { data: insData }
 }
 
-export async function getNGStatistics() {
+export async function getNGStatistics(): Promise<{ data: NGDetailLog[]; error?: string }> {
     const supabase = await createClient()
-    // Fetch ng_detail_logs joined with inspections
     const { data, error } = await supabase
         .from('ng_detail_logs')
         .select(`
-            *,
+            ng_log_id,
+            inspection_id,
+            ng_category,
+            ng_description,
+            ng_qty,
+            photo_path,
+            created_at,
             inspections (
                 inspection_date,
                 inspection_stage,
@@ -144,5 +149,5 @@ export async function getNGStatistics() {
         console.error('Error fetching NG statistics:', error)
         return { data: [], error: error.message }
     }
-    return { data }
+    return { data: (data as unknown as NGDetailLog[]) || [] }
 }

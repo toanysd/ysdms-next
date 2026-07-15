@@ -1,5 +1,6 @@
 import { getNGStatistics } from '@/app/actions/quality'
-import { AlertTriangle, TrendingDown, PackageX, Search } from 'lucide-react'
+import type { NGDetailLog } from '@/types/quality'
+import { AlertTriangle, PackageX, Search } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
 
@@ -13,11 +14,10 @@ const CATEGORY_LABELS: Record<string, string> = {
 
 export default async function DefectsDashboardPage() {
     const { data: defects } = await getNGStatistics()
-    const validDefects = defects || []
+    const validDefects: NGDetailLog[] = defects || []
 
     const totalNG = validDefects.reduce((sum, d) => sum + (d.ng_qty || 0), 0)
 
-    // Group by category
     const categoryStats = validDefects.reduce((acc, d) => {
         const cat = d.ng_category || 'other'
         acc[cat] = (acc[cat] || 0) + (d.ng_qty || 0)
@@ -64,7 +64,11 @@ export default async function DefectsDashboardPage() {
                     </h2>
                     <div className="relative">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-                        <input type="text" placeholder="Tìm kiếm Lô, Sản phẩm..." className="form-input pl-9 pr-4 py-2 text-sm w-64 border rounded" />
+                        <input
+                            type="text"
+                            placeholder="Tìm kiếm Lô, Sản phẩm..."
+                            className="form-input pl-9 pr-4 py-2 text-sm w-64 border rounded"
+                        />
                     </div>
                 </div>
                 
@@ -80,8 +84,8 @@ export default async function DefectsDashboardPage() {
                             </tr>
                         </thead>
                         <tbody>
-                            {validDefects.length > 0 ? validDefects.map((d, i) => {
-                                const ins: any = d.inspections;
+                            {validDefects.length > 0 ? validDefects.map((d: NGDetailLog, i: number) => {
+                                const ins = d.inspections
                                 const prod = ins?.production_lots?.production_orders?.products
                                 const lotNo = ins?.production_lots?.lot_no
                                 const date = ins?.inspection_date
@@ -94,13 +98,13 @@ export default async function DefectsDashboardPage() {
                                         </td>
                                         <td className="px-6 py-4">
                                             <span className="px-2 py-1 bg-red-100 text-red-700 rounded text-xs font-bold">
-                                                {CATEGORY_LABELS[d.ng_category] || d.ng_category}
+                                                {CATEGORY_LABELS[d.ng_category ?? 'other'] ?? d.ng_category}
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 text-center">
                                             <span className="font-black text-red-600">{d.ng_qty}</span>
                                         </td>
-                                        <td className="px-6 py-4 text-slate-600 max-w-xs truncate" title={d.ng_description || undefined}>
+                                        <td className="px-6 py-4 text-slate-600 max-w-xs truncate" title={d.ng_description ?? undefined}>
                                             {d.ng_description || '-'}
                                         </td>
                                     </tr>
