@@ -96,8 +96,13 @@ export default function CaseDetailPage() {
       setCurrentUserId(userId)
 
       if (userId) {
-        const { data: profile } = await (supabase as any).from('profiles').select('role').eq('id', userId).maybeSingle()
-        setCurrentUserRole((profile?.role as UserRole) ?? 'sales')
+        try {
+          const { data: profile } = await (supabase as any).from('profiles').select('role').eq('id', userId).maybeSingle()
+          setCurrentUserRole((profile?.role as UserRole) ?? 'sales')
+        } catch (err) {
+          console.error("Failed to load profile", err)
+          setCurrentUserRole('sales')
+        }
       }
 
       const { data, error } = await (supabase as any)
@@ -108,7 +113,7 @@ export default function CaseDetailPage() {
           created_at, updated_at,
           companies(company_id, company_name, company_code),
           sales_owner:employees!business_cases_sales_owner_id_fkey(employee_id, employee_name),
-          technical_reviews(*),
+          technical_reviews(id, case_id, version, approval_status, product_id, design_revision_id, material_spec, thickness_mm, special_requirements, mold_option, mold_id, pocket_count, cutting_die_option, cutting_die_id, machine_id, lead_time_days, cycle_time_sec, technical_constraints, rejected_reason, approved_by, approved_at, requested_by, reviewed_by, created_at, updated_at),
           quotations(id, quotation_code, total_amount, status, issued_date)
         `)
         .eq('id', caseId)
