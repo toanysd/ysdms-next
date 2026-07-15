@@ -387,7 +387,7 @@ export default function MoldWorkOrdersPage() {
       }
 
       // 1. Insert Production Order
-      const { data: newPo, error: poErr } = await supabase
+      const { data: newPo, error: poErr } = await (supabase as any)
         .from('mold_work_orders')
         .insert({
           mwo_code: finalPoCode,
@@ -396,7 +396,7 @@ export default function MoldWorkOrdersPage() {
           mwo_status: 'PLANNED',
           material_type: finalMaterialType,
           material_thickness: finalMaterialThickness,
-          material_width: finalMaterialWidth,
+          sheet_width_mm: finalMaterialWidth,
           mold_sets_to_make: moldSetsToMake,
           cavities_per_mold: cavitiesPerMold,
           req_aluminum_date: reqAluminumDate || null,
@@ -420,7 +420,7 @@ export default function MoldWorkOrdersPage() {
       const jobTypeId = jobType?.job_type_id || '00000000-0000-0000-0000-000000000000';
 
       // 3. Create Tooling Job (Linked to PO)
-      const { data: newJob, error: jobErr } = await supabase
+      const { data: newJob, error: jobErr } = await (supabase as any)
         .from('jobs')
         .insert({
           job_code: `JOB-${finalProduct.product_code}`,
@@ -492,7 +492,7 @@ export default function MoldWorkOrdersPage() {
       }
 
       // 2. Update mold_work_orders Target Deadlines & Stamps
-      const { error: poErr } = await supabase
+      const { error: poErr } = await (supabase as any)
         .from('mold_work_orders')
         .update({
           machine_id: assignedMachine || null,
@@ -517,7 +517,7 @@ export default function MoldWorkOrdersPage() {
       if (poErr) throw poErr;
 
       // 3. Update associated job and steps deadlines (Đồng bộ hai chiều)
-      const { data: linkedJob } = await supabase
+      const { data: linkedJob } = await (supabase as any)
         .from('jobs')
         .select('job_id')
         .eq('mold_work_order_id', selectedPo.mwo_id)
