@@ -74,7 +74,7 @@ export default function CasesPage() {
 
   const fetchCases = useCallback(async () => {
     setLoading(true)
-    let q = supabase
+    let q = (supabase as any)
       .from('business_cases')
       .select(`
         id, case_code, title, case_type, status, requested_due_date, created_at,

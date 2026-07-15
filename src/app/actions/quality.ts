@@ -25,7 +25,7 @@ export async function createInspection(payload: Record<string, unknown>) {
     const { data: { user } } = await supabase.auth.getUser()
     const inspected_by = user?.id || null
 
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
         .from('tray_inspections')
         .insert([{
             ...payload,
@@ -47,7 +47,7 @@ export async function createInspection(payload: Record<string, unknown>) {
 export async function updateInspection(inspectionId: string, payload: Record<string, unknown>) {
     const supabase = await createClient()
     
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
         .from('tray_inspections')
         .update(payload)
         .eq('inspection_id', inspectionId)
@@ -72,7 +72,7 @@ export async function createLotInspection(
     const { data: { user } } = await supabase.auth.getUser()
     const inspector_id = user?.id || null
 
-    const { data: insData, error: insError } = await supabase
+    const { data: insData, error: insError } = await (supabase as any)
         .from('inspections')
         .insert({
             production_lot_id: payload.production_lot_id,
@@ -104,7 +104,7 @@ export async function createLotInspection(
             photo_path: (ng.photo_path as string) || null
         }))
 
-        const { error: ngError } = await supabase
+        const { error: ngError } = await (supabase as any)
             .from('ng_detail_logs')
             .insert(ngPayloads)
 
@@ -121,7 +121,7 @@ export async function createLotInspection(
 
 export async function getNGStatistics(): Promise<{ data: NGDetailLog[]; error?: string }> {
     const supabase = await createClient()
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
         .from('ng_detail_logs')
         .select(`
             ng_log_id,

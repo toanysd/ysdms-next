@@ -95,7 +95,7 @@ export default function MoldWorkOrdersPage() {
     setLoading(true);
     try {
       // 1. Fetch production orders
-      const { data: poData, error: poErr } = await supabase
+      const { data: poData, error: poErr } = await (supabase as any)
         .from('mold_work_orders')
         .select(`
           *,
@@ -118,10 +118,10 @@ export default function MoldWorkOrdersPage() {
       if (poErr) throw poErr;
 
       // 2. Fetch lookup data
-      const { data: machData } = await supabase.from('machines').select('*');
-      const { data: moldData } = await supabase.from('physical_molds').select('*');
-      const { data: cutData } = await supabase.from('cutters').select('*');
-      const { data: empData } = await supabase.from('employees').select('*').order('employee_code');
+      const { data: machData } = await (supabase as any).from('machines').select('*');
+      const { data: moldData } = await (supabase as any).from('physical_molds').select('*');
+      const { data: cutData } = await (supabase as any).from('cutters').select('*');
+      const { data: empData } = await (supabase as any).from('employees').select('*').order('employee_code');
 
       setInstructions(poData || []);
       setMachines(machData || []);
@@ -130,7 +130,7 @@ export default function MoldWorkOrdersPage() {
       setEmployees(empData || []);
 
       // Fetch active products list
-      const { data: prodData } = await supabase
+      const { data: prodData } = await (supabase as any)
         .from('products')
         .select('*, companies(company_id, company_name, company_code), design_revisions(*)')
         .order('product_code');
@@ -138,7 +138,7 @@ export default function MoldWorkOrdersPage() {
 
       if (poData && poData.length > 0) {
         // If there was a selected PO, keep it selected, else select first
-        const currentSelected = selectedPo ? poData.find(p => p.mwo_id === selectedPo.mwo_id) : null;
+        let currentSelected = selectedPo ? poData.find((p: any) => p.mwo_id === selectedPo.mwo_id) : null;
         handleSelectPo(currentSelected || poData[0]);
       }
     } catch (err: any) {
@@ -194,7 +194,7 @@ export default function MoldWorkOrdersPage() {
     setActualMoldingDate(null);
 
     // Fetch associated Tooling Job & steps
-    const { data: jobData } = await supabase
+    const { data: jobData } = await (supabase as any)
       .from('jobs')
       .select('*, job_steps(*)')
       .eq('mold_work_order_id', po.mwo_id)
@@ -216,7 +216,7 @@ export default function MoldWorkOrdersPage() {
     }
 
     // Fetch sample submission details
-    const { data: sampleData } = await supabase
+    const { data: sampleData } = await (supabase as any)
       .from('sample_submissions')
       .select('*')
       .eq('product_id', product?.product_id)
@@ -260,7 +260,7 @@ export default function MoldWorkOrdersPage() {
 
     try {
       // Get all approved order lines
-      const { data: lines, error } = await supabase
+      const { data: lines, error } = await (supabase as any)
         .from('order_lines')
         .select(`
           *,
@@ -272,8 +272,8 @@ export default function MoldWorkOrdersPage() {
       if (error) throw error;
 
       // Filter out lines that already have instructions
-      const { data: activePos } = await supabase.from('mold_work_orders').select('order_line_id');
-      const activeLineIds = new Set((activePos || []).map(p => p.order_line_id));
+      const { data: activePos } = await (supabase as any).from('mold_work_orders').select('order_line_id');
+      const activeLineIds = new Set((activePos || []).map((p: any) => p.order_line_id));
 
       const pending = (lines || []).filter((l: any) => !activeLineIds.has(l.line_id));
       setPendingOrderLines(pending);
@@ -286,7 +286,7 @@ export default function MoldWorkOrdersPage() {
 
   const handleSelectPendingLine = (lineId: string) => {
     setSelectedLineId(lineId);
-    const line = pendingOrderLines.find(l => l.line_id === lineId);
+    const line = pendingOrderLines.find((l: any) => l.line_id === lineId);
     if (line) {
       const design = line.products?.design_revisions?.[0] || {};
       setCavitiesPerMold(design.cavity_count || 1);
@@ -334,7 +334,7 @@ export default function MoldWorkOrdersPage() {
       let finalPoCode = '';
 
       if (activeTab === 'product') {
-        const product = productsList.find(p => p.product_id === selectedProductId);
+        const product = productsList.find((p: any) => p.product_id === selectedProductId);
         if (!product) throw new Error("Sản phẩm không hợp lệ");
         finalProduct = product;
         finalCompanyId = product.company_id;
@@ -342,7 +342,7 @@ export default function MoldWorkOrdersPage() {
 
         // Auto create placeholder order
         const tempOrderNo = `TEMP-PO-${product.product_code}-${Date.now().toString().slice(-4)}`;
-        const { data: tempOrder, error: orderErr } = await supabase
+        const { data: tempOrder, error: orderErr } = await (supabase as any)
           .from('orders')
           .insert({
             order_no: tempOrderNo,
@@ -357,7 +357,7 @@ export default function MoldWorkOrdersPage() {
         if (orderErr) throw orderErr;
 
         // Auto create placeholder line
-        const { data: tempLine, error: lineErr } = await supabase
+        const { data: tempLine, error: lineErr } = await (supabase as any)
           .from('order_lines')
           .insert({
             order_id: tempOrder.order_id,
@@ -374,7 +374,7 @@ export default function MoldWorkOrdersPage() {
         lineIdToUse = tempLine.line_id;
         finalPoCode = `PO-${tempOrderNo}-1`;
       } else {
-        const line = pendingOrderLines.find(l => l.line_id === selectedLineId);
+        const line = pendingOrderLines.find((l: any) => l.line_id === selectedLineId);
         if (!line) throw new Error("Đơn hàng không hợp lệ");
         finalProduct = line.products;
         finalCompanyId = line.orders.companies.company_id;
@@ -411,7 +411,7 @@ export default function MoldWorkOrdersPage() {
       if (poErr) throw poErr;
 
       // 2. Query job type NEW
-      const { data: jobType } = await supabase
+      const { data: jobType } = await (supabase as any)
         .from('job_types')
         .select('job_type_id')
         .eq('job_type_name_ja', 'NEW')
@@ -447,7 +447,7 @@ export default function MoldWorkOrdersPage() {
         { job_id: newJob.job_id, step_no: 5, step_name: 'Molding Trial & Sample', track: 'FINISH', deadline: reqMoldingDate ? `${reqMoldingDate}T12:00:00Z` : null, step_status: 'PENDING' }
       ];
 
-      const { error: stepsErr } = await supabase.from('job_steps').insert(stepsToInsert);
+      const { error: stepsErr } = await (supabase as any).from('job_steps').insert(stepsToInsert);
       if (stepsErr) throw stepsErr;
 
       setShowCreateModal(false);
@@ -472,7 +472,7 @@ export default function MoldWorkOrdersPage() {
 
       // 1. Update design_revisions specs
       if (design?.revision_id) {
-        const { error: designErr } = await supabase
+        const { error: designErr } = await (supabase as any)
           .from('design_revisions')
           .update({
             tolerance_x: toleranceX,
@@ -525,7 +525,7 @@ export default function MoldWorkOrdersPage() {
 
       if (linkedJob) {
         // Update job overall deadlines
-        await supabase
+        await (supabase as any)
           .from('jobs')
           .update({
             deadline: targetMoldingDate ? `${targetMoldingDate}T12:00:00Z` : null,
@@ -544,7 +544,7 @@ export default function MoldWorkOrdersPage() {
 
         for (const s of stepsToUpdate) {
           if (s.date) {
-            await supabase
+            await (supabase as any)
               .from('job_steps')
               .update({ deadline: `${s.date}T12:00:00Z` })
               .eq('job_id', linkedJob.job_id)
@@ -554,13 +554,13 @@ export default function MoldWorkOrdersPage() {
       }
 
       // 4. Upsert sample_submissions
-      const { data: existingSamples } = await supabase
+      const { data: existingSamples } = await (supabase as any)
         .from('sample_submissions')
         .select('submission_id')
         .eq('product_id', product?.product_id);
 
       if (existingSamples && existingSamples.length > 0) {
-        const { error: sampleErr } = await supabase
+        const { error: sampleErr } = await (supabase as any)
           .from('sample_submissions')
           .update({
             box_type: boxType,
@@ -574,7 +574,7 @@ export default function MoldWorkOrdersPage() {
 
         if (sampleErr) throw sampleErr;
       } else {
-        const { error: sampleErr } = await supabase
+        const { error: sampleErr } = await (supabase as any)
           .from('sample_submissions')
           .insert({
             product_id: product?.product_id,
@@ -606,7 +606,7 @@ export default function MoldWorkOrdersPage() {
   };
 
   const getEmployeeNameShort = (id: string) => {
-    const emp = employees.find(e => e.employee_id === id);
+    const emp = employees.find((e: any) => e.employee_id === id);
     if (!emp) return '';
     return emp.employee_name_short || emp.employee_name.split(' ')[0] || '';
   };
@@ -622,7 +622,7 @@ export default function MoldWorkOrdersPage() {
     );
   };
 
-  const filteredInstructions = instructions.filter(po => {
+  const filteredInstructions = instructions.filter((po: any) => {
     const code = po.mwo_code?.toLowerCase() || '';
     const internalName = po.order_lines?.products?.product_name_internal?.toLowerCase() || '';
     const company = po.order_lines?.orders?.companies?.company_name?.toLowerCase() || '';
@@ -686,7 +686,7 @@ export default function MoldWorkOrdersPage() {
             ) : filteredInstructions.length === 0 ? (
               <div className="p-4 text-center text-[var(--text-muted)]">該当するデータがありません</div>
             ) : (
-              filteredInstructions.map((po) => {
+              filteredInstructions.map((po: any) => {
                 const isActive = selectedPo?.mwo_id === po.mwo_id;
                 const product = po.order_lines?.products;
                 const company = po.order_lines?.orders?.companies;
@@ -833,14 +833,14 @@ export default function MoldWorkOrdersPage() {
                       <label className="text-[11px] text-red-700 font-medium">手配 (Yoshida)</label>
                       <select className="form-input w-full mt-0.5" value={stampProcurement} onChange={(e) => setStampProcurement(e.target.value)}>
                         <option value="">- 未捺印 -</option>
-                        {employees.map(e => <option key={e.employee_id} value={e.employee_id}>{e.employee_name}</option>)}
+                        {employees.map((e: any) => <option key={e.employee_id} value={e.employee_id}>{e.employee_name}</option>)}
                       </select>
                     </div>
                     <div>
                       <label className="text-[11px] text-red-700 font-medium">金型 (Endo/Taniguchi)</label>
                       <select className="form-input w-full mt-0.5" value={stampMoldShop} onChange={(e) => setStampMoldShop(e.target.value)}>
                         <option value="">- 未捺印 -</option>
-                        {employees.map(e => <option key={e.employee_id} value={e.employee_id}>{e.employee_name}</option>)}
+                        {employees.map((e: any) => <option key={e.employee_id} value={e.employee_id}>{e.employee_name}</option>)}
                       </select>
                     </div>
                   </div>
@@ -849,14 +849,14 @@ export default function MoldWorkOrdersPage() {
                       <label className="text-[11px] text-red-700 font-medium">成形 (Kohi/Taniguchi)</label>
                       <select className="form-input w-full mt-0.5" value={stampMoldingShop} onChange={(e) => setStampMoldingShop(e.target.value)}>
                         <option value="">- 未捺印 -</option>
-                        {employees.map(e => <option key={e.employee_id} value={e.employee_id}>{e.employee_name}</option>)}
+                        {employees.map((e: any) => <option key={e.employee_id} value={e.employee_id}>{e.employee_name}</option>)}
                       </select>
                     </div>
                     <div>
                       <label className="text-[11px] text-red-700 font-medium">検査 (Nakamura)</label>
                       <select className="form-input w-full mt-0.5" value={stampQc} onChange={(e) => setStampQc(e.target.value)}>
                         <option value="">- 未捺印 -</option>
-                        {employees.map(e => <option key={e.employee_id} value={e.employee_id}>{e.employee_name}</option>)}
+                        {employees.map((e: any) => <option key={e.employee_id} value={e.employee_id}>{e.employee_name}</option>)}
                       </select>
                     </div>
                   </div>
@@ -864,7 +864,7 @@ export default function MoldWorkOrdersPage() {
                     <label className="text-[11px] text-red-700 font-medium">管理確認 (Kobayashi)</label>
                     <select className="form-input w-full mt-0.5" value={stampManager} onChange={(e) => setStampManager(e.target.value)}>
                       <option value="">- 未捺印 -</option>
-                      {employees.map(e => <option key={e.employee_id} value={e.employee_id}>{e.employee_name}</option>)}
+                      {employees.map((e: any) => <option key={e.employee_id} value={e.employee_id}>{e.employee_name}</option>)}
                     </select>
                   </div>
                 </div>
@@ -879,7 +879,7 @@ export default function MoldWorkOrdersPage() {
                     onChange={(e) => setAssignedMachine(e.target.value)}
                   >
                     <option value="">- 未選択 -</option>
-                    {machines.map(m => <option key={m.machine_id} value={m.machine_id}>{m.machine_name} ({m.machine_code})</option>)}
+                    {machines.map((m: any) => <option key={m.machine_id} value={m.machine_id}>{m.machine_name} ({m.machine_code})</option>)}
                   </select>
                 </div>
 
@@ -903,7 +903,7 @@ export default function MoldWorkOrdersPage() {
                     onChange={(e) => setAssignedMold(e.target.value)}
                   >
                     <option value="">- 未選択 -</option>
-                    {molds.map(m => <option key={m.physical_mold_id} value={m.physical_mold_id}>{m.display_name} ({m.system_code})</option>)}
+                    {molds.map((m: any) => <option key={m.physical_mold_id} value={m.physical_mold_id}>{m.display_name} ({m.system_code})</option>)}
                   </select>
                 </div>
 
@@ -916,7 +916,7 @@ export default function MoldWorkOrdersPage() {
                     onChange={(e) => setAssignedCutter(e.target.value)}
                   >
                     <option value="">- 未選択 -</option>
-                    {cutters.map(c => <option key={c.cutter_id} value={c.cutter_id}>{c.cutter_name} ({c.cutter_no})</option>)}
+                    {cutters.map((c: any) => <option key={c.cutter_id} value={c.cutter_id}>{c.cutter_name} ({c.cutter_no})</option>)}
                   </select>
                 </div>
 

@@ -12,7 +12,7 @@ async function getCurrentUserAndRole() {
   const { data: { user }, error } = await supabase.auth.getUser();
   if (error || !user) throw new Error('Unauthorized');
 
-  const { data: profile } = await supabase
+  const { data: profile } = await (supabase as any)
     .from('profiles')
     .select('role')
     .eq('id', user.id)
@@ -59,7 +59,7 @@ export async function saveTechnicalReviewDraft(formData: FormData) {
 
     if (reviewId) {
       // Update: only if still draft
-      const { data: existing } = await supabase
+      const { data: existing } = await (supabase as any)
         .from('technical_reviews')
         .select('approval_status')
         .eq('id', reviewId)
@@ -69,7 +69,7 @@ export async function saveTechnicalReviewDraft(formData: FormData) {
         return { error: 'Không thể sửa review đã được gửi duyệt hoặc đã duyệt.' };
       }
 
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('technical_reviews')
         .update(payload)
         .eq('id', reviewId);
@@ -77,7 +77,7 @@ export async function saveTechnicalReviewDraft(formData: FormData) {
       if (error) return { error: error.message };
     } else {
       // Create: get next version number
-      const { data: existing } = await supabase
+      const { data: existing } = await (supabase as any)
         .from('technical_reviews')
         .select('version')
         .eq('case_id', caseId)
@@ -87,7 +87,7 @@ export async function saveTechnicalReviewDraft(formData: FormData) {
 
       const nextVersion = (existing?.version ?? 0) + 1;
 
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('technical_reviews')
         .insert({ ...payload, version: nextVersion });
 
@@ -112,7 +112,7 @@ export async function submitTechnicalReview(reviewId: string) {
     }
 
     const supabase = await createClient();
-    const { data: review } = await supabase
+    const { data: review } = await (supabase as any)
       .from('technical_reviews')
       .select('approval_status, case_id')
       .eq('id', reviewId)
@@ -123,7 +123,7 @@ export async function submitTechnicalReview(reviewId: string) {
       return { error: 'Chỉ có thể gửi duyệt review ở trạng thái Draft.' };
     }
 
-    const { error } = await supabase
+    const { error } = await (supabase as any)
       .from('technical_reviews')
       .update({ approval_status: 'in_review' })
       .eq('id', reviewId);
@@ -152,7 +152,7 @@ export async function approveTechnicalReview(
     }
 
     const supabase = await createClient();
-    const { data: review } = await supabase
+    const { data: review } = await (supabase as any)
       .from('technical_reviews')
       .select('approval_status, case_id')
       .eq('id', reviewId)
@@ -173,7 +173,7 @@ export async function approveTechnicalReview(
       updatePayload.rejected_reason = rejectReason;
     }
 
-    const { error } = await supabase
+    const { error } = await (supabase as any)
       .from('technical_reviews')
       .update(updatePayload)
       .eq('id', reviewId);
@@ -182,7 +182,7 @@ export async function approveTechnicalReview(
 
     // Update business_case status if approved
     if (decision === 'approved') {
-      await supabase
+      await (supabase as any)
         .from('business_cases')
         .update({ status: 'quotation_ready' })
         .eq('case_id', review.case_id);
@@ -208,7 +208,7 @@ export async function createTechnicalReviewRevision(caseId: string) {
     const supabase = await createClient();
 
     // Mark current approved as superseded
-    const { error: supersedeError } = await supabase
+    const { error: supersedeError } = await (supabase as any)
       .from('technical_reviews')
       .update({ approval_status: 'superseded' })
       .eq('case_id', caseId)
