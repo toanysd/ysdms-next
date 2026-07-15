@@ -96,12 +96,12 @@ export function ProductionInstructionPDF({ pi }: { pi: any }) {
           <Text style={styles.sectionTitle}>客先・納入先</Text>
           <View style={styles.grid2}>
             <View style={styles.col}>
-              <Row label="客先" value={pi.companies?.name ?? ''} />
+              <Row label="客先" value={pi.orders?.companies?.company_name ?? ''} />
               <Row label="受注No." value={pi.orders?.order_no ?? ''} />
             </View>
             <View style={styles.col}>
               <Row label="納入先" value={pi.delivery_sites?.site_name ?? ''} />
-              <Row label="住所" value={pi.delivery_sites?.address ?? ''} />
+              <Row label="住所" value={pi.delivery_sites?.site_address ?? ''} />
             </View>
           </View>
         </View>

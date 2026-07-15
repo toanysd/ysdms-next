@@ -78,6 +78,33 @@ export default function Step2ProductionInfo({ form, update, onBack, onNext }: Pr
         </div>
       </div>
 
+      {/* Material Dimensions */}
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">厚み (mm)</label>
+          <input
+            type="number"
+            step="0.01"
+            min={0}
+            value={form.material_thickness || ''}
+            onChange={e => update({ material_thickness: parseFloat(e.target.value) || 0 })}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+            placeholder="例: 0.5"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">シート巾 (mm)</label>
+          <input
+            type="number"
+            min={0}
+            value={form.material_width || ''}
+            onChange={e => update({ material_width: parseInt(e.target.value) || 0 })}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+            placeholder="例: 640"
+          />
+        </div>
+      </div>
+
       {/* Delivery site */}
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">納入先 <span className="text-red-500">*</span></label>

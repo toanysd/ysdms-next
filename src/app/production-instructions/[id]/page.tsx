@@ -7,8 +7,9 @@ const STATUS_LABELS: Record<string, string> = {
   DRAFT: '下書き', ISSUED: '発行済み', IN_PRODUCTION: '生産中', COMPLETED: '完了', CANCELLED: 'キャンセル'
 }
 
-export default async function ProductionInstructionDetailPage({ params }: { params: { id: string } }) {
-  const pi = await getProductionInstructionById(params.id)
+export default async function ProductionInstructionDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+  const pi = await getProductionInstructionById(id)
   if (!pi) notFound()
 
   const currentStepIdx = STATUS_STEPS.indexOf(pi.status)
