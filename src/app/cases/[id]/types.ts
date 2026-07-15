@@ -72,31 +72,37 @@ export interface BusinessCase {
   updated_at?: string;
 }
 
-export interface QuotationItem {
-  id: string; // e.g. uuid
-  name: string; // e.g. 金型代 (Mold cost), 抜型代 (Die cost)
+export interface QuotationLine {
+  line_id?: string;
+  quotation_id?: string;
+  line_no: number;
+  item_type: 'DESIGN_FEE' | 'PROTOTYPE' | 'MOLD' | 'PRODUCT' | 'OTHER';
+  description: string;
   quantity: number;
   unit_price: number;
   amount: number;
+  notes?: string;
 }
 
 export type QuotationStatus = 'draft' | 'sent' | 'accepted' | 'rejected';
 
 export interface Quotation {
-  id: string;
+  quotation_id: string; // the PK is quotation_id
   case_id: string;
+  company_id: string;
   quotation_no: string;
-  version: number;
-  issued_date: string | null;
+  version?: number;
+  issued_date?: string | null; // using quote_date in DB actually?
+  quote_date: string | null;
   valid_until: string | null;
   total_amount: number;
-  tax_amount: number;
-  currency: string;
-  items_json: QuotationItem[];
+  tax_amount?: number;
+  currency?: string;
   status: QuotationStatus;
   notes: string | null;
   prepared_by: string | null;
-  approved_by: string | null;
+  approved_by?: string | null;
   created_at: string;
   updated_at: string;
+  quotation_lines?: QuotationLine[];
 }

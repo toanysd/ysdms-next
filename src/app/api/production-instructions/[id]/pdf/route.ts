@@ -15,9 +15,9 @@ export async function GET(
     .select(`
       *,
       orders(order_no),
-      products(product_code, product_name, drawing_no),
-      companies(name, code),
-      delivery_sites(site_name, address, contact_person, phone)
+      products(product_id, product_code, product_name),
+      companies(company_name, company_code),
+      delivery_sites(site_name, site_address, contact_person, site_tel)
     `)
     .eq('id', params.id)
     .single()

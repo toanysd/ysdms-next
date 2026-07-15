@@ -7,6 +7,7 @@ import QuotationFormModal from './QuotationFormModal'
 
 type Props = {
   caseId: string
+  companyId: string | null
   quotations: Quotation[]
   currentUserId: string | null
   // Khi vào tab Sales từ nút "Tạo báo giá" bên tab Kỹ thuật → tự mở modal
@@ -24,6 +25,7 @@ const STATUS_MAP: Record<string, { labelJA: string; badge: string }> = {
 
 export default function SalesTab({
   caseId,
+  companyId,
   quotations,
   currentUserId,
   openModalOnMount,
@@ -87,7 +89,7 @@ export default function SalesTab({
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {quotations.map(q => (
-              <div key={q.id} style={{
+              <div key={q.quotation_id} style={{
                 border: '1px solid var(--border-default)',
                 borderRadius: 6,
                 padding: '12px 16px',
@@ -127,6 +129,7 @@ export default function SalesTab({
       {isModalOpen && (
         <QuotationFormModal
           caseId={caseId}
+          companyId={companyId}
           initialData={editingQuotation}
           onClose={() => setIsModalOpen(false)}
           onSuccess={() => {

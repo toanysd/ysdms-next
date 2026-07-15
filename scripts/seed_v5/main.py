@@ -6,11 +6,9 @@ sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 
 from config import get_supabase_client
 from utils import IdRegistry
-from importers import lookups_importer, master_importer, mold_importer, cutter_importer, job_importer, lifecycle_importer
+from importers import cutter_importer, job_importer, lifecycle_importer
 
-# Tables in reverse dependency order
 TABLES_TO_TRUNCATE = [
-    # Removed mold_masters and cutter_masters as they are being dropped
     ("mold_loan_certificates", "certificate_id"),
     ("mold_location_history", "location_log_id"),
     ("mold_maintenance", "maintenance_id"),
@@ -18,33 +16,11 @@ TABLES_TO_TRUNCATE = [
     ("job_steps", "step_id"),
     ("jobs", "job_id"),
     ("mold_design_cutters", "id"),
-    ("cutters", "cutter_id"),
-    ("physical_molds", "physical_mold_id"),
-    ("mold_revisions", "revision_id"),
-    ("design_revisions", "revision_id"),
-    ("products", "product_id"),
-    ("employees", "employee_id"),
-    ("companies", "company_id"),
-    ("rack_layers", "id"),
-    ("racks", "id"),
-    ("destinations", "destination_id"),
-    ("machines", "machine_id"),
-    ("cav_types", "cav_type_id"),
-    ("item_types", "item_type_id"),
-    ("processing_statuses", "status_id"),
-    ("processing_codes", "processing_code_id")
+    ("cutters", "cutter_id")
 ]
 
 def truncate_ysdms_tables(supabase):
     print("--- Bắt đầu dọn dẹp dữ liệu cũ (YSDMS Tables) ---")
-    print("LƯU Ý: Các bảng hệ thống (như omni_*) sẽ KHÔNG BỊ XÓA.")
-    
-    # Confirm disabled for unattended execution
-    # confirm = input("Bạn có chắc chắn muốn xóa toàn bộ dữ liệu YSDMS hiện tại? (y/N): ")
-    # if confirm.lower() != 'y':
-    #     print("Đã hủy quá trình import.")
-    #     sys.exit(0)
-
     for table, pk_col in TABLES_TO_TRUNCATE:
         print(f"Truncating {table}...")
         try:
@@ -53,43 +29,66 @@ def truncate_ysdms_tables(supabase):
                     res = supabase.table(table).delete().neq(pk_col, "00000000-0000-0000-0000-000000000000").execute()
                 except Exception as e:
                     res = supabase.table(table).delete().neq(pk_col, -1).execute()
-                
-                if len(res.data) < 1000:
-                    break
+                if len(res.data) < 1000: break
         except Exception as e:
             print(f"Warning: Failed to delete {table}: {e}")
-            print(f"Warning: Unexpected error when deleting {table}: {e}")
+
+def preload_registry_from_db(supabase, registry):
+    print("--- Preloading Registry from DB ---")
+    
+    # 1. Companies
+    res = supabase.table('companies').select('legacy_id, company_id').execute()
+    for row in res.data:
+        if row['legacy_id'] and row['legacy_id'].startswith('COMP-'):
+            registry.register('companies', row['legacy_id'].replace('COMP-',''), row['company_id'])
+            registry.register('machining_customers', row['legacy_id'].replace('COMP-',''), row['company_id'])
+    
+    res = supabase.table('companies').select('legacy_id, company_id').execute()
+    for row in res.data:
+        if row['legacy_id'] and row['legacy_id'].startswith('CUST-'):
+            registry.register('machining_customers', row['legacy_id'].replace('CUST-',''), row['company_id'])
+            
+    # 2. Employees
+    res = supabase.table('employees').select('legacy_id, employee_id').execute()
+    for row in res.data:
+        if row['legacy_id'] and row['legacy_id'].startswith('EMP-'):
+            registry.register('employees', row['legacy_id'].replace('EMP-',''), row['employee_id'])
+            
+    # 3. Physical Molds
+    res = supabase.table('physical_molds').select('legacy_id, physical_mold_id').execute()
+    for row in res.data:
+        if row['legacy_id'] and row['legacy_id'].startswith('MOLD-'):
+            registry.register('physical_molds', row['legacy_id'].replace('MOLD-',''), row['physical_mold_id'])
+            
+    # 4. Design Revisions
+    res = supabase.table('design_revisions').select('legacy_id, revision_id, product_id').execute()
+    for row in res.data:
+        if row['legacy_id'] and row['legacy_id'].startswith('DESIGN-'):
+            legacy_id = row['legacy_id'].replace('DESIGN-','')
+            registry.register('design_revisions', legacy_id, row['revision_id'])
+            if row['product_id']:
+                registry.register('mold_design_to_product', legacy_id, row['product_id'])
 
 def main():
     print("===========================================")
-    print("   YSDMS NEXTGEN - V5 SEED SCRIPT (PYTHON)")
+    print("   YSDMS NEXTGEN - V5 SEED (PARTIAL RUN)")
     print("===========================================")
     
     supabase = get_supabase_client()
     registry = IdRegistry()
     
-    # 0. Truncate
+    # 0. Truncate specific tables
     truncate_ysdms_tables(supabase)
+    
+    # 1. Preload
+    preload_registry_from_db(supabase, registry)
     
     start_time = time.time()
     
     try:
-        # 1. Lookups
-        lookups_importer.import_lookups(supabase, registry)
-        
-        # 2. Master
-        master_importer.import_master_data(supabase, registry)
-        
-        # 3. Mold Hierarchy
-        mold_importer.import_mold_hierarchy(supabase, registry)
-        
-        # 4. Cutters
+        # Run specific importers for missing data
         cutter_importer.import_cutters(supabase, registry)
-        
-        # 5. Jobs
         job_importer.import_jobs(supabase, registry)
-        
-        # 6. Lifecycle
         lifecycle_importer.import_lifecycle(supabase, registry)
         
         print("\n===========================================")

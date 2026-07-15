@@ -6,7 +6,7 @@ import type { PIFormData } from '../new/page'
 
 const PRODUCTION_SITES = ['本社', '青森', '茨城', '坂田']
 
-interface DeliverySite { id: string; site_name: string; site_code: string; address: string | null }
+interface DeliverySite { site_id: string; site_name: string; site_code: string; site_address: string | null }
 interface Props { form: PIFormData; update: (p: Partial<PIFormData>) => void; onBack: () => void; onNext: () => void }
 
 export default function Step2ProductionInfo({ form, update, onBack, onNext }: Props) {
@@ -93,14 +93,14 @@ export default function Step2ProductionInfo({ form, update, onBack, onNext }: Pr
           <div className="mt-1 border border-gray-200 rounded-md max-h-48 overflow-y-auto">
             {siteResults.map(site => (
               <button
-                key={site.id}
+                key={site.site_id}
                 type="button"
-                onClick={() => { update({ delivery_site_id: site.id, delivery_site_name: site.site_name }); setSiteQuery(site.site_name); setSiteResults([]) }}
+                onClick={() => { update({ delivery_site_id: site.site_id, delivery_site_name: site.site_name }); setSiteQuery(site.site_name); setSiteResults([]) }}
                 className="w-full text-left px-3 py-2 hover:bg-blue-50 text-sm border-b border-gray-100 last:border-0"
               >
                 <span className="font-mono text-gray-500 mr-2">[{site.site_code}]</span>
                 {site.site_name}
-                {site.address && <span className="text-xs text-gray-400 ml-2">{site.address}</span>}
+                {site.site_address && <span className="text-xs text-gray-400 ml-2">{site.site_address}</span>}
               </button>
             ))}
           </div>

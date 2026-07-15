@@ -1,0 +1,9 @@
+- [x] Dọn dẹp rác E2E & Khởi động Server
+- [x] Tạo dữ liệu giả lập toàn diện (Full-Workflow Seed) cho mã KWE-005
+- [x] Triển khai Ưu tiên 1: Quản lý Vật tư & MRP (Theo Mét)
+  - [x] Gọi Subagent tạo Migration cập nhật schema (meters, feed_length)
+  - [x] Cập nhật View tồn kho `plastic_stock` theo Mét
+  - [x] Tích hợp tự động `feed_length_mm` từ Bảng thông số Máy vào Kế hoạch SX
+  - [x] Thêm các trường khai báo Mét vật tư vào form Nhật ký SX
+  - [x] Cập nhật logic tính toán MRP Action
+  - [x] Chạy thử nghiệm và kiểm chứng luồng dữ liệu

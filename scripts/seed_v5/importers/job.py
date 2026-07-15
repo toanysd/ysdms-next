@@ -174,7 +174,7 @@ def import_jobs(supabase, registry: IdRegistry):
         emp_uuid = registry.resolve('employees', row['EmployeeID']) if 'EmployeeID' in row else None
         job_uuid = registry.resolve('step_to_job', step_legacy_id) if step_legacy_id else None
         
-        if not job_uuid:
+        if not job_uuid or not emp_uuid:
             continue
             
         # If the parent step is completed, force all its work logs to finished = True

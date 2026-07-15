@@ -143,7 +143,7 @@ export const QuotationDocument = ({ quotation, customerName }: Props) => {
           </View>
           <View style={styles.metaRow}>
             <Text style={styles.metaLabel}>発行日:</Text>
-            <Text style={styles.metaValue}>{quotation.issued_date || '---'}</Text>
+            <Text style={styles.metaValue}>{quotation.quote_date || '---'}</Text>
           </View>
           <View style={styles.metaRow}>
             <Text style={styles.metaLabel}>有効期限:</Text>
@@ -158,7 +158,7 @@ export const QuotationDocument = ({ quotation, customerName }: Props) => {
         <View style={styles.totalAmountBox}>
           <Text style={styles.totalAmountLabel}>御見積金額:</Text>
           <Text style={styles.totalAmountValue}>
-            {new Intl.NumberFormat('ja-JP').format(quotation.total_amount)} {quotation.currency} (税抜)
+            {new Intl.NumberFormat('ja-JP').format(quotation.total_amount)} {quotation.currency || 'JPY'} (税抜)
           </Text>
         </View>
 
@@ -170,9 +170,9 @@ export const QuotationDocument = ({ quotation, customerName }: Props) => {
             <View style={[styles.tableColHeader, { width: '20%', textAlign: 'right' }]}><Text>単価</Text></View>
             <View style={[styles.tableColHeader, { width: '15%', textAlign: 'right' }]}><Text>金額</Text></View>
           </View>
-          {quotation.items_json.map((item, idx) => (
+          {(quotation.quotation_lines || []).map((item, idx) => (
             <View style={styles.tableRow} key={idx}>
-              <View style={[styles.tableCol, { width: '50%' }]}><Text>{item.name}</Text></View>
+              <View style={[styles.tableCol, { width: '50%' }]}><Text>{item.description}</Text></View>
               <View style={[styles.tableCol, { width: '15%', textAlign: 'center' }]}><Text>{item.quantity}</Text></View>
               <View style={[styles.tableCol, { width: '20%', textAlign: 'right' }]}><Text>{new Intl.NumberFormat('ja-JP').format(item.unit_price)}</Text></View>
               <View style={[styles.tableCol, { width: '15%', textAlign: 'right' }]}><Text>{new Intl.NumberFormat('ja-JP').format(item.amount)}</Text></View>

@@ -116,7 +116,7 @@ export default function CaseDetailPage() {
           requested_by, reviewed_by,
           created_at, updated_at
         ),
-        quotations(*)
+        quotations(*, quotation_lines(*))
       `)
       .eq('id', caseId)
       .single()
@@ -368,6 +368,7 @@ export default function CaseDetailPage() {
         {activeTab === 'sales' && (
           <SalesTab
             caseId={caseId}
+            companyId={caseData.companies?.company_id || null}
             quotations={caseData.quotations || []}
             currentUserId={currentUserId}
             openModalOnMount={openSalesModal}

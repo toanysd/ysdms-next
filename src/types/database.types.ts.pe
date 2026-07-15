@@ -1,0 +1,5356 @@
+﻿export type Json =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json | undefined }
+  | Json[]
+
+export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: "14.5"
+  }
+  public: {
+    Tables: {
+      aluminum_blanks: {
+        Row: {
+          blank_type: string | null
+          created_at: string | null
+          id: string
+          length_mm: number
+          material_grade: string | null
+          mold_id: string | null
+          notes: string | null
+          ordered_date: string | null
+          received_date: string | null
+          status: string | null
+          supplier_id: string | null
+          thickness_mm: number
+          updated_at: string | null
+          width_mm: number
+        }
+        Insert: {
+          blank_type?: string | null
+          created_at?: string | null
+          id?: string
+          length_mm: number
+          material_grade?: string | null
+          mold_id?: string | null
+          notes?: string | null
+          ordered_date?: string | null
+          received_date?: string | null
+          status?: string | null
+          supplier_id?: string | null
+          thickness_mm: number
+          updated_at?: string | null
+          width_mm: number
+        }
+        Update: {
+          blank_type?: string | null
+          created_at?: string | null
+          id?: string
+          length_mm?: number
+          material_grade?: string | null
+          mold_id?: string | null
+          notes?: string | null
+          ordered_date?: string | null
+          received_date?: string | null
+          status?: string | null
+          supplier_id?: string | null
+          thickness_mm?: number
+          updated_at?: string | null
+          width_mm?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "aluminum_blanks_mold_id_fkey"
+            columns: ["mold_id"]
+            isOneToOne: false
+            referencedRelation: "physical_molds"
+            referencedColumns: ["physical_mold_id"]
+          },
+          {
+            foreignKeyName: "aluminum_blanks_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["company_id"]
+          },
+        ]
+      }
+      asset_custody_certificates: {
+        Row: {
+          certificate_file: string | null
+          certificate_id: string
+          created_at: string | null
+          deadline: string | null
+          fiscal_year: number | null
+          issued_by: string | null
+          issued_date: string | null
+          mold_owner_id: string | null
+          notes: string | null
+          requested_date: string | null
+          status: string | null
+        }
+        Insert: {
+          certificate_file?: string | null
+          certificate_id?: string
+          created_at?: string | null
+          deadline?: string | null
+          fiscal_year?: number | null
+          issued_by?: string | null
+          issued_date?: string | null
+          mold_owner_id?: string | null
+          notes?: string | null
+          requested_date?: string | null
+          status?: string | null
+        }
+        Update: {
+          certificate_file?: string | null
+          certificate_id?: string
+          created_at?: string | null
+          deadline?: string | null
+          fiscal_year?: number | null
+          issued_by?: string | null
+          issued_date?: string | null
+          mold_owner_id?: string | null
+          notes?: string | null
+          requested_date?: string | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "asset_custody_certificates_issued_by_fkey"
+            columns: ["issued_by"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["employee_id"]
+          },
+          {
+            foreignKeyName: "asset_custody_certificates_mold_owner_id_fkey"
+            columns: ["mold_owner_id"]
+            isOneToOne: false
+            referencedRelation: "mold_owners"
+            referencedColumns: ["owner_id"]
+          },
+        ]
+      }
+      asset_location_logs: {
+        Row: {
+          asset_id: string
+          asset_type: Database["public"]["Enums"]["asset_type"]
+          id: string
+          moved_at: string | null
+          moved_by: string | null
+          new_rack_layer_id: string | null
+          notes: string | null
+          old_rack_layer_id: string | null
+        }
+        Insert: {
+          asset_id: string
+          asset_type: Database["public"]["Enums"]["asset_type"]
+          id?: string
+          moved_at?: string | null
+          moved_by?: string | null
+          new_rack_layer_id?: string | null
+          notes?: string | null
+          old_rack_layer_id?: string | null
+        }
+        Update: {
+          asset_id?: string
+          asset_type?: Database["public"]["Enums"]["asset_type"]
+          id?: string
+          moved_at?: string | null
+          moved_by?: string | null
+          new_rack_layer_id?: string | null
+          notes?: string | null
+          old_rack_layer_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "asset_location_logs_moved_by_fkey"
+            columns: ["moved_by"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["employee_id"]
+          },
+          {
+            foreignKeyName: "asset_location_logs_new_rack_layer_id_fkey"
+            columns: ["new_rack_layer_id"]
+            isOneToOne: false
+            referencedRelation: "rack_layers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "asset_location_logs_old_rack_layer_id_fkey"
+            columns: ["old_rack_layer_id"]
+            isOneToOne: false
+            referencedRelation: "rack_layers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      audit_logs: {
+        Row: {
+          action: string
+          changed_at: string | null
+          changed_by: string | null
+          log_id: string
+          new_data: Json | null
+          old_data: Json | null
+          record_id: string | null
+          table_name: string
+        }
+        Insert: {
+          action: string
+          changed_at?: string | null
+          changed_by?: string | null
+          log_id?: string
+          new_data?: Json | null
+          old_data?: Json | null
+          record_id?: string | null
+          table_name: string
+        }
+        Update: {
+          action?: string
+          changed_at?: string | null
+          changed_by?: string | null
+          log_id?: string
+          new_data?: Json | null
+          old_data?: Json | null
+          record_id?: string | null
+          table_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "audit_logs_changed_by_fkey"
+            columns: ["changed_by"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["employee_id"]
+          },
+        ]
+      }
+      auxiliary_equipments: {
+        Row: {
+          created_at: string | null
+          current_rack_layer_id: string | null
+          equipment_code: string
+          id: string
+          item_type_id: number | null
+          name: string
+          notes: string | null
+          status: Database["public"]["Enums"]["equipment_status"] | null
+        }
+        Insert: {
+          created_at?: string | null
+          current_rack_layer_id?: string | null
+          equipment_code: string
+          id?: string
+          item_type_id?: number | null
+          name: string
+          notes?: string | null
+          status?: Database["public"]["Enums"]["equipment_status"] | null
+        }
+        Update: {
+          created_at?: string | null
+          current_rack_layer_id?: string | null
+          equipment_code?: string
+          id?: string
+          item_type_id?: number | null
+          name?: string
+          notes?: string | null
+          status?: Database["public"]["Enums"]["equipment_status"] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "auxiliary_equipments_current_rack_layer_id_fkey"
+            columns: ["current_rack_layer_id"]
+            isOneToOne: false
+            referencedRelation: "rack_layers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "auxiliary_equipments_item_type_id_fkey"
+            columns: ["item_type_id"]
+            isOneToOne: false
+            referencedRelation: "item_types"
+            referencedColumns: ["item_type_id"]
+          },
+        ]
+      }
+      cav_types: {
+        Row: {
+          alias_cav_code: string | null
+          cav_code: string
+          cav_length_mm: number
+          cav_series: string | null
+          cav_type_id: string
+          cav_width_mm: number
+          created_at: string | null
+          is_active: boolean | null
+          machine_group: string
+          notes: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          alias_cav_code?: string | null
+          cav_code: string
+          cav_length_mm: number
+          cav_series?: string | null
+          cav_type_id?: string
+          cav_width_mm: number
+          created_at?: string | null
+          is_active?: boolean | null
+          machine_group: string
+          notes?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          alias_cav_code?: string | null
+          cav_code?: string
+          cav_length_mm?: number
+          cav_series?: string | null
+          cav_type_id?: string
+          cav_width_mm?: number
+          created_at?: string | null
+          is_active?: boolean | null
+          machine_group?: string
+          notes?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      certificate_items: {
+        Row: {
+          asset_code: string | null
+          asset_name: string | null
+          certificate_id: string
+          certificate_type: string
+          confirmed_date: string | null
+          is_confirmed: boolean | null
+          item_id: string
+          keeper_company_id: string | null
+          notes: string | null
+          photo_path: string | null
+          physical_mold_id: string | null
+          storage_location: string | null
+        }
+        Insert: {
+          asset_code?: string | null
+          asset_name?: string | null
+          certificate_id: string
+          certificate_type: string
+          confirmed_date?: string | null
+          is_confirmed?: boolean | null
+          item_id?: string
+          keeper_company_id?: string | null
+          notes?: string | null
+          photo_path?: string | null
+          physical_mold_id?: string | null
+          storage_location?: string | null
+        }
+        Update: {
+          asset_code?: string | null
+          asset_name?: string | null
+          certificate_id?: string
+          certificate_type?: string
+          confirmed_date?: string | null
+          is_confirmed?: boolean | null
+          item_id?: string
+          keeper_company_id?: string | null
+          notes?: string | null
+          photo_path?: string | null
+          physical_mold_id?: string | null
+          storage_location?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "certificate_items_keeper_company_id_fkey"
+            columns: ["keeper_company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "certificate_items_physical_mold_id_fkey"
+            columns: ["physical_mold_id"]
+            isOneToOne: false
+            referencedRelation: "physical_molds"
+            referencedColumns: ["physical_mold_id"]
+          },
+        ]
+      }
+      companies: {
+        Row: {
+          address: string | null
+          cad_folder_path: string | null
+          company_code: string
+          company_id: string
+          company_name: string
+          company_name_romaji: string | null
+          company_type: string[] | null
+          created_at: string | null
+          fax: string | null
+          is_active: boolean | null
+          legacy_id: string | null
+          legacy_specs: Json | null
+          notes: string | null
+          order_folder_path: string | null
+          parent_company_id: string | null
+          tel: string | null
+          updated_at: string | null
+          updated_by: string | null
+        }
+        Insert: {
+          address?: string | null
+          cad_folder_path?: string | null
+          company_code: string
+          company_id?: string
+          company_name: string
+          company_name_romaji?: string | null
+          company_type?: string[] | null
+          created_at?: string | null
+          fax?: string | null
+          is_active?: boolean | null
+          legacy_id?: string | null
+          legacy_specs?: Json | null
+          notes?: string | null
+          order_folder_path?: string | null
+          parent_company_id?: string | null
+          tel?: string | null
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Update: {
+          address?: string | null
+          cad_folder_path?: string | null
+          company_code?: string
+          company_id?: string
+          company_name?: string
+          company_name_romaji?: string | null
+          company_type?: string[] | null
+          created_at?: string | null
+          fax?: string | null
+          is_active?: boolean | null
+          legacy_id?: string | null
+          legacy_specs?: Json | null
+          notes?: string | null
+          order_folder_path?: string | null
+          parent_company_id?: string | null
+          tel?: string | null
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "companies_parent_company_id_fkey"
+            columns: ["parent_company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["company_id"]
+          },
+        ]
+      }
+      company_contacts: {
+        Row: {
+          company_id: string
+          contact_email: string | null
+          contact_id: string
+          contact_name: string
+          contact_role: string | null
+          contact_tel: string | null
+          created_at: string | null
+          is_primary: boolean | null
+          updated_at: string | null
+        }
+        Insert: {
+          company_id: string
+          contact_email?: string | null
+          contact_id?: string
+          contact_name: string
+          contact_role?: string | null
+          contact_tel?: string | null
+          created_at?: string | null
+          is_primary?: boolean | null
+          updated_at?: string | null
+        }
+        Update: {
+          company_id?: string
+          contact_email?: string | null
+          contact_id?: string
+          contact_name?: string
+          contact_role?: string | null
+          contact_tel?: string | null
+          created_at?: string | null
+          is_primary?: boolean | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_contacts_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["company_id"]
+          },
+        ]
+      }
+      cutter_orders: {
+        Row: {
+          actual_delivery: string | null
+          aluminum_base: boolean | null
+          base_completed: string | null
+          base_qty: number | null
+          created_at: string | null
+          cutter_id: string | null
+          delivery_destination: string | null
+          design_file: string | null
+          designed_by: string | null
+          estimated_delivery: string | null
+          is_movable: boolean | null
+          notes: string | null
+          order_id: string
+          order_type: string | null
+          ordered_by: string | null
+          ordered_date: string | null
+          product_code: string | null
+          reuse_cutter_id: string | null
+          status: string | null
+          supplier_id: string | null
+        }
+        Insert: {
+          actual_delivery?: string | null
+          aluminum_base?: boolean | null
+          base_completed?: string | null
+          base_qty?: number | null
+          created_at?: string | null
+          cutter_id?: string | null
+          delivery_destination?: string | null
+          design_file?: string | null
+          designed_by?: string | null
+          estimated_delivery?: string | null
+          is_movable?: boolean | null
+          notes?: string | null
+          order_id?: string
+          order_type?: string | null
+          ordered_by?: string | null
+          ordered_date?: string | null
+          product_code?: string | null
+          reuse_cutter_id?: string | null
+          status?: string | null
+          supplier_id?: string | null
+        }
+        Update: {
+          actual_delivery?: string | null
+          aluminum_base?: boolean | null
+          base_completed?: string | null
+          base_qty?: number | null
+          created_at?: string | null
+          cutter_id?: string | null
+          delivery_destination?: string | null
+          design_file?: string | null
+          designed_by?: string | null
+          estimated_delivery?: string | null
+          is_movable?: boolean | null
+          notes?: string | null
+          order_id?: string
+          order_type?: string | null
+          ordered_by?: string | null
+          ordered_date?: string | null
+          product_code?: string | null
+          reuse_cutter_id?: string | null
+          status?: string | null
+          supplier_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cutter_orders_cutter_id_fkey"
+            columns: ["cutter_id"]
+            isOneToOne: false
+            referencedRelation: "cutters"
+            referencedColumns: ["cutter_id"]
+          },
+          {
+            foreignKeyName: "cutter_orders_designed_by_fkey"
+            columns: ["designed_by"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["employee_id"]
+          },
+          {
+            foreignKeyName: "cutter_orders_ordered_by_fkey"
+            columns: ["ordered_by"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["employee_id"]
+          },
+          {
+            foreignKeyName: "cutter_orders_reuse_cutter_id_fkey"
+            columns: ["reuse_cutter_id"]
+            isOneToOne: false
+            referencedRelation: "cutters"
+            referencedColumns: ["cutter_id"]
+          },
+          {
+            foreignKeyName: "cutter_orders_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["company_id"]
+          },
+        ]
+      }
+      cutters: {
+        Row: {
+          base_type: string | null
+          cavity_count: string | null
+          chamfer_c: string | null
+          company_id: string | null
+          corner_r: string | null
+          created_at: string | null
+          current_rack_layer_id: string | null
+          cutline_length: number | null
+          cutline_width: number | null
+          cutter_design_code: string | null
+          cutter_height_mm: number | null
+          cutter_id: string
+          cutter_length_mm: number | null
+          cutter_name: string
+          cutter_no: string
+          cutter_presence: boolean | null
+          cutter_type: string | null
+          cutter_width_mm: number | null
+          date_entry: string | null
+          design_revision_id: string | null
+          item_type_id: number | null
+          keeper_company_id: string | null
+          legacy_id: string | null
+          legacy_specs: Json | null
+          notes: string | null
+          pitch_mm: number | null
+          plastic_cut_type: string | null
+          post_cut_length: number | null
+          post_cut_width: number | null
+          qr_uuid: string | null
+          storage_company_id: string | null
+          updated_at: string | null
+          updated_by: string | null
+          usage_status: string | null
+        }
+        Insert: {
+          base_type?: string | null
+          cavity_count?: string | null
+          chamfer_c?: string | null
+          company_id?: string | null
+          corner_r?: string | null
+          created_at?: string | null
+          current_rack_layer_id?: string | null
+          cutline_length?: number | null
+          cutline_width?: number | null
+          cutter_design_code?: string | null
+          cutter_height_mm?: number | null
+          cutter_id?: string
+          cutter_length_mm?: number | null
+          cutter_name: string
+          cutter_no: string
+          cutter_presence?: boolean | null
+          cutter_type?: string | null
+          cutter_width_mm?: number | null
+          date_entry?: string | null
+          design_revision_id?: string | null
+          item_type_id?: number | null
+          keeper_company_id?: string | null
+          legacy_id?: string | null
+          legacy_specs?: Json | null
+          notes?: string | null
+          pitch_mm?: number | null
+          plastic_cut_type?: string | null
+          post_cut_length?: number | null
+          post_cut_width?: number | null
+          qr_uuid?: string | null
+          storage_company_id?: string | null
+          updated_at?: string | null
+          updated_by?: string | null
+          usage_status?: string | null
+        }
+        Update: {
+          base_type?: string | null
+          cavity_count?: string | null
+          chamfer_c?: string | null
+          company_id?: string | null
+          corner_r?: string | null
+          created_at?: string | null
+          current_rack_layer_id?: string | null
+          cutline_length?: number | null
+          cutline_width?: number | null
+          cutter_design_code?: string | null
+          cutter_height_mm?: number | null
+          cutter_id?: string
+          cutter_length_mm?: number | null
+          cutter_name?: string
+          cutter_no?: string
+          cutter_presence?: boolean | null
+          cutter_type?: string | null
+          cutter_width_mm?: number | null
+          date_entry?: string | null
+          design_revision_id?: string | null
+          item_type_id?: number | null
+          keeper_company_id?: string | null
+          legacy_id?: string | null
+          legacy_specs?: Json | null
+          notes?: string | null
+          pitch_mm?: number | null
+          plastic_cut_type?: string | null
+          post_cut_length?: number | null
+          post_cut_width?: number | null
+          qr_uuid?: string | null
+          storage_company_id?: string | null
+          updated_at?: string | null
+          updated_by?: string | null
+          usage_status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cutters_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "cutters_current_rack_layer_id_fkey"
+            columns: ["current_rack_layer_id"]
+            isOneToOne: false
+            referencedRelation: "rack_layers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cutters_design_revision_id_fkey"
+            columns: ["design_revision_id"]
+            isOneToOne: false
+            referencedRelation: "design_revisions"
+            referencedColumns: ["revision_id"]
+          },
+          {
+            foreignKeyName: "cutters_item_type_id_fkey"
+            columns: ["item_type_id"]
+            isOneToOne: false
+            referencedRelation: "item_types"
+            referencedColumns: ["item_type_id"]
+          },
+          {
+            foreignKeyName: "cutters_keeper_company_id_fkey"
+            columns: ["keeper_company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "cutters_storage_company_id_fkey"
+            columns: ["storage_company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["company_id"]
+          },
+        ]
+      }
+      defect_reports: {
+        Row: {
+          approved_by: string | null
+          approved_date: string | null
+          company_notified: boolean | null
+          company_response: string | null
+          corrective_action: string | null
+          created_at: string | null
+          defect_description: string | null
+          defect_type: string | null
+          mold_code: string | null
+          notes: string | null
+          preventive_action: string | null
+          product_id: string | null
+          report_code: string
+          report_file: string | null
+          report_id: string
+          report_type: string
+          reported_by: string | null
+          reported_date: string | null
+          root_cause: string | null
+          root_cause_analysis: string | null
+          severity: string | null
+          status: string | null
+          translated_language: string | null
+          translation_confirmed: boolean | null
+          translation_confirmed_by: string | null
+        }
+        Insert: {
+          approved_by?: string | null
+          approved_date?: string | null
+          company_notified?: boolean | null
+          company_response?: string | null
+          corrective_action?: string | null
+          created_at?: string | null
+          defect_description?: string | null
+          defect_type?: string | null
+          mold_code?: string | null
+          notes?: string | null
+          preventive_action?: string | null
+          product_id?: string | null
+          report_code: string
+          report_file?: string | null
+          report_id?: string
+          report_type: string
+          reported_by?: string | null
+          reported_date?: string | null
+          root_cause?: string | null
+          root_cause_analysis?: string | null
+          severity?: string | null
+          status?: string | null
+          translated_language?: string | null
+          translation_confirmed?: boolean | null
+          translation_confirmed_by?: string | null
+        }
+        Update: {
+          approved_by?: string | null
+          approved_date?: string | null
+          company_notified?: boolean | null
+          company_response?: string | null
+          corrective_action?: string | null
+          created_at?: string | null
+          defect_description?: string | null
+          defect_type?: string | null
+          mold_code?: string | null
+          notes?: string | null
+          preventive_action?: string | null
+          product_id?: string | null
+          report_code?: string
+          report_file?: string | null
+          report_id?: string
+          report_type?: string
+          reported_by?: string | null
+          reported_date?: string | null
+          root_cause?: string | null
+          root_cause_analysis?: string | null
+          severity?: string | null
+          status?: string | null
+          translated_language?: string | null
+          translation_confirmed?: boolean | null
+          translation_confirmed_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "defect_reports_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["employee_id"]
+          },
+          {
+            foreignKeyName: "defect_reports_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "defect_reports_reported_by_fkey"
+            columns: ["reported_by"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["employee_id"]
+          },
+        ]
+      }
+      delivery_notes: {
+        Row: {
+          certificate_type: string | null
+          company_confirmed: boolean | null
+          confirmed_date: string | null
+          created_at: string | null
+          file_path: string | null
+          issued_by: string | null
+          issued_date: string | null
+          note_id: string
+          notes: string | null
+          shipment_id: string | null
+        }
+        Insert: {
+          certificate_type?: string | null
+          company_confirmed?: boolean | null
+          confirmed_date?: string | null
+          created_at?: string | null
+          file_path?: string | null
+          issued_by?: string | null
+          issued_date?: string | null
+          note_id?: string
+          notes?: string | null
+          shipment_id?: string | null
+        }
+        Update: {
+          certificate_type?: string | null
+          company_confirmed?: boolean | null
+          confirmed_date?: string | null
+          created_at?: string | null
+          file_path?: string | null
+          issued_by?: string | null
+          issued_date?: string | null
+          note_id?: string
+          notes?: string | null
+          shipment_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "delivery_notes_issued_by_fkey"
+            columns: ["issued_by"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["employee_id"]
+          },
+          {
+            foreignKeyName: "delivery_notes_shipment_id_fkey"
+            columns: ["shipment_id"]
+            isOneToOne: false
+            referencedRelation: "shipments"
+            referencedColumns: ["shipment_id"]
+          },
+        ]
+      }
+      delivery_sites: {
+        Row: {
+          company_id: string
+          contact_email: string | null
+          contact_person: string | null
+          created_at: string | null
+          delivery_notes: string | null
+          is_active: boolean | null
+          site_address: string | null
+          site_code: string
+          site_fax: string | null
+          site_id: string
+          site_name: string
+          site_tel: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          company_id: string
+          contact_email?: string | null
+          contact_person?: string | null
+          created_at?: string | null
+          delivery_notes?: string | null
+          is_active?: boolean | null
+          site_address?: string | null
+          site_code: string
+          site_fax?: string | null
+          site_id?: string
+          site_name: string
+          site_tel?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          company_id?: string
+          contact_email?: string | null
+          contact_person?: string | null
+          created_at?: string | null
+          delivery_notes?: string | null
+          is_active?: boolean | null
+          site_address?: string | null
+          site_code?: string
+          site_fax?: string | null
+          site_id?: string
+          site_name?: string
+          site_tel?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "delivery_sites_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["company_id"]
+          },
+        ]
+      }
+      design_revisions: {
+        Row: {
+          approved_date: string | null
+          cad_folder_path: string | null
+          cav_type_id: string | null
+          cavity_count: number | null
+          cavity_pitch_mm: number | null
+          chamfer_c: string | null
+          company_id: string | null
+          corner_r: string | null
+          created_at: string | null
+          customer_drawing_no: string | null
+          customer_equipment_no: string | null
+          customer_tray_name: string | null
+          cutline_length: number | null
+          cutline_width: number | null
+          data_input_date: string | null
+          design_code: string
+          design_date: string | null
+          design_depth: number | null
+          design_height: number | null
+          design_length: number | null
+          design_weight: string | null
+          design_width: number | null
+          designer: string | null
+          designer_id: string | null
+          discard_old_stock_on_remake: boolean | null
+          draft_angle: string | null
+          drawing_pdf_path: string | null
+          frame_spec: string | null
+          has_separate_cutter: boolean | null
+          legacy_id: string | null
+          legacy_specs: Json | null
+          machine_feed_pitch_mm: number | null
+          orientation: string | null
+          plastic_id: string | null
+          plastic_type_designed: string | null
+          plug_type: string | null
+          pocket_numbers: number | null
+          product_id: string | null
+          replace_qc_drawing_on_remake: boolean | null
+          revision_id: string
+          revision_number: number | null
+          setup_type: string | null
+          shared_plug_from_design_id: string | null
+          status: string | null
+          step_3d_path: string | null
+          text_content: string | null
+          tolerance_pitch: string | null
+          tolerance_x: string | null
+          tolerance_y: string | null
+          tray_info: string | null
+          under_depth: string | null
+          undercut_spec: string | null
+          updated_at: string | null
+          updated_by: string | null
+          version_note: string | null
+          water_cooling_plate_spec: string | null
+        }
+        Insert: {
+          approved_date?: string | null
+          cad_folder_path?: string | null
+          cav_type_id?: string | null
+          cavity_count?: number | null
+          cavity_pitch_mm?: number | null
+          chamfer_c?: string | null
+          company_id?: string | null
+          corner_r?: string | null
+          created_at?: string | null
+          customer_drawing_no?: string | null
+          customer_equipment_no?: string | null
+          customer_tray_name?: string | null
+          cutline_length?: number | null
+          cutline_width?: number | null
+          data_input_date?: string | null
+          design_code: string
+          design_date?: string | null
+          design_depth?: number | null
+          design_height?: number | null
+          design_length?: number | null
+          design_weight?: string | null
+          design_width?: number | null
+          designer?: string | null
+          designer_id?: string | null
+          discard_old_stock_on_remake?: boolean | null
+          draft_angle?: string | null
+          drawing_pdf_path?: string | null
+          frame_spec?: string | null
+          has_separate_cutter?: boolean | null
+          legacy_id?: string | null
+          legacy_specs?: Json | null
+          machine_feed_pitch_mm?: number | null
+          orientation?: string | null
+          plastic_id?: string | null
+          plastic_type_designed?: string | null
+          plug_type?: string | null
+          pocket_numbers?: number | null
+          product_id?: string | null
+          replace_qc_drawing_on_remake?: boolean | null
+          revision_id?: string
+          revision_number?: number | null
+          setup_type?: string | null
+          shared_plug_from_design_id?: string | null
+          status?: string | null
+          step_3d_path?: string | null
+          text_content?: string | null
+          tolerance_pitch?: string | null
+          tolerance_x?: string | null
+          tolerance_y?: string | null
+          tray_info?: string | null
+          under_depth?: string | null
+          undercut_spec?: string | null
+          updated_at?: string | null
+          updated_by?: string | null
+          version_note?: string | null
+          water_cooling_plate_spec?: string | null
+        }
+        Update: {
+          approved_date?: string | null
+          cad_folder_path?: string | null
+          cav_type_id?: string | null
+          cavity_count?: number | null
+          cavity_pitch_mm?: number | null
+          chamfer_c?: string | null
+          company_id?: string | null
+          corner_r?: string | null
+          created_at?: string | null
+          customer_drawing_no?: string | null
+          customer_equipment_no?: string | null
+          customer_tray_name?: string | null
+          cutline_length?: number | null
+          cutline_width?: number | null
+          data_input_date?: string | null
+          design_code?: string
+          design_date?: string | null
+          design_depth?: number | null
+          design_height?: number | null
+          design_length?: number | null
+          design_weight?: string | null
+          design_width?: number | null
+          designer?: string | null
+          designer_id?: string | null
+          discard_old_stock_on_remake?: boolean | null
+          draft_angle?: string | null
+          drawing_pdf_path?: string | null
+          frame_spec?: string | null
+          has_separate_cutter?: boolean | null
+          legacy_id?: string | null
+          legacy_specs?: Json | null
+          machine_feed_pitch_mm?: number | null
+          orientation?: string | null
+          plastic_id?: string | null
+          plastic_type_designed?: string | null
+          plug_type?: string | null
+          pocket_numbers?: number | null
+          product_id?: string | null
+          replace_qc_drawing_on_remake?: boolean | null
+          revision_id?: string
+          revision_number?: number | null
+          setup_type?: string | null
+          shared_plug_from_design_id?: string | null
+          status?: string | null
+          step_3d_path?: string | null
+          text_content?: string | null
+          tolerance_pitch?: string | null
+          tolerance_x?: string | null
+          tolerance_y?: string | null
+          tray_info?: string | null
+          under_depth?: string | null
+          undercut_spec?: string | null
+          updated_at?: string | null
+          updated_by?: string | null
+          version_note?: string | null
+          water_cooling_plate_spec?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "design_revisions_designer_id_fkey"
+            columns: ["designer_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["employee_id"]
+          },
+          {
+            foreignKeyName: "design_revisions_plastic_id_fkey"
+            columns: ["plastic_id"]
+            isOneToOne: false
+            referencedRelation: "plastic_master"
+            referencedColumns: ["plastic_id"]
+          },
+          {
+            foreignKeyName: "design_revisions_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "design_revisions_shared_plug_from_design_id_fkey"
+            columns: ["shared_plug_from_design_id"]
+            isOneToOne: false
+            referencedRelation: "design_revisions"
+            referencedColumns: ["revision_id"]
+          },
+          {
+            foreignKeyName: "mold_designs_cav_type_id_fkey"
+            columns: ["cav_type_id"]
+            isOneToOne: false
+            referencedRelation: "cav_types"
+            referencedColumns: ["cav_type_id"]
+          },
+          {
+            foreignKeyName: "mold_designs_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["company_id"]
+          },
+        ]
+      }
+      destinations: {
+        Row: {
+          destination_id: string
+          destination_name: string
+          destination_type: string | null
+          is_active: boolean | null
+        }
+        Insert: {
+          destination_id?: string
+          destination_name: string
+          destination_type?: string | null
+          is_active?: boolean | null
+        }
+        Update: {
+          destination_id?: string
+          destination_name?: string
+          destination_type?: string | null
+          is_active?: boolean | null
+        }
+        Relationships: []
+      }
+      employees: {
+        Row: {
+          company_id: string | null
+          created_at: string | null
+          department: string | null
+          employee_code: string
+          employee_id: string
+          employee_name: string
+          employee_name_short: string | null
+          is_active: boolean | null
+          joining_date: string | null
+          legacy_id: string | null
+          order_code: string | null
+          role: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          company_id?: string | null
+          created_at?: string | null
+          department?: string | null
+          employee_code: string
+          employee_id?: string
+          employee_name: string
+          employee_name_short?: string | null
+          is_active?: boolean | null
+          joining_date?: string | null
+          legacy_id?: string | null
+          order_code?: string | null
+          role?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          company_id?: string | null
+          created_at?: string | null
+          department?: string | null
+          employee_code?: string
+          employee_id?: string
+          employee_name?: string
+          employee_name_short?: string | null
+          is_active?: boolean | null
+          joining_date?: string | null
+          legacy_id?: string | null
+          order_code?: string | null
+          role?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employees_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["company_id"]
+          },
+        ]
+      }
+      equipment_ship_logs: {
+        Row: {
+          company_id: string | null
+          created_at: string | null
+          cutter_id: string | null
+          from_company_id: string | null
+          item_type_id: number | null
+          notes: string | null
+          physical_mold_id: string | null
+          ship_date: string | null
+          ship_id: string
+          ship_item_name: string | null
+          ship_status: string | null
+          to_company_id: string | null
+        }
+        Insert: {
+          company_id?: string | null
+          created_at?: string | null
+          cutter_id?: string | null
+          from_company_id?: string | null
+          item_type_id?: number | null
+          notes?: string | null
+          physical_mold_id?: string | null
+          ship_date?: string | null
+          ship_id?: string
+          ship_item_name?: string | null
+          ship_status?: string | null
+          to_company_id?: string | null
+        }
+        Update: {
+          company_id?: string | null
+          created_at?: string | null
+          cutter_id?: string | null
+          from_company_id?: string | null
+          item_type_id?: number | null
+          notes?: string | null
+          physical_mold_id?: string | null
+          ship_date?: string | null
+          ship_id?: string
+          ship_item_name?: string | null
+          ship_status?: string | null
+          to_company_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "equipment_ship_logs_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "equipment_ship_logs_cutter_id_fkey"
+            columns: ["cutter_id"]
+            isOneToOne: false
+            referencedRelation: "cutters"
+            referencedColumns: ["cutter_id"]
+          },
+          {
+            foreignKeyName: "equipment_ship_logs_from_company_id_fkey"
+            columns: ["from_company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "equipment_ship_logs_item_type_id_fkey"
+            columns: ["item_type_id"]
+            isOneToOne: false
+            referencedRelation: "item_types"
+            referencedColumns: ["item_type_id"]
+          },
+          {
+            foreignKeyName: "equipment_ship_logs_physical_mold_id_fkey"
+            columns: ["physical_mold_id"]
+            isOneToOne: false
+            referencedRelation: "physical_molds"
+            referencedColumns: ["physical_mold_id"]
+          },
+          {
+            foreignKeyName: "equipment_ship_logs_to_company_id_fkey"
+            columns: ["to_company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["company_id"]
+          },
+        ]
+      }
+      equipment_status_logs: {
+        Row: {
+          cutter_id: string | null
+          destination_id: string | null
+          employee_id: string | null
+          item_type_id: number | null
+          log_id: string
+          logged_at: string | null
+          notes: string | null
+          physical_mold_id: string | null
+          session_id: string | null
+          session_name: string | null
+          status: string | null
+        }
+        Insert: {
+          cutter_id?: string | null
+          destination_id?: string | null
+          employee_id?: string | null
+          item_type_id?: number | null
+          log_id?: string
+          logged_at?: string | null
+          notes?: string | null
+          physical_mold_id?: string | null
+          session_id?: string | null
+          session_name?: string | null
+          status?: string | null
+        }
+        Update: {
+          cutter_id?: string | null
+          destination_id?: string | null
+          employee_id?: string | null
+          item_type_id?: number | null
+          log_id?: string
+          logged_at?: string | null
+          notes?: string | null
+          physical_mold_id?: string | null
+          session_id?: string | null
+          session_name?: string | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "equipment_status_logs_cutter_id_fkey"
+            columns: ["cutter_id"]
+            isOneToOne: false
+            referencedRelation: "cutters"
+            referencedColumns: ["cutter_id"]
+          },
+          {
+            foreignKeyName: "equipment_status_logs_destination_id_fkey"
+            columns: ["destination_id"]
+            isOneToOne: false
+            referencedRelation: "destinations"
+            referencedColumns: ["destination_id"]
+          },
+          {
+            foreignKeyName: "equipment_status_logs_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["employee_id"]
+          },
+          {
+            foreignKeyName: "equipment_status_logs_item_type_id_fkey"
+            columns: ["item_type_id"]
+            isOneToOne: false
+            referencedRelation: "item_types"
+            referencedColumns: ["item_type_id"]
+          },
+          {
+            foreignKeyName: "equipment_status_logs_physical_mold_id_fkey"
+            columns: ["physical_mold_id"]
+            isOneToOne: false
+            referencedRelation: "physical_molds"
+            referencedColumns: ["physical_mold_id"]
+          },
+        ]
+      }
+      forming_conditions: {
+        Row: {
+          cav_type_id: string | null
+          condition_id: string
+          cooling_base_type: string | null
+          created_at: string | null
+          cutter_code: string | null
+          f2_heater_zones: Json | null
+          f3_timing: Json | null
+          f4_process: Json | null
+          f5_extra: Json | null
+          frame_type: string | null
+          heater_position: number | null
+          is_verified: boolean | null
+          last_used_date: string | null
+          machine_id: string
+          notes: string | null
+          plug_used: boolean | null
+          product_id: string
+          stacking_lower: string | null
+          stacking_upper: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          cav_type_id?: string | null
+          condition_id?: string
+          cooling_base_type?: string | null
+          created_at?: string | null
+          cutter_code?: string | null
+          f2_heater_zones?: Json | null
+          f3_timing?: Json | null
+          f4_process?: Json | null
+          f5_extra?: Json | null
+          frame_type?: string | null
+          heater_position?: number | null
+          is_verified?: boolean | null
+          last_used_date?: string | null
+          machine_id: string
+          notes?: string | null
+          plug_used?: boolean | null
+          product_id: string
+          stacking_lower?: string | null
+          stacking_upper?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          cav_type_id?: string | null
+          condition_id?: string
+          cooling_base_type?: string | null
+          created_at?: string | null
+          cutter_code?: string | null
+          f2_heater_zones?: Json | null
+          f3_timing?: Json | null
+          f4_process?: Json | null
+          f5_extra?: Json | null
+          frame_type?: string | null
+          heater_position?: number | null
+          is_verified?: boolean | null
+          last_used_date?: string | null
+          machine_id?: string
+          notes?: string | null
+          plug_used?: boolean | null
+          product_id?: string
+          stacking_lower?: string | null
+          stacking_upper?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "forming_conditions_cav_type_id_fkey"
+            columns: ["cav_type_id"]
+            isOneToOne: false
+            referencedRelation: "cav_types"
+            referencedColumns: ["cav_type_id"]
+          },
+          {
+            foreignKeyName: "forming_conditions_machine_id_fkey"
+            columns: ["machine_id"]
+            isOneToOne: false
+            referencedRelation: "machines"
+            referencedColumns: ["machine_id"]
+          },
+          {
+            foreignKeyName: "forming_conditions_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["product_id"]
+          },
+        ]
+      }
+      inspections: {
+        Row: {
+          created_at: string | null
+          file_path: string | null
+          inspection_date: string
+          inspection_id: string
+          inspector_id: string | null
+          lot_id: string | null
+          notes: string | null
+          po_id: string | null
+          result: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          file_path?: string | null
+          inspection_date: string
+          inspection_id?: string
+          inspector_id?: string | null
+          lot_id?: string | null
+          notes?: string | null
+          po_id?: string | null
+          result?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          file_path?: string | null
+          inspection_date?: string
+          inspection_id?: string
+          inspector_id?: string | null
+          lot_id?: string | null
+          notes?: string | null
+          po_id?: string | null
+          result?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inspections_inspector_id_fkey"
+            columns: ["inspector_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["employee_id"]
+          },
+          {
+            foreignKeyName: "inspections_lot_id_fkey"
+            columns: ["lot_id"]
+            isOneToOne: false
+            referencedRelation: "production_lots"
+            referencedColumns: ["lot_id"]
+          },
+          {
+            foreignKeyName: "inspections_po_id_fkey"
+            columns: ["po_id"]
+            isOneToOne: false
+            referencedRelation: "production_orders"
+            referencedColumns: ["po_id"]
+          },
+        ]
+      }
+      inventory_schedules: {
+        Row: {
+          assigned_to: string | null
+          is_active: boolean | null
+          last_completed: string | null
+          mold_owner_id: string | null
+          month_of_year: number | null
+          next_due: string | null
+          notes: string | null
+          reminder_days: number | null
+          schedule_id: string
+          schedule_type: string | null
+        }
+        Insert: {
+          assigned_to?: string | null
+          is_active?: boolean | null
+          last_completed?: string | null
+          mold_owner_id?: string | null
+          month_of_year?: number | null
+          next_due?: string | null
+          notes?: string | null
+          reminder_days?: number | null
+          schedule_id?: string
+          schedule_type?: string | null
+        }
+        Update: {
+          assigned_to?: string | null
+          is_active?: boolean | null
+          last_completed?: string | null
+          mold_owner_id?: string | null
+          month_of_year?: number | null
+          next_due?: string | null
+          notes?: string | null
+          reminder_days?: number | null
+          schedule_id?: string
+          schedule_type?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_schedules_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["employee_id"]
+          },
+          {
+            foreignKeyName: "inventory_schedules_mold_owner_id_fkey"
+            columns: ["mold_owner_id"]
+            isOneToOne: false
+            referencedRelation: "mold_owners"
+            referencedColumns: ["owner_id"]
+          },
+        ]
+      }
+      item_types: {
+        Row: {
+          item_type_code: string
+          item_type_id: number
+          item_type_name_ja: string
+          item_type_name_vi: string | null
+        }
+        Insert: {
+          item_type_code: string
+          item_type_id?: number
+          item_type_name_ja: string
+          item_type_name_vi?: string | null
+        }
+        Update: {
+          item_type_code?: string
+          item_type_id?: number
+          item_type_name_ja?: string
+          item_type_name_vi?: string | null
+        }
+        Relationships: []
+      }
+      job_step_dependencies: {
+        Row: {
+          created_at: string | null
+          dependency_id: string
+          dependency_type: string
+          predecessor_step_id: string
+          successor_step_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          dependency_id?: string
+          dependency_type?: string
+          predecessor_step_id: string
+          successor_step_id: string
+        }
+        Update: {
+          created_at?: string | null
+          dependency_id?: string
+          dependency_type?: string
+          predecessor_step_id?: string
+          successor_step_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_step_dependencies_predecessor_step_id_fkey"
+            columns: ["predecessor_step_id"]
+            isOneToOne: false
+            referencedRelation: "job_steps"
+            referencedColumns: ["step_id"]
+          },
+          {
+            foreignKeyName: "job_step_dependencies_successor_step_id_fkey"
+            columns: ["successor_step_id"]
+            isOneToOne: false
+            referencedRelation: "job_steps"
+            referencedColumns: ["step_id"]
+          },
+        ]
+      }
+      job_steps: {
+        Row: {
+          actual_hours: number | null
+          assigned_to: string | null
+          baseline_end: string | null
+          baseline_start: string | null
+          created_at: string | null
+          deadline: string | null
+          drawing_receipt_date: string | null
+          estimated_hours: number | null
+          is_overtime: boolean | null
+          item_type_id: number | null
+          job_id: string
+          machine_id: string | null
+          machining_location: string | null
+          notes: string | null
+          outsource_company: string | null
+          planned_end: string | null
+          planned_hours: number | null
+          planned_start: string | null
+          processing_item_id: number | null
+          processing_status_id: number | null
+          progress_percent: number | null
+          set_info: string | null
+          step_id: string
+          step_name: string
+          step_no: number
+          step_status: string | null
+          tehai_info: string | null
+          track: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          actual_hours?: number | null
+          assigned_to?: string | null
+          baseline_end?: string | null
+          baseline_start?: string | null
+          created_at?: string | null
+          deadline?: string | null
+          drawing_receipt_date?: string | null
+          estimated_hours?: number | null
+          is_overtime?: boolean | null
+          item_type_id?: number | null
+          job_id: string
+          machine_id?: string | null
+          machining_location?: string | null
+          notes?: string | null
+          outsource_company?: string | null
+          planned_end?: string | null
+          planned_hours?: number | null
+          planned_start?: string | null
+          processing_item_id?: number | null
+          processing_status_id?: number | null
+          progress_percent?: number | null
+          set_info?: string | null
+          step_id?: string
+          step_name: string
+          step_no: number
+          step_status?: string | null
+          tehai_info?: string | null
+          track?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          actual_hours?: number | null
+          assigned_to?: string | null
+          baseline_end?: string | null
+          baseline_start?: string | null
+          created_at?: string | null
+          deadline?: string | null
+          drawing_receipt_date?: string | null
+          estimated_hours?: number | null
+          is_overtime?: boolean | null
+          item_type_id?: number | null
+          job_id?: string
+          machine_id?: string | null
+          machining_location?: string | null
+          notes?: string | null
+          outsource_company?: string | null
+          planned_end?: string | null
+          planned_hours?: number | null
+          planned_start?: string | null
+          processing_item_id?: number | null
+          processing_status_id?: number | null
+          progress_percent?: number | null
+          set_info?: string | null
+          step_id?: string
+          step_name?: string
+          step_no?: number
+          step_status?: string | null
+          tehai_info?: string | null
+          track?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_steps_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["employee_id"]
+          },
+          {
+            foreignKeyName: "job_steps_item_type_id_fkey"
+            columns: ["item_type_id"]
+            isOneToOne: false
+            referencedRelation: "item_types"
+            referencedColumns: ["item_type_id"]
+          },
+          {
+            foreignKeyName: "job_steps_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["job_id"]
+          },
+          {
+            foreignKeyName: "job_steps_machine_id_fkey"
+            columns: ["machine_id"]
+            isOneToOne: false
+            referencedRelation: "machines"
+            referencedColumns: ["machine_id"]
+          },
+          {
+            foreignKeyName: "job_steps_outsource_company_fkey"
+            columns: ["outsource_company"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "job_steps_processing_item_id_fkey"
+            columns: ["processing_item_id"]
+            isOneToOne: false
+            referencedRelation: "processing_items"
+            referencedColumns: ["processing_item_id"]
+          },
+          {
+            foreignKeyName: "job_steps_processing_status_id_fkey"
+            columns: ["processing_status_id"]
+            isOneToOne: false
+            referencedRelation: "processing_statuses"
+            referencedColumns: ["status_id"]
+          },
+        ]
+      }
+      job_types: {
+        Row: {
+          category: string | null
+          description: string | null
+          job_type_id: string
+          job_type_name_ja: string
+          job_type_name_vi: string
+          sort_order: number | null
+        }
+        Insert: {
+          category?: string | null
+          description?: string | null
+          job_type_id: string
+          job_type_name_ja: string
+          job_type_name_vi: string
+          sort_order?: number | null
+        }
+        Update: {
+          category?: string | null
+          description?: string | null
+          job_type_id?: string
+          job_type_name_ja?: string
+          job_type_name_vi?: string
+          sort_order?: number | null
+        }
+        Relationships: []
+      }
+      jobs: {
+        Row: {
+          approved: boolean | null
+          company_id: string | null
+          completed_date: string | null
+          created_at: string | null
+          deadline: string | null
+          design_revision_id: string | null
+          estimated_hours: number | null
+          has_plug: boolean | null
+          job_code: string
+          job_id: string
+          job_name: string
+          job_status: string | null
+          job_type_id: string | null
+          legacy_id: string | null
+          mold_deadline: string | null
+          mold_track_status: string | null
+          month_period: number | null
+          notes: string | null
+          outsource_company: string | null
+          overall_progress: number | null
+          physical_mold_id: string | null
+          plug_track_status: string | null
+          priority: number | null
+          processing_item_id: number | null
+          product_id: string | null
+          production_order_id: string | null
+          responsible_id: string | null
+          ship_date: string | null
+          start_date: string | null
+          updated_at: string | null
+          updated_by: string | null
+          year_period: number | null
+        }
+        Insert: {
+          approved?: boolean | null
+          company_id?: string | null
+          completed_date?: string | null
+          created_at?: string | null
+          deadline?: string | null
+          design_revision_id?: string | null
+          estimated_hours?: number | null
+          has_plug?: boolean | null
+          job_code: string
+          job_id?: string
+          job_name: string
+          job_status?: string | null
+          job_type_id?: string | null
+          legacy_id?: string | null
+          mold_deadline?: string | null
+          mold_track_status?: string | null
+          month_period?: number | null
+          notes?: string | null
+          outsource_company?: string | null
+          overall_progress?: number | null
+          physical_mold_id?: string | null
+          plug_track_status?: string | null
+          priority?: number | null
+          processing_item_id?: number | null
+          product_id?: string | null
+          production_order_id?: string | null
+          responsible_id?: string | null
+          ship_date?: string | null
+          start_date?: string | null
+          updated_at?: string | null
+          updated_by?: string | null
+          year_period?: number | null
+        }
+        Update: {
+          approved?: boolean | null
+          company_id?: string | null
+          completed_date?: string | null
+          created_at?: string | null
+          deadline?: string | null
+          design_revision_id?: string | null
+          estimated_hours?: number | null
+          has_plug?: boolean | null
+          job_code?: string
+          job_id?: string
+          job_name?: string
+          job_status?: string | null
+          job_type_id?: string | null
+          legacy_id?: string | null
+          mold_deadline?: string | null
+          mold_track_status?: string | null
+          month_period?: number | null
+          notes?: string | null
+          outsource_company?: string | null
+          overall_progress?: number | null
+          physical_mold_id?: string | null
+          plug_track_status?: string | null
+          priority?: number | null
+          processing_item_id?: number | null
+          product_id?: string | null
+          production_order_id?: string | null
+          responsible_id?: string | null
+          ship_date?: string | null
+          start_date?: string | null
+          updated_at?: string | null
+          updated_by?: string | null
+          year_period?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "jobs_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "jobs_design_revision_id_fkey"
+            columns: ["design_revision_id"]
+            isOneToOne: false
+            referencedRelation: "design_revisions"
+            referencedColumns: ["revision_id"]
+          },
+          {
+            foreignKeyName: "jobs_job_type_id_fkey"
+            columns: ["job_type_id"]
+            isOneToOne: false
+            referencedRelation: "job_types"
+            referencedColumns: ["job_type_id"]
+          },
+          {
+            foreignKeyName: "jobs_outsource_company_fkey"
+            columns: ["outsource_company"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "jobs_physical_mold_id_fkey"
+            columns: ["physical_mold_id"]
+            isOneToOne: false
+            referencedRelation: "physical_molds"
+            referencedColumns: ["physical_mold_id"]
+          },
+          {
+            foreignKeyName: "jobs_processing_item_id_fkey"
+            columns: ["processing_item_id"]
+            isOneToOne: false
+            referencedRelation: "processing_items"
+            referencedColumns: ["processing_item_id"]
+          },
+          {
+            foreignKeyName: "jobs_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "jobs_production_order_id_fkey"
+            columns: ["production_order_id"]
+            isOneToOne: false
+            referencedRelation: "production_orders"
+            referencedColumns: ["po_id"]
+          },
+          {
+            foreignKeyName: "jobs_responsible_id_fkey"
+            columns: ["responsible_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["employee_id"]
+          },
+        ]
+      }
+      machine_cav_compatibility: {
+        Row: {
+          cav_type_id: string
+          compat_id: string
+          is_preferred: boolean | null
+          machine_id: string
+          notes: string | null
+        }
+        Insert: {
+          cav_type_id: string
+          compat_id?: string
+          is_preferred?: boolean | null
+          machine_id: string
+          notes?: string | null
+        }
+        Update: {
+          cav_type_id?: string
+          compat_id?: string
+          is_preferred?: boolean | null
+          machine_id?: string
+          notes?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "machine_cav_compatibility_cav_type_id_fkey"
+            columns: ["cav_type_id"]
+            isOneToOne: false
+            referencedRelation: "cav_types"
+            referencedColumns: ["cav_type_id"]
+          },
+          {
+            foreignKeyName: "machine_cav_compatibility_machine_id_fkey"
+            columns: ["machine_id"]
+            isOneToOne: false
+            referencedRelation: "machines"
+            referencedColumns: ["machine_id"]
+          },
+        ]
+      }
+      machine_schedules: {
+        Row: {
+          actual_end: string | null
+          actual_start: string | null
+          created_at: string | null
+          id: string
+          job_step_id: string | null
+          machine_id: string
+          notes: string | null
+          planned_end: string
+          planned_start: string
+          status: string | null
+        }
+        Insert: {
+          actual_end?: string | null
+          actual_start?: string | null
+          created_at?: string | null
+          id?: string
+          job_step_id?: string | null
+          machine_id: string
+          notes?: string | null
+          planned_end: string
+          planned_start: string
+          status?: string | null
+        }
+        Update: {
+          actual_end?: string | null
+          actual_start?: string | null
+          created_at?: string | null
+          id?: string
+          job_step_id?: string | null
+          machine_id?: string
+          notes?: string | null
+          planned_end?: string
+          planned_start?: string
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "machine_schedules_job_step_id_fkey"
+            columns: ["job_step_id"]
+            isOneToOne: false
+            referencedRelation: "job_steps"
+            referencedColumns: ["step_id"]
+          },
+          {
+            foreignKeyName: "machine_schedules_machine_id_fkey"
+            columns: ["machine_id"]
+            isOneToOne: false
+            referencedRelation: "machines"
+            referencedColumns: ["machine_id"]
+          },
+        ]
+      }
+      machines: {
+        Row: {
+          created_at: string | null
+          is_active: boolean | null
+          location: string | null
+          machine_code: string
+          machine_group: string | null
+          machine_id: string
+          machine_name: string
+          machine_type: string
+          manufacturer: string | null
+          max_mold_length: number | null
+          max_mold_width: number | null
+          max_sheet_width: number | null
+          model: string | null
+          notes: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          is_active?: boolean | null
+          location?: string | null
+          machine_code: string
+          machine_group?: string | null
+          machine_id?: string
+          machine_name: string
+          machine_type: string
+          manufacturer?: string | null
+          max_mold_length?: number | null
+          max_mold_width?: number | null
+          max_sheet_width?: number | null
+          model?: string | null
+          notes?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          is_active?: boolean | null
+          location?: string | null
+          machine_code?: string
+          machine_group?: string | null
+          machine_id?: string
+          machine_name?: string
+          machine_type?: string
+          manufacturer?: string | null
+          max_mold_length?: number | null
+          max_mold_width?: number | null
+          max_sheet_width?: number | null
+          model?: string | null
+          notes?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      material_change_logs: {
+        Row: {
+          approved_by: string | null
+          approved_date: string | null
+          change_id: string
+          created_at: string | null
+          new_material_id: string | null
+          notes: string | null
+          old_material_id: string | null
+          product_id: string | null
+          reason: string | null
+          requires_mold_mod: boolean | null
+          requires_new_cutter: boolean | null
+          status: string | null
+          trial_job_id: string | null
+        }
+        Insert: {
+          approved_by?: string | null
+          approved_date?: string | null
+          change_id?: string
+          created_at?: string | null
+          new_material_id?: string | null
+          notes?: string | null
+          old_material_id?: string | null
+          product_id?: string | null
+          reason?: string | null
+          requires_mold_mod?: boolean | null
+          requires_new_cutter?: boolean | null
+          status?: string | null
+          trial_job_id?: string | null
+        }
+        Update: {
+          approved_by?: string | null
+          approved_date?: string | null
+          change_id?: string
+          created_at?: string | null
+          new_material_id?: string | null
+          notes?: string | null
+          old_material_id?: string | null
+          product_id?: string | null
+          reason?: string | null
+          requires_mold_mod?: boolean | null
+          requires_new_cutter?: boolean | null
+          status?: string | null
+          trial_job_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_material_change_trial_job"
+            columns: ["trial_job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["job_id"]
+          },
+          {
+            foreignKeyName: "material_change_logs_new_material_id_fkey"
+            columns: ["new_material_id"]
+            isOneToOne: false
+            referencedRelation: "materials"
+            referencedColumns: ["material_id"]
+          },
+          {
+            foreignKeyName: "material_change_logs_old_material_id_fkey"
+            columns: ["old_material_id"]
+            isOneToOne: false
+            referencedRelation: "materials"
+            referencedColumns: ["material_id"]
+          },
+          {
+            foreignKeyName: "material_change_logs_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["product_id"]
+          },
+        ]
+      }
+      material_inventory: {
+        Row: {
+          inventory_id: string
+          last_counted: string | null
+          location: string | null
+          material_id: string
+          quantity_kg: number | null
+          quantity_meters: number | null
+          quantity_rolls: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          inventory_id?: string
+          last_counted?: string | null
+          location?: string | null
+          material_id: string
+          quantity_kg?: number | null
+          quantity_meters?: number | null
+          quantity_rolls?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          inventory_id?: string
+          last_counted?: string | null
+          location?: string | null
+          material_id?: string
+          quantity_kg?: number | null
+          quantity_meters?: number | null
+          quantity_rolls?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "material_inventory_material_id_fkey"
+            columns: ["material_id"]
+            isOneToOne: false
+            referencedRelation: "materials"
+            referencedColumns: ["material_id"]
+          },
+        ]
+      }
+      material_transactions: {
+        Row: {
+          created_at: string | null
+          employee_id: string | null
+          material_id: string
+          notes: string | null
+          quantity: number | null
+          reference_id: string | null
+          reference_type: string | null
+          transaction_id: string
+          transaction_type: string
+          unit: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          employee_id?: string | null
+          material_id: string
+          notes?: string | null
+          quantity?: number | null
+          reference_id?: string | null
+          reference_type?: string | null
+          transaction_id?: string
+          transaction_type: string
+          unit?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          employee_id?: string | null
+          material_id?: string
+          notes?: string | null
+          quantity?: number | null
+          reference_id?: string | null
+          reference_type?: string | null
+          transaction_id?: string
+          transaction_type?: string
+          unit?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "material_transactions_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["employee_id"]
+          },
+          {
+            foreignKeyName: "material_transactions_material_id_fkey"
+            columns: ["material_id"]
+            isOneToOne: false
+            referencedRelation: "materials"
+            referencedColumns: ["material_id"]
+          },
+        ]
+      }
+      materials: {
+        Row: {
+          color: string | null
+          conductivity_type: string | null
+          created_at: string | null
+          has_silicone: boolean | null
+          is_active: boolean | null
+          is_antistatic: boolean | null
+          is_conductive: boolean | null
+          manufacturer: string | null
+          material_code: string
+          material_grade: string | null
+          material_id: string
+          material_type: string
+          notes: string | null
+          supplier_id: string | null
+          thickness_mm: number | null
+          unit_price: number | null
+          updated_at: string | null
+          width_mm: number | null
+        }
+        Insert: {
+          color?: string | null
+          conductivity_type?: string | null
+          created_at?: string | null
+          has_silicone?: boolean | null
+          is_active?: boolean | null
+          is_antistatic?: boolean | null
+          is_conductive?: boolean | null
+          manufacturer?: string | null
+          material_code: string
+          material_grade?: string | null
+          material_id?: string
+          material_type: string
+          notes?: string | null
+          supplier_id?: string | null
+          thickness_mm?: number | null
+          unit_price?: number | null
+          updated_at?: string | null
+          width_mm?: number | null
+        }
+        Update: {
+          color?: string | null
+          conductivity_type?: string | null
+          created_at?: string | null
+          has_silicone?: boolean | null
+          is_active?: boolean | null
+          is_antistatic?: boolean | null
+          is_conductive?: boolean | null
+          manufacturer?: string | null
+          material_code?: string
+          material_grade?: string | null
+          material_id?: string
+          material_type?: string
+          notes?: string | null
+          supplier_id?: string | null
+          thickness_mm?: number | null
+          unit_price?: number | null
+          updated_at?: string | null
+          width_mm?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "materials_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["company_id"]
+          },
+        ]
+      }
+      mold_design_cutters: {
+        Row: {
+          cutter_id: string
+          date_entry: string | null
+          id: string
+          mold_design_id: string
+          notes: string | null
+        }
+        Insert: {
+          cutter_id: string
+          date_entry?: string | null
+          id?: string
+          mold_design_id: string
+          notes?: string | null
+        }
+        Update: {
+          cutter_id?: string
+          date_entry?: string | null
+          id?: string
+          mold_design_id?: string
+          notes?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mold_design_cutters_cutter_id_fkey"
+            columns: ["cutter_id"]
+            isOneToOne: false
+            referencedRelation: "cutters"
+            referencedColumns: ["cutter_id"]
+          },
+        ]
+      }
+      mold_disposal_logs: {
+        Row: {
+          certificate_file: string | null
+          certificate_no: string | null
+          certificate_sent: boolean | null
+          created_at: string | null
+          disposal_fee: number | null
+          disposal_id: string
+          disposal_no: string | null
+          disposal_type: string | null
+          disposed_by: string | null
+          disposed_date: string | null
+          mold_code: string | null
+          notes: string | null
+          permission_by: string | null
+          permission_date: string | null
+          photo_after: string | null
+          photo_before: string | null
+          physical_mold_id: string | null
+          registered_by: string | null
+          registered_date: string | null
+          requested_by_company: string | null
+          requested_date: string | null
+          status: string | null
+        }
+        Insert: {
+          certificate_file?: string | null
+          certificate_no?: string | null
+          certificate_sent?: boolean | null
+          created_at?: string | null
+          disposal_fee?: number | null
+          disposal_id?: string
+          disposal_no?: string | null
+          disposal_type?: string | null
+          disposed_by?: string | null
+          disposed_date?: string | null
+          mold_code?: string | null
+          notes?: string | null
+          permission_by?: string | null
+          permission_date?: string | null
+          photo_after?: string | null
+          photo_before?: string | null
+          physical_mold_id?: string | null
+          registered_by?: string | null
+          registered_date?: string | null
+          requested_by_company?: string | null
+          requested_date?: string | null
+          status?: string | null
+        }
+        Update: {
+          certificate_file?: string | null
+          certificate_no?: string | null
+          certificate_sent?: boolean | null
+          created_at?: string | null
+          disposal_fee?: number | null
+          disposal_id?: string
+          disposal_no?: string | null
+          disposal_type?: string | null
+          disposed_by?: string | null
+          disposed_date?: string | null
+          mold_code?: string | null
+          notes?: string | null
+          permission_by?: string | null
+          permission_date?: string | null
+          photo_after?: string | null
+          photo_before?: string | null
+          physical_mold_id?: string | null
+          registered_by?: string | null
+          registered_date?: string | null
+          requested_by_company?: string | null
+          requested_date?: string | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mold_disposal_logs_disposed_by_fkey"
+            columns: ["disposed_by"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["employee_id"]
+          },
+          {
+            foreignKeyName: "mold_disposal_logs_physical_mold_id_fkey"
+            columns: ["physical_mold_id"]
+            isOneToOne: false
+            referencedRelation: "physical_molds"
+            referencedColumns: ["physical_mold_id"]
+          },
+          {
+            foreignKeyName: "mold_disposal_logs_registered_by_fkey"
+            columns: ["registered_by"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["employee_id"]
+          },
+          {
+            foreignKeyName: "mold_disposal_logs_requested_by_company_fkey"
+            columns: ["requested_by_company"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["company_id"]
+          },
+        ]
+      }
+      mold_inventory_checks: {
+        Row: {
+          check_code: string
+          check_id: string
+          check_type: string | null
+          completed_by: string | null
+          completed_date: string | null
+          confirmed_count: number | null
+          created_at: string | null
+          deadline: string | null
+          missing_count: number | null
+          mold_owner_id: string | null
+          notes: string | null
+          report_file: string | null
+          reported_date: string | null
+          requested_by: string | null
+          requested_date: string | null
+          status: string | null
+          total_molds: number | null
+        }
+        Insert: {
+          check_code: string
+          check_id?: string
+          check_type?: string | null
+          completed_by?: string | null
+          completed_date?: string | null
+          confirmed_count?: number | null
+          created_at?: string | null
+          deadline?: string | null
+          missing_count?: number | null
+          mold_owner_id?: string | null
+          notes?: string | null
+          report_file?: string | null
+          reported_date?: string | null
+          requested_by?: string | null
+          requested_date?: string | null
+          status?: string | null
+          total_molds?: number | null
+        }
+        Update: {
+          check_code?: string
+          check_id?: string
+          check_type?: string | null
+          completed_by?: string | null
+          completed_date?: string | null
+          confirmed_count?: number | null
+          created_at?: string | null
+          deadline?: string | null
+          missing_count?: number | null
+          mold_owner_id?: string | null
+          notes?: string | null
+          report_file?: string | null
+          reported_date?: string | null
+          requested_by?: string | null
+          requested_date?: string | null
+          status?: string | null
+          total_molds?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mold_inventory_checks_completed_by_fkey"
+            columns: ["completed_by"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["employee_id"]
+          },
+          {
+            foreignKeyName: "mold_inventory_checks_mold_owner_id_fkey"
+            columns: ["mold_owner_id"]
+            isOneToOne: false
+            referencedRelation: "mold_owners"
+            referencedColumns: ["owner_id"]
+          },
+        ]
+      }
+      mold_inventory_items: {
+        Row: {
+          check_id: string
+          confirmed_by: string | null
+          confirmed_date: string | null
+          is_confirmed: boolean | null
+          item_id: string
+          keeper_company_id: string | null
+          mold_code: string | null
+          notes: string | null
+          photo_path: string | null
+          physical_mold_id: string | null
+          storage_location: string | null
+        }
+        Insert: {
+          check_id: string
+          confirmed_by?: string | null
+          confirmed_date?: string | null
+          is_confirmed?: boolean | null
+          item_id?: string
+          keeper_company_id?: string | null
+          mold_code?: string | null
+          notes?: string | null
+          photo_path?: string | null
+          physical_mold_id?: string | null
+          storage_location?: string | null
+        }
+        Update: {
+          check_id?: string
+          confirmed_by?: string | null
+          confirmed_date?: string | null
+          is_confirmed?: boolean | null
+          item_id?: string
+          keeper_company_id?: string | null
+          mold_code?: string | null
+          notes?: string | null
+          photo_path?: string | null
+          physical_mold_id?: string | null
+          storage_location?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mold_inventory_items_check_id_fkey"
+            columns: ["check_id"]
+            isOneToOne: false
+            referencedRelation: "mold_inventory_checks"
+            referencedColumns: ["check_id"]
+          },
+          {
+            foreignKeyName: "mold_inventory_items_keeper_company_id_fkey"
+            columns: ["keeper_company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "mold_inventory_items_physical_mold_id_fkey"
+            columns: ["physical_mold_id"]
+            isOneToOne: false
+            referencedRelation: "physical_molds"
+            referencedColumns: ["physical_mold_id"]
+          },
+        ]
+      }
+      mold_loan_certificates: {
+        Row: {
+          certificate_file: string | null
+          certificate_id: string
+          certificate_no: string | null
+          created_at: string | null
+          issued_by: string | null
+          issued_date: string | null
+          mold_owner_id: string | null
+          notes: string | null
+          prepared_by: string | null
+          requested_date: string | null
+          status: string | null
+        }
+        Insert: {
+          certificate_file?: string | null
+          certificate_id?: string
+          certificate_no?: string | null
+          created_at?: string | null
+          issued_by?: string | null
+          issued_date?: string | null
+          mold_owner_id?: string | null
+          notes?: string | null
+          prepared_by?: string | null
+          requested_date?: string | null
+          status?: string | null
+        }
+        Update: {
+          certificate_file?: string | null
+          certificate_id?: string
+          certificate_no?: string | null
+          created_at?: string | null
+          issued_by?: string | null
+          issued_date?: string | null
+          mold_owner_id?: string | null
+          notes?: string | null
+          prepared_by?: string | null
+          requested_date?: string | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mold_loan_certificates_issued_by_fkey"
+            columns: ["issued_by"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["employee_id"]
+          },
+          {
+            foreignKeyName: "mold_loan_certificates_mold_owner_id_fkey"
+            columns: ["mold_owner_id"]
+            isOneToOne: false
+            referencedRelation: "mold_owners"
+            referencedColumns: ["owner_id"]
+          },
+          {
+            foreignKeyName: "mold_loan_certificates_prepared_by_fkey"
+            columns: ["prepared_by"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["employee_id"]
+          },
+        ]
+      }
+      mold_location_history: {
+        Row: {
+          location_log_id: string
+          moved_at: string | null
+          moved_by: string | null
+          new_rack_layer_id: string | null
+          notes: string | null
+          old_rack_layer_id: string | null
+          physical_mold_id: string
+        }
+        Insert: {
+          location_log_id?: string
+          moved_at?: string | null
+          moved_by?: string | null
+          new_rack_layer_id?: string | null
+          notes?: string | null
+          old_rack_layer_id?: string | null
+          physical_mold_id: string
+        }
+        Update: {
+          location_log_id?: string
+          moved_at?: string | null
+          moved_by?: string | null
+          new_rack_layer_id?: string | null
+          notes?: string | null
+          old_rack_layer_id?: string | null
+          physical_mold_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mold_location_history_moved_by_fkey"
+            columns: ["moved_by"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["employee_id"]
+          },
+          {
+            foreignKeyName: "mold_location_history_new_rack_layer_id_fkey"
+            columns: ["new_rack_layer_id"]
+            isOneToOne: false
+            referencedRelation: "rack_layers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mold_location_history_old_rack_layer_id_fkey"
+            columns: ["old_rack_layer_id"]
+            isOneToOne: false
+            referencedRelation: "rack_layers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mold_location_history_physical_mold_id_fkey"
+            columns: ["physical_mold_id"]
+            isOneToOne: false
+            referencedRelation: "physical_molds"
+            referencedColumns: ["physical_mold_id"]
+          },
+        ]
+      }
+      mold_maintenance: {
+        Row: {
+          completed_date: string | null
+          cost: number | null
+          created_at: string | null
+          employee_id: string | null
+          maintenance_id: string
+          maintenance_type: string
+          notes: string | null
+          physical_mold_id: string
+          reason: string | null
+          request_date: string | null
+          result: string | null
+          status: string | null
+          updated_at: string | null
+          vendor_id: string | null
+        }
+        Insert: {
+          completed_date?: string | null
+          cost?: number | null
+          created_at?: string | null
+          employee_id?: string | null
+          maintenance_id?: string
+          maintenance_type: string
+          notes?: string | null
+          physical_mold_id: string
+          reason?: string | null
+          request_date?: string | null
+          result?: string | null
+          status?: string | null
+          updated_at?: string | null
+          vendor_id?: string | null
+        }
+        Update: {
+          completed_date?: string | null
+          cost?: number | null
+          created_at?: string | null
+          employee_id?: string | null
+          maintenance_id?: string
+          maintenance_type?: string
+          notes?: string | null
+          physical_mold_id?: string
+          reason?: string | null
+          request_date?: string | null
+          result?: string | null
+          status?: string | null
+          updated_at?: string | null
+          vendor_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mold_maintenance_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["employee_id"]
+          },
+          {
+            foreignKeyName: "mold_maintenance_physical_mold_id_fkey"
+            columns: ["physical_mold_id"]
+            isOneToOne: false
+            referencedRelation: "physical_molds"
+            referencedColumns: ["physical_mold_id"]
+          },
+          {
+            foreignKeyName: "mold_maintenance_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["company_id"]
+          },
+        ]
+      }
+      mold_material_bom: {
+        Row: {
+          bom_id: string
+          component_name: string | null
+          created_at: string | null
+          material_id: string | null
+          mold_master_id: string | null
+          notes: string | null
+          quantity_per_shot: number | null
+        }
+        Insert: {
+          bom_id?: string
+          component_name?: string | null
+          created_at?: string | null
+          material_id?: string | null
+          mold_master_id?: string | null
+          notes?: string | null
+          quantity_per_shot?: number | null
+        }
+        Update: {
+          bom_id?: string
+          component_name?: string | null
+          created_at?: string | null
+          material_id?: string | null
+          mold_master_id?: string | null
+          notes?: string | null
+          quantity_per_shot?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mold_material_bom_material_id_fkey"
+            columns: ["material_id"]
+            isOneToOne: false
+            referencedRelation: "materials"
+            referencedColumns: ["material_id"]
+          },
+        ]
+      }
+      mold_measurements: {
+        Row: {
+          created_at: string | null
+          measured_by: string | null
+          measured_date: string | null
+          measurement_id: string
+          mold_height_mm: number | null
+          mold_length_mm: number | null
+          mold_weight_kg: number | null
+          mold_width_mm: number | null
+          notes: string | null
+          physical_mold_id: string | null
+          purpose: string | null
+          requested_by: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          measured_by?: string | null
+          measured_date?: string | null
+          measurement_id?: string
+          mold_height_mm?: number | null
+          mold_length_mm?: number | null
+          mold_weight_kg?: number | null
+          mold_width_mm?: number | null
+          notes?: string | null
+          physical_mold_id?: string | null
+          purpose?: string | null
+          requested_by?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          measured_by?: string | null
+          measured_date?: string | null
+          measurement_id?: string
+          mold_height_mm?: number | null
+          mold_length_mm?: number | null
+          mold_weight_kg?: number | null
+          mold_width_mm?: number | null
+          notes?: string | null
+          physical_mold_id?: string | null
+          purpose?: string | null
+          requested_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mold_measurements_measured_by_fkey"
+            columns: ["measured_by"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["employee_id"]
+          },
+          {
+            foreignKeyName: "mold_measurements_physical_mold_id_fkey"
+            columns: ["physical_mold_id"]
+            isOneToOne: false
+            referencedRelation: "physical_molds"
+            referencedColumns: ["physical_mold_id"]
+          },
+        ]
+      }
+      mold_name_history: {
+        Row: {
+          change_reason: string | null
+          changed_at: string | null
+          changed_by: string | null
+          history_id: string
+          new_physical_stamp: string | null
+          new_system_code: string
+          old_physical_stamp: string | null
+          old_system_code: string | null
+          physical_mold_id: string
+        }
+        Insert: {
+          change_reason?: string | null
+          changed_at?: string | null
+          changed_by?: string | null
+          history_id?: string
+          new_physical_stamp?: string | null
+          new_system_code: string
+          old_physical_stamp?: string | null
+          old_system_code?: string | null
+          physical_mold_id: string
+        }
+        Update: {
+          change_reason?: string | null
+          changed_at?: string | null
+          changed_by?: string | null
+          history_id?: string
+          new_physical_stamp?: string | null
+          new_system_code?: string
+          old_physical_stamp?: string | null
+          old_system_code?: string | null
+          physical_mold_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mold_name_history_physical_mold_id_fkey"
+            columns: ["physical_mold_id"]
+            isOneToOne: false
+            referencedRelation: "physical_molds"
+            referencedColumns: ["physical_mold_id"]
+          },
+        ]
+      }
+      mold_owner_qr_labels: {
+        Row: {
+          applied_by: string | null
+          applied_date: string | null
+          created_at: string | null
+          is_active: boolean | null
+          label_id: string
+          label_type: string | null
+          mold_owner_id: string | null
+          notes: string | null
+          photo_path: string | null
+          physical_mold_id: string | null
+          qr_code: string | null
+        }
+        Insert: {
+          applied_by?: string | null
+          applied_date?: string | null
+          created_at?: string | null
+          is_active?: boolean | null
+          label_id?: string
+          label_type?: string | null
+          mold_owner_id?: string | null
+          notes?: string | null
+          photo_path?: string | null
+          physical_mold_id?: string | null
+          qr_code?: string | null
+        }
+        Update: {
+          applied_by?: string | null
+          applied_date?: string | null
+          created_at?: string | null
+          is_active?: boolean | null
+          label_id?: string
+          label_type?: string | null
+          mold_owner_id?: string | null
+          notes?: string | null
+          photo_path?: string | null
+          physical_mold_id?: string | null
+          qr_code?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mold_owner_qr_labels_applied_by_fkey"
+            columns: ["applied_by"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["employee_id"]
+          },
+          {
+            foreignKeyName: "mold_owner_qr_labels_mold_owner_id_fkey"
+            columns: ["mold_owner_id"]
+            isOneToOne: false
+            referencedRelation: "mold_owners"
+            referencedColumns: ["owner_id"]
+          },
+          {
+            foreignKeyName: "mold_owner_qr_labels_physical_mold_id_fkey"
+            columns: ["physical_mold_id"]
+            isOneToOne: false
+            referencedRelation: "physical_molds"
+            referencedColumns: ["physical_mold_id"]
+          },
+        ]
+      }
+      mold_owners: {
+        Row: {
+          company_id: string
+          created_at: string | null
+          is_active: boolean | null
+          notes: string | null
+          owner_code: string
+          owner_id: string
+          owner_name_ja: string
+          owner_name_kana: string | null
+          owner_name_romaji: string | null
+          updated_at: string | null
+          updated_by: string | null
+        }
+        Insert: {
+          company_id: string
+          created_at?: string | null
+          is_active?: boolean | null
+          notes?: string | null
+          owner_code: string
+          owner_id?: string
+          owner_name_ja: string
+          owner_name_kana?: string | null
+          owner_name_romaji?: string | null
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Update: {
+          company_id?: string
+          created_at?: string | null
+          is_active?: boolean | null
+          notes?: string | null
+          owner_code?: string
+          owner_id?: string
+          owner_name_ja?: string
+          owner_name_kana?: string | null
+          owner_name_romaji?: string | null
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mold_owners_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["company_id"]
+          },
+        ]
+      }
+      mold_photos: {
+        Row: {
+          created_at: string | null
+          file_path: string
+          notes: string | null
+          photo_id: string
+          photo_type: string | null
+          physical_mold_id: string | null
+          taken_by: string | null
+          taken_date: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          file_path: string
+          notes?: string | null
+          photo_id?: string
+          photo_type?: string | null
+          physical_mold_id?: string | null
+          taken_by?: string | null
+          taken_date?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          file_path?: string
+          notes?: string | null
+          photo_id?: string
+          photo_type?: string | null
+          physical_mold_id?: string | null
+          taken_by?: string | null
+          taken_date?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mold_photos_physical_mold_id_fkey"
+            columns: ["physical_mold_id"]
+            isOneToOne: false
+            referencedRelation: "physical_molds"
+            referencedColumns: ["physical_mold_id"]
+          },
+          {
+            foreignKeyName: "mold_photos_taken_by_fkey"
+            columns: ["taken_by"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["employee_id"]
+          },
+        ]
+      }
+      mold_return_logs: {
+        Row: {
+          created_at: string | null
+          deadline: string | null
+          disposal_request_no: string | null
+          drawing_no: string | null
+          includes_drawing: boolean | null
+          includes_parts: boolean | null
+          includes_receipt: boolean | null
+          mold_code: string | null
+          notes: string | null
+          physical_mold_id: string | null
+          prepared_by: string | null
+          requested_by_company: string | null
+          requested_date: string | null
+          return_id: string
+          shipped_date: string | null
+          shipping_cost: number | null
+          shipping_slip_no: string | null
+          status: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          deadline?: string | null
+          disposal_request_no?: string | null
+          drawing_no?: string | null
+          includes_drawing?: boolean | null
+          includes_parts?: boolean | null
+          includes_receipt?: boolean | null
+          mold_code?: string | null
+          notes?: string | null
+          physical_mold_id?: string | null
+          prepared_by?: string | null
+          requested_by_company?: string | null
+          requested_date?: string | null
+          return_id?: string
+          shipped_date?: string | null
+          shipping_cost?: number | null
+          shipping_slip_no?: string | null
+          status?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          deadline?: string | null
+          disposal_request_no?: string | null
+          drawing_no?: string | null
+          includes_drawing?: boolean | null
+          includes_parts?: boolean | null
+          includes_receipt?: boolean | null
+          mold_code?: string | null
+          notes?: string | null
+          physical_mold_id?: string | null
+          prepared_by?: string | null
+          requested_by_company?: string | null
+          requested_date?: string | null
+          return_id?: string
+          shipped_date?: string | null
+          shipping_cost?: number | null
+          shipping_slip_no?: string | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mold_return_logs_physical_mold_id_fkey"
+            columns: ["physical_mold_id"]
+            isOneToOne: false
+            referencedRelation: "physical_molds"
+            referencedColumns: ["physical_mold_id"]
+          },
+          {
+            foreignKeyName: "mold_return_logs_prepared_by_fkey"
+            columns: ["prepared_by"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["employee_id"]
+          },
+          {
+            foreignKeyName: "mold_return_logs_requested_by_company_fkey"
+            columns: ["requested_by_company"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["company_id"]
+          },
+        ]
+      }
+      mold_revisions: {
+        Row: {
+          change_description: string | null
+          created_at: string | null
+          design_revision_id: string | null
+          effective_date: string | null
+          inherited_from_mold_id: string | null
+          is_active: boolean | null
+          legacy_id: string | null
+          legacy_specs: Json | null
+          product_id: string | null
+          revision_code: string | null
+          revision_id: string
+          revision_name: string
+          revision_reason: string | null
+          updated_at: string | null
+          updated_by: string | null
+        }
+        Insert: {
+          change_description?: string | null
+          created_at?: string | null
+          design_revision_id?: string | null
+          effective_date?: string | null
+          inherited_from_mold_id?: string | null
+          is_active?: boolean | null
+          legacy_id?: string | null
+          legacy_specs?: Json | null
+          product_id?: string | null
+          revision_code?: string | null
+          revision_id?: string
+          revision_name: string
+          revision_reason?: string | null
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Update: {
+          change_description?: string | null
+          created_at?: string | null
+          design_revision_id?: string | null
+          effective_date?: string | null
+          inherited_from_mold_id?: string | null
+          is_active?: boolean | null
+          legacy_id?: string | null
+          legacy_specs?: Json | null
+          product_id?: string | null
+          revision_code?: string | null
+          revision_id?: string
+          revision_name?: string
+          revision_reason?: string | null
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mold_revisions_design_revision_id_fkey"
+            columns: ["design_revision_id"]
+            isOneToOne: false
+            referencedRelation: "design_revisions"
+            referencedColumns: ["revision_id"]
+          },
+          {
+            foreignKeyName: "mold_revisions_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["product_id"]
+          },
+        ]
+      }
+      order_lines: {
+        Row: {
+          charge_type: string | null
+          created_at: string | null
+          delivery_site_id: string | null
+          design_revision_id: string | null
+          due_date: string | null
+          is_free_sample: boolean | null
+          line_id: string
+          line_no: number
+          line_status: string | null
+          material_spec_id: string | null
+          notes: string | null
+          order_id: string
+          packing_style: string | null
+          priority: number | null
+          product_id: string
+          quantity: number
+          ship_date: string | null
+          shipping_notes: string | null
+          unit: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          charge_type?: string | null
+          created_at?: string | null
+          delivery_site_id?: string | null
+          design_revision_id?: string | null
+          due_date?: string | null
+          is_free_sample?: boolean | null
+          line_id?: string
+          line_no: number
+          line_status?: string | null
+          material_spec_id?: string | null
+          notes?: string | null
+          order_id: string
+          packing_style?: string | null
+          priority?: number | null
+          product_id: string
+          quantity: number
+          ship_date?: string | null
+          shipping_notes?: string | null
+          unit?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          charge_type?: string | null
+          created_at?: string | null
+          delivery_site_id?: string | null
+          design_revision_id?: string | null
+          due_date?: string | null
+          is_free_sample?: boolean | null
+          line_id?: string
+          line_no?: number
+          line_status?: string | null
+          material_spec_id?: string | null
+          notes?: string | null
+          order_id?: string
+          packing_style?: string | null
+          priority?: number | null
+          product_id?: string
+          quantity?: number
+          ship_date?: string | null
+          shipping_notes?: string | null
+          unit?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_lines_delivery_site_id_fkey"
+            columns: ["delivery_site_id"]
+            isOneToOne: false
+            referencedRelation: "delivery_sites"
+            referencedColumns: ["site_id"]
+          },
+          {
+            foreignKeyName: "order_lines_design_revision_id_fkey"
+            columns: ["design_revision_id"]
+            isOneToOne: false
+            referencedRelation: "design_revisions"
+            referencedColumns: ["revision_id"]
+          },
+          {
+            foreignKeyName: "order_lines_material_spec_id_fkey"
+            columns: ["material_spec_id"]
+            isOneToOne: false
+            referencedRelation: "product_material_specs"
+            referencedColumns: ["spec_id"]
+          },
+          {
+            foreignKeyName: "order_lines_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["order_id"]
+          },
+          {
+            foreignKeyName: "order_lines_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["product_id"]
+          },
+        ]
+      }
+      orders: {
+        Row: {
+          company_id: string
+          company_po: string | null
+          created_at: string | null
+          customer_order_no: string | null
+          customer_product_code: string | null
+          legacy_id: string | null
+          lot_no: string | null
+          mold_code_ref: string | null
+          notes: string | null
+          order_date: string
+          order_id: string
+          order_no: string
+          order_source: string | null
+          order_status: string | null
+          order_type: string | null
+          recipient_name: string | null
+          requested_delivery: string | null
+          updated_at: string | null
+          updated_by: string | null
+        }
+        Insert: {
+          company_id: string
+          company_po?: string | null
+          created_at?: string | null
+          customer_order_no?: string | null
+          customer_product_code?: string | null
+          legacy_id?: string | null
+          lot_no?: string | null
+          mold_code_ref?: string | null
+          notes?: string | null
+          order_date: string
+          order_id?: string
+          order_no: string
+          order_source?: string | null
+          order_status?: string | null
+          order_type?: string | null
+          recipient_name?: string | null
+          requested_delivery?: string | null
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Update: {
+          company_id?: string
+          company_po?: string | null
+          created_at?: string | null
+          customer_order_no?: string | null
+          customer_product_code?: string | null
+          legacy_id?: string | null
+          lot_no?: string | null
+          mold_code_ref?: string | null
+          notes?: string | null
+          order_date?: string
+          order_id?: string
+          order_no?: string
+          order_source?: string | null
+          order_status?: string | null
+          order_type?: string | null
+          recipient_name?: string | null
+          requested_delivery?: string | null
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orders_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["company_id"]
+          },
+        ]
+      }
+      physical_molds: {
+        Row: {
+          actual_height_mm: string | null
+          actual_length_mm: string | null
+          actual_weight: string | null
+          actual_width_mm: string | null
+          cav_type_id: string | null
+          copy_number: number | null
+          created_at: string | null
+          current_rack_layer_id: string | null
+          device_status: string | null
+          display_name: string
+          disposed_date: string | null
+          keeper_company_id: string | null
+          last_inventory_date: string | null
+          legacy_id: string | null
+          legacy_specs: Json | null
+          manufacturing_date: string | null
+          mold_entry_date: string | null
+          mold_revision_id: string | null
+          mold_type: string | null
+          notes: string | null
+          on_checklist: boolean | null
+          photo_url: string | null
+          physical_mold_id: string
+          physical_stamp: string | null
+          piece_count: number | null
+          qr_uuid: string | null
+          returned_date: string | null
+          surface_treatment: string | null
+          system_code: string
+          updated_at: string | null
+          updated_by: string | null
+          usage_status: string | null
+        }
+        Insert: {
+          actual_height_mm?: string | null
+          actual_length_mm?: string | null
+          actual_weight?: string | null
+          actual_width_mm?: string | null
+          cav_type_id?: string | null
+          copy_number?: number | null
+          created_at?: string | null
+          current_rack_layer_id?: string | null
+          device_status?: string | null
+          display_name: string
+          disposed_date?: string | null
+          keeper_company_id?: string | null
+          last_inventory_date?: string | null
+          legacy_id?: string | null
+          legacy_specs?: Json | null
+          manufacturing_date?: string | null
+          mold_entry_date?: string | null
+          mold_revision_id?: string | null
+          mold_type?: string | null
+          notes?: string | null
+          on_checklist?: boolean | null
+          photo_url?: string | null
+          physical_mold_id?: string
+          physical_stamp?: string | null
+          piece_count?: number | null
+          qr_uuid?: string | null
+          returned_date?: string | null
+          surface_treatment?: string | null
+          system_code: string
+          updated_at?: string | null
+          updated_by?: string | null
+          usage_status?: string | null
+        }
+        Update: {
+          actual_height_mm?: string | null
+          actual_length_mm?: string | null
+          actual_weight?: string | null
+          actual_width_mm?: string | null
+          cav_type_id?: string | null
+          copy_number?: number | null
+          created_at?: string | null
+          current_rack_layer_id?: string | null
+          device_status?: string | null
+          display_name?: string
+          disposed_date?: string | null
+          keeper_company_id?: string | null
+          last_inventory_date?: string | null
+          legacy_id?: string | null
+          legacy_specs?: Json | null
+          manufacturing_date?: string | null
+          mold_entry_date?: string | null
+          mold_revision_id?: string | null
+          mold_type?: string | null
+          notes?: string | null
+          on_checklist?: boolean | null
+          photo_url?: string | null
+          physical_mold_id?: string
+          physical_stamp?: string | null
+          piece_count?: number | null
+          qr_uuid?: string | null
+          returned_date?: string | null
+          surface_treatment?: string | null
+          system_code?: string
+          updated_at?: string | null
+          updated_by?: string | null
+          usage_status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "physical_molds_cav_type_id_fkey"
+            columns: ["cav_type_id"]
+            isOneToOne: false
+            referencedRelation: "cav_types"
+            referencedColumns: ["cav_type_id"]
+          },
+          {
+            foreignKeyName: "physical_molds_current_rack_layer_id_fkey"
+            columns: ["current_rack_layer_id"]
+            isOneToOne: false
+            referencedRelation: "rack_layers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "physical_molds_keeper_company_id_fkey"
+            columns: ["keeper_company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "physical_molds_mold_revision_id_fkey"
+            columns: ["mold_revision_id"]
+            isOneToOne: false
+            referencedRelation: "mold_revisions"
+            referencedColumns: ["revision_id"]
+          },
+        ]
+      }
+      plastic_adjustment_log: {
+        Row: {
+          action_type: string
+          change_length_m: number
+          created_at: string | null
+          id: string
+          note: string | null
+          operator_name: string | null
+          roll_id: string
+          work_log_id: string | null
+        }
+        Insert: {
+          action_type: string
+          change_length_m: number
+          created_at?: string | null
+          id?: string
+          note?: string | null
+          operator_name?: string | null
+          roll_id: string
+          work_log_id?: string | null
+        }
+        Update: {
+          action_type?: string
+          change_length_m?: number
+          created_at?: string | null
+          id?: string
+          note?: string | null
+          operator_name?: string | null
+          roll_id?: string
+          work_log_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plastic_adjustment_log_roll_id_fkey"
+            columns: ["roll_id"]
+            isOneToOne: false
+            referencedRelation: "plastic_receipt_roll"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      plastic_manufacturer_map: {
+        Row: {
+          commercial_grade_code: string
+          created_at: string | null
+          is_active: boolean | null
+          map_id: string
+          mapping_status: string | null
+          note: string | null
+          plastic_id: string | null
+          price_jpy_per_kg: number | null
+          specific_gravity_kg_m3: number | null
+          supplier_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          commercial_grade_code: string
+          created_at?: string | null
+          is_active?: boolean | null
+          map_id?: string
+          mapping_status?: string | null
+          note?: string | null
+          plastic_id?: string | null
+          price_jpy_per_kg?: number | null
+          specific_gravity_kg_m3?: number | null
+          supplier_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          commercial_grade_code?: string
+          created_at?: string | null
+          is_active?: boolean | null
+          map_id?: string
+          mapping_status?: string | null
+          note?: string | null
+          plastic_id?: string | null
+          price_jpy_per_kg?: number | null
+          specific_gravity_kg_m3?: number | null
+          supplier_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plastic_manufacturer_map_plastic_id_fkey"
+            columns: ["plastic_id"]
+            isOneToOne: false
+            referencedRelation: "plastic_master"
+            referencedColumns: ["plastic_id"]
+          },
+          {
+            foreignKeyName: "plastic_manufacturer_map_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["supplier_id"]
+          },
+        ]
+      }
+      plastic_master: {
+        Row: {
+          additive_flags: string | null
+          additive_text_raw: string | null
+          appearance_text_raw: string | null
+          color_code_raw: string | null
+          color_name_normalized: string | null
+          created_at: string | null
+          electrical_property: string | null
+          is_active: boolean | null
+          plastic_code: string
+          plastic_family: string
+          plastic_id: string
+          plastic_subtype: string | null
+          remarks_raw: string | null
+          silicone_status_normalized: string | null
+          standard_length_m: number | null
+          status_review: string | null
+          thickness_mm: number
+          updated_at: string | null
+          width_mm: number
+        }
+        Insert: {
+          additive_flags?: string | null
+          additive_text_raw?: string | null
+          appearance_text_raw?: string | null
+          color_code_raw?: string | null
+          color_name_normalized?: string | null
+          created_at?: string | null
+          electrical_property?: string | null
+          is_active?: boolean | null
+          plastic_code: string
+          plastic_family: string
+          plastic_id?: string
+          plastic_subtype?: string | null
+          remarks_raw?: string | null
+          silicone_status_normalized?: string | null
+          standard_length_m?: number | null
+          status_review?: string | null
+          thickness_mm: number
+          updated_at?: string | null
+          width_mm: number
+        }
+        Update: {
+          additive_flags?: string | null
+          additive_text_raw?: string | null
+          appearance_text_raw?: string | null
+          color_code_raw?: string | null
+          color_name_normalized?: string | null
+          created_at?: string | null
+          electrical_property?: string | null
+          is_active?: boolean | null
+          plastic_code?: string
+          plastic_family?: string
+          plastic_id?: string
+          plastic_subtype?: string | null
+          remarks_raw?: string | null
+          silicone_status_normalized?: string | null
+          standard_length_m?: number | null
+          status_review?: string | null
+          thickness_mm?: number
+          updated_at?: string | null
+          width_mm?: number
+        }
+        Relationships: []
+      }
+      plastic_receipt: {
+        Row: {
+          created_at: string | null
+          id: string
+          note: string | null
+          receipt_date: string
+          receipt_no: string
+          supplier_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          note?: string | null
+          receipt_date: string
+          receipt_no: string
+          supplier_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          note?: string | null
+          receipt_date?: string
+          receipt_no?: string
+          supplier_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      plastic_receipt_roll: {
+        Row: {
+          branch_id: string | null
+          commercial_grade_code: string | null
+          created_at: string | null
+          current_length_m: number
+          id: string
+          location: string | null
+          lot_no: string | null
+          nominal_length_m: number
+          notes: string | null
+          plastic_id: string | null
+          receipt_id: string | null
+          received_length_m: number
+          roll_barcode: string
+          status: string | null
+          supplier_name: string | null
+          updated_at: string | null
+          warehouse_location: string | null
+        }
+        Insert: {
+          branch_id?: string | null
+          commercial_grade_code?: string | null
+          created_at?: string | null
+          current_length_m: number
+          id?: string
+          location?: string | null
+          lot_no?: string | null
+          nominal_length_m: number
+          notes?: string | null
+          plastic_id?: string | null
+          receipt_id?: string | null
+          received_length_m: number
+          roll_barcode: string
+          status?: string | null
+          supplier_name?: string | null
+          updated_at?: string | null
+          warehouse_location?: string | null
+        }
+        Update: {
+          branch_id?: string | null
+          commercial_grade_code?: string | null
+          created_at?: string | null
+          current_length_m?: number
+          id?: string
+          location?: string | null
+          lot_no?: string | null
+          nominal_length_m?: number
+          notes?: string | null
+          plastic_id?: string | null
+          receipt_id?: string | null
+          received_length_m?: number
+          roll_barcode?: string
+          status?: string | null
+          supplier_name?: string | null
+          updated_at?: string | null
+          warehouse_location?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plastic_receipt_roll_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "plastic_receipt_roll_plastic_id_fkey"
+            columns: ["plastic_id"]
+            isOneToOne: false
+            referencedRelation: "plastic_master"
+            referencedColumns: ["plastic_id"]
+          },
+          {
+            foreignKeyName: "plastic_receipt_roll_receipt_id_fkey"
+            columns: ["receipt_id"]
+            isOneToOne: false
+            referencedRelation: "plastic_receipt"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      processing_codes: {
+        Row: {
+          category: string | null
+          created_at: string | null
+          is_active: boolean | null
+          processing_code_id: number
+          processing_name: string
+          sort_note: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string | null
+          is_active?: boolean | null
+          processing_code_id: number
+          processing_name: string
+          sort_note?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          category?: string | null
+          created_at?: string | null
+          is_active?: boolean | null
+          processing_code_id?: number
+          processing_name?: string
+          sort_note?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      processing_items: {
+        Row: {
+          description: string | null
+          item_name: string
+          notes: string | null
+          processing_item_id: number
+        }
+        Insert: {
+          description?: string | null
+          item_name: string
+          notes?: string | null
+          processing_item_id?: number
+        }
+        Update: {
+          description?: string | null
+          item_name?: string
+          notes?: string | null
+          processing_item_id?: number
+        }
+        Relationships: []
+      }
+      processing_statuses: {
+        Row: {
+          status_code: string
+          status_id: number
+          status_name_vi: string | null
+        }
+        Insert: {
+          status_code: string
+          status_id?: number
+          status_name_vi?: string | null
+        }
+        Update: {
+          status_code?: string
+          status_id?: number
+          status_name_vi?: string | null
+        }
+        Relationships: []
+      }
+      product_material_specs: {
+        Row: {
+          coating: string | null
+          component_name: string | null
+          created_at: string | null
+          handling_notes: string | null
+          is_default: boolean | null
+          material_grade: string | null
+          material_type: string
+          notes: string | null
+          product_id: string
+          sheet_width_mm: number | null
+          silicone: string | null
+          spec_id: string
+          static_charge: string | null
+          thickness_mm: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          coating?: string | null
+          component_name?: string | null
+          created_at?: string | null
+          handling_notes?: string | null
+          is_default?: boolean | null
+          material_grade?: string | null
+          material_type: string
+          notes?: string | null
+          product_id: string
+          sheet_width_mm?: number | null
+          silicone?: string | null
+          spec_id?: string
+          static_charge?: string | null
+          thickness_mm?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          coating?: string | null
+          component_name?: string | null
+          created_at?: string | null
+          handling_notes?: string | null
+          is_default?: boolean | null
+          material_grade?: string | null
+          material_type?: string
+          notes?: string | null
+          product_id?: string
+          sheet_width_mm?: number | null
+          silicone?: string | null
+          spec_id?: string
+          static_charge?: string | null
+          thickness_mm?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_material_specs_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["product_id"]
+          },
+        ]
+      }
+      production_logs: {
+        Row: {
+          created_at: string | null
+          defect_quantity: number | null
+          end_time: string | null
+          forming_params_json: Json | null
+          log_date: string
+          log_id: string
+          lot_id: string | null
+          machine_id: string | null
+          notes: string | null
+          operator_id: string | null
+          output_quantity: number | null
+          po_id: string | null
+          start_time: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          defect_quantity?: number | null
+          end_time?: string | null
+          forming_params_json?: Json | null
+          log_date: string
+          log_id?: string
+          lot_id?: string | null
+          machine_id?: string | null
+          notes?: string | null
+          operator_id?: string | null
+          output_quantity?: number | null
+          po_id?: string | null
+          start_time?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          defect_quantity?: number | null
+          end_time?: string | null
+          forming_params_json?: Json | null
+          log_date?: string
+          log_id?: string
+          lot_id?: string | null
+          machine_id?: string | null
+          notes?: string | null
+          operator_id?: string | null
+          output_quantity?: number | null
+          po_id?: string | null
+          start_time?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "production_logs_lot_id_fkey"
+            columns: ["lot_id"]
+            isOneToOne: false
+            referencedRelation: "production_lots"
+            referencedColumns: ["lot_id"]
+          },
+          {
+            foreignKeyName: "production_logs_machine_id_fkey"
+            columns: ["machine_id"]
+            isOneToOne: false
+            referencedRelation: "machines"
+            referencedColumns: ["machine_id"]
+          },
+          {
+            foreignKeyName: "production_logs_operator_id_fkey"
+            columns: ["operator_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["employee_id"]
+          },
+          {
+            foreignKeyName: "production_logs_po_id_fkey"
+            columns: ["po_id"]
+            isOneToOne: false
+            referencedRelation: "production_orders"
+            referencedColumns: ["po_id"]
+          },
+        ]
+      }
+      production_lots: {
+        Row: {
+          created_at: string | null
+          end_time: string | null
+          good_quantity: number | null
+          input_quantity: number | null
+          lot_id: string
+          lot_no: string
+          lot_status: string | null
+          machine_id: string | null
+          ng_quantity: number | null
+          notes: string | null
+          operator_id: string | null
+          package_spec: string | null
+          po_id: string
+          scrap_quantity: number | null
+          ship_date: string | null
+          start_time: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          end_time?: string | null
+          good_quantity?: number | null
+          input_quantity?: number | null
+          lot_id?: string
+          lot_no: string
+          lot_status?: string | null
+          machine_id?: string | null
+          ng_quantity?: number | null
+          notes?: string | null
+          operator_id?: string | null
+          package_spec?: string | null
+          po_id: string
+          scrap_quantity?: number | null
+          ship_date?: string | null
+          start_time?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          end_time?: string | null
+          good_quantity?: number | null
+          input_quantity?: number | null
+          lot_id?: string
+          lot_no?: string
+          lot_status?: string | null
+          machine_id?: string | null
+          ng_quantity?: number | null
+          notes?: string | null
+          operator_id?: string | null
+          package_spec?: string | null
+          po_id?: string
+          scrap_quantity?: number | null
+          ship_date?: string | null
+          start_time?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "production_lots_machine_id_fkey"
+            columns: ["machine_id"]
+            isOneToOne: false
+            referencedRelation: "machines"
+            referencedColumns: ["machine_id"]
+          },
+          {
+            foreignKeyName: "production_lots_operator_id_fkey"
+            columns: ["operator_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["employee_id"]
+          },
+          {
+            foreignKeyName: "production_lots_po_id_fkey"
+            columns: ["po_id"]
+            isOneToOne: false
+            referencedRelation: "production_orders"
+            referencedColumns: ["po_id"]
+          },
+        ]
+      }
+      production_orders: {
+        Row: {
+          actual_end: string | null
+          actual_quantity: number | null
+          actual_start: string | null
+          approved_by_manager: string | null
+          approved_by_mold_shop: string | null
+          approved_by_molding_shop: string | null
+          approved_by_procurement: string | null
+          approved_by_qc: string | null
+          cavities_per_mold: number | null
+          created_at: string | null
+          cutter_id: string | null
+          forming_location: string | null
+          machine_id: string | null
+          material_thickness: number | null
+          material_type: string | null
+          material_width: number | null
+          mold_sets_to_make: number | null
+          notes: string | null
+          order_line_id: string | null
+          physical_mold_id: string | null
+          planned_end: string | null
+          planned_quantity: number | null
+          planned_start: string | null
+          po_code: string
+          po_id: string
+          po_status: string | null
+          po_type: string | null
+          priority: number | null
+          req_aluminum_date: string | null
+          req_cutter_date: string | null
+          req_mold_date: string | null
+          req_molding_date: string | null
+          req_plug_date: string | null
+          updated_at: string | null
+          updated_by: string | null
+        }
+        Insert: {
+          actual_end?: string | null
+          actual_quantity?: number | null
+          actual_start?: string | null
+          approved_by_manager?: string | null
+          approved_by_mold_shop?: string | null
+          approved_by_molding_shop?: string | null
+          approved_by_procurement?: string | null
+          approved_by_qc?: string | null
+          cavities_per_mold?: number | null
+          created_at?: string | null
+          cutter_id?: string | null
+          forming_location?: string | null
+          machine_id?: string | null
+          material_thickness?: number | null
+          material_type?: string | null
+          material_width?: number | null
+          mold_sets_to_make?: number | null
+          notes?: string | null
+          order_line_id?: string | null
+          physical_mold_id?: string | null
+          planned_end?: string | null
+          planned_quantity?: number | null
+          planned_start?: string | null
+          po_code: string
+          po_id?: string
+          po_status?: string | null
+          po_type?: string | null
+          priority?: number | null
+          req_aluminum_date?: string | null
+          req_cutter_date?: string | null
+          req_mold_date?: string | null
+          req_molding_date?: string | null
+          req_plug_date?: string | null
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Update: {
+          actual_end?: string | null
+          actual_quantity?: number | null
+          actual_start?: string | null
+          approved_by_manager?: string | null
+          approved_by_mold_shop?: string | null
+          approved_by_molding_shop?: string | null
+          approved_by_procurement?: string | null
+          approved_by_qc?: string | null
+          cavities_per_mold?: number | null
+          created_at?: string | null
+          cutter_id?: string | null
+          forming_location?: string | null
+          machine_id?: string | null
+          material_thickness?: number | null
+          material_type?: string | null
+          material_width?: number | null
+          mold_sets_to_make?: number | null
+          notes?: string | null
+          order_line_id?: string | null
+          physical_mold_id?: string | null
+          planned_end?: string | null
+          planned_quantity?: number | null
+          planned_start?: string | null
+          po_code?: string
+          po_id?: string
+          po_status?: string | null
+          po_type?: string | null
+          priority?: number | null
+          req_aluminum_date?: string | null
+          req_cutter_date?: string | null
+          req_mold_date?: string | null
+          req_molding_date?: string | null
+          req_plug_date?: string | null
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "production_orders_approved_by_manager_fkey"
+            columns: ["approved_by_manager"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["employee_id"]
+          },
+          {
+            foreignKeyName: "production_orders_approved_by_mold_shop_fkey"
+            columns: ["approved_by_mold_shop"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["employee_id"]
+          },
+          {
+            foreignKeyName: "production_orders_approved_by_molding_shop_fkey"
+            columns: ["approved_by_molding_shop"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["employee_id"]
+          },
+          {
+            foreignKeyName: "production_orders_approved_by_procurement_fkey"
+            columns: ["approved_by_procurement"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["employee_id"]
+          },
+          {
+            foreignKeyName: "production_orders_approved_by_qc_fkey"
+            columns: ["approved_by_qc"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["employee_id"]
+          },
+          {
+            foreignKeyName: "production_orders_cutter_id_fkey"
+            columns: ["cutter_id"]
+            isOneToOne: false
+            referencedRelation: "cutters"
+            referencedColumns: ["cutter_id"]
+          },
+          {
+            foreignKeyName: "production_orders_machine_id_fkey"
+            columns: ["machine_id"]
+            isOneToOne: false
+            referencedRelation: "machines"
+            referencedColumns: ["machine_id"]
+          },
+          {
+            foreignKeyName: "production_orders_order_line_id_fkey"
+            columns: ["order_line_id"]
+            isOneToOne: false
+            referencedRelation: "order_lines"
+            referencedColumns: ["line_id"]
+          },
+          {
+            foreignKeyName: "production_orders_physical_mold_id_fkey"
+            columns: ["physical_mold_id"]
+            isOneToOne: false
+            referencedRelation: "physical_molds"
+            referencedColumns: ["physical_mold_id"]
+          },
+        ]
+      }
+      production_schedules: {
+        Row: {
+          created_at: string | null
+          machine_id: string
+          mold_id: string | null
+          notes: string | null
+          order_line_id: string | null
+          planned_quantity: number | null
+          product_id: string | null
+          schedule_date: string
+          schedule_id: string
+          shift: string | null
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          machine_id: string
+          mold_id?: string | null
+          notes?: string | null
+          order_line_id?: string | null
+          planned_quantity?: number | null
+          product_id?: string | null
+          schedule_date: string
+          schedule_id?: string
+          shift?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          machine_id?: string
+          mold_id?: string | null
+          notes?: string | null
+          order_line_id?: string | null
+          planned_quantity?: number | null
+          product_id?: string | null
+          schedule_date?: string
+          schedule_id?: string
+          shift?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "production_schedules_machine_id_fkey"
+            columns: ["machine_id"]
+            isOneToOne: false
+            referencedRelation: "machines"
+            referencedColumns: ["machine_id"]
+          },
+          {
+            foreignKeyName: "production_schedules_mold_id_fkey"
+            columns: ["mold_id"]
+            isOneToOne: false
+            referencedRelation: "physical_molds"
+            referencedColumns: ["physical_mold_id"]
+          },
+          {
+            foreignKeyName: "production_schedules_order_line_id_fkey"
+            columns: ["order_line_id"]
+            isOneToOne: false
+            referencedRelation: "order_lines"
+            referencedColumns: ["line_id"]
+          },
+          {
+            foreignKeyName: "production_schedules_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["product_id"]
+          },
+        ]
+      }
+      products: {
+        Row: {
+          box_spec: string | null
+          company_id: string
+          created_at: string | null
+          customer_product_name: string | null
+          date_entry: string | null
+          legacy_id: string | null
+          legacy_specs: Json | null
+          mold_master_id: string | null
+          notes: string | null
+          pieces_per_box: number | null
+          pocket_count: number | null
+          product_code: string
+          product_description: string | null
+          product_id: string
+          product_name: string | null
+          product_name_en: string | null
+          product_name_internal: string | null
+          product_status: string | null
+          updated_at: string | null
+          updated_by: string | null
+        }
+        Insert: {
+          box_spec?: string | null
+          company_id: string
+          created_at?: string | null
+          customer_product_name?: string | null
+          date_entry?: string | null
+          legacy_id?: string | null
+          legacy_specs?: Json | null
+          mold_master_id?: string | null
+          notes?: string | null
+          pieces_per_box?: number | null
+          pocket_count?: number | null
+          product_code: string
+          product_description?: string | null
+          product_id?: string
+          product_name?: string | null
+          product_name_en?: string | null
+          product_name_internal?: string | null
+          product_status?: string | null
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Update: {
+          box_spec?: string | null
+          company_id?: string
+          created_at?: string | null
+          customer_product_name?: string | null
+          date_entry?: string | null
+          legacy_id?: string | null
+          legacy_specs?: Json | null
+          mold_master_id?: string | null
+          notes?: string | null
+          pieces_per_box?: number | null
+          pocket_count?: number | null
+          product_code?: string
+          product_description?: string | null
+          product_id?: string
+          product_name?: string | null
+          product_name_en?: string | null
+          product_name_internal?: string | null
+          product_status?: string | null
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "products_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["company_id"]
+          },
+        ]
+      }
+      quotations: {
+        Row: {
+          company_id: string
+          created_at: string | null
+          file_path: string | null
+          notes: string | null
+          quotation_id: string
+          quotation_no: string
+          quote_date: string
+          status: string | null
+          total_amount: number | null
+          updated_at: string | null
+          valid_until: string | null
+        }
+        Insert: {
+          company_id: string
+          created_at?: string | null
+          file_path?: string | null
+          notes?: string | null
+          quotation_id?: string
+          quotation_no: string
+          quote_date: string
+          status?: string | null
+          total_amount?: number | null
+          updated_at?: string | null
+          valid_until?: string | null
+        }
+        Update: {
+          company_id?: string
+          created_at?: string | null
+          file_path?: string | null
+          notes?: string | null
+          quotation_id?: string
+          quotation_no?: string
+          quote_date?: string
+          status?: string | null
+          total_amount?: number | null
+          updated_at?: string | null
+          valid_until?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quotations_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["company_id"]
+          },
+        ]
+      }
+      rack_layers: {
+        Row: {
+          id: string
+          layer_code: string
+          layer_number: number
+          legacy_id: string | null
+          notes: string | null
+          rack_id: string | null
+        }
+        Insert: {
+          id?: string
+          layer_code: string
+          layer_number: number
+          legacy_id?: string | null
+          notes?: string | null
+          rack_id?: string | null
+        }
+        Update: {
+          id?: string
+          layer_code?: string
+          layer_number?: number
+          legacy_id?: string | null
+          notes?: string | null
+          rack_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rack_layers_rack_id_fkey"
+            columns: ["rack_id"]
+            isOneToOne: false
+            referencedRelation: "racks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      racks: {
+        Row: {
+          created_at: string | null
+          id: string
+          legacy_id: string | null
+          location_in_factory: string | null
+          notes: string | null
+          rack_code: string
+          rack_name: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          legacy_id?: string | null
+          location_in_factory?: string | null
+          notes?: string | null
+          rack_code: string
+          rack_name?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          legacy_id?: string | null
+          location_in_factory?: string | null
+          notes?: string | null
+          rack_code?: string
+          rack_name?: string | null
+        }
+        Relationships: []
+      }
+      sample_submissions: {
+        Row: {
+          bagging_required: boolean | null
+          box_type: string | null
+          company_result: string | null
+          created_at: string | null
+          delivery_company: string | null
+          feedback_date: string | null
+          feedback_notes: string | null
+          free_quantity: number | null
+          job_id: string | null
+          mass_production_hold: boolean | null
+          mass_production_released: string | null
+          materials_json: Json | null
+          mold_owner_id: string | null
+          notes: string | null
+          office_quantity: number | null
+          packaging_instructions: string | null
+          product_id: string | null
+          sample_quantity: number | null
+          sample_type: string | null
+          shipped_date: string | null
+          submission_id: string
+          tracking_no: string | null
+        }
+        Insert: {
+          bagging_required?: boolean | null
+          box_type?: string | null
+          company_result?: string | null
+          created_at?: string | null
+          delivery_company?: string | null
+          feedback_date?: string | null
+          feedback_notes?: string | null
+          free_quantity?: number | null
+          job_id?: string | null
+          mass_production_hold?: boolean | null
+          mass_production_released?: string | null
+          materials_json?: Json | null
+          mold_owner_id?: string | null
+          notes?: string | null
+          office_quantity?: number | null
+          packaging_instructions?: string | null
+          product_id?: string | null
+          sample_quantity?: number | null
+          sample_type?: string | null
+          shipped_date?: string | null
+          submission_id?: string
+          tracking_no?: string | null
+        }
+        Update: {
+          bagging_required?: boolean | null
+          box_type?: string | null
+          company_result?: string | null
+          created_at?: string | null
+          delivery_company?: string | null
+          feedback_date?: string | null
+          feedback_notes?: string | null
+          free_quantity?: number | null
+          job_id?: string | null
+          mass_production_hold?: boolean | null
+          mass_production_released?: string | null
+          materials_json?: Json | null
+          mold_owner_id?: string | null
+          notes?: string | null
+          office_quantity?: number | null
+          packaging_instructions?: string | null
+          product_id?: string | null
+          sample_quantity?: number | null
+          sample_type?: string | null
+          shipped_date?: string | null
+          submission_id?: string
+          tracking_no?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_sample_submissions_job"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["job_id"]
+          },
+          {
+            foreignKeyName: "sample_submissions_mold_owner_id_fkey"
+            columns: ["mold_owner_id"]
+            isOneToOne: false
+            referencedRelation: "mold_owners"
+            referencedColumns: ["owner_id"]
+          },
+          {
+            foreignKeyName: "sample_submissions_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["product_id"]
+          },
+        ]
+      }
+      shipments: {
+        Row: {
+          created_at: string | null
+          delivery_method: string | null
+          delivery_note_no: string | null
+          delivery_site_id: string | null
+          invoice_no: string | null
+          notes: string | null
+          order_id: string | null
+          ship_date: string
+          shipment_id: string
+          shipped_by: string | null
+          status: string | null
+          tracking_no: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          delivery_method?: string | null
+          delivery_note_no?: string | null
+          delivery_site_id?: string | null
+          invoice_no?: string | null
+          notes?: string | null
+          order_id?: string | null
+          ship_date: string
+          shipment_id?: string
+          shipped_by?: string | null
+          status?: string | null
+          tracking_no?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          delivery_method?: string | null
+          delivery_note_no?: string | null
+          delivery_site_id?: string | null
+          invoice_no?: string | null
+          notes?: string | null
+          order_id?: string | null
+          ship_date?: string
+          shipment_id?: string
+          shipped_by?: string | null
+          status?: string | null
+          tracking_no?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shipments_delivery_site_id_fkey"
+            columns: ["delivery_site_id"]
+            isOneToOne: false
+            referencedRelation: "delivery_sites"
+            referencedColumns: ["site_id"]
+          },
+          {
+            foreignKeyName: "shipments_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["order_id"]
+          },
+          {
+            foreignKeyName: "shipments_shipped_by_fkey"
+            columns: ["shipped_by"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["employee_id"]
+          },
+        ]
+      }
+      standard_process_times: {
+        Row: {
+          default_hours: number
+          default_hours_trial: number | null
+          id: string
+          is_active: boolean | null
+          machine_type_required: string | null
+          notes: string | null
+          process_code: string
+          process_name_ja: string
+          process_name_vi: string | null
+          sort_order: number
+          track: string
+        }
+        Insert: {
+          default_hours: number
+          default_hours_trial?: number | null
+          id?: string
+          is_active?: boolean | null
+          machine_type_required?: string | null
+          notes?: string | null
+          process_code: string
+          process_name_ja: string
+          process_name_vi?: string | null
+          sort_order?: number
+          track?: string
+        }
+        Update: {
+          default_hours?: number
+          default_hours_trial?: number | null
+          id?: string
+          is_active?: boolean | null
+          machine_type_required?: string | null
+          notes?: string | null
+          process_code?: string
+          process_name_ja?: string
+          process_name_vi?: string | null
+          sort_order?: number
+          track?: string
+        }
+        Relationships: []
+      }
+      suppliers: {
+        Row: {
+          contact_info: string | null
+          created_at: string | null
+          is_active: boolean | null
+          note: string | null
+          short_name: string | null
+          supplier_code: string
+          supplier_id: string
+          supplier_name: string
+          updated_at: string | null
+        }
+        Insert: {
+          contact_info?: string | null
+          created_at?: string | null
+          is_active?: boolean | null
+          note?: string | null
+          short_name?: string | null
+          supplier_code: string
+          supplier_id?: string
+          supplier_name: string
+          updated_at?: string | null
+        }
+        Update: {
+          contact_info?: string | null
+          created_at?: string | null
+          is_active?: boolean | null
+          note?: string | null
+          short_name?: string | null
+          supplier_code?: string
+          supplier_id?: string
+          supplier_name?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      tray_inspections: {
+        Row: {
+          certificate_file: string | null
+          certificate_no: string | null
+          certificate_type: string | null
+          company_approved: boolean | null
+          company_approved_date: string | null
+          created_at: string | null
+          inspected_by: string | null
+          inspected_date: string | null
+          inspection_id: string
+          inspection_stage: string | null
+          inspection_type: string
+          issued_by: string | null
+          issued_date: string | null
+          job_id: string | null
+          measurement_data: Json | null
+          notes: string | null
+          pass_fail: string | null
+          product_id: string | null
+          tolerance_data: Json | null
+        }
+        Insert: {
+          certificate_file?: string | null
+          certificate_no?: string | null
+          certificate_type?: string | null
+          company_approved?: boolean | null
+          company_approved_date?: string | null
+          created_at?: string | null
+          inspected_by?: string | null
+          inspected_date?: string | null
+          inspection_id?: string
+          inspection_stage?: string | null
+          inspection_type: string
+          issued_by?: string | null
+          issued_date?: string | null
+          job_id?: string | null
+          measurement_data?: Json | null
+          notes?: string | null
+          pass_fail?: string | null
+          product_id?: string | null
+          tolerance_data?: Json | null
+        }
+        Update: {
+          certificate_file?: string | null
+          certificate_no?: string | null
+          certificate_type?: string | null
+          company_approved?: boolean | null
+          company_approved_date?: string | null
+          created_at?: string | null
+          inspected_by?: string | null
+          inspected_date?: string | null
+          inspection_id?: string
+          inspection_stage?: string | null
+          inspection_type?: string
+          issued_by?: string | null
+          issued_date?: string | null
+          job_id?: string | null
+          measurement_data?: Json | null
+          notes?: string | null
+          pass_fail?: string | null
+          product_id?: string | null
+          tolerance_data?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_tray_inspections_job"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["job_id"]
+          },
+          {
+            foreignKeyName: "tray_inspections_inspected_by_fkey"
+            columns: ["inspected_by"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["employee_id"]
+          },
+          {
+            foreignKeyName: "tray_inspections_issued_by_fkey"
+            columns: ["issued_by"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["employee_id"]
+          },
+          {
+            foreignKeyName: "tray_inspections_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["product_id"]
+          },
+        ]
+      }
+      tray_samples: {
+        Row: {
+          created_at: string | null
+          current_rack_layer_id: string | null
+          id: string
+          is_approved: boolean | null
+          job_id: string | null
+          measured_weight_g: number | null
+          measurement_data: Json | null
+          product_id: string | null
+          taken_by: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          current_rack_layer_id?: string | null
+          id?: string
+          is_approved?: boolean | null
+          job_id?: string | null
+          measured_weight_g?: number | null
+          measurement_data?: Json | null
+          product_id?: string | null
+          taken_by?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          current_rack_layer_id?: string | null
+          id?: string
+          is_approved?: boolean | null
+          job_id?: string | null
+          measured_weight_g?: number | null
+          measurement_data?: Json | null
+          product_id?: string | null
+          taken_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_tray_samples_job"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["job_id"]
+          },
+          {
+            foreignKeyName: "tray_samples_current_rack_layer_id_fkey"
+            columns: ["current_rack_layer_id"]
+            isOneToOne: false
+            referencedRelation: "rack_layers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tray_samples_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "tray_samples_taken_by_fkey"
+            columns: ["taken_by"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["employee_id"]
+          },
+        ]
+      }
+      work_logs: {
+        Row: {
+          company_id: string | null
+          contact_content: string | null
+          created_at: string | null
+          description: string | null
+          employee_id: string
+          hours_spent: number | null
+          is_finished: boolean | null
+          job_id: string
+          job_step_id: string | null
+          log_id: string
+          machine_id: string | null
+          notes: string | null
+          planned_date: string | null
+          planned_hours: number | null
+          processing_code_id: number | null
+          processing_status_id: number | null
+          quantity_done: number | null
+          work_date: string
+        }
+        Insert: {
+          company_id?: string | null
+          contact_content?: string | null
+          created_at?: string | null
+          description?: string | null
+          employee_id: string
+          hours_spent?: number | null
+          is_finished?: boolean | null
+          job_id: string
+          job_step_id?: string | null
+          log_id?: string
+          machine_id?: string | null
+          notes?: string | null
+          planned_date?: string | null
+          planned_hours?: number | null
+          processing_code_id?: number | null
+          processing_status_id?: number | null
+          quantity_done?: number | null
+          work_date: string
+        }
+        Update: {
+          company_id?: string | null
+          contact_content?: string | null
+          created_at?: string | null
+          description?: string | null
+          employee_id?: string
+          hours_spent?: number | null
+          is_finished?: boolean | null
+          job_id?: string
+          job_step_id?: string | null
+          log_id?: string
+          machine_id?: string | null
+          notes?: string | null
+          planned_date?: string | null
+          planned_hours?: number | null
+          processing_code_id?: number | null
+          processing_status_id?: number | null
+          quantity_done?: number | null
+          work_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_logs_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "work_logs_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["employee_id"]
+          },
+          {
+            foreignKeyName: "work_logs_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["job_id"]
+          },
+          {
+            foreignKeyName: "work_logs_job_step_id_fkey"
+            columns: ["job_step_id"]
+            isOneToOne: false
+            referencedRelation: "job_steps"
+            referencedColumns: ["step_id"]
+          },
+          {
+            foreignKeyName: "work_logs_machine_id_fkey"
+            columns: ["machine_id"]
+            isOneToOne: false
+            referencedRelation: "machines"
+            referencedColumns: ["machine_id"]
+          },
+          {
+            foreignKeyName: "work_logs_processing_code_id_fkey"
+            columns: ["processing_code_id"]
+            isOneToOne: false
+            referencedRelation: "processing_codes"
+            referencedColumns: ["processing_code_id"]
+          },
+          {
+            foreignKeyName: "work_logs_processing_status_id_fkey"
+            columns: ["processing_status_id"]
+            isOneToOne: false
+            referencedRelation: "processing_statuses"
+            referencedColumns: ["status_id"]
+          },
+        ]
+      }
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      calculate_plastic_mrp_v2: {
+        Args: { p_end_date: string; p_start_date: string }
+        Returns: {
+          demand_meters: number
+          plastic_id: string
+          supply_meters: number
+          timeline_date: string
+        }[]
+      }
+    }
+    Enums: {
+      asset_type: "MOLD" | "CUTTER" | "EQUIPMENT" | "TRAY_SAMPLE" | "PLUG"
+      equipment_status: "ACTIVE" | "MAINTENANCE" | "BROKEN" | "DISPOSED"
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
+}
+
+type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
+
+type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
+
+export type Tables<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+      Row: infer R
+    }
+    ? R
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+        Row: infer R
+      }
+      ? R
+      : never
+    : never
+
+export type TablesInsert<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Insert: infer I
+    }
+    ? I
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Insert: infer I
+      }
+      ? I
+      : never
+    : never
+
+export type TablesUpdate<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Update: infer U
+    }
+    ? U
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Update: infer U
+      }
+      ? U
+      : never
+    : never
+
+export type Enums<
+  DefaultSchemaEnumNameOrOptions extends
+    | keyof DefaultSchema["Enums"]
+    | { schema: keyof DatabaseWithoutInternals },
+  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+    : never = never,
+> = DefaultSchemaEnumNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
+    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+    : never
+
+export type CompositeTypes<
+  PublicCompositeTypeNameOrOptions extends
+    | keyof DefaultSchema["CompositeTypes"]
+    | { schema: keyof DatabaseWithoutInternals },
+  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    : never = never,
+> = PublicCompositeTypeNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
+    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+    : never
+
+export const Constants = {
+  public: {
+    Enums: {
+      asset_type: ["MOLD", "CUTTER", "EQUIPMENT", "TRAY_SAMPLE", "PLUG"],
+      equipment_status: ["ACTIVE", "MAINTENANCE", "BROKEN", "DISPOSED"],
+    },
+  },
+} as const

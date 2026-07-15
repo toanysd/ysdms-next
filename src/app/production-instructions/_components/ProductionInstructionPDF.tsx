@@ -3,25 +3,24 @@ import {
   Document, Page, Text, View, StyleSheet, Font,
 } from '@react-pdf/renderer'
 
-// NOTE for AN: Register NotoSansJP font paths that already exist in the project
-// (same path used in Quotation PDF). Update paths if different.
-// Font.register({
-//   family: 'NotoSansJP',
-//   fonts: [
-//     { src: '/fonts/NotoSansJP-Regular.ttf', fontWeight: 400 },
-//     { src: '/fonts/NotoSansJP-Bold.ttf', fontWeight: 700 },
-//   ],
-// })
+Font.register({
+  family: 'NotoSansJP',
+  src: 'https://fonts.gstatic.com/ea/notosansjapanese/v6/NotoSansJP-Regular.otf',
+})
+Font.register({
+  family: 'NotoSansJP-Bold',
+  src: 'https://fonts.gstatic.com/ea/notosansjapanese/v6/NotoSansJP-Bold.otf',
+})
 
 const styles = StyleSheet.create({
-  page: { fontFamily: 'Helvetica', fontSize: 9, padding: 20, backgroundColor: '#fff' },
-  title: { fontSize: 14, fontWeight: 'bold', textAlign: 'center', marginBottom: 4 },
+  page: { fontFamily: 'NotoSansJP', fontSize: 9, padding: 20, backgroundColor: '#fff' },
+  title: { fontSize: 14, fontFamily: 'NotoSansJP-Bold', textAlign: 'center', marginBottom: 4 },
   subtitle: { fontSize: 8, textAlign: 'center', color: '#666', marginBottom: 12 },
   row: { flexDirection: 'row', marginBottom: 2 },
   label: { width: 100, color: '#555' },
-  value: { flex: 1, fontWeight: 'bold' },
+  value: { flex: 1, fontFamily: 'NotoSansJP-Bold' },
   section: { marginBottom: 8, padding: 6, border: '1pt solid #ddd', borderRadius: 3 },
-  sectionTitle: { fontSize: 8, fontWeight: 'bold', color: '#444', marginBottom: 4, textTransform: 'uppercase' },
+  sectionTitle: { fontSize: 8, fontFamily: 'NotoSansJP-Bold', color: '#444', marginBottom: 4, textTransform: 'uppercase' },
   grid2: { flexDirection: 'row', gap: 8 },
   col: { flex: 1 },
   warningBadge: { backgroundColor: '#FFF3CD', border: '1pt solid #FFC107', padding: '3pt 6pt', borderRadius: 3, marginBottom: 8, fontSize: 8, color: '#856404' },
@@ -31,7 +30,7 @@ const styles = StyleSheet.create({
   footer: { position: 'absolute', bottom: 12, left: 20, right: 20, textAlign: 'right', fontSize: 7, color: '#999' },
   headerRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10, alignItems: 'flex-start' },
   logoArea: { width: 80, height: 24, backgroundColor: '#1a56db', borderRadius: 3, padding: 4 },
-  logoText: { color: '#fff', fontSize: 11, fontWeight: 'bold' },
+  logoText: { color: '#fff', fontSize: 11, fontFamily: 'NotoSansJP-Bold' },
   instrNoBox: { border: '1.5pt solid #333', padding: '4pt 10pt', borderRadius: 3 },
   instrNoLabel: { fontSize: 7, color: '#555' },
   instrNo: { fontSize: 13, fontWeight: 'bold', fontFamily: 'Courier' },

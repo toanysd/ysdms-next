@@ -37,8 +37,8 @@ export async function getProductionInstructions(filters: {
       quantity_ordered, requested_date, status, template_type,
       material_stock_warning, created_at,
       orders(order_no),
-      products(product_code, product_name),
-      companies(name),
+      products(product_id, product_code, product_name),
+      companies(company_name),
       delivery_sites(site_name)
     `)
     .order('created_at', { ascending: false })
@@ -61,11 +61,11 @@ export async function getProductionInstructionById(id: string) {
   const { data } = await supabase
     .from('production_instructions')
     .select(`
-      *,
-      orders(order_no),
-      products(product_code, product_name),
-      companies(name),
-      delivery_sites(site_name, address)
+        *,
+        orders(order_no),
+        products(product_id, product_code, product_name),
+        companies(company_name),
+        delivery_sites(site_name, site_address)
     `)
     .eq('id', id)
     .single()
@@ -90,9 +90,9 @@ export async function searchDeliverySites(query: string) {
   const supabase = await createClient()
   const { data } = await supabase
     .from('delivery_sites')
-    .select('id, site_name, site_code, address')
+    .select('site_id, site_name, site_code, site_address')
     .or(`site_name.ilike.%${query}%,site_code.ilike.%${query}%`)
-    .eq('active', true)
+    .eq('is_active', true)
     .limit(30)
   return data ?? []
 }
