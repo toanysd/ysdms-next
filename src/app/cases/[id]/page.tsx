@@ -4,7 +4,8 @@ import React, { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import TechnicalReviewTab from './_components/TechnicalReviewTab'
-import type { TechnicalReview, UserRole } from './types'
+import SalesTab from './_components/SalesTab'
+import type { TechnicalReview, UserRole, Quotation } from './types'
 import {
   Briefcase, ArrowLeft, List,
   ClipboardList, FileSpreadsheet, Factory, FolderOpen,
@@ -27,6 +28,7 @@ type CaseDetail = {
   companies: { company_id: string; company_name: string; company_code: string } | null
   sales_owner: { employee_id: string; employee_name: string } | null
   technical_reviews: TechnicalReview[]
+  quotations: Quotation[]
 }
 
 // ── Config ─────────────────────────────────────────────────────────────
@@ -116,7 +118,8 @@ export default function CaseDetailPage() {
             approved_by, approved_at,
             requested_by, reviewed_by,
             created_at, updated_at
-          )
+          ),
+          quotations(*)
         `)
         .eq('id', caseId)
         .single()
@@ -366,19 +369,43 @@ export default function CaseDetailPage() {
 
         {/* ====== TAB: SALES ====== */}
         {activeTab === 'sales' && (
-          <div className="form-section">
-            <div className="form-section-header">
-              <FileSpreadsheet size={14} className="section-icon" />
-              <span style={{ fontFamily: 'var(--font-jp)' }}>見積書一覧</span>
-              <span style={{ marginLeft: 6, opacity: 0.6 }}>Danh sách Báo giá</span>
-            </div>
-            <div className="form-section-body">
-              <div style={{ textAlign: 'center', padding: '40px 0',
-                color: 'var(--text-muted)', fontSize: 13 }}>
-                見積がありません / Chưa có báo giá
-              </div>
-            </div>
-          </div>
+          <SalesTab 
+            caseId={caseId} 
+            quotations={caseData.quotations || []} 
+            currentUserId={currentUserId}
+            onRefresh={() => {
+              setLoading(true)
+              const fetchCase = async () => {
+                const { data } = await (supabase as any)
+                  .from('business_cases')
+                  .select(`
+                    id, case_code, title, case_type, status,
+                    requested_due_date, raw_text_snapshot,
+                    created_at, updated_at,
+                    companies(company_id, company_name, company_code),
+                    sales_owner:employees!business_cases_sales_owner_id_fkey(employee_id, employee_name),
+                    technical_reviews(
+                      id, case_id, version, approval_status,
+                      product_id, design_revision_id,
+                      material_spec, thickness_mm, special_requirements,
+                      mold_option, mold_id, pocket_count,
+                      cutting_die_option, cutting_die_id, machine_id,
+                      lead_time_days, cycle_time_sec,
+                      technical_constraints, rejected_reason,
+                      approved_by, approved_at,
+                      requested_by, reviewed_by,
+                      created_at, updated_at
+                    ),
+                    quotations(*)
+                  `)
+                  .eq('id', caseId)
+                  .single()
+                if (data) setCaseData(data as unknown as CaseDetail)
+                setLoading(false)
+              }
+              fetchCase()
+            }}
+          />
         )}
 
         {/* ====== TAB: PRODUCTION ====== */}

@@ -73,7 +73,7 @@ export async function createLotInspection(payload: any, ngDetails: any[] = []) {
     // 1. Insert into inspections
     const { data: insData, error: insError } = await supabase
         .from('inspections')
-        .insert([{
+        .insert({
             production_lot_id: payload.production_lot_id,
             po_id: payload.po_id,
             inspector_id: inspector_id,
@@ -85,7 +85,7 @@ export async function createLotInspection(payload: any, ngDetails: any[] = []) {
             ng_category: payload.ng_category || null,
             result: payload.result || (payload.ng_qty > 0 ? 'FAIL' : 'PASS'),
             notes: payload.notes
-        }])
+        })
         .select()
         .single()
 

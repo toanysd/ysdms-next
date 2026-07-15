@@ -61,7 +61,6 @@ export interface TechnicalReview {
   created_at?: string;
   updated_at?: string;
 }
-
 export interface BusinessCase {
   case_id: string;
   case_code: string;
@@ -71,4 +70,33 @@ export interface BusinessCase {
   product_id?: string | null;
   created_at?: string;
   updated_at?: string;
+}
+
+export interface QuotationItem {
+  id: string; // e.g. uuid
+  name: string; // e.g. 金型代 (Mold cost), 抜型代 (Die cost)
+  quantity: number;
+  unit_price: number;
+  amount: number;
+}
+
+export type QuotationStatus = 'draft' | 'sent' | 'accepted' | 'rejected';
+
+export interface Quotation {
+  id: string;
+  case_id: string;
+  quotation_no: string;
+  version: number;
+  issued_date: string | null;
+  valid_until: string | null;
+  total_amount: number;
+  tax_amount: number;
+  currency: string;
+  items_json: QuotationItem[];
+  status: QuotationStatus;
+  notes: string | null;
+  prepared_by: string | null;
+  approved_by: string | null;
+  created_at: string;
+  updated_at: string;
 }
