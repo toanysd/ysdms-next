@@ -3,8 +3,19 @@
 
 > **Viết bởi:** PE (Perplexity) — 2026-07-15  
 > **Dựa trên:** `docs/02_BUSINESS_PROCESS_CATALOG.md`, `docs/AN_deep_scan_part2.md`  
-> **Status:** 📝 Draft — chờ Anh Thoan duyệt  
-> **AN implement sau khi:** Anh Thoan confirm spec này + V5 Seed đã chạy xong
+> **Status:** ✅ APPROVED — Anh Thoan đã duyệt 2026-07-15  
+> **AN implement sau khi:** V5 Seed đã chạy xong (phụ thuộc key mới)
+
+---
+
+## QUYẾT ĐỊNH ĐÃ CONFIRMED (2026-07-15)
+
+| # | Câu hỏi | Quyết định | Lý do |
+|---|---------|-----------|-------|
+| Q1 | PDF library | **`@react-pdf/renderer`** | Đã dùng cho Quotation PDF, hỗ trợ font CJK (NotoSansJP), viết JSX quen thuộc. Puppeteer cần server riêng → phức tạp hóa deploy Vercel |
+| Q2 | Delivery sites seed | **Import ngay khi migration** | File `納入先一覧表.xlsx` có sẵn 1,864 dòng — nhập thủ công không khả thi. AN viết script seed từ Excel → insert Supabase |
+| Q3 | Liên động tồn kho | **Sprint 1: chỉ cảnh báo ⚠️** | Module tồn kho nhựa (BP-42~47) chưa xây dựng → không có gì để trừ. Sprint 2 mới trừ kho tự động |
+| Q4 | Gia công ngoài (外注) | **Sprint 2** | Sprint 1 tập trung luồng chính: 成形 (thành hình). Gia công ngoài là nhánh phụ |
 
 ---
 
@@ -17,6 +28,8 @@ Thay thế hoàn toàn file Excel VBA `C. 指示書作成シート(成形）.xls
 
 **Kết quả mong đợi:** Nhân viên nhập mã tray + số lượng + nơi giao → hệ thống tự động tổng hợp thông tin và tạo chỉ thị sản xuất in được.
 
+**Sprint 1 scope:** Chỉ loại `FORMING` (成形). Loại `OUTSOURCE` (外注) để Sprint 2.
+
 ---
 
 ## 2. LUỒNG NGHIỆP VỤ
@@ -28,20 +41,22 @@ Nhân viên vào "Tạo Chỉ thị SX mới"
     ↓
 [A] Chọn Order → hệ thống tự điền: KH, Mã tray, Sản phẩm
     ↓
-[B] Chọn nơi giao (từ danh sách 1,864 địa chỉ)
+[B] Chọn nơi giao (searchable dropdown từ delivery_sites — 1,864 địa chỉ)
     ↓
 [C] Nhập số lượng + ngày giao yêu cầu
     ↓
 [D] Hệ thống kiểm tra tồn kho vật liệu (material_inventory)
-    → Đủ: ✅ tạo chỉ thị
-    → Thiếu: ⚠️ cảnh báo thiếu vật liệu
+    → Đủ: ✅ tạo chỉ thị bình thường
+    → Thiếu hoặc không có dữ liệu: ⚠️ badge cảnh báo, vẫn cho phép tạo
     ↓
 [E] Tạo chỉ thị → sinh Số hiệu (伝票No.) tự động
     ↓
-[F] In PDF theo template KH tương ứng
+[F] In PDF bằng @react-pdf/renderer theo template KH tương ứng
     ↓
 [G] Trạng thái: DRAFT → ISSUED → IN_PRODUCTION → COMPLETED
 ```
+
+**Ghi chú bước [D]:** Sprint 1 chỉ hiển thị cảnh báo — KHÔNG tự động trừ kho. Trừ kho tự động sẽ triển khai ở Sprint 2 sau khi có Module BP-42~47.
 
 ---
 
@@ -52,36 +67,42 @@ Nhân viên vào "Tạo Chỉ thị SX mới"
 ```sql
 CREATE TABLE production_instructions (
   id                    UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  instruction_no        TEXT UNIQUE NOT NULL,  -- 伝票No. tự sinh, VD: "PI-2026-001234"
+  instruction_no        TEXT UNIQUE NOT NULL,  -- 伝票No. tự sinh: "PI-2026-001234"
   order_id              UUID REFERENCES orders(id),
-  product_id            UUID REFERENCES products(id),      -- Mã tray
-  physical_mold_id      UUID REFERENCES physical_molds(id), -- Khuôn đang dùng
+  product_id            UUID REFERENCES products(id),
+  physical_mold_id      UUID REFERENCES physical_molds(id),
 
   -- Thông tin sản xuất
-  instruction_type      TEXT NOT NULL CHECK (instruction_type IN ('FORMING', 'OUTSOURCE')), -- 成形 or 外注
-  production_site       TEXT,            -- 本社 / 青森 / 茨城 / 坂田 / 坂田精文堂 / 青森成形
-  quantity_ordered      INTEGER NOT NULL, -- Số lượng yêu cầu
-  quantity_per_stack    INTEGER,          -- 入数 (số/chồng)
+  -- Sprint 1: chỉ dùng 'FORMING'. 'OUTSOURCE' để Sprint 2
+  instruction_type      TEXT NOT NULL DEFAULT 'FORMING'
+                          CHECK (instruction_type IN ('FORMING', 'OUTSOURCE')),
+  production_site       TEXT,  -- 本社 / 青森 / 茨城 / 坂田
+  quantity_ordered      INTEGER NOT NULL,
+  quantity_per_stack    INTEGER,  -- 入数
 
-  -- Vật liệu
-  material_spec         TEXT,            -- PS(N)0.58t×640×350m
-  material_thickness    NUMERIC(4,2),    -- 厚み (mm)
-  material_width        INTEGER,         -- シート巾 (mm)
-  antistatic            BOOLEAN DEFAULT false,  -- 帯電防止
-  silicon               BOOLEAN DEFAULT false,  -- シリコン
-  surface_coating       BOOLEAN DEFAULT false,  -- 塗布
-  recycled_pct          NUMERIC(5,2) DEFAULT 0, -- 粉砕材含有率 (%)
+  -- Vật liệu (tự điền từ products table)
+  material_spec         TEXT,     -- VD: PS(N)0.58t×640×350m
+  material_thickness    NUMERIC(4,2),
+  material_width        INTEGER,
+  antistatic            BOOLEAN DEFAULT false,
+  silicon               BOOLEAN DEFAULT false,
+  surface_coating       BOOLEAN DEFAULT false,
+  recycled_pct          NUMERIC(5,2) DEFAULT 0,
 
   -- Giao hàng
   delivery_site_id      UUID REFERENCES delivery_sites(id),
-  requested_date        DATE NOT NULL,   -- Ngày giao yêu cầu
-  lot_no                TEXT,            -- LOT No.
+  requested_date        DATE NOT NULL,
+  lot_no                TEXT,
 
-  -- Template / Format
-  template_type         TEXT NOT NULL CHECK (template_type IN
-                          ('HAE', 'NLC', 'SMK', 'YAE', 'GENERAL')), -- Template theo KH
-  has_label             BOOLEAN DEFAULT false,   -- Cần dán nhãn (ラベル)
-  is_first_time         BOOLEAN DEFAULT false,   -- 初回 (lần đầu SX)
+  -- Template
+  template_type         TEXT NOT NULL
+                          CHECK (template_type IN ('HAE','NLC','SMK','YAE','GENERAL')),
+  has_label             BOOLEAN DEFAULT false,  -- ラベル
+  is_first_time         BOOLEAN DEFAULT false,  -- 初回
+
+  -- Cảnh báo tồn kho (Sprint 1: chỉ lưu trạng thái cảnh báo, KHÔNG trừ kho)
+  material_stock_warning BOOLEAN DEFAULT false,  -- true = đã cảnh báo thiếu khi tạo
+  material_stock_qty     INTEGER,  -- Tồn kho tại thời điểm tạo (snapshot)
 
   -- Trạng thái
   status                TEXT NOT NULL DEFAULT 'DRAFT'
@@ -90,7 +111,6 @@ CREATE TABLE production_instructions (
   completed_at          TIMESTAMPTZ,
   notes                 TEXT,
 
-  -- Metadata
   created_by            UUID REFERENCES auth.users(id),
   created_at            TIMESTAMPTZ DEFAULT NOW(),
   updated_at            TIMESTAMPTZ DEFAULT NOW()
@@ -106,18 +126,20 @@ CREATE TABLE delivery_sites (
   company_id      UUID REFERENCES companies(id),
   site_name       TEXT NOT NULL,          -- VD: 'ＳＭＫ（株）ひたち'
   address         TEXT,
-  requester_name  TEXT,                   -- 依頼元
-  contact_person  TEXT,                   -- サブ担当者
+  requester_name  TEXT,    -- 依頼元
+  contact_person  TEXT,    -- サブ担当者
   phone           TEXT,
   fax             TEXT,
-  is_placeholder  BOOLEAN DEFAULT false,  -- true khi code là 888 hoặc 999
+  is_placeholder  BOOLEAN DEFAULT false,  -- true khi code = '888' hoặc '999'
   notes           TEXT,
   active          BOOLEAN DEFAULT true,
   created_at      TIMESTAMPTZ DEFAULT NOW()
 );
 ```
 
-### 3.3 Trigger tự động cập nhật `updated_at`
+**Seed data ngay khi migration:** AN viết script đọc `source_data/生産指示書/A. 納入先一覧表.xlsx` (1,864 dòng) → insert vào `delivery_sites`.
+
+### 3.3 Trigger `updated_at`
 
 ```sql
 CREATE TRIGGER set_updated_at_production_instructions
@@ -132,20 +154,18 @@ CREATE TRIGGER set_updated_at_production_instructions
 ```
 app/
   production-instructions/
-    page.tsx                   → Danh sách chỉ thị SX (filter theo status, KH, ngày)
-    new/
-      page.tsx                 → Form tạo mới
+    page.tsx              → Danh sách (filter: status, KH, ngày, nơi SX)
+    new/page.tsx          → Form tạo mới (3 bước)
     [id]/
-      page.tsx                 → Chi tiết + in PDF
-      edit/page.tsx            → Chỉnh sửa (chỉ khi status = DRAFT)
+      page.tsx            → Chi tiết + nút in PDF
+      edit/page.tsx       → Chỉnh sửa (chỉ khi status = DRAFT)
 
-app/api/
-  production-instructions/
-    route.ts                   → GET (list), POST (create)
-    [id]/route.ts              → GET, PATCH, DELETE
-    [id]/issue/route.ts        → POST → chuyển DRAFT → ISSUED
-    [id]/complete/route.ts     → POST → chuyển IN_PRODUCTION → COMPLETED
-    [id]/pdf/route.ts          → GET → trả về PDF buffer
+app/api/production-instructions/
+  route.ts                → GET (list), POST (create)
+  [id]/route.ts           → GET, PATCH, DELETE
+  [id]/issue/route.ts     → POST → DRAFT → ISSUED
+  [id]/complete/route.ts  → POST → IN_PRODUCTION → COMPLETED
+  [id]/pdf/route.ts       → GET → trả về PDF buffer (dùng @react-pdf/renderer)
 ```
 
 ---
@@ -154,7 +174,7 @@ app/api/
 
 ### 5.1 Trang danh sách `/production-instructions`
 
-| Cột hiển thị | Ghi chú |
+| Cột | Ghi chú |
 |---|---|
 | Số hiệu (伝票No.) | Link đến chi tiết |
 | Mã tray | |
@@ -162,20 +182,20 @@ app/api/
 | Số lượng | |
 | Nơi SX | 本社/青森/茨城/坂田 |
 | Ngày giao | |
-| Trạng thái | Badge màu: DRAFT/ISSUED/IN_PRODUCTION/COMPLETED |
+| Trạng thái | Badge: DRAFT (xám) / ISSUED (xanh) / IN_PRODUCTION (cam) / COMPLETED (xanh lá) |
 | Thao tác | Xem / In PDF / Huỷ |
 
 **Filter:** Theo KH, theo trạng thái, theo khoảng ngày, theo nơi SX
 
-### 5.2 Form tạo mới `/production-instructions/new`
+### 5.2 Form tạo mới — 3 bước
 
 **Bước 1 — Chọn Đơn hàng:**
-- Tìm kiếm theo mã đơn hàng hoặc mã tray
-- Khi chọn → tự động điền: Khách hàng, Mã tray, Tên sản phẩm, Vật liệu từ `products` table
-- Tự động chọn template (HAE/NLC/SMK/YAE/GENERAL) theo `company_id`
+- Tìm theo mã đơn hàng hoặc mã tray
+- Khi chọn → tự điền: KH, Mã tray, Tên SP, Vật liệu từ `products`
+- Tự động chọn template (xem mục 6.1)
 
 **Bước 2 — Thông tin sản xuất:**
-- Nơi sản xuất (dropdown): 本社 / 青森 / 茨城 / 坂田 / Gia công ngoài
+- Nơi sản xuất (dropdown): 本社 / 青森 / 茨城 / 坂田
 - Số lượng (number input)
 - Ngày giao yêu cầu (date picker)
 - Nơi giao hàng (searchable dropdown từ `delivery_sites`)
@@ -183,17 +203,16 @@ app/api/
 
 **Bước 3 — Xác nhận vật liệu:**
 - Hiển thị: Tên vật liệu, Độ dày, Chiều rộng, Tính năng đặc biệt
-- ⚠️ Cảnh báo nếu tồn kho vật liệu tại nơi SX chọn < số lượng cần
+- ⚠️ Badge cảnh báo nếu `material_inventory` tại nơi SX < số lượng cần — **KHÔNG chặn tạo**
 - Ghi chú bổ sung
+- Nút: `Lưu nháp (DRAFT)` | `Phát hành ngay (ISSUED)`
 
-**Nút:** `Lưu nháp (DRAFT)` | `Phát hành ngay (ISSUED)`
+### 5.3 Chi tiết `/production-instructions/[id]`
 
-### 5.3 Chi tiết & In PDF `/production-instructions/[id]`
-
-- Hiển thị đầy đủ thông tin chỉ thị
-- **Nút In PDF** → gọi `/api/production-instructions/[id]/pdf`
-- PDF render theo template tương ứng (5 template)
-- Timeline trạng thái: DRAFT → ISSUED → IN_PRODUCTION → COMPLETED
+- Hiển thị đầy đủ thông tin
+- Nút **In PDF** → `/api/.../pdf`
+- Timeline trạng thái (stepper)
+- Nếu có `material_stock_warning = true` → hiển thị banner ⚠️ "Đã phát hành khi thiếu vật liệu"
 
 ---
 
@@ -202,22 +221,20 @@ app/api/
 ### 6.1 Tự động chọn Template theo Khách hàng
 
 ```typescript
-// Mapping company → template type
 const COMPANY_TEMPLATE_MAP: Record<string, TemplateType> = {
-  'HAE': 'HAE',   // 日本航空電子系
-  'JAE': 'HAE',   // Cùng nhóm với HAE
-  'NLC': 'NLC',   // ニッコー・ロジスティクス
-  'SMK': 'SMK',   // SMK株式会社
-  'YAE': 'YAE',   // 山形航空電子
-  // Mặc định → GENERAL
+  'HAE': 'HAE',  // 日本航空電子系
+  'JAE': 'HAE',  // Cùng nhóm HAE
+  'NLC': 'NLC',  // ニッコー・ロジスティクス
+  'SMK': 'SMK',  // SMK株式会社
+  'YAE': 'YAE',  // 山形航空電子
+  // default → 'GENERAL'
 };
 ```
 
 ### 6.2 Sinh Số hiệu tự động
 
 ```typescript
-// Format: PI-YYYY-NNNNNN (6 chữ số, tự tăng)
-// Ví dụ: PI-2026-000001, PI-2026-000002...
+// Format: PI-YYYY-NNNNNN
 const generateInstructionNo = async (supabase: SupabaseClient): Promise<string> => {
   const year = new Date().getFullYear();
   const { count } = await supabase
@@ -229,10 +246,10 @@ const generateInstructionNo = async (supabase: SupabaseClient): Promise<string> 
 };
 ```
 
-### 6.3 Kiểm tra tồn kho vật liệu
+### 6.3 Kiểm tra tồn kho (Sprint 1: chỉ cảnh báo)
 
 ```typescript
-// Truy vấn bản ghi tồn kho mới nhất cho vật liệu + nhà máy
+// Lấy snapshot tồn kho mới nhất — KHÔNG trừ, KHÔNG block
 const checkMaterialStock = async (
   materialSpec: string,
   productionSite: string,
@@ -246,97 +263,111 @@ const checkMaterialStock = async (
     .order('snapshot_date', { ascending: false })
     .limit(1)
     .single();
-  
+
   const currentStock = data?.quantity ?? 0;
-  return { sufficient: currentStock >= quantityNeeded, currentStock };
+  return {
+    sufficient: currentStock >= quantityNeeded,
+    currentStock
+  };
 };
+// Sprint 2: thêm logic trừ kho khi status chuyển sang ISSUED
 ```
 
 ---
 
-## 7. PDF TEMPLATE
+## 7. PDF TEMPLATE (`@react-pdf/renderer`)
 
-Mỗi template in ra 1 tờ A4 gồm:
+**Font:** NotoSansJP (đã dùng cho Quotation PDF — tái sử dụng font registration hiện có)
+
+Mỗi template in ra 1 tờ A4:
 
 | Vùng | Nội dung |
 |---|---|
 | Header | Logo YSD + Tiêu đề + Số hiệu (伝票No.) + Ngày phát hành |
-| Thông tin KH | Tên KH, địa chỉ giao, người liên hệ |
+| Thông tin KH | Tên KH, địa chỉ giao, người liên hệ (từ `delivery_sites`) |
 | Thông tin sản phẩm | Mã tray, Tên SP, Mã bản vẽ KH |
-| Vật liệu | Tên, Độ dày, Chiều rộng, Tính năng đặc biệt, % tái chế |
-| Số lượng | Số lượng, Số/chồng (入数) |
+| Vật liệu | Tên, Độ dày, Chiều rộng, Tính năng, % tái chế |
+| Số lượng | Số lượng + Số/chồng (入数) |
 | Kích thước | Dài × Rộng, Dung sai (+/-) |
 | Nơi SX | 本社 / 青森 / 茨城 / 坂田 |
 | Ngày giao | |
 | LOT No. | |
 | Ghi chú | Cờ 初回, cờ ラベル, ghi chú tự do |
-| Footer | Ô ký duyệt (担当 / 確認 / 承認) |
+| Footer | Ô ký duyệt: 担当 / 確認 / 承認 |
 
-**Thư viện PDF đề xuất:** `@react-pdf/renderer` (đang dùng trong dự án nếu có) hoặc `puppeteer` render HTML→PDF
+**Thứ tự implement template:**
+1. GENERAL (trước — đơn giản nhất, dùng để test)
+2. SMK (phức tạp nhất — nhiều trường riêng)
+3. HAE / YAE / NLC (tương tự nhau)
 
 ---
 
 ## 8. RLS POLICIES
 
 ```sql
--- Tất cả authenticated users được đọc
+ALTER TABLE production_instructions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE delivery_sites ENABLE ROW LEVEL SECURITY;
+
 CREATE POLICY "PI: authenticated read"
   ON production_instructions FOR SELECT
   TO authenticated USING (true);
 
--- Chỉ tạo được khi DRAFT
 CREATE POLICY "PI: authenticated insert"
   ON production_instructions FOR INSERT
   TO authenticated WITH CHECK (status = 'DRAFT');
 
--- Chỉ update khi DRAFT hoặc ISSUED
 CREATE POLICY "PI: update draft or issued"
   ON production_instructions FOR UPDATE
   TO authenticated
   USING (status IN ('DRAFT', 'ISSUED'))
   WITH CHECK (true);
 
--- Tương tự cho delivery_sites
 CREATE POLICY "DS: authenticated read"
   ON delivery_sites FOR SELECT TO authenticated USING (true);
+
+CREATE POLICY "DS: authenticated insert"
+  ON delivery_sites FOR INSERT TO authenticated WITH CHECK (true);
 ```
 
 ---
 
-## 9. MIGRATION
+## 9. MIGRATION & SEED
 
 **Tên migration:** `create_production_instructions`
 
-**Thứ tự:**
-1. `CREATE TABLE delivery_sites` (không phụ thuộc)
-2. `CREATE TABLE production_instructions` (phụ thuộc `delivery_sites`, `orders`, `products`, `physical_molds`)
-3. Thêm trigger `updated_at`
-4. Thêm RLS policies
-5. **Seed data:** Import `A. 納入先一覧表.xlsx` (1,864 dòng) vào `delivery_sites`
+**Thứ tự thực hiện:**
+1. `CREATE TABLE delivery_sites`
+2. `CREATE TABLE production_instructions`
+3. `CREATE TRIGGER set_updated_at_production_instructions`
+4. `ALTER TABLE ... ENABLE ROW LEVEL SECURITY` + `CREATE POLICY ...` (cả 2 bảng)
+5. **Seed delivery_sites:** AN viết script Python/TS đọc `source_data/生産指示書/A. 納入先一覧表.xlsx` → parse 1,864 dòng → batch insert vào `delivery_sites`
+
+**Lưu ý seed:**
+- `site_code = '888'` hoặc `'999'` → set `is_placeholder = true`
+- Deduplicate theo `site_code` trước khi insert
+- Chạy seed script **sau** migration (không phải trong migration SQL)
 
 ---
 
-## 10. TIÊU CHÍ HOÀN THÀNH (Definition of Done)
+## 10. TIÊU CHÍ HOÀN THÀNH Sprint 1 (Definition of Done)
 
-- [ ] Migration chạy thành công trên Supabase
+- [ ] Migration chạy thành công
+- [ ] `delivery_sites` có đủ 1,864 dòng từ seed script
 - [ ] Tạo được chỉ thị SX từ 1 order có sẵn trong DB
 - [ ] Số hiệu tự sinh đúng format `PI-2026-NNNNNN`
-- [ ] Dropdown nơi giao hàng load được danh sách từ `delivery_sites`
-- [ ] Cảnh báo thiếu vật liệu hoạt động
-- [ ] In được PDF (ít nhất template GENERAL trước)
-- [ ] RLS: user không đăng nhập không xem được
-- [ ] AN cập nhật `PROJECT_STATUS.md` sau khi hoàn thành
+- [ ] Dropdown nơi giao hàng searchable, load từ `delivery_sites`
+- [ ] Tự động chọn đúng template theo KH
+- [ ] Badge ⚠️ cảnh báo thiếu vật liệu hiển thị đúng (không block tạo)
+- [ ] In được PDF template GENERAL với font NotoSansJP
+- [ ] RLS: unauthenticated user không xem được
+- [ ] AN cập nhật `PROJECT_STATUS.md` sau khi done
+
+**Để Sprint 2:**
+- Template OUTSOURCE (外注)
+- Trừ kho tự động khi ISSUED
+- Template PDF: SMK, HAE, YAE, NLC (chỉ cần GENERAL cho Sprint 1)
 
 ---
 
-## 11. CÂU HỎI CHỜ XÁC NHẬN TỪ ANH THOAN
-
-1. **Template PDF:** Dùng thư viện nào? `@react-pdf/renderer` hay `puppeteer`? Hay đã có pattern trong dự án?
-2. **Delivery sites:** Import ngay lúc migration hay để nhập thủ công sau?
-3. **Liên động tồn kho:** Sprint 1 chỉ cần cảnh báo, hay phải trừ tồn kho ngay khi phát hành chỉ thị?
-4. **Outsource (外注):** Sprint 1 có cần template gia công ngoài không, hay chỉ làm 成形 (thành hình) trước?
-
----
-
-*Spec viết bởi PE (Perplexity) — 2026-07-15*  
-*Nguồn tham khảo: `docs/02_BUSINESS_PROCESS_CATALOG.md` (v1.1), `docs/AN_deep_scan_part2.md`*
+*Spec viết bởi PE (Perplexity) — 2026-07-15 | Approved bởi Anh Thoan — 2026-07-15*  
+*Nguồn: `docs/02_BUSINESS_PROCESS_CATALOG.md` (v1.1), `docs/AN_deep_scan_part2.md`*
