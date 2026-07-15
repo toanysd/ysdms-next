@@ -40,7 +40,12 @@ test_molds.py
 test_product.ts
 test_tables.py
 add_col.js
-t e s t - r e s u l t s /  
+/test-results/
+/playwright-report/
+
+# Scratch / Debug / Legacy (dọn dẹp 2026-07-15)
+/scratch/
+/temp_ai/
 
 # Data and backups
 /source_data/
@@ -54,6 +59,12 @@ t e s t - r e s u l t s /
 /supabase/
 /tham_khao/
 /business_docs/
-/docs/
 /release/
 /.agents/
+
+# AI workspace files (không push lên GitHub)
+/.ai/
+/.claude/
+.cursorrules
+.cursorignore
+tsconfig.tsbuildinfo
