@@ -9,10 +9,10 @@ const COMPANY_TEMPLATE_MAP: Record<string, 'HAE' | 'NLC' | 'SMK' | 'YAE' | 'GENE
 }
 
 interface OrderResult {
-  id: string
+  order_id: string
   order_no: string
-  products: { id: string; product_code: string; product_name: string; material_spec: string | null; material_thickness: number | null; material_width: number | null; antistatic: boolean; silicon: boolean; surface_coating: boolean; recycled_pct: number } | null
-  companies: { id: string; name: string; code: string } | null
+  products: { product_id: string; product_code: string; product_name: string; primary_plastic_code: string | null; primary_plastic_spec: string | null } | null
+  companies: { company_id: string; company_name: string; company_code: string } | null
 }
 
 interface Props { form: PIFormData; update: (p: Partial<PIFormData>) => void; onNext: () => void }
@@ -26,30 +26,27 @@ export default function Step1OrderSelect({ form, update, onNext }: Props) {
     if (!query.trim()) return
     setSearching(true)
     const data = await searchOrders(query)
-    setResults(data)
+    setResults(data as unknown as OrderResult[])
     setSearching(false)
   }
 
   const select = (order: OrderResult) => {
     const p = order.products
     const c = order.companies
-    const companyCode = c?.code?.toUpperCase() ?? ''
+    const companyCode = c?.company_code?.toUpperCase() ?? ''
     update({
-      order_id: order.id,
+      order_id: order.order_id,
       order_no: order.order_no,
-      product_id: p?.id ?? '',
+      product_id: p?.product_id ?? '',
       product_code: p?.product_code ?? '',
       product_name: p?.product_name ?? '',
-      company_id: c?.id ?? '',
+      company_id: c?.company_id ?? '',
       company_code: companyCode,
       template_type: COMPANY_TEMPLATE_MAP[companyCode] ?? 'GENERAL',
-      material_spec: p?.material_spec ?? '',
-      material_thickness: p?.material_thickness ?? null,
-      material_width: p?.material_width ?? null,
-      antistatic: p?.antistatic ?? false,
-      silicon: p?.silicon ?? false,
-      surface_coating: p?.surface_coating ?? false,
-      recycled_pct: p?.recycled_pct ?? 0,
+      material_spec: p?.primary_plastic_spec ?? p?.primary_plastic_code ?? '',
+      material_thickness: 0,
+      material_width: 0,
+      recycled_pct: 0,
     })
   }
 
@@ -90,17 +87,17 @@ export default function Step1OrderSelect({ form, update, onNext }: Props) {
             <tbody className="divide-y divide-gray-100">
               {results.map(o => (
                 <tr
-                  key={o.id}
+                  key={o.order_id}
                   onClick={() => select(o)}
                   className={`cursor-pointer hover:bg-blue-50 transition-colors ${
-                    form.order_id === o.id ? 'bg-blue-50 ring-1 ring-inset ring-blue-400' : ''
+                    form.order_id === o.order_id ? 'bg-blue-50 ring-1 ring-inset ring-blue-400' : ''
                   }`}
                 >
                   <td className="px-3 py-2 font-mono">{o.order_no}</td>
                   <td className="px-3 py-2">{o.products?.product_code}</td>
                   <td className="px-3 py-2 text-gray-600">{o.products?.product_name}</td>
-                  <td className="px-3 py-2">{o.companies?.name}</td>
-                  <td className="px-3 py-2 text-blue-600">{form.order_id === o.id ? '✓ 選択中' : '選択'}</td>
+                  <td className="px-3 py-2">{o.companies?.company_name}</td>
+                  <td className="px-3 py-2 text-blue-600">{form.order_id === o.order_id ? '✓ 選択中' : '選択'}</td>
                 </tr>
               ))}
             </tbody>

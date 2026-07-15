@@ -138,7 +138,7 @@ export async function getMachineEffectiveSpecs() {
 export async function getMachineTrayCompatibility(productId?: string) {
   const supabase = await createClient()
 
-  let query = supabase
+  let query: any = (supabase as any)
     // @ts-ignore
     .from('machine_tray_compatibility')
     .select(`

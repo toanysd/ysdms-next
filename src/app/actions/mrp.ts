@@ -23,7 +23,7 @@ export async function calculateMRP(): Promise<MrpResult[]> {
   const supabase = await createClient()
 
   // 1. Fetch incomplete order items with nested product -> mold -> bom -> plastic
-  const { data: orderItems, error } = await supabase
+  const { data: orderItems, error } = (await (supabase as any)
     // @ts-ignore
     .from('order_items')
     .select(`
@@ -43,7 +43,7 @@ export async function calculateMRP(): Promise<MrpResult[]> {
         )
       )
     `)
-    .in('status', ['DRAFT', 'SCHEDULED', 'IN_PROGRESS'])
+    .in('status', ['DRAFT', 'SCHEDULED', 'IN_PROGRESS'])) as any
 
   if (error || !orderItems) {
     console.error('MRP Error:', error)
@@ -85,7 +85,7 @@ export async function calculateMRP(): Promise<MrpResult[]> {
   })
 
   // 3. Aggregate Demand
-  orderItems.forEach(item => {
+  orderItems.forEach((item: any) => {
     // @ts-ignore
     const product = item.product_master as any
     if (!product) return

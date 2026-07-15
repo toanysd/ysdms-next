@@ -10,18 +10,17 @@ type TemplateType = 'HAE' | 'NLC' | 'SMK' | 'YAE' | 'GENERAL'
 interface ProductionInstruction {
   id: string
   instruction_no: string
-  product_id: string
+  product_id: string | null
   instruction_type: 'FORMING' | 'OUTSOURCE'
   production_site: string | null
   quantity_ordered: number
   requested_date: string
   status: PIStatus
   template_type: TemplateType
-  material_stock_warning: boolean
-  created_at: string
-  orders?: { order_no: string } | null
+  material_stock_warning: boolean | null
+  created_at: string | null
+  orders?: { order_no: string, companies?: { company_name: string } | null } | null
   products?: { product_code: string; product_name: string } | null
-  companies?: { name: string } | null
   delivery_sites?: { site_name: string } | null
 }
 
@@ -49,7 +48,7 @@ export default function ProductionInstructionsPage() {
   const load = useCallback(async () => {
     setLoading(true)
     const data = await getProductionInstructions(filters)
-    setInstructions(data)
+    setInstructions(data as unknown as ProductionInstruction[])
     setLoading(false)
   }, [filters])
 
@@ -143,7 +142,7 @@ export default function ProductionInstructionsPage() {
                       )}
                     </td>
                     <td className="px-4 py-3">{pi.products?.product_code ?? '—'}</td>
-                    <td className="px-4 py-3">{pi.companies?.name ?? '—'}</td>
+                    <td className="px-4 py-3">{pi.orders?.companies?.company_name ?? '—'}</td>
                     <td className="px-4 py-3 text-right font-mono">{pi.quantity_ordered.toLocaleString()}</td>
                     <td className="px-4 py-3">{pi.production_site ?? '—'}</td>
                     <td className="px-4 py-3 font-mono">{pi.requested_date}</td>

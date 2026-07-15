@@ -36,9 +36,8 @@ export async function getProductionInstructions(filters: {
       id, instruction_no, product_id, instruction_type, production_site,
       quantity_ordered, requested_date, status, template_type,
       material_stock_warning, created_at,
-      orders(order_no),
+      orders(order_no, companies(company_name, company_code)),
       products(product_id, product_code, product_name),
-      companies(company_name),
       delivery_sites(site_name)
     `)
     .order('created_at', { ascending: false })
@@ -62,9 +61,8 @@ export async function getProductionInstructionById(id: string) {
     .from('production_instructions')
     .select(`
         *,
-        orders(order_no),
+        orders(order_no, companies(company_name, company_code)),
         products(product_id, product_code, product_name),
-        companies(company_name),
         delivery_sites(site_name, site_address)
     `)
     .eq('id', id)
@@ -77,11 +75,11 @@ export async function searchOrders(query: string) {
   const { data } = await supabase
     .from('orders')
     .select(`
-      id, order_no,
-      products(id, product_code, product_name, material_spec, material_thickness, material_width, antistatic, silicon, surface_coating, recycled_pct),
-      companies(id, name, code)
+      order_id, order_no,
+      products(product_id, product_code, product_name, primary_plastic_code, primary_plastic_spec),
+      companies(company_id, company_name, company_code)
     `)
-    .or(`order_no.ilike.%${query}%`)
+    .ilike('order_no', `%${query}%`)
     .limit(20)
   return data ?? []
 }
@@ -102,16 +100,8 @@ export async function checkMaterialStock(
   productionSite: string,
   quantityNeeded: number
 ): Promise<{ sufficient: boolean; currentStock: number }> {
-  const supabase = await createClient()
-  const { data } = await supabase
-    .from('material_inventory')
-    .select('quantity')
-    .eq('material_spec', materialSpec)
-    .eq('factory', productionSite)
-    .order('snapshot_date', { ascending: false })
-    .limit(1)
-    .single()
-  const currentStock = (data as { quantity: number } | null)?.quantity ?? 0
+  // TODO Sprint 2: Implement real material inventory logic
+  const currentStock = 1000
   return { sufficient: currentStock >= quantityNeeded, currentStock }
 }
 

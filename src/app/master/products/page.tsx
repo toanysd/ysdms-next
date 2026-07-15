@@ -213,7 +213,7 @@ function ProductsPageContent() {
 
     let query = supabase
       .from('products')
-      .select('*, companies(company_name, company_code)', { count: 'exact' })
+      .select('*, companies!products_company_id_fkey(company_name, company_code)', { count: 'exact' })
       .order(sortCol, { ascending: sortDir === 'asc' })
 
     if (statusFilter !== 'ALL') {
@@ -232,10 +232,10 @@ function ProductsPageContent() {
 
     const { data, error: err, count } = await query
     if (err) setError(err.message)
-    else {
-      setProducts((data as Product[]) || [])
-      setTotalRecords(count || 0)
-    }
+      else {
+        setProducts((data as unknown as Product[]) || [])
+        setTotalRecords(count || 0)
+      }
     setLoading(false)
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [statusFilter, debouncedSearchQuery, page, sortCol, sortDir])

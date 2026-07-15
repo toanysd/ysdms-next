@@ -27,7 +27,7 @@ export default async function ProductionInstructionDetailPage({ params }: { para
             )}
           </div>
           <p className="text-sm text-gray-500 mt-1">
-            作成: {new Date(pi.created_at).toLocaleDateString('ja-JP')}
+            作成: {pi.created_at ? new Date(pi.created_at).toLocaleDateString('ja-JP') : ''}
           </p>
         </div>
         <div className="flex gap-2">
@@ -80,7 +80,7 @@ export default async function ProductionInstructionDetailPage({ params }: { para
           <Row label="受注No." value={pi.orders?.order_no ?? '—'} />
           <Row label="品番" value={pi.products?.product_code ?? '—'} />
           <Row label="品名" value={pi.products?.product_name ?? '—'} />
-          <Row label="客先" value={pi.companies?.name ?? '—'} />
+          <Row label="客先" value={pi.orders?.companies?.company_name ?? '—'} />
           <Row label="テンプレート" value={pi.template_type} />
         </InfoCard>
         <InfoCard title="生産情報">
@@ -97,7 +97,7 @@ export default async function ProductionInstructionDetailPage({ params }: { para
           <Row label="シート巾" value={pi.material_width ? `${pi.material_width}mm` : '—'} />
           {pi.antistatic && <Row label="帯電防止" value="✅" />}
           {pi.silicon && <Row label="シリコン" value="✅" />}
-          {pi.recycled_pct > 0 && <Row label="粉砕材" value={`${pi.recycled_pct}%`} />}
+          {pi.recycled_pct && pi.recycled_pct > 0 && <Row label="粉砕材" value={`${pi.recycled_pct}%`} />}
           {pi.material_stock_qty !== null && (
             <Row
               label="在庫 (作成時)"
@@ -107,7 +107,7 @@ export default async function ProductionInstructionDetailPage({ params }: { para
         </InfoCard>
         <InfoCard title="納入先">
           <Row label="納入先" value={pi.delivery_sites?.site_name ?? '—'} />
-          <Row label="住所" value={pi.delivery_sites?.address ?? '—'} />
+          <Row label="住所" value={pi.delivery_sites?.site_address ?? '—'} />
           <Row label="LOT No." value={pi.lot_no ?? '—'} />
         </InfoCard>
       </div>
