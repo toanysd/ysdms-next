@@ -15,7 +15,7 @@ type BusinessCase = {
   requested_due_date: string | null
   created_at: string
   companies: { company_name: string; company_code: string } | null
-  sales_owner: { full_name: string } | null
+  sales_owner: { employee_name: string } | null
 }
 
 // ── Config ─────────────────────────────────────────────────────────────
@@ -79,7 +79,7 @@ export default function CasesPage() {
       .select(`
         id, case_code, title, case_type, status, requested_due_date, created_at,
         companies(company_name, company_code),
-        sales_owner:employees!business_cases_sales_owner_id_fkey(full_name)
+        sales_owner:employees!business_cases_sales_owner_id_fkey(employee_name)
       `, { count: 'exact' })
       .order('created_at', { ascending: false })
 
@@ -92,7 +92,11 @@ export default function CasesPage() {
     q = q.range(from, from + PAGE_SIZE - 1) as typeof q
 
     const { data, error, count } = await q
-    if (!error) {
+    if (error) {
+      console.error('Fetch cases error:', error)
+      setCases([])
+      setTotalRecords(0)
+    } else {
       setCases((data || []) as unknown as BusinessCase[])
       setTotalRecords(count || 0)
     }
@@ -252,7 +256,7 @@ export default function CasesPage() {
                           ) : <span style={{ color: 'var(--text-muted)' }}>—</span>}
                         </td>
                         <td style={{ color: 'var(--text-secondary)', fontSize: 13 }}>
-                          {c.sales_owner?.full_name ?? '—'}
+                          {c.sales_owner?.employee_name ?? '—'}
                         </td>
                         <td style={{ fontFamily: 'monospace', color: 'var(--text-secondary)',
                           fontSize: 12 }}>{formatDate(c.requested_due_date)}</td>

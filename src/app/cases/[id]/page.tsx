@@ -3,6 +3,8 @@
 import React, { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import TechnicalReviewTab from './_components/TechnicalReviewTab'
+import type { TechnicalReview, UserRole } from './types'
 import {
   Briefcase, ArrowLeft, List, ExternalLink,
   ClipboardList, FileSpreadsheet, Factory, FolderOpen,
@@ -24,18 +26,9 @@ type CaseDetail = {
   created_at: string
   updated_at: string | null
   companies: { company_id: string; company_name: string; company_code: string } | null
-  sales_owner: { employee_id: string; full_name: string } | null
-  technical_reviews: TechReview[]
+  sales_owner: { employee_id: string; employee_name: string } | null
+  technical_reviews: TechnicalReview[]
   quotations: Quotation[]
-}
-
-type TechReview = {
-  id: string
-  review_code: string
-  decision: string
-  status: string
-  reviewed_at: string | null
-  reviewer: { full_name: string } | null
 }
 
 type Quotation = {
@@ -90,23 +83,32 @@ export default function CaseDetailPage() {
   const [caseData, setCaseData] = useState<CaseDetail | null>(null)
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('overview')
+  const [currentUserRole, setCurrentUserRole] = useState<UserRole>('sales')
+  const [currentUserId, setCurrentUserId] = useState<string>('')
 
   useEffect(() => {
     if (!caseId) return
     const fetchCase = async () => {
       setLoading(true)
-      const { data, error } = await supabase
+      
+      const { data: { session } } = await supabase.auth.getSession()
+      const userId = session?.user?.id || ''
+      setCurrentUserId(userId)
+
+      if (userId) {
+        const { data: profile } = await (supabase as any).from('profiles').select('role').eq('id', userId).maybeSingle()
+        setCurrentUserRole((profile?.role as UserRole) ?? 'sales')
+      }
+
+      const { data, error } = await (supabase as any)
         .from('business_cases')
         .select(`
           id, case_code, title, case_type, status, priority,
           requested_due_date, instruction_notes, raw_text_snapshot,
           created_at, updated_at,
           companies(company_id, company_name, company_code),
-          sales_owner:employees!business_cases_sales_owner_id_fkey(employee_id, full_name),
-          technical_reviews(
-            id, review_code, decision, status, reviewed_at,
-            reviewer:employees!technical_reviews_reviewer_id_fkey(full_name)
-          ),
+          sales_owner:employees!business_cases_sales_owner_id_fkey(employee_id, employee_name),
+          technical_reviews(*),
           quotations(id, quotation_code, total_amount, status, issued_date)
         `)
         .eq('id', caseId)
@@ -266,7 +268,7 @@ export default function CaseDetailPage() {
                       <span className="label-ja">担当営業</span>
                       <span className="label-vi">Nhân viên phụ trách KD</span>
                     </label>
-                    <input className="form-input" readOnly value={caseData.sales_owner?.full_name ?? '—'} />
+                    <input className="form-input" readOnly value={caseData.sales_owner?.employee_name ?? '—'} />
                   </div>
                   <div className="form-field form-col-span-2">
                     <label className="form-label">
@@ -336,43 +338,12 @@ export default function CaseDetailPage() {
         {/* ====== TAB: TECHNICAL ====== */}
         {activeTab === 'technical' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <div className="form-section">
-              <div className="form-section-header">
-                <Wrench size={14} className="section-icon" />
-                <span style={{ fontFamily: 'var(--font-jp)' }}>技術検討履歴</span>
-                <span style={{ marginLeft: 6, opacity: 0.6 }}>Lịch sử Technical Review</span>
-              </div>
-              <div className="form-section-body">
-                {caseData.technical_reviews.length === 0 ? (
-                  <div style={{ textAlign: 'center', padding: '32px 0', color: 'var(--text-muted)', fontSize: 13 }}>
-                    技術検討がありません / Chưa có Technical Review
-                  </div>
-                ) : (
-                  <table className="data-table">
-                    <thead>
-                      <tr>
-                        <th><span className="ja">検討コード</span><span className="vi">Mã TR</span></th>
-                        <th><span className="ja">判定</span><span className="vi">Quyết định</span></th>
-                        <th><span className="ja">状態</span><span className="vi">Trạng thái</span></th>
-                        <th><span className="ja">担当者</span><span className="vi">Người review</span></th>
-                        <th><span className="ja">検討日</span><span className="vi">Ngày review</span></th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {caseData.technical_reviews.map(tr => (
-                        <tr key={tr.id}>
-                          <td style={{ fontFamily: 'monospace', fontWeight: 700, color: 'var(--accent)' }}>{tr.review_code}</td>
-                          <td><span className="badge badge--neutral" style={{ fontFamily: 'var(--font-jp)' }}>{tr.decision}</span></td>
-                          <td><span className="badge badge--info" style={{ fontFamily: 'var(--font-jp)' }}>{tr.status}</span></td>
-                          <td>{tr.reviewer?.full_name ?? '—'}</td>
-                          <td style={{ fontFamily: 'monospace' }}>{formatDate(tr.reviewed_at)}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                )}
-              </div>
-            </div>
+            <TechnicalReviewTab
+              caseId={caseId}
+              reviews={caseData.technical_reviews || []}
+              currentUserRole={currentUserRole}
+              currentUserId={currentUserId}
+            />
           </div>
         )}
 

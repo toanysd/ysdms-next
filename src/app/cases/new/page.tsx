@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Briefcase, ArrowLeft, Save, AlertCircle } from 'lucide-react'
@@ -24,11 +24,28 @@ export default function NewCasePage() {
   const [form, setForm] = useState({
     title: '',
     case_type: 'new_tray',
+    customer_id: '',
+    sales_owner_id: '',
     requested_due_date: '',
     instruction_notes: '',
   })
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  
+  const [companies, setCompanies] = useState<{company_id: string, company_name: string}[]>([])
+  const [employees, setEmployees] = useState<{employee_id: string, employee_name: string}[]>([])
+
+  useEffect(() => {
+    async function loadOptions() {
+      const [{ data: compData }, { data: empData }] = await Promise.all([
+        supabase.from('companies').select('company_id, company_name').order('company_name'),
+        supabase.from('employees').select('employee_id, employee_name').order('employee_name')
+      ])
+      if (compData) setCompanies(compData)
+      if (empData) setEmployees(empData as {employee_id: string, employee_name: string}[])
+    }
+    loadOptions()
+  }, [supabase])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -36,12 +53,14 @@ export default function NewCasePage() {
     setSaving(true)
     setError(null)
 
-    const { data, error: insertError } = await supabase
+    const { data, error: insertError } = await (supabase as any)
       .from('business_cases')
       .insert({
         title: form.title.trim(),
         case_type: form.case_type,
         status: 'open',
+        customer_id: form.customer_id || null,
+        sales_owner_id: form.sales_owner_id || null,
         requested_due_date: form.requested_due_date || null,
         instruction_notes: form.instruction_notes || null,
       })
@@ -117,6 +136,36 @@ export default function NewCasePage() {
                     <option key={t.value} value={t.value}>
                       {t.labelJA} / {t.labelVI}
                     </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="form-field">
+                <label className="form-label">
+                  <span className="label-ja">得意先 <span className="label-required">*</span></span>
+                  <span className="label-vi">Khách hàng</span>
+                </label>
+                <select className="form-select" required
+                  value={form.customer_id}
+                  onChange={e => setForm(f => ({ ...f, customer_id: e.target.value }))}>
+                  <option value="">-- 選択 / Chọn --</option>
+                  {companies.map(c => (
+                    <option key={c.company_id} value={c.company_id}>{c.company_name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="form-field">
+                <label className="form-label">
+                  <span className="label-ja">営業担当 <span className="label-required">*</span></span>
+                  <span className="label-vi">Phụ trách KD</span>
+                </label>
+                <select className="form-select" required
+                  value={form.sales_owner_id}
+                  onChange={e => setForm(f => ({ ...f, sales_owner_id: e.target.value }))}>
+                  <option value="">-- 選択 / Chọn --</option>
+                  {employees.map(e => (
+                    <option key={e.employee_id} value={e.employee_id}>{e.employee_name}</option>
                   ))}
                 </select>
               </div>
