@@ -49,6 +49,8 @@ add_col.js
 
 # Data and backups
 /source_data/
+!/source_data/csv-access-data/
+/source_data/csv-access-data/archived/
 *.rar
 *.zip
 *.tar
