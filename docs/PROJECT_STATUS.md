@@ -12,6 +12,9 @@
 | 2026-07-15 | — | Dọn repo: 43 file rác chuyển vào `scratch/` — root còn ~30 files sạch |
 | 2026-07-15 | `docs/AN_deep_scan_part1/2/3.md` | 3 báo cáo scan chi tiết: Quotation/ISO, Delivery/Production, Legacy CSV |
 | 2026-07-15 | `docs/02_BUSINESS_PROCESS_CATALOG.md` | Danh mục nghiệp vụ v1.1 — tổng hợp từ 3 scanner |
+| 2026-07-15 | `supabase/migrations/20260715110000_bp42_material_stock.sql` | Migration cho material_stock (BP-42~47) và View tổng hợp tồn kho |
+| 2026-07-15 | `scripts/seed_material_stock.py` | Import thành công 180 SKUs tồn kho từ Excel vào DB thật |
+| 2026-07-15 | `src/app/actions/production-instructions.ts` | Tích hợp checkMaterialStock với view material_inventory_v2 thật |
 
 ---
 

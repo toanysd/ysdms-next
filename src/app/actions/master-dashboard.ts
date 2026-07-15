@@ -33,8 +33,7 @@ export async function getMasterDashboardKPIs(): Promise<MasterDashboardKPIs> {
     const unscheduledOrdersCount = pendingOrders?.length || 0
 
     // 4. Maintenance Alerts: Query new view
-    const { count: maintenanceAlerts, error: err4 } = await supabase
-        // @ts-ignore
+    const { count: maintenanceAlerts, error: err4 } = await (supabase as any)
         .from('v_maintenance_overdue')
         .select('*', { count: 'exact', head: true })
 
@@ -53,8 +52,7 @@ export async function getCoverageChartData() {
     const supabase = await createClient()
 
     // We fetch top 10 items in production progress for the chart
-    const { data, error } = await supabase
-        // @ts-ignore
+    const { data, error } = await (supabase as any)
         .from('v_production_plan_progress')
         .select(`
             order_item_id,

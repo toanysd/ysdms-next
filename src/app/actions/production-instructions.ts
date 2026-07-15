@@ -100,8 +100,20 @@ export async function checkMaterialStock(
   productionSite: string,
   quantityNeeded: number
 ): Promise<{ sufficient: boolean; currentStock: number }> {
-  // TODO Sprint 2: Implement real material inventory logic
-  const currentStock = 1000
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from('material_inventory_v2')
+    .select('available_m')
+    .eq('material_spec', materialSpec)
+    .eq('factory_site', productionSite)
+
+  if (error || !data || data.length === 0) {
+    return { sufficient: false, currentStock: 0 }
+  }
+
+  // Sum up available stock across all variants (silicon/antistatic) for the same spec and factory
+  const currentStock = data.reduce((sum, row) => sum + Number(row.available_m || 0), 0)
+
   return { sufficient: currentStock >= quantityNeeded, currentStock }
 }
 
