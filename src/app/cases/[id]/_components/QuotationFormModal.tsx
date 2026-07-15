@@ -91,13 +91,13 @@ export default function QuotationFormModal({ caseId, initialData, onClose, onSuc
       if (isEdit) {
         const { error: updErr } = await supabase
           .from('quotations')
-          .update(payload)
+          .update(payload as any)
           .eq('id', initialData.id)
         if (updErr) throw updErr
       } else {
         const { error: insErr } = await supabase
           .from('quotations')
-          .insert(payload)
+          .insert(payload as any)
         if (insErr) throw insErr
       }
 
