@@ -1,27 +1,46 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import type { Quotation } from '../types'
-import { FileSpreadsheet, Plus, FileText, Download, CheckCircle2, Clock } from 'lucide-react'
+import { FileSpreadsheet, Plus, FileText, Download } from 'lucide-react'
 import QuotationFormModal from './QuotationFormModal'
 
 type Props = {
   caseId: string
   quotations: Quotation[]
   currentUserId: string | null
+  // Khi vào tab Sales từ nút "Tạo báo giá" bên tab Kỹ thuật → tự mở modal
+  openModalOnMount?: boolean
+  onModalMounted?: () => void
   onRefresh: () => void
 }
 
 const STATUS_MAP: Record<string, { labelJA: string; badge: string }> = {
-  draft: { labelJA: '下書き', badge: 'badge--neutral' },
-  sent: { labelJA: '提出済', badge: 'badge--info' },
-  accepted: { labelJA: '承認済', badge: 'badge--success' },
-  rejected: { labelJA: '失注', badge: 'badge--error' },
+  draft:    { labelJA: '下書き',  badge: 'badge--neutral' },
+  sent:     { labelJA: '提出済',  badge: 'badge--info' },
+  accepted: { labelJA: '承認済',  badge: 'badge--success' },
+  rejected: { labelJA: '失注',    badge: 'badge--error' },
 }
 
-export default function SalesTab({ caseId, quotations, currentUserId, onRefresh }: Props) {
+export default function SalesTab({
+  caseId,
+  quotations,
+  currentUserId,
+  openModalOnMount,
+  onModalMounted,
+  onRefresh,
+}: Props) {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingQuotation, setEditingQuotation] = useState<Quotation | null>(null)
+
+  // Tự mở modal nếu được yêu cầu từ tab Kỹ thuật
+  useEffect(() => {
+    if (openModalOnMount) {
+      setEditingQuotation(null)
+      setIsModalOpen(true)
+      onModalMounted?.()
+    }
+  }, [openModalOnMount, onModalMounted])
 
   const handleOpenModal = (q?: Quotation) => {
     setEditingQuotation(q || null)
@@ -31,7 +50,7 @@ export default function SalesTab({ caseId, quotations, currentUserId, onRefresh 
   const handleExportPDF = async (q: Quotation) => {
     try {
       const { generateQuotationPDF } = await import('@/lib/utils/pdfExport')
-      const blob = await generateQuotationPDF(q, '得意先') // We can pass the real customer name later if available
+      const blob = await generateQuotationPDF(q, '得意先')
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
@@ -40,7 +59,7 @@ export default function SalesTab({ caseId, quotations, currentUserId, onRefresh 
       a.click()
       document.body.removeChild(a)
       URL.revokeObjectURL(url)
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err)
       alert('PDFのエクスポートに失敗しました。')
     }
@@ -59,7 +78,7 @@ export default function SalesTab({ caseId, quotations, currentUserId, onRefresh 
           <span style={{ fontFamily: 'var(--font-jp)' }}>見積作成</span>
         </button>
       </div>
-      
+
       <div className="form-section-body">
         {(!quotations || quotations.length === 0) ? (
           <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-muted)', fontSize: 13 }}>

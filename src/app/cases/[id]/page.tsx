@@ -13,7 +13,7 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 
-// ── Types ──────────────────────────────────────────────────────────────
+// ── Types ──────────────────────────────────────────────────────────────────
 type CaseDetail = {
   id: string
   case_code: string
@@ -31,7 +31,7 @@ type CaseDetail = {
   quotations: Quotation[]
 }
 
-// ── Config ─────────────────────────────────────────────────────────────
+// ── Config ─────────────────────────────────────────────────────────────────
 const STATUS_CONFIG: Record<string, { labelJA: string; labelVI: string; badgeClass: string }> = {
   open:      { labelJA: '新規',     labelVI: 'Mới',         badgeClass: 'badge badge--info' },
   in_review: { labelJA: '検討中',   labelVI: 'Đang xem xét', badgeClass: 'badge badge--warning' },
@@ -65,7 +65,7 @@ function formatDate(d: string | null) {
   return d.substring(0, 10).replace(/-/g, '/')
 }
 
-// ── Main Component ──────────────────────────────────────────────────────
+// ── Main Component ───────────────────────────────────────────────────────────────────
 export default function CaseDetailPage() {
   const params = useParams()
   const router = useRouter()
@@ -75,69 +75,68 @@ export default function CaseDetailPage() {
   const [caseData, setCaseData] = useState<CaseDetail | null>(null)
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('overview')
+  // Khi tab kỹ thuật bấm "Tạo báo giá", set cở này → SalesTab tự mở modal
+  const [openSalesModal, setOpenSalesModal] = useState(false)
   const [currentUserRole, setCurrentUserRole] = useState<UserRole>('sales')
   const [currentUserId, setCurrentUserId] = useState<string>('')
 
-  useEffect(() => {
-    if (!caseId) return
-    const fetchCase = async () => {
-      setLoading(true)
+  const fetchCase = React.useCallback(async () => {
+    setLoading(true)
+    const { data: { session } } = await supabase.auth.getSession()
+    const userId = session?.user?.id || ''
+    setCurrentUserId(userId)
 
-      const { data: { session } } = await supabase.auth.getSession()
-      const userId = session?.user?.id || ''
-      setCurrentUserId(userId)
-
-      if (userId) {
-        try {
-          const { data: profile } = await (supabase as any)
-            .from('profiles').select('role').eq('id', userId).maybeSingle()
-          setCurrentUserRole((profile?.role as UserRole) ?? 'sales')
-        } catch (err) {
-          console.error('Failed to load profile', err)
-          setCurrentUserRole('sales')
-        }
+    if (userId) {
+      try {
+        const { data: profile } = await (supabase as any)
+          .from('profiles').select('role').eq('id', userId).maybeSingle()
+        setCurrentUserRole((profile?.role as UserRole) ?? 'sales')
+      } catch {
+        setCurrentUserRole('sales')
       }
-
-      // NOTE: quotations table not yet created — removed from select until migration is applied
-      const { data, error } = await (supabase as any)
-        .from('business_cases')
-        .select(`
-          id, case_code, title, case_type, status,
-          requested_due_date, instruction_notes, raw_text_snapshot,
-          created_at, updated_at,
-          companies(company_id, company_name, company_code),
-          sales_owner:employees!business_cases_sales_owner_id_fkey(employee_id, employee_name),
-          technical_reviews(
-            id, case_id, version, approval_status,
-            product_id, design_revision_id,
-            material_spec, thickness_mm, special_requirements,
-            mold_option, mold_id, pocket_count,
-            cutting_die_option, cutting_die_id, machine_id,
-            lead_time_days, cycle_time_sec,
-            technical_constraints, rejected_reason,
-            approved_by, approved_at,
-            requested_by, reviewed_by,
-            created_at, updated_at
-          ),
-          quotations(*)
-        `)
-        .eq('id', caseId)
-        .single()
-
-      if (error) {
-        console.error('Failed to load business case:', {
-          code: error.code,
-          message: error.message,
-          details: error.details,
-          hint: error.hint,
-        })
-      }
-
-      if (!error && data) setCaseData(data as unknown as CaseDetail)
-      setLoading(false)
     }
-    fetchCase()
+
+    const { data, error } = await (supabase as any)
+      .from('business_cases')
+      .select(`
+        id, case_code, title, case_type, status,
+        requested_due_date, instruction_notes, raw_text_snapshot,
+        created_at, updated_at,
+        companies(company_id, company_name, company_code),
+        sales_owner:employees!business_cases_sales_owner_id_fkey(employee_id, employee_name),
+        technical_reviews(
+          id, case_id, version, approval_status,
+          product_id, design_revision_id,
+          material_spec, thickness_mm, special_requirements,
+          mold_option, mold_id, pocket_count,
+          cutting_die_option, cutting_die_id, machine_id,
+          lead_time_days, cycle_time_sec,
+          technical_constraints, rejected_reason,
+          approved_by, approved_at,
+          requested_by, reviewed_by,
+          created_at, updated_at
+        ),
+        quotations(*)
+      `)
+      .eq('id', caseId)
+      .single()
+
+    if (error) {
+      console.error('Failed to load business case:', error)
+    }
+    if (!error && data) setCaseData(data as unknown as CaseDetail)
+    setLoading(false)
   }, [caseId, supabase])
+
+  useEffect(() => {
+    if (caseId) fetchCase()
+  }, [caseId, fetchCase])
+
+  // Handler: từ TechnicalReviewSummary → chuyển sang Sales tab và mở modal
+  function handleGoToSalesAndOpenModal() {
+    setOpenSalesModal(true)
+    setActiveTab('sales')
+  }
 
   if (loading) return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -186,7 +185,6 @@ export default function CaseDetailPage() {
         </Link>
 
         <span style={{ color: 'var(--border-strong)', margin: '0 4px' }}>/</span>
-
         <Briefcase size={14} style={{ color: 'var(--accent)' }} />
         <span style={{ fontFamily: 'monospace', fontWeight: 700, color: 'var(--accent)', fontSize: 13 }}>
           {caseData.case_code}
@@ -200,9 +198,7 @@ export default function CaseDetailPage() {
             <span style={{ fontFamily: 'var(--font-jp)' }}>{statusCfg.labelJA}</span>
           </span>
         )}
-
         <div style={{ flex: 1 }} />
-
         <button className="btn btn-secondary" style={{ gap: 6, fontSize: 12, padding: '4px 10px' }}>
           <Edit2 size={13} />
           <span style={{ fontFamily: 'var(--font-jp)' }}>編集</span>
@@ -364,47 +360,19 @@ export default function CaseDetailPage() {
             reviews={caseData.technical_reviews || []}
             currentUserRole={currentUserRole}
             currentUserId={currentUserId}
+            onCreateQuotation={handleGoToSalesAndOpenModal}
           />
         )}
 
         {/* ====== TAB: SALES ====== */}
         {activeTab === 'sales' && (
-          <SalesTab 
-            caseId={caseId} 
-            quotations={caseData.quotations || []} 
+          <SalesTab
+            caseId={caseId}
+            quotations={caseData.quotations || []}
             currentUserId={currentUserId}
-            onRefresh={() => {
-              setLoading(true)
-              const fetchCase = async () => {
-                const { data } = await (supabase as any)
-                  .from('business_cases')
-                  .select(`
-                    id, case_code, title, case_type, status,
-                    requested_due_date, raw_text_snapshot,
-                    created_at, updated_at,
-                    companies(company_id, company_name, company_code),
-                    sales_owner:employees!business_cases_sales_owner_id_fkey(employee_id, employee_name),
-                    technical_reviews(
-                      id, case_id, version, approval_status,
-                      product_id, design_revision_id,
-                      material_spec, thickness_mm, special_requirements,
-                      mold_option, mold_id, pocket_count,
-                      cutting_die_option, cutting_die_id, machine_id,
-                      lead_time_days, cycle_time_sec,
-                      technical_constraints, rejected_reason,
-                      approved_by, approved_at,
-                      requested_by, reviewed_by,
-                      created_at, updated_at
-                    ),
-                    quotations(*)
-                  `)
-                  .eq('id', caseId)
-                  .single()
-                if (data) setCaseData(data as unknown as CaseDetail)
-                setLoading(false)
-              }
-              fetchCase()
-            }}
+            openModalOnMount={openSalesModal}
+            onModalMounted={() => setOpenSalesModal(false)}
+            onRefresh={fetchCase}
           />
         )}
 

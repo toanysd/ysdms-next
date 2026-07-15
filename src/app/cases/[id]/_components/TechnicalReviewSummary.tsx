@@ -1,6 +1,5 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
 import type { TechnicalReview, UserRole } from '../types';
 import { createTechnicalReviewRevision } from '../actions';
 import { useTransition } from 'react';
@@ -10,29 +9,31 @@ interface Props {
   caseId: string;
   currentUserRole: UserRole;
   onCreateRevision: () => void;
+  // Callback từ page.tsx — chuyển sang Sales tab và mở modal báo giá
+  onCreateQuotation?: () => void;
 }
 
 export default function TechnicalReviewSummary({
   review,
-  caseId,
+  caseId: _caseId,
   currentUserRole,
   onCreateRevision,
+  onCreateQuotation,
 }: Props) {
-  const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
   const rows: { label: string; value: string | number | null | undefined }[] = [
-    { label: 'Version',          value: review.version },
-    { label: 'Vật liệu',         value: review.material_spec },
-    { label: 'Độ dày (mm)',      value: review.thickness_mm },
-    { label: 'Phương án khuôn',  value: review.mold_option },
-    { label: 'Số pocket',        value: review.pocket_count },
-    { label: 'Phương án dao cắt',value: review.cutting_die_option },
-    { label: 'Lead time (ngày)', value: review.lead_time_days },
-    { label: 'Cycle time (sec)', value: review.cycle_time_sec },
-    { label: 'Yêu cầu đặc biệt',value: review.special_requirements },
-    { label: 'Ghi chú kỹ thuật',value: review.technical_constraints },
-    { label: 'Người duyệt',      value: review.approved_by },
+    { label: 'Version',           value: review.version },
+    { label: 'Vật liệu',          value: review.material_spec },
+    { label: 'Độ dày (mm)',       value: review.thickness_mm },
+    { label: 'Phương án khuôn',   value: review.mold_option },
+    { label: 'Số pocket',         value: review.pocket_count },
+    { label: 'Phương án dao cắt', value: review.cutting_die_option },
+    { label: 'Lead time (ngày)',  value: review.lead_time_days },
+    { label: 'Cycle time (sec)',  value: review.cycle_time_sec },
+    { label: 'Yêu cầu đặc biệt', value: review.special_requirements },
+    { label: 'Ghi chú kỹ thuật', value: review.technical_constraints },
+    { label: 'Người duyệt',       value: review.approved_by },
     {
       label: 'Ngày duyệt',
       value: review.approved_at
@@ -41,13 +42,9 @@ export default function TechnicalReviewSummary({
     },
   ];
 
-  function handleCreateQuotation() {
-    router.push(`/quotations/new?case_id=${caseId}&review_id=${review.id}`);
-  }
-
   function handleCreateRevision() {
     startTransition(async () => {
-      await createTechnicalReviewRevision(caseId);
+      await createTechnicalReviewRevision(_caseId);
       onCreateRevision();
     });
   }
@@ -60,12 +57,15 @@ export default function TechnicalReviewSummary({
           <span className="badge badge-success">承認済 / Approved</span>
         </div>
         <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
-          <button
-            className="btn btn-primary"
-            onClick={handleCreateQuotation}
-          >
-            📄 見積書を作成 / Tạo báo giá
-          </button>
+          {/* Nút này chuyển sang Tab 販売 và mở modal — KHÔNG navigate ra /quotations/new */}
+          {onCreateQuotation && (
+            <button
+              className="btn btn-primary"
+              onClick={onCreateQuotation}
+            >
+              📄 見積書を作成 / Tạo báo giá
+            </button>
+          )}
           {(currentUserRole === 'engineering' || currentUserRole === 'manager') && (
             <button
               className="btn btn-secondary"

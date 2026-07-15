@@ -11,6 +11,8 @@ interface Props {
   reviews: TechnicalReview[];
   currentUserRole: UserRole;
   currentUserId: string;
+  // Callback từ parent (page.tsx) — chuyển sang Sales tab và mở modal
+  onCreateQuotation?: () => void;
 }
 
 export default function TechnicalReviewTab({
@@ -18,6 +20,7 @@ export default function TechnicalReviewTab({
   reviews,
   currentUserRole,
   currentUserId,
+  onCreateQuotation,
 }: Props) {
   const [mode, setMode] = useState<'view' | 'create' | 'edit'>('view');
   const [editingReview, setEditingReview] = useState<TechnicalReview | null>(null);
@@ -41,7 +44,6 @@ export default function TechnicalReviewTab({
     setMode('view');
   }
 
-  // Empty state
   if (reviews.length === 0 && mode === 'view') {
     return (
       <div className="empty-state">
@@ -68,6 +70,7 @@ export default function TechnicalReviewTab({
           caseId={caseId}
           currentUserRole={currentUserRole}
           onCreateRevision={() => handleCreate()}
+          onCreateQuotation={onCreateQuotation}
         />
       )}
 
