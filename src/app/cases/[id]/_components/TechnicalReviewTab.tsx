@@ -23,12 +23,8 @@ export default function TechnicalReviewTab({
   const [editingReview, setEditingReview] = useState<TechnicalReview | null>(null);
 
   const approvedReview = reviews.find((r) => r.approval_status === 'approved');
-  const activeReview = reviews.find((r)
-    => r.approval_status === 'draft' || r.approval_status === 'in_review'
-  );
-  const historyReviews = reviews.filter((r)
-    => r.approval_status === 'superseded' || r.approval_status === 'rejected'
-  );
+  const activeReview = reviews.find((r) => r.approval_status === 'draft' || r.approval_status === 'in_review');
+  const historyReviews = reviews.filter((r) => r.approval_status === 'superseded' || r.approval_status === 'rejected');
 
   function handleCreate() {
     setEditingReview(null);
