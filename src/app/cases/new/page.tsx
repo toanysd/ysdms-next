@@ -62,7 +62,7 @@ export default function NewCasePage() {
         customer_id: form.customer_id || null,
         sales_owner_id: form.sales_owner_id || null,
         requested_due_date: form.requested_due_date || null,
-        instruction_notes: form.instruction_notes || null,
+        raw_text_snapshot: form.instruction_notes || null,
       })
       .select('id')
       .single()
