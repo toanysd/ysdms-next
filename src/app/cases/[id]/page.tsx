@@ -19,9 +19,7 @@ type CaseDetail = {
   title: string
   case_type: string
   status: string
-  priority: string | null
   requested_due_date: string | null
-  instruction_notes: string | null
   raw_text_snapshot: string | null
   created_at: string
   updated_at: string | null
@@ -100,7 +98,7 @@ export default function CaseDetailPage() {
           const { data: profile } = await (supabase as any).from('profiles').select('role').eq('id', userId).maybeSingle()
           setCurrentUserRole((profile?.role as UserRole) ?? 'sales')
         } catch (err) {
-          console.error("Failed to load profile", err)
+          console.error('Failed to load profile', err)
           setCurrentUserRole('sales')
         }
       }
@@ -108,8 +106,8 @@ export default function CaseDetailPage() {
       const { data, error } = await (supabase as any)
         .from('business_cases')
         .select(`
-          id, case_code, title, case_type, status, priority,
-          requested_due_date, instruction_notes, raw_text_snapshot,
+          id, case_code, title, case_type, status,
+          requested_due_date, raw_text_snapshot,
           created_at, updated_at,
           companies(company_id, company_name, company_code),
           sales_owner:employees!business_cases_sales_owner_id_fkey(employee_id, employee_name),
@@ -118,6 +116,16 @@ export default function CaseDetailPage() {
         `)
         .eq('id', caseId)
         .single()
+
+      if (error) {
+        console.error('Failed to load business case:', {
+          code: error.code,
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+        })
+      }
+
       if (!error && data) setCaseData(data as unknown as CaseDetail)
       setLoading(false)
     }
@@ -282,13 +290,13 @@ export default function CaseDetailPage() {
                     </label>
                     <input className="form-input" readOnly value={caseData.title} />
                   </div>
-                  {caseData.instruction_notes && (
+                  {caseData.raw_text_snapshot && (
                     <div className="form-field form-col-span-2">
                       <label className="form-label">
-                        <span className="label-ja">指示メモ</span>
-                        <span className="label-vi">Ghi chú chỉ thị</span>
+                        <span className="label-ja">指示メモ / 原文</span>
+                        <span className="label-vi">Ghi chú chỉ thị / Nội dung gốc</span>
                       </label>
-                      <textarea className="form-textarea" readOnly value={caseData.instruction_notes}
+                      <textarea className="form-textarea" readOnly value={caseData.raw_text_snapshot}
                         style={{ minHeight: 80 }} />
                     </div>
                   )}
