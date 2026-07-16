@@ -2,11 +2,13 @@
 
 import { useEffect, useState, useCallback, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import {
-  Plus, Edit2, Trash2, X, Truck, Filter, Package, Search, Loader2
-} from 'lucide-react'
+import { Plus, Edit2, Trash2, X, Truck, Filter, Package, Search, Loader2 } from 'lucide-react'
 import { AsyncSearchableSelect } from '@/components/ui/AsyncSearchableSelect'
 import { Pagination } from '@/components/ui/Pagination'
+import Link from 'next/link'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { useSearchHistory } from '@/hooks/useSearchHistory'
+import { SearchSuggestions } from '@/components/ui/SearchSuggestions'
 
 /* ─── Types ──────────────────────────────────────────────────── */
 type Shipment = {
@@ -78,16 +80,21 @@ export default function ShipmentsPage() {
   // Filter
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
-  const [searchText, setSearchText] = useState('')
+  
+  const searchParams = useSearchParams()
+  const urlSearch = searchParams.get('search') || ''
+  const [searchText, setSearchText] = useState(urlSearch)
+  const [showSuggestions, setShowSuggestions] = useState(false)
+  const { history, addHistory, clearHistory } = useSearchHistory('shipments_search')
+  const router = useRouter()
   
   // Pagination
   const [page, setPage] = useState(1)
   const [totalRecords, setTotalRecords] = useState(0)
   const PAGE_SIZE = 50
 
-  // Modal
+  // Modal (Create Only)
   const [modalOpen, setModalOpen] = useState(false)
-  const [editingId, setEditingId] = useState<string | null>(null)
   const [form, setForm] = useState<ShipmentForm>({ ...emptyForm })
   const [saving, setSaving] = useState(false)
 
@@ -143,22 +150,6 @@ export default function ShipmentsPage() {
   /* ─── Modal handlers ────────────────────────────────────────── */
   const openAdd = () => {
     setForm({ ...emptyForm })
-    setEditingId(null)
-    setModalOpen(true)
-  }
-
-  const openEdit = (s: Shipment) => {
-    setForm({
-      order_id: s.order_id || '',
-      ship_date: s.ship_date?.slice(0, 10) || '',
-      delivery_date: s.delivery_date?.slice(0, 10) || '',
-      delivery_note_no: s.delivery_note_no || '',
-      carrier: s.carrier || '',
-      tracking_no: s.tracking_no || '',
-      status: s.status || 'SHIPPED',
-      notes: s.notes || '',
-    })
-    setEditingId(s.shipment_id)
     setModalOpen(true)
   }
 
@@ -175,17 +166,12 @@ export default function ShipmentsPage() {
       order_id: form.order_id || null,
     }
 
-    if (editingId) {
-      payload.updated_at = new Date().toISOString()
-      const { error: err } = await supabase.from('shipments').update(payload as any).eq('shipment_id', editingId)
-      if (err) { alert('更新エラー: ' + err.message); setSaving(false); return }
-    } else {
-      const { error: err } = await supabase.from('shipments').insert(payload as any)
-      if (err) { alert('登録エラー: ' + err.message); setSaving(false); return }
-    }
+    const { data, error: err } = await supabase.from('shipments').insert(payload as any).select().single()
+    if (err) { alert('登録エラー: ' + err.message); setSaving(false); return }
+    
     setSaving(false)
     setModalOpen(false)
-    fetchShipments()
+    router.push(`/orders/shipments/${data.shipment_id}`)
   }
 
   const handleDelete = async () => {
@@ -259,9 +245,28 @@ export default function ShipmentsPage() {
                   placeholder="検索..."
                   value={searchText}
                   onChange={e => setSearchText(e.target.value)}
-                  className="form-input"
+                  onFocus={() => setShowSuggestions(true)}
+                  onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter' && searchText.trim()) {
+                      addHistory(searchText.trim())
+                      router.push(`?search=${encodeURIComponent(searchText.trim())}`)
+                    }
+                  }}
+                  className="form-input form-input-search"
                   style={{ paddingLeft: 30 }}
                 />
+                {showSuggestions && (
+                  <SearchSuggestions
+                    history={history}
+                    onSelect={(v) => {
+                      setSearchText(v)
+                      addHistory(v)
+                      router.push(`?search=${encodeURIComponent(v)}`)
+                    }}
+                    onClear={clearHistory}
+                  />
+                )}
               </div>
             </div>
           </div>
@@ -332,7 +337,15 @@ export default function ShipmentsPage() {
                       return (
                         <tr key={s.shipment_id}>
                           <td style={{ fontFamily: 'monospace', fontWeight: 600 }}>
-                            {s.delivery_note_no || <span style={{ color: 'var(--text-muted)' }}>-</span>}
+                            {s.delivery_note_no ? (
+                              <Link href={`/orders/shipments/${s.shipment_id}`} style={{ color: 'var(--accent)', textDecoration: 'none' }}>
+                                {s.delivery_note_no}
+                              </Link>
+                            ) : (
+                              <Link href={`/orders/shipments/${s.shipment_id}`} style={{ color: 'var(--text-muted)', textDecoration: 'none', fontStyle: 'italic' }}>
+                                未設定
+                              </Link>
+                            )}
                           </td>
                           <td style={{ fontFamily: 'monospace', color: 'var(--accent)', fontWeight: 600 }}>
                             {s.orders?.order_no || <span style={{ color: 'var(--text-muted)' }}>-</span>}
@@ -370,13 +383,13 @@ export default function ShipmentsPage() {
                           </td>
                           <td style={{ textAlign: 'right' }}>
                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 4 }}>
-                              <button
-                                onClick={() => openEdit(s)}
+                              <Link
+                                href={`/orders/shipments/${s.shipment_id}`}
                                 style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', padding: 4 }}
-                                title="編集"
+                                title="詳細"
                               >
                                 <Edit2 size={14} />
-                              </button>
+                              </Link>
                               <button
                                 onClick={() => setDeleteId(s.shipment_id)}
                                 style={{ background: 'none', border: 'none', color: 'var(--status-error)', cursor: 'pointer', padding: 4 }}
@@ -413,10 +426,10 @@ export default function ShipmentsPage() {
             <div className="form-section-header" style={{ justifyContent: 'space-between', padding: '12px 16px' }}>
               <div>
                 <span className="ja" style={{ fontSize: 13, textTransform: 'none', color: 'var(--text-primary)' }}>
-                  {editingId ? '出荷編集' : '新規出荷登録'}
+                  新規出荷登録
                 </span>
                 <span className="vi" style={{ fontSize: 10, textTransform: 'none' }}>
-                  {editingId ? 'Chỉnh sửa phiếu xuất' : 'Tạo phiếu xuất mới'}
+                  Tạo phiếu xuất mới
                 </span>
               </div>
               <button onClick={() => setModalOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}>
@@ -492,7 +505,7 @@ export default function ShipmentsPage() {
               <button type="button" className="btn btn-secondary" onClick={() => setModalOpen(false)} disabled={saving}>キャンセル</button>
               <button type="button" className="btn btn-primary" onClick={handleSave} disabled={saving || !form.ship_date}>
                 {saving && <Loader2 size={12} className="animate-spin" style={{ marginRight: 4 }} />}
-                {editingId ? '更新する' : '登録する'}
+                登録する
               </button>
             </div>
           </div>
