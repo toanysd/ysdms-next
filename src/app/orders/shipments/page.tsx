@@ -85,12 +85,12 @@ export default function ShipmentsPage() {
   const urlSearch = searchParams.get('search') || ''
   const [searchText, setSearchText] = useState(urlSearch)
   const [showSuggestions, setShowSuggestions] = useState(false)
-  const { history, addHistory, clearHistory } = useSearchHistory('shipments_search')
+  const { history, addToHistory, removeFromHistory, clearHistory } = useSearchHistory('shipments_search')
   const router = useRouter()
   
   // Pagination
   const [page, setPage] = useState(1)
-  const [totalRecords, setTotalRecords] = useState(0)
+  const [totalCount, setTotalCount] = useState(0)
   const PAGE_SIZE = 50
 
   // Modal (Create Only)
@@ -109,43 +109,33 @@ export default function ShipmentsPage() {
   /* ─── Fetch ─────────────────────────────────────────────────── */
   const fetchShipments = useCallback(async () => {
     setLoading(true)
-    setError(null)
     let q = supabase
       .from('shipments')
       .select('*, orders(order_no, companies(company_name))', { count: 'exact' })
-      .order('ship_date', { ascending: false })
-
+    
     if (dateFrom) q = q.gte('ship_date', dateFrom)
     if (dateTo) q = q.lte('ship_date', dateTo)
-    
-    // Pagination
-    const from = (page - 1) * PAGE_SIZE
-    const to = from + PAGE_SIZE - 1
-    q = q.range(from, to)
+    if (searchText) {
+      q = q.or(`delivery_note_no.ilike.%${searchText}%,tracking_no.ilike.%${searchText}%`)
+    }
 
-    const { data, error: err, count } = await q
-    if (err) setError(err.message)
-    else {
-      setShipments((data as unknown as Shipment[]) || [])
-      setTotalRecords(count || 0)
+    q = q.order('ship_date', { ascending: false })
+         .range((page - 1) * PAGE_SIZE, page * PAGE_SIZE - 1)
+
+    const { data, count, error } = await q
+    if (error) {
+      console.error(error)
+      setError(error.message)
+    } else {
+      setShipments((data as any) || [])
+      setTotalCount(count || 0)
     }
     setLoading(false)
-  }, [dateFrom, dateTo, page])
+  }, [dateFrom, dateTo, searchText, page, supabase])
 
-  useEffect(() => { fetchShipments() }, [fetchShipments])
-
-  /* ─── Filtered list (client side for text search inside the page) ───────────────────────── */
-  const filtered = useMemo(() => {
-    if (!searchText.trim()) return shipments
-    const q = searchText.toLowerCase()
-    return shipments.filter(s =>
-      (s.delivery_note_no || '').toLowerCase().includes(q) ||
-      (s.orders?.order_no || '').toLowerCase().includes(q) ||
-      (s.orders?.companies?.company_name || '').toLowerCase().includes(q) ||
-      (s.carrier || '').toLowerCase().includes(q) ||
-      (s.tracking_no || '').toLowerCase().includes(q)
-    )
-  }, [shipments, searchText])
+  useEffect(() => {
+    fetchShipments()
+  }, [fetchShipments])
 
   /* ─── Modal handlers ────────────────────────────────────────── */
   const openAdd = () => {
@@ -184,60 +174,47 @@ export default function ShipmentsPage() {
 
   /* ─── Render ────────────────────────────────────────────────── */
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', gap: '12px' }}>
-      {/* ── Page Header ───────────────────────────────────────── */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <Truck size={20} style={{ color: 'var(--accent)' }} />
-          <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <span className="ja" style={{ fontSize: 16 }}>出荷・納品</span>
-            <span className="vi" style={{ fontSize: 11 }}>Xuất hàng &amp; Phiếu giao</span>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', gap: 12 }}>
+      {/* ── Header ── */}
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexShrink: 0 }}>
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div style={{ width: 32, height: 32, borderRadius: 'var(--radius-md)', background: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
+              <Truck size={18} />
+            </div>
+            <div>
+              <h1 style={{ fontSize: 18, fontWeight: 700, margin: 0, color: 'var(--text-primary)' }}>
+                <span className="ja">出荷管理</span>
+                <span className="vi" style={{ fontSize: 12, fontWeight: 500, marginLeft: 8, color: 'var(--text-secondary)' }}>Quản lý Giao hàng</span>
+              </h1>
+            </div>
           </div>
         </div>
-
         <button className="btn btn-primary" onClick={openAdd}>
-          <Plus size={14} />
-          <span style={{ fontFamily: 'var(--font-jp)' }}>新規出荷</span>
+          <Plus size={16} />
+          新規出荷 / Tạo mới
         </button>
       </div>
 
-      {/* ── Filters Section ───────────────────────────────────── */}
-      <div className="form-section" style={{ flexShrink: 0, marginBottom: 0 }}>
-        <div className="form-section-header">
-          <Filter className="section-icon" />
-          <span>検索条件</span>
+      {/* ── Filters ── */}
+      <div className="card-flat" style={{ padding: '12px 16px', flexShrink: 0, display: 'flex', flexWrap: 'wrap', gap: 16, alignItems: 'center' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <Filter size={14} style={{ color: 'var(--text-muted)' }} />
+          <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)' }}>
+            <span className="ja">絞り込み</span>
+            <span className="vi" style={{ fontSize: 10, marginLeft: 4 }}>Lọc</span>
+          </span>
         </div>
-        <div className="form-section-body">
-          <div className="form-grid-4">
-            <div className="form-field">
-              <label className="form-label">
-                <span className="label-ja">出荷日 (から)</span>
-                <span className="label-vi">Xuất từ ngày</span>
-              </label>
-              <input
-                type="date"
-                value={dateFrom}
-                onChange={e => setDateFrom(e.target.value)}
-                className="form-input"
-              />
-            </div>
-            <div className="form-field">
-              <label className="form-label">
-                <span className="label-ja">出荷日 (まで)</span>
-                <span className="label-vi">Đến ngày</span>
-              </label>
-              <input
-                type="date"
-                value={dateTo}
-                onChange={e => setDateTo(e.target.value)}
-                className="form-input"
-              />
-            </div>
-            <div className="form-field">
-              <label className="form-label">
-                <span className="label-ja">キーワード</span>
-                <span className="label-vi">Tìm kiếm</span>
-              </label>
+        
+        <div style={{ display: 'flex', gap: 12, flex: 1 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} className="form-input" style={{ width: 130 }} />
+            <span style={{ color: 'var(--text-muted)' }}>~</span>
+            <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} className="form-input" style={{ width: 130 }} />
+          </div>
+
+          <div style={{ flex: 1, maxWidth: 300 }}>
+            <div className="form-group" style={{ marginBottom: 0 }}>
               <div style={{ position: 'relative' }}>
                 <Search size={14} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
                 <input
@@ -249,7 +226,7 @@ export default function ShipmentsPage() {
                   onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
                   onKeyDown={e => {
                     if (e.key === 'Enter' && searchText.trim()) {
-                      addHistory(searchText.trim())
+                      addToHistory(searchText.trim())
                       router.push(`?search=${encodeURIComponent(searchText.trim())}`)
                     }
                   }}
@@ -261,10 +238,13 @@ export default function ShipmentsPage() {
                     history={history}
                     onSelect={(v) => {
                       setSearchText(v)
-                      addHistory(v)
+                      addToHistory(v)
                       router.push(`?search=${encodeURIComponent(v)}`)
                     }}
                     onClear={clearHistory}
+                    onRemove={removeFromHistory}
+                    visible={showSuggestions}
+                    onClose={() => setShowSuggestions(false)}
                   />
                 )}
               </div>
@@ -325,14 +305,14 @@ export default function ShipmentsPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filtered.length === 0 ? (
+                  {shipments.length === 0 ? (
                     <tr>
                       <td colSpan={9} style={{ textAlign: 'center', padding: '32px 0', color: 'var(--text-muted)' }}>
                         データがありません
                       </td>
                     </tr>
                   ) : (
-                    filtered.map(s => {
+                    shipments.map((s: any) => {
                       const st = getStatusDef(s.status)
                       return (
                         <tr key={s.shipment_id}>
@@ -410,7 +390,7 @@ export default function ShipmentsPage() {
             <div style={{ padding: '8px 16px', borderTop: '1px solid var(--border-default)', background: 'var(--bg-surface)' }}>
               <Pagination
                 currentPage={page}
-                totalRecords={totalRecords}
+                totalRecords={totalCount}
                 pageSize={PAGE_SIZE}
                 onPageChange={setPage}
               />
