@@ -73,12 +73,10 @@ export async function recordTrayIn(payload: TrayInPayload) {
 
     const supabase = await createClient()
 
-    // @ts-ignore
-    const { data, error } = await supabase
-        // @ts-ignore
+    // tray_inventory_txn table exists at runtime but not yet in database.types.ts
+    const { data, error } = await (supabase as any)
         .from('tray_inventory_txn')
         .insert({
-            // @ts-ignore
             txn_type: 'IN',
             product_id: payload.product_id,
             production_log_id: payload.production_log_id || null,
@@ -170,12 +168,10 @@ export async function recordTrayAdjust(payload: TrayAdjustPayload) {
     }
 
     // Tiến hành ghi ADJUST
-    // @ts-ignore
-    const { data, error } = await supabase
-        // @ts-ignore
+    // tray_inventory_txn table exists at runtime but not yet in database.types.ts
+    const { data, error } = await (supabase as any)
         .from('tray_inventory_txn')
         .insert({
-            // @ts-ignore
             txn_type: 'ADJUST',
             product_id: payload.product_id,
             quantity: delta, // Delta có thể âm (-) hoặc dương (+) đúng theo thiết kế

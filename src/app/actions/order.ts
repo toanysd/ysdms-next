@@ -38,8 +38,8 @@ export async function createOrderWithItemsAction(
             order_id: orderId
         }))
 
-        const { error: itemsError } = await supabase
-            // @ts-ignore
+        // order_items table — legacy name, may not match current schema types
+        const { error: itemsError } = await (supabase as any)
             .from('order_items')
             .insert(itemsToInsert)
 

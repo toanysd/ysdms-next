@@ -38,8 +38,7 @@ export type MaintenanceLog = {
 export async function getMoldHealthList(): Promise<MoldHealth[]> {
     const supabase = await createClient()
 
-    const { data, error } = await supabase
-        // @ts-ignore
+    const { data, error } = await (supabase as any)
         .from('v_mold_health')
         .select('*')
         .order('lifecycle_pct', { ascending: false })
@@ -56,8 +55,7 @@ export async function getMoldHealthList(): Promise<MoldHealth[]> {
 export async function getMaintenanceOverdue(): Promise<MoldHealth[]> {
     const supabase = await createClient()
 
-    const { data, error } = await supabase
-        // @ts-ignore
+    const { data, error } = await (supabase as any)
         .from('v_maintenance_overdue')
         .select('*')
         .order('lifecycle_pct', { ascending: false })
@@ -74,14 +72,12 @@ export async function getMaintenanceOverdue(): Promise<MoldHealth[]> {
 export async function getMaintenanceLogs(physical_id?: string): Promise<MaintenanceLog[]> {
     const supabase = await createClient()
 
-    let query = supabase
-        // @ts-ignore
+    let query = (supabase as any)
         .from('mold_maintenance_log')
         .select('*')
         .order('maintenance_date', { ascending: false })
 
     if (physical_id) {
-        // @ts-ignore
         query = query.eq('mold_physical_id', physical_id)
     }
 

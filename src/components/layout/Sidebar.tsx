@@ -33,7 +33,7 @@ type NavSection = {
 
 const NAV_TOP: NavItem[] = [
   { href: '/dashboard', icon: Home, labelJA: 'ダッシュボード', labelVI: 'Dashboard' },
-  { href: '/worklog', icon: ClipboardEdit, labelJA: '日報', labelVI: 'Nhật ký' },
+  { href: '/worklogs', icon: ClipboardEdit, labelJA: '日報', labelVI: 'Nhật ký' },
 ]
 
 const NAV_SECTIONS: NavSection[] = [
