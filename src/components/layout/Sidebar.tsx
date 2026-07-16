@@ -62,7 +62,7 @@ const NAV_SECTIONS: NavSection[] = [
       { href: '/equipment/materials', icon: Layers, labelJA: 'アルミブランク', labelVI: 'Phôi nhôm' },
     ]
   },
-  // ── 3. Phòng Khuôn (Equipment / Die Dept) ──────────────────────
+  // ── 3. Phòng Khuôn (Equipment / Die Dept) ──────────────────────────
   {
     id: 'd3', icon: Wrench, labelJA: '設備・金型部', labelVI: 'Phòng Thiết bị & Khuôn', color: '#EA8C1C',
     items: [
@@ -75,6 +75,7 @@ const NAV_SECTIONS: NavSection[] = [
       { href: '/maintenance', icon: Wrench, labelJA: '保守・メンテ', labelVI: 'Bảo dưỡng' },
       { href: '/master/racks', icon: Grid3X3, labelJA: '棚管理', labelVI: 'Master Kệ chứa' },
       { href: '/equipment/lifecycle', icon: Archive, labelJA: '棚卸', labelVI: 'Kiểm kê' },
+      { href: '/worklogs', icon: ClipboardList, labelJA: '作業ログ', labelVI: 'Nhật ký SX' },
     ]
   },
   // ── 4. Phòng Định hình (Thermoforming Dept) ────────────────────────
