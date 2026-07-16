@@ -1,1 +1,16 @@
-CONTENT_PLACEHOLDER
+'use client'
+
+import React, { useMemo, useState, useEffect, useRef, useCallback } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
+import type { JobForGantt, JobStepRow } from '@/app/actions/mold-job'
+import { Gantt, Task, ViewMode } from 'gantt-task-react'
+import 'gantt-task-react/dist/index.css'
+import { Edit2, Save, Undo, ChevronLeft, ChevronRight, Crosshair } from 'lucide-react'
+import { createClient } from '@/lib/supabase/client'
+import { MultiSelectDropdown } from '@/components/ui/MultiSelectDropdown'
+
+import { shiftJobDates, applyAutoScheduleUpdates } from '@/app/actions/mold-job'
+import { EditStepModal } from '@/app/equipment/jobs/[id]/tabs/EditStepModal'
+import { WorklogFormShared } from '@/components/worklogs/WorklogFormShared'
+import { JobQuickViewDrawer } from '@/components/equipment/JobQuickViewDrawer'
+import { calculateAutoSchedule } from '@/lib/scheduling/autoScheduler'
