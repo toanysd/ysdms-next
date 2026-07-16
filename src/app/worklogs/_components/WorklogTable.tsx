@@ -5,7 +5,7 @@ import { useCallback, useTransition } from 'react'
 import { ClipboardList, Clock, Filter, X } from 'lucide-react'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
-type Employee = { employee_id: string; employee_code: string; full_name: string | null }
+type Employee = { employee_id: string; employee_code: string; employee_name: string | null }
 type JobOption = { job_id: string; job_code: string; job_name: string | null }
 
 type WorklogRow = {
@@ -21,7 +21,7 @@ type WorklogRow = {
     deadline: string | null
     job: { job_id: string; job_code: string; job_name: string | null } | null
   } | null
-  employee: { employee_id: string; employee_code: string; full_name: string | null } | null
+  employee: { employee_id: string; employee_code: string; employee_name: string | null } | null
 }
 
 type Filters = {
@@ -141,7 +141,7 @@ export default function WorklogTable({
             <option value="">— 担当 / Nhân viên —</option>
             {employees.map(e => (
               <option key={e.employee_id} value={e.employee_id}>
-                {e.employee_code}{e.full_name ? ` · ${e.full_name}` : ''}
+                {e.employee_code}{e.employee_name ? ` · ${e.employee_name}` : ''}
               </option>
             ))}
           </select>
@@ -278,9 +278,9 @@ export default function WorklogTable({
                       {log.employee ? (
                         <>
                           <span style={{ fontWeight: 500 }}>{log.employee.employee_code}</span>
-                          {log.employee.full_name && (
+                          {log.employee.employee_name && (
                             <span style={{ color: 'var(--text-secondary)', marginLeft: 4 }}>
-                              {log.employee.full_name}
+                              {log.employee.employee_name}
                             </span>
                           )}
                         </>

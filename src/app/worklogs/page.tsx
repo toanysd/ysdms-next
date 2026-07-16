@@ -30,7 +30,7 @@ export default async function WorklogsPage({
          step_id, step_no, step_name, deadline,
          job:jobs!job_steps_job_id_fkey(job_id, job_code, job_name)
        ),
-       employee:employees!work_logs_employee_id_fkey(employee_id, employee_code, full_name)`,
+       employee:employees!work_logs_employee_id_fkey(employee_id, employee_code, employee_name)`,
       { count: 'exact' }
     )
     .order('work_date', { ascending: false })
@@ -60,7 +60,7 @@ export default async function WorklogsPage({
   // Dropdown data cho FilterBar
   const { data: employees } = await supabase
     .from('employees')
-    .select('employee_id, employee_code, full_name')
+    .select('employee_id, employee_code, employee_name')
     .order('employee_code')
 
   const { data: jobs } = await supabase
