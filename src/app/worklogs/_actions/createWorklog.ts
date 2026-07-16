@@ -8,7 +8,7 @@ export async function createWorklog(
 ): Promise<{ error: string } | void> {
   const supabase = await createClient()
 
-  // ── Parse & validate ─────────────────────────────────────────────────────────────
+  // ── Parse & validate ────────────────────────────────────────────────
   const work_date   = formData.get('work_date')   as string | null
   const employee_id = formData.get('employee_id') as string | null
   const job_step_id = formData.get('job_step_id') as string | null
@@ -25,13 +25,27 @@ export async function createWorklog(
     return { error: '作業時間は0より大きい値を入力してください / Số giờ phải lớn hơn 0.' }
   }
 
-  // ── Insert ───────────────────────────────────────────────────────────────────────
+  // ── Lookup job_id từ job_steps ──────────────────────────────────────
+  const { data: step, error: stepError } = await supabase
+    .from('job_steps')
+    .select('job_id')
+    .eq('step_id', job_step_id)
+    .single()
+
+  if (stepError || !step?.job_id) {
+    return { error: '工程情報の取得に失敗しました / Không lấy được thông tin bước công việc.' }
+  }
+
+  const job_id = step.job_id
+
+  // ── Insert ──────────────────────────────────────────────────────────
   const { error } = await supabase
     .from('work_logs')
     .insert({
       work_date,
       employee_id,
       job_step_id,
+      job_id,
       hours_spent,
       is_finished,
       notes,
