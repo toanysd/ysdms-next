@@ -72,16 +72,34 @@ export async function getProductionInstructionById(id: string) {
 
 export async function searchOrders(query: string) {
   const supabase = await createClient()
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('orders')
     .select(`
       order_id, order_no,
-      products(product_id, product_code, product_name, primary_plastic_code, primary_plastic_spec),
+      order_lines(
+        products(product_id, product_code, product_name, primary_plastic_code, primary_plastic_spec)
+      ),
       companies(company_id, company_name, company_code)
     `)
     .ilike('order_no', `%${query}%`)
     .limit(20)
-  return data ?? []
+
+  if (error || !data) return []
+
+  // Map to match the expected structure: flatten product from first order_line
+  return data.map(order => {
+    // Safely type-cast the join result
+    const orderLines = (order as any).order_lines || []
+    const firstLine = orderLines[0]
+    const product = firstLine?.products || null
+
+    return {
+      order_id: order.order_id,
+      order_no: order.order_no,
+      products: product,
+      companies: order.companies
+    }
+  })
 }
 
 export async function searchDeliverySites(query: string) {
