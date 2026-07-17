@@ -1,5 +1,5 @@
 # PROJECT_STATUS.md
-> Cập nhật lần cuối: **2026-07-15** bởi **PE (Perplexity)**
+> Cập nhật lần cuối: **2026-07-16** bởi **AN (Antigravity)**
 
 ---
 
@@ -15,6 +15,9 @@
 | 2026-07-15 | `supabase/migrations/20260715110000_bp42_material_stock.sql` | Migration cho material_stock (BP-42~47) và View tổng hợp tồn kho |
 | 2026-07-15 | `scripts/seed_material_stock.py` | Import thành công 180 SKUs tồn kho từ Excel vào DB thật |
 | 2026-07-15 | `src/app/actions/production-instructions.ts` | Tích hợp checkMaterialStock với view material_inventory_v2 thật |
+| 2026-07-16 | `d24d35b` | Hệ thống Worklogs (Sprint 4) hoàn thiện UI/Gantt |
+| 2026-07-16 | — | D-04 PDF 注文書 (html2canvas+jsPDF) hoàn thiện và hiển thị chuẩn xác |
+| 2026-07-16 | — | Codebase TS zero errors (`tsc --noEmit` = 0) |
 
 ---
 
