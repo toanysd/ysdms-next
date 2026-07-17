@@ -33,17 +33,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     flex: 1,
+    paddingTop: 4,
   },
   title: { 
-    fontSize: 16, 
+    fontSize: 14, 
     fontFamily: 'NotoSansJP', 
     fontWeight: 700, 
     textAlign: 'center',
+    lineHeight: 1.2,
   },
   companyName: {
     fontSize: 8,
     color: '#333',
-    marginTop: 2,
+    marginTop: 3,
+    lineHeight: 1.2,
   },
   
   // Header block
@@ -52,6 +55,7 @@ const styles = StyleSheet.create({
     marginBottom: 8, 
     alignItems: 'flex-start',
     gap: 8,
+    position: 'relative',
   },
   
   // Packaging checkbox top-left
@@ -96,17 +100,19 @@ const styles = StyleSheet.create({
     fontWeight: 700,
   },
 
-  // Prototype tag (P試作)
+  // Prototype tag (P試作) - Make absolute to avoid squishing the centered title
   prototypeBadge: {
+    position: 'absolute',
+    top: 4,
+    right: 155,
     color: '#dc2626',
     border: '2pt solid #dc2626',
-    padding: '4pt 8pt',
-    fontSize: 14,
+    padding: '2pt 6pt',
+    fontSize: 11,
     fontFamily: 'NotoSansJP',
     fontWeight: 700,
     transform: 'rotate(-5deg)',
-    marginRight: 10,
-    alignSelf: 'center',
+    zIndex: 10,
   },
 
   // Checkboxes section
@@ -471,21 +477,21 @@ export function ProductionInstructionPDF({ pi, revision }: { pi: any; revision: 
 
           {/* Material row (Headers) */}
           <View style={styles.gridRow}>
-            <View style={[styles.gridColHeader, { width: '25%' }]}><Text>材料仕様</Text></View>
+            <View style={[styles.gridColHeader, { width: '20%' }]}><Text>材料仕様</Text></View>
             <View style={[styles.gridColHeader, { width: '8%' }]}><Text>厚み</Text></View>
             <View style={[styles.gridColHeader, { width: '8%' }]}><Text>シート巾</Text></View>
-            <View style={[styles.gridColHeader, { width: '12%' }]}><Text>粉砕材</Text></View>
-            <View style={[styles.gridColHeader, { width: '28%' }]}><Text>特殊処理 (帯電/シリコン/塗布)</Text></View>
-            <View style={[styles.gridColHeader, { width: '19%', borderRightWidth: 0 }]}><Text>品名 (YSD)</Text></View>
+            <View style={[styles.gridColHeader, { width: '10%' }]}><Text>粉砕材</Text></View>
+            <View style={[styles.gridColHeader, { width: '24%' }]}><Text>特殊 (帯電/シリコン/塗布)</Text></View>
+            <View style={[styles.gridColHeader, { width: '30%', borderRightWidth: 0 }]}><Text>品名 (YSD)</Text></View>
           </View>
 
           {/* Material row (Values) */}
           <View style={styles.gridRowLast}>
-            <View style={[styles.gridColValue, { width: '25%' }]}><Text>{pi.material_spec || pi.products?.primary_plastic_spec || ''}</Text></View>
+            <View style={[styles.gridColValue, { width: '20%' }]}><Text>{pi.material_spec || pi.products?.primary_plastic_spec || ''}</Text></View>
             <View style={[styles.gridColValue, { width: '8%' }]}><Text>{pi.material_thickness ? `${pi.material_thickness}t` : ''}</Text></View>
             <View style={[styles.gridColValue, { width: '8%' }]}><Text>{pi.material_width ? `${pi.material_width}mm` : ''}</Text></View>
-            <View style={[styles.gridColValue, { width: '12%' }]}><Text>{pi.recycled_pct > 0 ? `${pi.recycled_pct}%` : 'なし'}</Text></View>
-            <View style={[styles.gridColValue, { width: '28%' }]}>
+            <View style={[styles.gridColValue, { width: '10%' }]}><Text>{pi.recycled_pct > 0 ? `${pi.recycled_pct}%` : 'なし'}</Text></View>
+            <View style={[styles.gridColValue, { width: '24%' }]}>
               <Text>
                 {[
                   hasAntistatic && '帯電防止',
@@ -494,7 +500,7 @@ export function ProductionInstructionPDF({ pi, revision }: { pi: any; revision: 
                 ].filter(Boolean).join(' / ') || 'なし'}
               </Text>
             </View>
-            <View style={[styles.gridColValueLast, { width: '19%' }]}><Text>{pi.products?.product_name || ''}</Text></View>
+            <View style={[styles.gridColValueLast, { width: '30%' }]}><Text style={{ fontSize: 7.5 }}>{pi.products?.product_name || ''}</Text></View>
           </View>
         </View>
 
