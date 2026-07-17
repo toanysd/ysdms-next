@@ -1,9 +1,10 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { Save, Loader2, Calendar, X } from 'lucide-react'
+import { Save, Loader2, Calendar, X, Plus } from 'lucide-react'
 import { SearchableSelect } from '@/components/ui/SearchableSelect'
+import { createQuickJob } from '@/app/actions/mold-job'
 
 // ── Types ────────────────────────────────────────────────────────────────────
 export type WorklogFormSharedProps = {
@@ -34,6 +35,7 @@ export type WorklogInitialData = {
 type Employee = { value: string; label: string }
 type JobOption = { value: string; label: string }
 type JobStepOption = { step_id: string; step_no: number | null; step_name: string | null; job_id: string }
+type JobType = { job_type_id: string; job_type_name_ja: string; job_type_name_vi: string }
 
 // ── Component ────────────────────────────────────────────────────────────────
 export function WorklogFormShared({
@@ -52,6 +54,7 @@ export function WorklogFormShared({
   const [employees, setEmployees] = useState<Employee[]>([])
   const [jobs, setJobs] = useState<JobOption[]>([])
   const [steps, setSteps] = useState<JobStepOption[]>(preloadedSteps || [])
+  const [jobTypes, setJobTypes] = useState<JobType[]>([])
 
   // ── Form state ───────────────────────────────────────────────────────────
   const today = new Date().toISOString().slice(0, 10)
@@ -66,6 +69,12 @@ export function WorklogFormShared({
 
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  // ── Quick Job Creation state (DEC-008) ──────────────────────────────────
+  const [showQuickJob, setShowQuickJob] = useState(false)
+  const [quickJobName, setQuickJobName] = useState('')
+  const [quickJobTypeId, setQuickJobTypeId] = useState('')
+  const [quickJobCreating, setQuickJobCreating] = useState(false)
 
   // ── Load master data ──────────────────────────────────────────────────────
   useEffect(() => {
@@ -96,6 +105,13 @@ export function WorklogFormShared({
             label: `[${j.job_code}] ${j.job_name || ''}`
           })))
         }
+
+        // Job types for Quick Job creation
+        const { data: jtData } = await supabase
+          .from('job_types')
+          .select('job_type_id, job_type_name_ja, job_type_name_vi')
+          .order('job_type_name_ja')
+        if (jtData) setJobTypes(jtData)
       }
     }
     load()
@@ -202,8 +218,102 @@ export function WorklogFormShared({
           <SearchableSelect
             options={jobs}
             value={selectedJobId}
-            onChange={v => setSelectedJobId(v || '')}
+            onChange={v => { setSelectedJobId(v || ''); setShowQuickJob(false) }}
           />
+
+          {/* Quick Job Creation (DEC-008) */}
+          {!selectedJobId && !showQuickJob && (
+            <button
+              type="button"
+              onClick={() => setShowQuickJob(true)}
+              style={{
+                background: 'none', border: '1px dashed var(--border-default)',
+                borderRadius: 6, padding: '8px 12px', cursor: 'pointer',
+                display: 'flex', alignItems: 'center', gap: 6,
+                color: 'var(--accent)', fontSize: 12, fontWeight: 600,
+                marginTop: 4,
+              }}
+            >
+              <Plus size={14} />
+              <span>ジョブを新規作成 / Tạo Job nhanh</span>
+            </button>
+          )}
+
+          {showQuickJob && (
+            <div style={{
+              marginTop: 6, padding: 14, borderRadius: 8,
+              border: '1px solid var(--accent)',
+              background: 'color-mix(in srgb, var(--accent) 5%, var(--bg-surface))',
+              display: 'flex', flexDirection: 'column', gap: 10,
+            }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--accent)', display: 'flex', alignItems: 'center', gap: 6 }}>
+                <Plus size={13} /> クイックジョブ作成 / Tạo Job nhanh
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  <label className="form-label" style={{ fontSize: 11 }}>
+                    ジョブ名 <span style={{ color: 'var(--status-error)' }}>*</span>
+                  </label>
+                  <input
+                    type="text" className="form-input" placeholder="VD: K-0123 新規"
+                    value={quickJobName}
+                    onChange={e => setQuickJobName(e.target.value)}
+                  />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  <label className="form-label" style={{ fontSize: 11 }}>
+                    種別 <span style={{ color: 'var(--status-error)' }}>*</span>
+                  </label>
+                  <select className="form-input" value={quickJobTypeId} onChange={e => setQuickJobTypeId(e.target.value)}>
+                    <option value="">— 選択 —</option>
+                    {jobTypes.map(jt => (
+                      <option key={jt.job_type_id} value={jt.job_type_id}>
+                        {jt.job_type_name_ja}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+                <button
+                  type="button" className="btn btn-secondary"
+                  style={{ fontSize: 11, padding: '5px 12px' }}
+                  onClick={() => { setShowQuickJob(false); setQuickJobName(''); setQuickJobTypeId('') }}
+                >
+                  キャンセル
+                </button>
+                <button
+                  type="button" className="btn btn-primary"
+                  style={{ fontSize: 11, padding: '5px 12px' }}
+                  disabled={quickJobCreating || !quickJobName.trim() || !quickJobTypeId}
+                  onClick={async () => {
+                    setQuickJobCreating(true)
+                    setError(null)
+                    const result = await createQuickJob({
+                      job_name: quickJobName.trim(),
+                      job_type_id: quickJobTypeId,
+                      responsible_id: employeeId || null,
+                    })
+                    setQuickJobCreating(false)
+                    if (!result.success) {
+                      setError(result.error)
+                      return
+                    }
+                    // Add new job to list & select it
+                    const newJobOption = { value: result.job_id, label: `[${result.job_code}] ${quickJobName.trim()}` }
+                    setJobs(prev => [newJobOption, ...prev])
+                    setSelectedJobId(result.job_id)
+                    setShowQuickJob(false)
+                    setQuickJobName('')
+                    setQuickJobTypeId('')
+                  }}
+                >
+                  {quickJobCreating ? <Loader2 size={12} className="animate-spin" /> : <Plus size={12} />}
+                  <span>作成 / Tạo</span>
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 

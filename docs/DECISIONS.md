@@ -98,3 +98,31 @@
 - **Nguyên tắc:** AN chỉ implement khi có spec đã duyệt. PE đọc `PROJECT_STATUS.md` đầu mỗi phiên.
 - **Status:** ✅ Confirmed
 - **Impact:** Quy trình làm việc — áp dụng ngay
+
+---
+
+## [DEC-008] Quick Entry Worklog — Cho phép tạo Job/Khuôn tạm
+- **Ngày:** 2026-07-17
+- **Người quyết định:** Anh Thoan
+- **Nội dung:**
+  - Cho phép tạo `jobs` mà KHÔNG cần `physical_mold_id` (nullable trên schema)
+  - Cho phép tạo `physical_molds` mà KHÔNG cần `mold_revision_id` (nullable trên schema)
+  - Nhân viên khuôn có thể ghi worklog ngay cả khi khuôn mới chưa có đầy đủ thông tin
+  - Admin/quản lý sẽ bổ sung link `mold_revision_id`, `design_revision_id` sau
+  - Nút "tạo job nhanh" đặt trực tiếp trong WorklogForm (khi search không có kết quả)
+- **Phương án đã chọn:** A — Giữ `mold_revisions`, Quick Entry bỏ qua, admin bổ sung sau
+- **Status:** ✅ Confirmed
+- **Impact:** Frontend Sprint 5 — không cần migration SQL mới
+
+---
+
+## [DEC-009] Tương lai — Thêm `design_revision_id` trực tiếp vào `physical_molds`
+- **Ngày:** 2026-07-17
+- **Người quyết định:** Anh Thoan (xác nhận hướng đúng)
+- **Nội dung:**
+  - Thêm cột `design_revision_id` FK vào `physical_molds` (link trực tiếp, không qua `mold_revisions`)
+  - `mold_revisions` sẽ deprecated dần (giữ cho backward compat)
+  - 90% khuôn cùng phiên bản thiết kế → `mold_revisions` là pass-through thừa
+  - Migrate 4,500 records hiện có từ `mold_revision_id → design_revision_id`
+- **Status:** ⏳ Planned — Sprint 7+ (sau khi refactor khuôn toàn diện)
+- **Impact:** Schema migration + data migration + UI update

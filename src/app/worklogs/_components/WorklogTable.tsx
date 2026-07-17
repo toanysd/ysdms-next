@@ -1,8 +1,9 @@
 'use client'
 
+import Link from 'next/link'
 import { useRouter, usePathname, useSearchParams } from 'next/navigation'
-import { useCallback, useTransition } from 'react'
-import { ClipboardList, Clock, Filter, X } from 'lucide-react'
+import { useCallback, useMemo, useState, useTransition } from 'react'
+import { ArrowDown, ArrowUp, ArrowUpDown, ClipboardList, Clock, Filter, X } from 'lucide-react'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 type Employee = { employee_id: string; employee_code: string; employee_name: string | null }
@@ -60,6 +61,26 @@ function formatHours(h: number | null) {
   return `${h.toFixed(1)}h`
 }
 
+// ── Sorting helpers ───────────────────────────────────────────────────────────
+type SortKey = 'work_date' | 'job_code' | 'step' | 'employee' | 'hours' | 'job_total' | 'status' | null
+type SortDir = 'asc' | 'desc'
+
+function getSortValue(log: WorklogRow, key: SortKey, hoursByJob: Record<string, number>): string | number {
+  switch (key) {
+    case 'work_date':  return log.work_date ?? ''
+    case 'job_code':   return log.job_step?.job?.job_code ?? ''
+    case 'step':       return log.job_step?.step_no ?? 0
+    case 'employee':   return log.employee?.employee_code ?? ''
+    case 'hours':      return log.hours_spent ?? 0
+    case 'job_total': {
+      const jid = log.job_step?.job?.job_id
+      return jid ? (hoursByJob[jid] ?? 0) : 0
+    }
+    case 'status':     return log.is_finished ? 1 : 0
+    default:           return ''
+  }
+}
+
 // ── Main Component ────────────────────────────────────────────────────────────
 export default function WorklogTable({
   logs, totalCount, page, pageSize,
@@ -71,6 +92,37 @@ export default function WorklogTable({
   const [isPending, startTransition] = useTransition()
 
   const totalPages = Math.ceil(totalCount / pageSize)
+
+  // ── Client-side sorting ─────────────────────────────────────────────────
+  const [sortKey, setSortKey] = useState<SortKey>(null)
+  const [sortDir, setSortDir] = useState<SortDir>('asc')
+
+  const handleSort = useCallback((key: SortKey) => {
+    if (sortKey === key) {
+      if (sortDir === 'asc') setSortDir('desc')
+      else { setSortKey(null); setSortDir('asc') }
+    } else {
+      setSortKey(key)
+      setSortDir('asc')
+    }
+  }, [sortKey, sortDir])
+
+  const sortedLogs = useMemo(() => {
+    if (!sortKey) return logs
+    return [...logs].sort((a, b) => {
+      const va = getSortValue(a, sortKey, hoursByJob)
+      const vb = getSortValue(b, sortKey, hoursByJob)
+      const cmp = va < vb ? -1 : va > vb ? 1 : 0
+      return sortDir === 'asc' ? cmp : -cmp
+    })
+  }, [logs, sortKey, sortDir, hoursByJob])
+
+  function SortIcon({ col }: { col: SortKey }) {
+    if (sortKey !== col) return <ArrowUpDown size={12} style={{ opacity: 0.35 }} />
+    return sortDir === 'asc'
+      ? <ArrowUp size={12} style={{ color: 'var(--accent)' }} />
+      : <ArrowDown size={12} style={{ color: 'var(--accent)' }} />
+  }
 
   const updateParams = useCallback(
     (updates: Record<string, string | null>) => {
@@ -105,10 +157,16 @@ export default function WorklogTable({
             <span className="vi">Nhật ký Sản xuất</span>
           </h1>
         </div>
-        <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
-          <span className="ja">{totalCount.toLocaleString()} 件</span>
-          <span className="vi">{totalCount.toLocaleString()} bản ghi</span>
-        </span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
+            <span className="ja">{totalCount.toLocaleString()} 件</span>
+            <span className="vi">{totalCount.toLocaleString()} bản ghi</span>
+          </span>
+          <Link href="/worklogs/new" className="btn btn-primary" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+            <span className="ja">＋ 新規作成</span>
+            <span className="vi">＋ Tạo mới</span>
+          </Link>
+        </div>
       </div>
 
       {/* ── FilterBar ──────────────────────────────────────────────────── */}
@@ -196,36 +254,55 @@ export default function WorklogTable({
         >
           <thead>
             <tr>
-              <th style={{ width: 110 }}>
-                <span className="ja">作業日</span>
-                <span className="vi">Ngày làm</span>
+              <th style={{ width: 110, cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSort('work_date')}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <span className="ja">作業日</span>
+                  <span className="vi">Ngày làm</span>
+                  <SortIcon col="work_date" />
+                </div>
               </th>
-              <th>
-                <span className="ja">ジョブ</span>
-                <span className="vi">Job</span>
+              <th style={{ cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSort('job_code')}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <span className="ja">ジョブ</span>
+                  <span className="vi">Job</span>
+                  <SortIcon col="job_code" />
+                </div>
               </th>
-              <th>
-                <span className="ja">工程</span>
-                <span className="vi">Bước</span>
+              <th style={{ cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSort('step')}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <span className="ja">工程</span>
+                  <span className="vi">Bước</span>
+                  <SortIcon col="step" />
+                </div>
               </th>
-              <th>
-                <span className="ja">担当者</span>
-                <span className="vi">Nhân viên</span>
+              <th style={{ cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSort('employee')}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <span className="ja">担当者</span>
+                  <span className="vi">Nhân viên</span>
+                  <SortIcon col="employee" />
+                </div>
               </th>
-              <th style={{ width: 90, textAlign: 'right' }}>
-                <span className="ja">時間</span>
-                <span className="vi">Giờ</span>
+              <th style={{ width: 90, textAlign: 'right', cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSort('hours')}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 4 }}>
+                  <span className="ja">時間</span>
+                  <span className="vi">Giờ</span>
+                  <SortIcon col="hours" />
+                </div>
               </th>
-              <th style={{ width: 130, textAlign: 'right' }}>
+              <th style={{ width: 130, textAlign: 'right', cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSort('job_total')}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 4 }}>
                   <Clock size={12} />
                   <span className="ja">Job合計</span>
                   <span className="vi">Tổng/Job</span>
+                  <SortIcon col="job_total" />
                 </div>
               </th>
-              <th style={{ width: 115 }}>
-                <span className="ja">ステータス</span>
-                <span className="vi">Trạng thái</span>
+              <th style={{ width: 115, cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSort('status')}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <span className="ja">ステータス</span>
+                  <span className="vi">Trạng thái</span>
+                  <SortIcon col="status" />
+                </div>
               </th>
               <th>
                 <span className="ja">備考</span>
@@ -242,7 +319,7 @@ export default function WorklogTable({
                 </td>
               </tr>
             ) : (
-              logs.map(log => {
+              sortedLogs.map(log => {
                 const jobId    = log.job_step?.job?.job_id ?? null
                 const jobTotal = jobId ? (hoursByJob[jobId] ?? null) : null
                 const statusKey: keyof typeof STATUS_CONFIG =
@@ -256,14 +333,17 @@ export default function WorklogTable({
                     </td>
                     <td>
                       {log.job_step?.job ? (
-                        <span style={{ fontWeight: 500 }}>
+                        <Link
+                          href={`/equipment/jobs/${log.job_step.job.job_id}`}
+                          style={{ color: 'var(--accent)', fontWeight: 700, fontFamily: 'monospace', fontSize: 13, textDecoration: 'none' }}
+                        >
                           {log.job_step.job.job_code}
                           {log.job_step.job.job_name && (
-                            <span style={{ fontWeight: 400, color: 'var(--text-secondary)', marginLeft: 4 }}>
+                            <span style={{ fontWeight: 400, fontFamily: 'inherit', color: 'var(--text-secondary)', marginLeft: 4 }}>
                               {log.job_step.job.job_name}
                             </span>
                           )}
-                        </span>
+                        </Link>
                       ) : '—'}
                     </td>
                     <td>

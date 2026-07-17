@@ -206,6 +206,73 @@ export async function createMoldJobAction(input: CreateMoldJobInput) {
     return { success: true, job_id: job.job_id }
 }
 
+// ─────────────────────────────────────────────────────────────────────
+// QUICK CREATE — Tạo Job nhanh từ WorklogForm (DEC-008)
+// Chỉ cần 3 trường: job_name, job_type_id, responsible_id (optional)
+// Không cần physical_mold, design_revision, company
+// ─────────────────────────────────────────────────────────────────────
+
+export interface CreateQuickJobInput {
+    job_name: string
+    job_type_id: string
+    responsible_id?: string | null
+}
+
+export async function createQuickJob(input: CreateQuickJobInput): Promise<{
+    success: true; job_id: string; job_code: string
+} | {
+    success: false; error: string
+}> {
+    const supabase = await createClient()
+
+    // Validate required fields
+    if (!input.job_name?.trim()) {
+        return { success: false, error: 'ジョブ名は必須です' }
+    }
+    if (!input.job_type_id?.trim()) {
+        return { success: false, error: 'ジョブ種別は必須です' }
+    }
+
+    // Auto-generate job_code: QJ-{YYYYMMDD}-{HHMM} (Quick Job)
+    const now = new Date()
+    const pad = (n: number) => String(n).padStart(2, '0')
+    const dateStr = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}`
+    const timeStr = `${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`
+    const jobCode = `QJ-${dateStr}-${timeStr}`
+
+    const { data: job, error: jobError } = await supabase
+        .from('jobs')
+        .insert({
+            job_code: jobCode,
+            job_name: input.job_name.trim(),
+            job_type_id: input.job_type_id,
+            responsible_id: input.responsible_id || null,
+            job_status: 'NEW',
+            overall_progress: 0,
+            priority: 5,
+            start_date: now.toISOString().split('T')[0],
+        })
+        .select('job_id, job_code')
+        .single()
+
+    if (jobError || !job) {
+        console.error('[API Error] createQuickJob:', jobError)
+        return { success: false, error: jobError?.message || 'ジョブの作成に失敗しました' }
+    }
+
+    // Auto-create 1 default step "作業" for worklog attachment
+    await supabase.from('job_steps').insert({
+        job_id: job.job_id,
+        step_no: 1,
+        step_name: '作業',
+        step_status: 'IN_PROGRESS',
+    })
+
+    revalidatePath('/equipment/jobs')
+    revalidatePath('/worklogs')
+    return { success: true, job_id: job.job_id, job_code: job.job_code }
+}
+
 export async function deleteMoldJobAction(jobId: string) {
     const supabase = await createClient()
 

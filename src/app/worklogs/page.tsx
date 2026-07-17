@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import Link from 'next/link'
 import WorklogTable from './_components/WorklogTable'
 
 export const metadata = { title: 'YSDMS | 作業ログ' }

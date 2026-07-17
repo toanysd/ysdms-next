@@ -284,7 +284,7 @@ FK:  design_revision_id  UUID → design_revisions(revision_id)
 
 ```
 PK:  physical_mold_id    UUID
-FK:  mold_revision_id    UUID → mold_revisions(mold_revision_id)
+FK:  mold_revision_id    UUID → mold_revisions(mold_revision_id)  ← NULLABLE (DEC-008: Quick Entry cho phép NULL)
 FK:  keeper_company_id   UUID → companies(company_id)
 FK:  current_rack_layer_id UUID → rack_layers(rack_layer_id)
 FK:  cav_type_id         UUID → cav_types(cav_type_id)
@@ -397,9 +397,9 @@ FK:  outsource_company    UUID → companies(company_id)
 
 ```
 PK:  log_id               UUID
-FK:  job_step_id          UUID → job_steps(step_id) NOT NULL
-FK:  job_id               UUID → jobs(job_id)
-FK:  employee_id          UUID → employees(employee_id)
+FK:  job_id               UUID → jobs(job_id) NOT NULL
+FK:  job_step_id          UUID → job_steps(step_id)              ← NULLABLE (DB thực tế)
+FK:  employee_id          UUID → employees(employee_id) NOT NULL
 FK:  processing_code_id   INTEGER → processing_codes(processing_code_id)
 FK:  processing_status_id INTEGER → processing_statuses(status_id)
 FK:  machine_id           UUID → machines(machine_id)
@@ -409,6 +409,7 @@ FK:  machine_id           UUID → machines(machine_id)
      planned_date         DATE
      quantity_done        INTEGER
      is_finished          BOOLEAN
+     description          TEXT             ← Mô tả chi tiết công việc
      notes                TEXT
      contact_content      TEXT
 ```
