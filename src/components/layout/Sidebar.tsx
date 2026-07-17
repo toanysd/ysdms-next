@@ -49,7 +49,7 @@ const NAV_SECTIONS: NavSection[] = [
       { href: '/orders', icon: FileText, labelJA: '受注・指示書', labelVI: 'Đơn hàng' },
       { href: '/orders/shipments', icon: Truck, labelJA: '出荷・納品', labelVI: 'Xuất hàng' },
       { href: '/mrp', icon: Calculator, labelJA: 'MRP', labelVI: 'MRP' },
-      { href: '/production/orders?view=office', icon: ClipboardList, labelJA: '注文書／納入指示書', labelVI: 'Lệnh SX Khay' },
+      { href: '/production-instructions', icon: ClipboardList, labelJA: '生産指示', labelVI: 'Chỉ thị sản xuất' },
       { href: '/production/mold-orders', icon: Wrench, labelJA: '金型工程票', labelVI: 'Lệnh SX Khuôn' },
     ]
   },
@@ -84,7 +84,7 @@ const NAV_SECTIONS: NavSection[] = [
     items: [
       { href: '/production/dashboard', icon: Home, labelJA: 'ダッシュボード', labelVI: 'Tổng quan', exact: true },
       { href: '/production/planning', icon: Calendar, labelJA: '生産計画', labelVI: 'Kế hoạch SX' },
-      { href: '/production/orders?view=factory', icon: ClipboardList, labelJA: '注文書／納入指示書', labelVI: 'Chỉ thị Khay' },
+      { href: '/production-instructions', icon: ClipboardList, labelJA: '生産指示', labelVI: 'Chỉ thị sản xuất' },
       { href: '/production/kanban', icon: Columns3, labelJA: '看板', labelVI: 'Kanban' },
       { href: '/production/floor', icon: Factory, labelJA: '実績入力', labelVI: 'Nhập thực tế' },
       { href: '/master/machines', icon: Server, labelJA: '機械・設備', labelVI: 'Master Máy móc' },
