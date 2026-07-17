@@ -85,18 +85,31 @@ INSERT INTO orders (order_id, order_no, company_id, order_date, order_status)
 SELECT v_order_mur, 'ORD-2026-MUR-002', v_murata_id, '2026-07-05', 'CONFIRMED'
 WHERE NOT EXISTS (SELECT 1 FROM orders WHERE order_no='ORD-2026-MUR-002');
 
+-- Lấy IDs order thực tế nếu đã tồn tại để tránh lỗi FK
+SELECT order_id INTO v_order_kyo FROM orders WHERE order_no='ORD-2026-KYO-001';
+SELECT order_id INTO v_order_mur FROM orders WHERE order_no='ORD-2026-MUR-002';
+
 -- 5. Order Lines
-INSERT INTO order_lines (line_id, order_id, line_no, product_id, quantity)
-SELECT v_line_kyo_1, v_order_kyo, 1, v_prod_kyo_a1, 5000
-WHERE NOT EXISTS (SELECT 1 FROM order_lines WHERE line_id=v_line_kyo_1);
+IF NOT EXISTS (SELECT 1 FROM order_lines WHERE order_id = v_order_kyo AND line_no = 1) THEN
+  INSERT INTO order_lines (line_id, order_id, line_no, product_id, quantity)
+  VALUES (v_line_kyo_1, v_order_kyo, 1, v_prod_kyo_a1, 5000);
+ELSE
+  SELECT line_id INTO v_line_kyo_1 FROM order_lines WHERE order_id = v_order_kyo AND line_no = 1;
+END IF;
 
-INSERT INTO order_lines (line_id, order_id, line_no, product_id, quantity)
-SELECT v_line_kyo_2, v_order_kyo, 2, v_prod_kyo_c3, 2000
-WHERE NOT EXISTS (SELECT 1 FROM order_lines WHERE line_id=v_line_kyo_2);
+IF NOT EXISTS (SELECT 1 FROM order_lines WHERE order_id = v_order_kyo AND line_no = 2) THEN
+  INSERT INTO order_lines (line_id, order_id, line_no, product_id, quantity)
+  VALUES (v_line_kyo_2, v_order_kyo, 2, v_prod_kyo_c3, 2000);
+ELSE
+  SELECT line_id INTO v_line_kyo_2 FROM order_lines WHERE order_id = v_order_kyo AND line_no = 2;
+END IF;
 
-INSERT INTO order_lines (line_id, order_id, line_no, product_id, quantity)
-SELECT v_line_mur_1, v_order_mur, 1, v_prod_mur_b2, 8000
-WHERE NOT EXISTS (SELECT 1 FROM order_lines WHERE line_id=v_line_mur_1);
+IF NOT EXISTS (SELECT 1 FROM order_lines WHERE order_id = v_order_mur AND line_no = 1) THEN
+  INSERT INTO order_lines (line_id, order_id, line_no, product_id, quantity)
+  VALUES (v_line_mur_1, v_order_mur, 1, v_prod_mur_b2, 8000);
+ELSE
+  SELECT line_id INTO v_line_mur_1 FROM order_lines WHERE order_id = v_order_mur AND line_no = 1;
+END IF;
 
 -- 6. Production Orders
 INSERT INTO production_orders (po_id, po_code, order_line_id, planned_quantity)
@@ -110,6 +123,10 @@ WHERE NOT EXISTS (SELECT 1 FROM production_orders WHERE po_code='PO-2026-002');
 INSERT INTO production_orders (po_id, po_code, order_line_id, planned_quantity)
 SELECT v_po_mur_1, 'PO-2026-003', v_line_mur_1, 8000
 WHERE NOT EXISTS (SELECT 1 FROM production_orders WHERE po_code='PO-2026-003');
+
+SELECT po_id INTO v_po_kyo_1 FROM production_orders WHERE po_code='PO-2026-001';
+SELECT po_id INTO v_po_kyo_2 FROM production_orders WHERE po_code='PO-2026-002';
+SELECT po_id INTO v_po_mur_1 FROM production_orders WHERE po_code='PO-2026-003';
 
 -- 7. Production Lots
 INSERT INTO production_lots (lot_id, po_id, lot_no, lot_status, good_qty, notes)
@@ -132,6 +149,12 @@ INSERT INTO production_lots (lot_id, po_id, lot_no, lot_status, good_qty, notes)
 SELECT v_lot_mur_2, v_po_mur_1, 'LOT-2026-0712-B', 'completed', 3980, 'Ca ngày 14/07. NG 20 pcs bavia - đã tái chế.'
 WHERE NOT EXISTS (SELECT 1 FROM production_lots WHERE lot_no='LOT-2026-0712-B');
 
+SELECT lot_id INTO v_lot_kyo_1 FROM production_lots WHERE lot_no='LOT-2026-0701-A';
+SELECT lot_id INTO v_lot_kyo_2 FROM production_lots WHERE lot_no='LOT-2026-0709-A';
+SELECT lot_id INTO v_lot_kyo_3 FROM production_lots WHERE lot_no='LOT-2026-0714-C';
+SELECT lot_id INTO v_lot_mur_1 FROM production_lots WHERE lot_no='LOT-2026-0706-B';
+SELECT lot_id INTO v_lot_mur_2 FROM production_lots WHERE lot_no='LOT-2026-0712-B';
+
 -- 8. Shipments
 INSERT INTO shipments (shipment_id, order_id, ship_date, delivery_site_id, status, tracking_no, notes)
 SELECT v_shp_kyo_1, v_order_kyo, '2026-07-15', v_kyocera_site_id, 'SHIPPED', 'SHP-2026-001', '京セラ向け第1便。出荷完了。'
@@ -144,6 +167,10 @@ WHERE NOT EXISTS (SELECT 1 FROM shipments WHERE shipment_id=v_shp_kyo_2);
 INSERT INTO shipments (shipment_id, order_id, ship_date, delivery_site_id, status, tracking_no, notes)
 SELECT v_shp_mur_1, v_order_mur, '2026-07-19', v_murata_site_id, 'DELIVERED', 'SHP-2026-003', '村田向け全数出荷。受領確認済み。'
 WHERE NOT EXISTS (SELECT 1 FROM shipments WHERE shipment_id=v_shp_mur_1);
+
+SELECT shipment_id INTO v_shp_kyo_1 FROM shipments WHERE tracking_no='SHP-2026-001';
+SELECT shipment_id INTO v_shp_kyo_2 FROM shipments WHERE tracking_no='SHP-2026-002';
+SELECT shipment_id INTO v_shp_mur_1 FROM shipments WHERE tracking_no='SHP-2026-003';
 
 -- 9. Shipment Lots
 INSERT INTO shipment_lots (shipment_id, lot_id, qty_shipped, carton_count, pallet_no, notes)

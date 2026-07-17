@@ -20,11 +20,17 @@ export async function GET(
         product_id, product_code, product_name, primary_plastic_code, primary_plastic_spec,
         design_revisions(
           revision_id, revision_number, customer_drawing_no, cutline_length, cutline_width,
-          cavity_count, chamfer_c, has_separate_cutter, tolerance_pitch, setup_type, drawing_pdf_path
+          cavity_count, chamfer_c, has_separate_cutter, tolerance_pitch, setup_type, drawing_pdf_path,
+          gas_pressure
         )
       ),
       delivery_sites(site_name, site_address, contact_person, site_tel),
-      physical_molds(physical_mold_id, system_code, display_name)
+      physical_molds(physical_mold_id, system_code, display_name),
+      production_instruction_tags(
+        tag_code,
+        custom_label,
+        production_tag_master(label_ja, label_vi, priority, print_style)
+      )
     `)
     .eq('id', id)
     .single()
@@ -33,10 +39,11 @@ export async function GET(
 
   // Find the selected/latest design revision to pass to the component
   const designRevisions = (pi.products as any)?.design_revisions || []
-  // Fallback to the latest revision (ordered by revision_number or created_at, or just first one for Phase 1)
-  const selectedRevision = designRevisions.length > 0 
-    ? designRevisions.sort((a: any, b: any) => (b.revision_number || 0) - (a.revision_number || 0))[0]
-    : null
+  const selectedRevision = pi.design_revision_id
+    ? designRevisions.find((r: any) => r.revision_id === pi.design_revision_id)
+    : (designRevisions.length > 0
+        ? designRevisions.sort((a: any, b: any) => (b.revision_number || 0) - (a.revision_number || 0))[0]
+        : null)
 
   const buffer = await renderToBuffer(
     React.createElement(ProductionInstructionPDF as React.ComponentType<any>, { 

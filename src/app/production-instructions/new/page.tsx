@@ -24,15 +24,21 @@ export type PIFormData = {
   silicon: boolean
   surface_coating: boolean
   recycled_pct: number
+  design_revision_id: string | null
   // Step 2
   production_site: string
   quantity_ordered: number
+  daily_quantity: number | null
   requested_date: string
   delivery_site_id: string
   delivery_site_name: string
   is_first_time: boolean
   has_label: boolean
+  plain_case: boolean
+  plain_label: boolean
+  adhesive_sheet: boolean
   notes: string
+  tags: Array<{ tag_code: string | null; custom_label: string | null }>
   // Step 3 (computed)
   material_stock_warning: boolean
   material_stock_qty: number | null
@@ -43,9 +49,11 @@ const INITIAL: PIFormData = {
   company_id: '', company_code: '', template_type: 'GENERAL',
   material_spec: '', material_thickness: null, material_width: null,
   antistatic: false, silicon: false, surface_coating: false, recycled_pct: 0,
-  production_site: '本社', quantity_ordered: 0, requested_date: '',
+  design_revision_id: null,
+  production_site: '本社', quantity_ordered: 0, daily_quantity: null, requested_date: '',
   delivery_site_id: '', delivery_site_name: '',
-  is_first_time: false, has_label: false, notes: '',
+  is_first_time: false, has_label: false, plain_case: false, plain_label: false, adhesive_sheet: false, notes: '',
+  tags: [],
   material_stock_warning: false, material_stock_qty: null,
 }
 

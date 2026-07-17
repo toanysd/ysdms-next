@@ -346,7 +346,7 @@ const styles = StyleSheet.create({
     fontWeight: 700,
     marginBottom: 2,
     textAlign: 'center',
-    width: '100%',
+    borderRight: '1pt solid #000',
     borderBottom: '0.5pt solid #ddd',
   },
   
@@ -359,6 +359,32 @@ const styles = StyleSheet.create({
     textAlign: 'right', 
     fontSize: 7, 
     color: '#999' 
+  },
+  // Tags Section
+  tagContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 5,
+    marginBottom: 6,
+    padding: '2pt 0pt',
+  },
+  tagBadge: {
+    padding: '2pt 6pt',
+    fontSize: 7.5,
+    fontFamily: 'NotoSansJP',
+    fontWeight: 700,
+    borderRadius: 2,
+    border: '1pt solid #000',
+  },
+  tagRed: {
+    color: '#dc2626',
+    borderColor: '#dc2626',
+    backgroundColor: '#fff5f5',
+  },
+  tagBlack: {
+    color: '#000',
+    borderColor: '#000',
+    backgroundColor: '#ffffff',
   },
 })
 
@@ -398,6 +424,43 @@ export function ProductionInstructionPDF({ pi, revision }: { pi: any; revision: 
   const isChamfer = !!revision?.chamfer_c
   const isSeparateCutter = !!revision?.has_separate_cutter
 
+  // Process Tags
+  const rawTags = pi.production_instruction_tags || []
+  const TAG_PRIORITY_ORDER = ['URGENT', 'PROTOTYPE', 'FIRST_RUN', 'QUALITY_HOLD']
+  const sortedTags = [...rawTags].sort((a: any, b: any) => {
+    const aCode = a.tag_code
+    const bCode = b.tag_code
+    const aIndex = aCode ? TAG_PRIORITY_ORDER.indexOf(aCode) : -1
+    const bIndex = bCode ? TAG_PRIORITY_ORDER.indexOf(bCode) : -1
+    if (aIndex !== -1 && bIndex !== -1) return aIndex - bIndex
+    if (aIndex !== -1 && bIndex === -1) return -1
+    if (bIndex !== -1 && aIndex === -1) return 1
+    if (aCode && !bCode) return -1
+    if (bCode && !aCode) return 1
+    const aPriority = a.production_tag_master?.priority ?? 999
+    const bPriority = b.production_tag_master?.priority ?? 999
+    return aPriority - bPriority
+  })
+
+  const maxHeaderTags = 8
+  const headerTags = sortedTags.length > maxHeaderTags 
+    ? sortedTags.slice(0, 7) 
+    : sortedTags
+  const hasOverflow = sortedTags.length > maxHeaderTags
+  const overflowCount = sortedTags.length - 7
+  const overflowTags = sortedTags.length > maxHeaderTags 
+    ? sortedTags.slice(7) 
+    : []
+
+  const overflowText = overflowTags.map((t: any) => {
+    return t.tag_code ? (t.production_tag_master?.label_ja || t.tag_code) : t.custom_label
+  }).join(', ')
+
+  const notesText = [
+    hasOverflow ? `【追加タグ / Chỉ thị bổ sung】: ${overflowText}` : null,
+    pi.notes
+  ].filter(Boolean).join('\n')
+
   return (
     <Document title={pi.instruction_no} author="YSD">
       <Page size="A4" style={styles.page}>
@@ -435,12 +498,33 @@ export function ProductionInstructionPDF({ pi, revision }: { pi: any; revision: 
           </View>
         </View>
 
+        {/* Indication Tags Area */}
+        {sortedTags.length > 0 && (
+          <View style={styles.tagContainer}>
+            {headerTags.map((tag: any, idx: number) => {
+              const label = tag.tag_code ? (tag.production_tag_master?.label_ja || tag.tag_code) : tag.custom_label
+              const printStyle = tag.production_tag_master?.print_style || 'default'
+              const isRed = printStyle === 'red' || printStyle === 'red_bold'
+              return (
+                <View key={idx} style={[styles.tagBadge, isRed ? styles.tagRed : styles.tagBlack]}>
+                  <Text>{label}</Text>
+                </View>
+              )
+            })}
+            {hasOverflow && (
+              <View style={[styles.tagBadge, styles.tagRed, { borderStyle: 'dashed' }]}>
+                <Text>+{overflowCount}</Text>
+              </View>
+            )}
+          </View>
+        )}
+
         {/* Checkbox Controls section */}
         <View style={styles.checkboxSection}>
           <Checkbox label="袋詰め" checked={isBag} />
-          <Checkbox label="無地ケース" checked={false} />
-          <Checkbox label="無地ラベル" checked={false} />
-          <Checkbox label="接着印刷シート" checked={false} />
+          <Checkbox label="無地ケース" checked={pi.plain_case || false} />
+          <Checkbox label="無地ラベル" checked={pi.plain_label || false} />
+          <Checkbox label="接着印刷シート" checked={pi.adhesive_sheet || false} />
           <Checkbox label="面取り" checked={isChamfer} />
           <Checkbox label="別抜き" checked={isSeparateCutter} />
           <Checkbox label="P" checked={false} />
@@ -465,8 +549,8 @@ export function ProductionInstructionPDF({ pi, revision }: { pi: any; revision: 
           {/* Data Row */}
           <View style={styles.gridRow}>
             <View style={[styles.gridColValue, { width: '25%' }]}><Text style={styles.boldText}>{pi.products?.product_code || ''}</Text></View>
-            <View style={[styles.gridColValue, { width: '8%' }]}><Text></Text></View>
-            <View style={[styles.gridColValue, { width: '8%' }]}><Text></Text></View>
+            <View style={[styles.gridColValue, { width: '8%' }]}><Text>{pi.daily_quantity ? `${pi.daily_quantity.toLocaleString()}枚` : ''}</Text></View>
+            <View style={[styles.gridColValue, { width: '8%' }]}><Text>{revision?.gas_pressure || ''}</Text></View>
             <View style={[styles.gridColValue, { width: '12%' }]}><Text style={styles.boldText}>{pi.physical_molds?.system_code || revision?.customer_equipment_no || ''}</Text></View>
             <View style={[styles.gridColValue, { width: '8%' }]}><Text>{pi.material_width ? `${pi.material_width}mm` : ''}</Text></View>
             <View style={[styles.gridColValue, { width: '12%' }]}><Text>{revision?.setup_type || ''}</Text></View>
@@ -607,12 +691,12 @@ export function ProductionInstructionPDF({ pi, revision }: { pi: any; revision: 
         </View>
 
         {/* Notes (備考) */}
-        {pi.notes && (
+        {notesText ? (
           <View style={[styles.gridTable, { backgroundColor: '#fffbeb', padding: 6, marginBottom: 8 }]}>
             <Text style={{ fontSize: 7, fontWeight: 700, marginBottom: 2 }}>備考</Text>
-            <Text style={{ fontSize: 8 }}>{pi.notes}</Text>
+            <Text style={{ fontSize: 8 }}>{notesText}</Text>
           </View>
-        )}
+        ) : null}
 
         {/* Signature Box (社長 / 品課 / プレス / 包装) */}
         <View style={styles.signatureRow}>

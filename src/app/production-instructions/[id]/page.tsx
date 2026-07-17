@@ -14,12 +14,17 @@ export default async function ProductionInstructionDetailPage({ params }: { para
 
   const currentStepIdx = STATUS_STEPS.indexOf(pi.status)
 
+  // Process tags for display
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const tags = (pi as any).production_instruction_tags || []
+
   return (
     <div className="p-6 max-w-4xl mx-auto space-y-6">
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
           <div className="flex items-center gap-3">
+            <Link href="/production-instructions" className="text-sm text-gray-500 hover:text-gray-700" title="一覧へ">↑ 一覧</Link>
             <h1 className="text-2xl font-bold text-gray-900 font-mono">{pi.instruction_no}</h1>
             {pi.material_stock_warning && (
               <span className="inline-flex items-center gap-1 px-2 py-1 bg-orange-50 border border-orange-200 rounded text-xs text-orange-700">
@@ -51,6 +56,33 @@ export default async function ProductionInstructionDetailPage({ params }: { para
           </Link>
         </div>
       </div>
+
+      {/* Tags Display */}
+      {tags.length > 0 && (
+        <div className="flex gap-2 flex-wrap items-center">
+          <span className="text-xs text-gray-500 font-medium mr-1">タグ:</span>
+          {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+          {tags.map((tag: any, idx: number) => {
+            const label = tag.tag_code
+              ? (tag.production_tag_master?.label_ja || tag.tag_code)
+              : tag.custom_label
+            const printStyle = tag.production_tag_master?.print_style || 'default'
+            const isRed = printStyle === 'red' || printStyle === 'red_bold'
+            return (
+              <span
+                key={idx}
+                className={`inline-flex items-center px-2.5 py-1 rounded text-xs font-semibold border ${
+                  isRed
+                    ? 'bg-red-50 text-red-700 border-red-200'
+                    : 'bg-white text-gray-700 border-gray-300'
+                }`}
+              >
+                {label}
+              </span>
+            )
+          })}
+        </div>
+      )}
 
       {/* Status Stepper */}
       <div className="bg-white rounded-lg border border-gray-200 p-4">
@@ -86,11 +118,15 @@ export default async function ProductionInstructionDetailPage({ params }: { para
         </InfoCard>
         <InfoCard title="生産情報">
           <Row label="生産拠点" value={pi.production_site ?? '—'} />
-          <Row label="数量" value={`${pi.quantity_ordered.toLocaleString()} 枚`} />
+          <Row label="計画数量" value={`${pi.quantity_ordered.toLocaleString()} 枚`} />
+          {pi.daily_quantity && <Row label="日次目標" value={`${pi.daily_quantity.toLocaleString()} 枚/日`} />}
           <Row label="入数" value={pi.quantity_per_stack ? `${pi.quantity_per_stack}枚/段` : '—'} />
           <Row label="納期" value={pi.requested_date} mono />
           {pi.is_first_time && <Row label="初回" value="✅ 初回" />}
           {pi.has_label && <Row label="ラベル" value="✅ 要ラベル" />}
+          {pi.plain_case && <Row label="無地箱" value="✅" />}
+          {pi.plain_label && <Row label="無地ラベル" value="✅" />}
+          {pi.adhesive_sheet && <Row label="粘着シート" value="✅" />}
         </InfoCard>
         <InfoCard title="材料">
           <Row label="材料" value={pi.material_spec ?? '—'} />

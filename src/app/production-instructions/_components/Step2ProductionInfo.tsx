@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { searchDeliverySites } from '@/app/actions/production-instructions'
+import { searchDeliverySites, getStandardTags } from '@/app/actions/production-instructions'
 import type { PIFormData } from '../new/page'
 
 const PRODUCTION_SITES = ['本社', '青森', '茨城', '坂田']
@@ -13,6 +13,12 @@ export default function Step2ProductionInfo({ form, update, onBack, onNext }: Pr
   const [siteQuery, setSiteQuery] = useState('')
   const [siteResults, setSiteResults] = useState<DeliverySite[]>([])
   const [searching, setSearching] = useState(false)
+  const [standardTags, setStandardTags] = useState<any[]>([])
+  const [customTagInput, setCustomTagInput] = useState('')
+
+  useEffect(() => {
+    getStandardTags().then(setStandardTags)
+  }, [])
 
   const searchSite = async (q: string) => {
     if (q.length < 1) { setSiteResults([]); return }
@@ -26,6 +32,40 @@ export default function Step2ProductionInfo({ form, update, onBack, onNext }: Pr
     const timer = setTimeout(() => searchSite(siteQuery), 300)
     return () => clearTimeout(timer)
   }, [siteQuery])
+
+  const handleToggleTag = (tagCode: string) => {
+    const exists = form.tags.some(t => t.tag_code === tagCode)
+    if (exists) {
+      update({ tags: form.tags.filter(t => t.tag_code !== tagCode) })
+    } else {
+      update({ tags: [...form.tags, { tag_code: tagCode, custom_label: null }] })
+    }
+  }
+
+  const handleAddCustomTag = () => {
+    const val = customTagInput.trim()
+    if (!val) return
+
+    const currentCustomCount = form.tags.filter(t => t.custom_label !== null).length
+    if (currentCustomCount >= 2) {
+      alert('カスタムタグは最大2個まで登録可能です。')
+      return
+    }
+
+    const isJapanese = /[\u3000-\u303f\u3040-\u309f\u30a0-\u30ff\uff00-\uff9f\u4e00-\u9faf\u3400-\u4dbf]/.test(val)
+    const maxLen = isJapanese ? 12 : 24
+    if (val.length > maxLen) {
+      alert(`文字数制限を超えています (日本語: 最大12文字, 英数/越語: 最大24文字)。現在の文字数: ${val.length}`)
+      return
+    }
+
+    update({ tags: [...form.tags, { tag_code: null, custom_label: val }] })
+    setCustomTagInput('')
+  }
+
+  const handleRemoveCustomTag = (label: string) => {
+    update({ tags: form.tags.filter(t => t.custom_label !== label) })
+  }
 
   const canNext = form.production_site && form.quantity_ordered > 0 && form.requested_date && form.delivery_site_id
 
@@ -54,10 +94,10 @@ export default function Step2ProductionInfo({ form, update, onBack, onNext }: Pr
         </div>
       </div>
 
-      {/* Quantity + Date */}
-      <div className="grid grid-cols-2 gap-4">
+      {/* Quantity + Daily target + Date */}
+      <div className="grid grid-cols-3 gap-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">数量 <span className="text-red-500">*</span></label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">計画数量 <span className="text-red-500">*</span></label>
           <input
             type="number"
             min={1}
@@ -65,6 +105,17 @@ export default function Step2ProductionInfo({ form, update, onBack, onNext }: Pr
             onChange={e => update({ quantity_ordered: parseInt(e.target.value) || 0 })}
             className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
             placeholder="例: 1000"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">日次目標数量</label>
+          <input
+            type="number"
+            min={1}
+            value={form.daily_quantity || ''}
+            onChange={e => update({ daily_quantity: parseInt(e.target.value) || null })}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+            placeholder="例: 200"
           />
         </div>
         <div>
@@ -87,7 +138,7 @@ export default function Step2ProductionInfo({ form, update, onBack, onNext }: Pr
             step="0.01"
             min={0}
             value={form.material_thickness || ''}
-            onChange={e => update({ material_thickness: parseFloat(e.target.value) || 0 })}
+            onChange={e => update({ material_thickness: parseFloat(e.target.value) || null })}
             className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
             placeholder="例: 0.5"
           />
@@ -98,7 +149,7 @@ export default function Step2ProductionInfo({ form, update, onBack, onNext }: Pr
             type="number"
             min={0}
             value={form.material_width || ''}
-            onChange={e => update({ material_width: parseInt(e.target.value) || 0 })}
+            onChange={e => update({ material_width: parseInt(e.target.value) || null })}
             className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
             placeholder="例: 640"
           />
@@ -110,7 +161,7 @@ export default function Step2ProductionInfo({ form, update, onBack, onNext }: Pr
         <label className="block text-sm font-medium text-gray-700 mb-1">納入先 <span className="text-red-500">*</span></label>
         <input
           type="text"
-          placeholder="納入先名またはコードで検索 (例: SMK, 11)"
+          placeholder="納入先名 hoặc mã để tìm kiếm (Ví dụ: SMK, 11)"
           value={siteQuery}
           onChange={e => setSiteQuery(e.target.value)}
           className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
@@ -137,16 +188,121 @@ export default function Step2ProductionInfo({ form, update, onBack, onNext }: Pr
         )}
       </div>
 
-      {/* Checkboxes */}
-      <div className="flex gap-6">
-        <label className="flex items-center gap-2 text-sm cursor-pointer">
-          <input type="checkbox" checked={form.is_first_time} onChange={e => update({ is_first_time: e.target.checked })} className="rounded" />
-          初回 (初めての生産)
-        </label>
-        <label className="flex items-center gap-2 text-sm cursor-pointer">
-          <input type="checkbox" checked={form.has_label} onChange={e => update({ has_label: e.target.checked })} className="rounded" />
-          ラベル要
-        </label>
+      {/* Packaging Options Checkboxes */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">梱包・その他指示</label>
+        <div className="grid grid-cols-2 gap-3 bg-gray-50 border border-gray-200 rounded-md p-3">
+          <label className="flex items-center gap-2 text-sm cursor-pointer font-medium text-gray-700">
+            <input type="checkbox" checked={form.is_first_time} onChange={e => update({ is_first_time: e.target.checked })} className="rounded text-blue-600 focus:ring-blue-500" />
+            初回生産 (First Time)
+          </label>
+          <label className="flex items-center gap-2 text-sm cursor-pointer font-medium text-gray-700">
+            <input type="checkbox" checked={form.has_label} onChange={e => update({ has_label: e.target.checked })} className="rounded text-blue-600 focus:ring-blue-500" />
+            ラベル貼付要
+          </label>
+          <label className="flex items-center gap-2 text-sm cursor-pointer font-medium text-gray-700">
+            <input type="checkbox" checked={form.plain_case} onChange={e => update({ plain_case: e.target.checked })} className="rounded text-blue-600 focus:ring-blue-500" />
+            無地箱指定 (Plain Case)
+          </label>
+          <label className="flex items-center gap-2 text-sm cursor-pointer font-medium text-gray-700">
+            <input type="checkbox" checked={form.plain_label} onChange={e => update({ plain_label: e.target.checked })} className="rounded text-blue-600 focus:ring-blue-500" />
+            無地ラベル (Plain Label)
+          </label>
+          <label className="flex items-center gap-2 text-sm cursor-pointer font-medium text-gray-700">
+            <input type="checkbox" checked={form.adhesive_sheet} onChange={e => update({ adhesive_sheet: e.target.checked })} className="rounded text-blue-600 focus:ring-blue-500" />
+            粘着シート使用 (Adhesive Sheet)
+          </label>
+        </div>
+      </div>
+
+      {/* Tag Selector */}
+      <div className="space-y-3">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">指示書タグ (Tags) <span className="text-xs text-gray-500">(複数可, 赤色タグは警告・高優先)</span></label>
+          <div className="flex gap-2 flex-wrap mb-2">
+            {standardTags.map(tag => {
+              const isSelected = form.tags.some(t => t.tag_code === tag.tag_code)
+              const isRed = tag.print_style === 'red' || tag.print_style === 'red_bold'
+              return (
+                <button
+                  key={tag.tag_code}
+                  type="button"
+                  onClick={() => handleToggleTag(tag.tag_code)}
+                  className={`px-3 py-1.5 text-xs rounded-full border transition-all font-medium ${
+                    isSelected
+                      ? isRed
+                        ? 'bg-red-50 text-red-700 border-red-300 ring-2 ring-red-200'
+                        : 'bg-gray-800 text-white border-gray-800 ring-2 ring-gray-200'
+                      : 'bg-white text-gray-600 border-gray-300 hover:border-gray-400'
+                  }`}
+                >
+                  {tag.label_ja}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* Custom Tag Input */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">カスタムタグ追加 <span className="text-xs text-gray-500">(最大2点, 日本語12文字/英数越語24文字まで)</span></label>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              placeholder="例: 特急仕様など"
+              value={customTagInput}
+              onChange={e => setCustomTagInput(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), handleAddCustomTag())}
+              disabled={form.tags.filter(t => t.custom_label !== null).length >= 2}
+              className="flex-1 px-3 py-2 border border-gray-300 rounded-md text-sm disabled:bg-gray-100 disabled:text-gray-400"
+            />
+            <button
+              type="button"
+              onClick={handleAddCustomTag}
+              disabled={!customTagInput.trim() || form.tags.filter(t => t.custom_label !== null).length >= 2}
+              className="px-4 py-2 bg-gray-800 text-white text-sm font-medium rounded-md hover:bg-gray-900 disabled:opacity-40"
+            >
+              追加
+            </button>
+          </div>
+        </div>
+
+        {/* Selected Tags Preview */}
+        {form.tags.length > 0 && (
+          <div className="flex gap-2 flex-wrap items-center bg-gray-50 border border-gray-200 rounded-md p-3">
+            <span className="text-xs text-gray-500 font-medium">選択中のタグ:</span>
+            {form.tags.map((tag, idx) => {
+              const matchedStandard = standardTags.find(s => s.tag_code === tag.tag_code)
+              const label = matchedStandard ? matchedStandard.label_ja : tag.custom_label
+              const isRed = matchedStandard && (matchedStandard.print_style === 'red' || matchedStandard.print_style === 'red_bold')
+              return (
+                <span
+                  key={idx}
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-semibold border ${
+                    isRed
+                      ? 'bg-red-50 text-red-700 border-red-200'
+                      : 'bg-white text-gray-700 border-gray-300'
+                  }`}
+                >
+                  {label}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (tag.tag_code) {
+                        handleToggleTag(tag.tag_code)
+                      } else if (tag.custom_label) {
+                        handleRemoveCustomTag(tag.custom_label)
+                      }
+                    }}
+                    className="text-gray-400 hover:text-gray-600 font-bold focus:outline-none"
+                  >
+                    ×
+                  </button>
+                </span>
+              )
+            })}
+          </div>
+        )}
       </div>
 
       {/* Notes */}

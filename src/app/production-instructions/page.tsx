@@ -123,7 +123,7 @@ export default function ProductionInstructionsPage() {
           <table className="w-full text-sm">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
-                {['伝票No.', '品番', '客先', '数量', '生産拠点', '納期', '状態', '操作'].map(h => (
+                {['伝票No.', '品番', '客先', '数量', '生産拠点', '納期', '状態', 'タグ', '操作'].map(h => (
                   <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">{h}</th>
                 ))}
               </tr>
@@ -131,6 +131,10 @@ export default function ProductionInstructionsPage() {
             <tbody className="divide-y divide-gray-100">
               {instructions.map(pi => {
                 const status = STATUS_CONFIG[pi.status]
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const tags = (pi as any).production_instruction_tags || []
+                const visibleTags = tags.slice(0, 2)
+                const overflowCount = tags.length - 2
                 return (
                   <tr key={pi.id} className="hover:bg-gray-50 transition-colors">
                     <td className="px-4 py-3 font-mono">
@@ -150,6 +154,39 @@ export default function ProductionInstructionsPage() {
                       <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${status.className}`}>
                         {status.label}
                       </span>
+                    </td>
+                    <td className="px-4 py-3">
+                      {tags.length > 0 ? (
+                        <div className="flex gap-1 flex-wrap">
+                          {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                          {visibleTags.map((tag: any, idx: number) => {
+                            const label = tag.tag_code
+                              ? (tag.production_tag_master?.label_ja || tag.tag_code)
+                              : tag.custom_label
+                            const ps = tag.production_tag_master?.print_style || 'default'
+                            const isRed = ps === 'red' || ps === 'red_bold'
+                            return (
+                              <span
+                                key={idx}
+                                className={`inline-flex px-1.5 py-0.5 rounded text-[10px] font-semibold border ${
+                                  isRed
+                                    ? 'bg-red-50 text-red-600 border-red-200'
+                                    : 'bg-gray-50 text-gray-600 border-gray-200'
+                                }`}
+                              >
+                                {label}
+                              </span>
+                            )
+                          })}
+                          {overflowCount > 0 && (
+                            <span className="inline-flex px-1.5 py-0.5 rounded text-[10px] font-medium bg-gray-100 text-gray-500 border border-gray-200">
+                              +{overflowCount}
+                            </span>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-gray-300">—</span>
+                      )}
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex gap-2">

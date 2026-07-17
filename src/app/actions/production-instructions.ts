@@ -38,7 +38,12 @@ export async function getProductionInstructions(filters: {
       material_stock_warning, created_at,
       orders(order_no, companies(company_name, company_code)),
       products(product_id, product_code, product_name),
-      delivery_sites(site_name)
+      delivery_sites(site_name),
+      production_instruction_tags(
+        tag_code,
+        custom_label,
+        production_tag_master(label_ja, print_style)
+      )
     `)
     .order('created_at', { ascending: false })
     .limit(100)
@@ -63,7 +68,12 @@ export async function getProductionInstructionById(id: string) {
         *,
         orders(order_no, companies(company_name, company_code)),
         products(product_id, product_code, product_name),
-        delivery_sites(site_name, site_address)
+        delivery_sites(site_name, site_address),
+        production_instruction_tags(
+          tag_code,
+          custom_label,
+          production_tag_master(label_ja, label_vi, priority, print_style)
+        )
     `)
     .eq('id', id)
     .single()
@@ -77,7 +87,10 @@ export async function searchOrders(query: string) {
     .select(`
       order_id, order_no,
       order_lines(
-        products(product_id, product_code, product_name, primary_plastic_code, primary_plastic_spec)
+        products(
+          product_id, product_code, product_name, primary_plastic_code, primary_plastic_spec,
+          design_revisions(revision_id, revision_number)
+        )
       ),
       companies(company_id, company_name, company_code)
     `)
@@ -92,11 +105,22 @@ export async function searchOrders(query: string) {
     const orderLines = (order as any).order_lines || []
     const firstLine = orderLines[0]
     const product = firstLine?.products || null
+    const designRevisions = product?.design_revisions || []
+    const latestRevision = designRevisions.length > 0
+      ? designRevisions.sort((a: any, b: any) => (b.revision_number || 0) - (a.revision_number || 0))[0]
+      : null
 
     return {
       order_id: order.order_id,
       order_no: order.order_no,
-      products: product,
+      products: product ? {
+        product_id: product.product_id,
+        product_code: product.product_code,
+        product_name: product.product_name,
+        primary_plastic_code: product.primary_plastic_code,
+        primary_plastic_spec: product.primary_plastic_spec,
+        latest_design_revision_id: latestRevision ? latestRevision.revision_id : null
+      } : null,
       companies: order.companies
     }
   })
@@ -133,6 +157,16 @@ export async function checkMaterialStock(
   const currentStock = data.reduce((sum, row) => sum + Number(row.available_m || 0), 0)
 
   return { sufficient: currentStock >= quantityNeeded, currentStock }
+}
+
+export async function getStandardTags() {
+  const supabase = await createClient()
+  const { data } = await supabase
+    .from('production_tag_master')
+    .select('tag_code, label_ja, label_vi, priority, print_style')
+    .eq('is_active', true)
+    .order('priority', { ascending: true })
+  return data ?? []
 }
 
 // ─── Mutations ────────────────────────────────────────────────────────────────
@@ -174,11 +208,33 @@ export async function createProductionInstruction(
       status: form.status,
       issued_at,
       created_by: user.id,
+      daily_quantity: form.daily_quantity || null,
+      plain_case: form.plain_case || false,
+      plain_label: form.plain_label || false,
+      adhesive_sheet: form.adhesive_sheet || false,
+      design_revision_id: form.design_revision_id || null,
     })
     .select('id')
     .single()
 
   if (error) return { error: error.message }
+
+  // Insert tags if any
+  if (form.tags && form.tags.length > 0) {
+    const tagsToInsert = form.tags.map((t, idx) => ({
+      instruction_id: data.id,
+      tag_code: t.tag_code || null,
+      custom_label: t.custom_label || null,
+      display_order: idx
+    }))
+    const { error: tagsError } = await supabase
+      .from('production_instruction_tags')
+      .insert(tagsToInsert)
+    if (tagsError) {
+      console.error('Failed to save tags for instruction:', tagsError)
+    }
+  }
+
   revalidatePath('/production-instructions')
   return { id: data.id }
 }

@@ -11,7 +11,14 @@ const COMPANY_TEMPLATE_MAP: Record<string, 'HAE' | 'NLC' | 'SMK' | 'YAE' | 'GENE
 interface OrderResult {
   order_id: string
   order_no: string
-  products: { product_id: string; product_code: string; product_name: string; primary_plastic_code: string | null; primary_plastic_spec: string | null } | null
+  products: {
+    product_id: string
+    product_code: string
+    product_name: string
+    primary_plastic_code: string | null
+    primary_plastic_spec: string | null
+    latest_design_revision_id: string | null
+  } | null
   companies: { company_id: string; company_name: string; company_code: string } | null
 }
 
@@ -47,6 +54,7 @@ export default function Step1OrderSelect({ form, update, onNext }: Props) {
       material_thickness: 0,
       material_width: 0,
       recycled_pct: 0,
+      design_revision_id: p?.latest_design_revision_id ?? null,
     })
   }
 
