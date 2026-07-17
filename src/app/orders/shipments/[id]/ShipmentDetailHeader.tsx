@@ -1,6 +1,7 @@
 'use client'
 
 import { Truck } from 'lucide-react'
+import Link from 'next/link'
 
 export function ShipmentDetailHeader({ shipment }: { shipment: any }) {
   const isShipped = shipment.status === 'SHIPPED'
@@ -60,6 +61,16 @@ export function ShipmentDetailHeader({ shipment }: { shipment: any }) {
             </span>
           </div>
         </div>
+      </div>
+      <div>
+        <Link 
+          href={`/orders/shipments/${shipment.shipment_id}/print`}
+          target="_blank"
+          className="btn btn-secondary"
+          style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+        >
+          🖨️ <span className="ja">納品書印刷</span><span className="vi" style={{ fontSize: 11 }}>In phiếu giao</span>
+        </Link>
       </div>
     </div>
   )

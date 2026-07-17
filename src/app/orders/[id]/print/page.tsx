@@ -4,7 +4,10 @@ import React, { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Printer, FileDown, ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
+import html2canvas from 'html2canvas'
+import { jsPDF } from 'jspdf'
 import './print.css'
+import { YSD_COMPANY_INFO } from '@/lib/company'
 
 // ── Helpers ──
 function parseMaterialNotes(notes: string | null) {
@@ -49,6 +52,8 @@ export default function OrderPrintPage({ params }: { params: Promise<{ id: strin
   const { id } = React.use(params)
   const [order, setOrder] = useState<any>(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [exporting, setExporting] = useState(false)
 
   // ── States for all editable fields ──
   const [orderNo, setOrderNo] = useState('')
@@ -104,14 +109,22 @@ export default function OrderPrintPage({ params }: { params: Promise<{ id: strin
             products ( product_id, product_code, product_name, product_name_internal, pocket_count, pieces_per_box, box_spec, notes ),
             design_revisions (
               *,
-              plastic_master ( plastic_code, material, plastic_family, thickness_mm, width_mm, color )
+              plastic_master ( plastic_code, plastic_family, thickness_mm, width_mm, color_name_normalized )
             )
           )
         `)
         .eq('order_id', id)
         .single()
       
-      if (!error && data) {
+      if (error) {
+        console.error('Fetch Error:', error)
+        setError(`${error.message} (Code: ${error.code})`)
+        setLoading(false)
+        return
+      }
+      
+      if (data) {
+        setOrder(data)
         setOrderNo(data.order_no || '')
         setOrderDate(formatDate(data.order_date))
         setCompanyNameHeader(data.companies?.company_name || '')
@@ -188,9 +201,10 @@ export default function OrderPrintPage({ params }: { params: Promise<{ id: strin
           const rev = l.design_revisions
           const pm = rev?.plastic_master
           if (pm) {
-            const family = pm.plastic_family || pm.material || ''
+            const family = pm.plastic_family || ''
+            const colorVal = pm.color_name_normalized || ''
             mat = {
-              material: family + (pm.color && pm.color !== 'TBA' ? `(${pm.color})` : ''),
+              material: family + (colorVal && colorVal !== 'TBA' ? `(${colorVal})` : ''),
               thickness: pm.thickness_mm != null ? String(pm.thickness_mm) : '',
               width: pm.width_mm != null ? String(pm.width_mm) : '',
               staticCharge: family.includes('帯電') || pm.plastic_code?.includes('E') ? '有' : '無',
@@ -251,6 +265,7 @@ export default function OrderPrintPage({ params }: { params: Promise<{ id: strin
   }, [id])
 
   if (loading) return <div style={{ padding: 20 }}>読み込み中...</div>
+  if (error) return <div style={{ padding: 20, color: 'red' }}>エラーが発生しました: {error}</div>
   if (!order) return <div style={{ padding: 20 }}>受注が見つかりません。</div>
 
   const handleLineChange = (index: number, key: string, value: string) => {
@@ -261,6 +276,51 @@ export default function OrderPrintPage({ params }: { params: Promise<{ id: strin
     })
   }
 
+  const handleExportPDF = async () => {
+    const element = document.querySelector('.print-page') as HTMLElement
+    if (!element || exporting) return
+    setExporting(true)
+    element.classList.add('pdf-exporting')
+    
+    try {
+      const canvas = await html2canvas(element, {
+        scale: 2,           // 2x resolution
+        useCORS: true,
+        backgroundColor: '#ffffff',
+        width: element.scrollWidth,
+        windowWidth: 860,
+      })
+      
+      const imgData = canvas.toDataURL('image/png')
+      const pdf = new jsPDF('p', 'mm', 'a4')
+      const pdfW = 210
+      const pdfH = 297
+      const imgW = pdfW
+      const imgH = (canvas.height * pdfW) / canvas.width
+      
+      let heightLeft = imgH
+      let position = 0
+
+      pdf.addImage(imgData, 'PNG', 0, position, imgW, imgH)
+      heightLeft -= pdfH
+
+      while (heightLeft > 0) {
+        position = heightLeft - imgH
+        pdf.addPage()
+        pdf.addImage(imgData, 'PNG', 0, position, imgW, imgH)
+        heightLeft -= pdfH
+      }
+      
+      pdf.save(`注文書_${orderNo || 'draft'}.pdf`)
+    } catch (e) {
+      console.error(e)
+      alert('PDF出力に失敗しました')
+    } finally {
+      element.classList.remove('pdf-exporting')
+      setExporting(false)
+    }
+  }
+
   return (
     <div className="print-container">
       {/* ── Action Buttons (Hidden on Print) ── */}
@@ -269,12 +329,12 @@ export default function OrderPrintPage({ params }: { params: Promise<{ id: strin
           <ArrowLeft size={14} /> 受注詳細に戻る
         </Link>
         <div style={{ flex: 1 }} />
-        <button className="btn btn-primary" onClick={() => window.print()} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+        <button className="btn btn-primary" onClick={() => window.print()} disabled={exporting} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           <Printer size={16} /> 印刷
         </button>
-        <a href={`/api/orders/${order.order_id}/export`} className="btn btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: 6, textDecoration: 'none' }}>
-          <FileDown size={16} /> Excel出力
-        </a>
+        <button className="btn btn-secondary" onClick={handleExportPDF} disabled={exporting} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <FileDown size={16} /> {exporting ? '出力中...' : 'PDF出力'}
+        </button>
       </div>
 
       {/* ── Print Page ── */}
@@ -316,8 +376,8 @@ export default function OrderPrintPage({ params }: { params: Promise<{ id: strin
               YSD
             </div>
             <div className="print-logo-text">
-              <div className="en">YOSHIDA PACKAGE CO.,LTD.</div>
-              <div className="ja">株式会社 ヨシダパッケージ</div>
+              <div className="en">{YSD_COMPANY_INFO.nameEn}</div>
+              <div className="ja">{YSD_COMPANY_INFO.nameJa}</div>
             </div>
           </div>
 
