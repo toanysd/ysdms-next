@@ -2,14 +2,20 @@ import React from 'react'
 import { Document, Page, Text, View, StyleSheet, Font, pdf } from '@react-pdf/renderer'
 import type { Quotation } from '@/app/cases/[id]/types'
 
-Font.register({
-  family: 'NotoSansJP',
-  src: 'https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-jp@5.0.3/files/noto-sans-jp-japanese-400-normal.woff',
-})
+const isServer = typeof window === 'undefined'
+const fontSrcRegular = isServer
+  ? (process.cwd() + '/public/fonts/NotoSansJP-Regular.otf')
+  : '/fonts/NotoSansJP-Regular.otf'
+const fontSrcBold = isServer
+  ? (process.cwd() + '/public/fonts/NotoSansJP-Bold.otf')
+  : '/fonts/NotoSansJP-Bold.otf'
 
 Font.register({
-  family: 'NotoSansJP-Bold',
-  src: 'https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-jp@5.0.3/files/noto-sans-jp-japanese-700-normal.woff',
+  family: 'NotoSansJP',
+  fonts: [
+    { src: fontSrcRegular, fontWeight: 400 },
+    { src: fontSrcBold, fontWeight: 700 },
+  ],
 })
 
 const styles = StyleSheet.create({
@@ -26,7 +32,8 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 24,
-    fontFamily: 'NotoSansJP-Bold',
+    fontFamily: 'NotoSansJP',
+    fontWeight: 700,
     letterSpacing: 4,
   },
   companyInfo: {
@@ -35,7 +42,8 @@ const styles = StyleSheet.create({
     lineHeight: 1.5,
   },
   companyName: {
-    fontFamily: 'NotoSansJP-Bold',
+    fontFamily: 'NotoSansJP',
+    fontWeight: 700,
     fontSize: 12,
   },
   customerInfo: {
@@ -46,7 +54,8 @@ const styles = StyleSheet.create({
   },
   customerName: {
     fontSize: 16,
-    fontFamily: 'NotoSansJP-Bold',
+    fontFamily: 'NotoSansJP',
+    fontWeight: 700,
   },
   metaTable: {
     marginBottom: 30,
@@ -75,7 +84,8 @@ const styles = StyleSheet.create({
   },
   totalAmountValue: {
     fontSize: 16,
-    fontFamily: 'NotoSansJP-Bold',
+    fontFamily: 'NotoSansJP',
+    fontWeight: 700,
   },
   table: {
     width: '100%',
@@ -96,7 +106,8 @@ const styles = StyleSheet.create({
     borderTopWidth: 0,
     backgroundColor: '#f5f5f5',
     padding: 6,
-    fontFamily: 'NotoSansJP-Bold',
+    fontFamily: 'NotoSansJP',
+    fontWeight: 700,
   },
   tableCol: {
     borderStyle: 'solid',
@@ -181,7 +192,7 @@ export const QuotationDocument = ({ quotation, customerName }: Props) => {
 
         {quotation.notes && (
           <View style={styles.notesBox}>
-            <Text style={{ fontFamily: 'NotoSansJP-Bold', marginBottom: 4 }}>備考:</Text>
+            <Text style={{ fontFamily: 'NotoSansJP', fontWeight: 700, marginBottom: 4 }}>備考:</Text>
             <Text>{quotation.notes}</Text>
           </View>
         )}
