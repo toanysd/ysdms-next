@@ -2,15 +2,14 @@ import React from 'react'
 import { Document, Page, Text, View, StyleSheet, Font, pdf } from '@react-pdf/renderer'
 import type { Quotation } from '@/app/cases/[id]/types'
 
-// Register a Japanese Font from a CDN
 Font.register({
   family: 'NotoSansJP',
-  src: 'https://fonts.gstatic.com/ea/notosansjapanese/v6/NotoSansJP-Regular.otf',
+  src: 'https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-jp@5.0.3/files/noto-sans-jp-japanese-400-normal.woff',
 })
 
 Font.register({
   family: 'NotoSansJP-Bold',
-  src: 'https://fonts.gstatic.com/ea/notosansjapanese/v6/NotoSansJP-Bold.otf',
+  src: 'https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-jp@5.0.3/files/noto-sans-jp-japanese-700-normal.woff',
 })
 
 const styles = StyleSheet.create({
