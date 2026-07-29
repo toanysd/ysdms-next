@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { useTranslations } from 'next-intl'
 import { Save, Loader2, Calendar, X, Plus } from 'lucide-react'
 import { SearchableSelect } from '@/components/ui/SearchableSelect'
 import { createQuickJob } from '@/app/actions/mold-job'
@@ -44,21 +45,28 @@ export function WorklogFormShared({
   initialData,
   mode,
   onSuccess,
-  onCancel,
+  onCancel
 }: WorklogFormSharedProps) {
   const supabase = createClient()
-  const isEdit = !!(initialData?.log_id)
+  const t = useTranslations('Worklogs')
+  const tCommon = useTranslations('Common')
+
+  const isEdit = !!initialData?.log_id
   const isJobLocked = !!defaultJobId
 
-  // ── Master data ──────────────────────────────────────────────────────────
+  // ── States ──────────────────────────────────────────────────────────────────
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
   const [employees, setEmployees] = useState<Employee[]>([])
   const [jobs, setJobs] = useState<JobOption[]>([])
-  const [steps, setSteps] = useState<JobStepOption[]>(preloadedSteps || [])
+  const [steps, setSteps] = useState<JobStepOption[]>([])
   const [jobTypes, setJobTypes] = useState<JobType[]>([])
 
-  // ── Form state ───────────────────────────────────────────────────────────
-  const today = new Date().toISOString().slice(0, 10)
-  const [workDate, setWorkDate] = useState(initialData?.work_date || today)
+  const [workDate, setWorkDate] = useState(() => {
+    if (initialData?.work_date) return initialData.work_date
+    return new Date().toISOString().split('T')[0]
+  })
   const [employeeId, setEmployeeId] = useState(initialData?.employee_id || '')
   const [selectedJobId, setSelectedJobId] = useState(defaultJobId || initialData?.job_id || '')
   const [stepId, setStepId] = useState(initialData?.job_step_id || '')
@@ -67,75 +75,57 @@ export function WorklogFormShared({
   const [description, setDescription] = useState(initialData?.description || '')
   const [notes, setNotes] = useState(initialData?.notes || '')
 
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-
-  // ── Quick Job Creation state (DEC-008) ──────────────────────────────────
+  // Quick Job Form
   const [showQuickJob, setShowQuickJob] = useState(false)
   const [quickJobName, setQuickJobName] = useState('')
   const [quickJobTypeId, setQuickJobTypeId] = useState('')
   const [quickJobCreating, setQuickJobCreating] = useState(false)
 
-  // ── Load master data ──────────────────────────────────────────────────────
+  // ── Load Initial Metadata ──────────────────────────────────────────────────
   useEffect(() => {
-    async function load() {
-      // Employees
-      const { data: empData } = await supabase
-        .from('employees')
-        .select('employee_id, employee_code, employee_name')
-        .eq('is_active', true)
-        .order('employee_name')
-      if (empData) {
-        setEmployees(empData.map(e => ({
-          value: e.employee_id,
-          label: `${e.employee_code}${e.employee_name ? ' · ' + e.employee_name : ''}`
-        })))
+    async function loadMeta() {
+      // 1. Employees
+      const { data: emps } = await supabase.from('employees').select('employee_id, employee_name, employee_code').order('employee_code')
+      if (emps) {
+        setEmployees(emps.map(e => ({ value: e.employee_id, label: `[${e.employee_code}] ${e.employee_name}` })))
       }
 
-      // Jobs (chỉ load khi không lock)
+      // 2. Jobs (nếu không lock)
       if (!isJobLocked) {
-        const { data: jobData } = await supabase
-          .from('jobs')
-          .select('job_id, job_code, job_name')
-          .order('created_at', { ascending: false })
-          .limit(200)
-        if (jobData) {
-          setJobs(jobData.map(j => ({
-            value: j.job_id,
-            label: `[${j.job_code}] ${j.job_name || ''}`
-          })))
+        const { data: jobList } = await supabase.from('jobs').select('job_id, job_code, job_name').order('job_code')
+        if (jobList) {
+          setJobs(jobList.map(j => ({ value: j.job_id, label: `[${j.job_code}] ${j.job_name}` })))
         }
+      }
 
-        // Job types for Quick Job creation
-        const { data: jtData } = await supabase
-          .from('job_types')
-          .select('job_type_id, job_type_name_ja, job_type_name_vi')
-          .order('job_type_name_ja')
-        if (jtData) setJobTypes(jtData)
+      // 3. Job Types
+      const { data: jTypes } = await supabase.from('job_types').select('*').order('job_type_name_ja')
+      if (jTypes) {
+        setJobTypes(jTypes)
       }
     }
-    load()
+    loadMeta()
   }, [supabase, isJobLocked])
 
-  // ── Load steps khi job thay đổi (chế độ free-select) ─────────────────────
+  // ── Load Steps when Job changes ────────────────────────────────────────────
   useEffect(() => {
     if (isJobLocked && preloadedSteps) {
       setSteps(preloadedSteps)
       return
     }
+
     if (!selectedJobId) {
       setSteps([])
-      setStepId('')
       return
     }
+
     async function loadSteps() {
       const { data } = await supabase
         .from('job_steps')
         .select('step_id, step_no, step_name, job_id')
         .eq('job_id', selectedJobId)
         .order('step_no')
-      setSteps(data || [])
-      setStepId('')
+      if (data) setSteps(data)
     }
     loadSteps()
   }, [selectedJobId, supabase, isJobLocked, preloadedSteps])
@@ -143,13 +133,13 @@ export function WorklogFormShared({
   // ── Submit ────────────────────────────────────────────────────────────────
   const handleSave = async () => {
     setError(null)
-    if (!workDate) return setError('作業日を入力してください / Vui lòng nhập ngày làm việc.')
-    if (!employeeId) return setError('作業者を選択してください / Vui lòng chọn nhân viên.')
-    if (!selectedJobId) return setError('ジョブを選択してください / Vui lòng chọn Job.')
-    if (!stepId) return setError('工程を選択してください / Vui lòng chọn bước công việc.')
+    if (!workDate) return setError(t('validation.reqWorkDate'))
+    if (!employeeId) return setError(t('validation.reqEmployee'))
+    if (!selectedJobId) return setError(t('validation.reqJob'))
+    if (!stepId) return setError(t('validation.reqStep'))
     const hours = hoursSpent ? parseFloat(hoursSpent) : null
     if (!hours || isNaN(hours) || hours <= 0) {
-      return setError('作業時間は0より大きい値を入力してください / Số giờ phải lớn hơn 0.')
+      return setError(t('validation.reqHours'))
     }
 
     setLoading(true)
@@ -191,7 +181,7 @@ export function WorklogFormShared({
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
           <label className="form-label">
-            作業日 <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>Ngày làm việc</span>
+            {t('formWorkDate')}
             <span style={{ color: 'var(--status-error)' }}> *</span>
           </label>
           <div style={{ position: 'relative' }}>
@@ -201,7 +191,7 @@ export function WorklogFormShared({
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
           <label className="form-label">
-            作業者 <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>Nhân viên</span>
+            {t('formEmployee')}
             <span style={{ color: 'var(--status-error)' }}> *</span>
           </label>
           <SearchableSelect options={employees} value={employeeId} onChange={v => setEmployeeId(v || '')} />
@@ -212,7 +202,7 @@ export function WorklogFormShared({
       {!isJobLocked && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
           <label className="form-label">
-            ジョブ <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>Chọn Job</span>
+            {t('formJob')}
             <span style={{ color: 'var(--status-error)' }}> *</span>
           </label>
           <SearchableSelect
@@ -235,7 +225,7 @@ export function WorklogFormShared({
               }}
             >
               <Plus size={14} />
-              <span>ジョブを新規作成 / Tạo Job nhanh</span>
+              <span>{t('createQuickJob')}</span>
             </button>
           )}
 
@@ -247,53 +237,50 @@ export function WorklogFormShared({
               display: 'flex', flexDirection: 'column', gap: 10,
             }}>
               <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--accent)', display: 'flex', alignItems: 'center', gap: 6 }}>
-                <Plus size={13} /> クイックジョブ作成 / Tạo Job nhanh
+                <Plus size={13} /> {t('quickJobTitle')}
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                   <label className="form-label" style={{ fontSize: 11 }}>
-                    ジョブ名 <span style={{ color: 'var(--status-error)' }}>*</span>
+                    {t('quickJobNameLabel')} <span style={{ color: 'var(--status-error)' }}>*</span>
                   </label>
                   <input
-                    type="text" className="form-input" placeholder="VD: K-0123 新規"
+                    type="text" className="form-input" placeholder={t('quickJobNamePlaceholder')}
                     value={quickJobName}
                     onChange={e => setQuickJobName(e.target.value)}
                   />
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                   <label className="form-label" style={{ fontSize: 11 }}>
-                    種別 <span style={{ color: 'var(--status-error)' }}>*</span>
+                    {t('type')} <span style={{ color: 'var(--status-error)' }}>*</span>
                   </label>
-                  <select className="form-input" value={quickJobTypeId} onChange={e => setQuickJobTypeId(e.target.value)}>
-                    <option value="">— 選択 —</option>
-                    {jobTypes.map(jt => (
-                      <option key={jt.job_type_id} value={jt.job_type_id}>
-                        {jt.job_type_name_ja}
+                  <select
+                    className="form-input"
+                    value={quickJobTypeId}
+                    onChange={e => setQuickJobTypeId(e.target.value)}
+                  >
+                    <option value="">{t('selectType')}</option>
+                    {jobTypes.map(t => (
+                      <option key={t.job_type_id} value={t.job_type_id}>
+                        {t.job_type_name_ja}
                       </option>
                     ))}
                   </select>
                 </div>
               </div>
-              <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 6, marginTop: 4 }}>
                 <button
-                  type="button" className="btn btn-secondary"
-                  style={{ fontSize: 11, padding: '5px 12px' }}
+                  type="button" className="btn btn-secondary" style={{ padding: '4px 10px', fontSize: 11 }}
                   onClick={() => { setShowQuickJob(false); setQuickJobName(''); setQuickJobTypeId('') }}
                 >
-                  キャンセル
+                  {tCommon('cancel')}
                 </button>
                 <button
-                  type="button" className="btn btn-primary"
-                  style={{ fontSize: 11, padding: '5px 12px' }}
+                  type="button" className="btn btn-primary" style={{ padding: '4px 10px', fontSize: 11, display: 'flex', alignItems: 'center', gap: 4 }}
                   disabled={quickJobCreating || !quickJobName.trim() || !quickJobTypeId}
                   onClick={async () => {
                     setQuickJobCreating(true)
-                    setError(null)
-                    const result = await createQuickJob({
-                      job_name: quickJobName.trim(),
-                      job_type_id: quickJobTypeId,
-                      responsible_id: employeeId || null,
-                    })
+                    const result = await createQuickJob({ job_name: quickJobName.trim(), job_type_id: quickJobTypeId })
                     setQuickJobCreating(false)
                     if (!result.success) {
                       setError(result.error)
@@ -309,7 +296,7 @@ export function WorklogFormShared({
                   }}
                 >
                   {quickJobCreating ? <Loader2 size={12} className="animate-spin" /> : <Plus size={12} />}
-                  <span>作成 / Tạo</span>
+                  <span>{t('create')}</span>
                 </button>
               </div>
             </div>
@@ -320,7 +307,7 @@ export function WorklogFormShared({
       {/* Row 3: Bước công việc */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
         <label className="form-label">
-          工程ステップ <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>Bước công việc</span>
+          {t('formStep')}
           <span style={{ color: 'var(--status-error)' }}> *</span>
         </label>
         <select
@@ -329,10 +316,10 @@ export function WorklogFormShared({
           onChange={e => setStepId(e.target.value)}
           disabled={!selectedJobId}
         >
-          <option value="">— {selectedJobId ? '工程を選択 / Chọn bước' : 'Chọn Job trước'} —</option>
+          <option value="">— {selectedJobId ? t('selectStep') : t('selectJobFirst')} —</option>
           {steps.map(s => (
             <option key={s.step_id} value={s.step_id}>
-              {s.step_no != null ? `${s.step_no}. ` : ''}{s.step_name || '(Không tên)'}
+              {s.step_no != null ? `${s.step_no}. ` : ''}{s.step_name || t('unnamedStep')}
             </option>
           ))}
         </select>
@@ -342,7 +329,7 @@ export function WorklogFormShared({
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
           <label className="form-label">
-            実績時間 (h) <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>Số giờ thực tế</span>
+            {t('formHours')}
             <span style={{ color: 'var(--status-error)' }}> *</span>
           </label>
           <input
@@ -353,7 +340,7 @@ export function WorklogFormShared({
           />
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-          <label className="form-label">ステータス <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>Trạng thái</span></label>
+          <label className="form-label">{t('formStatus')}</label>
           <label style={{ display: 'flex', alignItems: 'center', gap: 8, height: 38, cursor: 'pointer' }}>
             <input
               type="checkbox"
@@ -361,17 +348,17 @@ export function WorklogFormShared({
               checked={isFinished}
               onChange={e => setIsFinished(e.target.checked)}
             />
-            <span style={{ fontSize: 12 }}>工程完了 / Hoàn thành bước</span>
+            <span style={{ fontSize: 12 }}>{t('stepFinished')}</span>
           </label>
         </div>
       </div>
 
       {/* Row 5: Mô tả */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-        <label className="form-label">作業詳細 <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>Chi tiết thao tác (tuỳ chọn)</span></label>
+        <label className="form-label">{t('formDescription')}</label>
         <input
           type="text" className="form-input"
-          placeholder="VD: Bản nháp, xử lý thô, hiệu chỉnh..."
+          placeholder="..."
           value={description}
           onChange={e => setDescription(e.target.value)}
         />
@@ -379,10 +366,10 @@ export function WorklogFormShared({
 
       {/* Row 6: Ghi chú */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-        <label className="form-label">備考 <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>Ghi chú thêm</span></label>
+        <label className="form-label">{t('formNotes')}</label>
         <textarea
           className="form-input" rows={2}
-          placeholder="Ghi chú thêm nếu cần..."
+          placeholder="..."
           style={{ resize: 'vertical' }}
           value={notes}
           onChange={e => setNotes(e.target.value)}
@@ -408,7 +395,7 @@ export function WorklogFormShared({
           <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--border-default)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div>
               <h2 style={{ margin: 0, fontSize: 15, fontWeight: 700, fontFamily: 'var(--font-jp)' }}>
-                {isEdit ? 'ログ編集 / Sửa nhật ký' : '新規ログ / Thêm nhật ký'}
+                {isEdit ? t('editLog') : t('newLog')}
               </h2>
             </div>
             <button onClick={onCancel} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}>
@@ -421,10 +408,10 @@ export function WorklogFormShared({
           </div>
           {/* Footer */}
           <div style={{ padding: '14px 20px', borderTop: '1px solid var(--border-default)', display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
-            <button className="btn btn-secondary" onClick={onCancel} disabled={loading}>キャンセル</button>
+            <button className="btn btn-secondary" onClick={onCancel} disabled={loading}>{tCommon('cancel')}</button>
             <button className="btn btn-primary" onClick={handleSave} disabled={loading}>
               {loading ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
-              <span style={{ fontFamily: 'var(--font-jp)' }}>{isEdit ? '更新' : '保存'}</span>
+              <span style={{ fontFamily: 'var(--font-jp)' }}>{loading ? t('saving') : tCommon('save')}</span>
             </button>
           </div>
         </div>
@@ -440,11 +427,11 @@ export function WorklogFormShared({
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, paddingTop: 16, marginTop: 4, borderTop: '1px solid var(--border-default)' }}>
           <button className="btn btn-secondary" onClick={onCancel} disabled={loading} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <X size={14} />
-            <span>キャンセル / Hủy</span>
+            <span>{tCommon('cancel')}</span>
           </button>
           <button className="btn btn-primary" onClick={handleSave} disabled={loading} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             {loading ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
-            <span style={{ fontFamily: 'var(--font-jp)' }}>{loading ? '登録中…' : '登録する / Lưu'}</span>
+            <span style={{ fontFamily: 'var(--font-jp)' }}>{loading ? t('saving') : tCommon('save')}</span>
           </button>
         </div>
       </div>

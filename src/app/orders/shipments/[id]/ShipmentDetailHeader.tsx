@@ -1,30 +1,30 @@
 'use client'
 
+import { useTranslations } from 'next-intl'
+
 import { Truck } from 'lucide-react'
 import Link from 'next/link'
 
 export function ShipmentDetailHeader({ shipment }: { shipment: any }) {
+  const t = useTranslations()
+
   const isShipped = shipment.status === 'SHIPPED'
   const isDelivered = shipment.status === 'DELIVERED'
   const isCancelled = shipment.status === 'CANCELLED'
   const isPending = shipment.status === 'PENDING'
 
   let badgeClass = 'badge--neutral'
-  let labelJa = '未出荷'
-  let labelVi = 'Chưa xuất'
+  let labelKey = 'statusPending'
 
   if (isShipped) {
     badgeClass = 'badge--info'
-    labelJa = '出荷済'
-    labelVi = 'Đã xuất'
+    labelKey = 'statusShipped'
   } else if (isDelivered) {
     badgeClass = 'badge--success'
-    labelJa = '納品済'
-    labelVi = 'Đã giao'
+    labelKey = 'statusDelivered'
   } else if (isCancelled) {
     badgeClass = 'badge--error'
-    labelJa = 'キャンセル'
-    labelVi = 'Hủy'
+    labelKey = 'statusCancelled'
   }
 
   return (
@@ -39,22 +39,20 @@ export function ShipmentDetailHeader({ shipment }: { shipment: any }) {
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <h1 style={{ fontSize: 18, fontWeight: 700, margin: 0, fontFamily: 'monospace', color: 'var(--text-primary)' }}>
-              {shipment.delivery_note_no || '未設定 (No Delivery Note)'}
+              {shipment.delivery_note_no || t('Shipments.notSet')}
             </h1>
-            <span className={`badge ${badgeClass}`}>{labelJa}</span>
+            <span className={`badge ${badgeClass}`}>{t(`Shipments.${labelKey}`)}</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 4, fontSize: 12, color: 'var(--text-secondary)' }}>
             <span>
-              <span className="ja">受注番号:</span>
-              <span className="vi" style={{ fontSize: 10, marginLeft: 4 }}>Mã ĐH:</span>
+              {t('Orders.maH')}
               <span style={{ fontFamily: 'monospace', fontWeight: 600, color: 'var(--accent)', marginLeft: 4 }}>
                 {shipment.orders?.order_no || '-'}
               </span>
             </span>
             <span>•</span>
             <span>
-              <span className="ja">得意先:</span>
-              <span className="vi" style={{ fontSize: 10, marginLeft: 4 }}>Khách hàng:</span>
+              {t('Orders.khachHang')}
               <span style={{ fontWeight: 600, color: 'var(--text-primary)', marginLeft: 4 }}>
                 {shipment.orders?.companies?.company_name || '-'}
               </span>
@@ -69,7 +67,7 @@ export function ShipmentDetailHeader({ shipment }: { shipment: any }) {
           className="btn btn-secondary"
           style={{ display: 'flex', alignItems: 'center', gap: 6 }}
         >
-          🖨️ <span className="ja">納品書印刷</span><span className="vi" style={{ fontSize: 11 }}>In phiếu giao</span>
+          🖨️ {t('Orders.inPhieuGiao')}
         </Link>
       </div>
     </div>

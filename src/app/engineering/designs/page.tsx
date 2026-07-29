@@ -1,5 +1,6 @@
-// @ts-nocheck
 'use client'
+
+// @ts-nocheck
 
 import { useEffect, useState, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
@@ -11,6 +12,7 @@ import { Pagination } from '@/components/ui/Pagination'
 import Link from 'next/link'
 import { useSearchHistory } from '@/hooks/useSearchHistory'
 import { SearchSuggestions } from '@/components/ui/SearchSuggestions'
+import { useTranslations } from 'next-intl'
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 type MoldWithProduct = {
@@ -29,21 +31,22 @@ type MoldWithProduct = {
   _revisionCount?: number
 }
 
-const STATUS_BADGE: Record<string, { ja: string; vi: string; cls: string }> = {
-  DRAFT:      { ja: '下書き',  vi: 'Nháp',        cls: 'badge badge--warning' },
-  SUBMITTED:  { ja: '提出済',  vi: 'Đã gửi',      cls: 'badge badge--info' },
-  RELEASED:   { ja: 'リリース', vi: 'Đã duyệt',    cls: 'badge badge--success' },
-  APPROVED:   { ja: '承認済',  vi: 'Đã duyệt',    cls: 'badge badge--success' },
-  REJECTED:   { ja: '却下',    vi: 'Từ chối',     cls: 'badge badge--error' },
-  SUPERSEDED: { ja: '旧版',    vi: 'Đã thay thế', cls: 'badge badge--neutral' },
-  ACTIVE:     { ja: '稼働中',  vi: 'Hoạt động',   cls: 'badge badge--success' },
-  INACTIVE:   { ja: '休止中',  vi: 'Không HĐ',    cls: 'badge badge--neutral' },
+const STATUS_BADGE: Record<string, { key: string; cls: string }> = {
+  DRAFT:      { key: 'DRAFT',       cls: 'badge badge--warning' },
+  SUBMITTED:  { key: 'SUBMITTED',   cls: 'badge badge--info' },
+  RELEASED:   { key: 'RELEASED',    cls: 'badge badge--success' },
+  APPROVED:   { key: 'APPROVED',    cls: 'badge badge--success' },
+  REJECTED:   { key: 'REJECTED',    cls: 'badge badge--error' },
+  SUPERSEDED: { key: 'SUPERSEDED',  cls: 'badge badge--neutral' },
+  ACTIVE:     { key: 'ACTIVE',      cls: 'badge badge--success' },
+  INACTIVE:   { key: 'INACTIVE',    cls: 'badge badge--neutral' },
 }
 
 const PAGE_SIZE = 50
 
 // ─── Component ─────────────────────────────────────────────────────
 export default function DesignsListPage() {
+  const t = useTranslations('Engineering')
   const supabase = createClient()
 
   const [molds, setMolds] = useState<MoldWithProduct[]>([])
@@ -77,7 +80,7 @@ export default function DesignsListPage() {
       .from('products')
       .select(`
         product_id, product_code, product_name_internal, product_name, customer_product_name, product_status, company_id, notes,
-        companies ( company_name, company_code )
+        companies:companies!products_company_id_fkey ( company_name, company_code )
       `, { count: 'exact' })
       .order('product_code', { ascending: true })
 
@@ -147,8 +150,7 @@ export default function DesignsListPage() {
     if (!cfg) return <span className="badge badge--neutral" style={{ fontSize: 10 }}>{status}</span>
     return (
       <span className={cfg.cls} style={{ fontSize: 10 }}>
-        <span style={{ fontFamily: 'var(--font-jp)', fontWeight: 700 }}>{cfg.ja}</span>
-        <span style={{ opacity: 0.7, marginLeft: 2 }}>{cfg.vi}</span>
+        <span style={{ fontFamily: 'var(--font-jp)', fontWeight: 700 }}>{t('status.' + cfg.key)}</span>
       </span>
     )
   }
@@ -161,9 +163,9 @@ export default function DesignsListPage() {
           <PenTool size={20} style={{ color: 'var(--accent)' }} />
           <div>
             <h1 style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'var(--font-jp)', lineHeight: 1.3 }}>
-              設計版
+              {t('designs.title')}
             </h1>
-            <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>Phiên bản Thiết kế — Danh sách Khuôn</span>
+            <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{t('designs.subtitle')}</span>
           </div>
         </div>
       </div>
@@ -174,17 +176,17 @@ export default function DesignsListPage() {
           <div className="flex items-center gap-2">
             <Layers size={14} style={{ color: 'var(--text-muted)' }} />
             <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-secondary)', fontFamily: 'var(--font-jp)' }}>
-              金型一覧
+              {t('designs.moldList')}
             </span>
             <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>
-              ({totalRecords} khuôn)
+              ({t('designs.moldsCount', { count: totalRecords })})
             </span>
           </div>
           <div className="relative">
             <Search size={14} style={{ position: 'absolute', left: 8, top: 8, color: 'var(--text-muted)' }} />
             <input
               type="text"
-              placeholder="金型コード・名前で検索..."
+              placeholder={t('designs.searchPlaceholder')}
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
               onFocus={() => setShowSuggestions(true)}
@@ -206,16 +208,15 @@ export default function DesignsListPage() {
       {/* ── Data Table ── */}
       {loading ? (
         <div className="card-flat" style={{ padding: 32, textAlign: 'center', color: 'var(--text-muted)', fontSize: 12 }}>
-          <span style={{ fontFamily: 'var(--font-jp)' }}>読み込み中...</span> Đang tải...
+          {t('designs.loading')}
         </div>
       ) : error ? (
         <div className="card-flat" style={{ padding: 16, color: 'var(--status-error)', fontSize: 12 }}>
-          エラー: {error}
+          {t('designs.error')}: {error}
         </div>
       ) : molds.length === 0 ? (
         <div className="card-flat" style={{ padding: 32, textAlign: 'center', color: 'var(--text-muted)', fontSize: 12 }}>
-          <span style={{ fontFamily: 'var(--font-jp)' }}>データなし</span>
-          <span style={{ marginLeft: 8 }}>Không có dữ liệu</span>
+          {t('designs.noData')}
         </div>
       ) : (
         <div className="card-flat" style={{ padding: 0, overflow: 'hidden' }}>
@@ -223,28 +224,22 @@ export default function DesignsListPage() {
             <thead>
               <tr>
                 <th style={{ width: 130 }}>
-                  <span style={{ fontFamily: 'var(--font-jp)' }}>金型コード</span>
-                  <br /><span style={{ fontSize: 9, color: 'var(--text-muted)', fontWeight: 400 }}>Mã khuôn</span>
+                  <span style={{ fontFamily: 'var(--font-jp)' }}>{t('designs.cols.moldCode')}</span>
                 </th>
                 <th>
-                  <span style={{ fontFamily: 'var(--font-jp)' }}>製品</span>
-                  <br /><span style={{ fontSize: 9, color: 'var(--text-muted)', fontWeight: 400 }}>Sản phẩm</span>
+                  <span style={{ fontFamily: 'var(--font-jp)' }}>{t('designs.cols.product')}</span>
                 </th>
                 <th style={{ width: 140 }}>
-                  <span style={{ fontFamily: 'var(--font-jp)' }}>顧客製品名</span>
-                  <br /><span style={{ fontSize: 9, color: 'var(--text-muted)', fontWeight: 400 }}>Tên SP KH</span>
+                  <span style={{ fontFamily: 'var(--font-jp)' }}>{t('designs.cols.customerProductName')}</span>
                 </th>
                 <th style={{ width: 140 }}>
-                  <span style={{ fontFamily: 'var(--font-jp)' }}>得意先</span>
-                  <br /><span style={{ fontSize: 9, color: 'var(--text-muted)', fontWeight: 400 }}>Khách hàng</span>
+                  <span style={{ fontFamily: 'var(--font-jp)' }}>{t('designs.cols.customer')}</span>
                 </th>
                 <th style={{ width: 80, textAlign: 'center' }}>
-                  <span style={{ fontFamily: 'var(--font-jp)' }}>版数</span>
-                  <br /><span style={{ fontSize: 9, color: 'var(--text-muted)', fontWeight: 400 }}>Số PB</span>
+                  <span style={{ fontFamily: 'var(--font-jp)' }}>{t('designs.cols.revision')}</span>
                 </th>
                 <th style={{ width: 130, textAlign: 'center' }}>
-                  <span style={{ fontFamily: 'var(--font-jp)' }}>最新版状態</span>
-                  <br /><span style={{ fontSize: 9, color: 'var(--text-muted)', fontWeight: 400 }}>TT mới nhất</span>
+                  <span style={{ fontFamily: 'var(--font-jp)' }}>{t('designs.cols.latestStatus')}</span>
                 </th>
                 <th style={{ width: 50, textAlign: 'center' }}></th>
               </tr>
@@ -307,20 +302,19 @@ export default function DesignsListPage() {
                           color: 'var(--accent)', fontSize: 10, fontWeight: 700,
                           textDecoration: 'none', whiteSpace: 'nowrap',
                         }}
-                        title="設計を作成する / Tạo thiết kế"
+                        title={t('designs.createDesign')}
                       >
                         <Plus size={10} />
-                        <span style={{ fontFamily: 'var(--font-jp)' }}>設計作成</span>
+                        <span style={{ fontFamily: 'var(--font-jp)' }}>{t('designs.createDesign')}</span>
                       </Link>
                     )}
                   </td>
                   <td style={{ textAlign: 'center' }}>
                     {m._revisionCount ? (
-                      renderBadge(m._latestRevisionStatus)
+                      renderBadge(m._latestRevisionStatus ?? null)
                     ) : (
                       <span className="badge badge--neutral" style={{ fontSize: 10 }}>
-                        <span style={{ fontFamily: 'var(--font-jp)' }}>未設計</span>
-                        <span style={{ opacity: 0.7, marginLeft: 2 }}>Chưa TK</span>
+                        <span style={{ fontFamily: 'var(--font-jp)' }}>{t('status.UNPLANNED')}</span>
                       </span>
                     )}
                   </td>
@@ -333,7 +327,7 @@ export default function DesignsListPage() {
                         border: '1px solid var(--border-default)', background: 'var(--bg-surface)',
                         color: 'var(--accent)', cursor: 'pointer', textDecoration: 'none',
                       }}
-                      title="詳細 / Chi tiết"
+                      title={t('designs.details')}
                     >
                       <ChevronRight size={14} />
                     </Link>

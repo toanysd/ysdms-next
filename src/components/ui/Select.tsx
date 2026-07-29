@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl'
 import React, { forwardRef } from 'react'
 
 export interface SelectOption {
@@ -6,6 +7,7 @@ export interface SelectOption {
 }
 
 export interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
+  label?: string;
   labelJa?: string;
   labelVi?: string;
   error?: string;
@@ -14,13 +16,13 @@ export interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElemen
 }
 
 export const Select = forwardRef<HTMLSelectElement, SelectProps>(
-  ({ className = '', labelJa, labelVi, error, options, placeholder, ...props }, ref) => {
+  ({ className = '', label, labelJa, labelVi, error, options, placeholder, ...props }, ref) => {
+    const displayLabel = label || labelJa || labelVi;
     return (
       <div className="flex flex-col gap-1 w-full">
-        {(labelJa || labelVi) && (
+        {displayLabel && (
           <label className="text-xs font-bold text-[var(--mcs-text)] flex flex-col">
-            {labelJa && <span className="ja">{labelJa}</span>}
-            {labelVi && <span className="vi font-normal text-[var(--mcs-text-muted)] mt-[-2px]">{labelVi}</span>}
+            {displayLabel}
           </label>
         )}
         <select

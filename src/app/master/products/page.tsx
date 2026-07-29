@@ -1,5 +1,7 @@
 'use client'
 
+import { useTranslations, useLocale } from 'next-intl'
+
 import { useEffect, useState, useCallback, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import {
@@ -113,6 +115,8 @@ const EMPTY_FORM: ProductForm = {
 import React, { Suspense } from 'react'
 
 function ProductsPageContent() {
+  const t = useTranslations()
+  const locale = useLocale()
   const supabase = createClient()
   const urlSearchParams = useSearchParams()
   const router = useRouter()
@@ -392,16 +396,14 @@ function ProductsPageContent() {
   const SortTh = ({ col, ja, vi, w, style }: { col?: string; ja: string; vi: string; w?: number | string; style?: React.CSSProperties }) => {
     if (!col) return (
       <th style={{ padding: '6px 10px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)', textAlign: 'left', whiteSpace: 'nowrap', width: w, borderBottom: '1px solid var(--border-default)', fontFamily: 'var(--font-jp)', ...style }}>
-        {ja}
-        {vi && <span style={{ fontWeight: 400, marginLeft: 4, fontSize: 9, color: 'var(--text-muted)', opacity: 0.7, textTransform: 'none' }}>{vi}</span>}
+        {locale === 'vi' ? vi : ja}
       </th>
     )
     return (
       <th style={{ padding: '6px 10px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)', textAlign: 'left', whiteSpace: 'nowrap', width: w, borderBottom: '1px solid var(--border-default)', fontFamily: 'var(--font-jp)', cursor: 'pointer', userSelect: 'none', ...style }} onClick={() => handleSort(col)}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
           <div>
-            <span className="ja">{ja}</span>
-            <span className="vi">{vi}</span>
+            {locale === 'vi' ? vi : ja}
           </div>
           <SortIcon col={col} />
         </div>
@@ -1011,6 +1013,7 @@ function FieldGroup({
 }
 
 export default function ProductsPage() {
+  const t = useTranslations()
   return (
     <Suspense fallback={<div className="p-4 text-sm text-slate-500">Loading...</div>}>
       <ProductsPageContent />

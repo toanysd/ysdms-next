@@ -1,13 +1,17 @@
+export const dynamic = 'force-dynamic'
+
 import React from 'react'
 import { AlertTriangle, PackageSearch, PackageMinus, RefreshCw } from 'lucide-react'
 import Link from 'next/link'
 import { getMRPTimelineData } from '@/app/actions/mrp-actions'
+import { getTranslations } from 'next-intl/server'
 
 export const metadata = {
   title: 'MRP Dashboard - YSDMS NextGen',
 }
 
 export default async function MRPDashboardPage() {
+  const t = await getTranslations('MrpTimeline')
   const days = 14
   // Fetch Real Data from Server Action
   const matrixData = await getMRPTimelineData(days)
@@ -47,14 +51,13 @@ export default async function MRPDashboardPage() {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold" style={{ fontFamily: 'var(--font-jp)' }}>材料所要量計画 (MRP)</h1>
-          <p className="text-sm text-slate-500">Material Requirements Planning - Dự báo nhu cầu vật liệu</p>
+          <h1 className="text-2xl font-bold" style={{ fontFamily: 'var(--font-jp)' }}>{t('title')}</h1>
+          <p className="text-sm text-slate-500">{t('subtitle')}</p>
         </div>
         <div className="flex gap-2">
           <button className="btn btn-secondary flex items-center gap-2">
             <RefreshCw className="w-4 h-4" />
-            <span style={{ fontFamily: 'var(--font-jp)' }}>同期</span>
-            <span className="text-[10px] text-slate-500 ml-1">Đồng bộ</span>
+            <span style={{ fontFamily: 'var(--font-jp)' }}>{t('sync')}</span>
           </button>
         </div>
       </div>
@@ -64,7 +67,7 @@ export default async function MRPDashboardPage() {
         <div className="card-flat p-5 border-l-4 border-l-red-500 bg-red-50 flex items-center justify-between">
           <div>
             <p className="text-sm font-semibold text-red-700" style={{ fontFamily: 'var(--font-jp)' }}>
-              欠品危機 <span className="text-xs font-normal opacity-80">(Thủng kho &lt; 7 ngày)</span>
+              {t('kpiCritical')} <span className="text-xs font-normal opacity-80">({t('kpiCriticalSub')})</span>
             </p>
             <h2 className="text-3xl font-bold text-red-600 mt-1">{kpiData.criticalShortages}</h2>
           </div>
@@ -73,7 +76,7 @@ export default async function MRPDashboardPage() {
         <div className="card-flat p-5 border-l-4 border-l-amber-500 bg-amber-50 flex items-center justify-between">
           <div>
             <p className="text-sm font-semibold text-amber-700" style={{ fontFamily: 'var(--font-jp)' }}>
-              在庫警告 <span className="text-xs font-normal opacity-80">(Dưới mức an toàn)</span>
+              {t('kpiWarning')} <span className="text-xs font-normal opacity-80">({t('kpiWarningSub')})</span>
             </p>
             <h2 className="text-3xl font-bold text-amber-600 mt-1">{kpiData.lowStock}</h2>
           </div>
@@ -82,7 +85,7 @@ export default async function MRPDashboardPage() {
         <div className="card-flat p-5 border-l-4 border-l-sky-500 bg-sky-50 flex items-center justify-between">
           <div>
             <p className="text-sm font-semibold text-sky-700" style={{ fontFamily: 'var(--font-jp)' }}>
-              工場間アンバランス <span className="text-xs font-normal opacity-80">(Cần luân chuyển)</span>
+              {t('kpiImbalance')} <span className="text-xs font-normal opacity-80">({t('kpiImbalanceSub')})</span>
             </p>
             <h2 className="text-3xl font-bold text-sky-600 mt-1">{kpiData.transferNeeded}</h2>
           </div>
@@ -95,8 +98,7 @@ export default async function MRPDashboardPage() {
         <div className="col-span-1 space-y-4">
           <h3 className="font-semibold text-slate-800 flex items-center gap-2">
             <span className="w-2 h-5 bg-accent rounded-sm inline-block"></span>
-            <span style={{ fontFamily: 'var(--font-jp)' }}>スマート提案</span>
-            <span className="text-xs font-normal text-slate-500">Đề xuất</span>
+            <span style={{ fontFamily: 'var(--font-jp)' }}>{t('proposalTitle')}</span>
           </h3>
           <div className="space-y-3">
             <div className="p-4 rounded-lg border text-sm bg-red-50 border-red-200">
@@ -105,11 +107,10 @@ export default async function MRPDashboardPage() {
                 <span className="badge badge--neutral text-[10px]">HONSHA</span>
               </div>
               <p className="text-slate-600 mb-3" style={{ fontFamily: 'var(--font-jp)' }}>
-                7/15の注文に5,000m不足 <br />
-                <span className="text-xs text-slate-500">Thiếu 5,000m cho đơn hàng 15/07</span>
+                {t('poProposalText')}
               </p>
               <button className="w-full py-2 rounded text-xs font-semibold bg-red-600 text-white hover:bg-red-700" style={{ fontFamily: 'var(--font-jp)' }}>
-                発注書作成 <span className="font-normal opacity-80">(Tạo PO)</span>
+                {t('createPo')}
               </button>
             </div>
             
@@ -119,11 +120,10 @@ export default async function MRPDashboardPage() {
                 <span className="badge badge--neutral text-[10px]">MARUDAI</span>
               </div>
               <p className="text-slate-600 mb-3" style={{ fontFamily: 'var(--font-jp)' }}>
-                2,000m不足 (Sakata工場に5,000mの余剰あり) <br />
-                <span className="text-xs text-slate-500">Đang thiếu 2,000m (Sakata dư 5k)</span>
+                {t('transferProposalText')}
               </p>
               <button className="w-full py-2 rounded text-xs font-semibold bg-sky-600 text-white hover:bg-sky-700" style={{ fontFamily: 'var(--font-jp)' }}>
-                工場間移動 <span className="font-normal opacity-80">(Chuyển kho)</span>
+                {t('factoryTransfer')}
               </button>
             </div>
           </div>
@@ -134,19 +134,19 @@ export default async function MRPDashboardPage() {
           <div className="p-4 border-b bg-slate-50 flex justify-between items-center">
             <h3 className="font-semibold text-slate-800 flex items-center gap-2">
               <span className="w-2 h-5 bg-accent rounded-sm inline-block"></span>
-              <span style={{ fontFamily: 'var(--font-jp)' }}>タイムライン・マトリックス</span>
-              <span className="text-xs font-normal text-slate-500">(Dự báo tồn kho)</span>
+              <span style={{ fontFamily: 'var(--font-jp)' }}>{t('matrixTitle')}</span>
+              <span className="text-xs font-normal text-slate-500">{t('matrixSub')}</span>
             </h3>
             <div className="flex gap-2">
               <select className="form-input text-xs py-1 h-auto" style={{ fontFamily: 'var(--font-jp)' }}>
-                <option>全工場 (Tất cả)</option>
+                <option>{t('allFactories')}</option>
                 <option>HONSHA</option>
                 <option>MARUDAI</option>
                 <option>SAKATA</option>
               </select>
               <select className="form-input text-xs py-1 h-auto" style={{ fontFamily: 'var(--font-jp)' }}>
-                <option>14 日間</option>
-                <option>30 日間</option>
+                <option>{t('fourteenDays')}</option>
+                <option>{t('thirtyDays')}</option>
               </select>
             </div>
           </div>
@@ -155,8 +155,8 @@ export default async function MRPDashboardPage() {
             <table className="w-full text-xs text-left whitespace-nowrap">
               <thead>
                 <tr className="bg-slate-100 border-b">
-                  <th className="p-3 font-semibold w-48 sticky left-0 bg-slate-100 z-10 border-r" style={{ fontFamily: 'var(--font-jp)' }}>材料コード <span className="text-[10px] font-normal text-slate-500 block">Mã Nhựa</span></th>
-                  <th className="p-3 font-semibold text-right border-r" style={{ fontFamily: 'var(--font-jp)' }}>現在在庫 <span className="text-[10px] font-normal text-slate-500 block">Tồn kho HT</span></th>
+                  <th className="p-3 font-semibold w-48 sticky left-0 bg-slate-100 z-10 border-r" style={{ fontFamily: 'var(--font-jp)' }}>{t('colMaterial')}</th>
+                  <th className="p-3 font-semibold text-right border-r" style={{ fontFamily: 'var(--font-jp)' }}>{t('colCurrentStock')}</th>
                   {timelineCols.map(col => (
                     <th key={col} className="p-3 font-semibold text-center border-r min-w-[70px]">{col}</th>
                   ))}
@@ -196,7 +196,7 @@ export default async function MRPDashboardPage() {
             </table>
           </div>
           <div className="p-3 border-t bg-slate-50 text-[11px] text-slate-500" style={{ fontFamily: 'var(--font-jp)' }}>
-            * セルをクリックすると、その日の在庫変動の原因となった製造オーダー（ジョブ）の詳細が表示されます。 (Bấm vào từng ô để xem chi tiết biến động)
+            {t('footnote')}
           </div>
         </div>
       </div>

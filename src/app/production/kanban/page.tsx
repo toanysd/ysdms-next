@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic'
+
 import { createClient } from '@/lib/supabase/server'
 import KanbanBoard from '../KanbanBoard-v8.5.2-1'
 import { getTodayProductionPlans, getActiveProductionLogs, getTodayCompletedLogs } from '@/app/actions/production'

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import { useLocale } from 'next-intl'
 import { createClient } from '@/lib/supabase/client'
 import { upsertUnifiedMold, type UnifiedMoldPayload } from '@/app/actions/mold'
 import { CustomerSearchInput } from '@/components/order/CustomerSearchInput'
@@ -27,6 +28,8 @@ const inputCls = 'w-full min-h-[40px] px-3 border border-slate-300 rounded-lg bg
 const labelCls = 'text-xs font-bold text-slate-500 mb-1 flex items-baseline gap-1'
 
 export default function UnifiedMoldDrawer({ isOpen, onClose, editPhysicalId, customers, itemTypes, racks, allLayers }: Props) {
+  const locale = useLocale()
+  const isVi = locale === 'vi'
   const [activeSection, setActiveSection] = useState<Section>('BASE')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -151,7 +154,7 @@ export default function UnifiedMoldDrawer({ isOpen, onClose, editPhysicalId, cus
 
   const renderTextInput = (label: string, jp: string, field: string, required?: boolean) => (
     <div className="flex flex-col">
-      <label className={labelCls}><span>{jp}{required ? ' *' : ''}</span><span className="text-[10px] opacity-60">{label}</span></label>
+      <label className={labelCls}><span>{isVi ? label : jp}{required ? ' *' : ''}</span></label>
       <input type="text" value={(form as any)[field] || ''} onChange={e => updateField(field, e.target.value)} className={inputCls} disabled={isSubmitting} />
     </div>
   )
@@ -165,9 +168,9 @@ export default function UnifiedMoldDrawer({ isOpen, onClose, editPhysicalId, cus
         <div className="bg-gradient-to-r from-teal-700 to-teal-600 text-white p-4 flex items-center justify-between shadow-lg">
           <div>
             <div className="text-teal-200 text-[10px] font-bold tracking-widest mb-0.5">
-              {isEditMode ? '金型編集 / CHỈNH SỬA KHUÔN' : '金型登録 / TẠO KHUÔN MỚI'}
+              {isEditMode ? (isVi ? 'CHỈNH SỬA KHUÔN' : '金型編集') : (isVi ? 'TẠO KHUÔN MỚI' : '金型登録')}
             </div>
-            <h2 className="text-lg font-bold">{form.code || '新規 (Mới)'}</h2>
+            <h2 className="text-lg font-bold">{form.code || (isVi ? 'Mới' : '新規')}</h2>
           </div>
           <button onClick={onClose} className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-white/20 transition-colors text-lg">✕</button>
         </div>
@@ -180,8 +183,7 @@ export default function UnifiedMoldDrawer({ isOpen, onClose, editPhysicalId, cus
                 activeSection === s.id ? 'border-teal-600 bg-white text-teal-700' : 'border-transparent text-slate-500 hover:bg-slate-100'
               }`}>
               <span className="text-base">{s.icon}</span>
-              <span className="text-[10px] font-bold">{s.jp}</span>
-              <span className="text-[9px] opacity-60">{s.vi}</span>
+              <span className="text-[11px] font-bold">{isVi ? s.vi : s.jp}</span>
             </button>
           ))}
         </div>
@@ -189,7 +191,7 @@ export default function UnifiedMoldDrawer({ isOpen, onClose, editPhysicalId, cus
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-5 bg-slate-50/80">
           {loading ? (
-            <div className="flex items-center justify-center h-40 text-slate-400 text-sm">読み込み中... Đang tải...</div>
+            <div className="flex items-center justify-center h-40 text-slate-400 text-sm">{isVi ? 'Đang tải...' : '読み込み中...'}</div>
           ) : (
             <>
               {/* SECTION: BASE */}
@@ -361,7 +363,7 @@ export default function UnifiedMoldDrawer({ isOpen, onClose, editPhysicalId, cus
                     </div>
                   </div>
                   <div className="flex flex-col">
-                    <label className={labelCls}><span>メモ</span><span className="text-[10px] opacity-60">Ghi chú vật lý</span></label>
+                    <label className={labelCls}><span>{isVi ? 'Ghi chú vật lý' : 'メモ'}</span></label>
                     <textarea value={form.physical_notes || ''} onChange={e => updateField('physical_notes', e.target.value)} rows={2} className={inputCls + ' resize-none'} disabled={isSubmitting} />
                   </div>
                 </div>
@@ -373,13 +375,13 @@ export default function UnifiedMoldDrawer({ isOpen, onClose, editPhysicalId, cus
         {/* Footer */}
         <div className="p-4 bg-white border-t border-slate-200 shrink-0 space-y-2">
           {error && <div className="p-2 bg-red-50 border border-red-200 rounded-lg text-red-700 text-xs font-medium">⚠️ {error}</div>}
-          {success && <div className="p-2 bg-emerald-50 border border-emerald-200 rounded-lg text-emerald-700 text-xs font-bold text-center">✅ 保存完了 / Lưu thành công!</div>}
+          {success && <div className="p-2 bg-emerald-50 border border-emerald-200 rounded-lg text-emerald-700 text-xs font-bold text-center">{isVi ? '✅ Lưu thành công!' : '✅ 保存完了'}</div>}
           <div className="flex gap-3">
             <button onClick={onClose} disabled={isSubmitting} className="flex-1 min-h-[44px] bg-white text-slate-600 border border-slate-300 hover:bg-slate-50 rounded-lg font-bold text-sm transition-colors disabled:opacity-50">
-              キャンセル (Hủy)
+              {isVi ? 'Hủy' : 'キャンセル'}
             </button>
             <button onClick={handleSubmit} disabled={isSubmitting || success} className="flex-1 min-h-[44px] bg-gradient-to-r from-teal-600 to-teal-500 text-white hover:from-teal-700 hover:to-teal-600 rounded-lg font-bold text-sm transition-all disabled:from-slate-300 disabled:to-slate-300 disabled:text-slate-500 flex items-center justify-center gap-2 shadow-sm">
-              {isSubmitting ? (<><Spinner /> 処理中...</>) : success ? '✅ 完了' : '保存 (Lưu) →'}
+              {isSubmitting ? (<><Spinner /> {isVi ? 'Đang xử lý...' : '処理中...'}</>) : success ? (isVi ? '✅ Hoàn thành' : '✅ 完了') : (isVi ? 'Lưu →' : '保存 →')}
             </button>
           </div>
         </div>
@@ -389,11 +391,12 @@ export default function UnifiedMoldDrawer({ isOpen, onClose, editPhysicalId, cus
 }
 
 function SectionHeader({ jp, vi }: { jp: string; vi: string }) {
+  const locale = useLocale()
+  const isVi = locale === 'vi'
   return (
     <div className="flex items-center gap-2 mb-1">
       <span className="w-1 h-5 bg-teal-500 rounded-full" />
-      <span className="font-bold text-sm text-slate-700">{jp}</span>
-      <span className="text-xs text-slate-400">/ {vi}</span>
+      <span className="font-bold text-sm text-slate-700">{isVi ? vi : jp}</span>
     </div>
   )
 }

@@ -1,29 +1,29 @@
+'use client'
+
 import { Package, Pencil, Building2, Tag, Layers } from 'lucide-react'
 import Link from 'next/link'
 import type { ProductDetailData } from './page'
+import { useTranslations } from 'next-intl'
 
-const STATUS_LABELS: Record<string, { ja: string; color: string; bg: string; border: string }> = {
+const STATUS_LABELS: Record<string, { color: string; bg: string; border: string }> = {
   ACTIVE: {
-    ja: '有効',
     color: 'var(--status-success)',
     bg: 'color-mix(in srgb, var(--status-success) 12%, transparent)',
     border: 'color-mix(in srgb, var(--status-success) 25%, transparent)',
   },
   MAINTENANCE: {
-    ja: 'メンテ中',
     color: 'var(--status-warning)',
     bg: 'color-mix(in srgb, var(--status-warning) 12%, transparent)',
     border: 'color-mix(in srgb, var(--status-warning) 25%, transparent)',
   },
   DISPOSED: {
-    ja: '廃止',
     color: 'var(--text-muted)',
     bg: 'color-mix(in srgb, var(--text-muted) 12%, transparent)',
     border: 'color-mix(in srgb, var(--text-muted) 25%, transparent)',
   },
 }
 
-function StatusBadge({ status }: { status: string | null }) {
+function StatusBadge({ status, label }: { status: string | null; label: string }) {
   const s = STATUS_LABELS[status || ''] || STATUS_LABELS.DISPOSED
   return (
     <span
@@ -36,7 +36,7 @@ function StatusBadge({ status }: { status: string | null }) {
         whiteSpace: 'nowrap',
       }}
     >
-      {s.ja}
+      {label}
     </span>
   )
 }
@@ -50,8 +50,9 @@ export function ProductDetailHeader({
   isEditing: boolean
   setIsEditing: (v: boolean) => void
 }) {
+  const t = useTranslations('Master.Products.Header')
+  const tOverview = useTranslations('Master.Products.Overview')
   const customer = product.companies
-  // Products = MoldMasters = Tray (same entity)
 
   return (
     <div
@@ -60,7 +61,7 @@ export function ProductDetailHeader({
     >
       <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: 6, textTransform: 'uppercase' }}>
         <Package size={12} />
-        <span>製品 / Sản phẩm</span>
+        <span>{t('title')}</span>
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
         <div>
@@ -77,13 +78,16 @@ export function ProductDetailHeader({
           </span>
         </div>
 
-        <StatusBadge status={product.product_status} />
+        <StatusBadge 
+          status={product.product_status} 
+          label={tOverview(`statusLabels.${product.product_status || 'ACTIVE'}`)} 
+        />
 
         {!isEditing && (
           <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
             <button className="btn btn-secondary text-xs" onClick={() => setIsEditing(true)}>
               <Pencil size={14} />
-              編集 / Sửa
+              {t('edit')}
             </button>
           </div>
         )}
@@ -100,7 +104,7 @@ export function ProductDetailHeader({
               background: 'var(--bg-surface-2)', border: '1px solid var(--border-default)',
               fontSize: 10, color: 'var(--text-primary)', textDecoration: 'none', fontWeight: 600,
             }}
-            title="顧客を開く / Mở khách hàng"
+            title={t('openCustomer')}
           >
             <Building2 size={10} style={{ color: 'var(--text-secondary)' }} />
             <span>{customer.company_name}</span>
@@ -130,7 +134,7 @@ export function ProductDetailHeader({
               background: 'var(--bg-surface-2)', border: '1px solid var(--border-default)',
               fontSize: 10, color: 'var(--text-primary)', textDecoration: 'none', fontWeight: 600,
             }}
-            title="設計版管理を開く / Mở trang quản lý thiết kế"
+            title={t('openDesigns')}
           >
             <Layers size={10} style={{ color: 'var(--accent)' }} />
             <span style={{ fontFamily: 'var(--font-jp)' }}>{product.product_code}</span>

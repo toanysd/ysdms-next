@@ -164,7 +164,7 @@ export default function MoldDetailPage() {
             product_code,
             product_name,
             product_name_internal,
-            companies(company_id, company_name, company_code)
+            companies:companies!products_company_id_fkey(company_id, company_name, company_code)
           ),
           design_revisions(
             revision_id, design_code, design_length, design_width, design_height, design_depth,
@@ -210,7 +210,7 @@ export default function MoldDetailPage() {
               revision_id, design_code, product_id,
               products!design_revisions_product_id_fkey(
                 product_id, product_code, product_name, product_name_internal,
-                companies(company_id, company_name, company_code)
+                companies:companies!products_company_id_fkey(company_id, company_name, company_code)
               )
             `)
             .eq('design_code', possibleDesignCode)

@@ -108,7 +108,7 @@ export async function getMoldBaseDetail(moldMasterId: string) {
     .select(`
       *,
       companies!products_company_id_fkey ( company_code, company_name ),
-      keeper_company:companies!products_keeper_company_id_fkey ( company_code, company_name )
+      keeper_company:companies!products_end_user_company_id_fkey ( company_code, company_name )
     `)
     .eq('product_id', moldMasterId)
     .single()

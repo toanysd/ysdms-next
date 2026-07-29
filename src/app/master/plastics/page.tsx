@@ -1,4 +1,7 @@
+export const dynamic = 'force-dynamic'
+
 // @ts-nocheck
+import { getTranslations } from 'next-intl/server'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { Plus, Package, ChevronRight } from 'lucide-react'
@@ -31,25 +34,26 @@ export default async function PlasticMasterPage(props: {
   const showAll = familyFilter === 'all'
 
   const supabase = await createClient()
+  const t = await getTranslations('Master')
   const from = (page - 1) * PAGE_SIZE
   const to = from + PAGE_SIZE - 1
 
   let dbQuery = supabase
     .from('plastic_master')
-    .select('*', { count: 'exact' })
+    .select('id:plastic_id, code:plastic_code, family:plastic_family, thickness_mm, width_mm, color, is_active, status_review', { count: 'exact' })
 
   // Filter theo Family
   if (!showAll) {
-    dbQuery = dbQuery.eq('family', familyFilter)
+    dbQuery = dbQuery.eq('plastic_family', familyFilter)
   }
 
   // Server-side search
   if (query) {
-    dbQuery = dbQuery.or(`code.ilike.%${query}%,family.ilike.%${query}%`)
+    dbQuery = dbQuery.or(`plastic_code.ilike.%${query}%,plastic_family.ilike.%${query}%`)
   }
 
   const { data: plastics, count, error } = await dbQuery
-    .order('code', { ascending: true })
+    .order('plastic_code', { ascending: true })
     .range(from, to)
 
   const totalRecords = count ?? 0
@@ -61,8 +65,7 @@ export default async function PlasticMasterPage(props: {
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <Package size={20} style={{ color: 'var(--accent)' }} />
           <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <span className="ja" style={{ fontSize: 16 }}>プラ材料マスター</span>
-            <span className="vi" style={{ fontSize: 11 }}>Danh mục Vật tư Nhựa</span>
+            {t('Master.danhMucVatTuNhua')}
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -72,81 +75,34 @@ export default async function PlasticMasterPage(props: {
           <Link href="/master/plastics/new">
             <button className="btn btn-primary">
               <Plus size={14} />
-              <span className="ja" style={{ fontFamily: 'var(--font-jp)' }}>新規登録</span>
+              {t('Master.maNhua')}
             </button>
           </Link>
         </div>
       </div>
 
-      {/* ── Filters Section ── */}
-      <div className="form-section" style={{ flexShrink: 0, marginBottom: 0 }}>
-        <div className="form-section-body">
-          <div className="tab-nav" style={{ margin: '-14px -14px -14px', background: 'var(--bg-surface)' }}>
-            <Link 
-              href={`/master/plastics?q=${query}&family=all`}
-              className={`tab-item ${showAll ? 'tab-item--active' : ''}`}
-              style={{ flex: 1, padding: '8px 4px', textDecoration: 'none' }}
-            >
-              <span className="tab-ja">全て</span>
-              <span className="tab-vi">Tất cả {showAll && `(${totalRecords})`}</span>
-            </Link>
-            <Link 
-              href={`/master/plastics?q=${query}&family=PS`}
-              className={`tab-item ${familyFilter === 'PS' ? 'tab-item--active' : ''}`}
-              style={{ flex: 1, padding: '8px 4px', textDecoration: 'none' }}
-            >
-              <span className="tab-ja">PS</span>
-              <span className="tab-vi">Nhựa PS {familyFilter === 'PS' && `(${totalRecords})`}</span>
-            </Link>
-            <Link 
-              href={`/master/plastics?q=${query}&family=PP`}
-              className={`tab-item ${familyFilter === 'PP' ? 'tab-item--active' : ''}`}
-              style={{ flex: 1, padding: '8px 4px', textDecoration: 'none' }}
-            >
-              <span className="tab-ja">PP</span>
-              <span className="tab-vi">Nhựa PP {familyFilter === 'PP' && `(${totalRecords})`}</span>
-            </Link>
-            <Link 
-              href={`/master/plastics?q=${query}&family=PET`}
-              className={`tab-item ${familyFilter === 'PET' ? 'tab-item--active' : ''}`}
-              style={{ flex: 1, padding: '8px 4px', textDecoration: 'none' }}
-            >
-              <span className="tab-ja">PET</span>
-              <span className="tab-vi">Nhựa PET {familyFilter === 'PET' && `(${totalRecords})`}</span>
-            </Link>
-          </div>
-        </div>
-      </div>
-
-      {/* ── Data Table ── */}
-      <div className="card-flat" style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}>
-        <div className="custom-scrollbar" style={{ flex: 1, overflowY: 'auto' }}>
+      <div className="card-flat" style={{ flex: 1, overflow: 'auto', display: 'flex', flexDirection: 'column' }}>
+        <div style={{ flex: 1, overflow: 'auto' }}>
           <table className="data-table">
             <thead>
               <tr>
-                <th style={{ width: 180 }}>
-                  <span className="ja">材料コード</span>
-                  <span className="vi">Mã Nhựa</span>
+                <th style={{ width: 150 }}>
+                  {t('Master.maNhua')}
                 </th>
                 <th style={{ width: 120 }}>
-                  <span className="ja">寸法</span>
-                  <span className="vi">Family</span>
+                  {t('Master.family')}
                 </th>
                 <th style={{ width: 150 }}>
-                  <span className="ja">厚×幅(mm)</span>
-                  <span className="vi">Dày x Khổ</span>
+                  {t('Master.dayXKho')}
                 </th>
                 <th style={{ width: 150 }}>
-                  <span className="ja">色/Grade</span>
-                  <span className="vi">Màu / Grade</span>
+                  {t('Master.mauGrade')}
                 </th>
                 <th style={{ width: 150, textAlign: 'right' }}>
-                  <span className="ja">発注点 (kg)</span>
-                  <span className="vi">Min. Stock</span>
+                  {t('Master.minStock')}
                 </th>
                 <th style={{ width: 120, textAlign: 'center' }}>
-                  <span className="ja">状態</span>
-                  <span className="vi">Trạng thái</span>
+                  {t('Master.trangThai')}
                 </th>
                 <th style={{ width: 60, textAlign: 'right' }}></th>
               </tr>

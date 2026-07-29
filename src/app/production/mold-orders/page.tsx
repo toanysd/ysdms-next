@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
+import { useTranslations } from 'next-intl';
 import { createClient } from '@/lib/supabase/client';
 import { 
   FileText, Search, Printer, Save, CheckCircle2, 
@@ -8,6 +9,7 @@ import {
 } from 'lucide-react';
 
 export default function MoldWorkOrdersPage() {
+  const t = useTranslations('MoldOrders');
   const supabase = createClient();
   const [instructions, setInstructions] = useState<any[]>([]);
   const [selectedPo, setSelectedPo] = useState<any | null>(null);
@@ -132,7 +134,7 @@ export default function MoldWorkOrdersPage() {
       // Fetch active products list
       const { data: prodData } = await (supabase as any)
         .from('products')
-        .select('*, companies(company_id, company_name, company_code), design_revisions(*)')
+        .select('*, companies:companies!products_company_id_fkey(company_id, company_name, company_code), design_revisions(*)')
         .order('product_code');
       setProductsList(prodData || []);
 
@@ -452,10 +454,10 @@ export default function MoldWorkOrdersPage() {
 
       setShowCreateModal(false);
       await fetchInitialData();
-      setMessage({ type: 'success', text: '新規指示書と関連Jobを正常に作成しました！ / Khởi tạo chỉ thị và Job thành công!' });
+      setMessage({ type: 'success', text: t('createSuccess') });
     } catch (err: any) {
       console.error(err);
-      setMessage({ type: 'error', text: `作成に失敗しました: ${err.message}` });
+      setMessage({ type: 'error', text: t('createError') + err.message });
     } finally {
       setSaving(false);
     }
@@ -589,13 +591,13 @@ export default function MoldWorkOrdersPage() {
         if (sampleErr) throw sampleErr;
       }
 
-      setMessage({ type: 'success', text: '指示書と関連Jobのスケジュールを保存しました！ / Đã lưu thay đổi chỉ thị và Job!' });
+      setMessage({ type: 'success', text: t('saveSuccess') });
       
       // Refresh current data
       await fetchInitialData();
     } catch (err: any) {
       console.error(err);
-      setMessage({ type: 'error', text: `保存に失敗しました: ${err.message}` });
+      setMessage({ type: 'error', text: t('saveError') + err.message });
     } finally {
       setSaving(false);
     }
@@ -631,60 +633,68 @@ export default function MoldWorkOrdersPage() {
   });
 
   return (
-    <div className="flex flex-col gap-4 h-[calc(100vh-64px)] w-full overflow-hidden text-[13px] font-sans bg-[var(--bg-background)]">
+    <div className="flex flex-col h-full gap-3 overflow-hidden text-[13px] font-sans">
       
-      {/* Top Banner Control */}
-      <div className="flex items-center justify-between border-b border-[var(--border-default)] pb-3 px-4 bg-white shadow-sm">
-        <div className="flex items-center gap-3">
-          <FileText className="text-[var(--accent)] w-5 h-5" />
+      {/* PageHeader (flexShrink: 0) */}
+      <div className="card-flat" style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <FileText size={20} style={{ color: 'var(--accent)' }} />
           <div>
-            <h1 className="text-[16px] font-bold text-[var(--text-primary)]">新規金型製造工程票</h1>
-            <p className="text-[11px] text-[var(--text-muted)]">Quản lý Chỉ thị Sản xuất & Mẫu thử nghiệm</p>
+            <h1 style={{ fontSize: 16, fontWeight: 700, margin: 0, color: 'var(--text-primary)' }}>
+              {t('title')}
+            </h1>
+            <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: 0 }}>
+              {t('subtitle')}
+            </p>
           </div>
         </div>
 
-        {/* Global Toolbar */}
-        <div className="flex items-center gap-3">
-          <div className="relative">
-            <Search className="absolute left-2.5 top-2 w-4 h-4 text-[var(--text-muted)]" />
-            <input 
-              id="search-input"
-              type="text" 
-              placeholder="検索 / Tìm kiếm..." 
-              className="form-input pl-8 w-64 h-8"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
+        {/* Action Buttons */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <button 
             id="create-btn"
-            className="btn btn-primary flex items-center gap-1.5 h-8 px-3"
+            className="btn btn-primary"
             onClick={openCreateModal}
           >
-            <Plus className="w-4 h-4" /> <span>新規作成 / Tạo mới</span>
+            <Plus className="w-4 h-4" /> <span>{t('createButton')}</span>
           </button>
           <button 
             id="refresh-btn"
-            className="btn btn-secondary flex items-center gap-1.5 h-8 px-3"
+            className="btn btn-secondary"
             onClick={fetchInitialData}
           >
-            <RefreshCw className="w-3.5 h-3.5" /> <span>更新</span>
+            <RefreshCw className="w-3.5 h-3.5" /> <span>{t('refreshButton')}</span>
           </button>
         </div>
       </div>
 
-      <div className="flex flex-1 overflow-hidden px-4 gap-4 pb-4">
+      {/* FilterBar / TabBar (flexShrink: 0) */}
+      <div className="card-flat" style={{ padding: '8px 16px', display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
+        <div className="relative w-64">
+          <Search className="absolute left-2.5 top-2 w-4 h-4 text-[var(--text-muted)]" />
+          <input 
+            id="search-input"
+            type="text" 
+            placeholder={t('searchPlaceholder')} 
+            className="form-input form-input-search w-full"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
+      </div>
+
+      <div className="flex flex-1 overflow-hidden gap-3 pb-3 min-h-0">
         
         {/* Left Panel: Instructions List */}
         <div className="w-80 flex flex-col border border-[var(--border-default)] rounded-md bg-white overflow-hidden">
           <div className="p-3 bg-[var(--bg-surface-2)] border-b border-[var(--border-default)] font-bold text-[12px] text-[var(--text-muted)]">
-            指示書一覧 ({filteredInstructions.length})
+            {t('listHeader', { count: filteredInstructions.length })}
           </div>
           <div className="flex-1 overflow-y-auto">
             {loading ? (
-              <div className="p-4 text-center text-[var(--text-muted)]">読み込み中...</div>
+              <div className="p-4 text-center text-[var(--text-muted)]">{t('loading')}</div>
             ) : filteredInstructions.length === 0 ? (
-              <div className="p-4 text-center text-[var(--text-muted)]">該当するデータがありません</div>
+              <div className="p-4 text-center text-[var(--text-muted)]">{t('noData')}</div>
             ) : (
               filteredInstructions.map((po: any) => {
                 const isActive = selectedPo?.mwo_id === po.mwo_id;
@@ -724,7 +734,7 @@ export default function MoldWorkOrdersPage() {
             {/* Header Control for Detail View */}
             <div className="p-3 bg-[var(--bg-surface-2)] border-b border-[var(--border-default)] flex justify-between items-center">
               <span className="font-bold text-[var(--text-primary)]">
-                詳細編集 / Chi tiết: {selectedPo.order_lines?.products?.product_name_internal}
+                {t('detailTitle', { name: selectedPo.order_lines?.products?.product_name_internal })}
               </span>
               <div className="flex gap-2">
                 <button 
@@ -732,7 +742,7 @@ export default function MoldWorkOrdersPage() {
                   className="btn btn-secondary flex items-center gap-1.5 h-8 px-3"
                   onClick={handlePrint}
                 >
-                  <Printer className="w-3.5 h-3.5" /> <span>印刷 / Export PDF</span>
+                  <Printer className="w-3.5 h-3.5" /> <span>{t('printButton')}</span>
                 </button>
                 <button 
                   id="save-btn"
@@ -740,27 +750,27 @@ export default function MoldWorkOrdersPage() {
                   onClick={handleSaveChanges}
                   disabled={saving}
                 >
-                  <Save className="w-3.5 h-3.5" /> <span>{saving ? '保存中...' : '変更保存'}</span>
+                  <Save className="w-3.5 h-3.5" /> <span>{saving ? t('savingButton') : t('saveButton')}</span>
                 </button>
               </div>
             </div>
 
             {/* Workflow Links Bar */}
             <div className="flex items-center gap-4 py-1.5 px-4 bg-slate-50 border-b border-[var(--border-default)] text-[11px] text-slate-600 shrink-0 select-none">
-              <span className="font-bold text-slate-500">関連リンク / Liên kết nhanh:</span>
+              <span className="font-bold text-slate-500">{t('quickLinks')}</span>
               {selectedPo.order_lines?.orders && (
                 <a href={`/orders/${selectedPo.order_lines.orders.order_id}`} className="hover:text-blue-600 font-semibold text-blue-500 underline">
-                  受注: {selectedPo.order_lines.orders.order_no}
+                  {t('linkOrder')}: {selectedPo.order_lines.orders.order_no}
                 </a>
               )}
               {selectedPo.order_lines?.products && (
                 <a href={`/master/products/${selectedPo.order_lines.products.product_id}`} className="hover:text-blue-600 font-semibold text-blue-500 underline">
-                  製品: {selectedPo.order_lines.products.product_name_internal}
+                  {t('linkProduct')}: {selectedPo.order_lines.products.product_name_internal}
                 </a>
               )}
               {linkedJobId && (
                 <a href={`/equipment/jobs?search=${selectedPo.order_lines.products.product_code}`} className="hover:text-blue-600 font-semibold text-blue-500 underline">
-                  Gantt / Job: {selectedPo.order_lines.products.product_code}
+                  {t('linkJob')}: {selectedPo.order_lines.products.product_code}
                 </a>
               )}
             </div>
@@ -781,89 +791,89 @@ export default function MoldWorkOrdersPage() {
               {/* Interactive Editing Form */}
               <div className="flex-1 max-w-[420px] border-r border-[var(--border-default)] pr-6 flex flex-col gap-4">
                 <div className="font-bold text-[12px] text-[var(--text-muted)] uppercase tracking-wider flex items-center gap-1">
-                  <Sliders className="w-3.5 h-3.5" /> 編集パラメータ / Cấu hình sản xuất
+                  <Sliders className="w-3.5 h-3.5" /> {t('editParams')}
                 </div>
 
                 {/* Deadlines Section */}
                 <div className="flex flex-col gap-2 border border-orange-200 bg-orange-50/30 p-3 rounded-md">
                   <div className="font-bold text-[12px] text-orange-800 flex items-center gap-1">
-                    <Calendar className="w-3.5 h-3.5" /> 各部門納期設定 / Kỳ hạn các bộ phận
+                    <Calendar className="w-3.5 h-3.5" /> {t('targetDeadlines')}
                   </div>
                   
                   <div className="grid grid-cols-2 gap-2 mt-1">
                     <div>
-                      <label className="text-[11px] text-[var(--text-muted)]">アルミ材 (Nhôm)</label>
+                      <label className="text-[11px] text-[var(--text-muted)]">{t('aluminumDate')}</label>
                       <input type="date" className="form-input w-full mt-0.5" value={targetAluminumDate} onChange={(e) => setTargetAluminumDate(e.target.value)} />
-                      {actualAluminumDate && <span className="text-[10px] text-blue-600 font-medium">実績: {actualAluminumDate.substring(5)}</span>}
+                      {actualAluminumDate && <span className="text-[10px] text-blue-600 font-medium">{t('actual', { date: actualAluminumDate.substring(5) })}</span>}
                     </div>
                     <div>
-                      <label className="text-[11px] text-[var(--text-muted)]">プラグ (Plug)</label>
+                      <label className="text-[11px] text-[var(--text-muted)]">{t('plugDate')}</label>
                       <input type="date" className="form-input w-full mt-0.5" value={targetPlugDate} onChange={(e) => setTargetPlugDate(e.target.value)} />
-                      {actualPlugDate && <span className="text-[10px] text-blue-600 font-medium">実績: {actualPlugDate.substring(5)}</span>}
+                      {actualPlugDate && <span className="text-[10px] text-blue-600 font-medium">{t('actual', { date: actualPlugDate.substring(5) })}</span>}
                     </div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <label className="text-[11px] text-[var(--text-muted)]">カッター (Dao)</label>
+                      <label className="text-[11px] text-[var(--text-muted)]">{t('cutterDate')}</label>
                       <input type="date" className="form-input w-full mt-0.5" value={targetCutterDate} onChange={(e) => setTargetCutterDate(e.target.value)} />
-                      {actualCutterDate && <span className="text-[10px] text-blue-600 font-medium">実績: {actualCutterDate.substring(5)}</span>}
+                      {actualCutterDate && <span className="text-[10px] text-blue-600 font-medium">{t('actual', { date: actualCutterDate.substring(5) })}</span>}
                     </div>
                     <div>
-                      <label className="text-[11px] text-[var(--text-muted)]">本型納期 (Khuôn)</label>
+                      <label className="text-[11px] text-[var(--text-muted)]">{t('moldDate')}</label>
                       <input type="date" className="form-input w-full mt-0.5" value={targetMoldDate} onChange={(e) => setTargetMoldDate(e.target.value)} />
-                      {actualMoldDate && <span className="text-[10px] text-blue-600 font-medium">実績: {actualMoldDate.substring(5)}</span>}
+                      {actualMoldDate && <span className="text-[10px] text-blue-600 font-medium">{t('actual', { date: actualMoldDate.substring(5) })}</span>}
                     </div>
                   </div>
 
                   <div>
-                    <label className="text-[11px] text-[var(--text-muted)]">出荷納期 (Đúc mẫu khay)</label>
+                    <label className="text-[11px] text-[var(--text-muted)]">{t('moldingDate')}</label>
                     <input type="date" className="form-input w-full mt-0.5" value={targetMoldingDate} onChange={(e) => setTargetMoldingDate(e.target.value)} />
-                    {actualMoldingDate && <span className="text-[10px] text-blue-600 font-medium">実績: {actualMoldingDate.substring(5)}</span>}
+                    {actualMoldingDate && <span className="text-[10px] text-blue-600 font-medium">{t('actual', { date: actualMoldingDate.substring(5) })}</span>}
                   </div>
                 </div>
 
                 {/* Digital Stamps Section */}
                 <div className="flex flex-col gap-2 border border-red-200 bg-red-50/20 p-3 rounded-md">
                   <div className="font-bold text-[12px] text-red-800 flex items-center gap-1">
-                    <UserCheck className="w-3.5 h-3.5" /> 捺印承認 / Đóng dấu chữ ký bộ phận
+                    <UserCheck className="w-3.5 h-3.5" /> {t('stampsApproval')}
                   </div>
                   <div className="grid grid-cols-2 gap-2 mt-1">
                     <div>
-                      <label className="text-[11px] text-red-700 font-medium">手配 (Yoshida)</label>
+                      <label className="text-[11px] text-red-700 font-medium">{t('stampProcurement')}</label>
                       <select className="form-input w-full mt-0.5" value={stampProcurement} onChange={(e) => setStampProcurement(e.target.value)}>
-                        <option value="">- 未捺印 -</option>
+                        <option value="">{t('unapproved')}</option>
                         {employees.map((e: any) => <option key={e.employee_id} value={e.employee_id}>{e.employee_name}</option>)}
                       </select>
                     </div>
                     <div>
-                      <label className="text-[11px] text-red-700 font-medium">金型 (Endo/Taniguchi)</label>
+                      <label className="text-[11px] text-red-700 font-medium">{t('stampMoldShop')}</label>
                       <select className="form-input w-full mt-0.5" value={stampMoldShop} onChange={(e) => setStampMoldShop(e.target.value)}>
-                        <option value="">- 未捺印 -</option>
+                        <option value="">{t('unapproved')}</option>
                         {employees.map((e: any) => <option key={e.employee_id} value={e.employee_id}>{e.employee_name}</option>)}
                       </select>
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <label className="text-[11px] text-red-700 font-medium">成形 (Kohi/Taniguchi)</label>
+                      <label className="text-[11px] text-red-700 font-medium">{t('stampMoldingShop')}</label>
                       <select className="form-input w-full mt-0.5" value={stampMoldingShop} onChange={(e) => setStampMoldingShop(e.target.value)}>
-                        <option value="">- 未捺印 -</option>
+                        <option value="">{t('unapproved')}</option>
                         {employees.map((e: any) => <option key={e.employee_id} value={e.employee_id}>{e.employee_name}</option>)}
                       </select>
                     </div>
                     <div>
-                      <label className="text-[11px] text-red-700 font-medium">検査 (Nakamura)</label>
+                      <label className="text-[11px] text-red-700 font-medium">{t('stampQc')}</label>
                       <select className="form-input w-full mt-0.5" value={stampQc} onChange={(e) => setStampQc(e.target.value)}>
-                        <option value="">- 未捺印 -</option>
+                        <option value="">{t('unapproved')}</option>
                         {employees.map((e: any) => <option key={e.employee_id} value={e.employee_id}>{e.employee_name}</option>)}
                       </select>
                     </div>
                   </div>
                   <div>
-                    <label className="text-[11px] text-red-700 font-medium">管理確認 (Kobayashi)</label>
+                    <label className="text-[11px] text-red-700 font-medium">{t('stampManager')}</label>
                     <select className="form-input w-full mt-0.5" value={stampManager} onChange={(e) => setStampManager(e.target.value)}>
-                      <option value="">- 未捺印 -</option>
+                      <option value="">{t('unapproved')}</option>
                       {employees.map((e: any) => <option key={e.employee_id} value={e.employee_id}>{e.employee_name}</option>)}
                     </select>
                   </div>
@@ -871,51 +881,51 @@ export default function MoldWorkOrdersPage() {
 
                 {/* Machine, Mold and Cutter allocation */}
                 <div className="flex flex-col gap-2">
-                  <label className="font-semibold text-[12px]">成形機 / Máy đúc định hình</label>
+                  <label className="font-semibold text-[12px]">{t('moldingMachine')}</label>
                   <select 
                     id="machine-select"
                     className="form-input w-full"
                     value={assignedMachine}
                     onChange={(e) => setAssignedMachine(e.target.value)}
                   >
-                    <option value="">- 未選択 -</option>
+                    <option value="">{t('unselected')}</option>
                     {machines.map((m: any) => <option key={m.machine_id} value={m.machine_id}>{m.machine_name} ({m.machine_code})</option>)}
                   </select>
                 </div>
 
                 <div className="grid grid-cols-2 gap-2">
                   <div>
-                    <label className="text-[11px] font-semibold">起工数 (Mold Sets)</label>
+                    <label className="text-[11px] font-semibold">{t('moldSets')}</label>
                     <input type="number" className="form-input w-full mt-0.5" value={moldSetsToMake} onChange={(e) => setMoldSetsToMake(Number(e.target.value))} />
                   </div>
                   <div>
-                    <label className="text-[11px] font-semibold">取数 (Cavities)</label>
+                    <label className="text-[11px] font-semibold">{t('cavities')}</label>
                     <input type="number" className="form-input w-full mt-0.5" value={cavitiesPerMold} onChange={(e) => setCavitiesPerMold(Number(e.target.value))} />
                   </div>
                 </div>
 
                 <div className="flex flex-col gap-2">
-                  <label className="font-semibold text-[12px]">使用金型 / Khuôn vật lý sử dụng</label>
+                  <label className="font-semibold text-[12px]">{t('assignedMold')}</label>
                   <select 
                     id="mold-select"
                     className="form-input w-full"
                     value={assignedMold}
                     onChange={(e) => setAssignedMold(e.target.value)}
                   >
-                    <option value="">- 未選択 -</option>
+                    <option value="">{t('unselected')}</option>
                     {molds.map((m: any) => <option key={m.physical_mold_id} value={m.physical_mold_id}>{m.display_name} ({m.system_code})</option>)}
                   </select>
                 </div>
 
                 <div className="flex flex-col gap-2">
-                  <label className="font-semibold text-[12px]">使用抜型 / Dao cắt sử dụng</label>
+                  <label className="font-semibold text-[12px]">{t('assignedCutter')}</label>
                   <select 
                     id="cutter-select"
                     className="form-input w-full"
                     value={assignedCutter}
                     onChange={(e) => setAssignedCutter(e.target.value)}
                   >
-                    <option value="">- 未選択 -</option>
+                    <option value="">{t('unselected')}</option>
                     {cutters.map((c: any) => <option key={c.cutter_id} value={c.cutter_id}>{c.cutter_name} ({c.cutter_no})</option>)}
                   </select>
                 </div>
@@ -923,75 +933,75 @@ export default function MoldWorkOrdersPage() {
                 {/* Tolerances */}
                 <div className="border-t border-[var(--border-subtle)] pt-3 flex flex-col gap-3">
                   <div className="font-bold text-[12px] text-[var(--text-muted)] flex items-center gap-1">
-                    <Layers className="w-3.5 h-3.5" /> 寸法公差 / Dung sai kích thước
+                    <Layers className="w-3.5 h-3.5" /> {t('dimensionsTolerance')}
                   </div>
                   <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <label className="text-[11px] text-[var(--text-muted)]">公差 X (Rộng)</label>
+                      <label className="text-[11px] text-[var(--text-muted)]">{t('toleranceX')}</label>
                       <input id="tolerance-x-input" type="text" className="form-input w-full mt-1" value={toleranceX} onChange={(e) => setToleranceX(e.target.value)} />
                     </div>
                     <div>
-                      <label className="text-[11px] text-[var(--text-muted)]">公差 Y (Dài)</label>
+                      <label className="text-[11px] text-[var(--text-muted)]">{t('toleranceY')}</label>
                       <input id="tolerance-y-input" type="text" className="form-input w-full mt-1" value={toleranceY} onChange={(e) => setToleranceY(e.target.value)} />
                     </div>
                   </div>
                   <div>
-                    <label className="text-[11px] text-[var(--text-muted)]">ポケットピッチ公差 / Dung sai pitch</label>
+                    <label className="text-[11px] text-[var(--text-muted)]">{t('tolerancePitch')}</label>
                     <input id="tolerance-pitch-input" type="text" className="form-input w-full mt-1" value={tolerancePitch} onChange={(e) => setTolerancePitch(e.target.value)} />
                   </div>
                 </div>
 
                 {/* Remake Options */}
                 <div className="border-t border-[var(--border-subtle)] pt-3 flex flex-col gap-2">
-                  <div className="font-bold text-[12px] text-[var(--text-muted)]">金型再作製時の対応 / Phương án khi sửa khuôn</div>
+                  <div className="font-bold text-[12px] text-[var(--text-muted)]">{t('remakeOptions')}</div>
                   <label className="flex items-center gap-2 mt-1 cursor-pointer">
                     <input id="discard-stock-chk" type="checkbox" checked={discardOldStock} onChange={(e) => setDiscardOldStock(e.target.checked)} className="rounded" />
-                    <span>旧トレイ在庫廃棄 / Hủy tồn khay cũ</span>
+                    <span>{t('discardOldStock')}</span>
                   </label>
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input id="replace-drawing-chk" type="checkbox" checked={replaceQcDrawing} onChange={(e) => setReplaceQcDrawing(e.target.checked)} className="rounded" />
-                    <span>検査室旧図面差し替え / Đổi bản vẽ phòng QC</span>
+                    <span>{t('replaceQcDrawing')}</span>
                   </label>
                 </div>
 
                 {/* Packaging and Samples Setup */}
                 <div className="border-t border-[var(--border-subtle)] pt-3 flex flex-col gap-3">
                   <div className="font-bold text-[12px] text-[var(--text-muted)] flex items-center gap-1">
-                    <Package className="w-3.5 h-3.5" /> サンプルの内訳 & 梱包 / Cơ cấu mẫu & Đóng gói
+                    <Package className="w-3.5 h-3.5" /> {t('packagingSamples')}
                   </div>
                   <div className="grid grid-cols-3 gap-2">
                     <div>
-                      <label className="text-[11px] text-[var(--text-muted)]">無償 (Free)</label>
+                      <label className="text-[11px] text-[var(--text-muted)]">{t('freeQty')}</label>
                       <input id="free-qty-input" type="number" className="form-input w-full mt-1 text-center" value={freeQuantity} onChange={(e) => setFreeQuantity(Number(e.target.value))} />
                     </div>
                     <div>
-                      <label className="text-[11px] text-[var(--text-muted)]">有償 (Charged)</label>
+                      <label className="text-[11px] text-[var(--text-muted)]">{t('sampleQty')}</label>
                       <input id="sample-qty-input" type="number" className="form-input w-full mt-1 text-center" value={sampleQuantity} onChange={(e) => setSampleQuantity(Number(e.target.value))} />
                     </div>
                     <div>
-                      <label className="text-[11px] text-[var(--text-muted)]">事務所 (Office)</label>
+                      <label className="text-[11px] text-[var(--text-muted)]">{t('officeQty')}</label>
                       <input id="office-qty-input" type="number" className="form-input w-full mt-1 text-center" value={officeQuantity} onChange={(e) => setOfficeQuantity(Number(e.target.value))} />
                     </div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <label className="text-[11px] text-[var(--text-muted)]">箱の種類 / Loại thùng</label>
+                      <label className="text-[11px] text-[var(--text-muted)]">{t('boxType')}</label>
                       <select id="box-type-select" className="form-input w-full mt-1" value={boxType} onChange={(e) => setBoxType(e.target.value)}>
-                        <option value="PLAIN">無地箱 (Thùng trơn)</option>
-                        <option value="PRINTED">印刷箱 (Thùng in)</option>
+                        <option value="PLAIN">{t('boxTypePlain')}</option>
+                        <option value="PRINTED">{t('boxTypePrinted')}</option>
                       </select>
                     </div>
                     <div className="flex flex-col justify-end pb-1.5">
                       <label className="flex items-center gap-2 cursor-pointer">
                         <input id="bagging-chk" type="checkbox" checked={baggingRequired} onChange={(e) => setBaggingRequired(e.target.checked)} className="rounded" />
-                        <span>袋詰め要 / Bọc túi nylon</span>
+                        <span>{t('baggingRequired')}</span>
                       </label>
                     </div>
                   </div>
 
                   <div>
-                    <label className="text-[11px] text-[var(--text-muted)]">梱包指示 / Chỉ thị đóng gói</label>
+                    <label className="text-[11px] text-[var(--text-muted)]">{t('packagingInstructions')}</label>
                     <textarea 
                       id="packaging-instructions-textarea"
                       className="form-textarea w-full mt-1 text-[11px] h-16 resize-none"
@@ -1002,14 +1012,14 @@ export default function MoldWorkOrdersPage() {
 
                   <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <label className="text-[11px] text-[var(--text-muted)] flex items-center gap-0.5"><DollarSign className="w-3 h-3" /> 原価 (Cost)</label>
+                      <label className="text-[11px] text-[var(--text-muted)] flex items-center gap-0.5"><DollarSign className="w-3 h-3" /> {t('cost')}</label>
                       <input id="cost-input" type="text" className="form-input w-full mt-1" placeholder="e.g. 116.2" value={cost} onChange={(e) => setCost(e.target.value)} />
                     </div>
                     <div>
-                      <label className="text-[11px] text-[var(--text-muted)]">別抜き / Cắt riêng</label>
+                      <label className="text-[11px] text-[var(--text-muted)]">{t('separateCutter')}</label>
                       <select id="separate-cutter-select" className="form-input w-full mt-1" value={hasSeparateCutter ? 'true' : 'false'} onChange={(e) => setHasSeparateCutter(e.target.value === 'true')}>
-                        <option value="false">不要 (Cắt inline)</option>
-                        <option value="true">必要 (別抜き)</option>
+                        <option value="false">{t('separateCutterNo')}</option>
+                        <option value="true">{t('separateCutterYes')}</option>
                       </select>
                     </div>
                   </div>
@@ -1028,11 +1038,11 @@ export default function MoldWorkOrdersPage() {
                   {/* Sheet Header */}
                   <div className="flex justify-between items-start border-b-2 border-black pb-2 mb-3">
                     <div>
-                      <h2 className="text-[18px] font-bold tracking-widest text-center uppercase">新規金型製造工程票</h2>
+                      <h2 className="text-[18px] font-bold tracking-widest text-center uppercase">{t('printArea.title')}</h2>
                       <div className="text-[9px] text-gray-600 mt-1">YOSHIDA PACKAGE CO., LTD.</div>
                     </div>
                     <div className="border border-black p-1 text-center w-20">
-                      <div className="border-b border-black pb-0.5 text-[8px]">確認印</div>
+                      <div className="border-b border-black pb-0.5 text-[8px]">{t('printArea.confirmStamp')}</div>
                       <div className="h-10 flex items-center justify-center">
                         {renderStampCell(stampManager)}
                       </div>
@@ -1043,19 +1053,19 @@ export default function MoldWorkOrdersPage() {
                   <table className="w-full border-collapse border border-black mb-3">
                     <tbody>
                       <tr>
-                        <td className="border border-black bg-gray-100 p-1 w-20 font-bold">型番 (Mã khuôn)</td>
+                        <td className="border border-black bg-gray-100 p-1 w-20 font-bold">{t('printArea.moldCode')}</td>
                         <td className="border border-black p-1 font-bold text-[12px]">{selectedPo.order_lines?.products?.product_code || '---'}</td>
-                        <td className="border border-black bg-gray-100 p-1 w-20 font-bold">記入者</td>
+                        <td className="border border-black bg-gray-100 p-1 w-20 font-bold">{t('printArea.recorder')}</td>
                         <td className="border border-black p-1 w-28">小林 - 弘</td>
                       </tr>
                       <tr>
-                        <td className="border border-black bg-gray-100 p-1 font-bold">品名 (Mã khay)</td>
+                        <td className="border border-black bg-gray-100 p-1 font-bold">{t('printArea.trayCode')}</td>
                         <td className="border border-black p-1 font-bold">{selectedPo.order_lines?.products?.product_name_internal || '---'}</td>
-                        <td className="border border-black bg-gray-100 p-1 font-bold">記載日</td>
+                        <td className="border border-black bg-gray-100 p-1 font-bold">{t('printArea.recordDate')}</td>
                         <td className="border border-black p-1">{new Date(selectedPo.created_at).toLocaleDateString()}</td>
                       </tr>
                       <tr>
-                        <td className="border border-black bg-gray-100 p-1 font-bold">材質 (Vật liệu)</td>
+                        <td className="border border-black bg-gray-100 p-1 font-bold">{t('printArea.material')}</td>
                         <td className="border border-black p-1 font-bold" colSpan={3}>
                           {selectedPo.order_lines?.products?.product_material_specs?.[0] ? (
                             `${selectedPo.order_lines.products.product_material_specs[0].material_type} / ${selectedPo.order_lines.products.product_material_specs[0].thickness_mm}mm / Grade: ${selectedPo.order_lines.products.product_material_specs[0].material_grade || '---'} / ${selectedPo.order_lines.products.product_material_specs[0].static_charge || '---'}`
@@ -1063,76 +1073,76 @@ export default function MoldWorkOrdersPage() {
                         </td>
                       </tr>
                       <tr>
-                        <td className="border border-black bg-gray-100 p-1 font-bold">出荷納期</td>
+                        <td className="border border-black bg-gray-100 p-1 font-bold">{t('printArea.deliveryDate')}</td>
                         <td className="border border-black p-1 text-red-600 font-bold">
                           {targetMoldingDate ? targetMoldingDate.replace(/-/g, '/') : '---'}
                         </td>
-                        <td className="border border-black bg-gray-100 p-1 font-bold">出荷サンプル数</td>
+                        <td className="border border-black bg-gray-100 p-1 font-bold">{t('printArea.sampleCount')}</td>
                         <td className="border border-black p-1 font-bold text-red-600">
-                          {freeQuantity}枚(無償) + {sampleQuantity}枚(有償)
+                          {freeQuantity} {t('printArea.pieces')} ({t('printArea.free')}) + {sampleQuantity} {t('printArea.pieces')} ({t('printArea.charged')})
                         </td>
                       </tr>
                       <tr>
-                        <td className="border border-black bg-gray-100 p-1 font-bold">起工数</td>
-                        <td className="border border-black p-1 font-bold">{moldSetsToMake} 面</td>
-                        <td className="border border-black bg-gray-100 p-1 font-bold">取数 (Lòng khay)</td>
-                        <td className="border border-black p-1 font-bold">{cavitiesPerMold} 取</td>
+                        <td className="border border-black bg-gray-100 p-1 font-bold">{t('printArea.moldSets')}</td>
+                        <td className="border border-black p-1 font-bold">{moldSetsToMake} {t('printArea.sets')}</td>
+                        <td className="border border-black bg-gray-100 p-1 font-bold">{t('printArea.cavityCount')}</td>
+                        <td className="border border-black p-1 font-bold">{cavitiesPerMold} {t('printArea.cavities')}</td>
                       </tr>
                       <tr>
-                        <td className="border border-black bg-gray-100 p-1 font-bold">型寸法</td>
+                        <td className="border border-black bg-gray-100 p-1 font-bold">{t('printArea.moldSize')}</td>
                         <td className="border border-black p-1">
                           {selectedPo.order_lines?.products?.design_revisions?.[0]?.design_length || 470} × {selectedPo.order_lines?.products?.design_revisions?.[0]?.design_width || 400}
                         </td>
-                        <td className="border border-black bg-gray-100 p-1 font-bold">製品寸法</td>
+                        <td className="border border-black bg-gray-100 p-1 font-bold">{t('printArea.productSize')}</td>
                         <td className="border border-black p-1">
                           {selectedPo.order_lines?.products?.design_revisions?.[0]?.cutline_length || 400} × {selectedPo.order_lines?.products?.design_revisions?.[0]?.cutline_width || 360}
                         </td>
                       </tr>
                       <tr>
-                        <td className="border border-black bg-gray-100 p-1 font-bold">プラグ (Plug)</td>
-                        <td className="border border-black p-1 font-semibold">{plugType !== 'NONE' ? `有 (Type: ${plugType})` : '無'}</td>
-                        <td className="border border-black bg-gray-100 p-1 font-bold">カッター (Cutter)</td>
-                        <td className="border border-black p-1">{hasSeparateCutter ? '新規 (別抜き)' : '既存 (インライン)'}</td>
+                        <td className="border border-black bg-gray-100 p-1 font-bold">{t('printArea.plug')}</td>
+                        <td className="border border-black p-1 font-semibold">{plugType !== 'NONE' ? `${t('printArea.plugYes')} (Type: ${plugType})` : t('printArea.plugNo')}</td>
+                        <td className="border border-black bg-gray-100 p-1 font-bold">{t('printArea.cutter')}</td>
+                        <td className="border border-black p-1">{hasSeparateCutter ? t('printArea.separateCutter') : t('printArea.inlineCutter')}</td>
                       </tr>
                       <tr>
-                        <td className="border border-black bg-gray-100 p-1 font-bold">水冷盤</td>
-                        <td className="border border-black p-1">{coolingPlateSpec === 'NEW' ? '新規' : '既存'}</td>
-                        <td className="border border-black bg-gray-100 p-1 font-bold">枠 (Frame)</td>
-                        <td className="border border-black p-1">{frameSpec === 'NEW' ? '新規' : '既存'}</td>
+                        <td className="border border-black bg-gray-100 p-1 font-bold">{t('printArea.coolingPlate')}</td>
+                        <td className="border border-black p-1">{coolingPlateSpec === 'NEW' ? t('printArea.newPlate') : t('printArea.existingPlate')}</td>
+                        <td className="border border-black bg-gray-100 p-1 font-bold">{t('printArea.frame')}</td>
+                        <td className="border border-black p-1">{frameSpec === 'NEW' ? t('printArea.newFrame') : t('printArea.existingFrame')}</td>
                       </tr>
                     </tbody>
                   </table>
 
                   {/* Arrangements Sections */}
-                  <div className="font-bold text-[12px] border-b border-black pb-0.5 mb-1.5 uppercase">手配 (担当; 吉田) — Báo cáo vật tư</div>
+                  <div className="font-bold text-[12px] border-b border-black pb-0.5 mb-1.5 uppercase">{t('printArea.procurementSection')}</div>
                   <table className="w-full border-collapse border border-black mb-3">
                     <thead>
                       <tr className="bg-gray-100">
-                        <th className="border border-black p-1 text-left w-24">手配対象</th>
-                        <th className="border border-black p-1 text-center w-16">必要・不要</th>
-                        <th className="border border-black p-1 text-center w-24">期納期 (Yêu cầu)</th>
-                        <th className="border border-black p-1 text-center w-24">計画日 (Thực tế)</th>
-                        <th className="border border-black p-1 text-center w-20">確認印</th>
+                        <th className="border border-black p-1 text-left w-24">{t('printArea.procureTarget')}</th>
+                        <th className="border border-black p-1 text-center w-16">{t('printArea.procureRequired')}</th>
+                        <th className="border border-black p-1 text-center w-24">{t('printArea.procureTargetDeadline')}</th>
+                        <th className="border border-black p-1 text-center w-24">{t('printArea.procurePlannedDate')}</th>
+                        <th className="border border-black p-1 text-center w-20">{t('printArea.stampCell')}</th>
                       </tr>
                     </thead>
                     <tbody>
                       <tr>
-                        <td className="border border-black p-1 font-bold">アルミ材 (Nhôm)</td>
-                        <td className="border border-black p-1 text-center font-medium text-green-700">要</td>
+                        <td className="border border-black p-1 font-bold">{t('printArea.aluminum')}</td>
+                        <td className="border border-black p-1 text-center font-medium text-green-700">{t('printArea.required')}</td>
                         <td className="border border-black p-1 text-center font-bold text-red-600">{targetAluminumDate ? targetAluminumDate.substring(5).replace(/-/g, '/') : '---'}</td>
-                        <td className="border border-black p-1 text-center text-blue-600 font-bold">{actualAluminumDate ? actualAluminumDate.substring(5).replace(/-/g, '/') : '未計画'}</td>
+                        <td className="border border-black p-1 text-center text-blue-600 font-bold">{actualAluminumDate ? actualAluminumDate.substring(5).replace(/-/g, '/') : t('printArea.unplanned')}</td>
                         <td className="border border-black p-1 text-center">{renderStampCell(stampProcurement)}</td>
                       </tr>
                       <tr>
-                        <td className="border border-black p-1 font-bold">プラグ (Plug)</td>
-                        <td className="border border-black p-1 text-center">{plugType !== 'NONE' ? '要' : '不要'}</td>
+                        <td className="border border-black p-1 font-bold">{t('printArea.plugLabel')}</td>
+                        <td className="border border-black p-1 text-center">{plugType !== 'NONE' ? t('printArea.required') : t('printArea.notRequired')}</td>
                         <td className="border border-black p-1 text-center font-bold text-red-600">{plugType !== 'NONE' && targetPlugDate ? targetPlugDate.substring(5).replace(/-/g, '/') : '---'}</td>
                         <td className="border border-black p-1 text-center text-blue-600 font-bold">{plugType !== 'NONE' && actualPlugDate ? actualPlugDate.substring(5).replace(/-/g, '/') : '---'}</td>
                         <td className="border border-black p-1 text-center">{plugType !== 'NONE' ? renderStampCell(stampProcurement) : null}</td>
                       </tr>
                       <tr>
-                        <td className="border border-black p-1 font-bold">カッター (Cutter)</td>
-                        <td className="border border-black p-1 text-center">{hasSeparateCutter ? '要' : '不要'}</td>
+                        <td className="border border-black p-1 font-bold">{t('printArea.cutterLabel')}</td>
+                        <td className="border border-black p-1 text-center">{hasSeparateCutter ? t('printArea.required') : t('printArea.notRequired')}</td>
                         <td className="border border-black p-1 text-center font-bold text-red-600">{hasSeparateCutter && targetCutterDate ? targetCutterDate.substring(5).replace(/-/g, '/') : '---'}</td>
                         <td className="border border-black p-1 text-center text-blue-600 font-bold">{hasSeparateCutter && actualCutterDate ? actualCutterDate.substring(5).replace(/-/g, '/') : '---'}</td>
                         <td className="border border-black p-1 text-center">{hasSeparateCutter ? renderStampCell(stampProcurement) : null}</td>
@@ -1141,23 +1151,23 @@ export default function MoldWorkOrdersPage() {
                   </table>
 
                   {/* Mold Manufacturing Section */}
-                  <div className="font-bold text-[12px] border-b border-black pb-0.5 mb-1.5 uppercase">金型製造 (担当; 遠藤) — Chế tạo khuôn CNC</div>
+                  <div className="font-bold text-[12px] border-b border-black pb-0.5 mb-1.5 uppercase">{t('printArea.moldMfgSection')}</div>
                   <table className="w-full border-collapse border border-black mb-3">
                     <tbody>
                       <tr>
-                        <td className="border border-black bg-gray-100 p-1 w-24 font-bold">加工場所</td>
-                        <td className="border border-black p-1 font-medium">社内 (In-house CNC)</td>
-                        <td className="border border-black bg-gray-100 p-1 w-24 font-bold">本型納期 (Yêu cầu)</td>
+                        <td className="border border-black bg-gray-100 p-1 w-24 font-bold">{t('printArea.mfgLocation')}</td>
+                        <td className="border border-black p-1 font-medium">{t('printArea.mfgLocationInHouse')}</td>
+                        <td className="border border-black bg-gray-100 p-1 w-24 font-bold">{t('printArea.reqMoldDate')}</td>
                         <td className="border border-black p-1 font-bold text-red-600">{targetMoldDate ? targetMoldDate.replace(/-/g, '/') : '---'}</td>
                       </tr>
                       <tr>
-                        <td className="border border-black bg-gray-100 p-1 font-bold">金型状態 (Thực tế)</td>
+                        <td className="border border-black bg-gray-100 p-1 font-bold">{t('printArea.moldStatus')}</td>
                         <td className="border border-black p-1 font-bold text-blue-600" colSpan={3}>
-                          {actualMoldDate ? `完了予定日 (Gantt): ${actualMoldDate.replace(/-/g, '/')}` : '金型製作予定 (Chờ xếp lịch Gantt)'}
+                          {actualMoldDate ? `${t('printArea.actualMfgDatePrefix')}${actualMoldDate.replace(/-/g, '/')}` : t('printArea.actualMfgDatePending')}
                         </td>
                       </tr>
                       <tr>
-                        <td className="border border-black bg-gray-100 p-1 font-bold">担当者終了印</td>
+                        <td className="border border-black bg-gray-100 p-1 font-bold">{t('printArea.mfgStamp')}</td>
                         <td className="border border-black p-1 text-center" colSpan={3}>
                           {renderStampCell(stampMoldShop)}
                         </td>
@@ -1166,43 +1176,43 @@ export default function MoldWorkOrdersPage() {
                   </table>
 
                   {/* Molding Section */}
-                  <div className="font-bold text-[12px] border-b border-black pb-0.5 mb-1.5 uppercase">成形部指示 (担当; 小比類巻) — Ép khay định hình</div>
+                  <div className="font-bold text-[12px] border-b border-black pb-0.5 mb-1.5 uppercase">{t('printArea.moldingSection')}</div>
                   <table className="w-full border-collapse border border-black mb-3">
                     <tbody>
                       <tr>
-                        <td className="border border-black bg-gray-100 p-1 w-24 font-bold">成形機</td>
+                        <td className="border border-black bg-gray-100 p-1 w-24 font-bold">{t('printArea.moldingMachine')}</td>
                         <td className="border border-black p-1 font-bold">
                           {assignedMachine ? (
                             machines.find(m => m.machine_id === assignedMachine)?.machine_name || 'ILLIG'
                           ) : 'ILLIG'}
                         </td>
-                        <td className="border border-black bg-gray-100 p-1 w-24 font-bold">出荷予定日 (Yêu cầu)</td>
+                        <td className="border border-black bg-gray-100 p-1 w-24 font-bold">{t('printArea.deliveryDateLabel')}</td>
                         <td className="border border-black p-1 font-bold text-red-600">
                           {targetMoldingDate ? targetMoldingDate.replace(/-/g, '/') : '---'}
                         </td>
                       </tr>
                       <tr>
-                        <td className="border border-black bg-gray-100 p-1 font-bold">別抜き (Cắt rời)</td>
-                        <td className="border border-black p-1 font-bold">{hasSeparateCutter ? '有 (別抜き機使用)' : '無 (In-line)'}</td>
-                        <td className="border border-black bg-gray-100 p-1 font-bold">計画日 (Thực tế)</td>
+                        <td className="border border-black bg-gray-100 p-1 font-bold">{t('printArea.separateCutterLabel')}</td>
+                        <td className="border border-black p-1 font-bold">{hasSeparateCutter ? t('printArea.separateCutterYes') : t('printArea.separateCutterNo')}</td>
+                        <td className="border border-black bg-gray-100 p-1 font-bold">{t('printArea.moldingActualDate')}</td>
                         <td className="border border-black p-1 text-blue-600 font-bold">
-                          {actualMoldingDate ? actualMoldingDate.replace(/-/g, '/') : '未計画'}
+                          {actualMoldingDate ? actualMoldingDate.replace(/-/g, '/') : t('printArea.unplanned')}
                         </td>
                       </tr>
                       <tr>
-                        <td className="border border-black bg-gray-100 p-1 font-bold">袋詰め (Bọc túi)</td>
-                        <td className="border border-black p-1">{baggingRequired ? '要 (Bọc nylon bảo vệ)' : '否'}</td>
-                        <td className="border border-black bg-gray-100 p-1 font-bold">原価 (Cost)</td>
+                        <td className="border border-black bg-gray-100 p-1 font-bold">{t('printArea.bagging')}</td>
+                        <td className="border border-black p-1">{baggingRequired ? t('printArea.baggingYes') : t('printArea.baggingNo')}</td>
+                        <td className="border border-black bg-gray-100 p-1 font-bold">{t('printArea.costLabel')}</td>
                         <td className="border border-black p-1 font-bold">{cost ? `${cost} JPY` : '--- JPY'}</td>
                       </tr>
                       <tr>
-                        <td className="border border-black bg-gray-100 p-1 font-bold">寸法公差</td>
+                        <td className="border border-black bg-gray-100 p-1 font-bold">{t('printArea.toleranceLabel')}</td>
                         <td className="border border-black p-1 font-semibold" colSpan={3}>
                           X: 400 ({toleranceX}) , Y: 360 ({toleranceY}) , Pitch: ({tolerancePitch})
                         </td>
                       </tr>
                       <tr>
-                        <td className="border border-black bg-gray-100 p-1 font-bold">担当者終了印</td>
+                        <td className="border border-black bg-gray-100 p-1 font-bold">{t('printArea.mfgStamp')}</td>
                         <td className="border border-black p-1 text-center" colSpan={3}>
                           {renderStampCell(stampMoldingShop)}
                         </td>
@@ -1213,49 +1223,49 @@ export default function MoldWorkOrdersPage() {
                   {/* Exception checks */}
                   <div className="grid grid-cols-2 gap-2 border border-black p-2 mb-3 bg-gray-50">
                     <div className="flex items-center gap-1.5">
-                      <span className="font-bold">旧トレイ在庫廃棄確認:</span>
-                      <span>{discardOldStock ? '有 (Tiêu hủy)' : '無 (Không)'}</span>
+                      <span className="font-bold">{t('printArea.discardStockConfirm')}</span>
+                      <span>{discardOldStock ? t('printArea.yesText') : t('printArea.noText')}</span>
                       {discardOldStock && renderStampCell(stampQc)}
                     </div>
                     <div className="flex items-center gap-1.5">
-                      <span className="font-bold">旧図面差し替え確認:</span>
-                      <span>{replaceQcDrawing ? '有 (Đã đổi)' : '無 (Không)'}</span>
+                      <span className="font-bold">{t('printArea.replaceDrawingConfirm')}</span>
+                      <span>{replaceQcDrawing ? t('printArea.yesText') : t('printArea.noText')}</span>
                       {replaceQcDrawing && renderStampCell(stampQc)}
                     </div>
                   </div>
 
                   {/* Delivery & Special Packaging rules */}
-                  <div className="font-bold text-[12px] border-b border-black pb-0.5 mb-1.5 uppercase">送り先 & 梱包ルール (Giao hàng & Đóng gói)</div>
+                  <div className="font-bold text-[12px] border-b border-black pb-0.5 mb-1.5 uppercase">{t('printArea.deliverySection')}</div>
                   <div className="border border-black p-2 bg-gray-50 flex flex-col gap-1">
                     <div>
-                      <span className="font-bold text-gray-700">納入先 (Địa chỉ nhận):</span>{' '}
+                      <span className="font-bold text-gray-700">{t('printArea.deliveryAddress')}:</span>{' '}
                       {selectedPo.order_lines?.delivery_sites ? (
                         `${selectedPo.order_lines.delivery_sites.site_name} / ${selectedPo.order_lines.delivery_sites.site_address}`
                       ) : (
-                        `イリソ電子工業株式会社`
+                        t('printArea.defaultDeliveryAddress')
                       )}
                     </div>
                     <div>
-                      <span className="font-bold text-red-600">梱包指示 (Hướng dẫn đóng gói mẫu):</span>{' '}
-                      <span className="font-semibold text-red-700">{packagingInstructions || '10枚と5枚は袋分けして同梱納入してください。'}</span>
+                      <span className="font-bold text-red-600">{t('printArea.packagingRule')}:</span>{' '}
+                      <span className="font-semibold text-red-700">{packagingInstructions || t('printArea.defaultPackagingRule')}</span>
                     </div>
                     <div className="text-[10px] text-gray-500 mt-1 italic">
-                      ※ 事務所保管サンプルとして別途 各{officeQuantity}枚 を確保してください。
+                      {t('printArea.officeSampleNote', { qty: officeQuantity })}
                     </div>
                   </div>
 
                   {/* Signature block */}
                   <div className="mt-8 flex justify-end gap-1">
                     <div className="border border-gray-400 p-1 text-center w-20 text-[9px]">
-                      設計担当
+                      {t('printArea.designer')}
                       <div className="h-6 mt-1 flex items-center justify-center text-red-500 font-bold text-[10px]">クアン</div>
                     </div>
                     <div className="border border-gray-400 p-1 text-center w-20 text-[9px]">
-                      金型担当
+                      {t('printArea.moldMaker')}
                       <div className="h-6 mt-1 flex items-center justify-center text-red-500 font-bold text-[10px]">遠藤</div>
                     </div>
                     <div className="border border-gray-400 p-1 text-center w-20 text-[9px]">
-                      成形担当
+                      {t('printArea.moldingOperator')}
                       <div className="h-6 mt-1 flex items-center justify-center text-red-500 font-bold text-[10px]">谷口</div>
                     </div>
                   </div>
@@ -1269,8 +1279,8 @@ export default function MoldWorkOrdersPage() {
         ) : (
           <div className="flex-1 flex flex-col items-center justify-center border border-[var(--border-default)] rounded-md bg-white p-8 text-center">
             <FileText className="w-12 h-12 text-[var(--text-muted)] mb-3" />
-            <h3 className="font-bold text-[14px]">指示書が選択されていません</h3>
-            <p className="text-[12px] text-[var(--text-muted)] mt-1">左パネルのリストから指示書を選択するか、新規作成してください。</p>
+            <h3 className="font-bold text-[14px]">{t('noInstructionSelected')}</h3>
+            <p className="text-[12px] text-[var(--text-muted)] mt-1">{t('selectInstructionHint')}</p>
           </div>
         )}
 
@@ -1282,7 +1292,7 @@ export default function MoldWorkOrdersPage() {
           <div className="bg-white rounded-md border border-[var(--border-default)] w-full max-w-[640px] shadow-lg flex flex-col max-h-[90vh]">
             <div className="p-4 border-b border-[var(--border-default)] flex justify-between items-center bg-[var(--bg-surface-2)]">
               <h2 className="font-bold text-[14px] flex items-center gap-1.5">
-                <FileText className="w-4 h-4 text-[var(--accent)]" /> 新規金型製造工程票の起工 / Khởi tạo chỉ thị khuôn mới
+                <FileText className="w-4 h-4 text-[var(--accent)]" /> {t('modalTitle')}
               </h2>
               <button onClick={() => setShowCreateModal(false)} className="text-[var(--text-muted)] hover:text-black">
                 <X className="w-5 h-5" />
@@ -1291,27 +1301,27 @@ export default function MoldWorkOrdersPage() {
             
             <div className="p-4 overflow-y-auto flex-1 flex flex-col gap-4">
               {loadingPending ? (
-                <div className="p-8 text-center text-[var(--text-muted)]">読み込み中...</div>
+                <div className="p-8 text-center text-[var(--text-muted)]">{t('loading')}</div>
               ) : pendingOrderLines.length === 0 ? (
                 <div className="p-8 text-center text-red-600 bg-red-50 rounded-md border border-red-200">
                   <AlertTriangle className="w-8 h-8 mx-auto mb-2" />
-                  <p className="font-bold text-[13px]">起工可能な承認済み đơn hàng trống!</p>
+                  <p className="font-bold text-[13px]">{t('noPendingOrdersTitle')}</p>
                   <p className="text-[11px] mt-1 text-gray-500">
-                    新規作成するには、まず「見積書」または「受注」メニューから製品の注文を作成し、ステータスを「承認済 (APPROVED)」に変更する必要があります。
+                    {t('noPendingOrdersHint')}
                   </p>
                 </div>
               ) : (
                 <div className="flex flex-col gap-4">
                   {/* Select Order Line */}
                   <div className="flex flex-col gap-1.5">
-                    <label className="font-semibold text-[12px]">対象の注文品を選択 / Chọn dòng đơn hàng</label>
+                    <label className="font-semibold text-[12px]">{t('selectOrderLine')}</label>
                     <select 
                       id="line-select"
                       className="form-input w-full"
                       value={selectedLineId}
                       onChange={(e) => handleSelectPendingLine(e.target.value)}
                     >
-                      <option value="">- 選択してください -</option>
+                      <option value="">{t('selectOrderLineHint')}</option>
                       {pendingOrderLines.map(l => (
                         <option key={l.line_id} value={l.line_id}>
                           {l.orders.companies.company_code} - {l.products.product_name_internal} ({l.quantity} 枚) - PO: {l.orders.order_no}
@@ -1323,48 +1333,48 @@ export default function MoldWorkOrdersPage() {
                   {selectedLineId && (
                     <div className="border border-orange-200 bg-orange-50/20 p-4 rounded-md flex flex-col gap-4">
                       <div className="font-bold text-[12px] text-orange-800 flex items-center gap-1.5">
-                        <Sliders className="w-4 h-4" /> 初期設定パラメータ / Thiết lập ban đầu
+                        <Sliders className="w-4 h-4" /> {t('initialParams')}
                       </div>
 
                       <div className="grid grid-cols-2 gap-3">
                         <div>
-                          <label className="text-[11px] font-semibold">起工数 (Số bộ khuôn cần làm)</label>
+                          <label className="text-[11px] font-semibold">{t('moldSetsToMake')}</label>
                           <input type="number" className="form-input w-full mt-1" value={moldSetsToMake} onChange={(e) => setMoldSetsToMake(Number(e.target.value))} />
                         </div>
                         <div>
-                          <label className="text-[11px] font-semibold">取数 (Cavities per mold)</label>
+                          <label className="text-[11px] font-semibold">{t('cavitiesPerMold')}</label>
                           <input type="number" className="form-input w-full mt-1" value={cavitiesPerMold} onChange={(e) => setCavitiesPerMold(Number(e.target.value))} />
                         </div>
                       </div>
 
                       {/* Deadlines inputs */}
                       <div className="flex flex-col gap-2.5">
-                        <div className="font-semibold text-[12px] text-gray-700">各部門納期要求 (Target Deadlines)</div>
+                        <div className="font-semibold text-[12px] text-gray-700">{t('targetDeadlines')}</div>
                         
                         <div className="grid grid-cols-2 gap-3">
                           <div>
-                            <label className="text-[11px] text-[var(--text-muted)]">アルミ材 (Ngày phôi nhôm)</label>
+                            <label className="text-[11px] text-[var(--text-muted)]">{t('reqAluminumDate')}</label>
                             <input type="date" className="form-input w-full mt-1" value={reqAluminumDate} onChange={(e) => setReqAluminumDate(e.target.value)} />
                           </div>
                           <div>
-                            <label className="text-[11px] text-[var(--text-muted)]">プラグ (Hạn Plug)</label>
+                            <label className="text-[11px] text-[var(--text-muted)]">{t('reqPlugDate')}</label>
                             <input type="date" className="form-input w-full mt-1" value={reqPlugDate} onChange={(e) => setReqPlugDate(e.target.value)} />
                           </div>
                         </div>
 
                         <div className="grid grid-cols-2 gap-3">
                           <div>
-                            <label className="text-[11px] text-[var(--text-muted)]">カッター (Hạn Dao)</label>
+                            <label className="text-[11px] text-[var(--text-muted)]">{t('reqCutterDate')}</label>
                             <input type="date" className="form-input w-full mt-1" value={reqCutterDate} onChange={(e) => setReqCutterDate(e.target.value)} />
                           </div>
                           <div>
-                            <label className="text-[11px] text-[var(--text-muted)]">本型納期 (Hạn khuôn)</label>
+                            <label className="text-[11px] text-[var(--text-muted)]">{t('reqMoldDate')}</label>
                             <input type="date" className="form-input w-full mt-1" value={reqMoldDate} onChange={(e) => setReqMoldDate(e.target.value)} />
                           </div>
                         </div>
 
                         <div>
-                          <label className="text-[11px] text-[var(--text-muted)]">出荷納期 (Hạn đúc mẫu/xuất khay)</label>
+                          <label className="text-[11px] text-[var(--text-muted)]">{t('reqMoldingDate')}</label>
                           <input type="date" className="form-input w-full mt-1" value={reqMoldingDate} onChange={(e) => setReqMoldingDate(e.target.value)} />
                         </div>
                       </div>
@@ -1375,13 +1385,13 @@ export default function MoldWorkOrdersPage() {
             </div>
 
             <div className="p-4 border-t border-[var(--border-default)] flex justify-end gap-2 bg-[var(--bg-surface-2)]">
-              <button onClick={() => setShowCreateModal(false)} className="btn btn-secondary h-8 px-4">キャンセル</button>
+              <button onClick={() => setShowCreateModal(false)} className="btn btn-secondary h-8 px-4">{t('cancel')}</button>
               <button 
                 className="btn btn-primary h-8 px-6" 
                 onClick={handleCreateInstruction}
                 disabled={saving || !selectedLineId}
               >
-                {saving ? '作成中...' : '起工・作成'}
+                {saving ? t('savingButton') : t('create')}
               </button>
             </div>
           </div>

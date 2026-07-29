@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic'
+
 import type { Metadata } from 'next'
 import ReportDashboard from './ReportDashboard-v8.5.2-1'
 import Link from 'next/link'

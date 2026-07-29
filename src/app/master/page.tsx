@@ -1,5 +1,7 @@
 'use client'
 
+import { useTranslations } from 'next-intl'
+
 import { useEffect, useState, useCallback, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import {
@@ -81,6 +83,7 @@ const ALL_TYPES: CompanyType[] = ['CUSTOMER', 'SUPPLIER', 'SUBCONTRACTOR', 'INTE
    Page Component
    ═══════════════════════════════════════════════════════════════════════ */
 export default function CompaniesPage() {
+  const t = useTranslations()
   const supabase = createClient()
 
   /* ── State ──────────────────────────────────────────────────────────── */
@@ -296,32 +299,25 @@ export default function CompaniesPage() {
             <thead>
               <tr>
                 <th style={{ width: '100px' }}>
-                  <span className="ja">コード</span>
-                  <span className="vi">Mã</span>
+                  {t('Master.ma')}
                 </th>
                 <th style={{ width: '220px' }}>
-                  <span className="ja">会社名</span>
-                  <span className="vi">Tên công ty</span>
+                  {t('Master.tenCongTy')}
                 </th>
                 <th style={{ width: '200px' }}>
-                  <span className="ja">ローマ字</span>
-                  <span className="vi">Romaji</span>
+                  {t('Master.romaji')}
                 </th>
                 <th style={{ width: '220px' }}>
-                  <span className="ja">種別</span>
-                  <span className="vi">Loại</span>
+                  {t('Master.loai')}
                 </th>
                 <th style={{ width: '120px' }}>
-                  <span className="ja">電話番号</span>
-                  <span className="vi">SĐT</span>
+                  {t('Master.st')}
                 </th>
                 <th style={{ width: '70px', textAlign: 'center' }}>
-                  <span className="ja">状態</span>
-                  <span className="vi">Trạng thái</span>
+                  {t('Master.trangThai')}
                 </th>
                 <th style={{ width: '90px', textAlign: 'center' }}>
-                  <span className="ja">操作</span>
-                  <span className="vi">Thao tác</span>
+                  {t('Master.thaoTac')}
                 </th>
               </tr>
             </thead>

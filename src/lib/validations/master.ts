@@ -2,8 +2,8 @@ import { z } from 'zod';
 
 export const productMasterSchema = z.object({
   id: z.string().optional(),
-  code: z.string().min(1, 'Product code is required'),
-  name: z.string().min(1, 'Product name is required'),
+  code: z.string().min(1, 'reqProductCode'),
+  name: z.string().min(1, 'reqProductName'),
   customer_id: z.string().nullable().optional(),
   customer_product_name: z.string().nullable().optional(),
   customer_part_number: z.string().nullable().optional(),
@@ -31,8 +31,8 @@ export type ProductMasterFormValues = z.infer<typeof productMasterSchema>;
 
 export const customerSchema = z.object({
   id: z.string().optional(),
-  customer_code: z.string().min(1, 'Mã khách hàng là bắt buộc'),
-  delivery_name: z.string().min(1, 'Tên khách hàng là bắt buộc'),
+  customer_code: z.string().min(1, 'reqCustomerCode'),
+  delivery_name: z.string().min(1, 'reqDeliveryName'),
   customer_name_jp: z.string().nullable().optional(),
   delivery_address: z.string().nullable().optional(),
   contact_person: z.string().nullable().optional(),
@@ -50,9 +50,9 @@ export type CustomerFormValues = z.infer<typeof customerSchema>;
 
 export const moldRevisionSchema = z.object({
   id: z.string().optional(),
-  mold_base_id: z.string().min(1, 'Khuôn gốc là bắt buộc'),
-  revision_code: z.string().min(1, 'Mã phiên bản (Revision Code) là bắt buộc'),
-  version_label: z.string().min(1, 'Nhãn phiên bản (Version Label) là bắt buộc'),
+  mold_base_id: z.string().min(1, 'reqMoldBase'),
+  revision_code: z.string().min(1, 'reqRevisionCode'),
+  version_label: z.string().min(1, 'reqVersionLabel'),
   approved_date: z.string().nullable().optional(),
   version_note: z.string().nullable().optional(),
   product_id: z.string().nullable().optional(),

@@ -1,5 +1,7 @@
 'use client'
 
+import { useTranslations, useLocale } from 'next-intl'
+
 import { CheckCircle2, Circle, Clock, ArrowUp, ArrowDown, ArrowUpDown, Pencil, Trash2, Plus } from 'lucide-react'
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
@@ -12,6 +14,10 @@ const STEP_STATUS_MAP: Record<string, { ja: string; color: string }> = {
 }
 
 export function StepsTab({ job, onRefresh }: { job: any; onRefresh?: () => void }) {
+  const t = useTranslations()
+  const locale = useLocale()
+  const isVi = locale === 'vi'
+
   const steps = [...(job.job_steps || [])].sort((a: any, b: any) => a.step_no - b.step_no)
   const supabase = createClient()
 
@@ -50,8 +56,7 @@ export function StepsTab({ job, onRefresh }: { job: any; onRefresh?: () => void 
     <th style={{ ...style, cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSort(col)}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
         <div>
-          <span className="ja">{ja}</span>
-          <span className="vi">{vi}</span>
+          {isVi ? vi : ja}
         </div>
         <SortIcon col={col} />
       </div>
@@ -98,13 +103,11 @@ export function StepsTab({ job, onRefresh }: { job: any; onRefresh?: () => void 
         <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-default)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 6 }}>
             <Clock size={16} style={{ color: 'var(--accent)' }} />
-            <span className="ja">工程一覧</span>
-            <span className="vi" style={{ marginLeft: 4 }}>Danh sách công đoạn</span>
+            {t('Equipment.danhSachCongOan')}
           </h3>
           <button className="btn btn-primary text-xs" onClick={openCreateModal}>
             <Plus size={14} />
-            <span className="ja">新規工程</span>
-            <span className="vi">Thêm công đoạn</span>
+            {t('Equipment.themCongOan')}
           </button>
         </div>
         
@@ -115,8 +118,7 @@ export function StepsTab({ job, onRefresh }: { job: any; onRefresh?: () => void 
                 <SortTh col="step_no" ja="No." vi="STT" style={{ width: 55, textAlign: 'center' }} />
                 <SortTh col="step_name" ja="工程名" vi="Tên công đoạn" style={{ width: 180 }} />
                 <th style={{ width: 80 }}>
-                  <span className="ja">トラック</span>
-                  <span className="vi">Track</span>
+                  {t('Equipment.track')}
                 </th>
                 <SortTh col="step_status" ja="状態" vi="Trạng thái" style={{ width: 100 }} />
                 <SortTh col="planned_start" ja="予定開始" vi="Bắt đầu DK" style={{ width: 110 }} />

@@ -3,6 +3,7 @@
 import React, { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { X, Save, Plus, Trash2 } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import type { Quotation, QuotationLine, QuotationStatus } from '../types'
 
 type Props = {
@@ -14,20 +15,21 @@ type Props = {
   currentUserId: string | null
 }
 
-const ITEM_TYPES = [
-  { value: 'DESIGN_FEE', label: '設計費 (Phí thiết kế)' },
-  { value: 'PROTOTYPE', label: '試作費 (Phí Prototype)' },
-  { value: 'MOLD', label: '金型代 (Phí Khuôn)' },
-  { value: 'PRODUCT', label: '製品代 (Sản phẩm)' },
-  { value: 'OTHER', label: 'その他 (Khác)' }
-]
-
 export default function QuotationFormModal({ caseId, companyId, initialData, onClose, onSuccess, currentUserId }: Props) {
+  const t = useTranslations()
   const isEdit = !!initialData
   const supabase = createClient()
   
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  const ITEM_TYPES = [
+    { value: 'DESIGN_FEE', labelKey: 'Cases.ItemTypes.DESIGN_FEE' },
+    { value: 'PROTOTYPE', labelKey: 'Cases.ItemTypes.PROTOTYPE' },
+    { value: 'MOLD', labelKey: 'Cases.ItemTypes.MOLD' },
+    { value: 'PRODUCT', labelKey: 'Cases.ItemTypes.PRODUCT' },
+    { value: 'OTHER', labelKey: 'Cases.ItemTypes.OTHER' }
+  ]
 
   const defaultLines: QuotationLine[] = initialData?.quotation_lines?.length
     ? initialData.quotation_lines
@@ -88,7 +90,7 @@ export default function QuotationFormModal({ caseId, companyId, initialData, onC
     setError(null)
 
     if (!companyId) {
-      setError('Lỗi: Chưa có thông tin khách hàng (company_id) từ Business Case.')
+      setError(t('Cases.customerInfoError'))
       setSaving(false)
       return
     }
@@ -131,7 +133,7 @@ export default function QuotationFormModal({ caseId, companyId, initialData, onC
           .single()
         
         if (insErr) throw insErr
-        if (!insData) throw new Error('Không lấy được quotation_id sau khi insert')
+        if (!insData) throw new Error(t('Cases.quotationIdError'))
         
         targetQuotationId = insData.quotation_id
       }
@@ -159,7 +161,7 @@ export default function QuotationFormModal({ caseId, companyId, initialData, onC
       onSuccess()
     } catch (err: any) {
       console.error(err)
-      setError(err.message || 'Lỗi khi lưu báo giá')
+      setError(err.message || t('Cases.saveQuotationError'))
       setSaving(false)
     }
   }
@@ -181,10 +183,7 @@ export default function QuotationFormModal({ caseId, companyId, initialData, onC
           display: 'flex', justifyContent: 'space-between', alignItems: 'center'
         }}>
           <h3 style={{ margin: 0, fontSize: 16 }}>
-            <span className="ja">{isEdit ? '見積書編集' : '新規見積作成'}</span>
-            <span className="vi" style={{ marginLeft: 8, fontSize: 12, color: 'var(--text-muted)' }}>
-              {isEdit ? 'Sửa báo giá' : 'Tạo báo giá mới'}
-            </span>
+            <span>{isEdit ? t('Cases.editQuotation') : t('Cases.newQuotation')}</span>
           </h3>
           <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}>
             <X size={20} />
@@ -203,20 +202,20 @@ export default function QuotationFormModal({ caseId, companyId, initialData, onC
             
             <div className="form-grid-2">
               <div className="form-field">
-                <label className="form-label">見積番号 (Mã báo giá)</label>
+                <label className="form-label">{t('Cases.quotationNo')}</label>
                 <input required className="form-input" value={formData.quotation_no}
                   onChange={e => setFormData({ ...formData, quotation_no: e.target.value })}
                   placeholder="YSD-Q-2026-001" />
               </div>
 
               <div className="form-field">
-                <label className="form-label">発行日 (Ngày phát hành)</label>
+                <label className="form-label">{t('Cases.quoteDate')}</label>
                 <input type="date" required className="form-input" value={formData.quote_date}
                   onChange={e => setFormData({ ...formData, quote_date: e.target.value })} />
               </div>
 
               <div className="form-field">
-                <label className="form-label">有効期限 (Hạn báo giá)</label>
+                <label className="form-label">{t('Cases.validUntil')}</label>
                 <input type="date" className="form-input" value={formData.valid_until}
                   onChange={e => setFormData({ ...formData, valid_until: e.target.value })} />
               </div>
@@ -224,9 +223,9 @@ export default function QuotationFormModal({ caseId, companyId, initialData, onC
 
             <div style={{ marginTop: 24, marginBottom: 16 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                <h4 style={{ margin: 0, fontSize: 14 }}>見積明細 (Hạng mục)</h4>
+                <h4 style={{ margin: 0, fontSize: 14 }}>{t('Cases.quotationLines')}</h4>
                 <button type="button" className="btn btn-secondary btn-sm" onClick={addLine}>
-                  <Plus size={14} /> 追加
+                  <Plus size={14} /> {t('Cases.add')}
                 </button>
               </div>
               
@@ -234,11 +233,11 @@ export default function QuotationFormModal({ caseId, companyId, initialData, onC
                 <table className="data-table">
                   <thead>
                     <tr>
-                      <th style={{ width: 150 }}>区分 (Loại)</th>
-                      <th>項目名 (Mô tả chi tiết)</th>
-                      <th style={{ width: 80 }}>数量 (SL)</th>
-                      <th style={{ width: 120 }}>単価 (Đơn giá)</th>
-                      <th style={{ width: 120 }}>金額 (Thành tiền)</th>
+                      <th style={{ width: 150 }}>{t('Cases.itemType')}</th>
+                      <th>{t('Cases.itemDesc')}</th>
+                      <th style={{ width: 80 }}>{t('Cases.qty')}</th>
+                      <th style={{ width: 120 }}>{t('Cases.unitPrice')}</th>
+                      <th style={{ width: 120 }}>{t('Cases.amount')}</th>
                       <th style={{ width: 40 }}></th>
                     </tr>
                   </thead>
@@ -248,7 +247,7 @@ export default function QuotationFormModal({ caseId, companyId, initialData, onC
                         <td>
                           <select className="form-input" value={line.item_type} required
                             onChange={e => handleLineChange(index, 'item_type', e.target.value)}>
-                            {ITEM_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+                            {ITEM_TYPES.map(tType => <option key={tType.value} value={tType.value}>{t(tType.labelKey)}</option>)}
                           </select>
                         </td>
                         <td>
@@ -277,7 +276,7 @@ export default function QuotationFormModal({ caseId, companyId, initialData, onC
                   </tbody>
                   <tfoot>
                     <tr style={{ background: 'var(--bg-surface-2)' }}>
-                      <td colSpan={4} style={{ textAlign: 'right', fontWeight: 600 }}>合計 (Tổng tiền):</td>
+                      <td colSpan={4} style={{ textAlign: 'right', fontWeight: 600 }}>{t('Cases.totalAmount')}:</td>
                       <td style={{ textAlign: 'right', fontWeight: 700, color: 'var(--accent)' }}>
                         {new Intl.NumberFormat('ja-JP').format(totalAmount)} {formData.currency}
                       </td>
@@ -289,19 +288,19 @@ export default function QuotationFormModal({ caseId, companyId, initialData, onC
             </div>
 
             <div className="form-field">
-              <label className="form-label">備考 (Ghi chú)</label>
+              <label className="form-label">{t('Cases.notes')}</label>
               <textarea className="form-textarea" rows={3} value={formData.notes}
                 onChange={e => setFormData({ ...formData, notes: e.target.value })} />
             </div>
 
             <div className="form-field" style={{ marginTop: 16 }}>
-              <label className="form-label">ステータス (Trạng thái)</label>
+              <label className="form-label">{t('Cases.status')}</label>
               <select className="form-input" value={formData.status}
                 onChange={e => setFormData({ ...formData, status: e.target.value as QuotationStatus })}>
-                <option value="draft">下書き (Nháp)</option>
-                <option value="sent">提出済 (Đã gửi)</option>
-                <option value="accepted">承認済 (Đã chốt)</option>
-                <option value="rejected">失注 (Từ chối)</option>
+                <option value="draft">{t('Cases.QuotationStatus.draft')}</option>
+                <option value="sent">{t('Cases.QuotationStatus.sent')}</option>
+                <option value="accepted">{t('Cases.QuotationStatus.accepted')}</option>
+                <option value="rejected">{t('Cases.QuotationStatus.rejected')}</option>
               </select>
             </div>
 
@@ -314,11 +313,11 @@ export default function QuotationFormModal({ caseId, companyId, initialData, onC
           display: 'flex', justifyContent: 'flex-end', gap: 12, background: 'var(--bg-surface)'
         }}>
           <button type="button" className="btn btn-secondary" onClick={onClose} disabled={saving}>
-            キャンセル
+            {t('Cases.cancel')}
           </button>
           <button type="submit" form="quotation-form" className="btn btn-primary" disabled={saving}>
             <Save size={16} />
-            <span style={{ fontFamily: 'var(--font-jp)' }}>{saving ? '保存中...' : '保存'}</span>
+            <span>{saving ? t('Cases.saving') : t('Cases.save')}</span>
           </button>
         </div>
 

@@ -2,8 +2,10 @@
 
 import { useEffect, useState } from "react"
 import { createClient } from "@/lib/supabase/client"
+import { useTranslations } from "next-intl"
 import { CheckinCheckoutModal } from "../designs/_components/CheckinCheckoutModal"
 import { RelocateModal } from "../designs/_components/RelocateModal"
+
 type TabType = 'INFO' | 'HISTORY' | 'JOBS'
 
 export default function MoldDetailPanel({ 
@@ -30,6 +32,7 @@ export default function MoldDetailPanel({
   const [loading, setLoading] = useState(true)
   const [modalMode, setModalMode] = useState<'in' | 'out' | 'relocate' | 'teflon' | null>(null)
   const supabase = createClient()
+  const t = useTranslations("Equipment")
 
   useEffect(() => {
     async function loadData() {
@@ -111,66 +114,66 @@ export default function MoldDetailPanel({
             {/* ĐỊNH DANH */}
             <div className="bg-white border border-slate-200 rounded overflow-hidden">
               <div className="bg-slate-50 px-3 py-1.5 border-b border-slate-200 font-bold text-xs text-slate-600">
-                基本情報 / ĐỊNH DANH
+                {t('basicInfo')}
               </div>
               <div className="p-3 text-sm space-y-2">
-                <div className="grid grid-cols-[100px_1fr]"><span className="text-slate-500 text-xs">Mã khuôn:</span><span className="font-semibold text-slate-800">{data?.system_code || '-'}</span></div>
-                <div className="grid grid-cols-[100px_1fr]"><span className="text-slate-500 text-xs">Tên khuôn:</span><span className="text-slate-800">{base?.product_name_internal || '-'}</span></div>
-                <div className="grid grid-cols-[100px_1fr]"><span className="text-slate-500 text-xs">Loại:</span><span className="text-slate-800">{it?.cav_name || '-'}</span></div>
-                <div className="grid grid-cols-[100px_1fr]"><span className="text-slate-500 text-xs">Cavity:</span><span className="text-slate-800">{data?.cavity || 1}</span></div>
-                <div className="grid grid-cols-[100px_1fr]"><span className="text-slate-500 text-xs">Serial No:</span><span className="text-slate-800">{data?.serial_no || '-'}</span></div>
+                <div className="grid grid-cols-[100px_1fr]"><span className="text-slate-500 text-xs">{t('moldCode')}:</span><span className="font-semibold text-slate-800">{data?.system_code || '-'}</span></div>
+                <div className="grid grid-cols-[100px_1fr]"><span className="text-slate-500 text-xs">{t('moldName')}:</span><span className="text-slate-800">{base?.product_name_internal || '-'}</span></div>
+                <div className="grid grid-cols-[100px_1fr]"><span className="text-slate-500 text-xs">{t('moldType')}:</span><span className="text-slate-800">{it?.cav_name || '-'}</span></div>
+                <div className="grid grid-cols-[100px_1fr]"><span className="text-slate-500 text-xs">{t('cavity')}:</span><span className="text-slate-800">{data?.cavity || 1}</span></div>
+                <div className="grid grid-cols-[100px_1fr]"><span className="text-slate-500 text-xs">{t('serialNo')}:</span><span className="text-slate-800">{data?.serial_no || '-'}</span></div>
               </div>
             </div>
 
             {/* VỊ TRÍ KHO */}
             <div className="bg-white border border-slate-200 rounded overflow-hidden">
               <div className="bg-slate-50 px-3 py-1.5 border-b border-slate-200 font-bold text-xs text-slate-600">
-                保管位置 / VỊ TRÍ KHO
+                {t('storageLocation')}
               </div>
               <div className="p-3 text-sm space-y-2">
-                <div className="grid grid-cols-[100px_1fr]"><span className="text-slate-500 text-xs">Kệ / Tầng:</span><span className="font-medium text-slate-800">{rl?.racks?.name || '-'} / {rl?.label || '-'}</span></div>
-                <div className="grid grid-cols-[100px_1fr]"><span className="text-slate-500 text-xs">Rack Code:</span><span className="text-slate-800 font-mono text-xs">{rl?.code || '-'}</span></div>
-                <div className="grid grid-cols-[100px_1fr]"><span className="text-slate-500 text-xs">Cập nhật:</span><span className="text-slate-800">{data?.updated_at ? new Date(data.updated_at).toLocaleDateString('ja-JP') : '-'}</span></div>
+                <div className="grid grid-cols-[100px_1fr]"><span className="text-slate-500 text-xs">{t('rackLayer')}:</span><span className="font-medium text-slate-800">{rl?.racks?.name || '-'} / {rl?.label || '-'}</span></div>
+                <div className="grid grid-cols-[100px_1fr]"><span className="text-slate-500 text-xs">{t('rackCode')}:</span><span className="text-slate-800 font-mono text-xs">{rl?.code || '-'}</span></div>
+                <div className="grid grid-cols-[100px_1fr]"><span className="text-slate-500 text-xs">{t('updatedAt')}:</span><span className="text-slate-800">{data?.updated_at ? new Date(data.updated_at).toLocaleDateString('ja-JP') : '-'}</span></div>
               </div>
             </div>
 
             {/* THIẾT KẾ */}
             <div className="bg-white border border-slate-200 rounded overflow-hidden">
               <div className="bg-slate-50 px-3 py-1.5 border-b border-slate-200 font-bold text-xs text-slate-600">
-                設計仕様 / THIẾT KẾ
+                {t('designSpec')}
               </div>
               <div className="p-3 text-sm space-y-2">
-                <div className="grid grid-cols-[100px_1fr]"><span className="text-slate-500 text-xs">Revision:</span><span className="text-slate-800">{rev?.revision_code || '-'} / {rev?.version_label || '-'}</span></div>
-                <div className="grid grid-cols-[100px_1fr]"><span className="text-slate-500 text-xs">Kích thước:</span><span className="text-slate-800">{rev?.length_mm || '-'} × {rev?.width_mm || '-'} × {rev?.height_mm || '-'} mm</span></div>
-                <div className="grid grid-cols-[100px_1fr]"><span className="text-slate-500 text-xs">Trọng lượng:</span><span className="text-slate-800">{data?.weight_g ? `${data.weight_g} g` : '-'}</span></div>
-                <div className="grid grid-cols-[100px_1fr]"><span className="text-slate-500 text-xs">Vật liệu:</span><span className="text-slate-800">{data?.material_notes || '-'}</span></div>
-                <div className="grid grid-cols-[100px_1fr]"><span className="text-slate-500 text-xs">Bản vẽ:</span><span className="text-slate-800">{rev?.drawing_no || '-'}</span></div>
+                <div className="grid grid-cols-[100px_1fr]"><span className="text-slate-500 text-xs">{t('revision')}:</span><span className="text-slate-800">{rev?.revision_code || '-'} / {rev?.version_label || '-'}</span></div>
+                <div className="grid grid-cols-[100px_1fr]"><span className="text-slate-500 text-xs">{t('dimensions')}:</span><span className="text-slate-800">{rev?.length_mm || '-'} × {rev?.width_mm || '-'} × {rev?.height_mm || '-'} mm</span></div>
+                <div className="grid grid-cols-[100px_1fr]"><span className="text-slate-500 text-xs">{t('weight')}:</span><span className="text-slate-800">{data?.weight_g ? `${data.weight_g} g` : '-'}</span></div>
+                <div className="grid grid-cols-[100px_1fr]"><span className="text-slate-500 text-xs">{t('material')}:</span><span className="text-slate-800">{data?.material_notes || '-'}</span></div>
+                <div className="grid grid-cols-[100px_1fr]"><span className="text-slate-500 text-xs">{t('drawing')}:</span><span className="text-slate-800">{rev?.drawing_no || '-'}</span></div>
               </div>
             </div>
 
             {/* TRẠNG THÁI */}
             <div className="bg-white border border-slate-200 rounded overflow-hidden">
               <div className="bg-slate-50 px-3 py-1.5 border-b border-slate-200 font-bold text-xs text-slate-600">
-                ステータス / TRẠNG THÁI
+                {t('status')}
               </div>
               <div className="p-3 text-sm space-y-3">
                 <div className="grid grid-cols-[100px_1fr] items-center">
-                  <span className="text-slate-500 text-xs">Checkin:</span>
+                  <span className="text-slate-500 text-xs">{t('checkinStatus')}:</span>
                   <span className={`inline-flex w-fit px-2 py-0.5 rounded text-xs font-bold ${
                     checkinStatus === 'IN' ? 'bg-teal-100 text-teal-800' : 
                     checkinStatus === 'OUT' ? 'bg-orange-100 text-orange-800' : 'bg-yellow-100 text-yellow-800'
                   }`}>
-                    {checkinStatus === 'IN' ? '● IN (Trong kho)' : checkinStatus === 'OUT' ? '○ OUT (Ngoài kho)' : '▲ AUDIT'}
+                    {checkinStatus === 'IN' ? `● ${t('inStock')}` : checkinStatus === 'OUT' ? `○ ${t('outOfStock')}` : `▲ ${t('audit')}`}
                   </span>
                 </div>
                 <div className="grid grid-cols-[100px_1fr] items-center">
-                  <span className="text-slate-500 text-xs">Teflon:</span>
+                  <span className="text-slate-500 text-xs">{t('teflon')}:</span>
                   <span className="text-slate-800 text-sm">
-                    {data?.teflon_count > 0 ? `${data.teflon_count} lần (gần nhất ${data.last_teflon_date ? new Date(data.last_teflon_date).toLocaleDateString('ja-JP') : '-'})` : 'Chưa từng mạ'}
+                    {data?.teflon_count > 0 ? `${data.teflon_count} ${t('times')} (${t('recent')} ${data.last_teflon_date ? new Date(data.last_teflon_date).toLocaleDateString('ja-JP') : '-'})` : t('neverPlated')}
                   </span>
                 </div>
                 <div className="grid grid-cols-[100px_1fr] items-center">
-                  <span className="text-slate-500 text-xs">Tình trạng:</span>
+                  <span className="text-slate-500 text-xs">{t('deviceStatus')}:</span>
                   <span className="text-slate-800 text-sm font-medium">{data?.device_status || 'ACTIVE'}</span>
                 </div>
               </div>
@@ -179,11 +182,11 @@ export default function MoldDetailPanel({
             {/* KHÁCH HÀNG */}
             <div className="bg-white border border-slate-200 rounded overflow-hidden md:col-span-2">
               <div className="bg-slate-50 px-3 py-1.5 border-b border-slate-200 font-bold text-xs text-slate-600">
-                顧客 / KHÁCH HÀNG
+                {t('owner')}
               </div>
               <div className="p-3 text-sm space-y-2 grid grid-cols-1 md:grid-cols-2">
-                <div className="grid grid-cols-[100px_1fr]"><span className="text-slate-500 text-xs">Khách hàng:</span><span className="font-semibold text-slate-800">{cust?.company_name || '-'}</span></div>
-                <div className="grid grid-cols-[100px_1fr]"><span className="text-slate-500 text-xs">Nhà SX (Maker):</span><span className="text-slate-800">{maker?.delivery_name || '-'}</span></div>
+                <div className="grid grid-cols-[100px_1fr]"><span className="text-slate-500 text-xs">{t('owner')}:</span><span className="font-semibold text-slate-800">{cust?.company_name || '-'}</span></div>
+                <div className="grid grid-cols-[100px_1fr]"><span className="text-slate-500 text-xs">{t('maker')}:</span><span className="text-slate-800">{maker?.delivery_name || '-'}</span></div>
               </div>
             </div>
 
@@ -193,24 +196,24 @@ export default function MoldDetailPanel({
           <div className="mt-6 border-t border-slate-200 pt-4">
             <div className="flex items-center gap-2 mb-3">
               <span className="w-1.5 h-4 bg-mcs-primary rounded-full"></span>
-              <span className="font-bold text-xs text-slate-600">操作 / THAO TÁC</span>
+              <span className="font-bold text-xs text-slate-600">{t('operations')}</span>
             </div>
             
             <div className="flex flex-col gap-2">
               {checkinStatus === 'IN' && (
                 <div className="flex gap-2">
                   <button onClick={() => setModalMode('out')} className="flex-1 min-h-[44px] bg-white border border-mcs-border hover:border-mcs-primary text-mcs-text rounded font-bold text-sm shadow-sm transition-colors">
-                    Check-Out 出庫
+                    {t('checkout')}
                   </button>
                   <button onClick={() => setModalMode('relocate')} className="flex-1 min-h-[44px] bg-white border border-mcs-border hover:border-mcs-primary text-mcs-text rounded font-bold text-sm shadow-sm transition-colors">
-                    Di chuyển 移動
+                    {t('relocate')}
                   </button>
                 </div>
               )}
               
               {checkinStatus === 'OUT' && (
                 <button onClick={() => setModalMode('in')} className="w-full min-h-[44px] bg-mcs-primary hover:bg-mcs-primary-hover text-white rounded font-bold text-sm shadow-sm transition-colors">
-                  Check-In 入庫
+                  {t('checkin')}
                 </button>
               )}            </div>
           </div>
@@ -219,15 +222,15 @@ export default function MoldDetailPanel({
     }
 
     if (activeTab === 'HISTORY') {
-      return <TimelineTab moldId={moldId} supabase={supabase} />
+      return <TimelineTab moldId={moldId} supabase={supabase} t={t} />
     }
 
     // Empty states for the rest
     return (
       <div className="p-6 flex flex-col items-center justify-center text-slate-400 h-[300px] border border-dashed border-slate-200 m-4 rounded bg-slate-50">
         <span className="text-2xl mb-2">🚧</span>
-        <p className="text-sm font-medium">開発中 (Đang phát triển)</p>
-        <p className="text-xs mt-1">Chức năng này sẽ được kích hoạt ở Phase 5C.</p>
+        <p className="text-sm font-medium">{t('underDev')}</p>
+        <p className="text-xs mt-1">{t('underDevExplanation')}</p>
       </div>
     )
   }
@@ -245,7 +248,7 @@ export default function MoldDetailPanel({
         {/* HEADER */}
         <div className="bg-[#01696f] text-white p-4 flex items-center justify-between shadow-md z-10 relative">
           <div>
-            <div className="text-teal-100 text-[10px] font-bold tracking-wider mb-0.5">金型詳細 / MOLD DETAILS</div>
+            <div className="text-teal-100 text-[10px] font-bold tracking-wider mb-0.5">{t('details')}</div>
             <h2 className="text-xl font-bold">{data?.system_code || 'Loading...'}</h2>
           </div>
           <div className="flex items-center gap-3">
@@ -269,21 +272,20 @@ export default function MoldDetailPanel({
         {/* TABS */}
         <div className="flex overflow-x-auto border-b border-slate-200 bg-slate-50 sticky top-0 z-0 hide-scrollbar">
           {[
-            { id: 'INFO', jp: '基本', vi: 'THÔNG TIN' },
-            { id: 'HISTORY', jp: '履歴', vi: 'LỊCH SỬ' },
-            { id: 'JOBS', jp: '工程', vi: 'JOBS' },
-          ].map(t => (
+            { id: 'INFO', label: t('tabInfo') },
+            { id: 'HISTORY', label: t('tabHistory') },
+            { id: 'JOBS', label: t('tabJobs') },
+          ].map(tab => (
             <button
-              key={t.id}
-              onClick={() => setActiveTab(t.id as TabType)}
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id as TabType)}
               className={`px-4 py-2.5 flex flex-col items-center justify-center min-w-[80px] border-b-2 transition-colors ${
-                activeTab === t.id 
+                activeTab === tab.id 
                   ? 'border-teal-600 bg-white' 
                   : 'border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-100'
               }`}
             >
-              <span className={`text-xs font-bold ${activeTab === t.id ? 'text-teal-700' : ''}`}>{t.jp}</span>
-              <span className="text-[9px] opacity-70">{t.vi}</span>
+              <span className={`text-xs font-bold ${activeTab === tab.id ? 'text-teal-700' : ''}`}>{tab.label}</span>
             </button>
           ))}
         </div>
@@ -324,7 +326,7 @@ export default function MoldDetailPanel({
   )
 }
 
-function TimelineTab({ moldId, supabase }: { moldId: string, supabase: any }) {
+function TimelineTab({ moldId, supabase, t }: { moldId: string, supabase: any, t: any }) {
   const [logs, setLogs] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -338,7 +340,7 @@ function TimelineTab({ moldId, supabase }: { moldId: string, supabase: any }) {
           .order('logged_at', { ascending: false })
           .limit(20),
         supabase.from('mold_location_history')
-          .select('*, from_layer:rack_layers!mold_location_history_old_rack_layer_id_fkey(code,label), to_layer:rack_layers!mold_location_history_new_rack_layer_id_fkey(code,label), employees(employee_name)')
+          .select('*, from_layer:rack_layers!mold_location_history_old_rack_layer_id_fkey(code,label), to_layer:rack_layers!mold_location_history_new_rack_layer_id_fkey(code,label), employees!mold_location_history_moved_by_fkey(employee_name)')
           .eq('physical_mold_id', moldId)
           .order('moved_at', { ascending: false })
           .limit(20)
@@ -376,8 +378,7 @@ function TimelineTab({ moldId, supabase }: { moldId: string, supabase: any }) {
   if (logs.length === 0) {
     return (
       <div className="p-6 flex flex-col items-center justify-center text-slate-500 h-[300px]">
-        <p className="text-sm">取引履歴はまだありません。</p>
-        <p className="text-xs mt-1">Chưa có lịch sử giao dịch.</p>
+        <p className="text-sm">{t('noHistory')}</p>
       </div>
     )
   }
@@ -395,7 +396,7 @@ function TimelineTab({ moldId, supabase }: { moldId: string, supabase: any }) {
               <div className="bg-white border border-slate-200 rounded p-3 shadow-sm">
                 <div className="flex justify-between items-start mb-1">
                   <span className="font-bold text-xs text-slate-700">
-                    {isStatus ? 'Trạng thái thay đổi' : 'Chuyển vị trí'}
+                    {isStatus ? t('statusChanged') : t('locationMoved')}
                   </span>
                   <span className="text-[10px] text-slate-400">
                     {new Date(log.timestamp).toLocaleString('ja-JP')}
@@ -404,22 +405,22 @@ function TimelineTab({ moldId, supabase }: { moldId: string, supabase: any }) {
                 
                 {isStatus ? (
                   <div className="text-sm text-slate-600 mt-2">
-                    Trạng thái mới: <span className="font-semibold text-slate-800">{log.status}</span>
+                    {t('newStatus')}: <span className="font-semibold text-slate-800">{log.status}</span>
                   </div>
                 ) : (
                   <div className="text-sm text-slate-600 mt-2 flex items-center gap-2">
                     <span className="bg-slate-100 px-2 py-0.5 rounded border border-slate-200 text-xs">
-                      {log.from_layer?.code || 'Kho ngoài'}
+                      {log.from_layer?.code || t('outOfRack')}
                     </span>
                     <span className="text-slate-400">➔</span>
                     <span className="bg-blue-50 text-blue-700 px-2 py-0.5 rounded border border-blue-200 text-xs font-medium">
-                      {log.to_layer?.code || 'Kho ngoài'}
+                      {log.to_layer?.code || t('outOfRack')}
                     </span>
                   </div>
                 )}
                 
                 <div className="mt-2 text-[10px] text-slate-500 flex justify-between">
-                  <span>Người thực hiện: {log.employees?.employee_name || 'Hệ thống'}</span>
+                  <span>{t('operator')}: {log.employees?.employee_name || t('system')}</span>
                 </div>
               </div>
             </div>

@@ -7,11 +7,11 @@ import TechnicalReviewTab from './_components/TechnicalReviewTab'
 import SalesTab from './_components/SalesTab'
 import type { TechnicalReview, UserRole, Quotation } from './types'
 import {
-  Briefcase, ArrowLeft, List,
-  ClipboardList, FileSpreadsheet, Factory, FolderOpen,
+  Briefcase, ArrowLeft, List, ClipboardList, FileSpreadsheet, Factory, FolderOpen,
   Wrench, Edit2, CheckCircle2, Clock, AlertCircle
 } from 'lucide-react'
 import Link from 'next/link'
+import { useTranslations } from 'next-intl'
 
 // ── Types ──────────────────────────────────────────────────────────────────
 type CaseDetail = {
@@ -32,13 +32,13 @@ type CaseDetail = {
 }
 
 // ── Config ─────────────────────────────────────────────────────────────────
-const STATUS_CONFIG: Record<string, { labelJA: string; labelVI: string; badgeClass: string }> = {
-  open:      { labelJA: '新規',     labelVI: 'Mới',         badgeClass: 'badge badge--info' },
-  in_review: { labelJA: '検討中',   labelVI: 'Đang xem xét', badgeClass: 'badge badge--warning' },
-  quoted:    { labelJA: '見積済',   labelVI: 'Đã báo giá',  badgeClass: 'badge badge--neutral' },
-  ordered:   { labelJA: '受注済',   labelVI: 'Có đơn hàng', badgeClass: 'badge badge--success' },
-  completed: { labelJA: '完了',     labelVI: 'Hoàn thành',  badgeClass: 'badge badge--success' },
-  closed:    { labelJA: 'クローズ', labelVI: 'Đã đóng',     badgeClass: 'badge badge--neutral' },
+const STATUS_CONFIG: Record<string, { labelKey: string; badgeClass: string }> = {
+  open:      { labelKey: 'Cases.Status.open',      badgeClass: 'badge badge--info' },
+  in_review: { labelKey: 'Cases.Status.in_review',  badgeClass: 'badge badge--warning' },
+  quoted:    { labelKey: 'Cases.Status.quoted',     badgeClass: 'badge badge--neutral' },
+  ordered:   { labelKey: 'Cases.Status.ordered',    badgeClass: 'badge badge--success' },
+  completed: { labelKey: 'Cases.Status.completed',  badgeClass: 'badge badge--success' },
+  closed:    { labelKey: 'Cases.Status.closed',     badgeClass: 'badge badge--neutral' },
 }
 
 const CASE_TYPE_LABEL: Record<string, string> = {
@@ -53,11 +53,11 @@ const CASE_TYPE_LABEL: Record<string, string> = {
 }
 
 const TABS = [
-  { key: 'overview',   iconEl: ClipboardList,   labelJA: '概要', labelVI: 'Tổng quan' },
-  { key: 'technical',  iconEl: Wrench,           labelJA: '技術', labelVI: 'Kỹ thuật' },
-  { key: 'sales',      iconEl: FileSpreadsheet,  labelJA: '販売', labelVI: 'Báo giá & Đơn hàng' },
-  { key: 'production', iconEl: Factory,          labelJA: '製造', labelVI: 'Sản xuất' },
-  { key: 'docs',       iconEl: FolderOpen,       labelJA: '書類', labelVI: 'Tài liệu' },
+  { key: 'overview',   iconEl: ClipboardList,   tKey: 'overview' },
+  { key: 'technical',  iconEl: Wrench,           tKey: 'technical' },
+  { key: 'sales',      iconEl: FileSpreadsheet,  tKey: 'sales' },
+  { key: 'production', iconEl: Factory,          tKey: 'production' },
+  { key: 'docs',       iconEl: FolderOpen,       tKey: 'docs' },
 ]
 
 function formatDate(d: string | null) {
@@ -67,6 +67,7 @@ function formatDate(d: string | null) {
 
 // ── Main Component ───────────────────────────────────────────────────────────────────
 export default function CaseDetailPage() {
+  const t = useTranslations()
   const params = useParams()
   const router = useRouter()
   const supabase = createClient()
@@ -141,7 +142,7 @@ export default function CaseDetailPage() {
   if (loading) return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center',
       height: '100%', color: 'var(--text-muted)', fontSize: 13 }}>
-      読み込み中... / Đang tải...
+      {t('Cases.loading')}
     </div>
   )
 
@@ -149,8 +150,8 @@ export default function CaseDetailPage() {
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center',
       justifyContent: 'center', height: '100%', gap: 12 }}>
       <AlertCircle size={40} style={{ color: 'var(--status-error)' }} />
-      <span style={{ color: 'var(--text-muted)', fontSize: 14 }}>事案が見つかりません / Không tìm thấy sự việc</span>
-      <Link href="/cases" className="btn btn-secondary">← 一覧に戻る</Link>
+      <span style={{ color: 'var(--text-muted)', fontSize: 14 }}>{t('Cases.notFound')}</span>
+      <Link href="/cases" className="btn btn-secondary">{t('Cases.backToList')}</Link>
     </div>
   )
 
@@ -170,7 +171,7 @@ export default function CaseDetailPage() {
           onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-hover)')}
           onMouseLeave={e => (e.currentTarget.style.background = 'none')}>
           <ArrowLeft size={14} />
-          <span style={{ fontFamily: 'var(--font-jp)' }}>戻る</span>
+          <span>{t('Cases.back')}</span>
         </button>
         <Link href="/cases"
           style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'var(--text-secondary)',
@@ -181,7 +182,7 @@ export default function CaseDetailPage() {
           onMouseLeave={(e: React.MouseEvent<HTMLAnchorElement>) =>
             (e.currentTarget.style.background = 'none')}>
           <List size={14} />
-          <span style={{ fontFamily: 'var(--font-jp)' }}>一覧</span>
+          <span>{t('Cases.list')}</span>
         </Link>
 
         <span style={{ color: 'var(--border-strong)', margin: '0 4px' }}>/</span>
@@ -195,13 +196,13 @@ export default function CaseDetailPage() {
         </span>
         {statusCfg && (
           <span className={statusCfg.badgeClass} style={{ marginLeft: 4 }}>
-            <span style={{ fontFamily: 'var(--font-jp)' }}>{statusCfg.labelJA}</span>
+            <span style={{ fontFamily: 'var(--font-jp)' }}>{t(statusCfg.labelKey)}</span>
           </span>
         )}
         <div style={{ flex: 1 }} />
         <button className="btn btn-secondary" style={{ gap: 6, fontSize: 12, padding: '4px 10px' }}>
           <Edit2 size={13} />
-          <span style={{ fontFamily: 'var(--font-jp)' }}>編集</span>
+          <span>{t('Cases.edit')}</span>
         </button>
       </div>
 
@@ -216,9 +217,8 @@ export default function CaseDetailPage() {
               style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
                 <IconEl size={13} />
-                <span className="tab-ja">{tab.labelJA}</span>
+                <span className="font-bold text-[12px]">{t(`Cases.Tabs.${tab.tKey}`)}</span>
               </div>
-              <span className="tab-vi">{tab.labelVI}</span>
             </button>
           )
         })}
@@ -234,7 +234,7 @@ export default function CaseDetailPage() {
               <div className="kpi-card">
                 <div style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: 'var(--font-jp)' }}>種別</div>
                 <div style={{ fontSize: 13, fontWeight: 700, marginTop: 4, fontFamily: 'var(--font-jp)' }}>
-                  {CASE_TYPE_LABEL[caseData.case_type] ?? caseData.case_type}
+                  {caseData.case_type ? t(`Cases.Types.${caseData.case_type}`) : '—'}
                 </div>
                 <div style={{ fontSize: 10, color: 'var(--text-muted)' }}>Loại sự việc</div>
               </div>
@@ -266,38 +266,33 @@ export default function CaseDetailPage() {
             <div className="form-section">
               <div className="form-section-header">
                 <ClipboardList size={14} className="section-icon" />
-                <span style={{ fontFamily: 'var(--font-jp)' }}>事案情報</span>
-                <span style={{ marginLeft: 6, opacity: 0.6 }}>Case Information</span>
+                <span>{t('Cases.caseInfo')}</span>
               </div>
               <div className="form-section-body">
                 <div className="form-grid-2">
                   <div className="form-field">
                     <label className="form-label">
-                      <span className="label-ja">事案コード</span>
-                      <span className="label-vi">Mã sự việc</span>
+                      <span>{t('Cases.caseCode')}</span>
                     </label>
                     <input className="form-input mono" readOnly value={caseData.case_code} />
                   </div>
                   <div className="form-field">
                     <label className="form-label">
-                      <span className="label-ja">担当営業</span>
-                      <span className="label-vi">Nhân viên phụ trách KD</span>
+                      <span>{t('Cases.salesOwnerLabel')}</span>
                     </label>
                     <input className="form-input" readOnly
                       value={caseData.sales_owner?.employee_name ?? '—'} />
                   </div>
                   <div className="form-field form-col-span-2">
                     <label className="form-label">
-                      <span className="label-ja">タイトル</span>
-                      <span className="label-vi">Tiêu đề sự việc</span>
+                      <span>{t('Cases.titleLabel')}</span>
                     </label>
                     <input className="form-input" readOnly value={caseData.title} />
                   </div>
                   {notes && (
                     <div className="form-field form-col-span-2">
                       <label className="form-label">
-                        <span className="label-ja">指示メモ</span>
-                        <span className="label-vi">Ghi chú chỉ thị</span>
+                        <span>{t('Cases.instructionNotes')}</span>
                       </label>
                       <textarea className="form-textarea" readOnly value={notes}
                         style={{ minHeight: 80 }} />
@@ -310,8 +305,7 @@ export default function CaseDetailPage() {
             <div className="form-section">
               <div className="form-section-header">
                 <CheckCircle2 size={14} className="section-icon" />
-                <span style={{ fontFamily: 'var(--font-jp)' }}>進捗ステージ</span>
-                <span style={{ marginLeft: 6, opacity: 0.6 }}>Tiến độ vòng đời</span>
+                <span>{t('Cases.progressStage')}</span>
               </div>
               <div className="form-section-body">
                 <div style={{ display: 'flex', alignItems: 'center' }}>
@@ -336,7 +330,7 @@ export default function CaseDetailPage() {
                           <span style={{ fontSize: 10, fontFamily: 'var(--font-jp)',
                             color: isCurrentOrPast ? 'var(--accent)' : 'var(--text-muted)',
                             fontWeight: caseData.status === s ? 700 : 400 }}>
-                            {cfg.labelJA}
+                            {t(cfg.labelKey)}
                           </span>
                         </div>
                         {i < 4 && (
@@ -382,13 +376,12 @@ export default function CaseDetailPage() {
           <div className="form-section">
             <div className="form-section-header">
               <Factory size={14} className="section-icon" />
-              <span style={{ fontFamily: 'var(--font-jp)' }}>製造指示</span>
-              <span style={{ marginLeft: 6, opacity: 0.6 }}>Production Orders</span>
+              <span>{t('Cases.productionOrders')}</span>
             </div>
             <div className="form-section-body">
               <div style={{ textAlign: 'center', padding: '40px 0',
                 color: 'var(--text-muted)', fontSize: 13 }}>
-                製造指示はまだありません / Chưa có chỉ thị sản xuất
+                {t('Cases.noProductionOrders')}
               </div>
             </div>
           </div>
@@ -399,8 +392,7 @@ export default function CaseDetailPage() {
           <div className="form-section">
             <div className="form-section-header">
               <FolderOpen size={14} className="section-icon" />
-              <span style={{ fontFamily: 'var(--font-jp)' }}>メール・原文スナップショット</span>
-              <span style={{ marginLeft: 6, opacity: 0.6 }}>Raw email / ghi chú gốc</span>
+              <span>{t('Cases.rawEmailSnapshot')}</span>
             </div>
             <div className="form-section-body">
               {notes ? (
@@ -412,7 +404,7 @@ export default function CaseDetailPage() {
               ) : (
                 <div style={{ textAlign: 'center', padding: '48px 0',
                   color: 'var(--text-muted)', fontSize: 13 }}>
-                  書類・添付ファイルがありません / Không có tài liệu đính kèm
+                  {t('Cases.noDocs')}
                 </div>
               )}
             </div>

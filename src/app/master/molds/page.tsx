@@ -1,5 +1,7 @@
-// @ts-nocheck
 'use client'
+
+// @ts-nocheck
+import { useTranslations } from 'next-intl'
 
 import React, { useEffect, useState, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
@@ -25,12 +27,13 @@ type MoldMaster = {
 }
 
 const STATUS_TABS = [
-  { key: 'ALL', label: '全て', labelVi: 'Tất cả' },
-  { key: 'ACTIVE', label: '稼働中', labelVi: 'Đang hoạt động' },
-  { key: 'INACTIVE', label: '休止中', labelVi: 'Không hoạt động' },
+  { key: 'ALL', tKey: 'statusAll' },
+  { key: 'ACTIVE', tKey: 'statusActive' },
+  { key: 'INACTIVE', tKey: 'statusInactive' },
 ]
 
 export default function MoldBasePage() {
+  const t = useTranslations()
   const supabase = createClient()
 
   const [molds, setMolds] = useState<MoldMaster[]>([])
@@ -68,7 +71,7 @@ export default function MoldBasePage() {
       .select(`
         *,
         companies!products_company_id_fkey ( company_code, company_name ),
-        keeper_company:companies!products_keeper_company_id_fkey ( company_code, company_name )
+        keeper_company:companies!products_end_user_company_id_fkey ( company_code, company_name )
       `, { count: 'exact' })
       .order('product_code', { ascending: true })
 
@@ -86,7 +89,7 @@ export default function MoldBasePage() {
     }
 
     if (filterKeeperId) {
-      query = query.eq('keeper_company_id', filterKeeperId)
+      query = query.eq('end_user_company_id', filterKeeperId)
     }
 
     // Pagination
@@ -128,14 +131,13 @@ export default function MoldBasePage() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <Layers size={20} style={{ color: 'var(--accent)' }} />
           <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <span className="ja" style={{ fontSize: 16 }}>金型マスター</span>
-            <span className="vi" style={{ fontSize: 11 }}>Danh mục Khuôn gốc</span>
+            {t('Master.Molds.title')}
           </div>
         </div>
         <Link href="/master/molds/new">
           <button className="btn btn-primary">
             <Plus size={14} />
-            <span style={{ fontFamily: 'var(--font-jp)' }}>新規登録</span>
+            <span style={{ fontFamily: 'var(--font-jp)' }}>{t('Master.Molds.newBtn')}</span>
           </button>
         </Link>
       </div>
@@ -145,14 +147,14 @@ export default function MoldBasePage() {
         <div className="form-section-header" style={{ justifyContent: 'space-between' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <Search className="section-icon" />
-            <span>検索条件 / Bộ lọc</span>
+            <span>{t('Master.Molds.searchFilter')}</span>
           </div>
           {hasFilters && (
             <button 
               onClick={handleClearFilters}
               style={{ background: 'none', border: 'none', color: 'var(--accent)', fontSize: 10, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, fontWeight: 600, textTransform: 'uppercase' }}
             >
-              <FilterX size={12} /> クリア / Xóa lọc
+              <FilterX size={12} /> {t('Master.Molds.clearFilter')}
             </button>
           )}
         </div>
@@ -167,8 +169,7 @@ export default function MoldBasePage() {
                 className={`tab-item ${activeTab === tab.key ? 'tab-item--active' : ''}`}
                 style={{ flex: 1, padding: '8px 4px', border: 'none', background: 'transparent' }}
               >
-                <span className="tab-ja">{tab.label}</span>
-                <span className="tab-vi">{tab.labelVi} {activeTab === tab.key ? `(${totalRecords})` : ''}</span>
+                <span className="font-bold text-[12px]">{t(`Master.Molds.${tab.tKey}`)} {activeTab === tab.key ? `(${totalRecords})` : ''}</span>
               </button>
             ))}
           </div>
@@ -177,14 +178,13 @@ export default function MoldBasePage() {
             {/* Search */}
             <div className="form-field">
               <label className="form-label">
-                <span className="label-ja">コード・名称</span>
-                <span className="label-vi">Mã/Tên khuôn</span>
+                {t('Master.matenKhuon')}
               </label>
               <div style={{ position: 'relative' }}>
                 <Search size={14} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
                 <input
                   type="text"
-                  placeholder="検索..."
+                  placeholder={t('Master.Molds.searchPlaceholder')}
                   value={searchQuery}
                   onChange={e => setSearchQuery(e.target.value)}
                   className="form-input"
@@ -196,13 +196,12 @@ export default function MoldBasePage() {
             {/* Customer Filter */}
             <div className="form-field">
               <label className="form-label">
-                <span className="label-ja">顧客 (所有者)</span>
-                <span className="label-vi">Khách hàng (Chủ sở hữu)</span>
+                {t('Master.khachHangChuSoHuu')}
               </label>
               <AsyncSearchableSelect
                 value={filterCompanyId}
                 onChange={setFilterCompanyId}
-                placeholder="顧客を検索..."
+                placeholder={t('Master.Molds.customerPlaceholder')}
                 fetchOptions={async (q) => {
                   const res = await fetch(`/api/search/companies?q=${encodeURIComponent(q)}&type=CUSTOMER&limit=20`)
                   if (!res.ok) return []
@@ -219,13 +218,12 @@ export default function MoldBasePage() {
             {/* Keeper Filter */}
             <div className="form-field">
               <label className="form-label">
-                <span className="label-ja">保管先</span>
-                <span className="label-vi">Nơi lưu giữ (Keeper)</span>
+                {t('Master.noiLuuGiuKeeper')}
               </label>
               <AsyncSearchableSelect
                 value={filterKeeperId}
                 onChange={setFilterKeeperId}
-                placeholder="保管先を検索..."
+                placeholder={t('Master.Molds.keeperPlaceholder')}
                 fetchOptions={async (q) => {
                   const res = await fetch(`/api/search/companies?q=${encodeURIComponent(q)}&limit=20`)
                   if (!res.ok) return []
@@ -246,11 +244,11 @@ export default function MoldBasePage() {
       <div className="card-flat" style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}>
         {loading ? (
           <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)', fontSize: 12 }}>
-            読み込み中... / Đang tải dữ liệu...
+            {t('Master.Molds.loading')}
           </div>
         ) : error ? (
           <div style={{ padding: 16, color: 'var(--status-error)', fontSize: 12 }}>
-            エラー / Lỗi: {error}
+            {t('Master.Molds.error')}: {error}
           </div>
         ) : (
           <React.Fragment>
@@ -259,24 +257,19 @@ export default function MoldBasePage() {
                 <thead>
                   <tr>
                     <th style={{ width: 180 }}>
-                      <span className="ja">金型コード</span>
-                      <span className="vi">Mã Khuôn</span>
+                      {t('Master.maKhuon')}
                     </th>
                     <th style={{ width: 220 }}>
-                      <span className="ja">金型名称</span>
-                      <span className="vi">Tên Khuôn</span>
+                      {t('Master.tenKhuon')}
                     </th>
                     <th style={{ width: 180 }}>
-                      <span className="ja">顧客</span>
-                      <span className="vi">Khách hàng</span>
+                      {t('Master.khachHang')}
                     </th>
                     <th style={{ width: 180 }}>
-                      <span className="ja">保管先</span>
-                      <span className="vi">Nơi lưu giữ</span>
+                      {t('Master.noiLuuGiu')}
                     </th>
                     <th style={{ width: 100, textAlign: 'center' }}>
-                      <span className="ja">状態</span>
-                      <span className="vi">Trạng thái</span>
+                      {t('Master.trangThai')}
                     </th>
                     <th style={{ width: 60, textAlign: 'right' }}></th>
                   </tr>
@@ -285,7 +278,7 @@ export default function MoldBasePage() {
                   {molds.length === 0 ? (
                     <tr>
                       <td colSpan={6} style={{ textAlign: 'center', padding: '32px 0', color: 'var(--text-muted)' }}>
-                        データがありません / Không có dữ liệu
+                        {t('Master.Molds.noData')}
                       </td>
                     </tr>
                   ) : (

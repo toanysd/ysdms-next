@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic'
+
 // @ts-nocheck
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
@@ -5,6 +7,7 @@ import { Plus, Users, Edit, X, Search, ChevronRight } from 'lucide-react'
 import { Suspense } from 'react'
 import { SearchBox } from '@/components/ui/SearchBox'
 import { Pagination } from '@/components/ui/Pagination'
+import { getTranslations } from 'next-intl/server'
 
 export type Company = {
   company_id: string
@@ -28,6 +31,9 @@ export default async function CustomersPage(props: {
   const page = Math.max(1, Number(searchParams?.page) || 1)
   const typeFilter = searchParams?.type || 'CUSTOMER'
   const showAll = typeFilter === 'all'
+
+  const t = await getTranslations('Customers')
+  const tCommon = await getTranslations('Common')
 
   const supabase = await createClient()
   const from = (page - 1) * PAGE_SIZE
@@ -85,18 +91,17 @@ export default async function CustomersPage(props: {
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <Users size={20} style={{ color: 'var(--accent)' }} />
           <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <span className="ja" style={{ fontSize: 16 }}>顧客・会社マスター</span>
-            <span className="vi" style={{ fontSize: 11 }}>Danh mục Công ty / Khách hàng</span>
+            <span style={{ fontSize: 16, fontWeight: 600 }}>{t('title')}</span>
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <Suspense fallback={<div style={{ width: 250, height: 36, background: 'var(--bg-surface-2)', borderRadius: 4 }} />}>
-            <SearchBox placeholder="コード・名称で検索..." historyKey='search_customers' />
+            <SearchBox placeholder={tCommon('searchByCodeOrName')} historyKey='search_customers' />
           </Suspense>
           <Link href="/master/customers/new">
             <button className="btn btn-primary">
               <Plus size={14} />
-              <span className="ja" style={{ fontFamily: 'var(--font-jp)' }}>新規登録</span>
+              <span style={{ fontWeight: 600 }}>{tCommon('addNew')}</span>
             </button>
           </Link>
         </div>
@@ -111,24 +116,21 @@ export default async function CustomersPage(props: {
               className={`tab-item ${showAll ? 'tab-item--active' : ''}`}
               style={{ flex: 1, padding: '8px 4px', textDecoration: 'none' }}
             >
-              <span className="tab-ja">全て</span>
-              <span className="tab-vi">Tất cả {showAll && `(${totalRecords})`}</span>
+              <span style={{ fontWeight: 600 }}>{tCommon('all')} {showAll && `(${totalRecords})`}</span>
             </Link>
             <Link 
               href={`/master/customers?q=${query}&type=CUSTOMER`}
               className={`tab-item ${typeFilter === 'CUSTOMER' && !showAll ? 'tab-item--active' : ''}`}
               style={{ flex: 1, padding: '8px 4px', textDecoration: 'none' }}
             >
-              <span className="tab-ja">顧客</span>
-              <span className="tab-vi">Khách hàng {typeFilter === 'CUSTOMER' && !showAll && `(${totalRecords})`}</span>
+              <span style={{ fontWeight: 600 }}>{t('customer')} {typeFilter === 'CUSTOMER' && !showAll && `(${totalRecords})`}</span>
             </Link>
             <Link 
               href={`/master/customers?q=${query}&type=VENDOR`}
               className={`tab-item ${typeFilter === 'VENDOR' && !showAll ? 'tab-item--active' : ''}`}
               style={{ flex: 1, padding: '8px 4px', textDecoration: 'none' }}
             >
-              <span className="tab-ja">仕入先</span>
-              <span className="tab-vi">Nhà cung cấp {typeFilter === 'VENDOR' && !showAll && `(${totalRecords})`}</span>
+              <span style={{ fontWeight: 600 }}>{t('vendor')} {typeFilter === 'VENDOR' && !showAll && `(${totalRecords})`}</span>
             </Link>
           </div>
         </div>
@@ -141,22 +143,23 @@ export default async function CustomersPage(props: {
             <thead>
               <tr>
                 <th style={{ width: 140 }}>
-                  <span className="ja">顧客コード</span>
-                  <span className="vi">Mã KH</span>
+                  <span style={{ fontWeight: 600 }}>{t('customerCode')}</span>
                 </th>
                 <th style={{ width: 300 }}>
-                  <span className="ja">会社名</span>
-                  <span className="vi">Tên công ty</span>
+                  <span style={{ fontWeight: 600 }}>{t('companyName')}</span>
                 </th>
-                <th style={{ width: 180 }}>
-                  <span className="ja">種別</span>
-                  <span className="vi">Loại</span>
+                <th style={{ width: 200 }} className="hidden md:table-cell">
+                  <span style={{ fontWeight: 600 }}>{t('companyNameRomaji')}</span>
                 </th>
-                <th style={{ width: 140 }}>
-                  <span className="ja">電話番号</span>
-                  <span className="vi">Điện thoại</span>
+                <th style={{ width: 120 }}>
+                  <span style={{ fontWeight: 600 }}>{t('type')}</span>
                 </th>
-                <th style={{ width: 60, textAlign: 'right' }}></th>
+                <th style={{ width: 150 }} className="hidden lg:table-cell">
+                  <span style={{ fontWeight: 600 }}>{t('tel')}</span>
+                </th>
+                <th style={{ width: 120, textAlign: 'center' }}>
+                  <span style={{ fontWeight: 600 }}>{tCommon('status')}</span>
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -174,7 +177,7 @@ export default async function CustomersPage(props: {
                   </td>
                 </tr>
               )}
-              {companies?.map((item: Company) => (
+              {companies?.map((item: any) => (
                 <tr key={item.company_id}>
                   <td>
                     <div style={{ display: 'flex', flexDirection: 'column' }}>

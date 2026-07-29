@@ -6,6 +6,7 @@ import { X, ExternalLink, Calendar, Building2, Wrench, Clock, ChevronRight, Save
 import Link from 'next/link'
 import type { JobForGantt, JobStepRow } from '@/app/actions/mold-job'
 import { createClient } from '@/lib/supabase/client'
+import { useTranslations } from 'next-intl'
 
 interface JobQuickViewDrawerProps {
   job: JobForGantt | null
@@ -14,18 +15,18 @@ interface JobQuickViewDrawerProps {
   onJobUpdated: () => void
 }
 
-const STATUS_OPTIONS = [
-  { value: 'NEW', label: '新規 / Mới', color: 'var(--status-info)' },
-  { value: 'IN_PROGRESS', label: '進行中 / Đang chạy', color: 'var(--status-warning)' },
-  { value: 'COMPLETED', label: '完了 / Hoàn thành', color: 'var(--status-success)' },
-  { value: 'ON_HOLD', label: '保留 / Tạm dừng', color: 'var(--text-muted)' },
+const getStatusOptions = (t: any) => [
+  { value: 'NEW', label: t('jobStatus.NEW'), color: 'var(--status-info)' },
+  { value: 'IN_PROGRESS', label: t('jobStatus.IN_PROGRESS'), color: 'var(--status-warning)' },
+  { value: 'COMPLETED', label: t('jobStatus.COMPLETED'), color: 'var(--status-success)' },
+  { value: 'ON_HOLD', label: t('jobStatus.ON_HOLD'), color: 'var(--text-muted)' },
 ]
 
-const STEP_STATUS_BADGE: Record<string, { label: string; bg: string; color: string }> = {
-  PENDING: { label: '待機', bg: 'var(--bg-surface-2)', color: 'var(--text-muted)' },
-  IN_PROGRESS: { label: '進行中', bg: 'rgba(245, 158, 11, 0.15)', color: 'var(--status-warning)' },
-  COMPLETED: { label: '完了', bg: 'rgba(16, 185, 129, 0.15)', color: 'var(--status-success)' },
-}
+const getStepStatusBadge = (t: any) => ({
+  PENDING: { label: t('stepStatus.PENDING'), bg: 'var(--bg-surface-2)', color: 'var(--text-muted)' },
+  IN_PROGRESS: { label: t('stepStatus.IN_PROGRESS'), bg: 'rgba(245, 158, 11, 0.15)', color: 'var(--status-warning)' },
+  COMPLETED: { label: t('stepStatus.COMPLETED'), color: 'var(--status-success)' },
+})
 
 function formatDate(d: string | null | undefined): string {
   if (!d) return '-'
@@ -42,6 +43,7 @@ function isOverdue(deadline: string | null | undefined): boolean {
 }
 
 export function JobQuickViewDrawer({ job, onClose, onOpenStepEdit, onJobUpdated }: JobQuickViewDrawerProps) {
+  const t = useTranslations('Engineering')
   const [activeTab, setActiveTab] = useState<'steps' | 'notes'>('steps')
   const [isEditing, setIsEditing] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
@@ -109,7 +111,9 @@ export function JobQuickViewDrawer({ job, onClose, onOpenStepEdit, onJobUpdated 
   if (!job) return null
 
   const steps = [...(job.job_steps || [])].sort((a, b) => a.step_no - b.step_no)
-  const statusOption = STATUS_OPTIONS.find(s => s.value === jobStatus) || STATUS_OPTIONS[0]
+  const statusOptions = getStatusOptions(t)
+  const stepStatusBadges = getStepStatusBadge(t)
+  const statusOption = statusOptions.find(s => s.value === jobStatus) || statusOptions[0]
   const productName = (job as any).mold_masters?.products?.product_name || (job as any).products?.product_name || '-'
   const moldCode = (job as any).mold_masters?.mold_master_code || (job as any).products?.product_code || '-'
   const companyName = job.companies?.company_name || '-'
@@ -193,7 +197,7 @@ export function JobQuickViewDrawer({ job, onClose, onOpenStepEdit, onJobUpdated 
             <div style={{ display: 'flex', gap: 6, flexShrink: 0, alignItems: 'center' }}>
               <Link
                 href={`/equipment/jobs/${job.job_id}`}
-                title="フルページを開く / Mở trang đầy đủ"
+                title={t('openFullPage')}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
@@ -250,7 +254,7 @@ export function JobQuickViewDrawer({ job, onClose, onOpenStepEdit, onJobUpdated 
                   display: 'flex',
                   alignItems: 'center',
                 }}
-                title="閉じる / Đóng"
+                title={t('close')}
               >
                 <X size={20} />
               </button>
@@ -362,7 +366,7 @@ export function JobQuickViewDrawer({ job, onClose, onOpenStepEdit, onJobUpdated 
                       onChange={e => setJobStatus(e.target.value)}
                       style={{ fontSize: 13, padding: '3px 6px', height: 30, width: '100%' }}
                     >
-                      {STATUS_OPTIONS.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+                      {statusOptions.map((s: any) => <option key={s.value} value={s.value}>{s.label}</option>)}
                     </select>
                   }
                 />
@@ -447,11 +451,11 @@ export function JobQuickViewDrawer({ job, onClose, onOpenStepEdit, onJobUpdated 
             <div>
               {steps.length === 0 ? (
                 <div style={{ padding: 32, textAlign: 'center', color: 'var(--text-muted)', fontSize: 13 }}>
-                  工程がありません / Chưa có công đoạn
+                  {t('noSteps')}
                 </div>
               ) : (
                 steps.map((step) => {
-                  const sb = STEP_STATUS_BADGE[step.step_status] || STEP_STATUS_BADGE.PENDING
+                  const sb = (stepStatusBadges as any)[step.step_status] || stepStatusBadges.PENDING
                   const stepOverdue = isOverdue(step.deadline) && step.step_status !== 'COMPLETED'
                   return (
                     <div
@@ -544,7 +548,7 @@ export function JobQuickViewDrawer({ job, onClose, onOpenStepEdit, onJobUpdated 
                   onClick={() => onOpenStepEdit(job.job_id, null as any)}
                   style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, height: 32, fontSize: 13 }}
                 >
-                  <Plus size={14} /> 新規工程追加 / Thêm công đoạn
+                  <Plus size={14} /> {t('addNewStep')}
                 </button>
               </div>
             </div>
@@ -557,7 +561,7 @@ export function JobQuickViewDrawer({ job, onClose, onOpenStepEdit, onJobUpdated 
                   onChange={e => setNotes(e.target.value)}
                   rows={8}
                   style={{ width: '100%', fontSize: 13 }}
-                  placeholder="備考を入力... / Nhập ghi chú..."
+                  placeholder={t('enterNotes')}
                 />
               ) : (
                 <div style={{
@@ -566,7 +570,7 @@ export function JobQuickViewDrawer({ job, onClose, onOpenStepEdit, onJobUpdated 
                   lineHeight: 1.7,
                   whiteSpace: 'pre-wrap',
                 }}>
-                  {notes || '備考なし / Không có ghi chú'}
+                  {notes || t('noNotes')}
                 </div>
               )}
             </div>

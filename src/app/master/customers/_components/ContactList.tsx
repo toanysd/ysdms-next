@@ -1,5 +1,7 @@
 'use client'
 
+import { useTranslations } from 'next-intl'
+
 import { useState } from 'react'
 import { Plus, Edit2, Trash2 } from 'lucide-react'
 import { upsertContactAction, deleteContactAction } from '@/app/actions/customer'
@@ -8,6 +10,8 @@ import { Database } from '@/types/database.types'
 type Contact = Database['public']['Tables']['company_contacts']['Row']
 
 export function ContactList({ companyId, contacts }: { companyId: string, contacts: Contact[] }) {
+  const t = useTranslations()
+
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingItem, setEditingItem] = useState<Contact | null>(null)
   const [isLoading, setIsLoading] = useState(false)
@@ -93,24 +97,19 @@ export function ContactList({ companyId, contacts }: { companyId: string, contac
             <thead>
               <tr>
                 <th>
-                  <span className="ja">優先</span>
-                  <span className="vi">Chính</span>
+                  {t('Master.chinh')}
                 </th>
                 <th>
-                  <span className="ja">担当者名</span>
-                  <span className="vi">Tên</span>
+                  {t('Master.ten')}
                 </th>
                 <th>
-                  <span className="ja">役職</span>
-                  <span className="vi">Chức vụ</span>
+                  {t('Master.chucVu')}
                 </th>
                 <th>
-                  <span className="ja">電話番号</span>
-                  <span className="vi">SĐT</span>
+                  {t('Master.st')}
                 </th>
                 <th>
-                  <span className="ja">メール</span>
-                  <span className="vi">Email</span>
+                  {t('Master.email')}
                 </th>
                 <th style={{ width: 80, textAlign: 'center' }}>操作</th>
               </tr>

@@ -1,5 +1,7 @@
 'use client'
 
+import { useTranslations } from 'next-intl'
+
 import React, { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Save, ArrowLeft, Loader2 } from 'lucide-react'
@@ -25,6 +27,8 @@ interface OrderFormClientProps {
 }
 
 export function OrderFormClient({ customers }: OrderFormClientProps) {
+  const t = useTranslations()
+
     const router = useRouter()
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [errorObj, setErrorObj] = useState<string | null>(null)
@@ -122,7 +126,7 @@ export function OrderFormClient({ customers }: OrderFormClientProps) {
                         <ArrowLeft size={18} />
                     </Link>
                     <h2 className="text-[14px] font-bold text-teal-900 flex flex-col">
-                        <span className="ja">新規指示書作成 (Tạo Lưu đồ Chỉ thị)</span>
+                        {t('Common.taoLuuOChiThi')}
                     </h2>
                 </div>
                 <div className="flex items-center gap-2">
@@ -133,7 +137,7 @@ export function OrderFormClient({ customers }: OrderFormClientProps) {
                         className="h-[30px] px-6 rounded bg-teal-700 text-white font-bold text-xs hover:bg-teal-800 flex items-center justify-center gap-2 transition-colors disabled:opacity-50 shadow-sm"
                     >
                         {isSubmitting ? <Loader2 className="animate-spin" size={14} /> : <Save size={14} />}
-                        保存する
+                        {t('Common.save')}
                     </button>
                 </div>
             </div>
@@ -144,31 +148,31 @@ export function OrderFormClient({ customers }: OrderFormClientProps) {
                     {/* Header Card */}
                     <div className="bg-white border border-teal-200 shadow-sm rounded-lg p-4">
                         <h3 className="text-sm font-bold text-teal-800 mb-3 flex items-center gap-2 border-b border-teal-100 pb-2">
-                            🏷️ 注文ヘッダー (Thông Tin Chung)
+                            🏷️ {t('Order.orderHeader')}
                         </h3>
 
                         <div className="grid grid-cols-5 gap-4">
                             <div className="col-span-1 flex flex-col gap-1">
-                                <label className="text-[12px] font-bold text-teal-900 shadow-black">伝票/LOT No. (Số phiếu)</label>
-                                <input value={slipNo} onChange={e => setSlipNo(e.target.value)} type="text" className="w-full h-[34px] font-mono text-sm border-teal-200 focus:border-teal-500 focus:ring-1 focus:ring-teal-500 rounded px-2" placeholder="例: 263090" />
+                                <label className="text-[12px] font-bold text-teal-900 shadow-black">{t('Order.slipNo')}</label>
+                                <input value={slipNo} onChange={e => setSlipNo(e.target.value)} type="text" className="w-full h-[34px] font-mono text-sm border-teal-200 focus:border-teal-500 focus:ring-1 focus:ring-teal-500 rounded px-2" placeholder={t('Order.slipNoPlaceholder')} />
                             </div>
 
                             <div className="col-span-1 flex flex-col gap-1">
-                                <label className="text-[12px] font-bold text-teal-900">発注日 (Ngày phát hành) <span className="text-red-500">*</span></label>
+                                <label className="text-[12px] font-bold text-teal-900">{t('Order.orderDate')} <span className="text-red-500">*</span></label>
                                 <input value={orderDate} onChange={e => setOrderDate(e.target.value)} type="date" required className="w-full h-[34px] text-sm border-teal-200 focus:border-teal-500 focus:ring-1 focus:ring-teal-500 rounded px-2" />
                             </div>
 
                             <div className="col-span-1 flex flex-col gap-1">
-                                <label className="text-[12px] font-bold text-teal-900">注文タイプ (Loại đơn) <span className="text-red-500">*</span></label>
+                                <label className="text-[12px] font-bold text-teal-900">{t('Order.orderType')} <span className="text-red-500">*</span></label>
                                 <select value={orderType} onChange={e => setOrderType(e.target.value as any)} className="w-full h-[34px] text-[13px] border-teal-200 focus:border-teal-500 focus:ring-1 focus:ring-teal-500 rounded px-2 bg-white cursor-pointer hover:bg-gray-50">
-                                    <option value="molding">Molding (Đúc khuôn)</option>
-                                    <option value="outsource">Outsource (Thuê ngoài)</option>
-                                    <option value="prototype">Prototype (Mẫu thử)</option>
+                                    <option value="molding">{t('Order.molding')}</option>
+                                    <option value="outsource">{t('Order.outsource')}</option>
+                                    <option value="prototype">{t('Order.prototype')}</option>
                                 </select>
                             </div>
 
                             <div className="col-span-1 flex flex-col gap-1">
-                                <label className="text-[12px] font-bold text-teal-900">得意先 (Khách hàng) <span className="text-red-500">*</span></label>
+                                <label className="text-[12px] font-bold text-teal-900">{t('Order.customer')} <span className="text-red-500">*</span></label>
                                 <CustomerSearchInput
                                     onSelect={(cust) => {
                                         if (cust) {
@@ -183,24 +187,24 @@ export function OrderFormClient({ customers }: OrderFormClientProps) {
                                 />
                                 {selectedCustomer && (
                                     <div className="text-[10px] text-[var(--mcs-primary)] mt-0.5 truncate bg-teal-50 px-1 py-0.5 rounded border border-teal-100" title={selectedCustomer.address || ''}>
-                                        📍 Giao tại: {selectedCustomer.address || 'Chưa có địa chỉ'}
+                                        📍 {t('Order.deliverTo')}: {selectedCustomer.address || t('Order.noAddress')}
                                     </div>
                                 )}
                             </div>
 
                             <div className="col-span-1 flex flex-col gap-1">
-                                <label className="text-[12px] font-bold text-teal-900">納入先担当者 (Người nhận)</label>
-                                <input value={recipientName} onChange={e => setRecipientName(e.target.value)} type="text" className="w-full h-[34px] text-sm border-teal-200 focus:border-teal-500 focus:ring-1 focus:ring-teal-500 rounded px-2" placeholder="例: 延澤 様" />
+                                <label className="text-[12px] font-bold text-teal-900">{t('Order.recipientName')}</label>
+                                <input value={recipientName} onChange={e => setRecipientName(e.target.value)} type="text" className="w-full h-[34px] text-sm border-teal-200 focus:border-teal-500 focus:ring-1 focus:ring-teal-500 rounded px-2" placeholder={t('Order.recipientPlaceholder')} />
                             </div>
 
                             <div className="col-span-1 flex flex-col gap-1">
-                                <label className="text-[12px] font-bold text-teal-900">担当 (PIC Lập đơn)</label>
-                                <input value={handlerName} onChange={e => setHandlerName(e.target.value)} type="text" className="w-full h-[34px] text-sm border-teal-200 focus:border-teal-500 focus:ring-1 focus:ring-teal-500 rounded px-2" placeholder="例: 桜井" />
+                                <label className="text-[12px] font-bold text-teal-900">{t('Order.handlerName')}</label>
+                                <input value={handlerName} onChange={e => setHandlerName(e.target.value)} type="text" className="w-full h-[34px] text-sm border-teal-200 focus:border-teal-500 focus:ring-1 focus:ring-teal-500 rounded px-2" placeholder={t('Order.handlerPlaceholder')} />
                             </div>
 
                             <div className="col-span-3 flex flex-col gap-1">
-                                <label className="text-[12px] font-bold text-teal-900">注意事項 (Ghi chú chung)</label>
-                                <textarea value={internalNotes} onChange={e => setInternalNotes(e.target.value)} className="w-full text-sm border-teal-200 focus:border-teal-500 focus:ring-1 focus:ring-teal-500 rounded p-2 min-h-[60px]" placeholder="注意事項を入力..." />
+                                <label className="text-[12px] font-bold text-teal-900">{t('Order.internalNotes')}</label>
+                                <textarea value={internalNotes} onChange={e => setInternalNotes(e.target.value)} className="w-full text-sm border-teal-200 focus:border-teal-500 focus:ring-1 focus:ring-teal-500 rounded p-2 min-h-[60px]" placeholder={t('Order.internalNotesPlaceholder')} />
                             </div>
                         </div>
                     </div>

@@ -132,10 +132,9 @@ Hệ thống này được thiết lập theo cơ chế đặc biệt: **"Portab
 ### RULE-UI-8 — Typography (Phương án A — chuẩn SAP/Salesforce, áp dụng 2026-06-17)
 - **Body / input / btn**: **14px** `var(--text-primary)` — chuẩn SAP Fiori, Salesforce SLDS, MUI
 - **Table cell (td)**: **13px** | Table header (th CAPS): **11px**
-- **Label JA** (chính): **12px** bold font-jp — ngôn ngữ chính, đọc rõ
-- **Label VI** (phụ): **10px** text-muted — nội dung phụ, nhỏ hơn là hợp lý
+- **Label** (form): **12px** (font-medium hoặc bold tùy theme) — sử dụng `next-intl` (t()) cho đa ngôn ngữ
 - **Section header (CAPS)**: **11px** + letter-spacing 0.07em — uppercase bù cho cỡ nhỏ
-- **Badge / chip**: **11–12px** | **Tab JA**: **12px** | **Tab VI**: **10px** (phụ)
+- **Badge / chip**: **11–12px** | **Tab**: **12px**
 - **Input height**: **36px** (từ 34px — đảm bảo không chèn chữ 14px)
 - **Mono (code/path)**: **13px** (1px nhỏ hơn body để phân biệt)
 - ⚠️ **KHÔNG thay đổi padding/margin/gap** khi tăng font — giữ compact density

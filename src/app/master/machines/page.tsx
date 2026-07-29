@@ -1,5 +1,7 @@
-// @ts-nocheck
 'use client'
+
+// @ts-nocheck
+import { useTranslations } from 'next-intl'
 
 import { useEffect, useState, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
@@ -76,6 +78,7 @@ const EMPTY_FORM: MachineForm = {
 // ─── Component ───────────────────────────────────────────────────────────────
 
 export default function MachinesPage() {
+  const t = useTranslations()
   const supabase = createClient()
 
   const [machines, setMachines] = useState<Machine[]>([])
@@ -110,7 +113,7 @@ export default function MachinesPage() {
 
     const { data, error: err } = await query
     if (err) setError(err.message)
-    else setMachines(data || [])
+    else setMachines((data || []) as Machine[])
     setLoading(false)
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filterType, filterGroup])
@@ -833,8 +836,8 @@ function FieldGroup({
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
       <label className="form-label">
-        <span className="ja">{label} {required && <span style={{ color: 'var(--status-error)' }}>*</span>}</span>
-        <span className="vi">{sub}</span>
+        {label} <span style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 400 }}>{sub}</span>
+        {required && <span style={{ color: 'var(--status-error)', marginLeft: 2 }}>*</span>}
       </label>
       {children}
     </div>

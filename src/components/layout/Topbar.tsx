@@ -4,8 +4,11 @@ import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 import { Search, SlidersHorizontal, Sun, Moon, X, QrCode, LogIn, LogOut, User } from 'lucide-react'
 import { useTheme } from '@/components/ThemeProvider'
 import { useAuth } from '@/components/AuthProvider'
+import LanguageSwitcher from '@/components/LanguageSwitcher'
+import { useTranslations } from 'next-intl'
 
 export default function Topbar() {
+  const t = useTranslations('Topbar')
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -46,11 +49,8 @@ export default function Topbar() {
         </div>
         <div className="flex flex-col">
           <span className="text-[13px] font-bold leading-tight" style={{ color: 'var(--text-primary)' }}>
-            金型・抜型 検索
+            {t('title')}
             <span className="text-[10px] font-normal ml-1" style={{ color: 'var(--text-muted)' }}>v2.0</span>
-          </span>
-          <span className="text-[11px] italic leading-tight" style={{ color: 'var(--text-secondary)' }}>
-            Tìm kiếm Khuôn / Dao cắt
           </span>
         </div>
       </div>
@@ -70,10 +70,10 @@ export default function Topbar() {
             className="bg-transparent border-none outline-none text-[12px] font-semibold px-2 h-full cursor-pointer min-w-[70px]"
             style={{ color: 'var(--text-secondary)' }}
           >
-            <option value="all">全て</option>
-            <option value="mold">金型</option>
-            <option value="cutter">抜型</option>
-            <option value="tray">トレイ</option>
+            <option value="all">{t('searchAll')}</option>
+            <option value="mold">{t('searchMold')}</option>
+            <option value="cutter">{t('searchCutter')}</option>
+            <option value="tray">{t('searchTray')}</option>
           </select>
           
           <div className="w-[1px] h-4 mx-1" style={{ background: 'var(--border-default)' }}></div>
@@ -82,7 +82,7 @@ export default function Topbar() {
             type="text" 
             className="flex-1 bg-transparent border-none outline-none px-2 text-[13px] h-full"
             style={{ color: 'var(--text-primary)' }}
-            placeholder="コード・名称検索..."
+            placeholder={t('searchPlaceholder')}
             value={searchValue}
             onChange={(e) => setSearchValue(e.target.value)}
             onKeyDown={handleSearch}
@@ -122,7 +122,7 @@ export default function Topbar() {
         <button 
           onClick={() => window.dispatchEvent(new Event('open-filter'))}
           className="theme-toggle"
-          title="絞込 / Lọc nâng cao"
+          title={t('filterTooltip')}
         >
           <SlidersHorizontal size={15} />
         </button>
@@ -131,10 +131,13 @@ export default function Topbar() {
         <button
           onClick={toggleTheme}
           className="theme-toggle"
-          title={theme === 'light' ? 'ダークモード' : 'ライトモード'}
+          title={theme === 'light' ? t('darkMode') : t('lightMode')}
         >
           {theme === 'light' ? <Moon size={15} /> : <Sun size={15} />}
         </button>
+
+        {/* Language Switcher */}
+        <LanguageSwitcher />
 
         {/* Divider */}
         <div className="w-[1px] h-5 mx-1" style={{ background: 'var(--border-default)' }}></div>
@@ -145,7 +148,7 @@ export default function Topbar() {
             onClick={signOut}
             className="flex items-center gap-2 h-[32px] px-2 rounded-lg transition-colors"
             style={{ background: 'var(--bg-surface-2)', border: '1px solid var(--border-default)' }}
-            title="ログアウト / Đăng xuất"
+            title={t('logout')}
           >
             <div
               className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0"
@@ -170,7 +173,7 @@ export default function Topbar() {
             >
               <LogIn size={12} />
             </div>
-            <span className="text-[11px] font-semibold whitespace-nowrap" style={{ color: 'var(--text-primary)' }}>ログイン</span>
+            <span className="text-[11px] font-semibold whitespace-nowrap" style={{ color: 'var(--text-primary)' }}>{t('login')}</span>
           </a>
         )}
       </div>

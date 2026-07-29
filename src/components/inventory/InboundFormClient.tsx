@@ -1,5 +1,7 @@
 'use client'
 
+import { useTranslations } from 'next-intl'
+
 import React, { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Save, ArrowLeft, Loader2 } from 'lucide-react'
@@ -14,6 +16,8 @@ interface PlasticLite {
 }
 
 export function InboundFormClient({ plastics }: { plastics: PlasticLite[] }) {
+  const t = useTranslations()
+
     const router = useRouter()
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [errorObj, setErrorObj] = useState<string | null>(null)
@@ -26,10 +30,10 @@ export function InboundFormClient({ plastics }: { plastics: PlasticLite[] }) {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
-        if (!plasticId) return alert('Vui lòng chọn loại nhựa')
+        if (!plasticId) return alert(t('Inventory.pleaseSelectPlastic'))
         const kg = parseFloat(changeKg)
-        if (isNaN(kg) || kg <= 0) return alert('Số lượng (Kg) phải lớn hơn 0')
-        if (!date) return alert('Ngày giao dịch không thể trống')
+        if (isNaN(kg) || kg <= 0) return alert(t('Inventory.quantityMustBeGreaterThanZero'))
+        if (!date) return alert(t('Inventory.dateCannotBeEmpty'))
 
         try {
             setIsSubmitting(true)
@@ -61,7 +65,7 @@ export function InboundFormClient({ plastics }: { plastics: PlasticLite[] }) {
                         <ArrowLeft size={18} />
                     </Link>
                     <h2 className="text-[14px] font-bold text-teal-900 flex flex-col">
-                        <span className="ja">入庫登録 (Ghi nhận Nhập Kho)</span>
+                        {t('Inventory.ghiNhanNhapKho')}
                     </h2>
                 </div>
                 <div className="flex items-center gap-2">
@@ -72,7 +76,7 @@ export function InboundFormClient({ plastics }: { plastics: PlasticLite[] }) {
                         className="bg-teal-700 hover:bg-teal-800 text-white h-[30px] px-6 flex items-center gap-2 text-xs rounded transition-colors shadow-sm font-bold disabled:opacity-50"
                     >
                         {isSubmitting ? <Loader2 className="animate-spin" size={14} /> : <Save size={14} />}
-                        Lưu phiếu nhập
+                        {t('Inventory.saveInbound')}
                     </button>
                 </div>
             </div>
@@ -80,19 +84,19 @@ export function InboundFormClient({ plastics }: { plastics: PlasticLite[] }) {
             <div className="flex-1 overflow-auto bg-gray-50/50 p-6">
                 <div className="max-w-[700px] mx-auto bg-white border border-teal-200 shadow-sm rounded-lg p-6 space-y-6">
                     <h3 className="text-sm font-bold text-teal-800 border-b border-teal-100 pb-2">
-                        📦 Thông tin lô nguyên liệu nhập
+                        📦 {t('Inventory.inboundLotInfo')}
                     </h3>
 
                     <div className="grid grid-cols-2 gap-4">
                         <div className="col-span-1 flex flex-col gap-1">
-                            <label className="text-[12px] font-bold text-teal-900">Ngày nhập kho (入庫日) <span className="text-red-500">*</span></label>
+                            <label className="text-[12px] font-bold text-teal-900">{t('Inventory.inboundDate')} <span className="text-red-500">*</span></label>
                             <input value={date} onChange={e => setDate(e.target.value)} type="date" required className="w-full h-[34px] text-sm border-teal-200 focus:border-teal-500 rounded px-2" />
                         </div>
 
                         <div className="col-span-1 flex flex-col gap-1">
-                            <label className="text-[12px] font-bold text-teal-900">Loại Nhựa (Vật tư) <span className="text-red-500">*</span></label>
+                            <label className="text-[12px] font-bold text-teal-900">{t('Inventory.plasticType')} <span className="text-red-500">*</span></label>
                             <select value={plasticId} onChange={e => setPlasticId(e.target.value)} required className="w-full h-[34px] text-sm border-teal-200 focus:border-teal-500 rounded px-2 bg-white">
-                                <option value="">-- Chọn cuộn nhựa --</option>
+                                <option value="">{t('Inventory.selectPlastic')}</option>
                                 {plastics.map(p => (
                                     <option key={p.id} value={p.id}>{p.code} - {p.material || ''} {p.color_name ? `(${p.color_name})` : ''}</option>
                                 ))}
@@ -100,18 +104,18 @@ export function InboundFormClient({ plastics }: { plastics: PlasticLite[] }) {
                         </div>
 
                         <div className="col-span-1 flex flex-col gap-1">
-                            <label className="text-[12px] font-bold text-teal-900">Số lượng Kg (数量) <span className="text-red-500">*</span></label>
-                            <input value={changeKg} onChange={e => setChangeKg(e.target.value)} type="number" step="0.01" min="0" required className="w-full h-[34px] text-sm border-teal-200 focus:border-teal-500 rounded px-2 font-mono" placeholder="Ví dụ: 1000.5" />
+                            <label className="text-[12px] font-bold text-teal-900">{t('Inventory.quantityKg')} <span className="text-red-500">*</span></label>
+                            <input value={changeKg} onChange={e => setChangeKg(e.target.value)} type="number" step="0.01" min="0" required className="w-full h-[34px] text-sm border-teal-200 focus:border-teal-500 rounded px-2 font-mono" placeholder={t('Inventory.quantityKgPlaceholder')} />
                         </div>
 
                         <div className="col-span-1 flex flex-col gap-1">
-                            <label className="text-[12px] font-bold text-teal-900">Mã Lô SX (Lot No/ロット)</label>
-                            <input value={lotNo} onChange={e => setLotNo(e.target.value)} type="text" className="w-full h-[34px] text-sm border-teal-200 focus:border-teal-500 rounded px-2 font-mono" placeholder="Ví dụ: L-2026X" />
+                            <label className="text-[12px] font-bold text-teal-900">{t('Inventory.lotNo')}</label>
+                            <input value={lotNo} onChange={e => setLotNo(e.target.value)} type="text" className="w-full h-[34px] text-sm border-teal-200 focus:border-teal-500 rounded px-2 font-mono" placeholder={t('Inventory.lotNoPlaceholder')} />
                         </div>
 
                         <div className="col-span-2 flex flex-col gap-1">
-                            <label className="text-[12px] font-bold text-teal-900">Ghi chú (備考)</label>
-                            <input value={notes} onChange={e => setNotes(e.target.value)} type="text" className="w-full h-[34px] text-sm border-teal-200 focus:border-teal-500 rounded px-2" placeholder="Ghi chú người vận chuyển, tình trạng bao bì..." />
+                            <label className="text-[12px] font-bold text-teal-900">{t('Inventory.notes')}</label>
+                            <input value={notes} onChange={e => setNotes(e.target.value)} type="text" className="w-full h-[34px] text-sm border-teal-200 focus:border-teal-500 rounded px-2" placeholder={t('Inventory.notesPlaceholder')} />
                         </div>
                     </div>
 

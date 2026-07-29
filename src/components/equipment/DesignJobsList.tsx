@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Hammer, ArrowRight, ExternalLink } from 'lucide-react'
 import Link from 'next/link'
+import { useTranslations } from 'next-intl'
 
 type Job = {
   job_id: string
@@ -28,6 +29,7 @@ export function DesignJobsList({
   selectedRevisionId: string | null
   selectedMoldId: string | null
 }) {
+  const t = useTranslations('Engineering')
   const supabase = createClient()
   const [jobs, setJobs] = useState<Job[]>([])
   const [loading, setLoading] = useState(true)
@@ -55,7 +57,7 @@ export function DesignJobsList({
   }, [fetchJobs])
 
   if (loading) {
-    return <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>読み込み中... (Đang tải...)</div>
+    return <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{t('loading')}</div>
   }
 
   const filteredJobs = jobs.filter(j => {
@@ -74,7 +76,7 @@ export function DesignJobsList({
     <div className="card-flat" style={{ padding: 0, overflow: 'hidden' }}>
       <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border-default)', background: 'var(--bg-surface-2)', display: 'flex', alignItems: 'center', gap: 8 }}>
         <Hammer size={14} style={{ color: 'var(--accent)' }} />
-        <h3 style={{ margin: 0, fontSize: 13, fontWeight: 700, fontFamily: 'var(--font-jp)' }}>関連ジョブ (Các Job liên quan)</h3>
+        <h3 style={{ margin: 0, fontSize: 13, fontWeight: 700, fontFamily: 'var(--font-jp)' }}>{t('relatedJobs')}</h3>
         {selectedMoldId ? (
           <span className="badge badge--info" style={{ fontSize: 10, marginLeft: 'auto', fontWeight: 600 }}>
             Filtered by Mold
@@ -88,19 +90,19 @@ export function DesignJobsList({
       <div style={{ overflowX: 'auto', maxHeight: 400 }}>
         {filteredJobs.length === 0 ? (
           <div style={{ padding: 24, textAlign: 'center', fontSize: 12, color: 'var(--text-muted)' }}>
-            Không có dữ liệu Job.
+            {t('noRelatedJobs')}
           </div>
         ) : (
         <table className="data-table">
           <thead>
             <tr>
-              <th>Job Code</th>
-              <th>Job Name</th>
-              <th>タイプ (Loại)</th>
-              <th>対象設計 (Thiết kế)</th>
-              <th>対象金型 (Khuôn VL)</th>
-              <th>ステータス (Status)</th>
-              <th>進捗 (Tiến độ)</th>
+              <th>{t('jobCode')}</th>
+              <th>{t('jobName')}</th>
+              <th>{t('jobType')}</th>
+              <th>{t('targetDesign')}</th>
+              <th>{t('targetMold')}</th>
+              <th>{t('statusLabel')}</th>
+              <th>{t('progress')}</th>
             </tr>
           </thead>
           <tbody>

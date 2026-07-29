@@ -1,5 +1,7 @@
 'use client'
 
+import { useTranslations, useLocale } from 'next-intl'
+
 import { useEffect, useState, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
@@ -7,12 +9,13 @@ import {
   ArrowLeft, Plus, Pencil, Trash2, X, Copy,
   FileText, Ruler, Settings, Building2, FolderOpen,
   ClipboardList, StickyNote, Package, Wrench, ExternalLink, Hammer,
-  ArrowUpFromLine, PenTool, Box
+  ArrowUpFromLine, PenTool, Box, Layers
 } from 'lucide-react'
 import Link from 'next/link'
 import { CreateJobModal } from '@/components/equipment/CreateJobModal'
 import { DesignJobsList } from '@/components/equipment/DesignJobsList'
 import { DesignPhysicalMoldsList } from '@/components/equipment/DesignPhysicalMoldsList'
+
 
 /* ─────────────────────────────────────────────────────
    Types
@@ -174,6 +177,8 @@ function strOrNull(v: string): string | null {
    ═══════════════════════════════════════════════════════ */
 
 export default function MoldMasterDesignsPage() {
+  const t = useTranslations()
+  const locale = useLocale()
   const params = useParams()
   const router = useRouter()
   const moldMasterId = params.moldMasterId as string
@@ -202,7 +207,7 @@ export default function MoldMasterDesignsPage() {
   const fetchMoldMaster = useCallback(async () => {
     const { data, error: err } = await supabase
       .from('products')
-      .select('*, companies(company_name, company_code)')
+      .select('*, companies:companies!products_company_id_fkey(company_name, company_code)')
       .eq('product_id', moldMasterId)
       .single()
     if (err) {
@@ -499,354 +504,108 @@ export default function MoldMasterDesignsPage() {
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
               <div>
-                <span className="label-ja" style={{ fontFamily: 'var(--font-jp)', fontSize: 11, color: 'var(--text-muted)', fontWeight: 600 }}>金型コード</span>
-                <span style={{ fontSize: 10, color: 'var(--text-muted)', display: 'block' }}>Mã SP (Nội bộ)</span>
-                <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--accent)', fontFamily: 'monospace' }}>
+                <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>製品コード / MÃ SP</span>
+                <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'monospace' }}>
                   {moldMaster.product_code}
-                </span>
+                </div>
               </div>
               <div>
-                <span className="label-ja" style={{ fontFamily: 'var(--font-jp)', fontSize: 11, color: 'var(--text-muted)', fontWeight: 600 }}>金型名</span>
-                <span style={{ fontSize: 10, color: 'var(--text-muted)', display: 'block' }}>Tên SP (Nội bộ)</span>
-                <span style={{ fontSize: 13, color: 'var(--text-primary)', fontWeight: 600 }}>
-                  {moldMaster.product_name_internal || moldMaster.product_name || '—'}
-                </span>
-              </div>
-              <div>
-                <span className="label-ja" style={{ fontFamily: 'var(--font-jp)', fontSize: 11, color: 'var(--text-muted)', fontWeight: 600 }}>得意先</span>
-                <span style={{ fontSize: 10, color: 'var(--text-muted)', display: 'block' }}>Khách hàng</span>
-                <span style={{ fontSize: 13, color: 'var(--text-primary)' }}>
-                  {companyCode && <span style={{ fontFamily: 'monospace', marginRight: 4, color: 'var(--text-secondary)' }}>{companyCode}</span>}
-                  {companyName}
-                </span>
-              </div>
-              <div>
-                <span className="label-ja" style={{ fontFamily: 'var(--font-jp)', fontSize: 11, color: 'var(--text-muted)', fontWeight: 600 }}>顧客製品名</span>
-                <span style={{ fontSize: 10, color: 'var(--text-muted)', display: 'block' }}>Tên SP KH</span>
-                <span style={{ fontSize: 13, color: 'var(--text-primary)', fontFamily: 'monospace' }}>
-                  {customerProductName}
-                </span>
+                <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>製品名 (内語) / TÊN SP (NB)</span>
+                <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)' }}>
+                  {moldMaster.product_name_internal || '—'}
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Right: Workflow Links */}
-          <div className="card-flat" style={{ padding: '12px 16px' }}>
-            <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: 6, textTransform: 'uppercase', marginBottom: 8 }}>
-              <ExternalLink size={12} />
-              <span style={{ fontFamily: 'var(--font-jp)' }}>関連リンク / LIÊN KẾT NHANH</span>
-            </div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-              {/* ← Product */}
-              <Link
-                href={`/master/products?search=${encodeURIComponent(moldMaster.product_code)}`}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: 6,
-                  padding: '6px 10px', borderRadius: 'var(--radius-md)',
-                  background: 'var(--bg-surface-2)', border: '1px solid var(--border-default)',
-                  fontSize: 12, color: 'var(--text-primary)', textDecoration: 'none',
-                  fontWeight: 600, transition: 'all 0.15s', flex: '1 1 calc(50% - 4px)'
-                }}
-                className="hover:border-[var(--accent)] hover:text-[var(--accent)]"
-                title="製品マスターを開く / Xem sản phẩm"
+          {/* Right: Actions / Links Card */}
+          <div className="card-flat" style={{ padding: '12px 16px', display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 8 }}>
+            <button
+              className="btn btn-primary"
+              style={{ width: '100%', justifyContent: 'center' }}
+              onClick={openAddModal}
+            >
+              <Plus size={14} />
+              新規リビジョン登録 / Thêm phiên bản thiết kế
+            </button>
+            {revisions.length > 0 && (
+              <button
+                className="btn btn-secondary"
+                style={{ width: '100%', justifyContent: 'center' }}
+                onClick={handleCopyFromPrevious}
               >
-                <Package size={14} style={{ color: 'var(--accent)' }} />
-                <div style={{ display: 'flex', flexDirection: 'column' }}>
-                  <span style={{ fontFamily: 'var(--font-jp)', lineHeight: 1.2 }}>製品</span>
-                  <span style={{ fontSize: 9, color: 'var(--text-muted)', fontWeight: 400 }}>Sản phẩm</span>
-                </div>
-              </Link>
-              {/* ← Customer */}
-              {moldMaster.company_id && (
-                <Link
-                  href={`/master/customers/${moldMaster.company_id}`}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: 6,
-                    padding: '6px 10px', borderRadius: 'var(--radius-md)',
-                    background: 'var(--bg-surface-2)', border: '1px solid var(--border-default)',
-                    fontSize: 12, color: 'var(--text-primary)', textDecoration: 'none',
-                    fontWeight: 600, transition: 'all 0.15s', flex: '1 1 calc(50% - 4px)'
-                  }}
-                  className="hover:border-[var(--text-secondary)] hover:text-[var(--text-secondary)]"
-                  title="得意先詳細を開く / Mở trang khách hàng"
-                >
-                  <Building2 size={14} style={{ color: 'var(--text-secondary)' }} />
-                  <div style={{ display: 'flex', flexDirection: 'column' }}>
-                    <span style={{ fontFamily: 'var(--font-jp)', lineHeight: 1.2 }}>得意先</span>
-                    <span style={{ fontSize: 9, color: 'var(--text-muted)', fontWeight: 400 }}>Khách hàng</span>
-                  </div>
-                </Link>
-              )}
-              {/* → Jobs */}
-              <Link
-                href={`/equipment/jobs?mold=${moldMaster.product_code}`}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: 6,
-                  padding: '6px 10px', borderRadius: 'var(--radius-md)',
-                  background: 'var(--bg-surface-2)', border: '1px solid var(--border-default)',
-                  fontSize: 12, color: 'var(--text-primary)', textDecoration: 'none',
-                  fontWeight: 600, transition: 'all 0.15s', flex: '1 1 calc(50% - 4px)'
-                }}
-                className="hover:border-[var(--text-secondary)] hover:text-[var(--text-secondary)]"
-                title="加工ジョブを開く / Xem công việc gia công"
-              >
-                <Hammer size={14} style={{ color: 'var(--text-secondary)' }} />
-                <div style={{ display: 'flex', flexDirection: 'column' }}>
-                  <span style={{ fontFamily: 'var(--font-jp)', lineHeight: 1.2 }}>ジョブ</span>
-                  <span style={{ fontSize: 9, color: 'var(--text-muted)', fontWeight: 400 }}>Jobs</span>
-                </div>
-              </Link>
-              {/* → Physical Molds */}
-              <Link
-                href={`/equipment/molds?master=${moldMaster.product_code}`}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: 6,
-                  padding: '6px 10px', borderRadius: 'var(--radius-md)',
-                  background: 'var(--bg-surface-2)', border: '1px solid var(--border-default)',
-                  fontSize: 12, color: 'var(--text-primary)', textDecoration: 'none',
-                  fontWeight: 600, transition: 'all 0.15s', flex: '1 1 calc(50% - 4px)'
-                }}
-                className="hover:border-[var(--text-secondary)] hover:text-[var(--text-secondary)]"
-                title="金型を開く / Xem khuôn vật lý"
-              >
-                <Wrench size={14} style={{ color: 'var(--text-secondary)' }} />
-                <div style={{ display: 'flex', flexDirection: 'column' }}>
-                  <span style={{ fontFamily: 'var(--font-jp)', lineHeight: 1.2 }}>金型</span>
-                  <span style={{ fontSize: 9, color: 'var(--text-muted)', fontWeight: 400 }}>Khuôn VL</span>
-                </div>
-              </Link>
-            </div>
+                前版からコピー / Sao chép từ bản trước
+              </button>
+            )}
           </div>
         </div>
       )}
 
-      {/* ── Toolbar ── */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <span style={{ fontFamily: 'var(--font-jp)', fontSize: 12, color: 'var(--text-secondary)', fontWeight: 600 }}>
-          設計版一覧 <span style={{ color: 'var(--text-muted)', fontWeight: 400, fontSize: 10 }}>Danh sách phiên bản</span>
-          {!loading && <span style={{ marginLeft: 8, fontSize: 11, color: 'var(--text-muted)' }}>({revisions.length})</span>}
-        </span>
-        <button className="btn btn-primary" style={{ height: 32, fontSize: 12, padding: '0 12px' }} onClick={openAddModal}>
-          <Plus size={14} />
-          <span style={{ fontFamily: 'var(--font-jp)' }}>新規版</span>
-        </button>
-      </div>
-
-      {/* ── Revisions Table ── */}
-      {loading ? (
-        <div className="card-flat" style={{ padding: 32, textAlign: 'center', color: 'var(--text-muted)', fontSize: 12 }}>
-          読み込み中... / Đang tải dữ liệu...
-        </div>
-      ) : error ? (
-        <div className="card-flat" style={{ padding: 16, color: 'var(--status-error)', fontSize: 12 }}>
-          エラー / Lỗi: {error}
-        </div>
-      ) : revisions.length === 0 ? (
-        <div className="card-flat" style={{ padding: 32, textAlign: 'center', color: 'var(--text-muted)', fontSize: 12 }}>
-          <span style={{ fontFamily: 'var(--font-jp)' }}>設計版なし</span>
-          <span style={{ marginLeft: 8 }}>Chưa có phiên bản thiết kế nào</span>
-        </div>
-      ) : (
-        <div className="card-flat" style={{ overflow: 'auto' }}>
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th style={{ width: 48 }}>Rev #</th>
-                <th style={{ width: 140 }}>Design Code</th>
-                <th style={{ width: 80 }}>ステータス</th>
-                <th style={{ width: 120 }}>サイズ L×W×H</th>
-                <th style={{ width: 50 }}>Cavity</th>
-                <th>設計者</th>
-                <th style={{ width: 90 }}>設計日</th>
-                <th style={{ width: 90 }}>承認日</th>
-                <th style={{ width: 80, textAlign: 'center' }}>操作</th>
-              </tr>
-            </thead>
-            <tbody>
-              {revisions.map(rev => {
-                const isSelected = selectedRevisionId === rev.revision_id
-                return (
-                <tr
-                  key={rev.revision_id}
-                  onClick={() => {
-                    if (isSelected) {
-                      setSelectedRevisionId(null)
-                      setSelectedMoldId(null)
-                    } else {
-                      setSelectedRevisionId(rev.revision_id)
-                      setSelectedMoldId(null)
-                    }
-                  }}
-                  style={{
-                    cursor: 'pointer',
-                    background: isSelected ? 'color-mix(in srgb, var(--accent) 8%, transparent)' : undefined,
-                    borderLeft: isSelected ? '3px solid var(--accent)' : '3px solid transparent'
-                  }}
-                  className="hover:bg-[var(--bg-surface-2)] transition-colors"
-                >
-                  <td style={{ fontFamily: 'monospace', fontWeight: 700 }} onClick={e => e.stopPropagation()}>
-                    <Link href={`/engineering/designs/revisions/${rev.revision_id}`} className="text-[var(--accent)] hover:underline">
-                      {rev.revision_number ?? '—'}
-                    </Link>
-                  </td>
-                  <td style={{ fontFamily: 'monospace', fontWeight: 600 }} onClick={e => e.stopPropagation()}>
-                    <Link href={`/engineering/designs/revisions/${rev.revision_id}`} className="text-[var(--accent)] hover:underline">
-                      {rev.design_code}
-                    </Link>
-                  </td>
-                  <td>{renderBadge(rev.status)}</td>
-                  <td style={{ fontFamily: 'monospace', fontSize: 12 }}>
-                    {dimStr(rev.design_length, rev.design_width, rev.design_height)}
-                  </td>
-                  <td style={{ textAlign: 'center', fontFamily: 'monospace' }}>{rev.cavity_count ?? '—'}</td>
-                  <td>{rev.employees?.employee_name ?? rev.designer ?? '—'}</td>
-                  <td style={{ fontSize: 12, fontFamily: 'monospace' }}>{fmtDate(rev.design_date)}</td>
-                  <td style={{ fontSize: 12, fontFamily: 'monospace' }}>{fmtDate(rev.approved_date)}</td>
-                  <td style={{ textAlign: 'center' }} onClick={e => e.stopPropagation()}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
-                      <button
-                        title="ジョブ作成 / Tạo Job"
-                        onClick={() => setJobModalRevId(rev.revision_id)}
-                        style={{
-                          width: 28, height: 28, display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                          borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-default)',
-                          background: 'var(--bg-surface)', color: 'var(--accent)', cursor: 'pointer',
-                        }}
-                      >
-                        <Hammer size={12} />
-                      </button>
-                      <button
-                        title="編集 / Sửa"
-                        onClick={() => openEditModal(rev)}
-                        style={{
-                          width: 28, height: 28, display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                          borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-default)',
-                          background: 'var(--bg-surface)', color: 'var(--accent)', cursor: 'pointer',
-                        }}
-                      >
-                        <Pencil size={12} />
-                      </button>
-                      <button
-                        title="削除 / Xoá"
-                        onClick={() => handleDelete(rev.revision_id, `Rev ${rev.revision_number}`)}
-                        style={{
-                          width: 28, height: 28, display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                          borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-default)',
-                          background: 'var(--bg-surface)', color: 'var(--status-error)', cursor: 'pointer',
-                        }}
-                      >
-                        <Trash2 size={12} />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              )})}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      {/* ═══════════════════════════════════════════════
-         ADD / EDIT MODAL — 720px, 5 sections
-         ═══════════════════════════════════════════════ */}
+      {/* ── Modal to Add/Edit Revision ── */}
       {showModal && (
-        <div
-          style={{
-            position: 'fixed', inset: 0, zIndex: 9999,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            background: 'rgba(0,0,0,0.4)',
-          }}
-          onClick={() => setShowModal(false)}
-        >
-          <div
-            className="card-flat custom-scrollbar"
-            style={{ width: 1100, maxWidth: '95vw', maxHeight: '92vh', overflow: 'auto', padding: 0 }}
-            onClick={e => e.stopPropagation()}
-          >
-            {/* Modal header */}
-            <div style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              padding: '10px 16px', borderBottom: '1px solid var(--border-default)',
-              background: 'var(--bg-surface-2)', position: 'sticky', top: 0, zIndex: 1,
-            }}>
-              <div>
-                <span style={{ fontSize: 13, fontWeight: 700, fontFamily: 'var(--font-jp)', color: 'var(--text-primary)' }}>
-                  {editingId ? '設計版 編集' : '新規 設計版'}
-                </span>
-                <span style={{ fontSize: 11, color: 'var(--text-muted)', marginLeft: 8 }}>
-                  {editingId ? 'Chỉnh sửa phiên bản' : 'Tạo phiên bản mới'}
-                </span>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                {!editingId && revisions.length > 0 && (
-                  <button
-                    className="btn btn-secondary"
-                    style={{ height: 28, fontSize: 11, padding: '0 8px' }}
-                    onClick={handleCopyFromPrevious}
-                    title="前回からコピー / Sao chép từ phiên bản trước"
-                  >
-                    <Copy size={12} />
-                    <span style={{ fontFamily: 'var(--font-jp)' }}>前回コピー</span>
-                  </button>
-                )}
-                <button
-                  onClick={() => setShowModal(false)}
-                  style={{
-                    width: 30, height: 30, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    borderRadius: 'var(--radius-sm)', border: 'none', cursor: 'pointer',
-                    background: 'transparent', color: 'var(--text-muted)',
-                  }}
-                >
-                  <X size={16} />
-                </button>
-              </div>
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 1000,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.5)' }} onClick={() => setShowModal(false)} />
+          <div className="card" style={{
+            position: 'relative', width: 900, maxHeight: '90vh', overflowY: 'auto', padding: 0, zIndex: 1,
+            display: 'flex', flexDirection: 'column', background: 'var(--bg-surface)'
+          }}>
+            {/* Modal Header */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: '1px solid var(--border-default)', flexShrink: 0 }}>
+              <h2 style={{ margin: 0, fontSize: 14, fontWeight: 700 }}>
+                {editingId ? 'リビジョン編集 / Sửa phiên bản' : '新規リビジョン追加 / Thêm phiên bản mới'}
+              </h2>
+              <button onClick={() => setShowModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}>
+                <X size={18} />
+              </button>
             </div>
 
-            {/* Modal body */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 p-4">
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }} className="lg:col-span-2">
-
-              {/* ── Section 1: プロジェクト情報 ── */}
-              <div className="form-section">
-                <div className="form-section-header">
-                  <ClipboardList className="section-icon" />
-                  <span style={{ fontFamily: 'var(--font-jp)' }}>プロジェクト情報</span>
-                  <span style={{ fontWeight: 400, color: 'var(--text-muted)', marginLeft: 4, fontSize: 10 }}>Thông tin dự án</span>
-                </div>
-                <div className="form-section-body">
-                  <div className="form-grid-4" style={{ display: 'grid', gap: 10, gridTemplateColumns: 'repeat(3, 1fr)' }}>
-                    {/* Design Code */}
-                    <div className="form-field">
-                      <label className="form-label">
-                        <span className="label-ja">設計コード <span className="label-required">*</span></span>
-                        <span className="label-vi">Design Code</span>
-                      </label>
-                      <input
-                        type="text"
-                        className="form-input mono"
-                        value={form.design_code}
-                        onChange={e => setField('design_code', e.target.value)}
-                      />
+            {/* Modal Body */}
+            <div style={{ padding: 20, flex: 1, overflowY: 'auto' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 20 }}>
+                
+                {/* Left pane: Form */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                  
+                  {/* ── Section 1: 基本情報 ── */}
+                  <div className="form-section">
+                    <div className="form-section-header">
+                      <Layers className="section-icon" />
+                      <span style={{ fontFamily: 'var(--font-jp)' }}>基本情報</span>
+                      <span style={{ fontWeight: 400, color: 'var(--text-muted)', marginLeft: 4, fontSize: 10 }}>Thông tin cơ bản</span>
                     </div>
-                    {/* Rev Number */}
-                    <div className="form-field">
-                      <label className="form-label">
-                        <span className="label-ja">版数</span>
-                        <span className="label-vi">Revision #</span>
-                      </label>
-                      <input
-                        type="number"
-                        className="form-input"
-                        value={form.revision_number ?? ''}
-                        onChange={e => setField('revision_number', e.target.value ? Number(e.target.value) : null)}
-                        readOnly={!!editingId}
-                      />
-                    </div>
+                    <div className="form-section-body">
+                      <div className="form-grid-2">
+                        <div className="form-field">
+                          <label className="form-label">
+                            {t('Engineering.designCode')}
+                          </label>
+                          <input
+                            type="text"
+                            className="form-input mono"
+                            value={form.design_code}
+                            onChange={e => setField('design_code', e.target.value)}
+                          />
+                        </div>
+                        {/* Rev Number */}
+                        <div className="form-field">
+                          <label className="form-label">
+                            {t('Engineering.revision')}
+                          </label>
+                          <input
+                            type="number"
+                            className="form-input"
+                            value={form.revision_number ?? ''}
+                            onChange={e => setField('revision_number', e.target.value ? Number(e.target.value) : null)}
+                            readOnly={!!editingId}
+                          />
+                        </div>
                     {/* Status */}
                     <div className="form-field">
                       <label className="form-label">
-                        <span className="label-ja">ステータス</span>
-                        <span className="label-vi">Trạng thái</span>
+                        {t('Engineering.trangThai')}
                       </label>
                       <select
                         className="form-input"
@@ -855,7 +614,7 @@ export default function MoldMasterDesignsPage() {
                       >
                         {STATUS_OPTIONS.map(s => (
                           <option key={s} value={s}>
-                            {STATUS_CONFIG[s].label} ({STATUS_CONFIG[s].labelVi})
+                            {locale === 'vi' ? STATUS_CONFIG[s].labelVi : STATUS_CONFIG[s].label}
                           </option>
                         ))}
                       </select>
@@ -865,8 +624,7 @@ export default function MoldMasterDesignsPage() {
                     {/* Designer */}
                     <div className="form-field">
                       <label className="form-label">
-                        <span className="label-ja">設計者</span>
-                        <span className="label-vi">NV Thiết kế</span>
+                        {t('Engineering.nvThietKe')}
                       </label>
                       <select
                         className="form-input"
@@ -884,8 +642,7 @@ export default function MoldMasterDesignsPage() {
                     {/* Design Date */}
                     <div className="form-field">
                       <label className="form-label">
-                        <span className="label-ja">設計日</span>
-                        <span className="label-vi">Ngày thiết kế</span>
+                        {t('Engineering.ngayThietKe')}
                       </label>
                       <input
                         type="date"
@@ -897,8 +654,7 @@ export default function MoldMasterDesignsPage() {
                     {/* Approved Date */}
                     <div className="form-field">
                       <label className="form-label">
-                        <span className="label-ja">承認日</span>
-                        <span className="label-vi">Ngày duyệt</span>
+                        {t('Engineering.ngayDuyet')}
                       </label>
                       <input
                         type="date"
@@ -915,8 +671,7 @@ export default function MoldMasterDesignsPage() {
               <div className="form-section">
                 <div className="form-section-header">
                   <Ruler className="section-icon" />
-                  <span style={{ fontFamily: 'var(--font-jp)' }}>寸法 & パラメータ</span>
-                  <span style={{ fontWeight: 400, color: 'var(--text-muted)', marginLeft: 4, fontSize: 10 }}>Kích thước & Thông số</span>
+                  <span style={{ fontFamily: 'var(--font-jp)' }}>{locale === 'vi' ? 'Kích thước & Thông số' : '寸法 & パラメータ'}</span>
                 </div>
                 <div className="form-section-body">
                   <div className="form-grid-4" style={{ display: 'grid', gap: 10, gridTemplateColumns: 'repeat(4, 1fr)' }}>
@@ -928,8 +683,7 @@ export default function MoldMasterDesignsPage() {
                     ] as [keyof FormData, string, string][]).map(([key, ja, vi]) => (
                       <div className="form-field" key={key}>
                         <label className="form-label">
-                          <span className="label-ja">{ja}</span>
-                          <span className="label-vi">{vi}</span>
+                          {locale === 'vi' ? vi : ja}
                         </label>
                         <input
                           type="number" step="any"
@@ -939,34 +693,30 @@ export default function MoldMasterDesignsPage() {
                           placeholder="mm"
                         />
                       </div>
-                    ))}
+                    ))}`
                   </div>
                   <div className="form-grid-4" style={{ display: 'grid', gap: 10, gridTemplateColumns: 'repeat(4, 1fr)', marginTop: 10 }}>
                     <div className="form-field">
                       <label className="form-label">
-                        <span className="label-ja">重量</span>
-                        <span className="label-vi">Khối lượng</span>
+                        {t('Engineering.khoiLuong')}
                       </label>
                       <input type="text" className="form-input" value={form.design_weight} onChange={e => setField('design_weight', e.target.value)} placeholder="g" />
                     </div>
                     <div className="form-field">
                       <label className="form-label">
-                        <span className="label-ja">切断線 L</span>
-                        <span className="label-vi">Cutline L</span>
+                        {t('Engineering.cutlineL')}
                       </label>
                       <input type="number" step="any" className="form-input" value={form.cutline_length} onChange={e => setField('cutline_length', e.target.value)} placeholder="mm" />
                     </div>
                     <div className="form-field">
                       <label className="form-label">
-                        <span className="label-ja">切断線 W</span>
-                        <span className="label-vi">Cutline W</span>
+                        {t('Engineering.cutlineW')}
                       </label>
                       <input type="number" step="any" className="form-input" value={form.cutline_width} onChange={e => setField('cutline_width', e.target.value)} placeholder="mm" />
                     </div>
                     <div className="form-field">
                       <label className="form-label">
-                        <span className="label-ja">キャビティ数</span>
-                        <span className="label-vi">Cavity</span>
+                        {t('Engineering.cavity')}
                       </label>
                       <input type="number" className="form-input" value={form.cavity_count} onChange={e => setField('cavity_count', e.target.value)} />
                     </div>
@@ -974,22 +724,19 @@ export default function MoldMasterDesignsPage() {
                   <div className="form-grid-4" style={{ display: 'grid', gap: 10, gridTemplateColumns: 'repeat(4, 1fr)', marginTop: 10 }}>
                     <div className="form-field">
                       <label className="form-label">
-                        <span className="label-ja">ポケット数</span>
-                        <span className="label-vi">Pocket</span>
+                        {t('Engineering.pocket')}
                       </label>
                       <input type="number" className="form-input" value={form.pocket_numbers} onChange={e => setField('pocket_numbers', e.target.value)} />
                     </div>
                     <div className="form-field">
                       <label className="form-label">
-                        <span className="label-ja">歩み（ピッチ）</span>
-                        <span className="label-vi">Cavity Pitch (mm)</span>
+                        {t('Engineering.cavityPitchMm')}
                       </label>
                       <input type="number" step="any" className="form-input" value={form.cavity_pitch_mm} onChange={e => setField('cavity_pitch_mm', e.target.value)} placeholder="mm" />
                     </div>
                     <div className="form-field">
                       <label className="form-label">
-                        <span className="label-ja">送り</span>
-                        <span className="label-vi">Feed Pitch (mm)</span>
+                        {t('Engineering.feedPitchMm')}
                       </label>
                       <input type="number" step="any" className="form-input" value={form.machine_feed_pitch_mm} onChange={e => setField('machine_feed_pitch_mm', e.target.value)} placeholder="mm" />
                     </div>
@@ -1007,33 +754,33 @@ export default function MoldMasterDesignsPage() {
                 <div className="form-section-body">
                   <div className="form-grid-4" style={{ display: 'grid', gap: 10, gridTemplateColumns: 'repeat(4, 1fr)' }}>
                     <div className="form-field">
-                      <label className="form-label"><span className="label-ja">コーナーR</span><span className="label-vi">Corner R</span></label>
+                      <label className="form-label">{t('Engineering.cornerR')}</label>
                       <input type="text" className="form-input" value={form.corner_r} onChange={e => setField('corner_r', e.target.value)} />
                     </div>
                     <div className="form-field">
-                      <label className="form-label"><span className="label-ja">面取りC</span><span className="label-vi">Chamfer C</span></label>
+                      <label className="form-label">{t('Engineering.chamferC')}</label>
                       <input type="text" className="form-input" value={form.chamfer_c} onChange={e => setField('chamfer_c', e.target.value)} />
                     </div>
                     <div className="form-field">
-                      <label className="form-label"><span className="label-ja">抜き勾配</span><span className="label-vi">Draft Angle</span></label>
+                      <label className="form-label">{t('Engineering.draftAngle')}</label>
                       <input type="text" className="form-input" value={form.draft_angle} onChange={e => setField('draft_angle', e.target.value)} />
                     </div>
                     <div className="form-field">
-                      <label className="form-label"><span className="label-ja">アンダー深さ</span><span className="label-vi">Under Depth</span></label>
+                      <label className="form-label">{t('Engineering.underDepth')}</label>
                       <input type="text" className="form-input" value={form.under_depth} onChange={e => setField('under_depth', e.target.value)} />
                     </div>
                   </div>
                   <div className="form-grid-4" style={{ display: 'grid', gap: 10, gridTemplateColumns: 'repeat(4, 1fr)', marginTop: 10 }}>
                     <div className="form-field" style={{ gridColumn: 'span 2' }}>
-                      <label className="form-label"><span className="label-ja">アンダーカット仕様</span><span className="label-vi">Undercut Spec</span></label>
+                      <label className="form-label">{t('Engineering.undercutSpec')}</label>
                       <input type="text" className="form-input" value={form.undercut_spec} onChange={e => setField('undercut_spec', e.target.value)} />
                     </div>
                     <div className="form-field">
-                      <label className="form-label"><span className="label-ja">方向</span><span className="label-vi">Orientation</span></label>
+                      <label className="form-label">{t('Engineering.orientation')}</label>
                       <input type="text" className="form-input" value={form.orientation} onChange={e => setField('orientation', e.target.value)} />
                     </div>
                     <div className="form-field">
-                      <label className="form-label"><span className="label-ja">セットアップ型</span><span className="label-vi">Setup Type</span></label>
+                      <label className="form-label">{t('Engineering.setupType')}</label>
                       <input type="text" className="form-input" value={form.setup_type} onChange={e => setField('setup_type', e.target.value)} />
                     </div>
                   </div>
@@ -1061,7 +808,7 @@ export default function MoldMasterDesignsPage() {
                   </div>
                   <div className="form-grid-2" style={{ marginTop: 10 }}>
                     <div className="form-field">
-                      <label className="form-label"><span className="label-ja">設計用樹脂</span><span className="label-vi">Nhựa thiết kế</span></label>
+                      <label className="form-label">{t('Engineering.nhuaThietKe')}</label>
                       <input type="text" className="form-input" value={form.plastic_type_designed} onChange={e => setField('plastic_type_designed', e.target.value)} />
                     </div>
                   </div>
@@ -1078,19 +825,19 @@ export default function MoldMasterDesignsPage() {
                 <div className="form-section-body">
                   <div className="form-grid-2">
                     <div className="form-field">
-                      <label className="form-label"><span className="label-ja">トレー名称</span><span className="label-vi">Customer Tray Name</span></label>
+                      <label className="form-label">{t('Engineering.customerTrayName')}</label>
                       <input type="text" className="form-input" value={form.customer_tray_name} onChange={e => setField('customer_tray_name', e.target.value)} />
                     </div>
                     <div className="form-field">
-                      <label className="form-label"><span className="label-ja">設備No.</span><span className="label-vi">Customer Equipment No</span></label>
+                      <label className="form-label">{t('Engineering.customerEquipmentNo')}</label>
                       <input type="text" className="form-input" value={form.customer_equipment_no} onChange={e => setField('customer_equipment_no', e.target.value)} />
                     </div>
                     <div className="form-field">
-                      <label className="form-label"><span className="label-ja">図面No.</span><span className="label-vi">Customer Drawing No</span></label>
+                      <label className="form-label">{t('Engineering.customerDrawingNo')}</label>
                       <input type="text" className="form-input" value={form.customer_drawing_no} onChange={e => setField('customer_drawing_no', e.target.value)} />
                     </div>
                     <div className="form-field">
-                      <label className="form-label"><span className="label-ja">トレー情報</span><span className="label-vi">Tray Info</span></label>
+                      <label className="form-label">{t('Engineering.trayInfo')}</label>
                       <input type="text" className="form-input" value={form.tray_info} onChange={e => setField('tray_info', e.target.value)} />
                     </div>
                   </div>
@@ -1107,36 +854,36 @@ export default function MoldMasterDesignsPage() {
                 <div className="form-section-body">
                   <div className="form-grid-2">
                     <div className="form-field" style={{ gridColumn: 'span 2' }}>
-                      <label className="form-label"><span className="label-ja">CADフォルダ</span><span className="label-vi">CAD Folder Path</span></label>
+                      <label className="form-label">{t('Engineering.cadFolderPath')}</label>
                       <input type="text" className="form-input mono" value={form.cad_folder_path} onChange={e => setField('cad_folder_path', e.target.value)} placeholder="\\server\cad\..." />
                     </div>
                     <div className="form-field">
-                      <label className="form-label"><span className="label-ja">図面PDF</span><span className="label-vi">Drawing PDF Path</span></label>
+                      <label className="form-label">{t('Engineering.drawingPdfPath')}</label>
                       <input type="text" className="form-input mono" value={form.drawing_pdf_path} onChange={e => setField('drawing_pdf_path', e.target.value)} />
                     </div>
                     <div className="form-field">
-                      <label className="form-label"><span className="label-ja">3D STEP</span><span className="label-vi">STEP 3D Path</span></label>
+                      <label className="form-label">{t('Engineering.step3dPath')}</label>
                       <input type="text" className="form-input mono" value={form.step_3d_path} onChange={e => setField('step_3d_path', e.target.value)} />
                     </div>
                   </div>
                   <div className="form-grid-2" style={{ marginTop: 10 }}>
                     <div className="form-field">
-                      <label className="form-label"><span className="label-ja">備考</span><span className="label-vi">Ghi chú</span></label>
+                      <label className="form-label">{t('Engineering.ghiChu')}</label>
                       <textarea
                         className="form-textarea"
                         value={form.notes}
                         onChange={e => setField('notes', e.target.value)}
                         rows={3}
-                      />
+                      ></textarea>
                     </div>
                     <div className="form-field">
-                      <label className="form-label"><span className="label-ja">版メモ</span><span className="label-vi">Version Note</span></label>
+                      <label className="form-label">{t('Engineering.versionNote')}</label>
                       <textarea
                         className="form-textarea"
                         value={form.version_note}
                         onChange={e => setField('version_note', e.target.value)}
                         rows={3}
-                      />
+                      ></textarea>
                     </div>
                   </div>
                 </div>
@@ -1220,6 +967,7 @@ export default function MoldMasterDesignsPage() {
                   </div>
                 )}
               </div>
+            </div>
             </div>
             {/* ── Sticky Footer with Workflow Links & Buttons ── */}
             <div style={{

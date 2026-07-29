@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import { Loader2, AlertTriangle, Save, ArrowLeft, ArrowUpFromLine } from 'lucide-react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { useTranslations } from 'next-intl'
 
 import { ProductDetailHeader } from './ProductDetailHeader'
 import { ProductTabNavigation, type TabId } from './ProductTabNavigation'
@@ -56,10 +57,11 @@ export type Company = {
 }
 
 function PlaceholderTab({ name }: { name: string }) {
+  const t = useTranslations('Common')
   return (
     <div className="card-flat" style={{ padding: '40px 20px', textAlign: 'center', color: 'var(--text-muted)' }}>
       <div style={{ fontSize: 13, fontFamily: 'var(--font-jp)', marginBottom: 4 }}>{name}</div>
-      <div style={{ fontSize: 11 }}>開発中 / Đang phát triển...</div>
+      <div style={{ fontSize: 11 }}>{t('underDevelopment')}</div>
     </div>
   )
 }
@@ -73,19 +75,21 @@ function TabContent({
   setFormData: React.Dispatch<React.SetStateAction<Partial<ProductDetailData>>>;
   companies: Company[];
 }) {
+  const tTabs = useTranslations('Master.Products.Tabs')
   switch (tab) {
     case 'overview':
       return <OverviewTab product={product} isEditing={isEditing} formData={formData} setFormData={setFormData} companies={companies} />
     case 'orders':
       return <OrdersTab productId={product.product_id} />
     case 'designs':
-      return <PlaceholderTab name="設計一覧 / Thiết kế" />
+      return <PlaceholderTab name={tTabs('designs')} />
     default:
       return null
   }
 }
 
 export default function ProductDetailPage() {
+  const t = useTranslations('Common')
   const params = useParams()
   const productId = params.id as string
   const supabase = createClient()
@@ -109,7 +113,7 @@ export default function ProductDetailPage() {
       .from('products')
       .select(`
         *,
-        companies(company_id, company_name, company_code),
+        companies:companies!products_company_id_fkey(company_id, company_name, company_code),
         design_revisions(revision_id, design_code, revision_number, status, design_date, plastic_master(plastic_code, thickness_mm, color_name_normalized))
       `)
       .eq('product_id', productId)
@@ -176,7 +180,7 @@ export default function ProductDetailPage() {
       fetchProduct()
     } else {
       console.error(updateErr)
-      setError(updateErr.code === '23505' ? '製品コードは既に存在します / Mã SP này đã tồn tại' : updateErr.message)
+      setError(updateErr.code === '23505' ? t('validation.productCodeExists') : updateErr.message)
     }
   }
 
@@ -184,7 +188,7 @@ export default function ProductDetailPage() {
     return (
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 300, gap: 8 }}>
         <Loader2 size={20} className="animate-spin" style={{ color: 'var(--accent)' }} />
-        <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>読み込み中...</span>
+        <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{t('loading')}</span>
       </div>
     )
   }
@@ -194,7 +198,7 @@ export default function ProductDetailPage() {
       <div className="card-flat" style={{ padding: 20, textAlign: 'center' }}>
         <AlertTriangle size={24} style={{ color: 'var(--status-error)', marginBottom: 8 }} />
         <div style={{ fontSize: 13, color: 'var(--status-error)', fontWeight: 600 }}>
-          製品が見つかりません / Không tìm thấy sản phẩm
+          {t('productNotFound')}
         </div>
         <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>
           ID: {productId}
@@ -211,10 +215,10 @@ export default function ProductDetailPage() {
           onClick={() => router.back()}
           className="btn btn-secondary"
           style={{ height: 28, padding: '0 8px', gap: 3, fontSize: 11 }}
-          title="前のページに戻る / Quay lại trang trước"
+          title={t('back')}
         >
           <ArrowLeft size={13} />
-          <span style={{ fontFamily: 'var(--font-jp)' }}>戻る</span>
+          <span style={{ fontFamily: 'var(--font-jp)' }}>{t('back')}</span>
         </button>
         <Link
           href="/master/products"
@@ -223,10 +227,10 @@ export default function ProductDetailPage() {
             height: 28, padding: '0 8px', gap: 3, fontSize: 11,
             textDecoration: 'none', display: 'inline-flex', alignItems: 'center',
           }}
-          title="一覧へ / Về danh sách"
+          title={t('list')}
         >
           <ArrowUpFromLine size={12} />
-          <span style={{ fontFamily: 'var(--font-jp)' }}>一覧</span>
+          <span style={{ fontFamily: 'var(--font-jp)' }}>{t('list')}</span>
         </Link>
       </div>
 
@@ -258,12 +262,12 @@ export default function ProductDetailPage() {
       {isEditing && (
         <div className="card-flat sticky bottom-0 z-10 flex justify-end gap-2 p-3 mt-4" style={{ backgroundColor: 'var(--bg-surface)' }}>
           <button className="btn btn-secondary" onClick={() => { setIsEditing(false); setFormData(product!); setError(null) }}>
-            キャンセル
+            {t('cancel')}
           </button>
           <button className="btn btn-primary" onClick={handleSave} disabled={saving}>
             {saving && <Loader2 size={14} className="animate-spin mr-1" />}
             <Save size={16} />
-            保存
+            {t('save')}
           </button>
         </div>
       )}

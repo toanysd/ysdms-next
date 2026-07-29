@@ -3,8 +3,10 @@
 import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { Box, Calculator, Plus, Search, Settings, Trash2, CheckCircle2, AlertTriangle, Layers, X } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 export default function AluminumBlanksPage() {
+  const t = useTranslations('Equipment.Aluminum');
   const supabase = createClient();
   const [blanks, setBlanks] = useState<any[]>([]);
   const [molds, setMolds] = useState<any[]>([]);
@@ -99,14 +101,14 @@ export default function AluminumBlanksPage() {
 
       const { error } = await supabase.from('aluminum_blanks').insert([newBlank]);
       if (error) {
-        alert('Có lỗi xảy ra khi lưu! ' + error.message);
+        alert(t('errorSave') + error.message);
       } else {
-        alert('Đặt hàng thành công!');
+        alert(t('orderSuccess'));
         fetchData();
         setIsModalOpen(false);
       }
     } catch (err) {
-      alert('Network error');
+      alert(t('networkError'));
     }
     setIsSaving(false);
   }
@@ -125,16 +127,16 @@ export default function AluminumBlanksPage() {
           </div>
           <div>
             <h1 className="text-[16px] font-bold" style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-jp)' }}>
-              アルミブランク
+              {t('title')}
             </h1>
-            <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>Phôi nhôm (A5052)</span>
+            <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>{t('subtitle')}</span>
           </div>
         </div>
         <button 
           className="btn-primary h-[32px] px-3 text-[12px] font-bold"
           onClick={() => setIsModalOpen(true)}
         >
-          <Plus size={16} className="mr-1" /> 新規発注 (Đặt hàng mới)
+          <Plus size={16} className="mr-1" /> {t('newOrder')}
         </button>
       </div>
 
@@ -144,12 +146,12 @@ export default function AluminumBlanksPage() {
         <div className="lg:col-span-1 card-flat p-4 flex flex-col gap-4">
           <div className="flex items-center gap-2 mb-2">
             <Calculator size={18} className="text-accent" />
-            <h2 className="text-[14px] font-bold" style={{ fontFamily: 'var(--font-jp)' }}>サイズ計算 (Tính kích thước)</h2>
+            <h2 className="text-[14px] font-bold" style={{ fontFamily: 'var(--font-jp)' }}>{t('calcSize')}</h2>
           </div>
 
           <div className="flex flex-col gap-3">
             <div>
-              <label className="block text-[11px] mb-1 font-semibold text-muted">対象金型 (Khuôn đích)</label>
+              <label className="block text-[11px] mb-1 font-semibold text-muted">{t('targetMold')}</label>
               <select 
                 className="w-full bg-surface-2 border rounded px-2 py-1.5 text-[12px] outline-none" style={{ borderColor: 'var(--border-default)' }}
                 onChange={e => {
@@ -163,7 +165,7 @@ export default function AluminumBlanksPage() {
                 }}
                 value={manualMode ? '' : (calcMold?.physical_mold_id || '')}
               >
-                <option value="">-- 手動入力 (Nhập thủ công) --</option>
+                <option value="">{t('manualInput')}</option>
                 {molds.map(m => (
                   <option key={m.physical_mold_id} value={m.physical_mold_id}>
                     {m.system_code} ({m.actual_length_mm || '-'}x{m.actual_width_mm || '-'}x{m.actual_height_mm || '-'})
@@ -175,17 +177,17 @@ export default function AluminumBlanksPage() {
             {manualMode && (
               <div className="grid grid-cols-3 gap-2 p-2 rounded bg-surface-2 border" style={{ borderColor: 'var(--border-default)' }}>
                 <div>
-                  <label className="block text-[10px] text-muted">Dài (L)</label>
+                  <label className="block text-[10px] text-muted">{t('length')}</label>
                   <input type="number" className="w-full border rounded px-1 py-1 text-[12px]" 
                     value={manualDimensions.l || ''} onChange={e => setManualDimensions({...manualDimensions, l: Number(e.target.value)})} />
                 </div>
                 <div>
-                  <label className="block text-[10px] text-muted">Rộng (W)</label>
+                  <label className="block text-[10px] text-muted">{t('width')}</label>
                   <input type="number" className="w-full border rounded px-1 py-1 text-[12px]" 
                     value={manualDimensions.w || ''} onChange={e => setManualDimensions({...manualDimensions, w: Number(e.target.value)})} />
                 </div>
                 <div>
-                  <label className="block text-[10px] text-muted">Cao (H)</label>
+                  <label className="block text-[10px] text-muted">{t('height')}</label>
                   <input type="number" className="w-full border rounded px-1 py-1 text-[12px]" 
                     value={manualDimensions.h || ''} onChange={e => setManualDimensions({...manualDimensions, h: Number(e.target.value)})} />
                 </div>
@@ -194,17 +196,17 @@ export default function AluminumBlanksPage() {
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-[11px] mb-1 font-semibold text-muted">種別 (Loại)</label>
+                <label className="block text-[11px] mb-1 font-semibold text-muted">{t('type')}</label>
                 <select 
                   className="w-full bg-surface-2 border rounded px-2 py-1.5 text-[12px] outline-none" style={{ borderColor: 'var(--border-default)' }}
                   value={blankType} onChange={e => setBlankType(e.target.value)}
                 >
-                  <option value="切板">切板 (Cut plate)</option>
-                  <option value="4F">4F (Milled 4-side)</option>
+                  <option value="切板">{t('cutPlate')}</option>
+                  <option value="4F">{t('fourF')}</option>
                 </select>
               </div>
               <div>
-                <label className="block text-[11px] mb-1 font-semibold text-muted">材質 (Vật liệu)</label>
+                <label className="block text-[11px] mb-1 font-semibold text-muted">{t('material')}</label>
                 <select 
                   className="w-full bg-surface-2 border rounded px-2 py-1.5 text-[12px] outline-none" style={{ borderColor: 'var(--border-default)' }}
                   value={material} onChange={e => setMaterial(e.target.value)}
@@ -217,26 +219,26 @@ export default function AluminumBlanksPage() {
 
             {calcResult && (
               <div className="mt-2 p-3 rounded-md bg-surface-2 border border-accent flex flex-col gap-2">
-                <div className="text-[11px] text-muted flex items-center gap-1"><CheckCircle2 size={12} className="text-success" /> 推奨サイズ (Kích thước đề xuất):</div>
+                <div className="text-[11px] text-muted flex items-center gap-1"><CheckCircle2 size={12} className="text-success" /> {t('suggestedSize')}</div>
                 <div className="text-[18px] font-mono font-bold text-center text-primary">
                   {calcResult.l} × {calcResult.w} × {calcResult.h}
                 </div>
                 <div className="text-[10px] text-muted text-center">
-                  (L/W {blankType === '切板' ? '+1mm' : '+0mm'}, H làm tròn bội số 5, min 25mm)
+                  {t('calcNote', { mod: blankType === '切板' ? '+1mm' : '+0mm' })}
                 </div>
                 <button 
                   className="btn-secondary w-full mt-2 h-[28px] text-[11px]"
                   onClick={handleOrderSubmit}
                   disabled={isSaving}
                 >
-                  {isSaving ? 'Lưu...' : 'このサイズで発注 (Đặt size này)'}
+                  {isSaving ? t('saving') : t('orderWithSize')}
                 </button>
               </div>
             )}
             
             {!calcResult && (
               <div className="mt-2 p-3 rounded-md bg-surface-2 border border-dashed flex flex-col items-center justify-center min-h-[100px]" style={{ borderColor: 'var(--border-default)' }}>
-                <span className="text-[11px] text-muted text-center">金型を選択するか<br/>寸法を入力してください</span>
+                <span className="text-[11px] text-muted text-center whitespace-pre-line">{t('selectOrInput')}</span>
               </div>
             )}
           </div>
@@ -249,16 +251,16 @@ export default function AluminumBlanksPage() {
               <Search size={14} className="text-muted" />
               <input 
                 type="text" 
-                placeholder="検索 (Tìm kiếm)..."
+                placeholder={t('searchPlaceholder')}
                 className="bg-transparent border-none outline-none text-[12px] w-[200px]"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
             <div className="flex gap-2">
-              <span className="badge badge--info">全て {blanks.length}</span>
-              <span className="badge badge--warning">発注済</span>
-              <span className="badge badge--success">在庫</span>
+              <span className="badge badge--info">{t('all')} {blanks.length}</span>
+              <span className="badge badge--warning">{t('ordered')}</span>
+              <span className="badge badge--success">{t('inStock')}</span>
             </div>
           </div>
 
@@ -266,22 +268,22 @@ export default function AluminumBlanksPage() {
             <table className="w-full text-left border-collapse data-table">
               <thead className="bg-surface-2 sticky top-0 z-10" style={{ background: 'var(--bg-surface-2)' }}>
                 <tr>
-                  <th className="px-3 py-2 text-[10px] uppercase font-semibold text-muted">対象金型 <br/><span className="text-[8px] font-normal">Target Mold</span></th>
-                  <th className="px-3 py-2 text-[10px] uppercase font-semibold text-muted">材質/種別 <br/><span className="text-[8px] font-normal">Mat/Type</span></th>
-                  <th className="px-3 py-2 text-[10px] uppercase font-semibold text-muted">サイズ (L×W×H) <br/><span className="text-[8px] font-normal">Dimensions</span></th>
-                  <th className="px-3 py-2 text-[10px] uppercase font-semibold text-muted">状態 <br/><span className="text-[8px] font-normal">Status</span></th>
-                  <th className="px-3 py-2 text-[10px] uppercase font-semibold text-right text-muted">操作</th>
+                  <th className="px-3 py-2 text-[10px] uppercase font-semibold text-muted">{t('cols.targetMold')}</th>
+                  <th className="px-3 py-2 text-[10px] uppercase font-semibold text-muted">{t('cols.matType')}</th>
+                  <th className="px-3 py-2 text-[10px] uppercase font-semibold text-muted">{t('cols.dimensions')}</th>
+                  <th className="px-3 py-2 text-[10px] uppercase font-semibold text-muted">{t('cols.status')}</th>
+                  <th className="px-3 py-2 text-[10px] uppercase font-semibold text-right text-muted">{t('cols.actions')}</th>
                 </tr>
               </thead>
               <tbody>
                 {isLoading ? (
-                  <tr><td colSpan={5} className="text-center py-8 text-[12px] text-muted">読み込み中...</td></tr>
+                  <tr><td colSpan={5} className="text-center py-8 text-[12px] text-muted">{t('loading')}</td></tr>
                 ) : filteredBlanks.length === 0 ? (
-                  <tr><td colSpan={5} className="text-center py-8 text-[12px] text-muted">データがありません (Không có dữ liệu)</td></tr>
+                  <tr><td colSpan={5} className="text-center py-8 text-[12px] text-muted">{t('noData')}</td></tr>
                 ) : (
                   filteredBlanks.map(b => (
                     <tr key={b.id} className="border-b last:border-0 hover-bg-subtle" style={{ borderColor: 'var(--border-subtle)' }}>
-                      <td className="px-3 py-2 text-[12px] font-bold">{b.physical_molds?.system_code || <span className="text-muted font-normal">未指定</span>}</td>
+                      <td className="px-3 py-2 text-[12px] font-bold">{b.physical_molds?.system_code || <span className="text-muted font-normal">{t('unspecified')}</span>}</td>
                       <td className="px-3 py-2 text-[12px]">
                         <div className="flex items-center gap-1">
                           <span className="font-mono text-accent">{b.material_grade}</span>
@@ -292,9 +294,9 @@ export default function AluminumBlanksPage() {
                         {b.length_mm} × {b.width_mm} × {b.thickness_mm}
                       </td>
                       <td className="px-3 py-2">
-                        {b.status === 'ORDERED' && <span className="badge badge--warning">発注済</span>}
-                        {b.status === 'IN_STOCK' && <span className="badge badge--success">在庫</span>}
-                        {b.status === 'USED' && <span className="badge badge--neutral">使用済</span>}
+                        {b.status === 'ORDERED' && <span className="badge badge--warning">{t('ordered')}</span>}
+                        {b.status === 'IN_STOCK' && <span className="badge badge--success">{t('inStock')}</span>}
+                        {b.status === 'USED' && <span className="badge badge--neutral">{t('used')}</span>}
                       </td>
                       <td className="px-3 py-2 text-right">
                         <button className="p-1 hover-bg-surface-2 rounded text-muted hover-accent transition-colors"><Settings size={14}/></button>
@@ -314,11 +316,11 @@ export default function AluminumBlanksPage() {
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
           <div className="bg-surface rounded-lg w-full max-w-md shadow-lg overflow-hidden flex flex-col" style={{ background: 'var(--bg-surface)' }}>
             <div className="flex justify-between items-center p-4 border-b" style={{ borderColor: 'var(--border-subtle)' }}>
-              <h3 className="font-bold text-[14px]">新規発注 (Đặt hàng thủ công)</h3>
+              <h3 className="font-bold text-[14px]">{t('manualOrderTitle')}</h3>
               <button onClick={() => setIsModalOpen(false)} className="text-muted hover:text-primary"><X size={16} /></button>
             </div>
             <div className="p-4 flex flex-col gap-3">
-              <p className="text-[12px] text-muted mb-2">Để tự động tính toán kích thước, vui lòng sử dụng bảng tính bên trái.</p>
+              <p className="text-[12px] text-muted mb-2">{t('manualOrderNote')}</p>
               
               <div className="grid grid-cols-3 gap-2">
                 <div>
@@ -339,7 +341,7 @@ export default function AluminumBlanksPage() {
               </div>
             </div>
             <div className="p-4 border-t flex justify-end gap-2 bg-surface-2" style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-surface-2)' }}>
-              <button onClick={() => setIsModalOpen(false)} className="btn-secondary h-[32px] px-4 text-[12px]">Hủy</button>
+              <button onClick={() => setIsModalOpen(false)} className="btn-secondary h-[32px] px-4 text-[12px]">{t('cancel')}</button>
               <button 
                 className="btn-primary h-[32px] px-4 text-[12px]" 
                 disabled={isSaving || manualDimensions.l === 0}
@@ -360,7 +362,7 @@ export default function AluminumBlanksPage() {
                   setIsSaving(false);
                 }}
               >
-                {isSaving ? 'Đang lưu...' : 'Lưu lại'}
+                {isSaving ? t('saving') : t('save')}
               </button>
             </div>
           </div>

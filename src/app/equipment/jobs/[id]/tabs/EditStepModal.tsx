@@ -1,5 +1,7 @@
 'use client'
 
+import { useTranslations } from 'next-intl'
+
 import { useState, useEffect, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { X, Save, Loader2, ListPlus, Plus, Trash2, Clock } from 'lucide-react'
@@ -38,6 +40,8 @@ const STATUS_OPTIONS = [
 ]
 
 export function EditStepModal({ step, jobId, nextStepNo, onClose, onSaved }: Props) {
+  const t = useTranslations()
+
   const supabase = createClient()
   const isNew = !step
 
@@ -352,8 +356,7 @@ export function EditStepModal({ step, jobId, nextStepNo, onClose, onSaved }: Pro
             display: 'flex', flexDirection: 'column', gap: 16
           }}>
             <h3 style={{ margin: 0, fontSize: 14, color: 'var(--text-secondary)' }}>
-              <span className="ja">工程情報</span>
-              <span className="vi" style={{ marginLeft: 4 }}>Thông tin công đoạn</span>
+              {t('Equipment.thongTinCongOan')}
             </h3>
 
             {error && (
@@ -366,8 +369,7 @@ export function EditStepModal({ step, jobId, nextStepNo, onClose, onSaved }: Pro
               <div style={{ background: 'var(--bg-surface-2)', padding: 12, borderRadius: 'var(--radius-md)', border: '1px solid var(--border-default)' }}>
                 <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--accent)' }}>
                   <ListPlus size={14} />
-                  <span className="ja">標準工程から選択</span>
-                  <span className="vi">Chọn từ quy trình chuẩn</span>
+                  {t('Equipment.chonTuQuyTrinhChuan')}
                 </label>
                 <select className="form-input" onChange={e => applyStdProcess(e.target.value)} defaultValue="">
                   <option value="">-- 手動で入力 / Nhập thủ công --</option>
@@ -383,15 +385,13 @@ export function EditStepModal({ step, jobId, nextStepNo, onClose, onSaved }: Pro
             <div className="form-grid-2">
               <div>
                 <label className="form-label">
-                  <span className="ja">工程名 *</span>
-                  <span className="vi">Tên công đoạn *</span>
+                  {t('Equipment.tenCongOan')}
                 </label>
                 <input className="form-input" value={stepName} onChange={e => setStepName(e.target.value)} />
               </div>
               <div>
                 <label className="form-label">
-                  <span className="ja">トラック</span>
-                  <span className="vi">Track</span>
+                  {t('Equipment.track')}
                 </label>
                 <input className="form-input" value={track} onChange={e => setTrack(e.target.value)} placeholder="例: MOLD, PLUG, FINISH" />
               </div>
@@ -400,8 +400,7 @@ export function EditStepModal({ step, jobId, nextStepNo, onClose, onSaved }: Pro
             <div className="form-grid-2">
               <div>
                 <label className="form-label">
-                  <span className="ja">状態</span>
-                  <span className="vi">Trạng thái</span>
+                  {t('Equipment.trangThai')}
                 </label>
                 <select className="form-input" value={processingStatusId} onChange={e => setProcessingStatusId(e.target.value)}>
                   <option value="">-- 自動算出 / Tự động --</option>
@@ -414,8 +413,7 @@ export function EditStepModal({ step, jobId, nextStepNo, onClose, onSaved }: Pro
               </div>
               <div>
                 <label className="form-label">
-                  <span className="ja">順番 (No.)</span>
-                  <span className="vi">Thứ tự</span>
+                  {t('Equipment.thuTu')}
                 </label>
                 <input type="number" className="form-input" value={stepNo} onChange={e => setStepNo(parseInt(e.target.value) || 1)} />
               </div>
@@ -424,15 +422,13 @@ export function EditStepModal({ step, jobId, nextStepNo, onClose, onSaved }: Pro
             <div className="form-grid-2">
               <div>
                 <label className="form-label">
-                  <span className="ja">予定開始</span>
-                  <span className="vi">Bắt đầu dự kiến</span>
+                  {t('Equipment.batAuDuKien')}
                 </label>
                 <input type="date" className="form-input" value={plannedStart} onChange={e => setPlannedStart(e.target.value)} />
               </div>
               <div>
                 <label className="form-label">
-                  <span className="ja">予定終了</span>
-                  <span className="vi">Kết thúc dự kiến</span>
+                  {t('Equipment.ketThucDuKien')}
                 </label>
                 <input type="date" className="form-input" value={plannedEnd} onChange={e => setPlannedEnd(e.target.value)} />
               </div>
@@ -441,8 +437,7 @@ export function EditStepModal({ step, jobId, nextStepNo, onClose, onSaved }: Pro
             <div className="form-grid-3" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
               <div>
                 <label className="form-label">
-                  <span className="ja">予定時間 (h)</span>
-                  <span className="vi">Giờ dự kiến</span>
+                  {t('Equipment.gioDuKien')}
                 </label>
                 <input 
                   type="number" 
@@ -462,15 +457,13 @@ export function EditStepModal({ step, jobId, nextStepNo, onClose, onSaved }: Pro
               </div>
               <div>
                 <label className="form-label">
-                  <span className="ja">実績時間 (h)</span>
-                  <span className="vi">Giờ thực tế</span>
+                  {t('Equipment.gioThucTe')}
                 </label>
                 <input type="number" step="0.5" min="0" className="form-input" value={actualHours} onChange={e => setActualHours(e.target.value)} />
               </div>
               <div>
                 <label className="form-label">
-                  <span className="ja">期限</span>
-                  <span className="vi">Hạn chót</span>
+                  {t('Equipment.hanChot')}
                 </label>
                 <input type="date" className="form-input" value={deadline} onChange={e => setDeadline(e.target.value)} />
               </div>
@@ -479,8 +472,7 @@ export function EditStepModal({ step, jobId, nextStepNo, onClose, onSaved }: Pro
 
             <div>
               <label className="form-label">
-                <span className="ja">備考</span>
-                <span className="vi">Ghi chú</span>
+                {t('Equipment.ghiChu')}
               </label>
               <textarea className="form-textarea" rows={2} value={notes} onChange={e => setNotes(e.target.value)} placeholder="メモ・注意事項..." />
             </div>
@@ -511,12 +503,7 @@ export function EditStepModal({ step, jobId, nextStepNo, onClose, onSaved }: Pro
               
               <div style={{ display: 'flex', gap: 8 }}>
                 <button className="btn btn-secondary" onClick={onClose} disabled={saving}>
-                  <span className="ja">キャンセル</span>
-                </button>
-                <button className="btn btn-primary" onClick={handleSaveStep} disabled={saving}>
-                  {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
-                  <span className="ja">保存</span>
-                  <span className="vi">Lưu</span>
+                  {t('Equipment.luu')}
                 </button>
               </div>
             </div>
@@ -530,8 +517,7 @@ export function EditStepModal({ step, jobId, nextStepNo, onClose, onSaved }: Pro
               <div style={{ padding: 20, borderBottom: '1px solid var(--border-default)', background: 'var(--bg-surface)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
                   <h3 style={{ margin: 0, fontSize: 14, color: 'var(--text-secondary)' }}>
-                    <span className="ja">{editingLogId ? '作業記録の編集' : '作業記録の追加'}</span>
-                    <span className="vi" style={{ marginLeft: 4 }}>{editingLogId ? 'Sửa nhật ký / kế hoạch' : 'Thêm nhật ký / kế hoạch'}</span>
+                    {editingLogId ? t('Common.edit') : t('Common.addNew')}
                   </h3>
                   {editingLogId && (
                     <button className="btn-icon" onClick={handleCancelEditLog} title="キャンセル / Hủy">
@@ -609,14 +595,17 @@ export function EditStepModal({ step, jobId, nextStepNo, onClose, onSaved }: Pro
                 
                 <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
                   {editingLogId && (
-                    <button className="btn btn-secondary text-xs" onClick={handleCancelEditLog}>
-                      <span className="ja">キャンセル</span>
+                    <button type="button" className="btn btn-secondary text-xs" onClick={handleCancelEditLog}>
+                      {t('Common.cancel')}
                     </button>
                   )}
-                  <button className="btn btn-primary text-xs" onClick={handleSaveLog} disabled={addingLog}>
-                    {addingLog ? <Loader2 size={12} className="animate-spin" /> : (editingLogId ? <Save size={12} /> : <Plus size={12} />)}
-                    <span className="ja">{editingLogId ? '更新' : '追加'}</span>
-                    <span className="vi">{editingLogId ? 'Cập nhật' : 'Thêm NK'}</span>
+                  <button 
+                    type="button" 
+                    className="btn btn-primary text-xs" 
+                    onClick={handleSaveLog} 
+                    disabled={addingLog}
+                  >
+                    {addingLog ? '...' : (editingLogId ? t('Common.save') : t('Common.addNew'))}
                   </button>
                 </div>
               </div>
@@ -625,8 +614,7 @@ export function EditStepModal({ step, jobId, nextStepNo, onClose, onSaved }: Pro
               <div style={{ flex: 1, padding: 20, overflowY: 'auto' }}>
                 <h3 style={{ margin: '0 0 12px 0', fontSize: 13, display: 'flex', alignItems: 'center', gap: 6, color: 'var(--text-muted)' }}>
                   <Clock size={14} />
-                  <span className="ja">履歴・計画</span>
-                  <span className="vi">Lịch sử / Kế hoạch</span>
+                  {t('Equipment.lichSuKeHoach')}
                 </h3>
 
                 {loadingLogs ? (

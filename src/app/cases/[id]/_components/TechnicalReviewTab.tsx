@@ -5,6 +5,7 @@ import type { TechnicalReview, UserRole } from '../types';
 import TechnicalReviewForm from './TechnicalReviewForm';
 import TechnicalReviewList from './TechnicalReviewList';
 import TechnicalReviewSummary from './TechnicalReviewSummary';
+import { useTranslations } from 'next-intl';
 
 interface Props {
   caseId: string;
@@ -22,6 +23,7 @@ export default function TechnicalReviewTab({
   currentUserId,
   onCreateQuotation,
 }: Props) {
+  const t = useTranslations();
   const [mode, setMode] = useState<'view' | 'create' | 'edit'>('view');
   const [editingReview, setEditingReview] = useState<TechnicalReview | null>(null);
 
@@ -48,13 +50,13 @@ export default function TechnicalReviewTab({
     return (
       <div className="empty-state">
         <div className="empty-state-icon">🔧</div>
-        <h3 className="empty-state-title">Chưa có Technical Review</h3>
+        <h3 className="empty-state-title">{t('Cases.TechnicalReview.emptyTitle')}</h3>
         <p className="empty-state-desc">
-          Tạo hồ sơ đánh giá kỹ thuật để cung cấp căn cứ cho báo giá.
+          {t('Cases.TechnicalReview.emptyDesc')}
         </p>
         {(currentUserRole === 'engineering' || currentUserRole === 'manager') && (
           <button className="btn btn-primary" onClick={handleCreate}>
-            技術検討を作成 / Tạo Technical Review
+            {t('Cases.TechnicalReview.createBtn')}
           </button>
         )}
       </div>
@@ -78,14 +80,18 @@ export default function TechnicalReviewTab({
       {activeReview && mode === 'view' && (
         <div className="card" style={{ marginTop: 'var(--space-4)' }}>
           <div className="card-header">
-            <span className="card-title">Đang soạn — Version {activeReview.version}</span>
+            <span className="card-title">
+              {t('Cases.TechnicalReview.draftTitle', { version: activeReview.version })}
+            </span>
             <span className={`badge badge-${activeReview.approval_status === 'in_review' ? 'warning' : 'info'}`}>
-              {activeReview.approval_status === 'in_review' ? '審査中 / Đang duyệt' : '下書き / Nháp'}
+              {activeReview.approval_status === 'in_review' 
+                ? t('Cases.TechnicalReview.statusInReview') 
+                : t('Cases.TechnicalReview.statusDraft')}
             </span>
           </div>
           <div className="card-body">
             <p className="text-muted text-sm">
-              {activeReview.technical_constraints || 'Chưa có ghi chú kỹ thuật.'}
+              {activeReview.technical_constraints || t('Cases.TechnicalReview.noNotes')}
             </p>
           </div>
           <div className="card-footer">
@@ -95,7 +101,7 @@ export default function TechnicalReviewTab({
                 className="btn btn-secondary"
                 onClick={() => handleEdit(activeReview)}
               >
-                ✏️ Chỉnh sửa
+                ✏️ {t('Cases.TechnicalReview.editBtn')}
               </button>
             )}
             {(currentUserRole === 'manager') &&
@@ -105,7 +111,7 @@ export default function TechnicalReviewTab({
                   className="btn btn-primary"
                   onClick={() => handleEdit(activeReview)}
                 >
-                  ✅ Duyệt / Từ chối
+                  {t('Cases.TechnicalReview.approveOrRejectBtn')}
                 </button>
               </div>
             )}
@@ -129,7 +135,7 @@ export default function TechnicalReviewTab({
         <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 'var(--space-4)' }}>
           {(currentUserRole === 'engineering' || currentUserRole === 'manager') && (
             <button className="btn btn-primary" onClick={handleCreate}>
-              + 技術検討を作成 / Tạo Review mới
+              + {t('Cases.TechnicalReview.createBtn')}
             </button>
           )}
         </div>

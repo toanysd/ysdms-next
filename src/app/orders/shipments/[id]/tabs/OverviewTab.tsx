@@ -1,5 +1,7 @@
 'use client'
 
+import { useTranslations } from 'next-intl'
+
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Loader2, Save } from 'lucide-react'
@@ -10,6 +12,8 @@ type Props = {
 }
 
 export function OverviewTab({ shipment, onRefresh }: Props) {
+  const t = useTranslations()
+
   const supabase = createClient()
   const [saving, setSaving] = useState(false)
   
@@ -54,7 +58,7 @@ export function OverviewTab({ shipment, onRefresh }: Props) {
       
     setSaving(false)
     if (error) {
-      alert('更新エラー: ' + error.message)
+      alert(t('Common.updateError') + error.message)
     } else {
       onRefresh()
     }
@@ -64,15 +68,13 @@ export function OverviewTab({ shipment, onRefresh }: Props) {
     <div className="card-flat" style={{ padding: 20 }}>
       <div className="form-section">
         <div className="form-section-header">
-          <span className="ja">基本情報</span>
-          <span className="vi">Thông tin cơ bản</span>
+          {t('Orders.thongTinCoBan')}
         </div>
         
         <div className="form-grid-2">
           <div>
             <label className="form-label">
-              <span className="label-ja">出荷日 <span style={{ color: 'var(--status-error)' }}>*</span></span>
-              <span className="label-vi">Ngày xuất</span>
+              {t('Orders.ngayXuat')}
             </label>
             <input
               type="date"
@@ -83,8 +85,7 @@ export function OverviewTab({ shipment, onRefresh }: Props) {
           </div>
           <div>
             <label className="form-label">
-              <span className="label-ja">納品日</span>
-              <span className="label-vi">Ngày giao (dự kiến/thực tế)</span>
+              {t('Orders.ngayGiaoDuKienthucTe')}
             </label>
             <input
               type="date"
@@ -95,8 +96,7 @@ export function OverviewTab({ shipment, onRefresh }: Props) {
           </div>
           <div>
             <label className="form-label">
-              <span className="label-ja">納品書番号</span>
-              <span className="label-vi">Số phiếu giao</span>
+              {t('Orders.soPhieuGiao')}
             </label>
             <input
               type="text"
@@ -107,18 +107,17 @@ export function OverviewTab({ shipment, onRefresh }: Props) {
           </div>
           <div>
             <label className="form-label">
-              <span className="label-ja">ステータス</span>
-              <span className="label-vi">Trạng thái</span>
+              {t('Orders.trangThai')}
             </label>
             <select
               className="form-select"
               value={form.status}
               onChange={e => setForm({ ...form, status: e.target.value })}
             >
-              <option value="PENDING">未出荷 / Chờ xuất</option>
-              <option value="SHIPPED">出荷済 / Đã xuất</option>
-              <option value="DELIVERED">納品済 / Đã giao</option>
-              <option value="CANCELLED">キャンセル / Hủy</option>
+              <option value="PENDING">{t('Shipments.statusPending')}</option>
+              <option value="SHIPPED">{t('Shipments.statusShipped')}</option>
+              <option value="DELIVERED">{t('Shipments.statusDelivered')}</option>
+              <option value="CANCELLED">{t('Shipments.statusCancelled')}</option>
             </select>
           </div>
         </div>
@@ -126,15 +125,13 @@ export function OverviewTab({ shipment, onRefresh }: Props) {
 
       <div className="form-section">
         <div className="form-section-header">
-          <span className="ja">配送情報</span>
-          <span className="vi">Thông tin vận chuyển</span>
+          {t('Orders.thongTinVanChuyen')}
         </div>
         
         <div className="form-grid-2">
           <div>
             <label className="form-label">
-              <span className="label-ja">配送業者</span>
-              <span className="label-vi">Đơn vị vận chuyển</span>
+              {t('Orders.onViVanChuyen')}
             </label>
             <input
               type="text"
@@ -145,8 +142,7 @@ export function OverviewTab({ shipment, onRefresh }: Props) {
           </div>
           <div>
             <label className="form-label">
-              <span className="label-ja">追跡番号</span>
-              <span className="label-vi">Mã vận đơn (Tracking)</span>
+              {t('Orders.maVanOnTracking')}
             </label>
             <input
               type="text"
@@ -157,8 +153,7 @@ export function OverviewTab({ shipment, onRefresh }: Props) {
           </div>
           <div style={{ gridColumn: '1 / -1' }}>
             <label className="form-label">
-              <span className="label-ja">備考</span>
-              <span className="label-vi">Ghi chú</span>
+              {t('Orders.ghiChu')}
             </label>
             <textarea
               className="form-textarea"
@@ -177,7 +172,7 @@ export function OverviewTab({ shipment, onRefresh }: Props) {
           disabled={saving || !form.ship_date}
         >
           {saving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
-          保存する
+          {t('Common.save')}
         </button>
       </div>
     </div>

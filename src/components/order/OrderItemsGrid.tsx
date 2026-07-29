@@ -4,6 +4,7 @@ import React from 'react'
 import { Plus, Trash2 } from 'lucide-react'
 import { ProductSearchInput } from './ProductSearchInput'
 import { ProcessTagsEditor } from './ProcessTagsEditor'
+import { useTranslations } from 'next-intl'
 
 export interface GridRow {
     _key: string
@@ -34,6 +35,7 @@ interface OrderItemsGridProps {
 }
 
 export function OrderItemsGrid({ items, onChange }: OrderItemsGridProps) {
+    const t = useTranslations('Order')
 
     const generateKey = () => Math.random().toString(36).substring(2, 9)
 
@@ -87,14 +89,14 @@ export function OrderItemsGrid({ items, onChange }: OrderItemsGridProps) {
         <div className="flex flex-col gap-2">
             <div className="flex items-center justify-between">
                 <h3 className="text-sm font-bold text-[var(--mcs-text)] flex items-center gap-2">
-                    📦 明細リスト (Danh Sách Mặt Hàng)
+                    📦 {t('itemList')}
                 </h3>
                 <button
                     type="button"
                     onClick={handleAddRow}
                     className="h-[28px] px-3 bg-teal-600 text-white text-[12px] font-bold rounded flex items-center gap-1 hover:bg-teal-700 transition-colors"
                 >
-                    <Plus size={14} /> Thêm Dòng
+                    <Plus size={14} /> {t('addRow')}
                 </button>
             </div>
 
@@ -103,23 +105,23 @@ export function OrderItemsGrid({ items, onChange }: OrderItemsGridProps) {
                     <thead className="bg-teal-50 border-b border-teal-200 text-[11px] text-teal-900 whitespace-nowrap">
                         <tr>
                             <th className="p-2 w-[40px] text-center border-r border-teal-100">No.</th>
-                            <th className="p-2 w-[120px] border-r border-teal-100">要求No. (Mã Y/C)</th>
-                            <th className="p-2 min-w-[240px] border-r border-teal-100">品番 (P/N) <span className="text-red-500">*</span></th>
-                            <th className="p-2 w-[80px] text-right border-r border-teal-100">数量 (Số lượng) <span className="text-red-500">*</span></th>
-                            <th className="p-2 w-[50px] text-right border-r border-teal-100" title="Văn phòng">事務所 (VP)</th>
-                            <th className="p-2 w-[80px] text-right border-r border-teal-100">梱包入数 (Qty/Thùng)</th>
-                            <th className="p-2 w-[80px] text-right border-r border-teal-100">箱数 (Số Thùng)</th>
-                            <th className="p-2 w-[110px] border-r border-teal-100">出荷日 (Ngày xuất)</th>
-                            <th className="p-2 w-[110px] border-r border-teal-100">着日 (Ngày nhận)</th>
-                            <th className="p-2 min-w-[150px] border-r border-teal-100">事項 (Ghi chú)</th>
-                            <th className="p-2 w-[40px] text-center">削除 (Xóa)</th>
+                            <th className="p-2 w-[120px] border-r border-teal-100">{t('requestNo')}</th>
+                            <th className="p-2 min-w-[240px] border-r border-teal-100">{t('pn')} <span className="text-red-500">*</span></th>
+                            <th className="p-2 w-[80px] text-right border-r border-teal-100">{t('quantity')} <span className="text-red-500">*</span></th>
+                            <th className="p-2 w-[50px] text-right border-r border-teal-100" title={t('officeQty')}>{t('officeQty')}</th>
+                            <th className="p-2 w-[80px] text-right border-r border-teal-100">{t('packingQty')}</th>
+                            <th className="p-2 w-[80px] text-right border-r border-teal-100">{t('packingBoxes')}</th>
+                            <th className="p-2 w-[110px] border-r border-teal-100">{t('deliveryDate')}</th>
+                            <th className="p-2 w-[110px] border-r border-teal-100">{t('deliveryDateEnd')}</th>
+                            <th className="p-2 min-w-[150px] border-r border-teal-100">{t('notes')}</th>
+                            <th className="p-2 w-[40px] text-center">{t('Common.delete' as any)}</th>
                         </tr>
                     </thead>
                     <tbody className="bg-white text-[12px]">
                         {items.length === 0 ? (
                             <tr>
-                                <td colSpan={9} className="p-8 text-center text-[var(--mcs-text-muted)] italic bg-gray-50/50">
-                                    Chưa có mặt hàng nào. Vui lòng nhấn "Thêm Dòng" để nhập mã liệu.
+                                <td colSpan={11} className="p-8 text-center text-[var(--mcs-text-muted)] italic bg-gray-50/50">
+                                    {t('noItems')}
                                 </td>
                             </tr>
                         ) : (
@@ -239,7 +241,7 @@ export function OrderItemsGrid({ items, onChange }: OrderItemsGridProps) {
                                             type="button"
                                             onClick={() => handleRemoveRow(row._key)}
                                             className="h-[34px] w-full flex items-center justify-center text-red-400 hover:text-red-600 hover:bg-red-50 transition-colors"
-                                            title="Xóa dòng này"
+                                            title={t('deleteRow')}
                                         >
                                             <Trash2 size={16} />
                                         </button>

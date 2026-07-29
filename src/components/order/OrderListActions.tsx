@@ -3,8 +3,9 @@
 import React, { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { Trash2, Edit, Loader2, CheckCircle, Truck } from 'lucide-react'
-import { deleteOrderAction, updateOrderStatusAction } from '@/app/actions/order'
+import { updateOrderStatusAction, deleteOrderAction } from '@/app/actions/order'
 import { ShipModal } from './ShipModal'
+import { useTranslations } from 'next-intl'
 
 interface OrderListActionsProps {
     orderId: string
@@ -14,6 +15,7 @@ interface OrderListActionsProps {
 }
 
 export function OrderListActions({ orderId, status, slipNo, orderItems }: OrderListActionsProps) {
+    const t = useTranslations()
     const router = useRouter()
     const [isPending, startTransition] = useTransition()
     const [isShipModalOpen, setIsShipModalOpen] = useState(false)
@@ -23,20 +25,20 @@ export function OrderListActions({ orderId, status, slipNo, orderItems }: OrderL
     }
 
     const handleDelete = () => {
-        if (!confirm('Bạn có chắc chắn muốn xóa Lệnh sản xuất Nháp này không?')) return
+        if (!confirm(t('Order.confirmDeleteDraft'))) return
 
         startTransition(async () => {
             try {
                 await deleteOrderAction(orderId)
                 router.refresh()
             } catch (err: any) {
-                alert('Lỗi: ' + err.message)
+                alert(`${t('Common.error')}: ${err.message}`)
             }
         })
     }
 
     const handleEdit = () => {
-        alert('Kho tính năng: Giao diện Sửa Lệnh (Edit Order) đang được phát triển theo luồng mới. Vui lòng tạo lại lệnh tạm thời.')
+        alert(t('Order.editNotAvailable'))
     }
 
     const handleConfirm = () => {
@@ -45,7 +47,7 @@ export function OrderListActions({ orderId, status, slipNo, orderItems }: OrderL
                 await updateOrderStatusAction(orderId, 'confirmed' as any)
                 router.refresh()
             } catch (err: any) {
-                alert('Lỗi duyệt đơn: ' + err.message)
+                alert(`${t('Order.confirmError')}: ${err.message}`)
             }
         })
     }
@@ -58,7 +60,7 @@ export function OrderListActions({ orderId, status, slipNo, orderItems }: OrderL
                         onClick={handleConfirm}
                         disabled={isPending}
                         className="p-1.5 text-emerald-600 hover:bg-emerald-50 focus:bg-emerald-100 rounded transition-colors disabled:opacity-50"
-                        title="Duyệt Đơn (Chuyển sang Confirmed)"
+                        title={t('Order.approveDraft')}
                     >
                         {isPending ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle size={16} />}
                     </button>
@@ -66,7 +68,7 @@ export function OrderListActions({ orderId, status, slipNo, orderItems }: OrderL
                         onClick={handleEdit}
                         disabled={isPending}
                         className="p-1.5 text-blue-500 hover:bg-blue-50 focus:bg-blue-100 rounded transition-colors disabled:opacity-50"
-                        title="Chỉnh sửa Đơn Nháp"
+                        title={t('Order.editDraft')}
                     >
                         <Edit size={16} />
                     </button>
@@ -74,7 +76,7 @@ export function OrderListActions({ orderId, status, slipNo, orderItems }: OrderL
                         onClick={handleDelete}
                         disabled={isPending}
                         className="p-1.5 text-red-500 hover:bg-red-50 focus:bg-red-100 rounded transition-colors disabled:opacity-50"
-                        title="Xóa Đơn Nháp"
+                        title={t('Order.deleteDraft')}
                     >
                         <Trash2 size={16} />
                     </button>
@@ -87,7 +89,7 @@ export function OrderListActions({ orderId, status, slipNo, orderItems }: OrderL
                         onClick={() => setIsShipModalOpen(true)}
                         className="px-2 py-1 text-xs font-bold text-white bg-teal-600 hover:bg-teal-700 rounded shadow-sm flex items-center gap-1 transition-colors"
                     >
-                        <Truck size={14} /> 出荷 (Giao)
+                        <Truck size={14} /> {t('Order.ship')}
                     </button>
                 </div>
             )}

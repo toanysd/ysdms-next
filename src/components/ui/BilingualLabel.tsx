@@ -1,4 +1,5 @@
 import React from 'react';
+import { useLocale } from 'next-intl';
 
 interface BilingualLabelProps {
   ja: string;
@@ -9,10 +10,14 @@ interface BilingualLabelProps {
 }
 
 export function BilingualLabel({ ja, vi, className = '', jaClassName = '', viClassName = '' }: BilingualLabelProps) {
+  const locale = useLocale();
   return (
     <span className={`label block ${className}`}>
-      <span className={`ja font-jp text-mcs-text ${jaClassName}`}>{ja}</span>
-      <span className={`vi font-vi mt-[1px] ${viClassName}`}>{vi}</span>
+      {locale === 'vi' ? (
+        <span className={`vi font-vi mt-[1px] ${viClassName}`}>{vi}</span>
+      ) : (
+        <span className={`ja font-jp text-mcs-text ${jaClassName}`}>{ja}</span>
+      )}
     </span>
   );
 }

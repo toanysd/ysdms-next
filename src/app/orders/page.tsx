@@ -8,6 +8,7 @@ import { AsyncSearchableSelect } from '@/components/ui/AsyncSearchableSelect'
 import Link from 'next/link'
 import { useSearchHistory } from '@/hooks/useSearchHistory'
 import { SearchSuggestions } from '@/components/ui/SearchSuggestions'
+import { useTranslations } from 'next-intl'
 
 // ── Types ──────────────────────────────────────────────────────────────
 type OrderLine = {
@@ -47,21 +48,21 @@ type Order = {
 type StatusKey = 'NEW' | 'QUOTED' | 'APPROVED' | 'IN_PRODUCTION' | 'SHIPPED' | 'CANCELLED'
 
 // ── Status config ──────────────────────────────────────────────────────
-const STATUS_CONFIG: Record<StatusKey, { label: string; labelVi: string; badgeClass: string }> = {
-  NEW:           { label: '新規',   labelVi: 'Mới',         badgeClass: 'badge badge--info' },
-  QUOTED:        { label: '見積済', labelVi: 'Đã báo giá',  badgeClass: 'badge badge--warning' },
-  APPROVED:      { label: '承認済', labelVi: 'Đã duyệt',    badgeClass: 'badge badge--neutral' },
-  IN_PRODUCTION: { label: '生産中', labelVi: 'Đang SX',     badgeClass: 'badge badge--success' },
-  SHIPPED:       { label: '出荷済', labelVi: 'Đã giao',     badgeClass: 'badge badge--neutral' },
-  CANCELLED:     { label: '取消',   labelVi: 'Đã huỷ',      badgeClass: 'badge badge--error' },
+const STATUS_CONFIG: Record<StatusKey, { labelKey: string; badgeClass: string }> = {
+  NEW:           { labelKey: 'statusNew', badgeClass: 'badge badge--info' },
+  QUOTED:        { labelKey: 'statusQuoted', badgeClass: 'badge badge--warning' },
+  APPROVED:      { labelKey: 'statusApproved', badgeClass: 'badge badge--neutral' },
+  IN_PRODUCTION: { labelKey: 'statusInProduction', badgeClass: 'badge badge--success' },
+  SHIPPED:       { labelKey: 'statusShipped', badgeClass: 'badge badge--neutral' },
+  CANCELLED:     { labelKey: 'statusCancelled', badgeClass: 'badge badge--error' },
 }
 
-const FILTER_TABS: { key: string; label: string; labelVi: string }[] = [
-  { key: 'ALL',           label: '全て',   labelVi: 'Tất cả' },
-  { key: 'NEW',           label: '新規',   labelVi: 'Mới' },
-  { key: 'IN_PRODUCTION', label: '生産中', labelVi: 'Đang SX' },
-  { key: 'SHIPPED',       label: '出荷済', labelVi: 'Đã giao' },
-  { key: 'CANCELLED',     label: '取消',   labelVi: 'Đã huỷ' },
+const FILTER_TABS: { key: string; labelKey: string }[] = [
+  { key: 'ALL',           labelKey: 'filterAll' },
+  { key: 'NEW',           labelKey: 'statusNew' },
+  { key: 'IN_PRODUCTION', labelKey: 'statusInProduction' },
+  { key: 'SHIPPED',       labelKey: 'statusShipped' },
+  { key: 'CANCELLED',     labelKey: 'statusCancelled' },
 ]
 
 // ── Helpers ────────────────────────────────────────────────────────────
@@ -86,6 +87,8 @@ function generateNextOrderNo(orders: Order[]): string {
 // Main Page Component
 // ══════════════════════════════════════════════════════════════════════
 export default function OrdersPage() {
+  const t = useTranslations('Orders')
+  const tCommon = useTranslations('Common')
   const supabase = createClient()
 
   // ── State ──
@@ -203,10 +206,10 @@ export default function OrdersPage() {
 
   // ── Delete order handler ──
   const handleDeleteOrder = async (id: string, orderNo: string) => {
-    if (!confirm(`「${orderNo}」を削除しますか？\nBạn muốn xoá đơn hàng "${orderNo}"?`)) return
+    if (!confirm(t('deleteConfirm', { orderNo }))) return
     const { error: delErr } = await supabase.from('orders').delete().eq('order_id', id)
     if (delErr) {
-      alert(`エラー: ${delErr.message}`)
+      alert(`${tCommon('error')}: ${delErr.message}`)
       return
     }
     fetchOrders()
@@ -227,7 +230,7 @@ export default function OrdersPage() {
 
   const handleBulkApprove = async () => {
     if (selectedOrders.length === 0) return
-    if (!confirm(`選択された ${selectedOrders.length} 件の受注を承認しますか？\nBạn có chắc chắn muốn duyệt ${selectedOrders.length} đơn hàng đã chọn?`)) return
+    if (!confirm(t('bulkApproveConfirm', { count: selectedOrders.length }))) return
 
     setIsApproving(true)
     const { error: updErr } = await supabase
@@ -237,7 +240,7 @@ export default function OrdersPage() {
 
     setIsApproving(false)
     if (updErr) {
-      alert(`エラー: ${updErr.message}`)
+      alert(`${tCommon('error')}: ${updErr.message}`)
       return
     }
     
@@ -251,7 +254,7 @@ export default function OrdersPage() {
     if (!cfg) return <span className="badge badge--neutral">{status}</span>
     return (
       <span className={cfg.badgeClass}>
-        <span style={{ fontFamily: 'var(--font-jp)', fontWeight: 700 }}>{cfg.label}</span>
+        <span style={{ fontWeight: 600 }}>{t(cfg.labelKey as any)}</span>
       </span>
     )
   }
@@ -269,8 +272,7 @@ export default function OrdersPage() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <FileText size={20} style={{ color: 'var(--accent)' }} />
           <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <span className="ja" style={{ fontSize: 16 }}>受注・指示書</span>
-            <span className="vi" style={{ fontSize: 11 }}>Quản lý Đơn hàng</span>
+            <span style={{ fontSize: 16, fontWeight: 600 }}>{t('title')}</span>
           </div>
         </div>
         <div style={{ display: 'flex', gap: 12 }}>
@@ -281,12 +283,12 @@ export default function OrdersPage() {
               disabled={isApproving}
               style={{ borderColor: 'var(--status-success)', color: 'var(--status-success)' }}
             >
-              {isApproving ? 'Đang duyệt...' : `一括承認${selectedOrders.length})`}
+              {isApproving ? t('approving') : t('bulkApprove', { count: selectedOrders.length })}
             </button>
           )}
           <Link href="/orders/create" className="btn btn-primary">
             <Plus size={14} />
-            <span style={{ fontFamily: 'var(--font-jp)' }}>新規受注</span>
+            <span style={{ fontWeight: 600 }}>{t('newOrder')}</span>
           </Link>
         </div>
       </div>
@@ -318,10 +320,7 @@ export default function OrdersPage() {
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-                      <span style={{ fontSize: 13, fontWeight: isActive ? 700 : 500, lineHeight: 1.2 }}>{tab.label}</span>
-                      <span style={{ fontSize: 10, opacity: 0.8, fontWeight: 500 }}>{tab.labelVi}</span>
-                    </div>
+                    <span style={{ fontSize: 13, fontWeight: isActive ? 700 : 500, lineHeight: 1.2 }}>{t(tab.labelKey as any)}</span>
                     {countStr && (
                       <span className="badge badge--neutral" style={{ padding: '0 6px', fontSize: 10, background: isActive ? 'var(--accent-light)' : 'var(--bg-surface-2)', color: isActive ? 'var(--accent)' : 'var(--text-muted)' }}>
                         {countStr}
@@ -342,7 +341,7 @@ export default function OrdersPage() {
               onClick={handleClearFilters}
               style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', fontSize: 11, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, padding: '4px 8px', borderRadius: '4px' }}
             >
-              <FilterX size={12} /> クリア
+              <FilterX size={12} /> {t('clear')}
             </button>
           )}
         </div>
@@ -354,7 +353,7 @@ export default function OrdersPage() {
             <Search size={14} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
             <input
               type="text"
-              placeholder="検索..."
+              placeholder={tCommon('search')}
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
               onFocus={() => setShowSuggestions(true)}
@@ -376,7 +375,7 @@ export default function OrdersPage() {
             <AsyncSearchableSelect
               value={filterCustomerId}
               onChange={setFilterCustomerId}
-              placeholder="得意先..."
+              placeholder={t('customer')}
               fetchOptions={async (q) => {
                 const { data } = await supabase
                   .from('companies')
@@ -400,7 +399,7 @@ export default function OrdersPage() {
               value={filterStartDate}
               onChange={e => setFilterStartDate(e.target.value)}
               style={{ border: 'none', background: 'transparent', outline: 'none', fontSize: 12, color: 'var(--text-primary)', width: 110 }}
-              title="Từ ngày"
+              title={t('fromDate')}
             />
             <span style={{ color: 'var(--text-muted)', fontSize: 12 }}>-</span>
             <input
@@ -408,7 +407,7 @@ export default function OrdersPage() {
               value={filterEndDate}
               onChange={e => setFilterEndDate(e.target.value)}
               style={{ border: 'none', background: 'transparent', outline: 'none', fontSize: 12, color: 'var(--text-primary)', width: 110 }}
-              title="Đến ngày"
+              title={t('toDate')}
             />
           </div>
         </div>
@@ -418,11 +417,11 @@ export default function OrdersPage() {
       <div className="card-flat" style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}>
         {loading ? (
           <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)', fontSize: 12 }}>
-            読み込み中...
+            {t('loading')}
           </div>
         ) : error ? (
           <div style={{ padding: 16, color: 'var(--status-error)', fontSize: 12 }}>
-            エラー: {error}
+            {tCommon('error')}: {error}
           </div>
         ) : (
           <React.Fragment>
@@ -439,32 +438,25 @@ export default function OrdersPage() {
                       />
                     </th>
                     <th style={{ width: 140 }}>
-                      <span className="ja">受注番号</span>
-                      <span className="vi">Mã đơn hàng</span>
+                      <span style={{ fontWeight: 600 }}>{t('orderCode')}</span>
                     </th>
                     <th style={{ width: 100 }}>
-                      <span className="ja">種別</span>
-                      <span className="vi">Loại ĐH</span>
+                      <span style={{ fontWeight: 600 }}>{tCommon('status')}</span>
                     </th>
                     <th style={{ width: 220 }}>
-                      <span className="ja">得意先</span>
-                      <span className="vi">Khách hàng</span>
+                      <span style={{ fontWeight: 600 }}>{t('customerName')}</span>
                     </th>
                     <th style={{ width: 110 }}>
-                      <span className="ja">受注日</span>
-                      <span className="vi">Ngày đặt</span>
+                      <span style={{ fontWeight: 600 }}>{t('orderDate')}</span>
                     </th>
                     <th style={{ width: 110 }}>
-                      <span className="ja">納期</span>
-                      <span className="vi">Ngày giao</span>
+                      <span style={{ fontWeight: 600 }}>{t('deliveryDate')}</span>
                     </th>
                     <th style={{ width: 80, textAlign: 'center' }}>
-                      <span className="ja">明細数</span>
-                      <span className="vi">Dòng</span>
+                      <span style={{ fontWeight: 600 }}>{t('quantity')}</span>
                     </th>
                     <th style={{ width: 100, textAlign: 'center' }}>
-                      <span className="ja">状態</span>
-                      <span className="vi">Trạng thái</span>
+                      <span style={{ fontWeight: 600 }}>{tCommon('status')}</span>
                     </th>
                     <th style={{ width: 80, textAlign: 'right' }}></th>
                   </tr>
@@ -473,7 +465,7 @@ export default function OrdersPage() {
                   {orders.length === 0 ? (
                     <tr>
                       <td colSpan={8} style={{ textAlign: 'center', padding: '32px 0', color: 'var(--text-muted)' }}>
-                        データがありません
+                        {t('noData')}
                       </td>
                     </tr>
                   ) : (
@@ -502,7 +494,7 @@ export default function OrdersPage() {
                           </td>
                           <td>
                             <span className={order.order_type === 'MOLD' ? 'badge badge--warning' : 'badge badge--info'}>
-                              {order.order_type === 'MOLD' ? 'MOLD' : 'PRODUCT'}
+                              {order.order_type === 'MOLD' ? t('mold') : t('product')}
                             </span>
                           </td>
                           <td>

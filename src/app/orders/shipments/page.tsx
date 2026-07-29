@@ -1,5 +1,7 @@
 'use client'
 
+import { useTranslations } from 'next-intl'
+
 import { useEffect, useState, useCallback, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Plus, Edit2, Trash2, X, Truck, Filter, Package, Search, Loader2 } from 'lucide-react'
@@ -42,10 +44,10 @@ type ShipmentForm = {
 }
 
 const STATUS_OPTIONS = [
-  { value: 'SHIPPED', labelJa: '出荷済', labelVi: 'Đã xuất', color: 'var(--status-info)' },
-  { value: 'IN_TRANSIT', labelJa: '配送中', labelVi: 'Đang giao', color: 'var(--status-warning)' },
-  { value: 'DELIVERED', labelJa: '納品完了', labelVi: 'Đã giao', color: 'var(--status-success)' },
-  { value: 'RETURNED', labelJa: '返品', labelVi: 'Trả lại', color: 'var(--status-error)' },
+  { value: 'SHIPPED', labelKey: 'statusShipped', color: 'var(--status-info)' },
+  { value: 'IN_TRANSIT', labelKey: 'statusInTransit', color: 'var(--status-warning)' },
+  { value: 'DELIVERED', labelKey: 'statusDelivered', color: 'var(--status-success)' },
+  { value: 'RETURNED', labelKey: 'statusReturned', color: 'var(--status-error)' },
 ]
 
 const emptyForm: ShipmentForm = {
@@ -71,6 +73,7 @@ function getStatusDef(status: string) {
 
 /* ─── Main Page ──────────────────────────────────────────────── */
 export default function ShipmentsPage() {
+  const t = useTranslations()
   const supabase = createClient()
 
   const [shipments, setShipments] = useState<Shipment[]>([])
@@ -157,7 +160,7 @@ export default function ShipmentsPage() {
     }
 
     const { data, error: err } = await supabase.from('shipments').insert(payload as any).select().single()
-    if (err) { alert('登録エラー: ' + err.message); setSaving(false); return }
+    if (err) { alert(`${t('Shipments.registerError')}${err.message}`); setSaving(false); return }
     
     setSaving(false)
     setModalOpen(false)
@@ -167,7 +170,7 @@ export default function ShipmentsPage() {
   const handleDelete = async () => {
     if (!deleteId) return
     const { error: err } = await supabase.from('shipments').delete().eq('shipment_id', deleteId)
-    if (err) alert('削除エラー: ' + err.message)
+    if (err) alert(`${t('Shipments.deleteError')}${err.message}`)
     setDeleteId(null)
     fetchShipments()
   }
@@ -184,15 +187,14 @@ export default function ShipmentsPage() {
             </div>
             <div>
               <h1 style={{ fontSize: 18, fontWeight: 700, margin: 0, color: 'var(--text-primary)' }}>
-                <span className="ja">出荷管理</span>
-                <span className="vi" style={{ fontSize: 12, fontWeight: 500, marginLeft: 8, color: 'var(--text-secondary)' }}>Quản lý Giao hàng</span>
+                {t('Orders.quanLyGiaoHang')}
               </h1>
             </div>
           </div>
         </div>
         <button className="btn btn-primary" onClick={openAdd}>
           <Plus size={16} />
-          新規出荷 / Tạo mới
+          {t('Shipments.newShipment')}
         </button>
       </div>
 
@@ -201,8 +203,7 @@ export default function ShipmentsPage() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <Filter size={14} style={{ color: 'var(--text-muted)' }} />
           <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)' }}>
-            <span className="ja">絞り込み</span>
-            <span className="vi" style={{ fontSize: 10, marginLeft: 4 }}>Lọc</span>
+            {t('Orders.loc')}
           </span>
         </div>
         
@@ -219,7 +220,7 @@ export default function ShipmentsPage() {
                 <Search size={14} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
                 <input
                   type="text"
-                  placeholder="検索..."
+                  placeholder={t('Shipments.searchPlaceholder')}
                   value={searchText}
                   onChange={e => setSearchText(e.target.value)}
                   onFocus={() => setShowSuggestions(true)}
@@ -257,11 +258,11 @@ export default function ShipmentsPage() {
       <div className="card-flat" style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}>
         {loading ? (
           <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)', fontSize: 12 }}>
-            読み込み中...
+            {t('Orders.loading')}
           </div>
         ) : error ? (
           <div style={{ padding: 16, color: 'var(--status-error)', fontSize: 12 }}>
-            エラー: {error}
+            {t('Common.error')}: {error}
           </div>
         ) : (
           <>
@@ -270,45 +271,37 @@ export default function ShipmentsPage() {
                 <thead>
                   <tr>
                     <th style={{ width: 120 }}>
-                      <span className="ja">納品書No</span>
-                      <span className="vi">Số PG</span>
+                      {t('Orders.soPg')}
                     </th>
                     <th style={{ width: 120 }}>
-                      <span className="ja">受注番号</span>
-                      <span className="vi">Mã ĐH</span>
+                      {t('Orders.maH')}
                     </th>
                     <th style={{ width: 180 }}>
-                      <span className="ja">得意先</span>
-                      <span className="vi">Khách hàng</span>
+                      {t('Orders.khachHang')}
                     </th>
                     <th style={{ width: 100 }}>
-                      <span className="ja">出荷日</span>
-                      <span className="vi">Ngày xuất</span>
+                      {t('Orders.ngayXuat')}
                     </th>
                     <th style={{ width: 100 }}>
-                      <span className="ja">納品日</span>
-                      <span className="vi">Ngày giao</span>
+                      {t('Orders.ngayGiao')}
                     </th>
                     <th style={{ width: 110 }}>
-                      <span className="ja">運送</span>
-                      <span className="vi">Vận chuyển</span>
+                      {t('Orders.vanChuyen')}
                     </th>
                     <th style={{ width: 120 }}>
-                      <span className="ja">追跡No</span>
-                      <span className="vi">Tracking</span>
+                      {t('Orders.tracking')}
                     </th>
                     <th style={{ width: 90, textAlign: 'center' }}>
-                      <span className="ja">状態</span>
-                      <span className="vi">Trạng thái</span>
+                      {t('Orders.trangThai')}
                     </th>
-                    <th style={{ width: 80, textAlign: 'right' }}>操作</th>
+                    <th style={{ width: 80, textAlign: 'right' }}>{t('Shipments.action')}</th>
                   </tr>
                 </thead>
                 <tbody>
                   {shipments.length === 0 ? (
                     <tr>
                       <td colSpan={9} style={{ textAlign: 'center', padding: '32px 0', color: 'var(--text-muted)' }}>
-                        データがありません
+                        {t('Shipments.noData')}
                       </td>
                     </tr>
                   ) : (
@@ -323,7 +316,7 @@ export default function ShipmentsPage() {
                               </Link>
                             ) : (
                               <Link href={`/orders/shipments/${s.shipment_id}`} style={{ color: 'var(--text-muted)', textDecoration: 'none', fontStyle: 'italic' }}>
-                                未設定
+                                {t('Shipments.notSet')}
                               </Link>
                             )}
                           </td>
@@ -358,7 +351,7 @@ export default function ShipmentsPage() {
                                 whiteSpace: 'nowrap',
                               }}
                             >
-                              {st.labelJa}
+                              {t(`Shipments.${st.labelKey}`)}
                             </span>
                           </td>
                           <td style={{ textAlign: 'right' }}>
@@ -366,14 +359,14 @@ export default function ShipmentsPage() {
                               <Link
                                 href={`/orders/shipments/${s.shipment_id}`}
                                 style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', padding: 4 }}
-                                title="詳細"
+                                title={t('Shipments.details')}
                               >
                                 <Edit2 size={14} />
                               </Link>
                               <button
                                 onClick={() => setDeleteId(s.shipment_id)}
                                 style={{ background: 'none', border: 'none', color: 'var(--status-error)', cursor: 'pointer', padding: 4 }}
-                                title="削除"
+                                title={t('Shipments.delete')}
                               >
                                 <Trash2 size={14} />
                               </button>
@@ -405,12 +398,7 @@ export default function ShipmentsPage() {
           <div className="card" style={{ width: 480, display: 'flex', flexDirection: 'column', maxHeight: '90vh' }}>
             <div className="form-section-header" style={{ justifyContent: 'space-between', padding: '12px 16px' }}>
               <div>
-                <span className="ja" style={{ fontSize: 13, textTransform: 'none', color: 'var(--text-primary)' }}>
-                  新規出荷登録
-                </span>
-                <span className="vi" style={{ fontSize: 10, textTransform: 'none' }}>
-                  Tạo phiếu xuất mới
-                </span>
+                {t('Orders.taoPhieuXuatMoi')}
               </div>
               <button onClick={() => setModalOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}>
                 <X size={16} />
@@ -419,11 +407,11 @@ export default function ShipmentsPage() {
             
             <div className="custom-scrollbar" style={{ padding: 16, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 12 }}>
               <div className="form-field">
-                <label className="form-label"><span className="label-ja">受注番号</span><span className="label-vi">Mã đơn hàng</span></label>
+                <label className="form-label">{t('Orders.maOnHang')}</label>
                 <AsyncSearchableSelect
                   value={form.order_id}
                   onChange={(v) => setForm(f => ({ ...f, order_id: v || '' }))}
-                  placeholder="受注番号を検索..."
+                  placeholder={t('Shipments.searchOrderPlaceholder')}
                   fetchOptions={async (q) => {
                     const { data } = await supabase
                       .from('orders')
@@ -441,51 +429,51 @@ export default function ShipmentsPage() {
 
               <div className="form-grid-2">
                 <div className="form-field">
-                  <label className="form-label"><span className="label-ja">出荷日 *</span><span className="label-vi">Ngày xuất</span></label>
+                  <label className="form-label">{t('Orders.ngayXuat')}</label>
                   <input type="date" required className="form-input" value={form.ship_date} onChange={e => setForm(f => ({ ...f, ship_date: e.target.value }))} />
                 </div>
                 <div className="form-field">
-                  <label className="form-label"><span className="label-ja">納品日</span><span className="label-vi">Ngày giao</span></label>
+                  <label className="form-label">{t('Orders.ngayGiao')}</label>
                   <input type="date" className="form-input" value={form.delivery_date} onChange={e => setForm(f => ({ ...f, delivery_date: e.target.value }))} />
                 </div>
               </div>
 
               <div className="form-field">
-                <label className="form-label"><span className="label-ja">納品書番号</span><span className="label-vi">Số phiếu giao</span></label>
+                <label className="form-label">{t('Orders.soPhieuGiao')}</label>
                 <input type="text" className="form-input mono" value={form.delivery_note_no} onChange={e => setForm(f => ({ ...f, delivery_note_no: e.target.value }))} placeholder="DN-2026-001" />
               </div>
 
               <div className="form-grid-2">
                 <div className="form-field">
-                  <label className="form-label"><span className="label-ja">運送会社</span><span className="label-vi">Hãng vận chuyển</span></label>
+                  <label className="form-label">{t('Orders.hangVanChuyen')}</label>
                   <input type="text" className="form-input" value={form.carrier} onChange={e => setForm(f => ({ ...f, carrier: e.target.value }))} placeholder="ヤマト運輸" />
                 </div>
                 <div className="form-field">
-                  <label className="form-label"><span className="label-ja">追跡番号</span><span className="label-vi">Mã tracking</span></label>
+                  <label className="form-label">{t('Orders.maTracking')}</label>
                   <input type="text" className="form-input mono" value={form.tracking_no} onChange={e => setForm(f => ({ ...f, tracking_no: e.target.value }))} />
                 </div>
               </div>
 
               <div className="form-field">
-                <label className="form-label"><span className="label-ja">状態</span><span className="label-vi">Trạng thái</span></label>
+                <label className="form-label">{t('Orders.trangThai')}</label>
                 <select className="form-input" value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value }))}>
                   {STATUS_OPTIONS.map(s => (
-                    <option key={s.value} value={s.value}>{s.labelJa} / {s.labelVi}</option>
+                    <option key={s.value} value={s.value}>{t(`Shipments.${s.labelKey}`)}</option>
                   ))}
                 </select>
               </div>
 
               <div className="form-field">
-                <label className="form-label"><span className="label-ja">備考</span><span className="label-vi">Ghi chú</span></label>
+                <label className="form-label">{t('Orders.ghiChu')}</label>
                 <textarea className="form-textarea" value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} rows={2} />
               </div>
             </div>
 
             <div className="form-actions" style={{ padding: '12px 16px', background: 'var(--bg-surface-2)', marginTop: 0 }}>
-              <button type="button" className="btn btn-secondary" onClick={() => setModalOpen(false)} disabled={saving}>キャンセル</button>
+              <button type="button" className="btn btn-secondary" onClick={() => setModalOpen(false)} disabled={saving}>{t('Shipments.cancel')}</button>
               <button type="button" className="btn btn-primary" onClick={handleSave} disabled={saving || !form.ship_date}>
                 {saving && <Loader2 size={12} className="animate-spin" style={{ marginRight: 4 }} />}
-                登録する
+                {t('Shipments.register')}
               </button>
             </div>
           </div>
@@ -497,15 +485,16 @@ export default function ShipmentsPage() {
         <div style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.5)' }}>
           <div className="card" style={{ width: 380, padding: 24, textAlign: 'center' }}>
             <Trash2 size={32} style={{ color: 'var(--status-error)', margin: '0 auto 12px' }} />
-            <h3 className="ja" style={{ fontSize: 15, marginBottom: 8 }}>削除確認</h3>
-            <p className="vi" style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 20 }}>
-              この出荷レコードを削除しますか？<br/>
-              Bạn có chắc muốn xoá bản ghi này?
+            <h3 style={{ fontSize: 15, marginBottom: 8, fontWeight: 'bold' }}>{t('Orders.confirmDelete')}</h3>
+            <p style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 20 }}>
+              {t('Orders.deleteQuestion')}
             </p>
             <div style={{ display: 'flex', justifyContent: 'center', gap: 8 }}>
-              <button className="btn btn-secondary" onClick={() => setDeleteId(null)}>キャンセル</button>
+              <button className="btn btn-secondary" onClick={() => setDeleteId(null)}>
+                {t('Orders.cancel')}
+              </button>
               <button className="btn" style={{ background: 'var(--status-error)', color: '#fff', border: 'none' }} onClick={handleDelete}>
-                削除する
+                {t('Orders.delete')}
               </button>
             </div>
           </div>

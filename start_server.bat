@@ -1,5 +1,5 @@
 @echo off
-title YSDMS Next-Gen Server (Webpack Mode)
+title YSDMS Next-Gen Server (Turbopack Mode)
 color 0b
 
 echo ==================================================
@@ -9,7 +9,7 @@ echo.
 
 echo ==================================================
 echo   DANG KHOI CHAY TRINH MAY CHU CUC BO...
-echo   (Dang su dung Webpack mac dinh cua Next.js)
+echo   (Dang su dung Turbopack cua Next.js)
 echo ==================================================
 
 :: Xoa cache Webpack (.next) de tranh loi ChunkLoadError hoac SyntaxError

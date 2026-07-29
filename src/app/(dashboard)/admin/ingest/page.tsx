@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { 
   DatabaseZap, FolderSearch, CheckCircle2, AlertTriangle, 
   Loader2, Play, RefreshCw, Upload, Users, FolderOpen,
@@ -22,6 +23,7 @@ type ApplyResult = {
 }
 
 export default function IngestPage() {
+  const t = useTranslations('Admin')
   const [serverRoot, setServerRoot] = useState('\\\\SERVER\\ysd-folder')
   const [scanning, setScanning] = useState(false)
   const [applying, setApplying] = useState(false)
@@ -87,8 +89,8 @@ export default function IngestPage() {
           <DatabaseZap size={20} className="text-white" />
         </div>
         <div>
-          <h1 className="text-lg font-bold text-[var(--mcs-text)] ja">データ自動取込ツール</h1>
-          <p className="text-xs text-[var(--mcs-text-muted)] vi">Công cụ nhập dữ liệu tự động từ Server</p>
+          <h1 className="text-lg font-bold text-[var(--mcs-text)]">{t('ingestTitle')}</h1>
+          <p className="text-xs text-[var(--mcs-text-muted)]">{t('ingestSubtitle')}</p>
         </div>
       </div>
 
@@ -96,7 +98,7 @@ export default function IngestPage() {
       <div className="bg-[var(--mcs-surface)] border border-[var(--mcs-border)] rounded-lg p-4 shadow-sm">
         <h2 className="text-sm font-bold text-[var(--mcs-text)] mb-3 flex items-center gap-2">
           <span className="w-5 h-5 rounded-full bg-[var(--mcs-primary)] text-white text-xs flex items-center justify-center">1</span>
-          Nguồn dữ liệu / データソース
+          {t('dataSource')}
         </h2>
         <div className="flex gap-2">
           <input
@@ -112,11 +114,11 @@ export default function IngestPage() {
             className="btn-primary h-9 px-4 flex items-center gap-2 text-sm disabled:opacity-60"
           >
             {scanning ? <Loader2 size={16} className="animate-spin" /> : <FolderSearch size={16} />}
-            {scanning ? 'Đang quét...' : 'Quét thư mục'}
+            {scanning ? t('scanningBtn') : t('scanBtn')}
           </button>
         </div>
         <p className="mt-2 text-xs text-[var(--mcs-text-muted)]">
-          Script sẽ quét các thư mục 新SMK注文書, 新AMP注文書, 新一般注文書... và tìm file Excel mới nhất cho từng sản phẩm.
+          {t('scanHint')}
         </p>
       </div>
 
@@ -134,7 +136,7 @@ export default function IngestPage() {
           <div className="px-4 py-3 bg-[var(--mcs-surface-3)] border-b border-[var(--mcs-border)] flex items-center justify-between">
             <h2 className="text-sm font-bold text-[var(--mcs-text)] flex items-center gap-2">
               <span className="w-5 h-5 rounded-full bg-[var(--mcs-primary)] text-white text-xs flex items-center justify-center">2</span>
-              Kết quả quét
+              {t('scanResultTitle')}
             </h2>
             <span className="text-xs text-[var(--mcs-text-muted)]">{new Date(scanResult.scannedAt).toLocaleString('ja-JP')}</span>
           </div>
@@ -142,10 +144,10 @@ export default function IngestPage() {
           {/* Stats */}
           <div className="grid grid-cols-4 divide-x divide-[var(--mcs-border)] border-b border-[var(--mcs-border)]">
             {[
-              { label: 'Nhóm SP', value: scanResult.summary.totalGroups, icon: FolderOpen, color: 'text-blue-600' },
-              { label: 'KH tìm thấy', value: scanResult.summary.totalCustomers, icon: Users, color: 'text-purple-600' },
-              { label: 'KH mới', value: scanResult.summary.newCustomers, icon: CheckCircle2, color: 'text-green-600' },
-              { label: 'Đã có', value: scanResult.summary.existingCustomers, icon: RefreshCw, color: 'text-orange-600' },
+              { label: t('stats.productGroups'), value: scanResult.summary.totalGroups, icon: FolderOpen, color: 'text-blue-600' },
+              { label: t('stats.foundCustomers'), value: scanResult.summary.totalCustomers, icon: Users, color: 'text-purple-600' },
+              { label: t('stats.newCustomers'), value: scanResult.summary.newCustomers, icon: CheckCircle2, color: 'text-green-600' },
+              { label: t('stats.existingCustomers'), value: scanResult.summary.existingCustomers, icon: RefreshCw, color: 'text-orange-600' },
             ].map(s => (
               <div key={s.label} className="p-4 text-center">
                 <div className={`text-2xl font-bold ${s.color}`}>{s.value}</div>
@@ -158,13 +160,13 @@ export default function IngestPage() {
           <div className="p-4">
             <div className="flex items-center justify-between mb-2">
               <h3 className="text-xs font-bold text-[var(--mcs-text)]">
-                Khách hàng mới ({scanResult.newCustomers.length}) — chọn để import:
+                {t('newCustomersTitle', { count: scanResult.newCustomers.length })}
               </h3>
               <div className="flex gap-2">
                 <button onClick={() => setSelectedCustomers(new Set(scanResult.newCustomers))}
-                  className="text-xs text-[var(--mcs-primary)] hover:underline">Chọn tất cả</button>
+                  className="text-xs text-[var(--mcs-primary)] hover:underline">{t('selectAll')}</button>
                 <button onClick={() => setSelectedCustomers(new Set())}
-                  className="text-xs text-[var(--mcs-text-muted)] hover:underline">Bỏ chọn</button>
+                  className="text-xs text-[var(--mcs-text-muted)] hover:underline">{t('deselectAll')}</button>
               </div>
             </div>
             <div className="max-h-48 overflow-y-auto border border-[var(--mcs-border)] rounded bg-[var(--mcs-surface-2)] p-2 flex flex-wrap gap-1.5">
@@ -182,7 +184,7 @@ export default function IngestPage() {
                 </button>
               ))}
               {scanResult.newCustomers.length === 0 && (
-                <span className="text-xs text-[var(--mcs-text-muted)]">Không có khách hàng mới — tất cả đã có trong DB</span>
+                <span className="text-xs text-[var(--mcs-text-muted)]">{t('noNewCustomers')}</span>
               )}
             </div>
 
@@ -190,7 +192,7 @@ export default function IngestPage() {
             {scanResult.existingCustomers.length > 0 && (
               <div className="mt-3">
                 <p className="text-xs text-[var(--mcs-text-muted)] mb-1">
-                  Đã tồn tại trong DB ({scanResult.existingCustomers.length}):
+                  {t('alreadyInDb', { count: scanResult.existingCustomers.length })}
                   <span className="ml-1 text-orange-600">{scanResult.existingCustomers.join(', ')}</span>
                 </p>
               </div>
@@ -202,7 +204,7 @@ export default function IngestPage() {
               className="mt-3 text-xs text-[var(--mcs-text-muted)] flex items-center gap-1 hover:text-[var(--mcs-primary)]"
             >
               {showGroups ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
-              {showGroups ? 'Ẩn' : 'Xem'} chi tiết {scanResult.summary.totalGroups} nhóm sản phẩm
+              {showGroups ? t('hideGroups') : t('showGroups', { count: scanResult.summary.totalGroups })}
             </button>
 
             {showGroups && (
@@ -210,10 +212,10 @@ export default function IngestPage() {
                 <table className="w-full">
                   <thead className="bg-[var(--mcs-surface-3)] sticky top-0">
                     <tr>
-                      <th className="p-2 text-left font-medium text-[var(--mcs-text-secondary)]">Khách hàng</th>
-                      <th className="p-2 text-left font-medium text-[var(--mcs-text-secondary)]">Mã SP</th>
-                      <th className="p-2 text-left font-medium text-[var(--mcs-text-secondary)]">File mới nhất</th>
-                      <th className="p-2 text-center font-medium text-[var(--mcs-text-secondary)]">Số phiên bản</th>
+                      <th className="p-2 text-left font-medium text-[var(--mcs-text-secondary)]">{t('tableHeaders.customer')}</th>
+                      <th className="p-2 text-left font-medium text-[var(--mcs-text-secondary)]">{t('tableHeaders.productCode')}</th>
+                      <th className="p-2 text-left font-medium text-[var(--mcs-text-secondary)]">{t('tableHeaders.latestFile')}</th>
+                      <th className="p-2 text-center font-medium text-[var(--mcs-text-secondary)]">{t('tableHeaders.versionCount')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -234,7 +236,7 @@ export default function IngestPage() {
           {/* Step 3: Apply */}
           <div className="px-4 py-3 bg-[var(--mcs-surface-3)] border-t border-[var(--mcs-border)] flex items-center justify-between">
             <div className="text-xs text-[var(--mcs-text-muted)]">
-              Đã chọn <span className="font-bold text-[var(--mcs-primary)]">{selectedCustomers.size}</span> khách hàng để import
+              {t('selectedImport', { count: selectedCustomers.size })}
             </div>
             <button
               onClick={handleApply}
@@ -242,7 +244,7 @@ export default function IngestPage() {
               className="btn-primary h-9 px-5 flex items-center gap-2 text-sm disabled:opacity-60"
             >
               {applying ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
-              {applying ? 'Đang import...' : `Import ${selectedCustomers.size} KH vào DB`}
+              {applying ? t('importingBtn') : t('importBtn', { count: selectedCustomers.size })}
             </button>
           </div>
         </div>
@@ -253,13 +255,13 @@ export default function IngestPage() {
         <div className="bg-green-50 border border-green-200 rounded-lg p-4">
           <div className="flex items-center gap-2 mb-3">
             <CheckCircle2 size={18} className="text-green-600" />
-            <h2 className="text-sm font-bold text-green-800">Import hoàn thành!</h2>
+            <h2 className="text-sm font-bold text-green-800">{t('importSuccess')}</h2>
           </div>
           <div className="grid grid-cols-3 gap-3 mb-3">
             {[
-              { label: 'Đã import', value: applyResult.summary.inserted, color: 'text-green-700' },
-              { label: 'Bỏ qua (đã có)', value: applyResult.summary.skipped, color: 'text-orange-600' },
-              { label: 'Lỗi', value: applyResult.summary.errors, color: 'text-red-600' },
+              { label: t('importStats.imported'), value: applyResult.summary.inserted, color: 'text-green-700' },
+              { label: t('importStats.skipped'), value: applyResult.summary.skipped, color: 'text-orange-600' },
+              { label: t('importStats.errors'), value: applyResult.summary.errors, color: 'text-red-600' },
             ].map(s => (
               <div key={s.label} className="text-center bg-white rounded border border-green-200 p-2">
                 <div className={`text-xl font-bold ${s.color}`}>{s.value}</div>
@@ -276,7 +278,7 @@ export default function IngestPage() {
           )}
           <button onClick={() => { setApplyResult(null); setScanResult(null) }}
             className="mt-3 text-xs text-green-700 flex items-center gap-1 hover:underline">
-            <RefreshCw size={12} /> Quét lại
+            <RefreshCw size={12} /> {t('scanAgain')}
           </button>
         </div>
       )}

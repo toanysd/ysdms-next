@@ -1,14 +1,16 @@
 import { createClient } from '@/lib/supabase/server'
 import { logoutAction } from '@/app/actions/auth'
+import { getTranslations } from 'next-intl/server'
 
 export default async function HeaderAuth() {
+    const t = await getTranslations('Auth')
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) {
         return (
             <div className="ml-auto text-xs text-gray-500">
-                <a href="/login" className="hover:underline">Đăng nhập</a>
+                <a href="/login" className="hover:underline">{t('login')}</a>
             </div>
         )
     }
@@ -34,7 +36,7 @@ export default async function HeaderAuth() {
 
             <form action={logoutAction}>
                 <button type="submit" className="text-xs text-gray-500 hover:text-red-600 px-2 border-l border-gray-300 ml-2">
-                    Thoát
+                    {t('logout')}
                 </button>
             </form>
         </div>

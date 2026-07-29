@@ -1,4 +1,4 @@
-﻿export type Json =
+export type Json =
   | string
   | number
   | boolean
@@ -2450,6 +2450,7 @@ export type Database = {
       machines: {
         Row: {
           created_at: string | null
+          feed_length_mm: number | null
           is_active: boolean | null
           location: string | null
           machine_code: string
@@ -2468,6 +2469,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string | null
+          feed_length_mm?: number | null
           is_active?: boolean | null
           location?: string | null
           machine_code: string
@@ -2486,6 +2488,7 @@ export type Database = {
         }
         Update: {
           created_at?: string | null
+          feed_length_mm?: number | null
           is_active?: boolean | null
           location?: string | null
           machine_code?: string
@@ -4510,6 +4513,7 @@ export type Database = {
           additive_flags: string | null
           additive_text_raw: string | null
           appearance_text_raw: string | null
+          color: string | null
           color_code_raw: string | null
           color_name_normalized: string | null
           created_at: string | null
@@ -4519,6 +4523,7 @@ export type Database = {
           plastic_family: string
           plastic_id: string
           plastic_subtype: string | null
+          properties: string | null
           remarks_raw: string | null
           silicone_status_normalized: string | null
           standard_length_m: number | null
@@ -4531,6 +4536,7 @@ export type Database = {
           additive_flags?: string | null
           additive_text_raw?: string | null
           appearance_text_raw?: string | null
+          color?: string | null
           color_code_raw?: string | null
           color_name_normalized?: string | null
           created_at?: string | null
@@ -4540,6 +4546,7 @@ export type Database = {
           plastic_family: string
           plastic_id?: string
           plastic_subtype?: string | null
+          properties?: string | null
           remarks_raw?: string | null
           silicone_status_normalized?: string | null
           standard_length_m?: number | null
@@ -4552,6 +4559,7 @@ export type Database = {
           additive_flags?: string | null
           additive_text_raw?: string | null
           appearance_text_raw?: string | null
+          color?: string | null
           color_code_raw?: string | null
           color_name_normalized?: string | null
           created_at?: string | null
@@ -4561,6 +4569,7 @@ export type Database = {
           plastic_family?: string
           plastic_id?: string
           plastic_subtype?: string | null
+          properties?: string | null
           remarks_raw?: string | null
           silicone_status_normalized?: string | null
           standard_length_m?: number | null
@@ -5527,6 +5536,54 @@ export type Database = {
           tag_code?: string
         }
         Relationships: []
+      }
+      production_log: {
+        Row: {
+          log_id: string
+          job_id: string | null
+          roll_id: string | null
+          meters_consumed: number
+          meters_remaining: number
+          meters_wasted: number
+          created_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          log_id?: string
+          job_id?: string | null
+          roll_id?: string | null
+          meters_consumed: number
+          meters_remaining: number
+          meters_wasted: number
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          log_id?: string
+          job_id?: string | null
+          roll_id?: string | null
+          meters_consumed?: number
+          meters_remaining?: number
+          meters_wasted?: number
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "production_log_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["job_id"]
+          },
+          {
+            foreignKeyName: "production_log_roll_id_fkey"
+            columns: ["roll_id"]
+            isOneToOne: false
+            referencedRelation: "plastic_receipt_roll"
+            referencedColumns: ["id"]
+          }
+        ]
       }
       products: {
         Row: {

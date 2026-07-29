@@ -2,6 +2,8 @@
 
 import { Download } from 'lucide-react'
 
+import { useTranslations } from 'next-intl'
+
 interface ExportCSVButtonProps {
     data: Record<string, unknown>[]
     filename: string
@@ -13,6 +15,8 @@ interface ExportCSVButtonProps {
  * Client Component: Export mảng dữ liệu ra file CSV với BOM (hỗ trợ tiếng Nhật/Việt)
  */
 export default function ExportCSVButton({ data, filename, headers, label }: ExportCSVButtonProps) {
+    const t = useTranslations('Common')
+
     const handleExport = () => {
         if (!data || data.length === 0) return
 
@@ -56,10 +60,10 @@ export default function ExportCSVButton({ data, filename, headers, label }: Expo
             onClick={handleExport}
             disabled={!data || data.length === 0}
             className="bg-white hover:bg-teal-50 border border-teal-300 text-teal-700 h-[30px] px-3 flex items-center gap-1.5 text-xs rounded transition-colors shadow-sm font-bold disabled:opacity-40 disabled:cursor-not-allowed"
-            title="CSV出力 / Xuất CSV"
+            title={t('csvExport')}
         >
             <Download size={14} />
-            {label || 'CSV出力'}
+            {label || t('csvExport')}
         </button>
     )
 }

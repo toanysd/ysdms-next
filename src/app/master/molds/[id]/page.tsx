@@ -1,4 +1,5 @@
 // @ts-nocheck
+import { getTranslations } from 'next-intl/server'
 import Link from 'next/link'
 import { ArrowLeft, Plus, Layers, GitBranch, FlaskConical, CheckCircle2, Clock, FileText, Factory } from 'lucide-react'
 import { getMoldBaseDetail } from '@/app/actions/mold'
@@ -9,6 +10,7 @@ type Props = {
 }
 
 export default async function MoldDetailPage({ params }: Props) {
+  const t = await getTranslations('Master')
   const { id } = await params
   const { moldBase, revisions, derivedMolds, error } = await getMoldBaseDetail(id)
 
@@ -36,8 +38,7 @@ export default async function MoldDetailPage({ params }: Props) {
           </Link>
           <Layers size={20} style={{ color: 'var(--accent)' }} />
           <h2 style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', display: 'flex', flexDirection: 'column' }}>
-            <span className="ja">金型詳細 — {moldBase.mold_master_code}</span>
-            <span className="vi" style={{ fontWeight: 400, color: 'var(--text-muted)' }}>Chi tiết Khuôn gốc</span>
+            {t('Master.chiTietKhuonGoc')}
           </h2>
         </div>
 
@@ -46,7 +47,7 @@ export default async function MoldDetailPage({ params }: Props) {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 16 }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
               <span style={{ color: 'var(--text-muted)', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                <span className="ja">金型コード</span> <span className="vi">/ Mã Khuôn</span>
+                {t('Master.maKhuon')}
               </span>
               <span style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: 16, color: 'var(--text-primary)' }}>
                 {moldBase.mold_master_code}
@@ -55,14 +56,14 @@ export default async function MoldDetailPage({ params }: Props) {
             
             <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
               <span style={{ color: 'var(--text-muted)', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                <span className="ja">金型名称</span> <span className="vi">/ Tên Khuôn</span>
+                {t('Master.tenKhuon')}
               </span>
               <span style={{ fontSize: 14 }}>{moldBase.mold_master_name || '—'}</span>
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
               <span style={{ color: 'var(--text-muted)', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                <span className="ja">顧客</span> <span className="vi">/ Khách hàng (Chủ sở hữu)</span>
+                {t('Master.khachHangChuSoHuu')}
               </span>
               {moldBase.companies ? (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -76,7 +77,7 @@ export default async function MoldDetailPage({ params }: Props) {
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
               <span style={{ color: 'var(--text-muted)', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                <span className="ja">保管先</span> <span className="vi">/ Nơi lưu giữ (Keeper)</span>
+                {t('Master.noiLuuGiuKeeper')}
               </span>
               {moldBase.keeper_company ? (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -91,7 +92,7 @@ export default async function MoldDetailPage({ params }: Props) {
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
               <span style={{ color: 'var(--text-muted)', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                <span className="ja">状態</span> <span className="vi">/ Status</span>
+                {t('Master.status')}
               </span>
               {moldBase.status === 'ACTIVE' ? 
                 (<span className="badge badge--success" style={{ width: 'fit-content' }}>ACTIVE</span>) :
@@ -117,45 +118,39 @@ export default async function MoldDetailPage({ params }: Props) {
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <FileText size={18} style={{ color: 'var(--text-muted)' }} />
             <h3 style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', display: 'flex', flexDirection: 'column' }}>
-              <span className="ja">設計版一覧 (Revisions)</span>
-              <span className="vi" style={{ fontWeight: 400, color: 'var(--text-muted)' }}>Danh sách Phiên bản thiết kế</span>
+              {t('Master.danhSachPhienBanThietKe')}
             </h3>
           </div>
           <Link href={`/master/mold/${id}/revision/new`}>
             <button className="btn btn-primary" style={{ height: 30, padding: '0 12px', fontSize: 12 }}>
               <Plus size={14} />
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', lineHeight: 1 }}>
-                <span className="ja">設計版追加</span>
-              </div>
+              {t('Master.maRevision')}
             </button>
           </Link>
         </div>
 
-        <div className="custom-scrollbar" style={{ flex: 1, overflow: 'auto' }}>
+        <div style={{ flex: 1, overflow: 'auto' }}>
           {revisions.length === 0 ? (
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '64px 0', gap: 12, color: 'var(--text-muted)' }}>
-              <Layers size={40} strokeWidth={1} />
-              <div style={{ textAlign: 'center' }}>
-                <p className="ja" style={{ fontWeight: 700, fontSize: 13 }}>設計版がまだありません</p>
-                <p className="vi" style={{ fontSize: 11, marginTop: 4 }}>Chưa có phiên bản thiết kế nào. Hãy tạo Revision đầu tiên!</p>
-              </div>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--text-muted)', gap: 8, padding: 48 }}>
+              <FileText size={32} style={{ opacity: 0.5 }} />
+              <span>Chưa có phiên bản thiết kế nào. Hãy tạo Revision đầu tiên!</span>
             </div>
           ) : (
             <table className="data-table">
               <thead>
                 <tr>
                   <th style={{ width: 60, textAlign: 'center' }}>#</th>
-                  <th style={{ width: 220 }}>
-                    <span className="ja">設計版コード</span><span className="vi">Mã Revision</span>
+                  <th>
+                    {t('Master.maRevision')}
                   </th>
                   <th style={{ width: 120 }}>
-                    <span className="ja">版ラベル</span><span className="vi">Nhãn</span>
+                    {t('Master.nhan')}
                   </th>
                   <th style={{ width: 140 }}>
-                    <span className="ja">承認日</span><span className="vi">Ngày hiệu lực</span>
+                    {t('Master.ngayHieuLuc')}
                   </th>
                   <th style={{ width: 120 }}>
-                    <span className="ja">状態</span><span className="vi">Status</span>
+                    {t('Master.status')}
                   </th>
                 </tr>
               </thead>

@@ -1,18 +1,11 @@
 'use client';
 
 import type { TechnicalReview } from '../types';
+import { useTranslations } from 'next-intl';
 
 interface Props {
   reviews: TechnicalReview[];
 }
-
-const STATUS_LABELS: Record<string, string> = {
-  superseded: '旧バージョン / Đã thay thế',
-  rejected:   '却下 / Bị từ chối',
-  draft:      '下書き / Nháp',
-  in_review:  '審査中 / Đang duyệt',
-  approved:   '承認済 / Đã duyệt',
-};
 
 const STATUS_BADGE: Record<string, string> = {
   superseded: 'badge-secondary',
@@ -23,22 +16,34 @@ const STATUS_BADGE: Record<string, string> = {
 };
 
 export default function TechnicalReviewList({ reviews }: Props) {
+  const t = useTranslations();
   if (reviews.length === 0) return null;
+
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case 'superseded': return t('Cases.TechnicalReview.statusSuperseded');
+      case 'rejected': return t('Cases.TechnicalReview.statusRejected');
+      case 'draft': return t('Cases.TechnicalReview.statusDraft');
+      case 'in_review': return t('Cases.TechnicalReview.statusInReview');
+      case 'approved': return t('Cases.TechnicalReview.statusApproved');
+      default: return status;
+    }
+  };
 
   return (
     <div style={{ marginTop: 'var(--space-6)' }}>
-      <h4 className="section-subtitle">履歴 / Lịch sử version</h4>
+      <h4 className="section-subtitle">{t('Cases.TechnicalReview.historyTitle')}</h4>
       <div className="table-wrapper">
         <table className="table">
           <thead>
             <tr>
-              <th>Ver.</th>
-              <th>Trạng thái</th>
-              <th>Phương án khuôn</th>
-              <th>Dao cắt</th>
-              <th>Pocket</th>
-              <th>Ghi chú / Lý do từ chối</th>
-              <th>Ngày tạo</th>
+              <th>{t('Cases.TechnicalReview.tableHeaders.ver')}</th>
+              <th>{t('Cases.TechnicalReview.tableHeaders.status')}</th>
+              <th>{t('Cases.TechnicalReview.tableHeaders.moldOption')}</th>
+              <th>{t('Cases.TechnicalReview.tableHeaders.cuttingDie')}</th>
+              <th>{t('Cases.TechnicalReview.tableHeaders.pocket')}</th>
+              <th>{t('Cases.TechnicalReview.tableHeaders.notesOrRejectReason')}</th>
+              <th>{t('Cases.TechnicalReview.tableHeaders.createdDate')}</th>
             </tr>
           </thead>
           <tbody>
@@ -49,11 +54,11 @@ export default function TechnicalReviewList({ reviews }: Props) {
                   <td className="text-center font-mono">v{r.version}</td>
                   <td>
                     <span className={`badge ${STATUS_BADGE[r.approval_status] ?? 'badge-secondary'}`}>
-                      {STATUS_LABELS[r.approval_status] ?? r.approval_status}
+                      {getStatusLabel(r.approval_status)}
                     </span>
                   </td>
-                  <td>{r.mold_option ?? '—'}</td>
-                  <td>{r.cutting_die_option ?? '—'}</td>
+                  <td>{r.mold_option ? t(`Cases.TechnicalReview.moldOptions.${r.mold_option}`, { defaultValue: r.mold_option }) : '—'}</td>
+                  <td>{r.cutting_die_option ? t(`Cases.TechnicalReview.dieOptions.${r.cutting_die_option}`, { defaultValue: r.cutting_die_option }) : '—'}</td>
                   <td className="text-center">{r.pocket_count ?? '—'}</td>
                   <td className="text-muted text-sm">
                     {r.rejected_reason || r.technical_constraints?.slice(0, 60) || '—'}

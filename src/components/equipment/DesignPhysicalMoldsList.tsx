@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Wrench, ExternalLink } from 'lucide-react'
 import Link from 'next/link'
+import { useTranslations } from 'next-intl'
 
 type PhysicalMold = {
   physical_mold_id: string
@@ -24,6 +25,7 @@ export function DesignPhysicalMoldsList({
   selectedMoldId: string | null
   onMoldSelect: (id: string | null) => void
 }) {
+  const t = useTranslations('Engineering')
   const supabase = createClient()
   const [molds, setMolds] = useState<PhysicalMold[]>([])
   const [loading, setLoading] = useState(true)
@@ -51,14 +53,14 @@ export function DesignPhysicalMoldsList({
   })
 
   if (loading) {
-    return <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>読み込み中... (Đang tải...)</div>
+    return <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{t('loading')}</div>
   }
 
   return (
     <div className="card-flat" style={{ padding: 0, overflow: 'hidden' }}>
       <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border-default)', background: 'var(--bg-surface-2)', display: 'flex', alignItems: 'center', gap: 8 }}>
         <Wrench size={14} style={{ color: 'var(--accent)' }} />
-        <h3 style={{ margin: 0, fontSize: 13, fontWeight: 700, fontFamily: 'var(--font-jp)' }}>関連金型 (Khuôn vật lý)</h3>
+        <h3 style={{ margin: 0, fontSize: 13, fontWeight: 700, fontFamily: 'var(--font-jp)' }}>{t('relatedMolds')}</h3>
         {selectedRevisionId ? (
           <span className="badge badge--info" style={{ fontSize: 10, marginLeft: 'auto', fontWeight: 600 }}>
             Filtered by Revision
@@ -68,15 +70,15 @@ export function DesignPhysicalMoldsList({
       <div style={{ overflowX: 'auto' }}>
         {filteredMolds.length === 0 ? (
           <div style={{ padding: 24, textAlign: 'center', fontSize: 12, color: 'var(--text-muted)' }}>
-            Không có dữ liệu khuôn vật lý.
+            {t('noRelatedMolds')}
           </div>
         ) : (
           <table className="data-table">
             <thead>
               <tr>
-                <th>Mã hệ thống</th>
-                <th>Tên hiển thị</th>
-                <th>Trạng thái</th>
+                <th>{t('systemCode')}</th>
+                <th>{t('displayName')}</th>
+                <th>{t('statusLabel')}</th>
               </tr>
             </thead>
             <tbody>

@@ -1,3 +1,5 @@
+import { getTranslations } from 'next-intl/server'
+import { useTranslations } from 'next-intl'
 import Link from 'next/link'
 import { ArrowLeft, ArrowUpFromLine, Plus, ExternalLink } from 'lucide-react'
 import { BackButton } from './BackButton'
@@ -8,7 +10,9 @@ import { DeliverySiteList } from '../_components/DeliverySiteList'
 import { notFound } from 'next/navigation'
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
-function formatDate(d: string | null) {
+async function formatDate(d: string | null) {
+  const t = await getTranslations()
+
   if (!d) return '—'
   return new Date(d).toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' })
 }
@@ -22,6 +26,7 @@ export default async function CustomerDetailPage(props: {
   params: Promise<{ id: string }>
   searchParams?: Promise<{ tab?: string }>
 }) {
+  const t = await getTranslations()
   const { id } = await props.params
   const sp = await props.searchParams
   const activeTab = (sp?.tab || 'info') as TabKey
@@ -119,17 +124,14 @@ export default async function CustomerDetailPage(props: {
             <Link
               href="/master/customers"
               style={{ color: 'var(--text-muted)', display: 'flex', alignItems: 'center', fontSize: 11, textDecoration: 'none', padding: '2px 4px' }}
-              title="顧客一覧へ / Về danh sách khách hàng"
+              title={t('Master.backToListTitle')}
             >
               <ArrowUpFromLine size={14} />
             </Link>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
             <span style={{ fontFamily: 'var(--font-jp)', fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', whiteSpace: 'nowrap' }}>
-              顧客詳細 / 編集
-            </span>
-            <span style={{ fontSize: 9, color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
-              Chi tiết &amp; Sửa thông tin Khách hàng
+              {t('Master.customerDetailTitle')}
             </span>
           </div>
         </div>
@@ -165,7 +167,7 @@ export default async function CustomerDetailPage(props: {
           {company.parent_company_id && parentName && (
             <div style={{ padding: '8px 14px', borderBottom: '1px solid var(--border-subtle)' }}>
               <p style={{ fontSize: 9, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>
-                親会社 / Công ty mẹ
+                {t('Master.parentCompany')}
               </p>
               <Link href={`/master/customers/${company.parent_company_id}`} style={{ fontSize: 12, color: 'var(--accent)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4 }}>
                 <ExternalLink size={10} />
@@ -179,10 +181,10 @@ export default async function CustomerDetailPage(props: {
             <div style={{ padding: '8px 14px', borderBottom: '1px solid var(--border-subtle)' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
                 <p style={{ fontSize: 9, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                  子会社 / Chi nhánh ({children.length})
+                  {t('Master.childCompany')} ({children.length})
                 </p>
                 <Link href={`/master/customers/new?parent=${id}`} style={{ fontSize: 10, color: 'var(--accent)', display: 'flex', alignItems: 'center', gap: 2 }}>
-                  <Plus size={10} />追加
+                  <Plus size={10} />{t('Master.addChildCompany')}
                 </Link>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
@@ -341,23 +343,19 @@ export default async function CustomerDetailPage(props: {
                   <thead>
                     <tr>
                       <th style={{ width: 130 }}>
-                        <span className="ja">受注番号</span>
-                        <span className="vi">Mã đơn</span>
+                        {t('Master.maOn')}
                       </th>
                       <th style={{ width: 100 }}>
-                        <span className="ja">受注日</span>
-                        <span className="vi">Ngày đặt</span>
+                        {t('Master.ngayAt')}
                       </th>
                       <th style={{ width: 100 }}>
-                        <span className="ja">納期</span>
-                        <span className="vi">Ngày giao</span>
+                        {t('Master.ngayGiao')}
                       </th>
                       <th style={{ width: 100, textAlign: 'center' }}>
-                        <span className="ja">状態</span>
-                        <span className="vi">Trạng thái</span>
+                        {t('Master.trangThai')}
                       </th>
                       <th style={{ width: 60, textAlign: 'center' }}>
-                        <span className="ja">操作</span>
+                        {t('Master.tempKey')}
                       </th>
                     </tr>
                   </thead>

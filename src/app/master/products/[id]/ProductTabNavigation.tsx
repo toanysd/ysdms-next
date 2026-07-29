@@ -2,20 +2,21 @@
 
 import { FileText, ShoppingCart, Layers } from 'lucide-react'
 
+import { useTranslations } from 'next-intl'
+
 export type TabId = 'overview' | 'orders' | 'designs'
 
 export type TabDef = {
   id: TabId
-  labelJa: string
-  labelVi: string
+  tKey: string
   icon: typeof FileText
   enabled: boolean
 }
 
 export const TABS: TabDef[] = [
-  { id: 'overview',    labelJa: '概要',       labelVi: 'Tổng quan',    icon: FileText,      enabled: true },
-  { id: 'orders',      labelJa: '注文履歴',   labelVi: 'Đơn hàng',     icon: ShoppingCart,  enabled: true },
-  { id: 'designs',    labelJa: '設計一覧',   labelVi: 'Thiết kế',     icon: Layers,        enabled: true },
+  { id: 'overview',    tKey: 'overview',       icon: FileText,      enabled: true },
+  { id: 'orders',      tKey: 'orders',         icon: ShoppingCart,  enabled: true },
+  { id: 'designs',     tKey: 'designs',        icon: Layers,        enabled: true },
 ]
 
 export function ProductTabNavigation({
@@ -25,6 +26,7 @@ export function ProductTabNavigation({
   activeTab: TabId
   onTabChange: (tab: TabId) => void
 }) {
+  const t = useTranslations('Master.Products.Tabs')
   return (
     <div
       className="card-flat"
@@ -54,10 +56,7 @@ export function ProductTabNavigation({
             }}
           >
             <Icon size={14} />
-            <span>{tab.labelJa}</span>
-            <span style={{ fontSize: 9, opacity: 0.6, fontFamily: 'var(--font-main)' }}>
-              {tab.labelVi}
-            </span>
+            <span>{t(tab.tKey)}</span>
           </button>
         )
       })}

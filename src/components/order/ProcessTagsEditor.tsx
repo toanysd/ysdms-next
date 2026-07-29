@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react'
 import { Plus, Loader2, X, Edit3 } from 'lucide-react'
 import { getProcessTagsAction, addCustomTagAction, ProcessTag } from '@/app/actions/tags'
+import { useTranslations } from 'next-intl'
 
 interface ProcessTagsEditorProps {
     value: string
@@ -29,6 +30,7 @@ export function ProcessTagsEditor({ value, onChange }: ProcessTagsEditorProps) {
     const [isSavingCustom, setIsSavingCustom] = useState(false)
     const [isExpanded, setIsExpanded] = useState(false)
     const containerRef = useRef<HTMLDivElement>(null)
+    const t = useTranslations('Orders')
 
     useEffect(() => {
         const fetchTags = async () => {
@@ -96,21 +98,21 @@ export function ProcessTagsEditor({ value, onChange }: ProcessTagsEditorProps) {
     }
 
     const handleAddCustom = async () => {
-        const t = customText.trim()
-        if (!t) return
-        const labelText = `【${t}】`
+        const txt = customText.trim()
+        if (!txt) return
+        const labelText = `【${txt}】`
 
         try {
             setIsSavingCustom(true)
             // Gửi Server
-            const newDbTag = await addCustomTagAction(labelText, t)
+            const newDbTag = await addCustomTagAction(labelText, txt)
             setCustomTagsList(prev => [newDbTag, ...prev])
             setCustomText('')
             // Auto Select
             const finalString = [...selectedLabels, labelText].join('') + (freeText ? ' ' + freeText : '')
             onChange(finalString)
         } catch (err) {
-            alert('Không thể lưu Custom Tag (Lưu ý: tag có thể đã bị trùng). Áp dụng thủ công.')
+            alert(t('errorCustomTag'))
             const finalString = [...selectedLabels, labelText].join('') + (freeText ? ' ' + freeText : '')
             onChange(finalString)
             setCustomText('')
@@ -129,7 +131,7 @@ export function ProcessTagsEditor({ value, onChange }: ProcessTagsEditorProps) {
             >
                 {selectedLabels.length === 0 && !freeText && (
                     <div className="flex items-center gap-1 text-gray-400 text-[11px] italic">
-                        <Edit3 size={12} /> メモを追加...
+                        <Edit3 size={12} /> {t('addMemo')}
                     </div>
                 )}
 
@@ -153,7 +155,7 @@ export function ProcessTagsEditor({ value, onChange }: ProcessTagsEditorProps) {
         <div className="relative w-full">
             <div ref={containerRef} className="flex flex-col gap-1.5 p-2 w-[320px] bg-white border-2 border-teal-500 rounded shadow-lg absolute z-[60] right-0 top-0 origin-top-right">
                 <div className="flex justify-between items-center mb-0.5 pb-1 border-b border-gray-100">
-                    <span className="text-[10px] font-bold text-teal-700">📋 タグ・メモ編集</span>
+                    <span className="text-[10px] font-bold text-teal-700">{t('editTagsTitle')}</span>
                     <button
                         onClick={() => setIsExpanded(false)}
                         className="text-gray-400 hover:text-red-500 transition-colors"
@@ -196,7 +198,7 @@ export function ProcessTagsEditor({ value, onChange }: ProcessTagsEditorProps) {
                                             ? 'bg-blue-600 text-white border-blue-700'
                                             : 'bg-blue-50 text-blue-600 border-blue-200 hover:bg-blue-100'
                                             }`}
-                                        title="Tag cá nhân (Custom)"
+                                        title={t('customTagTitle')}
                                     >
                                         {tag.display_text}
                                     </button>
@@ -211,7 +213,7 @@ export function ProcessTagsEditor({ value, onChange }: ProcessTagsEditorProps) {
                         type="text"
                         value={customText}
                         onChange={e => setCustomText(e.target.value)}
-                        placeholder="Tạo mộc mới..."
+                        placeholder={t('createCustomTag')}
                         className="flex-1 h-[24px] text-[10px] border border-gray-200 rounded px-1.5"
                         onKeyDown={(e) => {
                             if (e.key === 'Enter') {
@@ -226,7 +228,7 @@ export function ProcessTagsEditor({ value, onChange }: ProcessTagsEditorProps) {
                         disabled={isSavingCustom || !customText.trim()}
                         className="h-[24px] px-2 bg-gray-200 text-gray-700 text-[10px] rounded font-bold hover:bg-gray-300 disabled:opacity-50 flex items-center justify-center whitespace-nowrap"
                     >
-                        {isSavingCustom ? <Loader2 size={12} className="animate-spin" /> : '+ 追加'}
+                        {isSavingCustom ? <Loader2 size={12} className="animate-spin" /> : t('add')}
                     </button>
                 </div>
 
@@ -234,7 +236,7 @@ export function ProcessTagsEditor({ value, onChange }: ProcessTagsEditorProps) {
                     value={freeText}
                     onChange={handleTextChange}
                     className="w-full min-h-[40px] text-[11px] p-1.5 border border-teal-200 focus:border-teal-500 rounded mt-1 resize-y bg-yellow-50"
-                    placeholder="テキストを自由に入力..."
+                    placeholder={t('freeTextPlaceholder')}
                 />
             </div>
         </div>

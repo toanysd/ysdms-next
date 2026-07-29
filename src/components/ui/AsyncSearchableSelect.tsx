@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useEffect, useCallback } from 'react'
 import { ChevronDown, Search, X, Loader2 } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 
 export interface SelectOption {
   value: string
@@ -45,11 +46,13 @@ export const AsyncSearchableSelect: React.FC<AsyncSearchableSelectProps> = ({
   fetchOptions,
   value,
   onChange,
-  placeholder = '選択してください',
+  placeholder,
   disabled = false,
   minChars = 0,
   debounceMs = 300,
 }) => {
+  const t = useTranslations('Common')
+  const displayPlaceholder = placeholder || t('selectPlaceholder')
   const [isOpen, setIsOpen] = useState(false)
   const [search, setSearch] = useState('')
   const [options, setOptions] = useState<SelectOption[]>([])
@@ -133,7 +136,7 @@ export const AsyncSearchableSelect: React.FC<AsyncSearchableSelectProps> = ({
         onClick={() => { if (!disabled) { setIsOpen(!isOpen); setSearch('') } }}
       >
         <span className={selectedOption ? 'text-[var(--text-primary)] truncate' : 'text-[var(--text-muted)] truncate'}>
-          {selectedOption ? selectedOption.label : placeholder}
+          {selectedOption ? selectedOption.label : displayPlaceholder}
         </span>
         <div className="flex items-center gap-1 text-[var(--text-muted)] shrink-0">
           {selectedOption && !disabled && (
@@ -158,7 +161,7 @@ export const AsyncSearchableSelect: React.FC<AsyncSearchableSelectProps> = ({
               type="text"
               autoFocus
               className="w-full bg-transparent border-none outline-none text-[12px] text-[var(--text-primary)]"
-              placeholder="検索... / Tìm kiếm..."
+              placeholder={t('searchPlaceholder')}
               value={search}
               onChange={e => setSearch(e.target.value)}
             />
@@ -169,10 +172,10 @@ export const AsyncSearchableSelect: React.FC<AsyncSearchableSelectProps> = ({
           <div className="overflow-y-auto p-1 custom-scrollbar" style={{ flex: 1 }}>
             {loading && options.length === 0 ? (
               <div className="p-3 text-center text-[var(--text-muted)] flex items-center justify-center gap-2">
-                <Loader2 size={14} className="animate-spin" /> Đang tải...
+                <Loader2 size={14} className="animate-spin" /> {t('loading')}
               </div>
             ) : options.length === 0 ? (
-              <div className="p-2 text-center text-[var(--text-muted)]">見つかりません / Không tìm thấy</div>
+              <div className="p-2 text-center text-[var(--text-muted)]">{t('notFound')}</div>
             ) : (
               options.map(opt => (
                 <div
@@ -194,7 +197,7 @@ export const AsyncSearchableSelect: React.FC<AsyncSearchableSelectProps> = ({
           {/* Footer hint */}
           {!loading && options.length > 0 && (
             <div className="px-2 py-1 border-t border-[var(--border-subtle)] bg-[var(--bg-surface-2)] text-[10px] text-[var(--text-muted)] shrink-0">
-              {options.length} kết quả {search ? `cho "${search}"` : '— gõ để tìm thêm'}
+              {search ? t('resultsFor', { count: options.length, search }) : t('typeToSearch', { count: options.length })}
             </div>
           )}
         </div>

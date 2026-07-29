@@ -5,18 +5,19 @@ import { createClient } from '@/lib/supabase/client'
 import { X, Save, CheckCircle2 } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 
-const STATUS_LABELS: Record<string, { ja: string; vi: string; color: string }> = {
-  ACTIVE:      { ja: '使用中',    vi: 'Đang dùng',  color: 'var(--status-success)' },
-  MAINTENANCE: { ja: 'メンテ中',  vi: 'Bảo trì',    color: 'var(--status-warning)' },
-  DISPOSED:    { ja: '廃棄済',    vi: 'Đã huỷ',     color: 'var(--status-error)' },
-}
+const getStatusLabels = (t: any) => ({
+  ACTIVE:      t('statusConfig.ACTIVE'),
+  MAINTENANCE: t('statusConfig.MAINTENANCE'),
+  DISPOSED:    t('statusConfig.DISPOSED'),
+})
 
-const STORAGE_LABELS: Record<string, { ja: string; vi: string; color: string }> = {
-  IN_STOCK:     { ja: '在庫',   vi: 'Có hàng',   color: 'var(--status-success)' },
-  IN_USE:       { ja: '使用中', vi: 'Đang dùng', color: 'var(--status-info)' },
-  OUT_OF_STOCK: { ja: '出庫済', vi: 'Đã xuất',   color: 'var(--text-muted)' },
-}
+const getStorageLabels = (t: any) => ({
+  IN_STOCK:     t('storageConfig.IN_STOCK'),
+  IN_USE:       t('storageConfig.IN_USE'),
+  OUT_OF_STOCK: t('storageConfig.OUT_OF_STOCK'),
+})
 
 export type PhysicalMoldFormData = {
   system_code: string
@@ -43,8 +44,11 @@ interface MoldModalProps {
 }
 
 export function MoldModal({ isOpen, onClose, onSuccess, editingId, initialData }: MoldModalProps) {
+  const t = useTranslations()
   const supabase = createClient()
   const router = useRouter()
+  const statusLabels = getStatusLabels(t)
+  const storageLabels = getStorageLabels(t)
   
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -159,7 +163,7 @@ export function MoldModal({ isOpen, onClose, onSuccess, editingId, initialData }
       <div className="bg-white rounded-lg w-[640px] shadow-lg my-6" onClick={e => e.stopPropagation()}>
         <div className="flex justify-between items-center p-3 border-b bg-slate-50 rounded-t-lg">
           <div className="font-bold text-[13px]" style={{ fontFamily: 'var(--font-jp)' }}>
-            {editingId ? '金型編集 / Chỉnh sửa Khuôn' : '金型登録 / Đăng ký Khuôn'}
+            {editingId ? t('Equipment.editMold') : t('Equipment.registerMold')}
           </div>
           <button onClick={onClose}><X size={16} className="text-slate-500" /></button>
         </div>
@@ -169,13 +173,13 @@ export function MoldModal({ isOpen, onClose, onSuccess, editingId, initialData }
           <div className="flex gap-3">
             <div className="flex-1">
               <label className="block text-[11px] font-bold text-slate-600 mb-1" style={{ fontFamily: 'var(--font-jp)' }}>
-                システムコード <span className="font-normal text-[9px] text-slate-400">System Code</span>
+                {t('Equipment.systemCode')} <span className="font-normal text-[9px] text-slate-400">{t('Equipment.systemCodeHint')}</span>
               </label>
               <input value={formSystemCode} onChange={e => setFormSystemCode(e.target.value)} className="form-input w-full" style={{ fontSize: 12 }} />
             </div>
             <div className="flex-1">
               <label className="block text-[11px] font-bold text-slate-600 mb-1" style={{ fontFamily: 'var(--font-jp)' }}>
-                名称 <span className="font-normal text-[9px] text-slate-400">Display Name</span>
+                {t('Equipment.displayName')} <span className="font-normal text-[9px] text-slate-400">{t('Equipment.displayNameHint')}</span>
               </label>
               <input value={formDisplayName} onChange={e => setFormDisplayName(e.target.value)} className="form-input w-full" style={{ fontSize: 12 }} />
             </div>
@@ -184,25 +188,25 @@ export function MoldModal({ isOpen, onClose, onSuccess, editingId, initialData }
           <div className="flex gap-3">
             <div className="flex-1">
               <label className="block text-[11px] font-bold text-slate-600 mb-1" style={{ fontFamily: 'var(--font-jp)' }}>
-                状態 <span className="font-normal text-[9px] text-slate-400">Trạng thái</span>
+                {t('Equipment.status')} <span className="font-normal text-[9px] text-slate-400">{t('Equipment.statusHint')}</span>
               </label>
               <select value={formStatus} onChange={e => setFormStatus(e.target.value)} className="form-input w-full" style={{ fontSize: 12 }}>
-                {Object.keys(STATUS_LABELS).map(k => <option key={k} value={k}>{STATUS_LABELS[k].ja}</option>)}
+                {Object.keys(statusLabels).map(k => <option key={k} value={k}>{(statusLabels as any)[k]}</option>)}
               </select>
             </div>
             <div className="flex-1">
               <label className="block text-[11px] font-bold text-slate-600 mb-1" style={{ fontFamily: 'var(--font-jp)' }}>
-                保管 <span className="font-normal text-[9px] text-slate-400">Kho</span>
+                {t('Equipment.storage')} <span className="font-normal text-[9px] text-slate-400">{t('Equipment.storageHint')}</span>
               </label>
               <select value={formUsage} onChange={e => setFormUsage(e.target.value)} className="form-input w-full" style={{ fontSize: 12 }}>
-                {Object.keys(STORAGE_LABELS).map(k => <option key={k} value={k}>{STORAGE_LABELS[k].ja}</option>)}
+                {Object.keys(storageLabels).map(k => <option key={k} value={k}>{(storageLabels as any)[k]}</option>)}
               </select>
             </div>
           </div>
 
           <div>
             <label className="block text-[11px] font-bold text-slate-600 mb-1" style={{ fontFamily: 'var(--font-jp)' }}>
-              版リンク <span className="font-normal text-[9px] text-slate-400">Phiên bản thiết kế liên kết</span>
+              {t('Equipment.revisionLink')} <span className="font-normal text-[9px] text-slate-400">{t('Equipment.revisionLinkHint')}</span>
             </label>
             {formRevisionId ? (
               <div className="flex items-center gap-2">
@@ -214,7 +218,7 @@ export function MoldModal({ isOpen, onClose, onSuccess, editingId, initialData }
               </div>
             ) : (
               <div className="text-[10px] text-slate-400 p-2 border rounded bg-slate-50" style={{ fontFamily: 'var(--font-jp)' }}>
-                未リンク — 設計版ページからリンク可能 / Chưa liên kết — có thể liên kết từ trang thiết kế
+                {t('Equipment.unlinked')}
               </div>
             )}
           </div>
@@ -223,23 +227,23 @@ export function MoldModal({ isOpen, onClose, onSuccess, editingId, initialData }
 
           <div>
             <label className="block text-[11px] font-bold text-slate-600 mb-1" style={{ fontFamily: 'var(--font-jp)' }}>
-              寸法・重量 <span className="font-normal text-[9px] text-slate-400">Kích thước & Khối lượng</span>
+              {t('Equipment.dimensionsAndWeight')} <span className="font-normal text-[9px] text-slate-400">{t('Equipment.dimensionsAndWeightHint')}</span>
             </label>
             <div className="flex gap-2">
               <div className="flex-1">
-                <label className="block text-[9px] text-slate-400 mb-0.5">長さ L (mm)</label>
+                <label className="block text-[9px] text-slate-400 mb-0.5">{t('Equipment.lengthL')}</label>
                 <input type="text" value={formLength} onChange={e => setFormLength(e.target.value)} className="form-input w-full" style={{ fontSize: 12 }} placeholder="—" />
               </div>
               <div className="flex-1">
-                <label className="block text-[9px] text-slate-400 mb-0.5">幅 W (mm)</label>
+                <label className="block text-[9px] text-slate-400 mb-0.5">{t('Equipment.widthW')}</label>
                 <input type="text" value={formWidth} onChange={e => setFormWidth(e.target.value)} className="form-input w-full" style={{ fontSize: 12 }} placeholder="—" />
               </div>
               <div className="flex-1">
-                <label className="block text-[9px] text-slate-400 mb-0.5">高さ H (mm)</label>
+                <label className="block text-[9px] text-slate-400 mb-0.5">{t('Equipment.heightH')}</label>
                 <input type="text" value={formHeight} onChange={e => setFormHeight(e.target.value)} className="form-input w-full" style={{ fontSize: 12 }} placeholder="—" />
               </div>
               <div className="flex-1">
-                <label className="block text-[9px] text-slate-400 mb-0.5">重量 (kg)</label>
+                <label className="block text-[9px] text-slate-400 mb-0.5">{t('Equipment.weight')}</label>
                 <input type="text" value={formWeight} onChange={e => setFormWeight(e.target.value)} className="form-input w-full" style={{ fontSize: 12 }} placeholder="—" />
               </div>
             </div>
@@ -248,7 +252,7 @@ export function MoldModal({ isOpen, onClose, onSuccess, editingId, initialData }
           <div className="flex gap-3">
             <div className="flex-1">
               <label className="block text-[11px] font-bold text-slate-600 mb-1" style={{ fontFamily: 'var(--font-jp)' }}>
-                金型タイプ <span className="font-normal text-[9px] text-slate-400">Loại khuôn</span>
+                {t('Equipment.moldType')} <span className="font-normal text-[9px] text-slate-400">{t('Equipment.moldTypeHint')}</span>
               </label>
               <select value={formMoldType} onChange={e => setFormMoldType(e.target.value)} className="form-input w-full" style={{ fontSize: 12 }}>
                 <option value="">—</option>
@@ -259,7 +263,7 @@ export function MoldModal({ isOpen, onClose, onSuccess, editingId, initialData }
             </div>
             <div className="flex-1">
               <label className="block text-[11px] font-bold text-slate-600 mb-1" style={{ fontFamily: 'var(--font-jp)' }}>
-                ピース数 <span className="font-normal text-[9px] text-slate-400">Số miếng</span>
+                {t('Equipment.pieceCount')} <span className="font-normal text-[9px] text-slate-400">{t('Equipment.pieceCountHint')}</span>
               </label>
               <input type="number" value={formPieceCount} onChange={e => setFormPieceCount(e.target.value)} className="form-input w-full" style={{ fontSize: 12 }} placeholder="1" />
             </div>
@@ -267,7 +271,7 @@ export function MoldModal({ isOpen, onClose, onSuccess, editingId, initialData }
 
           <div>
             <label className="block text-[11px] font-bold text-slate-600 mb-1" style={{ fontFamily: 'var(--font-jp)' }}>
-              備考 <span className="font-normal text-[9px] text-slate-400">Ghi chú</span>
+              {t('Equipment.notes')} <span className="font-normal text-[9px] text-slate-400">{t('Equipment.notesHint')}</span>
             </label>
             <textarea value={formNotes} onChange={e => setFormNotes(e.target.value)} className="form-textarea w-full" style={{ fontSize: 12, minHeight: 50 }} />
           </div>
@@ -281,16 +285,16 @@ export function MoldModal({ isOpen, onClose, onSuccess, editingId, initialData }
                 className="text-[10px] font-bold"
                 style={{ color: 'var(--accent)', textDecoration: 'none' }}
               >
-                → 詳細ページへ / Mở Hub View
+                → {t('Equipment.openHubView')}
               </Link>
             )}
           </div>
           <div className="flex gap-2">
             <button onClick={onClose} className="btn btn-secondary" style={{ height: 32, fontSize: 12, padding: '0 14px' }}>
-              <span style={{ fontFamily: 'var(--font-jp)' }}>キャンセル</span>
+              <span style={{ fontFamily: 'var(--font-jp)' }}>{t('Common.cancel')}</span>
             </button>
             <button onClick={handleSave} disabled={saving} className="btn btn-primary" style={{ height: 32, fontSize: 12, padding: '0 14px' }}>
-              <Save size={14} /> <span style={{ fontFamily: 'var(--font-jp)' }}>{saving ? '保存中...' : '保存する'}</span>
+              <Save size={14} /> <span style={{ fontFamily: 'var(--font-jp)' }}>{saving ? t('Common.saving') : t('Common.save')}</span>
             </button>
           </div>
         </div>

@@ -1,5 +1,7 @@
 'use client'
 
+import { useTranslations } from 'next-intl'
+
 import React, { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Printer, FileDown, ArrowLeft } from 'lucide-react'

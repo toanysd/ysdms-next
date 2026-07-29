@@ -1,5 +1,7 @@
 'use client'
 
+import { useTranslations, useLocale } from 'next-intl'
+
 import { useEffect, useState, useCallback } from 'react'
 import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
@@ -31,16 +33,18 @@ type JobRow = {
   products: { product_id: string; product_code: string; product_name: string | null; product_name_internal: string | null; product_material_specs: { material_type: string }[] } | null
 }
 
-const STATUS_LABELS: Record<string, { ja: string; vi: string; color: string }> = {
-  NEW:         { ja: '新規',       vi: 'Mới tạo',       color: 'var(--status-info)' },
-  IN_PROGRESS: { ja: '進行中',     vi: 'Đang chạy',     color: 'var(--status-warning)' },
-  COMPLETED:   { ja: '完了',       vi: 'Hoàn thành',    color: 'var(--status-success)' },
-  CANCELLED:   { ja: 'キャンセル', vi: 'Đã hủy',        color: 'var(--text-muted)' },
+const STATUS_LABELS: Record<string, { key: string; color: string }> = {
+  NEW:         { key: 'NEW',         color: 'var(--status-info)' },
+  IN_PROGRESS: { key: 'IN_PROGRESS', color: 'var(--status-warning)' },
+  COMPLETED:   { key: 'COMPLETED',   color: 'var(--status-success)' },
+  CANCELLED:   { key: 'CANCELLED',   color: 'var(--text-muted)' },
 }
 
 import React, { Suspense } from 'react'
 
 function JobsPageContent() {
+  const t = useTranslations('Equipment.Jobs')
+  const locale = useLocale()
   const supabase = createClient()
   const router = useRouter()
   const pathname = usePathname()
@@ -181,21 +185,26 @@ function JobsPageContent() {
     return sortDir === 'asc' ? <ArrowUp size={12} /> : <ArrowDown size={12} />
   }
 
-  const SortableHeader = ({ col, ja, vi, style }: { col: string, ja: string, vi: string, style?: React.CSSProperties }) => (
-    <th 
-      style={{ ...style, cursor: 'pointer', userSelect: 'none' }} 
-      onClick={() => handleSort(col)}
-      title="クリックしてソート / Bấm để sắp xếp"
-    >
-      <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-        <div>
-          <span className="ja">{ja}</span>
-          <span className="vi">{vi}</span>
+  const SortableHeader = ({ col, style }: { col: string, style?: React.CSSProperties }) => {
+    return (
+      <th 
+        style={{ ...style, cursor: 'pointer', userSelect: 'none' }} 
+        onClick={() => handleSort(col)}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          <div>
+            {col === 'job_code' && t('cols.jobCode')}
+            {col === 'job_name' && t('cols.jobName')}
+            {col === 'job_status' && t('cols.status')}
+            {col === 'overall_progress' && t('cols.progress')}
+            {col === 'mold_deadline' && t('cols.deadline')}
+            {col === 'created_at' && t('cols.createdAt')}
+          </div>
+          <SortIcon col={col} />
         </div>
-        <SortIcon col={col} />
-      </div>
-    </th>
-  )
+      </th>
+    )
+  }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', gap: 'var(--space-4)' }}>
@@ -206,25 +215,25 @@ function JobsPageContent() {
             onClick={() => router.back()}
             className="btn btn-secondary"
             style={{ height: 28, padding: '0 8px', gap: 3, fontSize: 11 }}
-            title="前のページに戻る / Quay lại trang trước"
+            title={t('backTitle')}
           >
             <ArrowLeft size={13} />
-            <span style={{ fontFamily: 'var(--font-jp)' }}>戻る</span>
+            <span style={{ fontFamily: 'var(--font-jp)' }}>{t('back')}</span>
           </button>
           <Link
             href="/equipment/jobs"
             className="btn btn-secondary"
             style={{ height: 28, padding: '0 8px', gap: 3, fontSize: 11, textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }}
-            title="一覧へ / Về danh sách Job"
+            title={t('listTitle')}
             onClick={() => { setSearch(''); setFilterStatus(''); router.replace('/equipment/jobs') }}
           >
             <ArrowUpFromLine size={12} />
-            <span style={{ fontFamily: 'var(--font-jp)' }}>一覧</span>
+            <span style={{ fontFamily: 'var(--font-jp)' }}>{t('list')}</span>
           </Link>
           <Briefcase size={20} style={{ color: 'var(--accent)' }} />
           <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <span className="ja" style={{ fontSize: 16 }}>ジョブ管理</span>
-            <span className="vi" style={{ fontSize: 11 }}>Quản lý Job gia công</span>
+            <span style={{ fontSize: 15, fontWeight: 700, fontFamily: 'var(--font-jp)', color: 'var(--text-primary)' }}>{t('title')}</span>
+            <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{t('subtitle')}</span>
           </div>
         </div>
 
@@ -233,124 +242,88 @@ function JobsPageContent() {
           onClick={() => setShowCreateModal(true)}
         >
           <Plus size={14} />
-          <span className="ja" style={{ fontFamily: 'var(--font-jp)' }}>新規ジョブ</span>
+          {t('createJob')}
         </button>
       </div>
 
-      {/* ── Toolbar (Search & Filters) ── */}
-      <div className="card-flat" style={{ padding: '12px 16px', display: 'flex', gap: 12, alignItems: 'center', flexShrink: 0 }}>
-        <div style={{ position: 'relative', width: 300 }}>
-          <Search size={14} style={{ position: 'absolute', left: 10, top: 9, color: 'var(--text-muted)' }} />
+      {/* ── Search & Filters ── */}
+      <div className="card-flat" style={{ padding: 12, display: 'flex', gap: 12, alignItems: 'center', background: 'var(--bg-surface-2)', flexShrink: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, position: 'relative' }}>
+          <Search size={16} style={{ color: 'var(--text-muted)' }} />
           <input
-            type="text"
-            placeholder="コード・名前検索..."
             className="form-input form-input-search"
+            placeholder={t('searchPlaceholder')}
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={e => setSearch(e.target.value)}
             onFocus={() => setShowSuggestions(true)}
             onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
           />
-          {showSuggestions && history.length > 0 && (
-            <SearchSuggestions
-              history={history}
-              onSelect={setSearch}
-              onRemove={removeFromHistory}
-              onClear={clearHistory}
-              visible={showSuggestions}
-              onClose={() => setShowSuggestions(false)}
-            />
-          )}
+          <SearchSuggestions
+            history={history}
+            visible={showSuggestions}
+            onSelect={(val) => {
+              setSearch(val)
+              setShowSuggestions(false)
+            }}
+            onRemove={removeFromHistory}
+            onClear={clearHistory}
+            onClose={() => setShowSuggestions(false)}
+          />
         </div>
-
-        <div style={{ position: 'relative', width: 200 }}>
-          <Filter size={14} style={{ position: 'absolute', left: 10, top: 9, color: 'var(--text-muted)' }} />
-          <select
-            className="form-input form-input-search"
-            value={filterStatus}
-            onChange={e => setFilterStatus(e.target.value)}
-          >
-            <option value="">全てのステータス</option>
-            {Object.entries(STATUS_LABELS).map(([val, label]) => (
-              <option key={val} value={val}>{label.ja}</option>
-            ))}
-          </select>
-          <ChevronDown size={14} style={{ position: 'absolute', right: 10, top: 9, color: 'var(--text-muted)', pointerEvents: 'none' }} />
-        </div>
+        
+        <select
+          className="form-input"
+          style={{ width: 180 }}
+          value={filterStatus}
+          onChange={e => setFilterStatus(e.target.value)}
+        >
+          <option value="">{t('statusAll')}</option>
+          <option value="NEW">NEW</option>
+          <option value="IN_PROGRESS">IN_PROGRESS</option>
+          <option value="COMPLETED">COMPLETED</option>
+          <option value="CANCELLED">CANCELLED</option>
+        </select>
       </div>
 
-      {/* ── Data Table ── */}
-      <div className="card-flat" style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden', padding: 0 }}>
-        {(urlSearchParams.get('mold') || urlSearchParams.get('revision') || urlSearchParams.get('physical_mold')) && (
-          <div className="px-3 py-2 bg-slate-50 border-b text-[11px] text-slate-600 flex items-center justify-between">
-            <span>
-              <span className="font-bold mr-1">フィルタ:</span>
-              <span className="opacity-70 mr-2 text-[10px]">Đang lọc theo:</span>
-              {urlSearchParams.get('mold') && (
-                <span className="mr-3"><strong className="text-slate-800">Sản phẩm: {urlSearchParams.get('mold')}</strong></span>
-              )}
-              {urlSearchParams.get('revision') && (
-                <span className="mr-3"><strong className="text-slate-800">ID Phiên bản thiết kế: {urlSearchParams.get('revision')}</strong></span>
-              )}
-              {urlSearchParams.get('physical_mold') && (
-                <span><strong className="text-slate-800">ID Khuôn vật lý: {urlSearchParams.get('physical_mold')}</strong></span>
-              )}
-            </span>
-            <button 
-              onClick={() => {
-                const p = new URLSearchParams(window.location.search)
-                p.delete('mold')
-                p.delete('revision')
-                p.delete('physical_mold')
-                router.replace(`${pathname}${p.toString() ? '?' + p.toString() : ''}`)
-              }}
-              className="text-slate-400 hover:text-slate-800"
-              title="Xóa bộ lọc"
-            ><X size={14} /></button>
-          </div>
-        )}
-        <div className="custom-scrollbar" style={{ flex: 1, overflowY: 'auto' }}>
+      <div className="card-flat" style={{ flex: 1, overflow: 'auto', display: 'flex', flexDirection: 'column', padding: 0 }}>
+        <div style={{ flex: 1, overflow: 'auto' }}>
           <table className="data-table">
             <thead>
               <tr>
-                <SortableHeader col="job_code" ja="ジョブコード" vi="Job Code" style={{ width: 140 }} />
-                <SortableHeader col="job_name" ja="ジョブ名" vi="Tên Job" style={{ width: 200 }} />
-                <th style={{ width: 120 }}>
-                  <span className="ja">タイプ</span>
-                  <span className="vi">Loại</span>
+                <SortableHeader col="job_code" style={{ width: 140 }} />
+                <SortableHeader col="job_name" />
+                <th style={{ width: 100 }}>
+                  {t('cols.type')}
                 </th>
                 <th style={{ width: 150 }}>
-                  <span className="ja">金型</span>
-                  <span className="vi">Khuôn</span>
+                  {t('cols.product')}
                 </th>
                 <th style={{ width: 140 }}>
-                  <span className="ja">寸法</span>
-                  <span className="vi">Kích thước</span>
+                  {t('cols.size')}
                 </th>
                 <th style={{ width: 120 }}>
-                  <span className="ja">素材</span>
-                  <span className="vi">Vật liệu</span>
+                  {t('cols.material')}
                 </th>
                 <th style={{ width: 120 }}>
-                  <span className="ja">客先</span>
-                  <span className="vi">Khách hàng</span>
+                  {t('cols.customer')}
                 </th>
-                <SortableHeader col="job_status" ja="状態" vi="Trạng thái" style={{ width: 100 }} />
-                <SortableHeader col="overall_progress" ja="進捗" vi="Tiến độ" style={{ width: 100 }} />
-                <SortableHeader col="mold_deadline" ja="期限" vi="Hạn" style={{ width: 110 }} />
-                <SortableHeader col="created_at" ja="作成日" vi="Ngày tạo" style={{ width: 100 }} />
+                <SortableHeader col="job_status" style={{ width: 100 }} />
+                <SortableHeader col="overall_progress" style={{ width: 100 }} />
+                <SortableHeader col="mold_deadline" style={{ width: 110 }} />
+                <SortableHeader col="created_at" style={{ width: 100 }} />
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={9} style={{ padding: 40, textAlign: 'center' }}>
+                  <td colSpan={11} style={{ padding: 40, textAlign: 'center' }}>
                     <Loader2 size={24} className="animate-spin" style={{ margin: '0 auto', color: 'var(--accent)' }} />
                   </td>
                 </tr>
               ) : jobs.length === 0 ? (
                 <tr>
-                  <td colSpan={9} style={{ padding: 40, textAlign: 'center', color: 'var(--text-muted)' }}>
-                    データがありません / Không có dữ liệu
+                  <td colSpan={11} style={{ padding: 40, textAlign: 'center', color: 'var(--text-muted)' }}>
+                    {t('noData')}
                   </td>
                 </tr>
               ) : (
@@ -373,7 +346,7 @@ function JobsPageContent() {
                       <td>
                         {job.job_types ? (
                           <span style={{ fontFamily: 'var(--font-jp)' }}>
-                            {job.job_types.job_type_name_ja}
+                            {locale === 'vi' ? job.job_types.job_type_name_vi : job.job_types.job_type_name_ja}
                           </span>
                         ) : '—'}
                       </td>
@@ -421,7 +394,7 @@ function JobsPageContent() {
                       <td>{job.companies?.company_name || '—'}</td>
                       <td>
                         <span className="badge" style={{ backgroundColor: st.color, color: '#fff' }}>
-                          {st.ja}
+                          {st ? t(`statusLabels.${st.key}`) : job.job_status}
                         </span>
                       </td>
                       <td>

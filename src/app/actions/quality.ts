@@ -137,8 +137,11 @@ export async function getNGStatistics(): Promise<{ data: NGDetailLog[]; error?: 
                 production_lots!production_lot_id (
                     lot_no,
                     production_orders (
-                        order_no,
-                        products (product_code, product_name)
+                        po_code,
+                        order_lines (
+                            orders (order_no),
+                            products (product_code, product_name)
+                        )
                     )
                 )
             )
@@ -149,5 +152,22 @@ export async function getNGStatistics(): Promise<{ data: NGDetailLog[]; error?: 
         console.error('Error fetching NG statistics:', error)
         return { data: [], error: error.message }
     }
-    return { data: (data as unknown as NGDetailLog[]) || [] }
+
+    const mappedData = (data || []).map((item: any) => {
+        const ins = item.inspections
+        if (ins) {
+            const lot = ins.production_lots
+            if (lot) {
+                const po = lot.production_orders
+                if (po) {
+                    const line = po.order_lines
+                    po.order_no = line?.orders?.order_no || null
+                    po.products = line?.products || null
+                }
+            }
+        }
+        return item
+    })
+
+    return { data: (mappedData as unknown as NGDetailLog[]) }
 }

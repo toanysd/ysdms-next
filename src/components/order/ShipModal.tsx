@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useTransition } from 'react'
 import { X, Truck, Loader2, AlertTriangle } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { getStockForProducts } from '@/app/actions/inventory'
 import { shipOrderItemsAction } from '@/app/actions/order'
 
@@ -29,6 +30,7 @@ export function ShipModal({ orderId, slipNo, orderItems, onClose }: ShipModalPro
     const [stocks, setStocks] = useState<Record<string, number>>({})
     const [isLoadingStocks, setIsLoadingStocks] = useState(true)
     const [notes, setNotes] = useState('')
+    const t = useTranslations('Orders')
 
     // State for inputs
     const [inputs, setInputs] = useState<Record<string, { qty: string, lot: string }>>(() => {
@@ -44,58 +46,53 @@ export function ShipModal({ orderId, slipNo, orderItems, onClose }: ShipModalPro
 
     useEffect(() => {
         async function fetchStocks() {
-            if (!orderItems || orderItems.length === 0) {
-                setIsLoadingStocks(false)
-                return
-            }
-            const productIds = orderItems.map(i => i.product_id).filter(Boolean)
-            if (productIds.length > 0) {
-                const result = await getStockForProducts(productIds)
-                if (result.success && result.data) {
-                    const stockMap: Record<string, number> = {}
-                    result.data.forEach((s: any) => {
-                        stockMap[s.product_id] = s.current_stock
+            try {
+                const productIds = orderItems.map(i => i.product_id)
+                const res = await getStockForProducts(productIds)
+                if (res.success && res.data) {
+                    const map: Record<string, number> = {}
+                    res.data.forEach((item: any) => {
+                        map[item.product_id] = item.current_stock || 0
                     })
-                    setStocks(stockMap)
+                    setStocks(map)
                 }
+            } catch (err) {
+                console.error(err)
+            } finally {
+                setIsLoadingStocks(false)
             }
-            setIsLoadingStocks(false)
         }
         fetchStocks()
     }, [orderItems])
 
-    const handleInputChange = (itemId: string, field: 'qty' | 'lot', value: string) => {
+    const handleInputChange = (itemId: string, field: 'qty' | 'lot', val: string) => {
         setInputs(prev => ({
             ...prev,
-            [itemId]: { ...prev[itemId], [field]: value }
+            [itemId]: {
+                ...prev[itemId],
+                [field]: val
+            }
         }))
     }
 
-    const handleSubmit = async () => {
-        // Validate
-        const itemsToShip: Array<{ order_item_id: string, product_id: string, quantity: number, lot_no: string, operator_name: string }> = []
-        for (const item of orderItems) {
-            const qtyStr = inputs[item.id]?.qty || '0'
-            const qty = parseInt(qtyStr, 10)
-            if (isNaN(qty) || qty <= 0) {
-                alert(`Số lượng xuất của khay ${item.product_master?.code || item.product_pn_raw} phải lớn hơn 0`)
-                return
-            }
-            itemsToShip.push({
+    const handleSubmit = () => {
+        const itemsToShip = orderItems.map(item => {
+            const input = inputs[item.id]
+            return {
                 order_item_id: item.id,
                 product_id: item.product_id,
-                quantity: qty,
-                lot_no: inputs[item.id]?.lot || '',
-                operator_name: 'System' // Or get from session
-            })
-        }
+                quantity: parseInt(input?.qty || '0', 10) || 0,
+                lot_no: input?.lot || '',
+                operator_name: ''
+            }
+        })
 
         startTransition(async () => {
             try {
-                await shipOrderItemsAction(orderId, itemsToShip, notes || '出荷処理 / Xuất kho theo đơn hàng')
+                await shipOrderItemsAction(orderId, itemsToShip, notes || t('shippingDefaultNotes'))
                 onClose() // Tắt modal sau khi xong
             } catch (err: any) {
-                alert('Lỗi xuất kho: ' + err.message)
+                alert(t('errorShipping') + err.message)
             }
         })
     }
@@ -109,8 +106,8 @@ export function ShipModal({ orderId, slipNo, orderItems, onClose }: ShipModalPro
                     <div className="flex items-center gap-2">
                         <Truck size={20} />
                         <div>
-                            <h2 className="text-[16px] font-bold">出荷処理 / Xử Lý Giao Hàng</h2>
-                            <p className="text-xs text-teal-100 mt-0.5">Đơn hàng: #{slipNo || orderId.substring(0, 8)}</p>
+                            <h2 className="text-[16px] font-bold">{t('shipmentTitle')}</h2>
+                            <p className="text-xs text-teal-100 mt-0.5">{t('orderCode')}: #{slipNo || orderId.substring(0, 8)}</p>
                         </div>
                     </div>
                     <button onClick={onClose} disabled={isPending} className="p-1 hover:bg-black/20 rounded transition-colors disabled:opacity-50">
@@ -122,18 +119,18 @@ export function ShipModal({ orderId, slipNo, orderItems, onClose }: ShipModalPro
                     {isLoadingStocks ? (
                         <div className="flex justify-center items-center py-10">
                             <Loader2 className="animate-spin text-teal-600" size={24} />
-                            <span className="ml-2 text-sm text-gray-500">Đang tải tồn kho...</span>
+                            <span className="ml-2 text-sm text-gray-500">{t('loadingStock')}</span>
                         </div>
                     ) : (
                         <div className="bg-white border border-gray-200 rounded-md shadow-sm overflow-hidden">
                             <table className="w-full text-sm text-left">
                                 <thead className="bg-gray-100 border-b border-gray-200 text-xs text-gray-600">
                                     <tr>
-                                        <th className="p-3">品番 (Mã Khay)</th>
-                                        <th className="p-3 text-right">注文 (Đặt)</th>
-                                        <th className="p-3 text-right">現在庫 (Tồn Kho)</th>
-                                        <th className="p-3 text-center">出荷数 (Xuất)</th>
-                                        <th className="p-3">Lot No</th>
+                                        <th className="p-3">{t('colProductCode')}</th>
+                                        <th className="p-3 text-right">{t('colOrdered')}</th>
+                                        <th className="p-3 text-right">{t('colStock')}</th>
+                                        <th className="p-3 text-center">{t('colShipQty')}</th>
+                                        <th className="p-3">{t('colLot')}</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -142,11 +139,11 @@ export function ShipModal({ orderId, slipNo, orderItems, onClose }: ShipModalPro
                                         const code = pm?.customer_part_number || pm?.code || item.product_pn_raw
                                         const orderQty = item.quantity || 0
                                         const stock = stocks[item.product_id] || 0
-                                        const inputQty = parseInt(inputs[item.id]?.qty || '0', 10)
+                                        const inputQty = parseInt(inputs[item.id]?.qty || '0', 10) || 0
                                         const isLowStock = stock < inputQty
 
                                         return (
-                                            <tr key={item.id} className="border-b border-gray-100 hover:bg-gray-50">
+                                            <tr key={item.id} className="border-b border-gray-100 last:border-0 hover:bg-gray-50">
                                                 <td className="p-3 font-bold text-gray-800">{code}</td>
                                                 <td className="p-3 text-right font-mono text-gray-500">{orderQty.toLocaleString()}</td>
                                                 <td className="p-3 text-right font-mono font-bold">
@@ -180,12 +177,12 @@ export function ShipModal({ orderId, slipNo, orderItems, onClose }: ShipModalPro
                     )}
 
                     <div className="mt-4">
-                        <label className="block text-xs font-bold text-gray-700 mb-1">事項 (Ghi chú / Notes)</label>
+                        <label className="block text-xs font-bold text-gray-700 mb-1">{t('notesLabel')}</label>
                         <input
                             type="text"
                             value={notes}
                             onChange={e => setNotes(e.target.value)}
-                            placeholder="Tùy chọn..."
+                            placeholder="..."
                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:border-teal-500 focus:ring-teal-500 text-sm"
                         />
                     </div>
@@ -197,7 +194,7 @@ export function ShipModal({ orderId, slipNo, orderItems, onClose }: ShipModalPro
                         disabled={isPending}
                         className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50 transition-colors disabled:opacity-50"
                     >
-                        キャンセル (Hủy)
+                        {t('cancel')}
                     </button>
                     <button
                         onClick={handleSubmit}
@@ -205,7 +202,7 @@ export function ShipModal({ orderId, slipNo, orderItems, onClose }: ShipModalPro
                         className="px-4 py-2 text-sm font-bold text-white bg-teal-600 rounded hover:bg-teal-700 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
                     >
                         {isPending && <Loader2 size={16} className="animate-spin" />}
-                        ✈ 出荷確定 (Xác nhận Giao)
+                        ✈ {t('confirmShipment')}
                     </button>
                 </div>
             </div>

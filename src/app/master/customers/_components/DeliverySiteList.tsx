@@ -1,5 +1,6 @@
 'use client'
 
+import { useTranslations } from 'next-intl'
 import { useState } from 'react'
 import { Plus, Edit2, Trash2 } from 'lucide-react'
 import { upsertDeliverySiteAction, deleteDeliverySiteAction } from '@/app/actions/customer'
@@ -8,6 +9,8 @@ import { Database } from '@/types/database.types'
 type DeliverySite = Database['public']['Tables']['delivery_sites']['Row']
 
 export function DeliverySiteList({ companyId, sites }: { companyId: string, sites: DeliverySite[] }) {
+  const t = useTranslations()
+
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingItem, setEditingItem] = useState<DeliverySite | null>(null)
   const [isLoading, setIsLoading] = useState(false)
@@ -106,27 +109,22 @@ export function DeliverySiteList({ companyId, sites }: { companyId: string, site
             <thead>
               <tr>
                 <th style={{ width: 100 }}>
-                  <span className="ja">コード</span>
-                  <span className="vi">Mã</span>
+                  {t('Master.ma')}
                 </th>
                 <th style={{ width: 150 }}>
-                  <span className="ja">納品先名</span>
-                  <span className="vi">Tên ĐĐ</span>
+                  {t('Master.ten')}
                 </th>
                 <th>
-                  <span className="ja">住所</span>
-                  <span className="vi">Địa chỉ</span>
+                  {t('Master.iaChi')}
                 </th>
                 <th style={{ width: 120 }}>
-                  <span className="ja">担当者</span>
-                  <span className="vi">Người nhận</span>
+                  {t('Master.nguoiNhan')}
                 </th>
                 <th style={{ width: 100 }}>
-                  <span className="ja">電話番号</span>
-                  <span className="vi">SĐT</span>
+                  {t('Master.st')}
                 </th>
                 <th style={{ width: 60, textAlign: 'center' }}>
-                  <span className="ja">状態</span>
+                  {t('Master.tempKey')}
                 </th>
                 <th style={{ width: 80, textAlign: 'center' }}>操作</th>
               </tr>

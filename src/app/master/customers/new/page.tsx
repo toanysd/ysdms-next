@@ -1,3 +1,6 @@
+export const dynamic = 'force-dynamic'
+
+import { getTranslations } from 'next-intl/server'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
@@ -6,6 +9,7 @@ import { CompanyForm } from '../_components/CustomerForm'
 export default async function NewCustomerPage(props: {
   searchParams?: Promise<{ parent?: string }>
 }) {
+  const t = await getTranslations()
   const sp = await props.searchParams
   const parentId = sp?.parent
 
@@ -37,8 +41,7 @@ export default async function NewCustomerPage(props: {
           <ArrowLeft size={18} />
         </Link>
         <div style={{ display: 'flex', flexDirection: 'column' }}>
-          <span className="ja">新規顧客登録</span>
-          <span className="vi">Thêm Khách hàng mới</span>
+          {t('Master.themKhachHangMoi')}
         </div>
       </div>
 

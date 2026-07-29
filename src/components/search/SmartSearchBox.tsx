@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef, useTransition } from 'react'
 import { Search, X, Clock } from 'lucide-react'
 import { fetchAllSearchableItems, SearchableItem } from '@/lib/actions/searchActions'
 import { searchItems } from '@/lib/utils/searchLogic'
+import { useTranslations } from 'next-intl'
 
 interface SmartSearchBoxProps {
   onResults: (results: SearchableItem[], isSearching: boolean) => void
@@ -23,6 +24,7 @@ export function SmartSearchBox({ onResults, category = 'all', autoFocus = false 
   const [history, setHistory] = useState<HistoryItem[]>([])
   const [showDropdown, setShowDropdown] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
+  const t = useTranslations('Common')
   
   const inputRef = useRef<HTMLInputElement>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
@@ -120,7 +122,7 @@ export function SmartSearchBox({ onResults, category = 'all', autoFocus = false 
           type="text"
           disabled={isLoading}
           className="w-full h-[40px] pl-10 pr-10 text-sm border-2 border-[var(--mcs-primary)] rounded shadow-sm focus:outline-none focus:ring-2 focus:ring-[var(--mcs-primary)] bg-[var(--mcs-surface)] text-[var(--mcs-text)] disabled:bg-[var(--mcs-surface-3)]"
-          placeholder={isLoading ? "Đang tải dữ liệu..." : "Mã khuôn, tên dao, kích thước (Phẩy ',' là HOẶC, Cách ' ' là VÀ)"}
+          placeholder={isLoading ? t('loading') : t('smartSearchPlaceholder')}
           value={query}
           onChange={(e) => {
             setQuery(e.target.value)
@@ -145,14 +147,13 @@ export function SmartSearchBox({ onResults, category = 'all', autoFocus = false 
         <div ref={dropdownRef} className="absolute z-50 w-full mt-1 bg-[var(--mcs-surface)] border border-[var(--mcs-border)] rounded shadow-lg">
           <div className="flex justify-between items-center px-3 py-2 border-b border-[var(--mcs-border)] bg-[var(--mcs-surface-3)]">
             <div className="flex flex-col">
-              <span className="text-[11px] font-bold text-[var(--mcs-text)] ja">検索履歴</span>
-              <span className="text-[10px] text-[var(--mcs-text-muted)] vi">Lịch sử tìm kiếm</span>
+              <span className="text-[11px] font-bold text-[var(--mcs-text)]">{t('recentSearch')}</span>
             </div>
             <button 
               className="text-xs font-bold text-[var(--mcs-primary)] hover:underline px-2 py-1 rounded hover:bg-[var(--mcs-primary-light)]"
               onClick={() => { setHistory([]); localStorage.removeItem('ysdms_search_history'); setShowDropdown(false) }}
             >
-              Clear
+              {t('clearAll')}
             </button>
           </div>
           <div className="max-h-[300px] overflow-y-auto">

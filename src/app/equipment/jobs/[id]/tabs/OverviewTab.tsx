@@ -1,5 +1,7 @@
 'use client'
 
+import { useTranslations, useLocale } from 'next-intl'
+
 import { Clock, Info, Pencil, X, Save, Loader2, Ruler, Box, ExternalLink, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
@@ -8,11 +10,12 @@ import { useRouter } from 'next/navigation'
 import { deleteMoldJobAction } from '@/app/actions/mold-job'
 
 function InfoRow({ ja, vi, value }: { ja: string; vi: string; value: React.ReactNode }) {
+  const locale = useLocale()
+  const isVi = locale === 'vi'
   return (
     <div style={{ display: 'flex', alignItems: 'flex-start' }}>
       <div style={{ width: 140, flexShrink: 0, color: 'var(--text-muted)' }}>
-        <span className="ja">{ja}</span>
-        <span className="vi">{vi}</span>
+        {isVi ? vi : ja}
       </div>
       <div style={{ fontWeight: 500 }}>{value || '—'}</div>
     </div>
@@ -21,6 +24,7 @@ function InfoRow({ ja, vi, value }: { ja: string; vi: string; value: React.React
 
 // ── Edit Job Modal ──
 function EditJobModal({ job, onClose, onSaved }: { job: any; onClose: () => void; onSaved: () => void }) {
+  const t = useTranslations()
   const supabase = createClient()
   const router = useRouter()
   const [saving, setSaving] = useState(false)
@@ -67,8 +71,7 @@ function EditJobModal({ job, onClose, onSaved }: { job: any; onClose: () => void
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: '1px solid var(--border-default)' }}>
           <div>
-            <span className="ja" style={{ fontWeight: 700 }}>ジョブ情報編集</span>
-            <span className="vi" style={{ marginLeft: 6 }}>Chỉnh sửa thông tin Job</span>
+            {t('Equipment.chinhSuaThongTinJob')}
           </div>
           <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: 4 }}>
             <X size={18} />
@@ -83,8 +86,7 @@ function EditJobModal({ job, onClose, onSaved }: { job: any; onClose: () => void
 
           <div>
             <label className="form-label">
-              <span className="ja">ジョブ名</span>
-              <span className="vi">Tên Job</span>
+              {t('Equipment.tenJob')}
             </label>
             <input className="form-input" value={jobName} onChange={e => setJobName(e.target.value)} />
           </div>
@@ -92,15 +94,13 @@ function EditJobModal({ job, onClose, onSaved }: { job: any; onClose: () => void
           <div className="form-grid-2">
             <div>
               <label className="form-label">
-                <span className="ja">優先度</span>
-                <span className="vi">Mức ưu tiên</span>
+                {t('Equipment.mucUuTien')}
               </label>
               <input type="number" min="1" max="10" className="form-input" value={priority} onChange={e => setPriority(e.target.value)} />
             </div>
             <div>
               <label className="form-label">
-                <span className="ja">金型期限</span>
-                <span className="vi">Hạn chót khuôn</span>
+                {t('Equipment.hanChotKhuon')}
               </label>
               <input type="date" className="form-input" value={moldDeadline} onChange={e => setMoldDeadline(e.target.value)} />
             </div>
@@ -108,16 +108,14 @@ function EditJobModal({ job, onClose, onSaved }: { job: any; onClose: () => void
 
           <div>
             <label className="form-label">
-              <span className="ja">出荷日</span>
-              <span className="vi">Ngày xuất hàng</span>
+              {t('Equipment.ngayXuatHang')}
             </label>
             <input type="date" className="form-input" value={shipDate} onChange={e => setShipDate(e.target.value)} />
           </div>
 
           <div>
             <label className="form-label">
-              <span className="ja">備考</span>
-              <span className="vi">Ghi chú</span>
+              {t('Equipment.ghiChu')}
             </label>
             <textarea className="form-textarea" rows={3} value={notes} onChange={e => setNotes(e.target.value)} placeholder="メモ..." />
           </div>
@@ -150,11 +148,11 @@ function EditJobModal({ job, onClose, onSaved }: { job: any; onClose: () => void
           
           <div style={{ display: 'flex', gap: 8 }}>
             <button className="btn btn-secondary" onClick={onClose} disabled={saving}>
-              <span className="ja">キャンセル</span>
+              {t('Common.cancel')}
             </button>
             <button className="btn btn-primary" onClick={handleSave} disabled={saving}>
-              {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
-              <span className="ja">保存</span>
+              {saving ? <Loader2 className="animate-spin" size={14} /> : <Save size={14} />}
+              {t('Common.save')}
             </button>
           </div>
         </div>
@@ -163,9 +161,10 @@ function EditJobModal({ job, onClose, onSaved }: { job: any; onClose: () => void
   )
 }
 
-// ── OverviewTab ──
 export function OverviewTab({ job, onRefresh }: { job: any; onRefresh?: () => void }) {
   const [editing, setEditing] = useState(false)
+  const router = useRouter()
+  const t = useTranslations()
 
   const handleSaved = () => {
     setEditing(false)
@@ -173,87 +172,71 @@ export function OverviewTab({ job, onRefresh }: { job: any; onRefresh?: () => vo
   }
 
   return (
-    <>
-      <div className="form-grid-2">
-        <div className="card-flat" style={{ padding: 20 }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-            <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 6 }}>
-              <Info size={16} style={{ color: 'var(--accent)' }} />
-              <span className="ja">基本情報</span>
-              <span className="vi" style={{ marginLeft: 4 }}>Thông tin cơ bản</span>
-            </h3>
-            <button
-              onClick={() => setEditing(true)}
-              style={{
-                background: 'none', border: '1px solid var(--border-default)', borderRadius: 'var(--radius-sm)',
-                cursor: 'pointer', color: 'var(--text-muted)', padding: '4px 8px',
-                display: 'flex', alignItems: 'center', gap: 4, fontSize: 11,
-              }}
-              title="編集 / Chỉnh sửa"
-            >
-              <Pencil size={12} />
-              <span className="ja">編集</span>
-            </button>
-          </div>
-          
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <InfoRow ja="ジョブコード" vi="Mã Job" value={<span style={{ fontFamily: 'monospace', fontWeight: 700 }}>{job.job_code}</span>} />
-            <InfoRow ja="ジョブ名" vi="Tên Job" value={job.job_name} />
-            <InfoRow ja="ジョブタイプ" vi="Loại Job" value={job.job_types?.job_type_name_ja} />
-            <InfoRow ja="客先" vi="Khách hàng" value={job.companies?.company_name} />
-            {job.physical_molds && (
-              <InfoRow 
-                ja="対象金型" 
-                vi="Khuôn liên kết" 
-                value={
-                  <Link href={`/equipment/molds/${job.physical_molds.physical_mold_id}`} style={{ color: 'var(--accent)', fontWeight: 700, textDecoration: 'none' }}>
-                    {job.physical_molds.display_name} ({job.physical_molds.system_code})
-                  </Link>
-                } 
-              />
-            )}
-            {job.design_revisions && (
-              <InfoRow 
-                ja="設計版" 
-                vi="Phiên bản thiết kế" 
-                value={
-                  job.product_id ? (
-                    <Link href={`/master/products/${job.product_id}`} style={{ color: 'var(--accent)', fontWeight: 700, textDecoration: 'none' }}>
-                      {job.design_revisions.design_code} (Rev {job.design_revisions.revision_number})
-                    </Link>
-                  ) : (
-                    `${job.design_revisions.design_code} (Rev ${job.design_revisions.revision_number})`
-                  )
-                } 
-              />
-            )}
-            {job.products && (
-              <InfoRow 
-                ja="製品" 
-                vi="Sản phẩm" 
-                value={
-                  <Link href={`/master/products/${job.products.product_id}`} style={{ color: 'var(--accent)', fontWeight: 700, textDecoration: 'none' }}>
-                    {job.products.product_name || job.products.product_code}
-                  </Link>
-                } 
-              />
-            )}
-            <InfoRow ja="備考" vi="Ghi chú" value={
-              <span style={{ whiteSpace: 'pre-wrap' }}>{job.notes || '—'}</span>
-            } />
-          </div>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      
+      {/* Basic Info Card */}
+      <div className="card-flat" style={{ padding: 20 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+          <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 6 }}>
+            <Info size={16} style={{ color: 'var(--accent)' }} />
+            {t('Equipment.thongTinCoBan')}
+          </h3>
+          <button
+            onClick={() => setEditing(true)}
+            style={{
+              background: 'none', border: '1px solid var(--border-default)', borderRadius: 'var(--radius-sm)',
+              cursor: 'pointer', color: 'var(--text-muted)', padding: '4px 8px',
+              display: 'flex', alignItems: 'center', gap: 4, fontSize: 11,
+            }}
+            title="編集 / Chỉnh sửa"
+          >
+            <Pencil size={12} />
+            {t('Common.edit')}
+          </button>
         </div>
 
-        {/* Mold Dimensions Card */}
-        {(job.design_revisions || job.physical_molds) && (
-          <div className="card-flat" style={{ padding: 20 }}>
-            <h3 style={{ margin: '0 0 16px 0', display: 'flex', alignItems: 'center', gap: 6 }}>
-              <Ruler size={16} style={{ color: 'var(--accent)' }} />
-              <span className="ja">金型寸法</span>
-              <span className="vi" style={{ marginLeft: 4 }}>Kích thước khuôn</span>
-            </h3>
-            
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <InfoRow ja="ジョブ名" vi="Tên Job" value={job.job_name} />
+          <InfoRow ja="ジョブコード" vi="Mã Job" value={
+            <span style={{ fontFamily: 'monospace', fontWeight: 600 }}>{job.job_code}</span>
+          } />
+          {job.physical_molds && (
+            <InfoRow ja="物理金型" vi="Khuôn vật lý" value={
+              <Link href={`/equipment/molds/${job.physical_molds.mold_id}`} style={{ color: 'var(--accent)', textDecoration: 'none' }} className="hover:underline">
+                {job.physical_molds.display_name} ({job.physical_molds.system_code})
+              </Link>
+            } />
+          )}
+          {job.design_revisions && (
+            <InfoRow ja="設計リビジョン" vi="Thiết kế" value={
+              job.design_revisions.design_id ? (
+                <Link href={`/engineering/designs/${job.design_revisions.design_id}`} style={{ color: 'var(--accent)', textDecoration: 'none' }} className="hover:underline">
+                  {job.design_revisions.design_code} (Rev {job.design_revisions.revision_number})
+                </Link>
+              ) : (
+                `${job.design_revisions.design_code} (Rev ${job.design_revisions.revision_number})`
+              )
+            } />
+          )}
+          {job.products && (
+            <InfoRow ja="製品" vi="Sản phẩm" value={
+              <Link href={`/master/products/${job.products.product_id}`} style={{ color: 'var(--accent)', textDecoration: 'none' }} className="hover:underline">
+                {job.products.product_name || job.products.product_code}
+              </Link>
+            } />
+          )}
+          <InfoRow ja="備考" vi="Ghi chú" value={job.notes || '—'} />
+        </div>
+      </div>
+
+      {/* Mold Dimensions Card */}
+      {(job.design_revisions || job.physical_molds) && (
+        <div className="card-flat" style={{ padding: 20 }}>
+          <h3 style={{ margin: '0 0 16px 0', display: 'flex', alignItems: 'center', gap: 6 }}>
+            <Ruler size={16} style={{ color: 'var(--accent)' }} />
+            {t('Equipment.kichThuocKhuon')}
+          </h3>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               {job.design_revisions && (
                 <>
                   {(job.design_revisions.design_length || job.design_revisions.design_width) && (
@@ -308,8 +291,7 @@ export function OverviewTab({ job, onRefresh }: { job: any; onRefresh?: () => vo
           <div className="card-flat" style={{ padding: 20 }}>
             <h3 style={{ margin: '0 0 16px 0', display: 'flex', alignItems: 'center', gap: 6 }}>
               <Box size={16} style={{ color: 'var(--accent)' }} />
-              <span className="ja">素材情報</span>
-              <span className="vi" style={{ marginLeft: 4 }}>Thông tin vật liệu</span>
+              {t('Equipment.thongTinVatLieu')}
             </h3>
             
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -329,8 +311,7 @@ export function OverviewTab({ job, onRefresh }: { job: any; onRefresh?: () => vo
         <div className="card-flat" style={{ padding: 20 }}>
           <h3 style={{ margin: '0 0 16px 0', display: 'flex', alignItems: 'center', gap: 6 }}>
             <Clock size={16} style={{ color: 'var(--accent)' }} />
-            <span className="ja">スケジュール</span>
-            <span className="vi" style={{ marginLeft: 4 }}>Kế hoạch</span>
+            {t('Equipment.keHoach')}
           </h3>
           
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -373,7 +354,6 @@ export function OverviewTab({ job, onRefresh }: { job: any; onRefresh?: () => vo
             } />
           </div>
         </div>
-      </div>
 
       {editing && (
         <EditJobModal
@@ -382,6 +362,6 @@ export function OverviewTab({ job, onRefresh }: { job: any; onRefresh?: () => vo
           onSaved={handleSaved}
         />
       )}
-    </>
+    </div>
   )
 }

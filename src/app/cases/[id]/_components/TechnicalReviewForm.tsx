@@ -7,6 +7,7 @@ import {
   submitTechnicalReview,
   approveTechnicalReview,
 } from '../actions';
+import { useTranslations } from 'next-intl';
 
 interface Props {
   caseId: string;
@@ -16,19 +17,6 @@ interface Props {
   onClose: () => void;
 }
 
-const MOLD_OPTIONS = [
-  { value: 'reuse',  label: '流用 / Tái sử dụng' },
-  { value: 'modify', label: '改造 / Chỉnh sửa' },
-  { value: 'remake', label: '作り直し / Làm lại' },
-  { value: 'new',    label: '新規 / Khuôn mới' },
-];
-
-const DIE_OPTIONS = [
-  { value: 'reuse', label: '流用 / Tái sử dụng' },
-  { value: 'new',   label: '新規 / Dao mới' },
-  { value: 'none',  label: 'なし / Không cần' },
-];
-
 export default function TechnicalReviewForm({
   caseId,
   review,
@@ -36,6 +24,21 @@ export default function TechnicalReviewForm({
   currentUserId,
   onClose,
 }: Props) {
+  const t = useTranslations();
+
+  const MOLD_OPTIONS = [
+    { value: 'reuse',  label: t('Cases.TechnicalReview.moldOptions.reuse') },
+    { value: 'modify', label: t('Cases.TechnicalReview.moldOptions.modify') },
+    { value: 'remake', label: t('Cases.TechnicalReview.moldOptions.remake') },
+    { value: 'new',    label: t('Cases.TechnicalReview.moldOptions.new') },
+  ];
+
+  const DIE_OPTIONS = [
+    { value: 'reuse', label: t('Cases.TechnicalReview.dieOptions.reuse') },
+    { value: 'new',   label: t('Cases.TechnicalReview.dieOptions.new') },
+    { value: 'none',  label: t('Cases.TechnicalReview.dieOptions.none') },
+  ];
+
   const isApproveMode =
     review?.approval_status === 'in_review' && currentUserRole === 'manager';
   const isReadOnly =
@@ -96,7 +99,7 @@ export default function TechnicalReviewForm({
     <div className="card" style={{ marginTop: 'var(--space-4)' }}>
       <div className="card-header">
         <span className="card-title">
-          {review ? `Technical Review — Version ${review.version}` : 'Tạo Technical Review mới'}
+          {review ? t('Cases.TechnicalReview.formTitleEdit', { version: review.version }) : t('Cases.TechnicalReview.formTitleNew')}
         </span>
         <button className="btn btn-ghost btn-sm" onClick={onClose}>✕</button>
       </div>
@@ -104,7 +107,7 @@ export default function TechnicalReviewForm({
       <form ref={formRef}>
         {/* SECTION 1: Yêu cầu sản phẩm */}
         <fieldset className="form-section" disabled={isReadOnly}>
-          <legend className="form-section-title">① Yêu cầu sản phẩm</legend>
+          <legend className="form-section-title">{t('Cases.TechnicalReview.section1')}</legend>
           <div className="form-grid">
             <div className="form-group">
               <label className="form-label">Product ID</label>
@@ -125,7 +128,7 @@ export default function TechnicalReviewForm({
               />
             </div>
             <div className="form-group">
-              <label className="form-label">Vật liệu</label>
+              <label className="form-label">{t('Cases.TechnicalReview.materialSpec')}</label>
               <input
                 name="material_spec"
                 className="form-input"
@@ -134,7 +137,7 @@ export default function TechnicalReviewForm({
               />
             </div>
             <div className="form-group">
-              <label className="form-label">Độ dày (mm)</label>
+              <label className="form-label">{t('Cases.TechnicalReview.thickness')}</label>
               <input
                 name="thickness_mm"
                 type="number"
@@ -144,7 +147,7 @@ export default function TechnicalReviewForm({
               />
             </div>
             <div className="form-group" style={{ gridColumn: '1 / -1' }}>
-              <label className="form-label">Yêu cầu đặc biệt</label>
+              <label className="form-label">{t('Cases.TechnicalReview.specialRequirements')}</label>
               <textarea
                 name="special_requirements"
                 className="form-textarea"
@@ -157,19 +160,19 @@ export default function TechnicalReviewForm({
 
         {/* SECTION 2: Phương án khuôn */}
         <fieldset className="form-section" disabled={isReadOnly}>
-          <legend className="form-section-title">② 金型方針 / Phương án khuôn</legend>
+          <legend className="form-section-title">{t('Cases.TechnicalReview.section2')}</legend>
           <div className="form-grid">
             <div className="form-group">
-              <label className="form-label">Phương án khuôn</label>
+              <label className="form-label">{t('Cases.TechnicalReview.moldOption')}</label>
               <select name="mold_option" className="form-select" defaultValue={review?.mold_option ?? ''}>
-                <option value="">-- Chọn --</option>
+                <option value="">{t('Cases.TechnicalReview.choosePlaceholder')}</option>
                 {MOLD_OPTIONS.map((o) => (
                   <option key={o.value} value={o.value}>{o.label}</option>
                 ))}
               </select>
             </div>
             <div className="form-group">
-              <label className="form-label">Khuôn liên quan (mold_id)</label>
+              <label className="form-label">{t('Cases.TechnicalReview.moldId')}</label>
               <input
                 name="mold_id"
                 className="form-input"
@@ -178,7 +181,7 @@ export default function TechnicalReviewForm({
               />
             </div>
             <div className="form-group">
-              <label className="form-label">Số pocket / cavity</label>
+              <label className="form-label">{t('Cases.TechnicalReview.pocketCount')}</label>
               <input
                 name="pocket_count"
                 type="number"
@@ -187,7 +190,7 @@ export default function TechnicalReviewForm({
               />
             </div>
             <div className="form-group">
-              <label className="form-label">Kích thước khuôn X (mm)</label>
+              <label className="form-label">{t('Cases.TechnicalReview.moldSizeX')}</label>
               <input
                 name="mold_size_x"
                 type="number"
@@ -197,7 +200,7 @@ export default function TechnicalReviewForm({
               />
             </div>
             <div className="form-group">
-              <label className="form-label">Kích thước khuôn Y (mm)</label>
+              <label className="form-label">{t('Cases.TechnicalReview.moldSizeY')}</label>
               <input
                 name="mold_size_y"
                 type="number"
@@ -211,19 +214,19 @@ export default function TechnicalReviewForm({
 
         {/* SECTION 3: Dao cắt & Thiết bị */}
         <fieldset className="form-section" disabled={isReadOnly}>
-          <legend className="form-section-title">③ 刃型・設備 / Dao cắt & Thiết bị</legend>
+          <legend className="form-section-title">{t('Cases.TechnicalReview.section3')}</legend>
           <div className="form-grid">
             <div className="form-group">
-              <label className="form-label">Phương án dao cắt</label>
+              <label className="form-label">{t('Cases.TechnicalReview.cuttingDieOption')}</label>
               <select name="cutting_die_option" className="form-select" defaultValue={review?.cutting_die_option ?? ''}>
-                <option value="">-- Chọn --</option>
+                <option value="">{t('Cases.TechnicalReview.choosePlaceholder')}</option>
                 {DIE_OPTIONS.map((o) => (
                   <option key={o.value} value={o.value}>{o.label}</option>
                 ))}
               </select>
             </div>
             <div className="form-group">
-              <label className="form-label">Dao cắt liên quan (cutting_die_id)</label>
+              <label className="form-label">{t('Cases.TechnicalReview.cuttingDieId')}</label>
               <input
                 name="cutting_die_id"
                 className="form-input"
@@ -232,7 +235,7 @@ export default function TechnicalReviewForm({
               />
             </div>
             <div className="form-group">
-              <label className="form-label">Máy định hình đề xuất</label>
+              <label className="form-label">{t('Cases.TechnicalReview.machineId')}</label>
               <input
                 name="machine_id"
                 className="form-input"
@@ -241,7 +244,7 @@ export default function TechnicalReviewForm({
               />
             </div>
             <div className="form-group">
-              <label className="form-label">Lead time kỹ thuật (ngày)</label>
+              <label className="form-label">{t('Cases.TechnicalReview.leadTimeDays')}</label>
               <input
                 name="lead_time_days"
                 type="number"
@@ -250,7 +253,7 @@ export default function TechnicalReviewForm({
               />
             </div>
             <div className="form-group">
-              <label className="form-label">Cycle time ước tính (giây)</label>
+              <label className="form-label">{t('Cases.TechnicalReview.cycleTimeSec')}</label>
               <input
                 name="cycle_time_sec"
                 type="number"
@@ -264,10 +267,10 @@ export default function TechnicalReviewForm({
 
         {/* SECTION 4: Kết luận */}
         <fieldset className="form-section" disabled={isReadOnly && !isApproveMode}>
-          <legend className="form-section-title">④ 結論 / Kết luận kỹ thuật</legend>
+          <legend className="form-section-title">{t('Cases.TechnicalReview.section4')}</legend>
           <div className="form-grid">
             <div className="form-group" style={{ gridColumn: '1 / -1' }}>
-              <label className="form-label">Ghi chú kỹ thuật / Ràng buộc / Rủi ro</label>
+              <label className="form-label">{t('Cases.TechnicalReview.technicalConstraintsLabel')}</label>
               <textarea
                 name="technical_constraints"
                 className="form-textarea"
@@ -280,13 +283,13 @@ export default function TechnicalReviewForm({
           {/* Reject reason input */}
           {isApproveMode && showRejectInput && (
             <div className="form-group" style={{ marginTop: 'var(--space-3)' }}>
-              <label className="form-label">Lý do từ chối</label>
+              <label className="form-label">{t('Cases.TechnicalReview.rejectReason')}</label>
               <textarea
                 className="form-textarea"
                 rows={2}
                 value={rejectReason}
                 onChange={(e) => setRejectReason(e.target.value)}
-                placeholder="Nhập lý do..."
+                placeholder={t('Cases.TechnicalReview.rejectReasonPlaceholder')}
               />
             </div>
           )}
@@ -308,7 +311,7 @@ export default function TechnicalReviewForm({
               onClick={handleSaveDraft}
               disabled={isPending}
             >
-              💾 Lưu nháp
+              {t('Cases.TechnicalReview.saveDraft')}
             </button>
             {review && review.approval_status === 'draft' && (
               <button
@@ -316,7 +319,7 @@ export default function TechnicalReviewForm({
                 onClick={handleSubmit}
                 disabled={isPending}
               >
-                📤 Gửi duyệt
+                {t('Cases.TechnicalReview.submitForApproval')}
               </button>
             )}
           </>
@@ -329,7 +332,7 @@ export default function TechnicalReviewForm({
               onClick={handleApprove}
               disabled={isPending}
             >
-              ✅ Duyệt
+              {t('Cases.TechnicalReview.approve')}
             </button>
             {!showRejectInput ? (
               <button
@@ -337,7 +340,7 @@ export default function TechnicalReviewForm({
                 onClick={() => setShowRejectInput(true)}
                 disabled={isPending}
               >
-                ❌ Từ chối
+                {t('Cases.TechnicalReview.reject')}
               </button>
             ) : (
               <button
@@ -345,14 +348,14 @@ export default function TechnicalReviewForm({
                 onClick={handleReject}
                 disabled={isPending || !rejectReason.trim()}
               >
-                ❌ Xác nhận từ chối
+                {t('Cases.TechnicalReview.confirmReject')}
               </button>
             )}
           </>
         )}
 
         <button className="btn btn-ghost" onClick={onClose} disabled={isPending}>
-          Hủy
+          {t('Cases.TechnicalReview.cancel')}
         </button>
       </div>
     </div>

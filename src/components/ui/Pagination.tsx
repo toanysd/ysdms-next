@@ -1,6 +1,7 @@
 import React from 'react'
 import Link from 'next/link'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 
 /**
  * Pagination component — hỗ trợ hai chế độ:
@@ -20,6 +21,7 @@ export type PaginationProps = {
 }
 
 export function Pagination({ currentPage, totalRecords, pageSize, baseUrl, onPageChange }: PaginationProps) {
+  const t = useTranslations('Common')
   const totalPages = Math.max(1, Math.ceil(totalRecords / pageSize))
   const startItem = totalRecords === 0 ? 0 : (currentPage - 1) * pageSize + 1
   const endItem = Math.min(currentPage * pageSize, totalRecords)
@@ -56,12 +58,11 @@ export function Pagination({ currentPage, totalRecords, pageSize, baseUrl, onPag
   return (
     <div className="flex items-center justify-between border-t border-[var(--border-subtle)] bg-[var(--bg-surface)] px-4 py-3 sm:px-6 w-full rounded-b-lg shrink-0">
       <div className="flex flex-1 items-center justify-between">
-        <p className="text-xs text-[var(--text-secondary)] font-[family-name:var(--font-jp)]">
-          表示 <span className="font-medium text-[var(--text-primary)]">{startItem}</span> - <span className="font-medium text-[var(--text-primary)]">{endItem}</span> / <span className="font-medium text-[var(--text-primary)]">{totalRecords}</span> 件
-          <span className="mx-2 text-[var(--border-default)]">|</span>
-          <span className="font-[family-name:var(--font-vi)]">
-            Hiển thị <span className="font-medium text-[var(--text-primary)]">{startItem}</span> - <span className="font-medium text-[var(--text-primary)]">{endItem}</span> / <span className="font-medium text-[var(--text-primary)]">{totalRecords}</span> dòng
-          </span>
+        <p className="text-xs text-[var(--text-secondary)]">
+          {t('paginationPrefix')}{' '}
+          <span className="font-medium text-[var(--text-primary)]">{startItem}</span> -{' '}
+          <span className="font-medium text-[var(--text-primary)]">{endItem}</span> /{' '}
+          <span className="font-medium text-[var(--text-primary)]">{totalRecords}</span> {t('paginationSuffix')}
         </p>
         <nav className="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
           {prevEl}

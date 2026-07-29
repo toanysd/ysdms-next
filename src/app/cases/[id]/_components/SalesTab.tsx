@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react'
 import type { Quotation } from '../types'
 import { FileSpreadsheet, Plus, FileText, Download } from 'lucide-react'
 import QuotationFormModal from './QuotationFormModal'
+import { useTranslations } from 'next-intl'
 
 type Props = {
   caseId: string
@@ -16,11 +17,11 @@ type Props = {
   onRefresh: () => void
 }
 
-const STATUS_MAP: Record<string, { labelJA: string; badge: string }> = {
-  draft:    { labelJA: '下書き',  badge: 'badge--neutral' },
-  sent:     { labelJA: '提出済',  badge: 'badge--info' },
-  accepted: { labelJA: '承認済',  badge: 'badge--success' },
-  rejected: { labelJA: '失注',    badge: 'badge--error' },
+const STATUS_BADGE_MAP: Record<string, string> = {
+  draft:    'badge--neutral',
+  sent:     'badge--info',
+  accepted: 'badge--success',
+  rejected: 'badge--error',
 }
 
 export default function SalesTab({
@@ -32,6 +33,7 @@ export default function SalesTab({
   onModalMounted,
   onRefresh,
 }: Props) {
+  const t = useTranslations()
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingQuotation, setEditingQuotation] = useState<Quotation | null>(null)
 
@@ -63,7 +65,7 @@ export default function SalesTab({
       URL.revokeObjectURL(url)
     } catch (err: unknown) {
       console.error(err)
-      alert('PDFのエクスポートに失敗しました。')
+      alert(t('Cases.pdfExportFailed'))
     }
   }
 
@@ -72,19 +74,18 @@ export default function SalesTab({
       <div className="form-section-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div style={{ display: 'flex', alignItems: 'center' }}>
           <FileSpreadsheet size={14} className="section-icon" />
-          <span style={{ fontFamily: 'var(--font-jp)' }}>見積書一覧</span>
-          <span style={{ marginLeft: 6, opacity: 0.6 }}>Danh sách Báo giá</span>
+          <span style={{ fontWeight: 600 }}>{t('Cases.quotationList')}</span>
         </div>
         <button className="btn btn-primary btn-sm" onClick={() => handleOpenModal()}>
           <Plus size={14} />
-          <span style={{ fontFamily: 'var(--font-jp)' }}>見積作成</span>
+          <span>{t('Cases.createQuotation')}</span>
         </button>
       </div>
 
       <div className="form-section-body">
         {(!quotations || quotations.length === 0) ? (
           <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-muted)', fontSize: 13 }}>
-            見積がありません / Chưa có báo giá
+            {t('Cases.noQuotation')}
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -102,19 +103,19 @@ export default function SalesTab({
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <FileText size={16} style={{ color: 'var(--accent)' }} />
                     <span style={{ fontWeight: 600, fontSize: 14 }}>{q.quotation_no}</span>
-                    <span className={`badge ${STATUS_MAP[q.status]?.badge || 'badge--neutral'}`}>
-                      {STATUS_MAP[q.status]?.labelJA || q.status}
+                    <span className={`badge ${STATUS_BADGE_MAP[q.status] || 'badge--neutral'}`}>
+                      {t(`Cases.QuotationStatus.${q.status}`)}
                     </span>
                   </div>
                   <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-                    <span>発行日: {q.issued_date || '未定'}</span>
+                    <span>{t('Cases.quoteDate')}: {q.issued_date || t('Cases.undetermined')}</span>
                     <span style={{ margin: '0 8px' }}>|</span>
-                    <span>総額: {new Intl.NumberFormat('ja-JP').format(q.total_amount)} {q.currency}</span>
+                    <span>{t('Cases.totalAmountLabel')}: {new Intl.NumberFormat('ja-JP').format(q.total_amount)} {q.currency}</span>
                   </div>
                 </div>
                 <div style={{ display: 'flex', gap: 8 }}>
                   <button className="btn btn-secondary btn-sm" onClick={() => handleOpenModal(q)}>
-                    編集
+                    {t('Cases.edit')}
                   </button>
                   <button className="btn btn-primary btn-sm" onClick={() => handleExportPDF(q)}>
                     <Download size={14} /> PDF

@@ -4,6 +4,7 @@ import React, { useEffect, useState, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Briefcase, Plus, Search, FilterX } from 'lucide-react'
 import Link from 'next/link'
+import { useTranslations } from 'next-intl'
 
 // ── Types ──────────────────────────────────────────────────────────────
 type BusinessCase = {
@@ -19,32 +20,32 @@ type BusinessCase = {
 }
 
 // ── Config ─────────────────────────────────────────────────────────────
-const STATUS_CONFIG: Record<string, { labelJA: string; labelVI: string; badgeClass: string }> = {
-  open:        { labelJA: '新規',     labelVI: 'Mới',         badgeClass: 'badge badge--info' },
-  in_review:   { labelJA: '検討中',   labelVI: 'Đang xem xét', badgeClass: 'badge badge--warning' },
-  quoted:      { labelJA: '見積済',   labelVI: 'Đã báo giá',  badgeClass: 'badge badge--neutral' },
-  ordered:     { labelJA: '受注済',   labelVI: 'Có đơn hàng', badgeClass: 'badge badge--success' },
-  completed:   { labelJA: '完了',     labelVI: 'Hoàn thành',  badgeClass: 'badge badge--success' },
-  closed:      { labelJA: 'クローズ', labelVI: 'Đã đóng',     badgeClass: 'badge badge--neutral' },
+const STATUS_CONFIG: Record<string, { labelKey: string; badgeClass: string }> = {
+  open:        { labelKey: 'Cases.Status.open',      badgeClass: 'badge badge--info' },
+  in_review:   { labelKey: 'Cases.Status.in_review',  badgeClass: 'badge badge--warning' },
+  quoted:      { labelKey: 'Cases.Status.quoted',     badgeClass: 'badge badge--neutral' },
+  ordered:     { labelKey: 'Cases.Status.ordered',    badgeClass: 'badge badge--success' },
+  completed:   { labelKey: 'Cases.Status.completed',  badgeClass: 'badge badge--success' },
+  closed:      { labelKey: 'Cases.Status.closed',     badgeClass: 'badge badge--neutral' },
 }
 
-const CASE_TYPE_CONFIG: Record<string, { labelJA: string; labelVI: string }> = {
-  new_tray:          { labelJA: '新規トレイ',  labelVI: 'Khay mới' },
-  repeat_order:      { labelJA: '追加注文',    labelVI: 'Đặt lại' },
-  mold_modification: { labelJA: '金型改造',    labelVI: 'Sửa khuôn' },
-  material_change:   { labelJA: '材料変更',    labelVI: 'Đổi vật liệu' },
-  complaint:         { labelJA: 'クレーム',    labelVI: 'Khiếu nại' },
-  inventory_audit:   { labelJA: '棚卸依頼',   labelVI: 'Kiểm kê khuôn' },
-  tray_review:       { labelJA: '収納検討',    labelVI: 'Xem xét thiết kế tray' },
-  other:             { labelJA: 'その他',      labelVI: 'Khác' },
+const CASE_TYPE_CONFIG: Record<string, { labelKey: string }> = {
+  new_tray:          { labelKey: 'Cases.Types.new_tray' },
+  repeat_order:      { labelKey: 'Cases.Types.repeat_order' },
+  mold_modification: { labelKey: 'Cases.Types.mold_modification' },
+  material_change:   { labelKey: 'Cases.Types.material_change' },
+  complaint:         { labelKey: 'Cases.Types.complaint' },
+  inventory_audit:   { labelKey: 'Cases.Types.inventory_audit' },
+  tray_review:       { labelKey: 'Cases.Types.tray_review' },
+  other:             { labelKey: 'Cases.Types.other' },
 }
 
 const FILTER_TABS = [
-  { key: 'ALL',       labelJA: '全て',   labelVI: 'Tất cả' },
-  { key: 'open',      labelJA: '新規',   labelVI: 'Mới' },
-  { key: 'in_review', labelJA: '検討中', labelVI: 'Đang xem' },
-  { key: 'quoted',    labelJA: '見積済', labelVI: 'Đã báo giá' },
-  { key: 'ordered',   labelJA: '受注済', labelVI: 'Có đơn' },
+  { key: 'ALL',       labelKey: 'Cases.FilterTabs.ALL' },
+  { key: 'open',      labelKey: 'Cases.FilterTabs.open' },
+  { key: 'in_review', labelKey: 'Cases.FilterTabs.in_review' },
+  { key: 'quoted',    labelKey: 'Cases.FilterTabs.quoted' },
+  { key: 'ordered',   labelKey: 'Cases.FilterTabs.ordered' },
 ]
 
 const PAGE_SIZE = 50
@@ -56,6 +57,7 @@ function formatDate(d: string | null) {
 
 // ── Main Component ──────────────────────────────────────────────────────
 export default function CasesPage() {
+  const t = useTranslations()
   const supabase = createClient()
   const [cases, setCases] = useState<BusinessCase[]>([])
   const [loading, setLoading] = useState(true)
@@ -116,14 +118,13 @@ export default function CasesPage() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <Briefcase size={20} style={{ color: 'var(--accent)' }} />
           <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <span style={{ fontFamily: 'var(--font-jp)', fontSize: 15, fontWeight: 700, color: 'var(--text-primary)' }}>事案管理</span>
-            <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>Quản lý Sự việc / Business Cases</span>
+            {t('Cases.caseManagement')}
           </div>
-          <span className="badge badge--neutral" style={{ marginLeft: 4 }}>{totalRecords.toLocaleString()} 件</span>
+          <span className="badge badge--neutral" style={{ marginLeft: 4 }}>{totalRecords.toLocaleString()} {t('Cases.records')}</span>
         </div>
         <Link href="/cases/new" className="btn btn-primary" style={{ gap: 6, fontSize: 13 }}>
           <Plus size={14} />
-          <span style={{ fontFamily: 'var(--font-jp)' }}>新規事案</span>
+          {t('Cases.newCase')}
         </Link>
       </div>
 
@@ -141,8 +142,7 @@ export default function CasesPage() {
                     position: 'relative', color: active ? 'var(--accent)' : 'var(--text-secondary)',
                     fontWeight: active ? 700 : 500 }}>
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
-                    <span style={{ fontSize: 12, fontFamily: 'var(--font-jp)' }}>{tab.labelJA}</span>
-                    <span style={{ fontSize: 10, opacity: 0.75 }}>{tab.labelVI}</span>
+                    <span style={{ fontSize: 12 }}>{t(tab.labelKey)}</span>
                   </div>
                   {active && (
                     <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 2,
@@ -156,7 +156,7 @@ export default function CasesPage() {
             <button onClick={() => { setActiveTab('ALL'); setSearchQuery('') }}
               style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: 11,
                 cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, padding: '4px 8px' }}>
-              <FilterX size={12} /> リセット
+              <FilterX size={12} /> {t('Cases.reset')}
             </button>
           )}
         </div>
@@ -165,7 +165,7 @@ export default function CasesPage() {
         <div style={{ position: 'relative', width: 280 }}>
           <Search size={14} style={{ position: 'absolute', left: 10, top: '50%',
             transform: 'translateY(-50%)', color: 'var(--text-muted)', pointerEvents: 'none' }} />
-          <input type="text" placeholder="事案コード・タイトル検索 / Tìm kiếm..."
+          <input type="text" placeholder={t('Cases.searchPlaceholder')}
             value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
             className="form-input" style={{ paddingLeft: 32, height: 32, fontSize: 13 }} />
         </div>
@@ -176,7 +176,7 @@ export default function CasesPage() {
         minHeight: 0, overflow: 'hidden' }}>
         {loading ? (
           <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
-            color: 'var(--text-muted)', fontSize: 13 }}>読み込み中... / Đang tải...</div>
+            color: 'var(--text-muted)', fontSize: 13 }}>{t('Cases.loading')}</div>
         ) : (
           <>
             <div className="custom-scrollbar" style={{ flex: 1, overflowY: 'auto' }}>
@@ -184,32 +184,25 @@ export default function CasesPage() {
                 <thead>
                   <tr>
                     <th style={{ width: 150 }}>
-                      <span className="ja">事案コード</span>
-                      <span className="vi">Mã sự việc</span>
+                      {t('Cases.caseCode')}
                     </th>
                     <th>
-                      <span className="ja">タイトル</span>
-                      <span className="vi">Tiêu đề</span>
+                      {t('Cases.title')}
                     </th>
                     <th style={{ width: 120 }}>
-                      <span className="ja">種別</span>
-                      <span className="vi">Loại</span>
+                      {t('Cases.type')}
                     </th>
                     <th style={{ width: 200 }}>
-                      <span className="ja">得意先</span>
-                      <span className="vi">Khách hàng</span>
+                      {t('Cases.customer')}
                     </th>
                     <th style={{ width: 120 }}>
-                      <span className="ja">担当者</span>
-                      <span className="vi">Phụ trách KD</span>
+                      {t('Cases.salesOwner')}
                     </th>
                     <th style={{ width: 100 }}>
-                      <span className="ja">希望納期</span>
-                      <span className="vi">Hạn yêu cầu</span>
+                      {t('Cases.requestedDueDate')}
                     </th>
                     <th style={{ width: 100, textAlign: 'center' }}>
-                      <span className="ja">状態</span>
-                      <span className="vi">Trạng thái</span>
+                      {t('Cases.status')}
                     </th>
                   </tr>
                 </thead>
@@ -218,7 +211,7 @@ export default function CasesPage() {
                     <tr>
                       <td colSpan={7} style={{ textAlign: 'center', padding: '48px 0',
                         color: 'var(--text-muted)', fontSize: 13 }}>
-                        データがありません / Không có dữ liệu
+                        {t('Cases.noData')}
                       </td>
                     </tr>
                   ) : cases.map(c => {
@@ -242,7 +235,7 @@ export default function CasesPage() {
                         <td>
                           <span className="badge badge--neutral" style={{ fontSize: 11 }}>
                             <span style={{ fontFamily: 'var(--font-jp)' }}>
-                              {typeCfg?.labelJA ?? c.case_type}
+                              {typeCfg ? t(typeCfg.labelKey) : c.case_type}
                             </span>
                           </span>
                         </td>
@@ -263,7 +256,7 @@ export default function CasesPage() {
                         <td style={{ textAlign: 'center' }}>
                           {statusCfg
                             ? <span className={statusCfg.badgeClass}>
-                                <span style={{ fontFamily: 'var(--font-jp)' }}>{statusCfg.labelJA}</span>
+                                <span style={{ fontFamily: 'var(--font-jp)' }}>{t(statusCfg.labelKey)}</span>
                               </span>
                             : <span className="badge badge--neutral">{c.status}</span>}
                         </td>
@@ -280,17 +273,17 @@ export default function CasesPage() {
                 background: 'var(--bg-surface-2)', display: 'flex', alignItems: 'center',
                 justifyContent: 'space-between', flexShrink: 0 }}>
                 <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-                  {((page - 1) * PAGE_SIZE) + 1}–{Math.min(page * PAGE_SIZE, totalRecords)} / {totalRecords.toLocaleString()} 件
+                  {((page - 1) * PAGE_SIZE) + 1}–{Math.min(page * PAGE_SIZE, totalRecords)} / {totalRecords.toLocaleString()} {t('Cases.records')}
                 </span>
                 <div style={{ display: 'flex', gap: 4 }}>
                   <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
                     className="btn btn-secondary" style={{ padding: '4px 10px', fontSize: 12,
-                      opacity: page === 1 ? 0.4 : 1 }}>← 前へ</button>
+                      opacity: page === 1 ? 0.4 : 1 }}>{t('Cases.Pagination.prev')}</button>
                   <span style={{ fontSize: 12, color: 'var(--text-secondary)',
                     padding: '4px 8px', alignSelf: 'center' }}>{page} / {totalPages}</span>
                   <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}
                     className="btn btn-secondary" style={{ padding: '4px 10px', fontSize: 12,
-                      opacity: page === totalPages ? 0.4 : 1 }}>次へ →</button>
+                      opacity: page === totalPages ? 0.4 : 1 }}>{t('Cases.Pagination.next')}</button>
                 </div>
               </div>
             )}

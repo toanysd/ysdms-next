@@ -1,19 +1,21 @@
+import { useTranslations } from 'next-intl'
 import React, { forwardRef } from 'react'
 
 export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
+  label?: string;
   labelJa?: string;
   labelVi?: string;
   error?: string;
 }
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(
-  ({ className = '', labelJa, labelVi, error, ...props }, ref) => {
+  ({ className = '', label, labelJa, labelVi, error, ...props }, ref) => {
+    const displayLabel = label || labelJa || labelVi;
     return (
       <div className="flex flex-col gap-1 w-full">
-        {(labelJa || labelVi) && (
+        {displayLabel && (
           <label className="text-xs font-bold text-[var(--mcs-text)] flex flex-col">
-            {labelJa && <span className="ja">{labelJa}</span>}
-            {labelVi && <span className="vi font-normal text-[var(--mcs-text-muted)] mt-[-2px]">{labelVi}</span>}
+            {displayLabel}
           </label>
         )}
         <input

@@ -3,6 +3,7 @@ import { SearchableSelect } from '@/components/ui/SearchableSelect'
 import { useMemo } from 'react'
 import Link from 'next/link'
 import { ExternalLink, PenTool, LayoutTemplate } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 
 function FieldGroup({
   label, sub, required, children,
@@ -43,13 +44,13 @@ const STATUS_LABELS: Record<string, { ja: string; vi: string }> = {
   DISPOSED: { ja: '廃止', vi: 'Ngừng' },
 }
 
-const DESIGN_STATUS_CONFIG: Record<string, { label: string; labelVi: string; badge: string }> = {
-  DRAFT:      { label: '下書き',   labelVi: 'Nháp',       badge: 'badge badge--warning' },
-  SUBMITTED:  { label: '提出済',   labelVi: 'Đã gửi',     badge: 'badge badge--info' },
-  RELEASED:   { label: 'リリース', labelVi: 'Đã phát hành', badge: 'badge badge--success' },
-  APPROVED:   { label: '承認済',   labelVi: 'Đã duyệt',   badge: 'badge badge--success' },
-  REJECTED:   { label: '却下',     labelVi: 'Từ chối',     badge: 'badge badge--error' },
-  SUPERSEDED: { label: '旧版',     labelVi: 'Đã thay thế', badge: 'badge badge--neutral' },
+const DESIGN_STATUS_CONFIG: Record<string, { tKey: string; badge: string }> = {
+  DRAFT:      { tKey: 'DRAFT',       badge: 'badge badge--warning' },
+  SUBMITTED:  { tKey: 'SUBMITTED',     badge: 'badge badge--info' },
+  RELEASED:   { tKey: 'RELEASED', badge: 'badge badge--success' },
+  APPROVED:   { tKey: 'APPROVED',   badge: 'badge badge--success' },
+  REJECTED:   { tKey: 'REJECTED',     badge: 'badge badge--error' },
+  SUPERSEDED: { tKey: 'SUPERSEDED', badge: 'badge badge--neutral' },
 }
 
 export function OverviewTab({
@@ -65,6 +66,7 @@ export function OverviewTab({
   setFormData: React.Dispatch<React.SetStateAction<Partial<ProductDetailData>>>
   companies: Company[]
 }) {
+  const t = useTranslations('Master.Products.Overview')
   const customerCompanies = useMemo(() => {
     return companies.filter(c => {
       if (!c.company_type) return true
@@ -109,37 +111,37 @@ export function OverviewTab({
           <>
             <div className="card-flat">
               <h3 className="text-[13px] font-bold mb-3" style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-jp)', borderBottom: '1px solid var(--border-subtle)', paddingBottom: 6 }}>
-                基本情報 <span className="text-[11px] font-normal text-[var(--text-muted)] ml-2">Thông tin cơ bản</span>
+                {t('basicInfo')} <span className="text-[11px] font-normal text-[var(--text-muted)] ml-2">{t('basicInfoSub')}</span>
               </h3>
               <div className="form-grid-2 gap-3">
-                <ReadOnlyField label="製品コード" sub="Mã SP" value={product.product_code} />
-                <ReadOnlyField label="製品名" sub="Tên SP" value={product.product_name} />
-                <ReadOnlyField label="得意先" sub="Khách hàng" value={
+                <ReadOnlyField label={t('productCode')} sub={t('productCodeSub')} value={product.product_code} />
+                <ReadOnlyField label={t('productName')} sub={t('productNameSub')} value={product.product_name} />
+                <ReadOnlyField label={t('customer')} sub={t('customerSub')} value={
                   product.companies ? (
                     <Link href={`/master/customers/${product.companies.company_id}`} className="text-[var(--accent)] hover:underline font-bold transition-colors">
                       {product.companies.company_code} — {product.companies.company_name}
                     </Link>
                   ) : ''
                 } />
-                <ReadOnlyField label="顧客製品名" sub="Tên SP khách hàng" value={product.customer_product_name} />
+                <ReadOnlyField label={t('customerProductName')} sub={t('customerProductNameSub')} value={product.customer_product_name} />
               </div>
             </div>
 
             <div className="card-flat">
               <h3 className="text-[13px] font-bold mb-3" style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-jp)', borderBottom: '1px solid var(--border-subtle)', paddingBottom: 6 }}>
-                梱包仕様 <span className="text-[11px] font-normal text-[var(--text-muted)] ml-2">Thông số đóng gói</span>
+                {t('packSpec')} <span className="text-[11px] font-normal text-[var(--text-muted)] ml-2">{t('packSpecSub')}</span>
               </h3>
               <div className="form-grid-3 gap-3">
-                <ReadOnlyField label="ポケット数" sub="Số pocket" value={product.pocket_count} />
-                <ReadOnlyField label="箱入数" sub="Số lượng/hộp" value={product.pieces_per_box} />
-                <ReadOnlyField label="箱仕様" sub="Quy cách hộp" value={product.box_spec} />
+                <ReadOnlyField label={t('pocketCount')} sub={t('pocketCountSub')} value={product.pocket_count} />
+                <ReadOnlyField label={t('piecesPerBox')} sub={t('piecesPerBoxSub')} value={product.pieces_per_box} />
+                <ReadOnlyField label={t('boxSpec')} sub={t('boxSpecSub')} value={product.box_spec} />
               </div>
             </div>
 
             {uniquePlastics.length > 0 && (
               <div className="card-flat">
                 <h3 className="text-[13px] font-bold mb-3" style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-jp)', borderBottom: '1px solid var(--border-subtle)', paddingBottom: 6 }}>
-                  プラスチック仕様 <span className="text-[11px] font-normal text-[var(--text-muted)] ml-2">Thông số nhựa (Từ thiết kế)</span>
+                  {t('plasticSpec')} <span className="text-[11px] font-normal text-[var(--text-muted)] ml-2">{t('plasticSpecSub')}</span>
                 </h3>
                 <div className="flex flex-col gap-2">
                   {uniquePlastics.map(p => (
@@ -161,7 +163,7 @@ export function OverviewTab({
             {product.notes && (
               <div className="card-flat">
                 <h3 className="text-[13px] font-bold mb-3" style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-jp)', borderBottom: '1px solid var(--border-subtle)', paddingBottom: 6 }}>
-                  備考 <span className="text-[11px] font-normal text-[var(--text-muted)] ml-2">Ghi chú</span>
+                  {t('notes')} <span className="text-[11px] font-normal text-[var(--text-muted)] ml-2">{t('notesSub')}</span>
                 </h3>
                 <div style={{ fontSize: 13, color: 'var(--text-primary)', whiteSpace: 'pre-wrap' }}>
                   {product.notes}
@@ -172,7 +174,7 @@ export function OverviewTab({
         ) : (
           <div className="card-flat flex flex-col gap-4">
             <div className="form-grid-2 gap-3">
-              <FieldGroup label="製品コード" sub="Mã SP" required>
+              <FieldGroup label={t('productCode')} sub={t('productCodeSub')} required>
                 <input
                   type="text"
                   value={formData.product_code || ''}
@@ -182,7 +184,7 @@ export function OverviewTab({
                 />
               </FieldGroup>
               
-              <FieldGroup label="製品名" sub="Tên SP">
+              <FieldGroup label={t('productName')} sub={t('productNameSub')}>
                 <input
                   type="text"
                   value={formData.product_name || ''}
@@ -192,7 +194,7 @@ export function OverviewTab({
                 />
               </FieldGroup>
 
-              <FieldGroup label="得意先" sub="Khách hàng" required>
+              <FieldGroup label={t('customer')} sub={t('customerSub')} required>
                 <SearchableSelect
                   options={customerCompanies.map(c => ({
                     value: c.company_id,
@@ -203,7 +205,7 @@ export function OverviewTab({
                 />
               </FieldGroup>
 
-              <FieldGroup label="顧客製品名" sub="Tên SP khách hàng">
+              <FieldGroup label={t('customerProductName')} sub={t('customerProductNameSub')}>
                 <input
                   type="text"
                   value={formData.customer_product_name || ''}
@@ -213,14 +215,14 @@ export function OverviewTab({
                 />
               </FieldGroup>
 
-              <FieldGroup label="状態" sub="Trạng thái" required>
+              <FieldGroup label={t('status')} sub={t('statusSub')} required>
                 <select
                   value={formData.product_status || 'ACTIVE'}
                   onChange={e => setFormData(f => ({ ...f, product_status: e.target.value as any }))}
                   className="form-input w-full"
                 >
                   {Object.keys(STATUS_LABELS).map(k => (
-                    <option key={k} value={k}>{STATUS_LABELS[k].ja} / {STATUS_LABELS[k].vi}</option>
+                    <option key={k} value={k}>{t(`statusLabels.${k}`)}</option>
                   ))}
                 </select>
               </FieldGroup>
@@ -229,10 +231,10 @@ export function OverviewTab({
             <div style={{ borderTop: '1px solid var(--border-subtle)' }} />
 
             <p className="text-[11px] font-bold" style={{ color: 'var(--text-secondary)', fontFamily: 'var(--font-jp)' }}>
-              梱包仕様 <span style={{ fontWeight: 400, color: 'var(--text-muted)' }}>Thông số đóng gói</span>
+              {t('packSpec')} <span style={{ fontWeight: 400, color: 'var(--text-muted)' }}>{t('packSpecSub')}</span>
             </p>
             <div className="form-grid-3 gap-3">
-              <FieldGroup label="ポケット数" sub="Số pocket">
+              <FieldGroup label={t('pocketCount')} sub={t('pocketCountSub')}>
                 <input
                   type="number"
                   value={formData.pocket_count ?? ''}
@@ -242,7 +244,7 @@ export function OverviewTab({
                 />
               </FieldGroup>
 
-              <FieldGroup label="箱入数" sub="Số lượng/hộp">
+              <FieldGroup label={t('piecesPerBox')} sub={t('piecesPerBoxSub')}>
                 <input
                   type="number"
                   value={formData.pieces_per_box ?? ''}
@@ -252,7 +254,7 @@ export function OverviewTab({
                 />
               </FieldGroup>
 
-              <FieldGroup label="箱仕様" sub="Quy cách hộp">
+              <FieldGroup label={t('boxSpec')} sub={t('boxSpecSub')}>
                 <input
                   type="text"
                   value={formData.box_spec || ''}
@@ -264,7 +266,7 @@ export function OverviewTab({
 
             <div style={{ borderTop: '1px solid var(--border-subtle)' }} />
 
-            <FieldGroup label="備考" sub="Ghi chú">
+            <FieldGroup label={t('notes')} sub={t('notesSub')}>
               <textarea
                 value={formData.notes || ''}
                 onChange={e => setFormData(f => ({ ...f, notes: e.target.value || null }))}
@@ -282,20 +284,20 @@ export function OverviewTab({
           <div className="flex items-center justify-between mb-3 border-b border-[var(--border-default)] pb-2">
             <h3 className="text-[12px] font-bold flex items-center gap-2" style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-jp)' }}>
               <PenTool size={14} className="text-accent" />
-              設計一覧 <span className="text-[10px] text-[var(--text-muted)] font-normal">Phiên bản thiết kế</span>
+              {t('designList')} <span className="text-[10px] text-[var(--text-muted)] font-normal">{t('designListSub')}</span>
             </h3>
             <Link 
               href={`/engineering/designs/${product.product_id}`}
               className="text-[10px] flex items-center gap-1 font-bold text-accent hover:underline"
             >
-              詳細 <ExternalLink size={10} />
+              {t('designDetailBtn')} <ExternalLink size={10} />
             </Link>
           </div>
           
           <div className="flex flex-col gap-2">
             {sortedDesigns.length === 0 ? (
               <div className="text-[11px] text-center p-4 text-[var(--text-muted)]">
-                設計版がありません (Không có phiên bản thiết kế)
+                {t('noDesigns')}
               </div>
             ) : (
               sortedDesigns.map(rev => {
@@ -310,14 +312,14 @@ export function OverviewTab({
                   >
                     <div>
                       <div className="text-[12px] font-bold font-mono text-[var(--accent)] hover:underline">
-                        Mở thiết kế: {rev.design_code}
+                        {t('openDesign')} {rev.design_code}
                       </div>
                       <div className="text-[10px] text-[var(--text-muted)]">
                         Rev {rev.revision_number} • {rev.design_date || '—'}
                       </div>
                     </div>
                     <span className={`${cfg.badge} text-[9px]`}>
-                      {cfg.label}
+                      {t(`designStatus.${cfg.tKey}`)}
                     </span>
                   </Link>
                 )

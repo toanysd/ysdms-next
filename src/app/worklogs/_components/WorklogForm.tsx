@@ -1,5 +1,7 @@
 'use client'
 
+import { useTranslations } from 'next-intl'
+
 import { useRouter } from 'next/navigation'
 import { ClipboardList } from 'lucide-react'
 import { WorklogFormShared } from '@/components/worklogs/WorklogFormShared'
@@ -10,6 +12,7 @@ import { WorklogFormShared } from '@/components/worklogs/WorklogFormShared'
  * chịu trách nhiệm điều hướng sau khi submit thành công.
  */
 export default function WorklogForm() {
+  const t = useTranslations()
   const router = useRouter()
 
   return (
@@ -18,8 +21,7 @@ export default function WorklogForm() {
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
         <ClipboardList size={20} style={{ color: 'var(--accent)' }} />
         <h1 style={{ margin: 0, fontSize: 18, fontWeight: 700 }}>
-          <span className="ja">作業ログ — 新規登録</span>
-          <span className="vi"> / Nhật ký — Tạo mới</span>
+          {t('Worklogs.nhatKyTaoMoi')}
         </h1>
       </div>
 

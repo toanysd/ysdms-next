@@ -11,7 +11,8 @@
 ## Milestones
 | # | Name | Scope | Dependencies | Status |
 |---|------|-------|-------------|--------|
-| 1 | MRP by Meters | Schema migration (060), Backend actions (mrp.ts, production.ts), Frontend components (MrpDashboardClient, CreatePlanForm, track page). Includes machine spec updates for feed length. | none | IN_PROGRESS |
+| 1 | MRP by Meters | Schema migration (060), Backend actions (mrp.ts, production.ts), Frontend components (MrpDashboardClient, CreatePlanForm, track page). Includes machine spec updates for feed length. | none | COMPLETED |
+| 2 | Phase 2.3 (Di trú Quốc tế hóa i18n) | Complete codebase i18n migration utilizing `next-intl` dynamically translating all views (Common, Navigation, Cases, Orders, Customers, Plastics, Login) for Japanese (JA) and Vietnamese (VI). | none | COMPLETED |
 
 ## Interface Contracts
 ### Database ↔ Backend

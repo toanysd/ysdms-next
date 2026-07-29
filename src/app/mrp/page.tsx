@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic'
+
 import { calculateMRP } from '@/app/actions/mrp'
 import MrpDashboardClient from './_components/MrpDashboardClient'
 

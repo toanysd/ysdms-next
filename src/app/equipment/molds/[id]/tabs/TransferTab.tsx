@@ -1,5 +1,6 @@
 import { Truck, Calendar, Building2, ArrowRight, Plus } from 'lucide-react'
 import { useEffect, useState, useCallback } from 'react'
+import { useLocale } from 'next-intl'
 import { createClient } from '@/lib/supabase/client'
 import type { MoldDetailData } from '../page'
 
@@ -21,6 +22,8 @@ type Company = {
 }
 
 export function TransferTab({ mold }: { mold: MoldDetailData }) {
+  const locale = useLocale()
+  const isVi = locale === 'vi'
   const supabase = createClient()
   const [shipLogs, setShipLogs] = useState<ShipLog[]>([])
   const [loading, setLoading] = useState(true)
@@ -142,7 +145,7 @@ export function TransferTab({ mold }: { mold: MoldDetailData }) {
                   fontWeight: 700, color: 'var(--text-secondary)', width: h.w,
                   fontFamily: 'var(--font-jp)', borderBottom: '1px solid var(--border-default)',
                 }}>
-                  {h.ja}{h.vi && <span style={{ fontSize: 8, color: 'var(--text-muted)', marginLeft: 2 }}>{h.vi}</span>}
+                  {isVi ? h.vi : h.ja}
                 </th>
               ))}
             </tr>
@@ -151,7 +154,7 @@ export function TransferTab({ mold }: { mold: MoldDetailData }) {
             {loading ? (
               <tr><td colSpan={6} style={{ padding: 20, textAlign: 'center', fontSize: 11, color: 'var(--text-muted)' }}>読み込み中...</td></tr>
             ) : shipLogs.length === 0 ? (
-              <tr><td colSpan={6} style={{ padding: 20, textAlign: 'center', fontSize: 11, color: 'var(--text-muted)' }}>記録なし / Không có dữ liệu</td></tr>
+              <tr><td colSpan={6} style={{ padding: 20, textAlign: 'center', fontSize: 11, color: 'var(--text-muted)' }}>{isVi ? 'Không có dữ liệu' : '記録なし'}</td></tr>
             ) : (
               shipLogs.map(log => (
                 <tr key={log.ship_id} style={{ borderBottom: '1px solid var(--border-subtle)' }}>

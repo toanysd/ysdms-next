@@ -5,19 +5,21 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Briefcase, ArrowLeft, Save, AlertCircle } from 'lucide-react'
 import Link from 'next/link'
+import { useTranslations } from 'next-intl'
 
 const CASE_TYPES = [
-  { value: 'new_tray',          labelJA: '新規トレイ',      labelVI: 'Khay mới' },
-  { value: 'repeat_order',      labelJA: '追加注文',        labelVI: 'Đặt lại' },
-  { value: 'mold_modification', labelJA: '金型改造',        labelVI: 'Sửa khuôn' },
-  { value: 'material_change',   labelJA: '材料変更',        labelVI: 'Đổi vật liệu' },
-  { value: 'complaint',         labelJA: 'クレーム',        labelVI: 'Khiếu nại' },
-  { value: 'inventory_audit',   labelJA: '棚卸依頼',       labelVI: 'Kiểm kê khuôn' },
-  { value: 'tray_review',       labelJA: '収納トレイ検討',  labelVI: 'Xem xét thiết kế tray' },
-  { value: 'other',             labelJA: 'その他',          labelVI: 'Khác' },
+  { value: 'new_tray' },
+  { value: 'repeat_order' },
+  { value: 'mold_modification' },
+  { value: 'material_change' },
+  { value: 'complaint' },
+  { value: 'inventory_audit' },
+  { value: 'tray_review' },
+  { value: 'other' },
 ]
 
 export default function NewCasePage() {
+  const t = useTranslations()
   const router = useRouter()
   const supabase = createClient()
 
@@ -49,7 +51,7 @@ export default function NewCasePage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!form.title.trim()) { setError('タイトルは必須です / Tiêu đề là bắt buộc'); return }
+    if (!form.title.trim()) { setError(t('Cases.titleRequiredError')); return }
     setSaving(true)
     setError(null)
 
@@ -85,13 +87,12 @@ export default function NewCasePage() {
           style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'var(--text-secondary)',
             textDecoration: 'none', fontSize: 13 }}>
           <ArrowLeft size={14} />
-          <span style={{ fontFamily: 'var(--font-jp)' }}>事案一覧</span>
+          <span>{t('Cases.caseList')}</span>
         </Link>
         <span style={{ color: 'var(--border-strong)' }}>/</span>
         <Briefcase size={18} style={{ color: 'var(--accent)' }} />
         <div style={{ display: 'flex', flexDirection: 'column' }}>
-          <span style={{ fontFamily: 'var(--font-jp)', fontSize: 15, fontWeight: 700 }}>新規事案登録</span>
-          <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>Tạo mới Sự việc</span>
+          <span style={{ fontSize: 15, fontWeight: 700 }}>{t('Cases.newCaseRegistration')}</span>
         </div>
       </div>
 
@@ -107,34 +108,31 @@ export default function NewCasePage() {
         <div className="form-section">
           <div className="form-section-header">
             <Briefcase size={14} className="section-icon" />
-            <span style={{ fontFamily: 'var(--font-jp)' }}>基本情報</span>
-            <span style={{ marginLeft: 6, opacity: 0.6 }}>Thông tin cơ bản</span>
+            <span>{t('Cases.basicInfo')}</span>
           </div>
           <div className="form-section-body">
             <div className="form-grid-1" style={{ gap: 12 }}>
 
               <div className="form-field">
                 <label className="form-label">
-                  <span className="label-ja">タイトル <span className="label-required">*</span></span>
-                  <span className="label-vi">Tiêu đề sự việc (bắt buộc)</span>
+                  <span>{t('Cases.titleRequired')}</span>
                 </label>
                 <input type="text" className="form-input"
-                  placeholder="例: JAE AB30トレイ 新規開発依頼"
+                  placeholder={t('Cases.placeholderTitle')}
                   value={form.title}
                   onChange={e => setForm(f => ({ ...f, title: e.target.value }))} />
               </div>
 
               <div className="form-field">
                 <label className="form-label">
-                  <span className="label-ja">事案種別</span>
-                  <span className="label-vi">Loại sự việc</span>
+                  <span>{t('Cases.caseType')}</span>
                 </label>
                 <select className="form-select"
                   value={form.case_type}
                   onChange={e => setForm(f => ({ ...f, case_type: e.target.value }))}>
-                  {CASE_TYPES.map(t => (
-                    <option key={t.value} value={t.value}>
-                      {t.labelJA} / {t.labelVI}
+                  {CASE_TYPES.map(tType => (
+                    <option key={tType.value} value={tType.value}>
+                      {t('Cases.Types.' + tType.value)}
                     </option>
                   ))}
                 </select>
@@ -142,13 +140,12 @@ export default function NewCasePage() {
 
               <div className="form-field">
                 <label className="form-label">
-                  <span className="label-ja">得意先 <span className="label-required">*</span></span>
-                  <span className="label-vi">Khách hàng</span>
+                  <span>{t('Cases.customerRequired')}</span>
                 </label>
                 <select className="form-select" required
                   value={form.customer_id}
                   onChange={e => setForm(f => ({ ...f, customer_id: e.target.value }))}>
-                  <option value="">-- 選択 / Chọn --</option>
+                  <option value="">{t('Cases.selectPlaceholder')}</option>
                   {companies.map(c => (
                     <option key={c.company_id} value={c.company_id}>{c.company_name}</option>
                   ))}
@@ -157,13 +154,12 @@ export default function NewCasePage() {
 
               <div className="form-field">
                 <label className="form-label">
-                  <span className="label-ja">営業担当 <span className="label-required">*</span></span>
-                  <span className="label-vi">Phụ trách KD</span>
+                  <span>{t('Cases.salesOwnerRequired')}</span>
                 </label>
                 <select className="form-select" required
                   value={form.sales_owner_id}
                   onChange={e => setForm(f => ({ ...f, sales_owner_id: e.target.value }))}>
-                  <option value="">-- 選択 / Chọn --</option>
+                  <option value="">{t('Cases.selectPlaceholder')}</option>
                   {employees.map(e => (
                     <option key={e.employee_id} value={e.employee_id}>{e.employee_name}</option>
                   ))}
@@ -172,8 +168,7 @@ export default function NewCasePage() {
 
               <div className="form-field">
                 <label className="form-label">
-                  <span className="label-ja">希望納期</span>
-                  <span className="label-vi">Hạn yêu cầu giao hàng</span>
+                  <span>{t('Cases.requestedDueDate')}</span>
                 </label>
                 <input type="date" className="form-input"
                   value={form.requested_due_date}
@@ -182,11 +177,10 @@ export default function NewCasePage() {
 
               <div className="form-field">
                 <label className="form-label">
-                  <span className="label-ja">指示メモ</span>
-                  <span className="label-vi">Ghi chú / chỉ thị ban đầu</span>
+                  <span>{t('Cases.instructionNotes')}</span>
                 </label>
                 <textarea className="form-textarea"
-                  placeholder="メールからの引用や担当者メモなど"
+                  placeholder={t('Cases.placeholderNotes')}
                   rows={4}
                   value={form.instruction_notes}
                   onChange={e => setForm(f => ({ ...f, instruction_notes: e.target.value }))} />
@@ -198,12 +192,12 @@ export default function NewCasePage() {
 
         <div className="form-actions">
           <Link href="/cases" className="btn btn-secondary">
-            <span style={{ fontFamily: 'var(--font-jp)' }}>キャンセル</span>
+            <span>{t('Cases.cancel')}</span>
           </Link>
           <button type="submit" className="btn btn-primary" disabled={saving}
             style={{ opacity: saving ? 0.7 : 1 }}>
             <Save size={14} />
-            <span style={{ fontFamily: 'var(--font-jp)' }}>{saving ? '保存中...' : '保存して開く'}</span>
+            <span>{saving ? t('Cases.saving') : t('Cases.saveAndOpen')}</span>
           </button>
         </div>
       </form>

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import { useLocale } from 'next-intl'
 import { upsertUnifiedTray, type UnifiedTrayPayload } from '../upsert-actions'
 
 type Section = 'TRAY' | 'DESIGN' | 'PRODUCTION'
@@ -22,6 +23,8 @@ const inputCls = 'w-full min-h-[40px] px-3 border border-slate-300 rounded-lg bg
 const labelCls = 'text-xs font-bold text-slate-500 mb-1 flex items-baseline gap-1'
 
 export default function UnifiedTrayDrawer({ isOpen, onClose, customers = [], plasticTypes = [] }: Props) {
+  const locale = useLocale()
+  const isVi = locale === 'vi'
   const [activeSection, setActiveSection] = useState<Section>('TRAY')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -87,9 +90,9 @@ export default function UnifiedTrayDrawer({ isOpen, onClose, customers = [], pla
         <div className="bg-gradient-to-r from-indigo-700 to-indigo-600 text-white p-4 flex items-center justify-between shadow-lg">
           <div>
             <div className="text-indigo-200 text-[10px] font-bold tracking-widest mb-0.5">
-              トレイ登録 / TẠO HỒ SƠ KHAY
+              {isVi ? 'TẠO HỒ SƠ KHAY' : 'トレイ登録'}
             </div>
-            <h2 className="text-lg font-bold">{form.tray_code || '新規 (Mới)'}</h2>
+            <h2 className="text-lg font-bold">{form.tray_code || (isVi ? 'Mới' : '新規')}</h2>
           </div>
           <button onClick={onClose} className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-white/20 transition-colors text-lg">✕</button>
         </div>
@@ -102,8 +105,7 @@ export default function UnifiedTrayDrawer({ isOpen, onClose, customers = [], pla
                 activeSection === s.id ? 'border-indigo-600 bg-white text-indigo-700' : 'border-transparent text-slate-500 hover:bg-slate-100'
               }`}>
               <span className="text-base">{s.icon}</span>
-              <span className="text-[10px] font-bold">{s.jp}</span>
-              <span className="text-[9px] opacity-60">{s.vi}</span>
+              <span className="text-[11px] font-bold">{isVi ? s.vi : s.jp}</span>
             </button>
           ))}
         </div>
@@ -115,24 +117,28 @@ export default function UnifiedTrayDrawer({ isOpen, onClose, customers = [], pla
               <SectionHeader jp="トレイ情報" vi="Thông tin Khay & Khách hàng" />
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="flex flex-col">
-                  <label className={labelCls}><span>品番 *</span><span className="text-[10px] opacity-60">Mã Khay (VD: IRI-003)</span></label>
+                  <label className={labelCls}><span>{isVi ? 'Mã Khay *' : '品番 *'}</span></label>
                   <input type="text" value={form.tray_code} onChange={e => setForm({...form, tray_code: e.target.value})} className={inputCls} disabled={isSubmitting} />
                 </div>
                 <div className="flex flex-col">
-                  <label className={labelCls}><span>製品名 *</span><span className="text-[10px] opacity-60">Tên sản phẩm</span></label>
+                  <label className={labelCls}><span>{isVi ? 'Tên sản phẩm *' : '製品名 *'}</span></label>
                   <input type="text" value={form.tray_name} onChange={e => setForm({...form, tray_name: e.target.value})} className={inputCls} disabled={isSubmitting} />
                 </div>
               </div>
               <div className="flex flex-col">
-                <label className={labelCls}><span>顧客</span><span className="text-[10px] opacity-60">Khách hàng</span></label>
+                <label className={labelCls}><span>{isVi ? 'Khách hàng' : '顧客'}</span></label>
                 <select value={form.customer_id || ''} onChange={e => setForm({...form, customer_id: e.target.value})} className={inputCls} disabled={isSubmitting}>
-                  <option value="">-- 選択 (Chọn) --</option>
+                  <option value="">{isVi ? '-- Chọn --' : '-- 選択 --'}</option>
                   {customers.map(c => <option key={c.company_id} value={c.company_id}>{c.company_name} ({c.company_code})</option>)}
                 </select>
               </div>
               <div className="bg-amber-50 p-3 rounded-lg border border-amber-200 text-sm text-amber-800">
                 <p className="font-bold mb-1">💡 Product-Centric Workflow:</p>
-                <p className="text-xs">Thông tin Khay sẽ được nhập đầu tiên. Sau khi xác nhận thiết kế với khách, bạn có thể chuyển sang Tab "Hồ sơ Thiết kế" để tạo yêu cầu sinh mã Khuôn tự động.</p>
+                <p className="text-xs">
+                  {isVi 
+                    ? 'Thông tin Khay sẽ được nhập đầu tiên. Sau khi xác nhận thiết kế với khách, bạn có thể chuyển sang Tab "Hồ sơ Thiết kế" để tạo yêu cầu sinh mã Khuôn tự động.'
+                    : 'トレイ情報が最初に入力されます。顧客との設計確認後、「設計データ」タブで金型コードの自動生成要求ができます。'}
+                </p>
               </div>
             </div>
           )}
@@ -142,24 +148,24 @@ export default function UnifiedTrayDrawer({ isOpen, onClose, customers = [], pla
               <SectionHeader jp="設計データ" vi="Hồ sơ Kỹ thuật & Khuôn" />
               
               <div className="bg-white p-4 rounded-lg border border-slate-200 space-y-3">
-                <div className="text-xs font-bold text-slate-600 border-b border-slate-100 pb-2">金型自動生成 / Tự động sinh Khuôn</div>
+                <div className="text-xs font-bold text-slate-600 border-b border-slate-100 pb-2">{isVi ? 'Tự động sinh Khuôn' : '金型自動生成'}</div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="flex flex-col">
-                    <label className={labelCls}><span>金型コード</span><span className="text-[10px] opacity-60">Mã Khuôn (Bỏ trống nếu chưa chốt)</span></label>
+                    <label className={labelCls}><span>{isVi ? 'Mã Khuôn' : '金型コード'}</span></label>
                     <input type="text" placeholder="VD: K-18052S-01" value={form.mold_code || ''} onChange={e => setForm({...form, mold_code: e.target.value})} className={inputCls} disabled={isSubmitting} />
                   </div>
                   <div className="flex flex-col">
-                    <label className={labelCls}><span>キャビティ</span><span className="text-[10px] opacity-60">Số Cavity</span></label>
+                    <label className={labelCls}><span>{isVi ? 'Số Cavity' : 'キャビティ'}</span></label>
                     <input type="number" min="1" value={form.cavity || ''} onChange={e => setForm({...form, cavity: Number(e.target.value)})} className={inputCls} disabled={isSubmitting} />
                   </div>
                 </div>
               </div>
 
               <div className="bg-white p-4 rounded-lg border border-slate-200 space-y-3">
-                <div className="text-xs font-bold text-slate-600 border-b border-slate-100 pb-2">プラ材料 / Vật liệu nhựa</div>
+                <div className="text-xs font-bold text-slate-600 border-b border-slate-100 pb-2">{isVi ? 'Vật liệu nhựa' : 'プラ材料'}</div>
                 <div className="flex flex-col">
                   <select value={form.plastic_id || ''} onChange={e => setForm({...form, plastic_id: e.target.value})} className={inputCls} disabled={isSubmitting}>
-                    <option value="">-- 選択 (Chọn loại nhựa) --</option>
+                    <option value="">{isVi ? '-- Chọn loại nhựa --' : '-- プラスチック選択 --'}</option>
                     {plasticTypes.map(p => <option key={p.material_id} value={p.material_id}>{p.material_code} ({p.material_type} - T{p.thickness_mm}xW{p.width_mm})</option>)}
                   </select>
                 </div>
@@ -171,9 +177,9 @@ export default function UnifiedTrayDrawer({ isOpen, onClose, customers = [], pla
           {activeSection === 'PRODUCTION' && (
             <div className="space-y-4">
               <SectionHeader jp="生産指示" vi="Lệnh Sản xuất" />
-              <div className="bg-white p-4 rounded-lg border border-slate-200 shadow-sm flex flex-col items-center justify-center h-32 text-slate-500">
-                <p className="text-sm font-medium">Chức năng Sinh Lệnh SX (PO) đang được phát triển.</p>
-                <p className="text-xs mt-1">Sẽ có ở Phase tiếp theo của quy trình "Product-Centric".</p>
+              <div className="bg-white p-4 rounded-lg border border-slate-200 shadow-sm flex flex-col items-center justify-center h-32 text-slate-500 text-center">
+                <p className="text-sm font-medium">{isVi ? 'Chức năng Sinh Lệnh SX (PO) đang được phát triển.' : '生産指示（PO）生成機能は開発中です。'}</p>
+                <p className="text-xs mt-1">{isVi ? 'Sẽ có ở Phase tiếp theo của quy trình "Product-Centric".' : '次フェーズの「Product-Centric」で実装予定です。'}</p>
               </div>
             </div>
           )}
@@ -182,14 +188,14 @@ export default function UnifiedTrayDrawer({ isOpen, onClose, customers = [], pla
         {/* Footer */}
         <div className="p-4 bg-white border-t border-slate-200 shrink-0 space-y-2">
           {error && <div className="p-2 bg-red-50 border border-red-200 rounded-lg text-red-700 text-xs font-medium">⚠️ {error}</div>}
-          {success && <div className="p-2 bg-emerald-50 border border-emerald-200 rounded-lg text-emerald-700 text-xs font-bold text-center">✅ 保存完了 / Lưu thành công!</div>}
+          {success && <div className="p-2 bg-emerald-50 border border-emerald-200 rounded-lg text-emerald-700 text-xs font-bold text-center">{isVi ? '✅ Lưu thành công!' : '✅ 保存完了'}</div>}
           
           <div className="flex gap-3">
             <button onClick={onClose} disabled={isSubmitting} className="flex-1 min-h-[44px] bg-white text-slate-600 border border-slate-300 hover:bg-slate-50 rounded-lg font-bold text-sm transition-colors">
-              キャンセル (Hủy)
+              {isVi ? 'Hủy' : 'キャンセル'}
             </button>
             <button onClick={handleSubmit} disabled={isSubmitting || success} className="flex-1 min-h-[44px] bg-gradient-to-r from-indigo-600 to-indigo-500 text-white hover:from-indigo-700 hover:to-indigo-600 rounded-lg font-bold text-sm transition-all shadow-sm flex items-center justify-center">
-               {isSubmitting ? '処理中...' : success ? '✅ 完了' : '保存 (Lưu) →'}
+               {isSubmitting ? (isVi ? 'Đang xử lý...' : '処理中...') : success ? (isVi ? '✅ Hoàn thành' : '✅ 完了') : (isVi ? 'Lưu →' : '保存 →')}
             </button>
           </div>
         </div>
@@ -199,11 +205,12 @@ export default function UnifiedTrayDrawer({ isOpen, onClose, customers = [], pla
 }
 
 function SectionHeader({ jp, vi }: { jp: string; vi: string }) {
+  const locale = useLocale()
+  const isVi = locale === 'vi'
   return (
     <div className="flex items-center gap-2 mb-1">
       <span className="w-1 h-5 bg-indigo-500 rounded-full" />
-      <span className="font-bold text-sm text-slate-700">{jp}</span>
-      <span className="text-xs text-slate-400">/ {vi}</span>
+      <span className="font-bold text-sm text-slate-700">{isVi ? vi : jp}</span>
     </div>
   )
 }

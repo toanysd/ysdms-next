@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic'
+
 import React from 'react'
 import { createClient } from '@/lib/supabase/server'
 import ProductsClientPage from './_components/ProductsClientPage'
@@ -20,7 +22,7 @@ export default async function ProductsPage() {
     supabase.from('materials').select('material_id, material_code, material_type, thickness_mm, width_mm').order('material_code'),
     supabase.from('products').select(`
       product_id, product_code, product_name, product_name_internal, updated_at,
-      companies (company_code)
+      companies:companies!products_company_id_fkey (company_code)
     `).order('updated_at', { ascending: false }).limit(100)
   ])
 

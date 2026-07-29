@@ -1,5 +1,7 @@
 'use client'
 
+import { useTranslations } from 'next-intl'
+
 import { useEffect, useState, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Plus, Trash2, Loader2, Package, Check } from 'lucide-react'
@@ -10,6 +12,8 @@ type Props = {
 }
 
 export function LotsTab({ shipment, onRefresh }: Props) {
+  const t = useTranslations()
+
   const supabase = createClient()
   const [shipmentLots, setShipmentLots] = useState<any[]>([])
   const [availableLots, setAvailableLots] = useState<any[]>([])
@@ -76,7 +80,7 @@ export function LotsTab({ shipment, onRefresh }: Props) {
 
     setSaving(false)
     if (error) {
-      alert('追加エラー / Lỗi thêm lô: ' + error.message)
+      alert(t('Common.addError') + error.message)
     } else {
       setSelectedLotId('')
       setQtyShipped('')
@@ -87,9 +91,9 @@ export function LotsTab({ shipment, onRefresh }: Props) {
   }
 
   const handleRemove = async (id: string) => {
-    if (!confirm('削除しますか？ / Bạn có chắc muốn xóa?')) return
+    if (!confirm(t('Common.deleteConfirm'))) return
     const { error } = await supabase.from('shipment_lots').delete().eq('shipment_lot_id', id)
-    if (error) alert('削除エラー: ' + error.message)
+    if (error) alert(t('Common.deleteError') + error.message)
     else fetchLots()
   }
 
@@ -100,38 +104,37 @@ export function LotsTab({ shipment, onRefresh }: Props) {
       <div className="card-flat" style={{ padding: 16, background: 'var(--bg-surface-2)' }}>
         <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
           <Package size={14} />
-          <span className="ja">ロット割当</span>
-          <span className="vi" style={{ fontSize: 10 }}>Chỉ định lô</span>
+          {t('Orders.chiInhLo')}
         </div>
         
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, alignItems: 'flex-end' }}>
           <div style={{ flex: '1 1 200px' }}>
-            <label className="form-label" style={{ marginBottom: 4 }}><span className="ja">製造ロット</span><span className="vi">Lô sản xuất</span></label>
+            <label className="form-label" style={{ marginBottom: 4 }}>{t('Orders.loSanXuat')}</label>
             <select className="form-select" value={selectedLotId} onChange={e => setSelectedLotId(e.target.value)}>
-              <option value="">-- 選択 / Chọn --</option>
+              <option value="">-- {t('Common.selectPlaceholder')} --</option>
               {availableLots.map(l => (
                 <option key={l.lot_id} value={l.lot_id}>
-                  {l.lot_no || 'No. 未定'} (OK: {l.good_qty || 0})
+                  {l.lot_no || '—'} (OK: {l.good_qty || 0})
                 </option>
               ))}
             </select>
           </div>
           <div style={{ width: 100 }}>
-            <label className="form-label" style={{ marginBottom: 4 }}><span className="ja">出荷数</span><span className="vi">SL giao</span></label>
+            <label className="form-label" style={{ marginBottom: 4 }}>{t('Orders.slGiao')}</label>
             <input type="number" className="form-input text-right" value={qtyShipped} onChange={e => setQtyShipped(Number(e.target.value))} />
           </div>
           <div style={{ width: 100 }}>
-            <label className="form-label" style={{ marginBottom: 4 }}><span className="ja">箱数</span><span className="vi">Số thùng</span></label>
+            <label className="form-label" style={{ marginBottom: 4 }}>{t('Orders.soThung')}</label>
             <input type="number" className="form-input text-right" value={cartonCount} onChange={e => setCartonCount(Number(e.target.value))} />
           </div>
           <div style={{ width: 120 }}>
-            <label className="form-label" style={{ marginBottom: 4 }}><span className="ja">パレットNo</span><span className="vi">Số Pallet</span></label>
+            <label className="form-label" style={{ marginBottom: 4 }}>{t('Orders.soPallet')}</label>
             <input type="text" className="form-input" value={palletNo} onChange={e => setPalletNo(e.target.value)} />
           </div>
           <div>
             <button className="btn btn-primary" onClick={handleAdd} disabled={saving || !selectedLotId || qtyShipped === ''}>
               {saving ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}
-              追加 / Thêm
+              {t('Common.add')}
             </button>
           </div>
         </div>
@@ -145,18 +148,18 @@ export function LotsTab({ shipment, onRefresh }: Props) {
           <table className="data-table">
             <thead>
               <tr>
-                <th><span className="ja">ロット番号</span><span className="vi">Số lô</span></th>
-                <th style={{ textAlign: 'right' }}><span className="ja">出荷数</span><span className="vi">Số lượng giao</span></th>
-                <th style={{ textAlign: 'right' }}><span className="ja">箱数</span><span className="vi">Số thùng</span></th>
-                <th><span className="ja">パレットNo</span><span className="vi">Số Pallet</span></th>
-                <th style={{ textAlign: 'right' }}>操作</th>
+                <th>{t('Orders.soLo')}</th>
+                <th style={{ textAlign: 'right' }}>{t('Orders.soLuongGiao')}</th>
+                <th style={{ textAlign: 'right' }}>{t('Orders.soThung')}</th>
+                <th>{t('Orders.soPallet')}</th>
+                <th style={{ textAlign: 'right' }}>{t('Common.actions')}</th>
               </tr>
             </thead>
             <tbody>
               {shipmentLots.length === 0 ? (
                 <tr>
                   <td colSpan={5} style={{ textAlign: 'center', padding: '32px 0', color: 'var(--text-muted)' }}>
-                    割当済みのロットはありません / Chưa có lô nào được gán
+                    {t('Shipments.noLotsAssigned')}
                   </td>
                 </tr>
               ) : (
@@ -178,7 +181,7 @@ export function LotsTab({ shipment, onRefresh }: Props) {
                       <button
                         onClick={() => handleRemove(row.shipment_lot_id)}
                         style={{ background: 'none', border: 'none', color: 'var(--status-error)', cursor: 'pointer', padding: 4 }}
-                        title="削除 / Xóa"
+                        title={t('Common.delete')}
                       >
                         <Trash2 size={14} />
                       </button>

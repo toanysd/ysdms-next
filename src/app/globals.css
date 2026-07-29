@@ -139,10 +139,17 @@
    Base Styles
    ══════════════════════════════════════════════════════════════════════ */
 
+html[lang="ja"] {
+  font-family: var(--font-jp);
+}
+html[lang="vi"] {
+  font-family: var(--font-vi);
+}
+
 body {
   background-color: var(--bg-page);
   color: var(--text-primary);
-  font-family: var(--font-vi);
+  font-family: inherit;
   font-size: 14px;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
@@ -152,18 +159,19 @@ body {
 
 /* ── YSDMS Dual Language Labels ────────────────────────────────────── */
 .ja {
-  font-family: var(--font-jp);
-  font-size: 12px;         /* 固定: 0.875em→12px (SAP label standard) */
+  font-family: inherit;
+  font-size: 12px;         /* Dynamic 12px active label */
   font-weight: 600;
   display: block;
   color: var(--text-primary);
   letter-spacing: 0.02em;
 }
 .vi {
-  font-size: 10px;         /* 固定: 補助テキスト、小さめでOK */
-  font-weight: 400;
-  color: var(--text-muted);
+  font-family: inherit;
+  font-size: 12px;         /* Dynamic 12px active label */
+  font-weight: 600;
   display: block;
+  color: var(--text-primary);
   margin-top: 1px;
 }
 
@@ -454,22 +462,25 @@ input::placeholder, textarea::placeholder {
 }
 
 .form-label {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
 }
 .form-label .label-ja {
-  font-family: var(--font-jp);
+  font-family: inherit;
   font-size: 12px;         /* primary label: JA main language */
-  font-weight: 700;
+  font-weight: 600;
   color: var(--text-primary);
   letter-spacing: 0.01em;
 }
 .form-label .label-vi {
-  font-size: 10px;         /* secondary label: VI補助、小さめでOK */
-  font-weight: 400;
-  color: var(--text-muted);
-  font-family: var(--font-vi);
+  font-size: 12px;         /* Now 12px dynamic label */
+  font-weight: 600;
+  color: var(--text-primary);
+  font-family: inherit;
 }
 .form-label .label-required {
   color: var(--status-error);
@@ -484,7 +495,7 @@ input::placeholder, textarea::placeholder {
   border-radius: var(--radius-sm);
   color: var(--text-primary);
   font-size: 14px;
-  font-family: var(--font-vi);
+  font-family: inherit;
   transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
   width: 100%;
 }

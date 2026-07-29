@@ -1,5 +1,7 @@
 'use client'
 
+import { useTranslations } from 'next-intl'
+
 import React, { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useForm } from 'react-hook-form'
@@ -18,6 +20,7 @@ interface Props {
 }
 
 export function MoldRevisionForm({ initialData, moldBaseId, moldBaseCode, suggestedLabel }: Props) {
+  const t = useTranslations()
   const router = useRouter()
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -86,11 +89,10 @@ export function MoldRevisionForm({ initialData, moldBaseId, moldBaseCode, sugges
   }
 
   // Helper Input Component
-  const Input = ({ label, ja, name, type = 'text', required = false, placeholder = '' }: any) => (
+  const Input = ({ label, name, type = 'text', required = false, placeholder = '' }: any) => (
     <div className="flex flex-col gap-1">
       <label className="text-[12px] font-bold">
-        <span className="ja">{ja} {required && <span className="text-[var(--mcs-error)]">*</span>}</span>
-        <span className="vi text-[10px] text-[var(--mcs-text-muted)] block mt-[-2px]">{label} {required && '*'}</span>
+        {label} {required && <span className="text-[var(--mcs-error)]">*</span>}
       </label>
       <input
         type={type}
@@ -99,7 +101,13 @@ export function MoldRevisionForm({ initialData, moldBaseId, moldBaseCode, sugges
         placeholder={placeholder}
       />
       {errors[name as keyof MoldRevisionFormValues] && (
-        <p className="text-[10px] text-[var(--mcs-error)] mt-1">{(errors[name as keyof MoldRevisionFormValues] as any)?.message}</p>
+        <p className="text-[10px] text-[var(--mcs-error)] mt-1">
+          {(() => {
+            const msg = (errors[name as keyof MoldRevisionFormValues] as any)?.message;
+            if (!msg) return null;
+            return msg.startsWith('req') || msg.startsWith('invalid') ? t(`Common.validation.${msg}`) : msg;
+          })()}
+        </p>
       )}
     </div>
   )
@@ -114,10 +122,7 @@ export function MoldRevisionForm({ initialData, moldBaseId, moldBaseCode, sugges
             <ArrowLeft size={18} />
           </button>
           <h2 className="text-[14px] font-bold text-[var(--mcs-text)] flex flex-col">
-            <span className="ja">{isEdit ? '設計版編集' : '新規設計版追加'}</span>
-            <span className="vi font-normal text-[var(--mcs-text-muted)] mt-[-2px]">
-              {isEdit ? 'Chỉnh sửa Phiên bản thiết kế' : 'Thêm Phiên bản thiết kế mới'}
-            </span>
+            <span>{isEdit ? t('Master.editDesignRevision') : t('Master.addDesignRevision')}</span>
           </h2>
         </div>
         <div className="flex items-center gap-2">
@@ -127,8 +132,7 @@ export function MoldRevisionForm({ initialData, moldBaseId, moldBaseCode, sugges
             className="btn-primary h-[32px] px-6 flex items-center gap-2 text-xs font-bold disabled:opacity-50"
           >
             {isSubmitting ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
-            <span className="ja">保存</span>
-            <span className="vi text-[10px] font-normal block mt-[2px]">Lưu</span>
+            <span>{t('Master.save')}</span>
           </button>
         </div>
       </div>
@@ -142,38 +146,36 @@ export function MoldRevisionForm({ initialData, moldBaseId, moldBaseCode, sugges
           <div className="flex flex-col gap-4">
             <div className="bg-white p-4 rounded-lg border border-[var(--mcs-border)] shadow-sm">
               <h3 className="text-[13px] font-bold text-[var(--mcs-primary)] mb-4 flex items-center gap-2 border-b border-[var(--mcs-border)] pb-2">
-                <FileText size={16} /> Thông tin Định danh
+                <FileText size={16} /> {t('Master.identityInfo')}
               </h3>
               
               <div className="space-y-4">
                 <div className="flex flex-col gap-1 w-full pb-2 border-b border-[var(--mcs-border)]">
                   <label className="text-[12px] font-bold text-amber-600 flex flex-col">
-                    <span className="ja">連携するトレイ (Tray)</span>
-                    <span className="vi font-normal text-[var(--mcs-text-muted)] mt-[-2px]">Liên kết với Khay (Tùy chọn)</span>
+                    {t('Master.tray')}
                   </label>
                   <ProductSearchInput 
                     defaultValue={watch('product_id') || ''} 
                     onSelect={(product) => setValue('product_id', product ? product.id : '', { shouldValidate: true })}
                   />
                   <p className="text-[10px] text-[var(--mcs-text-muted)] mt-1 italic">
-                    Chọn Khay để hệ thống tự động gắn Khuôn này vào Khay đó.
+                    {t('Master.trayExplanation')}
                   </p>
                 </div>
                 
-                <Input name="revision_code" ja="設計版コード" label="Mã Phiên bản (Gốc-Nhãn)" required />
+                <Input name="revision_code" label={t('Master.revisionCode')} required />
                 <div className="grid grid-cols-2 gap-3">
-                  <Input name="version_label" ja="版ラベル" label="Nhãn (VD: R1)" required />
-                  <Input name="approved_date" type="date" ja="承認日" label="Ngày phê duyệt" />
+                  <Input name="version_label" label={t('Master.versionLabel')} required />
+                  <Input name="approved_date" type="date" label={t('Master.approvedDate')} />
                 </div>
                 <div className="flex flex-col gap-1">
                   <label className="text-[12px] font-bold">
-                    <span className="ja">改版履歴 / 備考</span>
-                    <span className="vi text-[10px] text-[var(--mcs-text-muted)] block mt-[-2px]">Ghi chú / Lịch sử thay đổi</span>
+                    {t('Master.notes')}
                   </label>
                   <textarea
                     {...register('version_note')}
                     className="w-full h-[60px] text-sm p-2 border border-[var(--mcs-border)] rounded focus:border-[var(--mcs-primary)] outline-none resize-none"
-                    placeholder="Ghi chú về phiên bản..."
+                    placeholder={t('Master.notesPlaceholder')}
                   />
                 </div>
               </div>
@@ -182,13 +184,13 @@ export function MoldRevisionForm({ initialData, moldBaseId, moldBaseCode, sugges
             {/* Thông tin Tham chiếu Khách hàng */}
             <div className="bg-white p-4 rounded-lg border border-[var(--mcs-border)] shadow-sm">
               <h3 className="text-[13px] font-bold text-amber-600 mb-4 flex items-center gap-2 border-b border-[var(--mcs-border)] pb-2">
-                <Package size={16} /> Tham chiếu Khách hàng
+                <Package size={16} /> {t('Master.customerReference')}
               </h3>
               
               <div className="space-y-4">
-                <Input name="customer_drawing_no" ja="客先図面NO" label="Số bản vẽ khách hàng" />
-                <Input name="customer_equipment_no" ja="客先設備NO" label="Số thiết bị KH (nếu có)" />
-                <Input name="customer_tray_name" ja="客先トレイ名" label="Tên khay (theo KH gọi)" />
+                <Input name="customer_drawing_no" label={t('Master.customerDrawingNo')} />
+                <Input name="customer_equipment_no" label={t('Master.customerEquipmentNo')} />
+                <Input name="customer_tray_name" label={t('Master.customerTrayName')} />
               </div>
             </div>
           </div>
@@ -197,23 +199,23 @@ export function MoldRevisionForm({ initialData, moldBaseId, moldBaseCode, sugges
           <div className="flex flex-col gap-4">
             <div className="bg-white p-4 rounded-lg border border-[var(--mcs-border)] shadow-sm h-full">
               <h3 className="text-[13px] font-bold text-[var(--mcs-success)] mb-4 flex items-center gap-2 border-b border-[var(--mcs-border)] pb-2">
-                <Wrench size={16} /> Kích thước 3D & Thông số
+                <Wrench size={16} /> {t('Master.dimensionsAndSpecs')}
               </h3>
               
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-3">
-                  <Input name="design_length" type="number" ja="設計長さ (L)" label="Chiều dài thiết kế (mm)" />
-                  <Input name="design_width" type="number" ja="設計幅 (W)" label="Chiều rộng thiết kế (mm)" />
-                  <Input name="design_height" type="number" ja="設計高さ (H)" label="Chiều cao thiết kế (mm)" />
-                  <Input name="design_depth" type="number" ja="設計深さ (D)" label="Độ sâu thiết kế (mm)" />
-                  <Input name="design_weight" type="number" ja="設計重量" label="Trọng lượng (g)" />
+                  <Input name="design_length" type="number" label={t('Master.designLength')} />
+                  <Input name="design_width" type="number" label={t('Master.designWidth')} />
+                  <Input name="design_height" type="number" label={t('Master.designHeight')} />
+                  <Input name="design_depth" type="number" label={t('Master.designDepth')} />
+                  <Input name="design_weight" type="number" label={t('Master.designWeight')} />
                 </div>
                 
                 <hr className="border-[var(--mcs-border)] my-2" />
                 
                 <div className="grid grid-cols-2 gap-3">
-                  <Input name="cutline_x" type="number" ja="カット寸法 X" label="Cutline X (mm)" />
-                  <Input name="cutline_y" type="number" ja="カット寸法 Y" label="Cutline Y (mm)" />
+                  <Input name="cutline_x" type="number" label={t('Master.cutlineX')} />
+                  <Input name="cutline_y" type="number" label={t('Master.cutlineY')} />
                 </div>
               </div>
             </div>
@@ -223,20 +225,20 @@ export function MoldRevisionForm({ initialData, moldBaseId, moldBaseCode, sugges
           <div className="flex flex-col gap-4">
             <div className="bg-white p-4 rounded-lg border border-[var(--mcs-border)] shadow-sm h-full">
               <h3 className="text-[13px] font-bold text-blue-600 mb-4 flex items-center gap-2 border-b border-[var(--mcs-border)] pb-2">
-                <Layers size={16} /> Kỹ thuật & Hoàn thiện
+                <Layers size={16} /> {t('Master.engineeringAndFinish')}
               </h3>
               
               <div className="space-y-4">
-                <Input name="design_for_plastic_type" ja="対象材質" label="Chất liệu nhựa dự kiến (PS/PET...)" />
-                <Input name="cavid" ja="キャビID" label="Cavid / Cavity Layout" />
+                <Input name="design_for_plastic_type" label={t('Master.designForPlasticType')} />
+                <Input name="cavid" label={t('Master.cavid')} />
                 
                 <div className="grid grid-cols-2 gap-3">
-                  <Input name="corner_r" ja="角 R" label="Góc R (Corner Radius)" />
-                  <Input name="chamfer_c" ja="面取り C" label="Vát C (Chamfer)" />
+                  <Input name="corner_r" label={t('Master.cornerR')} />
+                  <Input name="chamfer_c" label={t('Master.chamferC')} />
                 </div>
                 
-                <Input name="draft_angle" ja="抜き勾配" label="Góc vát khuôn (Draft Angle)" />
-                <Input name="data_input" ja="データ入力元" label="Nguồn dữ liệu / Phần mềm" />
+                <Input name="draft_angle" label={t('Master.draftAngle')} />
+                <Input name="data_input" label={t('Master.dataInput')} />
               </div>
             </div>
           </div>

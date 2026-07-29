@@ -5,7 +5,7 @@ export const orderItemSchema = z.object({
   line_no: z.number().int().min(1),
   product_id: z.string().nullable().optional(),
   product_pn_raw: z.string().nullable().optional(),
-  quantity: z.number().min(0, 'Số lượng không hợp lệ'),
+  quantity: z.number().min(0, 'invalidQty'),
   unit_price: z.number().nullable().optional(),
   currency: z.string().nullable().optional(),
   delivery_date: z.string().nullable().optional(),
@@ -22,7 +22,7 @@ export const orderItemSchema = z.object({
 export const orderSchema = z.object({
   id: z.string().optional(),
   slip_no: z.string().nullable().optional(),
-  order_date: z.string().min(1, 'Ngày đặt hàng là bắt buộc'),
+  order_date: z.string().min(1, 'reqOrderDate'),
   customer_id: z.string().nullable().optional(),
   order_type: z.string(),
   status: z.string(),

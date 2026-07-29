@@ -17,34 +17,42 @@ export const metadata: Metadata = {
   description: 'Enterprise Manufacturing & Warehouse Management System — Yoshida Package',
 }
 
-export default function RootLayout({
+import { NextIntlClientProvider } from 'next-intl';
+import { getLocale, getMessages } from 'next-intl/server';
+
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  return (
-    <html lang="ja" suppressHydrationWarning>
-      <body className={`${inter.className} ${notoSansJP.className} antialiased`}>
-        <ThemeProvider>
-          <AuthProvider>
-            <div className="flex h-screen overflow-hidden">
-              <Sidebar />
+  const locale = await getLocale();
+  const messages = await getMessages();
 
-              {/* Main Content Area */}
-              <main className="flex-1 flex flex-col overflow-hidden relative">
-                <Suspense fallback={<div className="h-[48px] shrink-0" style={{ background: 'var(--bg-topbar)', borderBottom: '1px solid var(--border-default)' }}></div>}>
-                  <Topbar />
-                </Suspense>
-                
-                <div className="flex-1 overflow-auto p-4 pb-20 md:pb-4 custom-scrollbar" style={{ background: 'var(--bg-page)' }}>
-                  {children}
-                </div>
-                
-                <MobileNavbar />
-              </main>
-            </div>
-          </AuthProvider>
-        </ThemeProvider>
+  return (
+    <html lang={locale} suppressHydrationWarning>
+      <body className={`${inter.className} ${notoSansJP.className} antialiased`}>
+        <NextIntlClientProvider messages={messages} locale={locale}>
+          <ThemeProvider>
+            <AuthProvider>
+              <div className="flex h-screen overflow-hidden">
+                <Sidebar />
+
+                {/* Main Content Area */}
+                <main className="flex-1 flex flex-col overflow-hidden relative">
+                  <Suspense fallback={<div className="h-[48px] shrink-0" style={{ background: 'var(--bg-topbar)', borderBottom: '1px solid var(--border-default)' }}></div>}>
+                    <Topbar />
+                  </Suspense>
+                  
+                  <div className="flex-1 overflow-auto p-4 pb-20 md:pb-4 custom-scrollbar" style={{ background: 'var(--bg-page)' }}>
+                    {children}
+                  </div>
+                  
+                  <MobileNavbar />
+                </main>
+              </div>
+            </AuthProvider>
+          </ThemeProvider>
+        </NextIntlClientProvider>
       </body>
     </html>
   )

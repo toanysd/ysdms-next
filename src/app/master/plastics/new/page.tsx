@@ -1,8 +1,12 @@
+export const dynamic = 'force-dynamic'
+
+import { useTranslations } from 'next-intl'
 import Link from 'next/link'
 import { ArrowLeft, Save } from 'lucide-react'
 import { addPlasticAction } from '@/app/actions/plastic'
 
 export default function NewPlasticPage() {
+  const t = useTranslations()
   return (
     <div style={{
       display: 'flex',
@@ -53,16 +57,14 @@ export default function NewPlasticPage() {
               <div className="form-grid-4">
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                   <label className="form-label">
-                    <span className="ja">材料コード <span style={{ color: 'var(--status-error)' }}>*</span></span>
-                    <span className="vi">Mã Nhựa (vd: PET-FR-02)</span>
+                    {t('Master.maNhuaVdPetfr02')}
                   </label>
                   <input type="text" name="code" required className="form-input" placeholder="VD: PET-FR-02" />
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                   <label className="form-label">
-                    <span className="ja">分類 <span style={{ color: 'var(--status-error)' }}>*</span></span>
-                    <span className="vi">Family (PS, PET, PP)</span>
+                    {t('Master.familyPsPetPp')}
                   </label>
                   <select name="family" required className="form-input">
                     <option value="">Chọn Family</option>
@@ -76,40 +78,35 @@ export default function NewPlasticPage() {
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                   <label className="form-label">
-                    <span className="ja">厚み (mm) <span style={{ color: 'var(--status-error)' }}>*</span></span>
-                    <span className="vi">Độ dày (VD: 0.5)</span>
+                    {t('Master.oDayVd05')}
                   </label>
                   <input type="number" step="0.01" min="0" name="thickness_mm" required className="form-input" placeholder="0.00" />
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                   <label className="form-label">
-                    <span className="ja">幅 (mm) <span style={{ color: 'var(--status-error)' }}>*</span></span>
-                    <span className="vi">Khổ ngang (VD: 680)</span>
+                    {t('Master.khoNgangVd680')}
                   </label>
                   <input type="number" step="1" min="0" name="width_mm" required className="form-input" placeholder="0" />
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                   <label className="form-label">
-                    <span className="ja">色 (Color)</span>
-                    <span className="vi">Màu sắc (VD: T, BK)</span>
+                    {t('Master.mauSacVdTBk')}
                   </label>
                   <input type="text" name="color" className="form-input" placeholder="VD: T (Trong suốt)" />
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                   <label className="form-label">
-                    <span className="ja">グレード (Grade)</span>
-                    <span className="vi">Đặc tính (Chống tĩnh điện)</span>
+                    {t('Master.acTinhChongTinhIen')}
                   </label>
                   <input type="text" name="grade" className="form-input" placeholder="VD: AS" />
                 </div>
                 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                   <label className="form-label">
-                    <span className="ja">発注点 (kg)</span>
-                    <span className="vi">Tồn kho tối thiểu</span>
+                    {t('Master.tonKhoToiThieu')}
                   </label>
                   <input type="number" step="0.1" min="0" name="reorder_point_kg" className="form-input" placeholder="VD: 50.0" defaultValue="0" />
                 </div>
@@ -119,11 +116,11 @@ export default function NewPlasticPage() {
 
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, marginTop: 12 }}>
             <Link href="/master/plastics" className="btn" style={{ height: 36 }}>
-              <span className="ja">キャンセル</span>
+              {t('Master.tempKey')}
             </Link>
             <button type="submit" className="btn btn-primary" style={{ height: 36 }}>
               <Save size={16} />
-              <span className="ja">保存 / Lưu</span>
+              {t('Master.luu')}
             </button>
           </div>
 

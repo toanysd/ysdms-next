@@ -63,6 +63,14 @@ add_col.js
 /business_docs/
 /release/
 /.agents/
+/scripts/rebaseline/output/
+
+# Helper scratch scripts
+replace_*.js
+update_*.js
+refactor_i18n.js
+check.py
+hardcoded_results.txt
 
 # AI workspace files (không push lên GitHub)
 /.ai/

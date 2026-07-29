@@ -5,9 +5,10 @@ import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 import { Search, X } from 'lucide-react'
 import { useSearchHistory } from '@/hooks/useSearchHistory'
 import { SearchSuggestions } from '@/components/ui/SearchSuggestions'
+import { useTranslations } from 'next-intl'
 
 export function SearchBox({ 
-  placeholder = "Tìm kiếm...", 
+  placeholder, 
   historyKey 
 }: { 
   placeholder?: string
@@ -21,6 +22,8 @@ export function SearchBox({
   const [query, setQuery] = useState(defaultQuery)
   const [isPending, startTransition] = useTransition()
   const [showSuggestions, setShowSuggestions] = useState(false)
+  const t = useTranslations('Common')
+  const displayPlaceholder = placeholder || t('searchPlaceholder')
 
   // Use history hook conditionally (we must call it unconditionally but the hook handles undefined keys gracefully)
   const { history, addToHistory, removeFromHistory, clearHistory } = useSearchHistory(historyKey || '')
@@ -59,7 +62,7 @@ export function SearchBox({
       />
       <input
         type="text"
-        placeholder={placeholder}
+        placeholder={displayPlaceholder}
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         onFocus={() => setShowSuggestions(true)}

@@ -11,6 +11,7 @@ import Link from 'next/link'
 import { OverviewTab } from './tabs/OverviewTab'
 import { CreateJobModal } from '@/components/equipment/CreateJobModal'
 import { MoldModal } from '@/components/equipment/MoldModal'
+import { useTranslations } from 'next-intl'
 
 export type DesignRevisionDetail = {
   revision_id: string
@@ -62,16 +63,17 @@ export type DesignRevisionDetail = {
   jobs?: { job_id: string; job_code: string; job_name: string; job_status: string }[] | null
 }
 
-const STATUS_CONFIG: Record<string, { label: string; badge: string }> = {
-  DRAFT:      { label: '下書き (Nháp)',       badge: 'badge badge--warning' },
-  SUBMITTED:  { label: '提出済 (Đã gửi)',     badge: 'badge badge--info' },
-  RELEASED:   { label: 'リリース (Đã phát hành)', badge: 'badge badge--success' },
-  APPROVED:   { label: '承認済 (Đã duyệt)',   badge: 'badge badge--success' },
-  REJECTED:   { label: '却下 (Từ chối)',     badge: 'badge badge--error' },
-  SUPERSEDED: { label: '旧版 (Đã thay thế)', badge: 'badge badge--neutral' },
+const STATUS_CONFIG: Record<string, { labelKey: string; badge: string }> = {
+  DRAFT:      { labelKey: 'Engineering.Status.DRAFT',       badge: 'badge badge--warning' },
+  SUBMITTED:  { labelKey: 'Engineering.Status.SUBMITTED',     badge: 'badge badge--info' },
+  RELEASED:   { labelKey: 'Engineering.Status.RELEASED',    badge: 'badge badge--success' },
+  APPROVED:   { labelKey: 'Engineering.Status.APPROVED',    badge: 'badge badge--success' },
+  REJECTED:   { labelKey: 'Engineering.Status.REJECTED',    badge: 'badge badge--error' },
+  SUPERSEDED: { labelKey: 'Engineering.Status.SUPERSEDED',  badge: 'badge badge--neutral' },
 }
 
 export default function DesignRevisionDetailPage() {
+  const t = useTranslations()
   const params = useParams()
   const router = useRouter()
   const revisionId = params.id as string
@@ -96,7 +98,7 @@ export default function DesignRevisionDetailPage() {
       .select(`
         *,
         employees!designer_id(employee_name),
-        products(product_code, product_name, companies(company_id, company_name, company_code)),
+        products(product_code, product_name, companies:companies!products_company_id_fkey(company_id, company_name, company_code)),
         mold_revisions(physical_molds(physical_mold_id, system_code, device_status)),
         jobs(job_id, job_code, job_name, job_status)
       `)
@@ -138,7 +140,7 @@ export default function DesignRevisionDetailPage() {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-[var(--text-muted)]">
         <Loader2 className="animate-spin mb-4" size={32} />
-        <p className="text-sm">Đang tải thông tin phiên bản...</p>
+        <p className="text-sm">{t('Engineering.loadingRevisionInfo')}</p>
       </div>
     )
   }
@@ -148,9 +150,9 @@ export default function DesignRevisionDetailPage() {
       <div className="card-flat p-6 border-l-4 border-[var(--error)] flex items-start gap-4 mx-4 mt-4">
         <AlertTriangle className="text-[var(--error)]" />
         <div>
-          <h3 className="font-bold text-[var(--text-primary)] mb-1">Lỗi tải dữ liệu</h3>
-          <p className="text-sm text-[var(--text-secondary)]">{error || 'Không tìm thấy phiên bản thiết kế'}</p>
-          <button className="btn btn-secondary mt-4" onClick={() => router.back()}>Quay lại</button>
+          <h3 className="font-bold text-[var(--text-primary)] mb-1">{t('Engineering.errorLoading')}</h3>
+          <p className="text-sm text-[var(--text-secondary)]">{error || t('Engineering.revisionNotFound')}</p>
+          <button className="btn btn-secondary mt-4" onClick={() => router.back()}>{t('Engineering.back')}</button>
         </div>
       </div>
     )
@@ -189,7 +191,7 @@ export default function DesignRevisionDetailPage() {
             style={{ padding: '6px 12px', height: '32px' }}
           >
             <ArrowLeft size={16} />
-            <span className="text-[12px] font-bold">戻る</span>
+            <span className="text-[12px] font-bold">{t('Engineering.back')}</span>
           </button>
           <Link 
             href={rev.product_id ? `/engineering/designs/${rev.product_id}` : '/engineering/designs'}
@@ -197,7 +199,7 @@ export default function DesignRevisionDetailPage() {
             style={{ padding: '6px 12px', height: '32px', color: 'var(--text-secondary)' }}
           >
             <ArrowUpFromLine size={16} />
-            <span className="text-[12px]">一覧 (Danh sách)</span>
+            <span className="text-[12px]">{t('Engineering.list')}</span>
           </Link>
         </div>
 
@@ -213,7 +215,7 @@ export default function DesignRevisionDetailPage() {
                 style={{ height: '32px', fontSize: '12px', padding: '0 12px' }}
                 disabled={saving}
               >
-                <X size={14} className="mr-1" /> Hủy
+                <X size={14} className="mr-1" /> {t('Engineering.cancel')}
               </button>
               <button 
                 onClick={handleSave}
@@ -221,7 +223,7 @@ export default function DesignRevisionDetailPage() {
                 style={{ height: '32px', fontSize: '12px', padding: '0 12px' }}
                 disabled={saving}
               >
-                <Save size={14} className="mr-1" /> {saving ? 'Đang lưu...' : 'Lưu lại'}
+                <Save size={14} className="mr-1" /> {saving ? t('Engineering.saving') : t('Engineering.save')}
               </button>
             </>
           ) : (
@@ -231,21 +233,21 @@ export default function DesignRevisionDetailPage() {
                 className="btn btn-secondary text-accent border-accent"
                 style={{ height: '32px', fontSize: '12px', padding: '0 12px' }}
               >
-                <FilePlus size={14} className="mr-1" /> Tạo Khuôn
+                <FilePlus size={14} className="mr-1" /> {t('Engineering.createMold')}
               </button>
               <button 
                 onClick={() => setJobModalOpen(true)}
                 className="btn btn-secondary text-accent border-accent"
                 style={{ height: '32px', fontSize: '12px', padding: '0 12px' }}
               >
-                <Hammer size={14} className="mr-1" /> Tạo Job
+                <Hammer size={14} className="mr-1" /> {t('Engineering.createJob')}
               </button>
               <button 
                 onClick={() => setIsEditing(true)}
                 className="btn btn-secondary"
                 style={{ height: '32px', fontSize: '12px', padding: '0 12px' }}
               >
-                <Pencil size={14} className="mr-1" /> Chỉnh sửa
+                <Pencil size={14} className="mr-1" /> {t('Engineering.edit')}
               </button>
             </>
           )}
@@ -265,7 +267,7 @@ export default function DesignRevisionDetailPage() {
               <h1 className="text-lg font-bold font-mono text-[var(--text-primary)] leading-none">
                 {rev.design_code}
               </h1>
-              <span className={`text-[10px] ${st.badge}`}>{st.label}</span>
+              <span className={`text-[10px] ${st.badge}`}>{t(st.labelKey)}</span>
             </div>
             <div className="text-[12px] text-[var(--text-secondary)] flex items-center gap-3">
               <span>{rev.products?.product_name || '—'}</span>
@@ -278,13 +280,13 @@ export default function DesignRevisionDetailPage() {
         {/* Quick Actions / Info */}
         <div className="flex items-center gap-6 text-[12px]">
           <div className="flex flex-col items-end">
-            <span className="text-[10px] text-[var(--text-muted)] mb-1">Thiết kế bởi</span>
+            <span className="text-[10px] text-[var(--text-muted)] mb-1">{t('Engineering.designedBy')}</span>
             <span className="font-medium text-[var(--text-primary)]">
               {rev.employees?.employee_name || '—'}
             </span>
           </div>
           <div className="flex flex-col items-end">
-            <span className="text-[10px] text-[var(--text-muted)] mb-1">Ngày thiết kế</span>
+            <span className="text-[10px] text-[var(--text-muted)] mb-1">{t('Engineering.designDate')}</span>
             <span className="font-mono text-[var(--text-primary)]">
               {rev.design_date ? new Date(rev.design_date).toLocaleDateString('ja-JP') : '—'}
             </span>
@@ -297,8 +299,8 @@ export default function DesignRevisionDetailPage() {
         display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap',
         padding: '0 4px',
       }}>
-        <span style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 600, marginRight: 4, fontFamily: 'var(--font-jp)' }}>
-          関連 / Liên kết:
+        <span style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 600, marginRight: 4 }}>
+          {t('Engineering.relatedLinks')}:
         </span>
         
         {/* ← Product */}
@@ -313,10 +315,10 @@ export default function DesignRevisionDetailPage() {
               fontSize: 11, color: 'var(--accent)', textDecoration: 'none',
               fontWeight: 600, transition: 'all 0.15s',
             }}
-            title="製品マスターを開く / Xem sản phẩm"
+            title="製品マスターを開く"
           >
             <Box size={12} style={{ color: 'var(--text-secondary)' }} />
-            <span style={{ fontFamily: 'var(--font-jp)' }}>製品</span>
+            <span>{t('Engineering.productMaster')}</span>
           </Link>
         )}
 
@@ -332,10 +334,10 @@ export default function DesignRevisionDetailPage() {
               fontSize: 11, color: 'var(--accent)', textDecoration: 'none',
               fontWeight: 600, transition: 'all 0.15s',
             }}
-            title="すべての設計版を開く / Xem tất cả phiên bản thiết kế của sản phẩm này"
+            title="すべての設計版を開く"
           >
             <Layers size={12} style={{ color: 'var(--text-secondary)' }} />
-            <span style={{ fontFamily: 'var(--font-jp)' }}>設計一覧</span>
+            <span>{t('Engineering.designListTab')}</span>
           </Link>
         )}
 
@@ -351,10 +353,10 @@ export default function DesignRevisionDetailPage() {
               fontSize: 11, color: 'var(--accent)', textDecoration: 'none',
               fontWeight: 600, transition: 'all 0.15s',
             }}
-            title="顧客情報を開く / Xem thông tin khách hàng"
+            title="顧客情報を開く"
           >
             <Building2 size={12} style={{ color: 'var(--text-secondary)' }} />
-            <span style={{ fontFamily: 'var(--font-jp)' }}>顧客情報</span>
+            <span>{t('Engineering.customerInfo')}</span>
           </Link>
         )}
       </div>
@@ -362,7 +364,7 @@ export default function DesignRevisionDetailPage() {
       {/* 3) Tab Navigation */}
       <div className="flex items-center border-b border-[var(--border-default)]">
         <button className="px-4 py-2 border-b-2 border-[var(--accent)] text-[var(--accent)] text-[13px] font-bold">
-          Tổng quan
+          {t('Engineering.overview')}
         </button>
       </div>
 

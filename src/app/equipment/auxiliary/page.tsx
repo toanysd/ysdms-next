@@ -1,6 +1,8 @@
 import { Layers, Target, Activity, Wrench, Zap } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 export default function AuxiliaryEquipmentPage() {
+  const t = useTranslations('Equipment.Auxiliary');
 
   return (
     <div className="flex flex-col gap-6 w-full max-w-6xl mx-auto">
@@ -11,9 +13,9 @@ export default function AuxiliaryEquipmentPage() {
           </div>
           <div>
             <h1 className="text-[16px] font-bold" style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-jp)' }}>
-              補助設備
+              {t('title')}
             </h1>
-            <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>Thiết bị phụ trợ (プラグ, フレーム, ベース)</span>
+            <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>{t('subtitle')}</span>
           </div>
         </div>
       </div>
@@ -23,12 +25,12 @@ export default function AuxiliaryEquipmentPage() {
         <div className="card-flat flex flex-col gap-3 justify-center items-center h-[192px]">
           <Zap size={24} style={{ color: 'var(--status-info)', opacity: 0.5 }} />
           <div className="text-center">
-            <h2 className="text-[14px] font-bold" style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-jp)' }}>プラグ</h2>
-            <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>Plugs</span>
+            <h2 className="text-[14px] font-bold" style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-jp)' }}>{t('plugs')}</h2>
+            <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>{t('plugsSub')}</span>
           </div>
           <p className="text-[12px] mt-1 text-center px-4" style={{ color: 'var(--text-muted)' }}>
-            プラグは金型設計の属性として管理されています。<br/>
-            <span className="text-[10px]">Plug được quản lý như thuộc tính của thiết kế khuôn (plug_type trên design_revisions)</span>
+            {t('plugsNote1')}<br/>
+            <span className="text-[10px]">{t('plugsNote2')}</span>
           </p>
         </div>
 
@@ -36,40 +38,40 @@ export default function AuxiliaryEquipmentPage() {
         <div className="card-flat flex flex-col gap-3 justify-center items-center h-[192px]">
           <Layers size={24} style={{ color: 'var(--text-muted)', opacity: 0.5 }} />
           <div className="text-center">
-            <h2 className="text-[14px] font-bold" style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-jp)' }}>上フレーム</h2>
-            <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>Khung trên (Upper Frame)</span>
+            <h2 className="text-[14px] font-bold" style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-jp)' }}>{t('upperFrame')}</h2>
+            <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>{t('upperFrameSub')}</span>
           </div>
-          <p className="text-[12px] mt-2" style={{ color: 'var(--text-muted)' }}>開発中 / Đang phát triển</p>
+          <p className="text-[12px] mt-2" style={{ color: 'var(--text-muted)' }}>{t('developing')}</p>
         </div>
 
         {/* Lower Frame Placeholder */}
         <div className="card-flat flex flex-col gap-3 justify-center items-center h-[192px]">
           <Layers size={24} style={{ color: 'var(--text-muted)', opacity: 0.5, transform: 'rotateX(180deg)' }} />
           <div className="text-center">
-            <h2 className="text-[14px] font-bold" style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-jp)' }}>下フレーム</h2>
-            <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>Khung dưới (Lower Frame)</span>
+            <h2 className="text-[14px] font-bold" style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-jp)' }}>{t('lowerFrame')}</h2>
+            <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>{t('lowerFrameSub')}</span>
           </div>
-          <p className="text-[12px] mt-2" style={{ color: 'var(--text-muted)' }}>開発中 / Đang phát triển</p>
+          <p className="text-[12px] mt-2" style={{ color: 'var(--text-muted)' }}>{t('developing')}</p>
         </div>
 
         {/* Pressure Base Placeholder */}
         <div className="card-flat flex flex-col gap-3 justify-center items-center h-[192px]">
           <Target size={24} style={{ color: 'var(--text-muted)', opacity: 0.5 }} />
           <div className="text-center">
-            <h2 className="text-[14px] font-bold" style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-jp)' }}>圧空ベース</h2>
-            <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>Đế áp suất (Pressure Base)</span>
+            <h2 className="text-[14px] font-bold" style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-jp)' }}>{t('pressureBase')}</h2>
+            <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>{t('pressureBaseSub')}</span>
           </div>
-          <p className="text-[12px] mt-2" style={{ color: 'var(--text-muted)' }}>開発中 / Đang phát triển</p>
+          <p className="text-[12px] mt-2" style={{ color: 'var(--text-muted)' }}>{t('developing')}</p>
         </div>
 
         {/* Cooling Base Placeholder */}
         <div className="card-flat flex flex-col gap-3 justify-center items-center h-[192px]">
           <Activity size={24} style={{ color: 'var(--text-muted)', opacity: 0.5 }} />
           <div className="text-center">
-            <h2 className="text-[14px] font-bold" style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-jp)' }}>水冷ベース</h2>
-            <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>Đế làm mát (Cooling Base)</span>
+            <h2 className="text-[14px] font-bold" style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-jp)' }}>{t('coolingBase')}</h2>
+            <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>{t('coolingBaseSub')}</span>
           </div>
-          <p className="text-[12px] mt-2" style={{ color: 'var(--text-muted)' }}>開発中 / Đang phát triển</p>
+          <p className="text-[12px] mt-2" style={{ color: 'var(--text-muted)' }}>{t('developing')}</p>
         </div>
 
       </div>

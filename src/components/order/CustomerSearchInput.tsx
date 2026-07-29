@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 import { searchCustomers } from '@/app/actions/customer'
+import { useTranslations } from 'next-intl'
 
 interface Customer {
     company_id: string;
@@ -20,6 +21,7 @@ interface Props {
 }
 
 export function CustomerSearchInput({ onSelect, defaultValue = '', required = false }: Props) {
+    const t = useTranslations()
     const [query, setQuery] = useState(defaultValue)
     const [results, setResults] = useState<Customer[]>([])
     const [open, setOpen] = useState(false)
@@ -72,7 +74,7 @@ export function CustomerSearchInput({ onSelect, defaultValue = '', required = fa
                     }}
                     onBlur={() => setTimeout(() => setOpen(false), 200)}
                     className="w-full h-full outline-none bg-transparent font-mono text-sm text-[var(--mcs-text)]"
-                    placeholder="Gõ mã hoặc tên khách..."
+                    placeholder={t('Order.customerSearchPlaceholder')}
                     required={required}
                 />
                 {query && (
@@ -91,7 +93,7 @@ export function CustomerSearchInput({ onSelect, defaultValue = '', required = fa
                     {isLoading && (
                         <li className="px-3 py-2 text-sm text-[var(--mcs-text-muted)] italic flex items-center gap-2">
                             <div className="w-3 h-3 border-2 border-teal-500 border-t-transparent rounded-full animate-spin"></div>
-                            Đang tìm kiếm...
+                            {t('Common.searching')}
                         </li>
                     )}
 
@@ -108,7 +110,7 @@ export function CustomerSearchInput({ onSelect, defaultValue = '', required = fa
                         </li>
                     ))}
                     {!isLoading && results.length === 0 && query.length >= 2 && (
-                        <li className="px-3 py-2 text-sm text-amber-600 bg-amber-50">Không tìm thấy khách hàng này</li>
+                        <li className="px-3 py-2 text-sm text-amber-600 bg-amber-50">{t('Order.customerNotFound')}</li>
                     )}
                 </ul>
             )}

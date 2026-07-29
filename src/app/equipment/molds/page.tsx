@@ -15,6 +15,7 @@ import { useSearchHistory } from '@/hooks/useSearchHistory'
 import Link from 'next/link'
 import { CreateJobModal } from '@/components/equipment/CreateJobModal'
 import { MoldModal, PhysicalMoldFormData } from '@/components/equipment/MoldModal'
+import { useTranslations } from 'next-intl'
 
 type MoldStatus = 'ACTIVE' | 'MAINTENANCE' | 'DISPOSED' | string
 type StorageStatus = 'IN_STOCK' | 'IN_USE' | 'OUT_OF_STOCK' | string
@@ -51,16 +52,16 @@ type PhysicalMold = {
   } | null
 }
 
-const STATUS_LABELS: Record<string, { ja: string; vi: string; color: string }> = {
-  ACTIVE:      { ja: '使用中',    vi: 'Đang dùng',  color: 'var(--status-success)' },
-  MAINTENANCE: { ja: 'メンテ中',  vi: 'Bảo trì',    color: 'var(--status-warning)' },
-  DISPOSED:    { ja: '廃棄済',    vi: 'Đã huỷ',     color: 'var(--status-error)' },
+const STATUS_LABELS: Record<string, { key: string; color: string }> = {
+  ACTIVE:      { key: 'ACTIVE',      color: 'var(--status-success)' },
+  MAINTENANCE: { key: 'MAINTENANCE', color: 'var(--status-warning)' },
+  DISPOSED:    { key: 'DISPOSED',    color: 'var(--status-error)' },
 }
 
-const STORAGE_LABELS: Record<string, { ja: string; vi: string; color: string }> = {
-  IN_STOCK:     { ja: '在庫',   vi: 'Có hàng',   color: 'var(--status-success)' },
-  IN_USE:       { ja: '使用中', vi: 'Đang dùng', color: 'var(--status-info)' },
-  OUT_OF_STOCK: { ja: '出庫済', vi: 'Đã xuất',   color: 'var(--text-muted)' },
+const STORAGE_LABELS: Record<string, { key: string; color: string }> = {
+  IN_STOCK:     { key: 'IN_STOCK',     color: 'var(--status-success)' },
+  IN_USE:       { key: 'IN_USE',       color: 'var(--status-info)' },
+  OUT_OF_STOCK: { key: 'OUT_OF_STOCK', color: 'var(--text-muted)' },
 }
 
 import React, { Suspense } from 'react'
@@ -70,6 +71,7 @@ function MoldsPageContent() {
   const router = useRouter()
   const pathname = usePathname()
   const urlSearchParams = useSearchParams()
+  const t = useTranslations('Equipment')
 
   const [molds, setMolds] = useState<PhysicalMold[]>([])
   const [loading, setLoading] = useState(true)
@@ -155,7 +157,7 @@ function MoldsPageContent() {
             product_code,
             product_name,
             product_name_internal,
-            companies(company_name, company_code)
+            companies:companies!products_company_id_fkey(company_name, company_code)
           )
         ),
         rack_layers!current_rack_layer_id(
@@ -243,10 +245,11 @@ function MoldsPageContent() {
   }
 
   const StatusBadge = ({ status }: { status: string }) => {
-    const s = STATUS_LABELS[status] || { ja: status, color: 'var(--text-muted)' }
+    const s = STATUS_LABELS[status]
+    const color = s ? s.color : 'var(--text-muted)'
     return (
-      <span className="inline-flex items-center px-[6px] py-[1px] rounded-full text-[10px] font-bold whitespace-nowrap" style={{ color: s.color, background: `color-mix(in srgb, ${s.color} 12%, transparent)`, border: `1px solid color-mix(in srgb, ${s.color} 25%, transparent)` }}>
-        {s.ja}
+      <span className="inline-flex items-center px-[6px] py-[1px] rounded-full text-[10px] font-bold whitespace-nowrap" style={{ color: color, background: `color-mix(in srgb, ${color} 12%, transparent)`, border: `1px solid color-mix(in srgb, ${color} 25%, transparent)` }}>
+        {s ? t(`status.${s.key}`) : status}
       </span>
     )
   }
@@ -266,12 +269,11 @@ function MoldsPageContent() {
     }
   }
 
-  const SortTh = ({ col, ja, vi, w, style, className }: { col?: string; ja: string; vi: string; w?: number | string; style?: React.CSSProperties, className?: string }) => {
+  const SortTh = ({ col, ja, w, style, className }: { col?: string; ja: string; w?: number | string; style?: React.CSSProperties, className?: string }) => {
     const baseClass = "text-left font-bold text-[10px] uppercase p-2 border-b text-slate-500 whitespace-nowrap"
     if (!col) return (
       <th className={`${baseClass} ${className || ''}`} style={{ width: w, fontFamily: 'var(--font-jp)', ...style }}>
         {ja}
-        {vi && <span className="font-normal ml-1 text-[9px] opacity-70 normal-case">{vi}</span>}
       </th>
     )
     return (
@@ -279,7 +281,6 @@ function MoldsPageContent() {
         <div className="flex items-center gap-1">
           <div>
             {ja}
-            {vi && <span className="font-normal ml-1 text-[9px] opacity-70 normal-case">{vi}</span>}
           </div>
           <SortIcon col={col} />
         </div>
@@ -297,34 +298,33 @@ function MoldsPageContent() {
             onClick={() => router.back()}
             className="btn btn-secondary"
             style={{ height: 28, padding: '0 8px', gap: 3, fontSize: 11 }}
-            title="前のページに戻る / Quay lại trang trước"
+            title={t('Molds.backTitle')}
           >
             <ArrowLeft size={13} />
-            <span style={{ fontFamily: 'var(--font-jp)' }}>戻る</span>
+            <span style={{ fontFamily: 'var(--font-jp)' }}>{t('Molds.back')}</span>
           </button>
           {/* Up = go to equipment top */}
           <Link
             href="/equipment/molds"
             className="btn btn-secondary"
             style={{ height: 28, padding: '0 8px', gap: 3, fontSize: 11, textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }}
-            title="一覧へ / Về danh sách khuôn"
+            title={t('Molds.listTitle')}
             onClick={() => { setSearch(''); setFilterStatus('') }}
           >
             <ArrowUpFromLine size={12} />
-            <span style={{ fontFamily: 'var(--font-jp)' }}>一覧</span>
+            <span style={{ fontFamily: 'var(--font-jp)' }}>{t('Molds.list')}</span>
           </Link>
           <div className="flex items-center gap-2">
             <Box size={18} style={{ color: 'var(--text-muted)' }} />
             <div>
-              <h1 className="text-[15px] font-bold leading-tight" style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-jp)' }}>金型マスター</h1>
-              <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>Quản lý Khuôn Vật lý</span>
+              <h1 className="text-[15px] font-bold leading-tight" style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-jp)' }}>{t('Molds.title')}</h1>
+              <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>{t('Molds.subtitle')}</span>
             </div>
           </div>
         </div>
         <button onClick={openCreate} className="h-[32px] px-3 text-[12px] font-bold rounded flex items-center gap-1.5" style={{ background: 'var(--accent)', color: '#fff', border: 'none', cursor: 'pointer' }}>
           <Plus size={14} />
-          <span style={{ fontFamily: 'var(--font-jp)' }}>新規登録</span>
-          <span className="text-[10px] opacity-80 ml-0.5">Đăng ký mới</span>
+          <span style={{ fontFamily: 'var(--font-jp)' }}>{t('Molds.newRegister')}</span>
         </button>
       </div>
 
@@ -337,7 +337,7 @@ function MoldsPageContent() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               onFocus={() => setShowSuggestions(true)}
-              placeholder="金型コード / 製品コード検索..."
+              placeholder={t('Molds.searchPlaceholder')}
               className="form-input w-full"
               style={{ paddingLeft: 26, height: 28, fontSize: 11 }}
             />
@@ -360,8 +360,8 @@ function MoldsPageContent() {
           </div>
           <div className="relative">
             <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value as MoldStatus | '')} className="h-[28px] pl-2 pr-6 text-[11px] rounded border border-slate-300 appearance-none bg-white">
-              <option value="">状態 (全て)</option>
-              {Object.keys(STATUS_LABELS).map((k) => <option key={k} value={k}>{STATUS_LABELS[k].ja}</option>)}
+              <option value="">{t('Molds.statusAll')}</option>
+              {Object.keys(STATUS_LABELS).map((k) => <option key={k} value={k}>{t(`status.${STATUS_LABELS[k].key}`)}</option>)}
             </select>
           </div>
         </div>
@@ -378,8 +378,7 @@ function MoldsPageContent() {
         {(urlSearchParams.get('master') || urlSearchParams.get('revision')) && (
           <div className="px-3 py-2 bg-slate-50 border-b text-[11px] text-slate-600 flex items-center justify-between">
             <span>
-              <span className="font-bold mr-1">フィルタ:</span>
-              <span className="opacity-70 mr-2 text-[10px]">Đang lọc theo:</span>
+              <span className="font-bold mr-1">{t('Molds.filterLabel')}</span>
               <strong className="text-slate-800">
                 {urlSearchParams.get('revision') || urlSearchParams.get('master')}
               </strong>
@@ -392,7 +391,7 @@ function MoldsPageContent() {
                 router.replace(`${pathname}${p.toString() ? '?' + p.toString() : ''}`)
               }}
               className="text-slate-400 hover:text-slate-800"
-              title="Xóa bộ lọc"
+              title={t('Molds.clearFilter')}
             ><X size={14} /></button>
           </div>
         )}
@@ -400,20 +399,20 @@ function MoldsPageContent() {
           <table className="w-full" style={{ borderCollapse: 'collapse', minWidth: 1050 }}>
             <thead>
               <tr style={{ background: 'var(--bg-surface-2)' }}>
-                <SortTh col="system_code" ja="コード" vi="Mã" w={90} />
-                <SortTh col="display_name" ja="名称" vi="Tên" w={120} />
-                <SortTh ja="製品" vi="SP" w={160} />
-                <SortTh ja="得意先" vi="KH" w={120} />
-                <SortTh ja="サイズ(L×W×H)" vi="mm" w={130} />
-                <SortTh ja="棚位置" vi="Vị trí" w={100} />
-                <SortTh col="usage_status" ja="保管" vi="Kho" w={65} />
-                <SortTh col="device_status" ja="状態" vi="Status" w={70} />
-                <SortTh ja="操作" vi="" w={80} />
+                <SortTh col="system_code" ja={t('Molds.cols.code')} w={90} />
+                <SortTh col="display_name" ja={t('Molds.cols.name')} w={120} />
+                <SortTh ja={t('Molds.cols.product')} w={160} />
+                <SortTh ja={t('Molds.cols.customer')} w={120} />
+                <SortTh ja={t('Molds.cols.size')} w={130} />
+                <SortTh ja={t('Molds.cols.rackLocation')} w={100} />
+                <SortTh col="usage_status" ja={t('Molds.cols.storage')} w={65} />
+                <SortTh col="device_status" ja={t('Molds.cols.status')} w={70} />
+                <SortTh ja={t('Molds.cols.actions')} w={80} />
               </tr>
             </thead>
             <tbody>
-              {loading && <tr><td colSpan={9} className="p-8 text-center text-xs text-slate-500"><Loader2 size={16} className="animate-spin inline mr-2" />読み込み中...</td></tr>}
-              {!loading && filteredMolds.length === 0 && <tr><td colSpan={9} className="p-8 text-center text-xs text-slate-500">データがありません</td></tr>}
+              {loading && <tr><td colSpan={9} className="p-8 text-center text-xs text-slate-500"><Loader2 size={16} className="animate-spin inline mr-2" />{t('Molds.loading')}</td></tr>}
+              {!loading && filteredMolds.length === 0 && <tr><td colSpan={9} className="p-8 text-center text-xs text-slate-500">{t('Molds.noData')}</td></tr>}
               {!loading && filteredMolds.map((m, idx) => {
                 const product = (m.mold_revisions as any)?.products
                 const customer = product?.companies
@@ -423,7 +422,7 @@ function MoldsPageContent() {
                       <Link
                         href={`/equipment/molds/${m.physical_mold_id}`}
                         style={{ color: 'var(--accent)', textDecoration: 'none' }}
-                        title="詳細を開く / Mở chi tiết khuôn"
+                        title={t('Molds.actions.openDetails')}
                       >
                         {m.system_code}
                       </Link>
@@ -450,7 +449,7 @@ function MoldsPageContent() {
                     </td>
                     <td className="p-2 text-[11px] font-mono font-semibold">{formatRackLocation(m)}</td>
                     <td className="p-2">
-                      <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full border bg-slate-100">{STORAGE_LABELS[m.usage_status]?.ja || m.usage_status}</span>
+                      <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full border bg-slate-100">{STORAGE_LABELS[m.usage_status] ? t(`storage.${STORAGE_LABELS[m.usage_status].key}`) : m.usage_status}</span>
                     </td>
                     <td className="p-2"><StatusBadge status={m.device_status} /></td>
                     <td className="p-2">
@@ -459,7 +458,7 @@ function MoldsPageContent() {
                           <Link
                             href={`/engineering/designs/${m.mold_revisions.product_id}?revision=${m.mold_revision_id}`}
                             className="p-1.5 border rounded hover:bg-slate-100 text-accent"
-                            title="設計版 / Phiên bản thiết kế"
+                            title={t('Molds.actions.designVersion')}
                           >
                             <PenTool size={12} />
                           </Link>
@@ -473,16 +472,16 @@ function MoldsPageContent() {
                               productCode: m.mold_revisions!.products?.product_code || ''
                             })}
                             className="p-1.5 border rounded hover:bg-slate-100 text-accent"
-                            title="ジョブ作成 / Tạo Job"
+                            title={t('Molds.actions.createJob')}
                           >
                             <Hammer size={12} />
                           </button>
                         )}
-                        <button onClick={() => window.open(`/api/pdf/mold-certificate?mold_id=${m.system_code}`, '_blank')} className="p-1.5 border rounded hover:bg-slate-100 text-slate-600" title="印刷 / In phiếu">
+                        <button onClick={() => window.open(`/api/pdf/mold-certificate?mold_id=${m.system_code}`, '_blank')} className="p-1.5 border rounded hover:bg-slate-100 text-slate-600" title={t('Molds.actions.print')}>
                           <FileText size={12} />
                         </button>
-                        <button onClick={() => openEdit(m)} className="p-1.5 border rounded hover:bg-slate-100 text-slate-600" title="編集 / Sửa"><Pencil size={12} /></button>
-                        <button onClick={() => setDeleteId(m.physical_mold_id)} className="p-1.5 border rounded hover:bg-red-50 text-red-500 border-red-200" title="削除 / Xóa"><Trash2 size={12} /></button>
+                        <button onClick={() => openEdit(m)} className="p-1.5 border rounded hover:bg-slate-100 text-slate-600" title={t('Molds.actions.edit')}><Pencil size={12} /></button>
+                        <button onClick={() => setDeleteId(m.physical_mold_id)} className="p-1.5 border rounded hover:bg-red-50 text-red-500 border-red-200" title={t('Molds.actions.delete')}><Trash2 size={12} /></button>
                       </div>
                     </td>
                   </tr>
@@ -502,11 +501,10 @@ function MoldsPageContent() {
       {deleteId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={() => setDeleteId(null)}>
           <div className="bg-white rounded-lg p-5 w-[360px]" onClick={e => e.stopPropagation()}>
-            <p className="font-bold text-[13px] mb-1">この金型を削除しますか？</p>
-            <p className="text-[11px] text-slate-500 mb-4">Bạn có chắc muốn xóa khuôn này?</p>
+            <p className="font-bold text-[13px] mb-4">{t('Molds.deleteConfirmTitle')}</p>
             <div className="flex justify-end gap-2">
-              <button onClick={() => setDeleteId(null)} className="px-3 py-1.5 text-xs border rounded">キャンセル</button>
-              <button onClick={() => handleDelete(deleteId)} className="px-3 py-1.5 text-xs bg-red-500 text-white font-bold rounded">削除する</button>
+              <button onClick={() => setDeleteId(null)} className="px-3 py-1.5 text-xs border rounded">{t('Molds.cancel')}</button>
+              <button onClick={() => handleDelete(deleteId)} className="px-3 py-1.5 text-xs bg-red-500 text-white font-bold rounded">{t('Molds.deleteButton')}</button>
             </div>
           </div>
         </div>

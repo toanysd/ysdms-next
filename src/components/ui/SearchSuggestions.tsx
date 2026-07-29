@@ -3,11 +3,13 @@
 import { useRef, useState, useEffect } from 'react'
 import { Clock, X, Trash2 } from 'lucide-react'
 
+import { useTranslations } from 'next-intl'
+
 type Props = {
   history: string[]
   onSelect: (query: string) => void
   onRemove: (query: string) => void
-  onClear: () => void
+  onClear: (e?: any) => void
   visible: boolean
   onClose: () => void
 }
@@ -18,6 +20,7 @@ type Props = {
  */
 export function SearchSuggestions({ history, onSelect, onRemove, onClear, visible, onClose }: Props) {
   const ref = useRef<HTMLDivElement>(null)
+  const t = useTranslations('Common')
 
   // Close on outside click
   useEffect(() => {
@@ -49,16 +52,16 @@ export function SearchSuggestions({ history, onSelect, onRemove, onClear, visibl
       >
         <span className="flex items-center gap-1" style={{ color: 'var(--text-muted)' }}>
           <Clock size={10} />
-          最近の検索 / Tìm kiếm gần đây
+          {t('recentSearch')}
         </span>
         <button
           onClick={(e) => { e.stopPropagation(); onClear() }}
           className="flex items-center gap-1 bg-transparent border-none cursor-pointer"
           style={{ color: 'var(--text-muted)', fontSize: 10 }}
-          title="全削除 / Xóa tất cả"
+          title={t('clearAll')}
         >
           <Trash2 size={10} />
-          クリア
+          {t('clearAll')}
         </button>
       </div>
 
@@ -92,7 +95,7 @@ export function SearchSuggestions({ history, onSelect, onRemove, onClear, visibl
                 e.preventDefault()
                 onRemove(item)
               }}
-              title="削除 / Xóa"
+              title={t('delete')}
             >
               <X size={12} />
             </button>

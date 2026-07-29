@@ -1,5 +1,7 @@
 'use client'
 
+import { useTranslations, useLocale } from 'next-intl'
+
 import React, { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import {
@@ -66,13 +68,12 @@ async function saveCompany(data: CompanyFormData): Promise<{ success: boolean; e
 function Field({
   ja, vi, required, children,
 }: { ja: string; vi: string; required?: boolean; children: React.ReactNode }) {
+  const locale = useLocale()
   return (
     <div className="form-field">
       <div className="form-label">
-        <span className="label-ja">
-          {ja}{required && <span className="label-required">*</span>}
-        </span>
-        <span className="label-vi">{vi}</span>
+        {locale === 'vi' ? vi : ja}
+        {required && <span style={{ color: 'var(--status-error)', marginLeft: 2 }}>*</span>}
       </div>
       {children}
     </div>
@@ -104,13 +105,12 @@ function Section({
 }: {
   icon: React.ElementType; ja: string; vi: string; children: React.ReactNode
 }) {
+  const locale = useLocale()
   return (
     <div className="form-section">
       <div className="form-section-header">
         <Icon className="section-icon" />
-        <span className="ja" style={{ textTransform: 'none', fontSize: 10, fontWeight: 700 }}>{ja}</span>
-        <span style={{ color: 'var(--border-strong)', marginLeft: 2, marginRight: 2 }}>/</span>
-        <span style={{ fontSize: 9, fontWeight: 400, color: 'var(--text-muted)', textTransform: 'none', letterSpacing: 0 }}>{vi}</span>
+        {locale === 'vi' ? vi : ja}
       </div>
       <div className="form-section-body">
         {children}
@@ -130,6 +130,8 @@ interface CompanyFormProps {
 // Main CompanyForm
 // ══════════════════════════════════════════════════════════════════════════════
 export function CompanyForm({ initialData, parentCompanies = [], mode = 'edit' }: CompanyFormProps) {
+  const t = useTranslations()
+
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [formError, setFormError] = useState<string | null>(null)

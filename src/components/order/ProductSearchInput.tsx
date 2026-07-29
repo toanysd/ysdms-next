@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 import { searchProducts } from '@/app/actions/product'
+import { useTranslations } from 'next-intl'
 
 interface Product {
     id: string; pn: string; customer_part_number: string; product_name: string;
@@ -19,6 +20,7 @@ export function ProductSearchInput({ onSelect, onChangeText, defaultValue = '' }
     const [results, setResults] = useState<Product[]>([])
     const [open, setOpen] = useState(false)
     const [isLoading, setIsLoading] = useState(false)
+    const t = useTranslations('Orders')
 
     // Debounce effect 300ms
     useEffect(() => {
@@ -68,7 +70,7 @@ export function ProductSearchInput({ onSelect, onChangeText, defaultValue = '' }
                 // Timeout 200ms để tránh click list bị blur đóng mất panel
                 onBlur={() => setTimeout(() => setOpen(false), 200)}
                 className="w-full h-full px-2 outline-none bg-transparent focus:bg-white focus:ring-1 ring-inset ring-teal-500 font-mono font-bold text-teal-800"
-                placeholder="型番入力... (Gõ P/N hoặc SMK...)"
+                placeholder={t('productSearchPlaceholder')}
                 required
             />
 
@@ -77,7 +79,7 @@ export function ProductSearchInput({ onSelect, onChangeText, defaultValue = '' }
                     {isLoading && (
                         <li className="px-3 py-2 text-sm text-[var(--mcs-text-muted)] italic flex items-center gap-2">
                             <div className="w-3 h-3 border-2 border-teal-500 border-t-transparent rounded-full animate-spin"></div>
-                            検索中... (Đang tìm...)
+                            {t('searching')}
                         </li>
                     )}
 
@@ -90,13 +92,13 @@ export function ProductSearchInput({ onSelect, onChangeText, defaultValue = '' }
                             <div className="flex flex-col">
                                 <span className="font-mono font-bold text-emerald-700 text-[13px]">{p.customer_part_number || p.pn}</span>
                                 <span className="text-[11px] text-[var(--mcs-text-muted)] mt-0.5">
-                                    社内コード: <b className="text-teal-900">{p.pn}</b> - {p.product_name || '名称未設定'}
+                                    {t('internalCode')} <b className="text-teal-900">{p.pn}</b> - {p.product_name || t('unnamedProduct')}
                                 </span>
                             </div>
                         </li>
                     ))}
                     {!isLoading && results.length === 0 && query.length >= 2 && (
-                        <li className="px-3 py-2 text-sm text-amber-600 bg-amber-50">該当データなし (Không tìm thấy)</li>
+                        <li className="px-3 py-2 text-sm text-amber-600 bg-amber-50">{t('noData')}</li>
                     )}
                 </ul>
             )}

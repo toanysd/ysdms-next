@@ -104,23 +104,22 @@ Prefix `_` cho thư mục `_components` — Next.js sẽ không treat chúng là
 - Dùng `useState`, `useEffect`, `useCallback`
 - Debounce search input: `setTimeout 400ms`
 
-### Dual Language Labels (bắt buộc 100%)
+### Đa Ngôn Ngữ (i18n) với next-intl
+Sử dụng thư viện `next-intl` thay vì hardcode hiển thị song ngữ:
 ```tsx
-// Heading/Title
-<span className="ja">受注管理</span>
-<span className="vi">Quản lý Đơn hàng</span>
+import { useTranslations } from 'next-intl';
 
-// Form label
-<label className="form-label">
-  <span className="label-ja">得意先名称</span>
-  <span className="label-vi">Tên khách hàng</span>
-</label>
-
-// Table header
-<th>
-  <span className="ja">受注番号</span>
-  <span className="vi">Mã đơn hàng</span>
-</th>
+export default function ExampleComponent() {
+  const t = useTranslations('Namespace');
+  
+  return (
+    <div>
+      <h1>{t('title')}</h1>
+      <label className="form-label">{t('customerName')}</label>
+      <th>{t('orderCode')}</th>
+    </div>
+  );
+}
 ```
 
 ---
@@ -205,3 +204,25 @@ Khi tạo route mới, PHẢI thêm vào `src/components/layout/Sidebar.tsx`:
 | 借用書 Giấy mượn | `/cases?type=loan` | ⬜ Planned | P1 |
 | 納品書 Phiếu giao | `/orders/shipments` | ⬜ Planned | P1 |
 | Nippo 日報 | `/worklog` | ✅ Exists | P2 |
+
+---
+
+## 🌍 QUY TẮC ĐA NGÔN NGỮ & I18N (BẮT BUỘC)
+
+Hệ thống sử dụng `next-intl` để xử lý đa ngôn ngữ (Tiếng Nhật / Tiếng Việt) động. Bạn **TUYỆT ĐỐI KHÔNG ĐƯỢC** sử dụng kiểu song ngữ tĩnh (hiển thị đồng thời cả 2 ngôn ngữ).
+
+1. **Quy trình i18n:**
+   - Phải khai báo keys vào `messages/ja.json` và `messages/vi.json` **TRƯỚC KHI** hoặc **TRONG KHI** viết component UI.
+   - Không được copy mã JSX (ví dụ `{count}`) hoặc code logic vào file JSON.
+
+2. **Không Hardcode UI:**
+   - Tuyệt đối không sử dụng các class như `className="ja"`, `className="vi"`, `className="label-ja"`.
+   - Không chèn trực tiếp các đoạn text song ngữ dạng `Tiếng Nhật / Tiếng Việt`.
+   - Bắt buộc sử dụng `const t = useTranslations('Namespace')` và gọi `t('key')`. Nếu cần xử lý linh hoạt, sử dụng `useLocale()` để kiểm tra locale là `ja` hay `vi`.
+
+3. **Kiểm tra tự động:**
+   - Sau khi thay đổi code UI hoặc file dịch, bạn **PHẢI CHẠY** lệnh sau để kiểm tra xem có thiếu key không:
+     `node scripts/check_translations.mjs`
+   - Báo cáo lỗi sẽ hiện ra nếu thiếu key. Bạn phải sửa trước khi tiếp tục.
+   - Để tìm các chỗ còn sót mã hardcode song ngữ, chạy:
+     `node scripts/find_hardcoded_bilingual.mjs`

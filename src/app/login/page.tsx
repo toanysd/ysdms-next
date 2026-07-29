@@ -4,6 +4,8 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { LogIn, Eye, EyeOff, AlertCircle } from 'lucide-react'
+import { useTranslations } from 'next-intl'
+import LanguageSwitcher from '@/components/LanguageSwitcher'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -12,6 +14,7 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const t = useTranslations('Login')
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -26,7 +29,7 @@ export default function LoginPage() {
 
     if (authError) {
       setError(authError.message === 'Invalid login credentials'
-        ? 'メールアドレスまたはパスワードが正しくありません / Email hoặc mật khẩu không đúng'
+        ? t('invalidCredentials')
         : authError.message
       )
       setLoading(false)
@@ -39,9 +42,12 @@ export default function LoginPage() {
 
   return (
     <div
-      className="min-h-screen flex items-center justify-center p-4"
+      className="min-h-screen flex items-center justify-center p-4 relative"
       style={{ background: 'var(--bg-page)' }}
     >
+      <div className="absolute top-4 right-4">
+        <LanguageSwitcher />
+      </div>
       <div
         className="w-full max-w-[380px] card-flat p-6"
         style={{ borderTop: '3px solid var(--accent)' }}
@@ -61,10 +67,7 @@ export default function LoginPage() {
             YSDMS NextGen
           </h1>
           <p className="text-[11px] mt-1" style={{ color: 'var(--text-muted)' }}>
-            吉田パッケージ 生産管理システム
-          </p>
-          <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
-            Hệ thống Quản lý Sản xuất Yoshida Package
+            {t('systemDescription')}
           </p>
         </div>
 
@@ -84,16 +87,16 @@ export default function LoginPage() {
           <div className="flex flex-col gap-1">
             <label
               className="text-[11px] font-semibold"
-              style={{ color: 'var(--text-secondary)', fontFamily: 'var(--font-jp)' }}
+              style={{ color: 'var(--text-secondary)' }}
             >
-              メールアドレス <span style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-vi)' }}>/ Email</span>
+              {t('email')}
             </label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="form-input"
-              placeholder="user@yoshida-package.co.jp"
+              placeholder={t('emailPlaceholder')}
               required
               autoFocus
             />
@@ -102,9 +105,9 @@ export default function LoginPage() {
           <div className="flex flex-col gap-1">
             <label
               className="text-[11px] font-semibold"
-              style={{ color: 'var(--text-secondary)', fontFamily: 'var(--font-jp)' }}
+              style={{ color: 'var(--text-secondary)' }}
             >
-              パスワード <span style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-vi)' }}>/ Mật khẩu</span>
+              {t('password')}
             </label>
             <div className="relative">
               <input
@@ -112,7 +115,7 @@ export default function LoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="form-input w-full pr-9"
-                placeholder="••••••••"
+                placeholder={t('passwordPlaceholder')}
                 required
               />
               <button
@@ -134,11 +137,11 @@ export default function LoginPage() {
             style={{ opacity: loading ? 0.7 : 1 }}
           >
             {loading ? (
-              <span className="text-[12px]">ログイン中... / Đang đăng nhập...</span>
+              <span className="text-[12px]">{t('loggingIn')}</span>
             ) : (
               <>
                 <LogIn size={15} />
-                <span className="text-[12px] font-semibold">ログイン / Đăng nhập</span>
+                <span className="text-[12px] font-semibold">{t('login')}</span>
               </>
             )}
           </button>

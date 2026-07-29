@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic'
+
 import { createClient } from '@/lib/supabase/server'
 import MoldSearchTable from "./_components/MoldSearchTable"
 import MoldHeaderActions from "./_components/MoldHeaderActions"

@@ -1,5 +1,7 @@
 'use client'
 
+import { useTranslations } from 'next-intl'
+
 import { useState, useEffect } from 'react'
 import { Plus, Edit2, Trash2, X, PackageOpen, Loader2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
@@ -28,13 +30,15 @@ type OrderLine = {
 }
 
 const LINE_STATUS_OPT = [
-  { value: 'NEW', labelJa: '新規' },
-  { value: 'PRODUCING', labelJa: '生産中' },
-  { value: 'INSPECTING', labelJa: '検査中' },
-  { value: 'READY', labelJa: '完了' },
+  { value: 'NEW', labelKey: 'lineStatusNew' },
+  { value: 'PRODUCING', labelKey: 'lineStatusProducing' },
+  { value: 'INSPECTING', labelKey: 'lineStatusInspecting' },
+  { value: 'READY', labelKey: 'lineStatusReady' },
 ]
 
 export function OrderLinesManager({ orderId, companyId, initialLines }: { orderId: string, companyId: string, initialLines: OrderLine[] }) {
+  const t = useTranslations()
+
   const supabase = createClient()
   const router = useRouter()
   
@@ -126,7 +130,7 @@ export function OrderLinesManager({ orderId, companyId, initialLines }: { orderI
   }
 
   const handleDelete = async (lineId: string) => {
-    if (!confirm('削除しますか？')) return
+    if (!confirm(t('Common.deleteConfirm'))) return
     const { error } = await supabase.from('order_lines').delete().eq('line_id', lineId)
     if (error) alert(error.message)
     else {
@@ -141,11 +145,11 @@ export function OrderLinesManager({ orderId, companyId, initialLines }: { orderI
       <div style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border-default)', background: 'var(--bg-surface)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <PackageOpen size={16} style={{ color: 'var(--accent)' }} />
-          <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>受注明細</span>
+          <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>{t('Orders.orderDetails')}</span>
         </div>
         <button className="btn btn-primary" onClick={handleOpenAdd}>
           <Plus size={14} />
-          <span>追加</span>
+          <span>{t('Common.add')}</span>
         </button>
       </div>
 
@@ -156,30 +160,28 @@ export function OrderLinesManager({ orderId, companyId, initialLines }: { orderI
             <tr>
               <th style={{ width: 60, textAlign: 'center' }}>No.</th>
               <th>
-                <span className="ja">製品</span>
-                <span className="vi">Sản phẩm</span>
+                {t('Orders.sanPham')}
               </th>
               <th style={{ width: 100, textAlign: 'right' }}>
-                <span className="ja">数量</span>
-                <span className="vi">Số lượng</span>
+                {t('Orders.soLuong')}
               </th>
               <th style={{ width: 80, textAlign: 'center' }}>
-                <span className="ja">状態</span>
-                <span className="vi">Trạng thái</span>
+                {t('Orders.trangThai')}
               </th>
-              <th style={{ width: 80, textAlign: 'right' }}>操作</th>
+              <th style={{ width: 80, textAlign: 'right' }}>{t('Common.action')}</th>
             </tr>
           </thead>
           <tbody>
             {lines.length === 0 ? (
               <tr>
                 <td colSpan={5} style={{ textAlign: 'center', padding: '32px 0', color: 'var(--text-muted)' }}>
-                  明細がありません
+                  {t('Orders.noOrderLines')}
                 </td>
               </tr>
             ) : (
               lines.map(l => {
-                const sLabel = LINE_STATUS_OPT.find(x => x.value === l.line_status)?.labelJa || l.line_status
+                const sLabel = LINE_STATUS_OPT.find(x => x.value === l.line_status)?.labelKey
+                const displayLabel = sLabel ? t(`Orders.${sLabel}`) : l.line_status
                 return (
                   <tr key={l.line_id}>
                     <td style={{ textAlign: 'center', fontFamily: 'monospace', color: 'var(--text-muted)' }}>{l.line_no}</td>
@@ -191,7 +193,7 @@ export function OrderLinesManager({ orderId, companyId, initialLines }: { orderI
                       {l.quantity} <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>{l.unit}</span>
                     </td>
                     <td style={{ textAlign: 'center' }}>
-                      <span className="badge badge--neutral" style={{ fontSize: 9 }}>{sLabel}</span>
+                      <span className="badge badge--neutral" style={{ fontSize: 9 }}>{displayLabel}</span>
                     </td>
                     <td style={{ textAlign: 'right' }}>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 4 }}>
@@ -217,12 +219,7 @@ export function OrderLinesManager({ orderId, companyId, initialLines }: { orderI
           <div className="card" style={{ width: 440 }}>
             <div className="form-section-header" style={{ justifyContent: 'space-between', padding: '12px 16px' }}>
               <div>
-                <span className="ja" style={{ fontSize: 13, color: 'var(--text-primary)', textTransform: 'none' }}>
-                  {editingId ? '明細編集' : '明細追加'}
-                </span>
-                <span className="vi" style={{ fontSize: 10, textTransform: 'none' }}>
-                  {editingId ? 'Sửa chi tiết' : 'Thêm chi tiết'}
-                </span>
+                {editingId ? t('Common.edit') : t('Common.addNew')}
               </div>
               <button onClick={() => setModalOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}>
                 <X size={16} />
@@ -231,11 +228,11 @@ export function OrderLinesManager({ orderId, companyId, initialLines }: { orderI
             
             <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
               <div className="form-field">
-                <label className="form-label"><span className="label-ja">製品</span><span className="label-vi">Sản phẩm</span></label>
+                <label className="form-label">{t('Orders.sanPham')}</label>
                 <AsyncSearchableSelect
                   value={form.product_id}
                   onChange={(v) => setForm(f => ({ ...f, product_id: v || '' }))}
-                  placeholder="製品を検索..."
+                  placeholder={t('Orders.searchProduct')}
                   fetchOptions={async (q) => {
                     const { data } = await supabase
                       .from('products')
@@ -253,19 +250,19 @@ export function OrderLinesManager({ orderId, companyId, initialLines }: { orderI
 
               <div className="form-grid-2">
                 <div className="form-field">
-                  <label className="form-label"><span className="label-ja">数量</span><span className="label-vi">Số lượng</span></label>
+                  <label className="form-label">{t('Orders.soLuong')}</label>
                   <input type="number" className="form-input" value={form.quantity} onChange={e => setForm(f => ({ ...f, quantity: Number(e.target.value) }))} />
                 </div>
                 <div className="form-field">
-                  <label className="form-label"><span className="label-ja">単位</span><span className="label-vi">Đơn vị</span></label>
+                  <label className="form-label">{t('Orders.onVi')}</label>
                   <input type="text" className="form-input" value={form.unit} onChange={e => setForm(f => ({ ...f, unit: e.target.value }))} />
                 </div>
               </div>
 
               <div className="form-field">
-                <label className="form-label"><span className="label-ja">納入先</span><span className="label-vi">Địa điểm giao hàng</span></label>
+                <label className="form-label">{t('Orders.iaIemGiaoHang')}</label>
                 <select className="form-input" value={form.delivery_site_id} onChange={e => setForm(f => ({ ...f, delivery_site_id: e.target.value }))}>
-                  <option value="">-- 指定なし (Không chỉ định) --</option>
+                  <option value="">{t('Orders.noDeliverySite')}</option>
                   {deliverySites.map(s => (
                     <option key={s.site_id} value={s.site_id}>
                       {s.site_name} {s.contact_person ? `(${s.contact_person})` : ''}
@@ -275,25 +272,25 @@ export function OrderLinesManager({ orderId, companyId, initialLines }: { orderI
               </div>
 
               <div className="form-field">
-                <label className="form-label"><span className="label-ja">状態</span><span className="label-vi">Trạng thái</span></label>
+                <label className="form-label">{t('Orders.trangThai')}</label>
                 <select className="form-input" value={form.line_status} onChange={e => setForm(f => ({ ...f, line_status: e.target.value }))}>
                   {LINE_STATUS_OPT.map(o => (
-                    <option key={o.value} value={o.value}>{o.labelJa}</option>
+                    <option key={o.value} value={o.value}>{t(`Orders.${o.labelKey}`)}</option>
                   ))}
                 </select>
               </div>
 
               <div className="form-field">
-                <label className="form-label"><span className="label-ja">備考</span><span className="label-vi">Ghi chú</span></label>
+                <label className="form-label">{t('Orders.ghiChu')}</label>
                 <textarea className="form-textarea" rows={2} value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} />
               </div>
             </div>
 
             <div className="form-actions" style={{ padding: '12px 16px', background: 'var(--bg-surface-2)', marginTop: 0 }}>
-              <button type="button" className="btn btn-secondary" onClick={() => setModalOpen(false)} disabled={saving}>キャンセル</button>
+              <button type="button" className="btn btn-secondary" onClick={() => setModalOpen(false)} disabled={saving}>{t('Common.cancel')}</button>
               <button type="button" className="btn btn-primary" onClick={handleSave} disabled={saving || !form.product_id}>
                 {saving && <Loader2 size={12} className="animate-spin" style={{ marginRight: 4 }} />}
-                保存
+                {t('Common.save')}
               </button>
             </div>
           </div>

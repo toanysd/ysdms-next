@@ -3,8 +3,8 @@
   "version": "0.1.9",
   "private": true,
   "scripts": {
-    "dev": "next dev --webpack",
-    "build": "next build --webpack",
+    "dev": "next dev --turbo",
+    "build": "next build",
     "start": "next start",
     "lint": "eslint",
     "db:seed": "node --env-file=.env.local scripts/seed.mjs",
@@ -29,6 +29,7 @@
     "jspdf": "^4.2.1",
     "lucide-react": "^1.17.0",
     "next": "16.2.3",
+    "next-intl": "^4.13.2",
     "pg": "^8.22.0",
     "react": "19.2.4",
     "react-dom": "19.2.4",

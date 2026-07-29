@@ -22,124 +22,117 @@ export interface MrpResult {
 export async function calculateMRP(): Promise<MrpResult[]> {
   const supabase = await createClient()
 
-  // 1. Fetch incomplete order items with nested product -> mold -> bom -> plastic
-  const { data: orderItems, error } = (await (supabase as any)
-    // @ts-ignore
-    .from('order_items')
+  // 1. Fetch incomplete order lines with nested product -> design_revisions
+  const { data: orderLines, error: linesError } = await supabase
+    .from('order_lines')
     .select(`
-      id, quantity, product_id, product_pn_raw, status,
-      orders ( slip_no ),
-      production_plans ( material_feed_length_mm ),
-      product_master (
-        product_mold_map (
-          mold_design_revision (
-            mold_plastic_bom (
-              actual_weight_grams,
-              scrap_ratio,
-              plastic_master ( id, code, color, thickness_mm )
-            ),
-            mold_physical ( cavity )
-          )
+      line_id,
+      quantity,
+      due_date,
+      order_id,
+      product_id,
+      design_revision_id,
+      orders!inner(order_no, order_status),
+      products!inner(
+        product_code,
+        design_revisions(
+          revision_id,
+          plastic_id,
+          cavity_count,
+          machine_feed_pitch_mm,
+          cutline_length
         )
       )
     `)
-    .in('status', ['DRAFT', 'SCHEDULED', 'IN_PROGRESS'])) as any
+    .in('orders.order_status', ['NEW', 'CONFIRMED', 'IN_PRODUCTION'])
 
-  if (error || !orderItems) {
-    console.error('MRP Error:', error)
+  if (linesError || !orderLines) {
+    console.error('MRP Error fetching order lines:', linesError)
     throw new Error('Failed to fetch order data for MRP')
   }
 
-  // 2. Fetch current plastic inventory
-  // @ts-ignore
-  const { data: stockData } = await supabase.from('plastic_stock').select('plastic_id, current_meters')
+  // 2. Fetch current plastic inventory (plastic_receipt_roll)
+  const { data: stockData, error: stockError } = await supabase
+    .from('plastic_receipt_roll')
+    .select('plastic_id, current_length_m')
+    .gt('current_length_m', 0)
+
+  if (stockError) {
+    console.error('MRP Error fetching plastic stock:', stockError)
+  }
+
   const stockMap: Record<string, number> = {}
   stockData?.forEach(s => {
-    // @ts-ignore
-    stockMap[s.plastic_id] = s.current_meters || 0
+    if (s.plastic_id) {
+      stockMap[s.plastic_id] = (stockMap[s.plastic_id] || 0) + (s.current_length_m || 0)
+    }
   })
 
-  // @ts-ignore
-  const { data: plastics } = await supabase.from('plastic_master').select('id, code, color, thickness_mm')
-  
+  // 3. Fetch all plastics
+  const { data: plastics, error: plasticsError } = await supabase
+    .from('plastic_master')
+    .select('plastic_id, plastic_code, color_name_normalized, thickness_mm')
+
+  if (plasticsError || !plastics) {
+    console.error('MRP Error fetching plastics:', plasticsError)
+    throw new Error('Failed to fetch plastics master data for MRP')
+  }
+
   const mrpMap: Record<string, MrpResult> = {}
   
-  plastics?.forEach(p => {
-    // @ts-ignore
-    mrpMap[p.id] = {
-      // @ts-ignore
-      plastic_id: p.id,
-      // @ts-ignore
-      plastic_code: p.code,
-      // @ts-ignore
-      plastic_color: p.color,
-      // @ts-ignore
-      plastic_thickness: p.thickness_mm,
+  plastics.forEach(p => {
+    mrpMap[p.plastic_id] = {
+      plastic_id: p.plastic_id,
+      plastic_code: p.plastic_code,
+      plastic_color: p.color_name_normalized || '',
+      plastic_thickness: Number(p.thickness_mm || 0),
       total_demand_meters: 0,
-      // @ts-ignore
-      current_stock_meters: stockMap[p.id] || 0,
+      current_stock_meters: stockMap[p.plastic_id] || 0,
       shortage_meters: 0,
       order_count: 0,
       demand_details: []
     }
   })
 
-  // 3. Aggregate Demand
-  orderItems.forEach((item: any) => {
-    // @ts-ignore
-    const product = item.product_master as any
+  // 4. Aggregate Demand
+  orderLines.forEach((line: any) => {
+    const product = line.products
     if (!product) return
 
-    const maps = product.product_mold_map
-    if (!maps || maps.length === 0) return
-
-    // Assuming 1 product maps to 1 active revision for simplicity
-    const map = maps[0]
-    const revision = map.mold_design_revision
-    if (!revision) return
-
-    const boms = revision.mold_plastic_bom
-    if (!boms || boms.length === 0) return
-
-    const bom = boms[0]
-    const plastic = Array.isArray(bom.plastic_master) ? bom.plastic_master[0] : bom.plastic_master
-    if (!plastic) return
-
-    // Fetch feed length from plans if any
-    // @ts-ignore
-    const plans = item.production_plans
-    let feedLength = 0
-    if (Array.isArray(plans) && plans.length > 0) {
-      feedLength = plans[0].material_feed_length_mm || 0
-    } else if (plans && !Array.isArray(plans)) {
-      feedLength = (plans as any).material_feed_length_mm || 0
+    // Find the revision
+    let revision: any = null
+    if (line.design_revision_id) {
+      revision = product.design_revisions?.find((r: any) => r.revision_id === line.design_revision_id)
     }
+    // Fallback to the first revision if none selected or not found
+    if (!revision && product.design_revisions && product.design_revisions.length > 0) {
+      revision = product.design_revisions[0]
+    }
+    if (!revision || !revision.plastic_id) return
 
-    const phys = Array.isArray(revision.mold_physical) ? revision.mold_physical[0] : revision.mold_physical
-    const cavity = phys?.cavity || 1
-    // @ts-ignore
-    const shotsNeeded = Math.ceil(item.quantity / cavity)
+    const plasticId = revision.plastic_id
+    if (!mrpMap[plasticId]) return
+
+    const cavity = revision.cavity_count || 1
+    const pitch = Number(revision.machine_feed_pitch_mm || revision.cutline_length || 0)
+    const shotsNeeded = Math.ceil(line.quantity / cavity)
     
-    // Formula: Demand in Meters = (material_feed_length_mm / 1000) * shotsNeeded
-    const demandMeters = (feedLength / 1000) * shotsNeeded
+    // Formula: Demand in Meters = (pitch_mm / 1000) * shotsNeeded * 1.05 (Hao hụt 5%)
+    const demandMeters = (pitch / 1000) * shotsNeeded * 1.05
 
-    if (mrpMap[plastic.id]) {
-      mrpMap[plastic.id].total_demand_meters += demandMeters
-      mrpMap[plastic.id].order_count += 1
-      // @ts-ignore
-      const orderData = item.orders as any
-      mrpMap[plastic.id].demand_details.push({
-        order_slip_no: orderData?.slip_no || 'N/A',
-        // @ts-ignore
-        product_code: item.product_pn_raw || 'Unknown',
-        // @ts-ignore
-        qty_needed: item.quantity,
-        plastic_demand_meters: demandMeters
-      })
-    }
+    mrpMap[plasticId].total_demand_meters += demandMeters
+    mrpMap[plasticId].order_count += 1
+    
+    const orderData = line.orders as any
+    mrpMap[plasticId].demand_details.push({
+      order_slip_no: orderData?.order_no || 'N/A',
+      product_code: product.product_code || 'Unknown',
+      qty_needed: line.quantity,
+      plastic_demand_meters: demandMeters
+    })
   })
 
-  // 4. Calculate Shortage
+  // 5. Calculate Shortage
   const results = Object.values(mrpMap).map(res => {
     res.shortage_meters = Math.max(0, res.total_demand_meters - res.current_stock_meters)
     return res

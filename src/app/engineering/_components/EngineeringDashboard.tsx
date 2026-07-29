@@ -1,5 +1,7 @@
 'use client'
 
+import { useTranslations } from 'next-intl'
+
 import React, { useState, useTransition } from 'react'
 import Link from 'next/link'
 import { FileEdit, CheckCircle, Clock, Search, ArrowRight, UploadCloud, Layers } from 'lucide-react'
@@ -7,6 +9,7 @@ import { updateDesignStatus } from '@/app/actions/engineering'
 import { BilingualTitle } from '@/components/ui/BilingualTitle'
 
 export default function EngineeringDashboard({ requests }: { requests: any[] }) {
+  const t = useTranslations()
     const [searchTerm, setSearchTerm] = useState('')
     const [isPending, startTransition] = useTransition()
 
@@ -106,7 +109,7 @@ export default function EngineeringDashboard({ requests }: { requests: any[] }) 
                             className={`flex justify-center items-center gap-1.5 text-[11px] font-bold py-1.5 rounded transition-colors ${!product?.id ? 'opacity-50 cursor-not-allowed bg-gray-200 text-gray-500' : 'bg-orange-50 text-orange-700 hover:bg-orange-100 border border-orange-200'}`}
                         >
                             <Layers size={14}/>
-                            <span className="ja">トレイ詳細 (Khay)</span>
+                            {t('Engineering.khay')}
                         </Link>
                         
                         <Link 
@@ -114,7 +117,7 @@ export default function EngineeringDashboard({ requests }: { requests: any[] }) 
                             className="flex justify-center items-center gap-1.5 text-[11px] font-bold py-1.5 rounded bg-purple-50 text-purple-700 hover:bg-purple-100 border border-purple-200 transition-colors"
                         >
                             <UploadCloud size={14}/>
-                            <span className="ja">金型図面 (Khuôn)</span>
+                            {t('Engineering.khuon')}
                         </Link>
                     </div>
                     {designStatus === 'approved' && (

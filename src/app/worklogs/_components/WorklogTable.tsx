@@ -1,12 +1,13 @@
 'use client'
 
+import { useTranslations } from 'next-intl'
 import Link from 'next/link'
 import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 import { useCallback, useMemo, useState, useTransition } from 'react'
 import { ArrowDown, ArrowUp, ArrowUpDown, ClipboardList, Clock, Filter, X } from 'lucide-react'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
-type Employee = { employee_id: string; employee_code: string; employee_name: string | null }
+type Employee = { employee_id: string; employee_code: string; full_name: string | null }
 type JobOption = { job_id: string; job_code: string; job_name: string | null }
 
 type WorklogRow = {
@@ -22,7 +23,7 @@ type WorklogRow = {
     deadline: string | null
     job: { job_id: string; job_code: string; job_name: string | null } | null
   } | null
-  employee: { employee_id: string; employee_code: string; employee_name: string | null } | null
+  employee: { employee_id: string; employee_code: string; full_name: string | null } | null
 }
 
 type Filters = {
@@ -47,8 +48,8 @@ type Props = {
 
 // ── Badge Config ──────────────────────────────────────────────────────────────
 const STATUS_CONFIG = {
-  finished:    { labelJA: '完了',   labelVI: 'Hoàn thành', badgeClass: 'badge badge--success' },
-  in_progress: { labelJA: '作業中', labelVI: 'Đang chạy',  badgeClass: 'badge badge--info'    },
+  finished:    { translationKey: 'Worklogs.finished', badgeClass: 'badge badge--success' },
+  in_progress: { translationKey: 'Worklogs.inProgress', badgeClass: 'badge badge--info' },
 }
 
 function formatDate(d: string | null) {
@@ -86,6 +87,7 @@ export default function WorklogTable({
   logs, totalCount, page, pageSize,
   employees, jobs, hoursByJob, filters, error,
 }: Props) {
+  const t = useTranslations()
   const router       = useRouter()
   const pathname     = usePathname()
   const searchParams = useSearchParams()
@@ -153,18 +155,15 @@ export default function WorklogTable({
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <ClipboardList size={20} style={{ color: 'var(--accent)' }} />
           <h1 style={{ margin: 0, fontSize: 18, fontWeight: 700 }}>
-            <span className="ja">作業ログ</span>
-            <span className="vi">Nhật ký Sản xuất</span>
+            {t('Worklogs.nhatKySanXuat')}
           </h1>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
-            <span className="ja">{totalCount.toLocaleString()} 件</span>
-            <span className="vi">{totalCount.toLocaleString()} bản ghi</span>
+            {totalCount.toLocaleString()} {t('Worklogs.recordCount')}
           </span>
           <Link href="/worklogs/new" className="btn btn-primary" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-            <span className="ja">＋ 新規作成</span>
-            <span className="vi">＋ Tạo mới</span>
+            {t('Worklogs.taoMoi')}
           </Link>
         </div>
       </div>
@@ -181,7 +180,7 @@ export default function WorklogTable({
             value={filters.jobFilter ?? ''}
             onChange={e => updateParams({ job_id: e.target.value || null })}
           >
-            <option value="">— Job —</option>
+            <option value="">{t('Worklogs.filterJob')}</option>
             {jobs.map(j => (
               <option key={j.job_id} value={j.job_id}>
                 {j.job_code}{j.job_name ? ` · ${j.job_name}` : ''}
@@ -196,10 +195,10 @@ export default function WorklogTable({
             value={filters.empFilter ?? ''}
             onChange={e => updateParams({ employee_id: e.target.value || null })}
           >
-            <option value="">— 担当 / Nhân viên —</option>
+            <option value="">{t('Worklogs.filterEmployee')}</option>
             {employees.map(e => (
               <option key={e.employee_id} value={e.employee_id}>
-                {e.employee_code}{e.employee_name ? ` · ${e.employee_name}` : ''}
+                {e.employee_code}{e.full_name ? ` · ${e.full_name}` : ''}
               </option>
             ))}
           </select>
@@ -224,9 +223,9 @@ export default function WorklogTable({
             value={filters.statusFilter}
             onChange={e => updateParams({ status: e.target.value })}
           >
-            <option value="all">— ステータス / Trạng thái —</option>
-            <option value="finished">完了 / Hoàn thành</option>
-            <option value="in_progress">作業中 / Đang chạy</option>
+            <option value="all">{t('Worklogs.filterStatus')}</option>
+            <option value="finished">{t('Worklogs.statusFinished')}</option>
+            <option value="in_progress">{t('Worklogs.statusInProgress')}</option>
           </select>
 
           {hasFilters && (
@@ -236,8 +235,7 @@ export default function WorklogTable({
               onClick={clearFilters}
             >
               <X size={13} />
-              <span className="ja">クリア</span>
-              <span className="vi">Xóa lọc</span>
+              {t('Worklogs.xoaLoc')}
             </button>
           )}
         </div>
@@ -256,57 +254,49 @@ export default function WorklogTable({
             <tr>
               <th style={{ width: 110, cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSort('work_date')}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                  <span className="ja">作業日</span>
-                  <span className="vi">Ngày làm</span>
+                  {t('Worklogs.ngayLam')}
                   <SortIcon col="work_date" />
                 </div>
               </th>
               <th style={{ cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSort('job_code')}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                  <span className="ja">ジョブ</span>
-                  <span className="vi">Job</span>
+                  {t('Worklogs.job')}
                   <SortIcon col="job_code" />
                 </div>
               </th>
               <th style={{ cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSort('step')}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                  <span className="ja">工程</span>
-                  <span className="vi">Bước</span>
+                  {t('Worklogs.buoc')}
                   <SortIcon col="step" />
                 </div>
               </th>
               <th style={{ cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSort('employee')}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                  <span className="ja">担当者</span>
-                  <span className="vi">Nhân viên</span>
+                  {t('Worklogs.nhanVien')}
                   <SortIcon col="employee" />
                 </div>
               </th>
               <th style={{ width: 90, textAlign: 'right', cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSort('hours')}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 4 }}>
-                  <span className="ja">時間</span>
-                  <span className="vi">Giờ</span>
+                  {t('Worklogs.gio')}
                   <SortIcon col="hours" />
                 </div>
               </th>
               <th style={{ width: 130, textAlign: 'right', cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSort('job_total')}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 4 }}>
                   <Clock size={12} />
-                  <span className="ja">Job合計</span>
-                  <span className="vi">Tổng/Job</span>
+                  {t('Worklogs.tongjob')}
                   <SortIcon col="job_total" />
                 </div>
               </th>
               <th style={{ width: 115, cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSort('status')}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                  <span className="ja">ステータス</span>
-                  <span className="vi">Trạng thái</span>
+                  {t('Worklogs.trangThai')}
                   <SortIcon col="status" />
                 </div>
               </th>
               <th>
-                <span className="ja">備考</span>
-                <span className="vi">Ghi chú</span>
+                {t('Worklogs.ghiChu')}
               </th>
             </tr>
           </thead>
@@ -314,8 +304,7 @@ export default function WorklogTable({
             {logs.length === 0 ? (
               <tr>
                 <td colSpan={8} style={{ textAlign: 'center', padding: 48, color: 'var(--text-secondary)' }}>
-                  <span className="ja">データなし</span>
-                  <span className="vi"> — Không có dữ liệu</span>
+                  {t('Worklogs.khongCoDuLieu')}
                 </td>
               </tr>
             ) : (
@@ -358,9 +347,9 @@ export default function WorklogTable({
                       {log.employee ? (
                         <>
                           <span style={{ fontWeight: 500 }}>{log.employee.employee_code}</span>
-                          {log.employee.employee_name && (
+                          {log.employee.full_name && (
                             <span style={{ color: 'var(--text-secondary)', marginLeft: 4 }}>
-                              {log.employee.employee_name}
+                              {log.employee.full_name}
                             </span>
                           )}
                         </>
@@ -374,8 +363,7 @@ export default function WorklogTable({
                     </td>
                     <td>
                       <span className={status.badgeClass}>
-                        <span className="ja">{status.labelJA}</span>
-                        <span className="vi">{status.labelVI}</span>
+                        {t(status.translationKey)}
                       </span>
                     </td>
                     <td style={{ color: 'var(--text-secondary)', maxWidth: 200 }}>
@@ -390,7 +378,6 @@ export default function WorklogTable({
           </tbody>
         </table>
       </div>
-
       {/* ── Pagination ─────────────────────────────────────────────────── */}
       {totalPages > 1 && (
         <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8, flexShrink: 0, padding: '4px 0' }}>

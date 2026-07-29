@@ -17,109 +17,111 @@ import {
 type NavItem = {
   href: string
   icon: React.ElementType
-  labelJA: string
-  labelVI: string
+  tKey: string
   exact?: boolean
 }
 
 type NavSection = {
   id: string
   icon: React.ElementType
-  labelJA: string
-  labelVI: string
+  tKey: string
   color: string
   items: NavItem[]
 }
 
 const NAV_TOP: NavItem[] = [
-  { href: '/dashboard', icon: Home, labelJA: 'ダッシュボード', labelVI: 'Dashboard' },
-  { href: '/worklogs', icon: ClipboardEdit, labelJA: '日報', labelVI: 'Nhật ký' },
+  { href: '/dashboard', icon: Home, tKey: 'top.dashboard' },
+  { href: '/worklogs', icon: ClipboardEdit, tKey: 'top.worklogs' },
 ]
 
 const NAV_SECTIONS: NavSection[] = [
   // ── 1. Văn phòng (Office) ──────────────────────────────────────────
   {
-    id: 'd1', icon: Building2, labelJA: 'オフィス', labelVI: 'Văn phòng', color: '#3B82F6',
+    id: 'd1', icon: Building2, tKey: 'sections.office', color: '#3B82F6',
     items: [
-      { href: '/office', icon: Home, labelJA: 'ダッシュボード', labelVI: 'Tổng quan', exact: true },
-      { href: '/cases', icon: Briefcase, labelJA: '事案管理', labelVI: 'Quản lý Sự việc' },
-      { href: '/master/customers', icon: Users, labelJA: '得意先', labelVI: 'Khách hàng' },
-      { href: '/master/products', icon: Package, labelJA: '製品マスター', labelVI: 'Sản phẩm' },
-      { href: '/orders/quotations', icon: FileSpreadsheet, labelJA: '見積書', labelVI: 'Báo giá' },
-      { href: '/orders', icon: FileText, labelJA: '受注・指示書', labelVI: 'Đơn hàng' },
-      { href: '/orders/shipments', icon: Truck, labelJA: '出荷・納品', labelVI: 'Xuất hàng' },
-      { href: '/mrp', icon: Calculator, labelJA: 'MRP', labelVI: 'MRP' },
-      { href: '/production-instructions', icon: ClipboardList, labelJA: '生産指示', labelVI: 'Chỉ thị sản xuất' },
-      { href: '/production/mold-orders', icon: Wrench, labelJA: '金型工程票', labelVI: 'Lệnh SX Khuôn' },
+      { href: '/office', icon: Home, tKey: 'items.overview', exact: true },
+      { href: '/cases', icon: Briefcase, tKey: 'items.cases' },
+      { href: '/master/customers', icon: Users, tKey: 'items.customers' },
+      { href: '/master/products', icon: Package, tKey: 'items.products' },
+      { href: '/orders/quotations', icon: FileSpreadsheet, tKey: 'items.quotations' },
+      { href: '/orders', icon: FileText, tKey: 'items.orders' },
+      { href: '/orders/shipments', icon: Truck, tKey: 'items.shipments' },
+      { href: '/mrp', icon: Calculator, tKey: 'items.mrp' },
+      { href: '/production-instructions', icon: ClipboardList, tKey: 'items.productionInstructions' },
+      { href: '/production/mold-orders', icon: Wrench, tKey: 'items.moldOrders' },
     ]
   },
   // ── 2. Phòng Thiết kế (Design Dept) ────────────────────────────────
   {
-    id: 'd2', icon: PenTool, labelJA: '設計技術部', labelVI: 'Phòng Thiết kế', color: '#14B8A6',
+    id: 'd2', icon: PenTool, tKey: 'sections.design', color: '#14B8A6',
     items: [
-      { href: '/engineering', icon: Home, labelJA: 'ダッシュボード', labelVI: 'Tổng quan', exact: true },
-      { href: '/engineering/designs', icon: PenTool, labelJA: '設計版', labelVI: 'Phiên bản Thiết kế' },
-      { href: '/equipment/materials', icon: Layers, labelJA: 'アルミブランク', labelVI: 'Phôi nhôm' },
+      { href: '/engineering', icon: Home, tKey: 'items.overview', exact: true },
+      { href: '/engineering/designs', icon: PenTool, tKey: 'items.designs' },
+      { href: '/equipment/aluminum', icon: Layers, tKey: 'items.aluminum' },
     ]
   },
   // ── 3. Phòng Khuôn (Equipment / Die Dept) ──────────────────────────
   {
-    id: 'd3', icon: Wrench, labelJA: '設備・金型部', labelVI: 'Phòng Thiết bị & Khuôn', color: '#EA8C1C',
+    id: 'd3', icon: Wrench, tKey: 'sections.equipment', color: '#EA8C1C',
     items: [
-      { href: '/equipment/dashboard', icon: Home, labelJA: 'ダッシュボード', labelVI: 'Tổng quan', exact: true },
-      { href: '/equipment/molds', icon: Box, labelJA: '金型実物', labelVI: 'Khuôn vật lý' },
-      { href: '/equipment/jobs', icon: Briefcase, labelJA: 'ジョブ管理', labelVI: 'Quản lý Job' },
-      { href: '/equipment/schedule', icon: GanttChart, labelJA: '工程計画', labelVI: 'Bảng Kế hoạch' },
-      { href: '/equipment/cutting-dies', icon: Scissors, labelJA: '抜型', labelVI: 'Dao cắt (Die)' },
-      { href: '/equipment/auxiliary', icon: Cog, labelJA: '補助設備', labelVI: 'TB phụ trợ' },
-      { href: '/maintenance', icon: Wrench, labelJA: '保守・メンテ', labelVI: 'Bảo dưỡng' },
-      { href: '/master/racks', icon: Grid3X3, labelJA: '棚管理', labelVI: 'Master Kệ chứa' },
-      { href: '/equipment/lifecycle', icon: Archive, labelJA: '棚卸', labelVI: 'Kiểm kê' },
-      { href: '/worklogs', icon: ClipboardList, labelJA: '作業ログ', labelVI: 'Nhật ký SX' },
+      { href: '/equipment/dashboard', icon: Home, tKey: 'items.overview', exact: true },
+      { href: '/equipment/molds', icon: Box, tKey: 'items.molds' },
+      { href: '/equipment/jobs', icon: Briefcase, tKey: 'items.jobs' },
+      { href: '/equipment/schedule', icon: GanttChart, tKey: 'items.schedule' },
+      { href: '/equipment/cutting-dies', icon: Scissors, tKey: 'items.cuttingDies' },
+      { href: '/equipment/auxiliary', icon: Cog, tKey: 'items.auxiliary' },
+      { href: '/maintenance', icon: Wrench, tKey: 'items.maintenance' },
+      { href: '/master/racks', icon: Grid3X3, tKey: 'items.racks' },
+      { href: '/equipment/lifecycle', icon: Archive, tKey: 'items.lifecycle' },
+      { href: '/equipment/plastics', icon: Package, tKey: 'items.plastics' },
+      { href: '/worklogs', icon: ClipboardList, tKey: 'items.worklogs' },
     ]
   },
   // ── 4. Phòng Định hình (Thermoforming Dept) ────────────────────────
   {
-    id: 'd4', icon: Factory, labelJA: '成形部', labelVI: 'Phòng Định hình', color: '#8B5CF6',
+    id: 'd4', icon: Factory, tKey: 'sections.thermoforming', color: '#8B5CF6',
     items: [
-      { href: '/production/dashboard', icon: Home, labelJA: 'ダッシュボード', labelVI: 'Tổng quan', exact: true },
-      { href: '/production/planning', icon: Calendar, labelJA: '生産計画', labelVI: 'Kế hoạch SX' },
-      { href: '/production-instructions', icon: ClipboardList, labelJA: '生産指示', labelVI: 'Chỉ thị sản xuất' },
-      { href: '/production/kanban', icon: Columns3, labelJA: '看板', labelVI: 'Kanban' },
-      { href: '/production/floor', icon: Factory, labelJA: '実績入力', labelVI: 'Nhập thực tế' },
-      { href: '/master/machines', icon: Server, labelJA: '機械・設備', labelVI: 'Master Máy móc' },
+      { href: '/production/dashboard', icon: Home, tKey: 'items.overview', exact: true },
+      { href: '/production/planning', icon: Calendar, tKey: 'items.planning' },
+      { href: '/production-instructions', icon: ClipboardList, tKey: 'items.productionInstructions' },
+      { href: '/production/kanban', icon: Columns3, tKey: 'items.kanban' },
+      { href: '/production/floor', icon: Factory, tKey: 'items.floor' },
+      { href: '/master/machines', icon: Server, tKey: 'items.machines' },
     ]
   },
   // ── 5. Phòng QC (Quality Control Dept) ─────────────────────────────
   {
-    id: 'd5', icon: ShieldCheck, labelJA: '品質管理部', labelVI: 'Phòng QC', color: '#EF4444',
+    id: 'd5', icon: ShieldCheck, tKey: 'sections.quality', color: '#EF4444',
     items: [
-      { href: '/quality', icon: Home, labelJA: 'ダッシュボード', labelVI: 'Tổng quan', exact: true },
-      { href: '/quality/inspections', icon: ScanLine, labelJA: '寸法検査', labelVI: 'KCS Đo đạc' },
-      { href: '/quality/lot-inspections', icon: ShieldCheck, labelJA: 'ロット検査', labelVI: 'QC Lô / NG' },
-      { href: '/quality/defects', icon: AlertTriangle, labelJA: '不良ダッシュボード', labelVI: 'Dashboard Lỗi' },
+      { href: '/quality', icon: Home, tKey: 'items.overview', exact: true },
+      { href: '/quality/inspections', icon: ScanLine, tKey: 'items.inspections' },
+      { href: '/quality/lot-inspections', icon: ShieldCheck, tKey: 'items.lotInspections' },
+      { href: '/quality/defects', icon: AlertTriangle, tKey: 'items.defects' },
     ]
   },
   // ── 6. Quản lý Vật tư (Material Dept) ─────────────────────────────
   {
-    id: 'd6', icon: Package, labelJA: '資材管理', labelVI: 'Quản lý Vật tư', color: '#EAB308',
+    id: 'd6', icon: Package, tKey: 'sections.materials', color: '#EAB308',
     items: [
-      { href: '/materials', icon: Home, labelJA: 'ダッシュボード', labelVI: 'Tổng quan', exact: true },
-      { href: '/plastics/master', icon: Layers, labelJA: '樹脂マスター', labelVI: 'Master Nhựa' },
-      { href: '/plastics/inventory', icon: Archive, labelJA: '樹脂在庫', labelVI: 'Kiểm kê Nhựa' },
-      { href: '/materials/daily', icon: ArrowDownUp, labelJA: '入出庫', labelVI: 'Nhập xuất kho' },
+      { href: '/materials', icon: Home, tKey: 'items.overview', exact: true },
+      { href: '/plastics/master', icon: Layers, tKey: 'items.plasticsMaster' },
+      { href: '/plastics/inventory', icon: Archive, tKey: 'items.plasticsInventory' },
+      { href: '/materials/daily', icon: ArrowDownUp, tKey: 'items.dailyMaterials' },
     ]
   },
 ]
 
 const NAV_BOTTOM: NavItem[] = [
-  { href: '/reports', icon: BarChart3, labelJA: 'レポート', labelVI: 'Báo cáo', exact: true },
-  { href: '/reports/daily-worklog', icon: ClipboardEdit, labelJA: '日報記録書', labelVI: 'Nippo' },
-  { href: '/admin/ingest', icon: DatabaseZap, labelJA: 'データ取込', labelVI: 'Nhập DL tự động' },
-  { href: '/settings', icon: Settings, labelJA: '設定', labelVI: 'Cài đặt' },
+  { href: '/reports', icon: BarChart3, tKey: 'bottom.reports', exact: true },
+  { href: '/reports/daily-worklog', icon: ClipboardEdit, tKey: 'bottom.dailyWorklog' },
+  { href: '/admin/ingest', icon: DatabaseZap, tKey: 'bottom.ingest' },
+  { href: '/settings', icon: Settings, tKey: 'bottom.settings' },
 ]
 
+import { useTranslations } from 'next-intl'
+
 export default function Sidebar() {
+  const t = useTranslations('Navigation')
   const pathname = usePathname()
   const [manuallyOpened, setManuallyOpened] = useState<string | null>(null)
   const [isHovered, setIsHovered] = useState(false)
@@ -163,7 +165,7 @@ export default function Sidebar() {
           <button
             onClick={() => setIsPinned(!isPinned)}
             className="text-white hover:bg-white/20 p-1.5 rounded transition-colors"
-            title={isPinned ? 'Bỏ ghim' : 'Ghim Sidebar'}
+            title={isPinned ? t('unpin') : t('pinSidebar')}
           >
             <Pin size={18} className={isPinned ? 'fill-white' : ''} style={{ transform: isPinned ? 'none' : 'rotate(45deg)' }} />
           </button>
@@ -184,14 +186,13 @@ export default function Sidebar() {
             return (
               <Link key={item.href} href={item.href}
                 className={`nav-item ${active ? 'nav-item--active' : ''}`}
-                title={`${item.labelJA} / ${item.labelVI}`}
+                title={t(item.tKey)}
               >
                 <div className="w-[32px] flex justify-center shrink-0">
                   <item.icon size={16} style={{ color: active ? 'var(--accent)' : 'var(--text-muted)' }} />
                 </div>
                 <div className={`flex flex-col justify-center whitespace-nowrap ml-2 transition-opacity duration-300 ${isSidebarOpen ? 'opacity-100' : 'opacity-0'}`}>
-                  <span className="text-[12px] font-semibold leading-tight" style={{ color: active ? 'var(--accent)' : 'var(--text-primary)', fontFamily: 'var(--font-jp)' }}>{item.labelJA}</span>
-                  <span className="text-[10px] leading-tight" style={{ color: 'var(--text-muted)' }}>{item.labelVI}</span>
+                  <span className="text-[12px] font-semibold leading-tight" style={{ color: active ? 'var(--accent)' : 'var(--text-primary)', fontFamily: 'var(--font-jp)' }}>{t(item.tKey)}</span>
                 </div>
               </Link>
             )
@@ -210,7 +211,7 @@ export default function Sidebar() {
                 <button
                   onClick={() => { toggleSection(section.id); if (!isSidebarOpen) setIsPinned(true) }}
                   className="nav-item w-full"
-                  title={`${section.labelJA} / ${section.labelVI}`}
+                  title={t(section.tKey)}
                   style={{ background: open && isSidebarOpen ? 'var(--bg-surface-2)' : undefined }}
                 >
                   <div className="w-[32px] flex justify-center shrink-0 relative">
@@ -224,8 +225,7 @@ export default function Sidebar() {
                     <div className="flex items-center gap-2">
                       <div className="w-[3px] h-[14px] rounded-full shrink-0" style={{ background: section.color }} />
                       <div className="flex flex-col text-left">
-                        <span className="text-[12px] font-bold leading-tight" style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-jp)' }}>{section.labelJA}</span>
-                        <span className="text-[9px] font-medium leading-tight" style={{ color: 'var(--text-secondary)' }}>{section.labelVI}</span>
+                        <span className="text-[12px] font-bold leading-tight" style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-jp)' }}>{t(section.tKey)}</span>
                       </div>
                     </div>
                     <ChevronRight size={14} style={{ color: 'var(--text-muted)' }}
@@ -250,8 +250,7 @@ export default function Sidebar() {
                             <item.icon size={14} style={{ color: active ? section.color : 'var(--text-muted)' }} />
                           </div>
                           <div className="flex flex-col justify-center whitespace-nowrap ml-2">
-                            <span className="text-[11px] font-semibold leading-tight" style={{ color: active ? section.color : 'var(--text-primary)', fontFamily: 'var(--font-jp)' }}>{item.labelJA}</span>
-                            <span className="text-[10px] leading-tight" style={{ color: 'var(--text-muted)' }}>{item.labelVI}</span>
+                            <span className="text-[11px] font-semibold leading-tight" style={{ color: active ? section.color : 'var(--text-primary)', fontFamily: 'var(--font-jp)' }}>{t(item.tKey)}</span>
                           </div>
                         </Link>
                       )
@@ -271,14 +270,13 @@ export default function Sidebar() {
             return (
               <Link key={item.href} href={item.href}
                 className={`nav-item ${active ? 'nav-item--active' : ''}`}
-                title={`${item.labelJA} / ${item.labelVI}`}
+                title={t(item.tKey)}
               >
                 <div className="w-[32px] flex justify-center shrink-0">
                   <item.icon size={16} style={{ color: active ? 'var(--accent)' : 'var(--text-muted)' }} />
                 </div>
                 <div className={`flex flex-col justify-center whitespace-nowrap ml-2 transition-opacity duration-300 ${isSidebarOpen ? 'opacity-100' : 'opacity-0'}`}>
-                  <span className="text-[12px] font-semibold leading-tight" style={{ color: active ? 'var(--accent)' : 'var(--text-primary)', fontFamily: 'var(--font-jp)' }}>{item.labelJA}</span>
-                  <span className="text-[10px] leading-tight" style={{ color: 'var(--text-muted)' }}>{item.labelVI}</span>
+                  <span className="text-[12px] font-semibold leading-tight" style={{ color: active ? 'var(--accent)' : 'var(--text-primary)', fontFamily: 'var(--font-jp)' }}>{t(item.tKey)}</span>
                 </div>
               </Link>
             )

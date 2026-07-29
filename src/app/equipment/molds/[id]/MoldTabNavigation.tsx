@@ -1,28 +1,17 @@
 'use client'
 
 import { useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { FileText, MapPin, Truck, Shield, Camera, Wrench } from 'lucide-react'
 
 export type TabId = 'overview' | 'location' | 'transfer' | 'jobs' | 'teflon' | 'photos' | 'maintenance'
 
 export type TabDef = {
   id: TabId
-  labelJa: string
-  labelVi: string
+  labelKey: string
   icon: typeof FileText
   enabled: boolean
 }
-
-/** Registry of all tabs — add new tabs here only */
-export const TABS: TabDef[] = [
-  { id: 'overview',    labelJa: '概要',       labelVi: 'Tổng quan',    icon: FileText,  enabled: true },
-  { id: 'location',    labelJa: '位置・入出庫', labelVi: 'Vị trí',       icon: MapPin,    enabled: true },
-  { id: 'transfer',    labelJa: '移動',       labelVi: 'Vận chuyển',   icon: Truck,     enabled: true },
-  { id: 'jobs',        labelJa: 'ジョブ',     labelVi: 'Job',          icon: Wrench,    enabled: true },
-  { id: 'teflon',      labelJa: 'テフロン',   labelVi: 'Teflon',       icon: Shield,    enabled: false },
-  { id: 'photos',      labelJa: '写真',       labelVi: 'Ảnh',          icon: Camera,    enabled: false },
-  { id: 'maintenance', labelJa: '保守',       labelVi: 'Bảo trì',     icon: Wrench,    enabled: false },
-]
 
 export function MoldTabNavigation({
   activeTab,
@@ -31,6 +20,17 @@ export function MoldTabNavigation({
   activeTab: TabId
   onTabChange: (tab: TabId) => void
 }) {
+  const t = useTranslations('Equipment')
+  const tabs: TabDef[] = [
+    { id: 'overview',    labelKey: 'tabOverview',       icon: FileText,  enabled: true },
+    { id: 'location',    labelKey: 'tabLocation',       icon: MapPin,    enabled: true },
+    { id: 'transfer',    labelKey: 'tabTransfer',       icon: Truck,     enabled: true },
+    { id: 'jobs',        labelKey: 'tabJobs',           icon: Wrench,    enabled: true },
+    { id: 'teflon',      labelKey: 'tabTeflon',         icon: Shield,    enabled: false },
+    { id: 'photos',      labelKey: 'tabPhotos',         icon: Camera,    enabled: false },
+    { id: 'maintenance', labelKey: 'tabMaintenance',    icon: Wrench,    enabled: false },
+  ]
+
   return (
     <div
       className="card-flat"
@@ -39,7 +39,7 @@ export function MoldTabNavigation({
         borderBottom: '2px solid var(--border-default)',
       }}
     >
-      {TABS.filter(t => t.enabled).map((tab) => {
+      {tabs.filter(t => t.enabled).map((tab) => {
         const Icon = tab.icon
         const isActive = activeTab === tab.id
         return (
@@ -64,10 +64,7 @@ export function MoldTabNavigation({
             }}
           >
             <Icon size={14} />
-            <span>{tab.labelJa}</span>
-            <span style={{ fontSize: 9, opacity: 0.6, fontFamily: 'var(--font-main)' }}>
-              {tab.labelVi}
-            </span>
+            <span>{t(tab.labelKey as any)}</span>
           </button>
         )
       })}

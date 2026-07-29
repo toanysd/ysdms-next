@@ -1,5 +1,7 @@
 'use client'
 
+import { useTranslations } from 'next-intl'
+
 import React from 'react'
 import { Building2 } from 'lucide-react'
 
@@ -10,6 +12,7 @@ interface CustomerStat {
 }
 
 export default function CustomerBento({ customers }: { customers: CustomerStat[] }) {
+  const t = useTranslations()
     if (!customers || customers.length === 0) return null
 
     // Color palette for bento cells
@@ -25,8 +28,7 @@ export default function CustomerBento({ customers }: { customers: CustomerStat[]
         <div className="mt-4">
             <h3 className="text-xs font-bold mb-2 flex items-center gap-2" style={{ color: 'var(--mcs-text-secondary)' }}>
                 <Building2 size={14} />
-                <span className="ja">本日の顧客別入庫</span>
-                <span className="vi">/ Top KH Nhập Hôm Nay</span>
+                {t('Common.topKhNhapHomNay')}
             </h3>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
                 {customers.map((c, i) => {

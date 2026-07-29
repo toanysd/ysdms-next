@@ -328,9 +328,7 @@ export async function getJobsForGantt(searchQuery?: string, fromDate?: string, t
 
     if (fromDate && toDate) {
         const toDateEnd = toDate + ' 23:59:59'
-        // Since we populated mold_deadline, we can use it, but fallback to others for safety
-        req = req.or(`mold_deadline.gte.${fromDate},deadline.gte.${fromDate},ship_date.gte.${fromDate}`)
-                 .or(`mold_deadline.lte.${toDateEnd},deadline.lte.${toDateEnd},ship_date.lte.${toDateEnd}`)
+        req = req.or(`and(mold_deadline.gte.${fromDate},mold_deadline.lte.${toDateEnd}),and(deadline.gte.${fromDate},deadline.lte.${toDateEnd}),and(start_date.gte.${fromDate},start_date.lte.${toDateEnd}),and(ship_date.gte.${fromDate},ship_date.lte.${toDateEnd})`)
     }
 
     const from = (page - 1) * pageSize

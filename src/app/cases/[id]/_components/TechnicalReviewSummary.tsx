@@ -3,6 +3,7 @@
 import type { TechnicalReview, UserRole } from '../types';
 import { createTechnicalReviewRevision } from '../actions';
 import { useTransition } from 'react';
+import { useTranslations } from 'next-intl';
 
 interface Props {
   review: TechnicalReview;
@@ -20,22 +21,23 @@ export default function TechnicalReviewSummary({
   onCreateRevision,
   onCreateQuotation,
 }: Props) {
+  const t = useTranslations();
   const [isPending, startTransition] = useTransition();
 
   const rows: { label: string; value: string | number | null | undefined }[] = [
-    { label: 'Version',           value: review.version },
-    { label: 'Vật liệu',          value: review.material_spec },
-    { label: 'Độ dày (mm)',       value: review.thickness_mm },
-    { label: 'Phương án khuôn',   value: review.mold_option },
-    { label: 'Số pocket',         value: review.pocket_count },
-    { label: 'Phương án dao cắt', value: review.cutting_die_option },
-    { label: 'Lead time (ngày)',  value: review.lead_time_days },
-    { label: 'Cycle time (sec)',  value: review.cycle_time_sec },
-    { label: 'Yêu cầu đặc biệt', value: review.special_requirements },
-    { label: 'Ghi chú kỹ thuật', value: review.technical_constraints },
-    { label: 'Người duyệt',       value: review.approved_by },
+    { label: t('Cases.TechnicalReview.fields.version'),           value: review.version },
+    { label: t('Cases.TechnicalReview.fields.material'),          value: review.material_spec },
+    { label: t('Cases.TechnicalReview.fields.thickness'),         value: review.thickness_mm },
+    { label: t('Cases.TechnicalReview.fields.moldOption'),         value: review.mold_option },
+    { label: t('Cases.TechnicalReview.fields.pocketCount'),         value: review.pocket_count },
+    { label: t('Cases.TechnicalReview.fields.cuttingDieOption'),   value: review.cutting_die_option },
+    { label: t('Cases.TechnicalReview.fields.leadTime'),          value: review.lead_time_days },
+    { label: t('Cases.TechnicalReview.fields.cycleTime'),          value: review.cycle_time_sec },
+    { label: t('Cases.TechnicalReview.fields.specialRequirements'),value: review.special_requirements },
+    { label: t('Cases.TechnicalReview.fields.technicalConstraints'),value: review.technical_constraints },
+    { label: t('Cases.TechnicalReview.fields.approvedBy'),         value: review.approved_by },
     {
-      label: 'Ngày duyệt',
+      label: t('Cases.TechnicalReview.fields.approvedAt'),
       value: review.approved_at
         ? new Date(review.approved_at).toLocaleDateString('ja-JP')
         : null,
@@ -53,8 +55,8 @@ export default function TechnicalReviewSummary({
     <div className="card card-approved">
       <div className="card-header">
         <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-          <span className="card-title">✅ Technical Review đã duyệt</span>
-          <span className="badge badge-success">承認済 / Approved</span>
+          <span className="card-title">✅ {t('Cases.TechnicalReview.approvedSummaryTitle')}</span>
+          <span className="badge badge-success">{t('Cases.TechnicalReview.statusApproved')}</span>
         </div>
         <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
           {/* Nút này chuyển sang Tab 販売 và mở modal — KHÔNG navigate ra /quotations/new */}
@@ -63,7 +65,7 @@ export default function TechnicalReviewSummary({
               className="btn btn-primary"
               onClick={onCreateQuotation}
             >
-              📄 見積書を作成 / Tạo báo giá
+              📄 {t('Cases.TechnicalReview.createQuotationBtn')}
             </button>
           )}
           {(currentUserRole === 'engineering' || currentUserRole === 'manager') && (
@@ -72,7 +74,7 @@ export default function TechnicalReviewSummary({
               onClick={handleCreateRevision}
               disabled={isPending}
             >
-              🔄 Tạo Revision mới
+              🔄 {t('Cases.TechnicalReview.createRevisionBtn')}
             </button>
           )}
         </div>
