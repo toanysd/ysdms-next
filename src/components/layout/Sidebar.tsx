@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
   Home, ClipboardEdit, Package, FileText, Truck, FileSpreadsheet,
-  Wrench, PenTool, Scissors, Cog, Archive,
+  Wrench, PenTool, Scissors, Cog, Archive, PlusCircle,
   Layers, ArrowDownUp,
   Factory, Calendar, Calculator,
   ShieldCheck, AlertTriangle,
@@ -65,6 +65,7 @@ const NAV_SECTIONS: NavSection[] = [
     id: 'd3', icon: Wrench, tKey: 'sections.equipment', color: '#EA8C1C',
     items: [
       { href: '/equipment/dashboard', icon: Home, tKey: 'items.overview', exact: true },
+      { href: '/equipment/jobs/quick-create', icon: PlusCircle, tKey: 'items.quickCreate' },
       { href: '/equipment/molds', icon: Box, tKey: 'items.molds' },
       { href: '/equipment/jobs', icon: Briefcase, tKey: 'items.jobs' },
       { href: '/equipment/schedule', icon: GanttChart, tKey: 'items.schedule' },

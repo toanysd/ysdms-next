@@ -200,7 +200,7 @@ export function LogsTab({ job, onRefresh }: { job: any; onRefresh: () => void })
                       }
                     </td>
                     <td style={{ fontSize: 11, color: 'var(--text-secondary)' }}>
-                      {log.description || '—'}
+                      {log.notes || log.description || '—'}
                     </td>
                     <td style={{ fontFamily: 'monospace', fontWeight: 700, color: 'var(--accent)' }}>
                       {log.hours_spent != null ? log.hours_spent.toFixed(2) : '0.00'}

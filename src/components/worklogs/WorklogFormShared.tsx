@@ -79,6 +79,7 @@ export function WorklogFormShared({
   const [showQuickJob, setShowQuickJob] = useState(false)
   const [quickJobName, setQuickJobName] = useState('')
   const [quickJobTypeId, setQuickJobTypeId] = useState('')
+  const [isFacilityJob, setIsFacilityJob] = useState(false)
   const [quickJobCreating, setQuickJobCreating] = useState(false)
 
   // ── Load Initial Metadata ──────────────────────────────────────────────────
@@ -268,6 +269,30 @@ export function WorklogFormShared({
                   </select>
                 </div>
               </div>
+
+              {/* Job Classification Selection */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 16, background: 'var(--bg-surface-2)', padding: '6px 10px', borderRadius: 6 }}>
+                <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)' }}>Phân loại Job:</span>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 11 }}>
+                  <input
+                    type="radio"
+                    name="isFacilityJob"
+                    checked={!isFacilityJob}
+                    onChange={() => setIsFacilityJob(false)}
+                  />
+                  <span>⚙️ 金型加工 (Gia công khuôn)</span>
+                </label>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 11 }}>
+                  <input
+                    type="radio"
+                    name="isFacilityJob"
+                    checked={isFacilityJob}
+                    onChange={() => setIsFacilityJob(true)}
+                  />
+                  <span>🧹 社内作業 (Công việc nội bộ)</span>
+                </label>
+              </div>
+
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 6, marginTop: 4 }}>
                 <button
                   type="button" className="btn btn-secondary" style={{ padding: '4px 10px', fontSize: 11 }}
@@ -280,7 +305,11 @@ export function WorklogFormShared({
                   disabled={quickJobCreating || !quickJobName.trim() || !quickJobTypeId}
                   onClick={async () => {
                     setQuickJobCreating(true)
-                    const result = await createQuickJob({ job_name: quickJobName.trim(), job_type_id: quickJobTypeId })
+                    const result = await createQuickJob({
+                      job_name: quickJobName.trim(),
+                      job_type_id: quickJobTypeId,
+                      is_facility_job: isFacilityJob
+                    })
                     setQuickJobCreating(false)
                     if (!result.success) {
                       setError(result.error)

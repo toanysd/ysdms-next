@@ -201,6 +201,7 @@ def import_tier2(supabase: Any, registry: IdRegistry, stats: ImportStats, dry_ru
     try:
         df_products = read_csv(CSV_DIR / 'tray.csv')
         product_records = []
+        seen_product_codes = {}
         for _, row in df_products.iterrows():
             tray_id = clean_id(row.get('TrayID'))
             if not tray_id:
@@ -212,22 +213,37 @@ def import_tier2(supabase: Any, registry: IdRegistry, stats: ImportStats, dry_ru
                 continue # NOT NULL constraint
                 
             product_id = str(uuid.uuid4())
-            tray_code = clean_value(row.get('TrayCode')) or f"TRAY-{tray_id}"
-            
+            mold_tray_name = clean_value(row.get('MoldTrayName'))
+            tray_name = clean_value(row.get('TrayName'))
+            tray_code_val = clean_value(row.get('TrayCode'))
+            customer_tray_name = clean_value(row.get('CustomerTrayName'))
+
+            base_code = mold_tray_name or tray_code_val or f"TRAY-{tray_id}"
+            if base_code in seen_product_codes:
+                seen_product_codes[base_code] += 1
+                p_code = f"{base_code}-{seen_product_codes[base_code]}"
+            else:
+                seen_product_codes[base_code] = 1
+                p_code = base_code
+
+            p_name_internal = mold_tray_name or tray_name or p_code
+            p_name = customer_tray_name or p_name_internal
+
             record = {
                 'product_id': product_id,
                 'legacy_id': f"TRAY-{tray_id}",
-                'product_code': tray_code,
-                'product_name_internal': clean_value(row.get('TrayName')),
-                'product_name': clean_value(row.get('MoldTrayName')),
+                'product_code': p_code,
+                'product_name_internal': p_name_internal,
+                'product_name': p_name,
+                'customer_product_name': customer_tray_name,
                 'company_id': company_id,
                 'date_entry': parse_date(row.get('TrayDateEntry')),
-                'product_status': 'active'
+                'product_status': 'ACTIVE'
             }
             product_records.append(record)
             registry.register('products', tray_id, product_id)
-            if tray_code:
-                registry.register('products_by_code', tray_code, product_id)
+            if p_code:
+                registry.register('products_by_code', p_code, product_id)
                 
         if not dry_run and product_records:
             for i in range(0, len(product_records), BATCH_SIZE):

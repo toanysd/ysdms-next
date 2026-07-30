@@ -1981,9 +1981,11 @@ export type Database = {
       job_steps: {
         Row: {
           actual_hours: number | null
+          arrangement: string | null
           assigned_to: string | null
           baseline_end: string | null
           baseline_start: string | null
+          condition: string | null
           created_at: string | null
           deadline: string | null
           drawing_receipt_date: string | null
@@ -1993,6 +1995,8 @@ export type Database = {
           job_id: string
           machine_id: string | null
           machining_location: string | null
+          manufacture_location: string | null
+          material_spec: string | null
           notes: string | null
           outsource_company: string | null
           planned_end: string | null
@@ -2001,6 +2005,7 @@ export type Database = {
           processing_item_id: number | null
           processing_status_id: number | null
           progress_percent: number | null
+          quantity: number | null
           set_info: string | null
           step_id: string
           step_name: string
@@ -2008,13 +2013,16 @@ export type Database = {
           step_status: string | null
           tehai_info: string | null
           track: string | null
+          type_code: string | null
           updated_at: string | null
         }
         Insert: {
           actual_hours?: number | null
+          arrangement?: string | null
           assigned_to?: string | null
           baseline_end?: string | null
           baseline_start?: string | null
+          condition?: string | null
           created_at?: string | null
           deadline?: string | null
           drawing_receipt_date?: string | null
@@ -2024,6 +2032,8 @@ export type Database = {
           job_id: string
           machine_id?: string | null
           machining_location?: string | null
+          manufacture_location?: string | null
+          material_spec?: string | null
           notes?: string | null
           outsource_company?: string | null
           planned_end?: string | null
@@ -2032,6 +2042,7 @@ export type Database = {
           processing_item_id?: number | null
           processing_status_id?: number | null
           progress_percent?: number | null
+          quantity?: number | null
           set_info?: string | null
           step_id?: string
           step_name: string
@@ -2039,13 +2050,16 @@ export type Database = {
           step_status?: string | null
           tehai_info?: string | null
           track?: string | null
+          type_code?: string | null
           updated_at?: string | null
         }
         Update: {
           actual_hours?: number | null
+          arrangement?: string | null
           assigned_to?: string | null
           baseline_end?: string | null
           baseline_start?: string | null
+          condition?: string | null
           created_at?: string | null
           deadline?: string | null
           drawing_receipt_date?: string | null
@@ -2055,6 +2069,8 @@ export type Database = {
           job_id?: string
           machine_id?: string | null
           machining_location?: string | null
+          manufacture_location?: string | null
+          material_spec?: string | null
           notes?: string | null
           outsource_company?: string | null
           planned_end?: string | null
@@ -2063,6 +2079,7 @@ export type Database = {
           processing_item_id?: number | null
           processing_status_id?: number | null
           progress_percent?: number | null
+          quantity?: number | null
           set_info?: string | null
           step_id?: string
           step_name?: string
@@ -2070,6 +2087,7 @@ export type Database = {
           step_status?: string | null
           tehai_info?: string | null
           track?: string | null
+          type_code?: string | null
           updated_at?: string | null
         }
         Relationships: [

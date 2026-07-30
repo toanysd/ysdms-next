@@ -449,7 +449,7 @@ function MoldsPageContent() {
                     </td>
                     <td className="p-2 text-[11px] font-mono font-semibold">{formatRackLocation(m)}</td>
                     <td className="p-2">
-                      <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full border bg-slate-100">{STORAGE_LABELS[m.usage_status] ? t(`storage.${STORAGE_LABELS[m.usage_status].key}`) : m.usage_status}</span>
+                      <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full border bg-slate-100">{STORAGE_LABELS[m.usage_status] ? t(`status.${STORAGE_LABELS[m.usage_status].key}`) : m.usage_status}</span>
                     </td>
                     <td className="p-2"><StatusBadge status={m.device_status} /></td>
                     <td className="p-2">

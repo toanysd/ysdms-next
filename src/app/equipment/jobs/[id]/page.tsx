@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { Loader2, AlertTriangle, Box, FileCog, Wrench, Layers } from 'lucide-react'
+import { Loader2, AlertTriangle, Box, FileCog, Wrench, Layers, Edit } from 'lucide-react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 
@@ -13,6 +13,7 @@ import { JobTabNavigation, type TabId } from './JobTabNavigation'
 import { OverviewTab } from './tabs/OverviewTab'
 import { StepsTab } from './tabs/StepsTab'
 import { LogsTab } from './tabs/LogsTab'
+import { QuickLinkMoldModal } from '@/components/equipment/QuickLinkMoldModal'
 
 // Placeholder Tabs
 function PlaceholderTab({ name }: { name: string }) {
@@ -48,6 +49,7 @@ export default function JobDetailPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<TabId>('overview')
+  const [showLinkMoldModal, setShowLinkMoldModal] = useState(false)
 
   const fetchJob = useCallback(async () => {
     setLoading(true)
@@ -182,7 +184,6 @@ export default function JobDetailPage() {
                 <span style={{ fontSize: 9, color: 'var(--text-muted)' }}>{job.design_revisions.design_code}</span>
               </Link>
             )}
-
             {/* ← Physical Mold */}
             {job.physical_molds && (
               <Link
@@ -202,9 +203,55 @@ export default function JobDetailPage() {
                 <span style={{ fontSize: 9, color: 'var(--text-muted)' }}>{job.physical_molds.system_code}</span>
               </Link>
             )}
+
+            {/* ← Edit Master 1-Page Link */}
+            <Link
+              href={`/equipment/jobs/quick-create?editJobId=${job.job_id}`}
+              className="btn btn-secondary"
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: 4,
+                padding: '3px 10px', borderRadius: 'var(--radius-sm)',
+                fontSize: 11, color: 'var(--accent)', textDecoration: 'none',
+                fontWeight: 700, height: 26, background: 'color-mix(in srgb, var(--accent) 8%, var(--bg-surface))'
+              }}
+              title="Mở form tổng hợp 1-trang để nạp & cập nhật trọn bộ thông tin"
+            >
+              <Edit size={12} />
+              <span>✏️ Sửa tổng thể (1-Trang)</span>
+            </Link>
           </div>
         </div>
       </div>
+
+      {/* Warning Banner for Unlinked Mold Jobs */}
+      {!job.physical_molds && !job.job_name.includes('社内作業') && (
+        <div style={{
+          padding: '8px 14px',
+          borderRadius: 8,
+          border: '1px solid var(--status-warning)',
+          background: 'color-mix(in srgb, var(--status-warning) 10%, var(--bg-surface))',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginBottom: 10,
+          fontSize: 12
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <AlertTriangle size={16} style={{ color: 'var(--status-warning)' }} />
+            <span>
+              <strong>⚠️ Job này chưa được gắn với Khuôn vật lý nào:</strong> Hãy liên kết Khuôn vật lý để theo dõi chính xác thời gian gia công & chi phí tích lũy.
+            </span>
+          </div>
+          <button
+            type="button"
+            className="btn btn-primary"
+            style={{ height: 26, padding: '0 10px', fontSize: 11, gap: 4 }}
+            onClick={() => setShowLinkMoldModal(true)}
+          >
+            + Gán Khuôn Ngay
+          </button>
+        </div>
+      )}
 
       {/* Row 2: Tabs */}
       <JobTabNavigation activeTab={activeTab} onTabChange={setActiveTab} />
@@ -213,6 +260,16 @@ export default function JobDetailPage() {
       <div style={{ flex: 1, minHeight: 0, marginTop: 0 }}>
         <TabContent tab={activeTab} job={job} onRefresh={fetchJob} />
       </div>
+
+      {showLinkMoldModal && (
+        <QuickLinkMoldModal
+          jobId={job.job_id}
+          jobCode={job.job_code}
+          jobName={job.job_name}
+          onClose={() => setShowLinkMoldModal(false)}
+          onSuccess={() => fetchJob()}
+        />
+      )}
     </div>
   )
 }

@@ -48,6 +48,11 @@ type Product = {
     company_name: string
     company_code: string
   } | null
+  design_revisions?: {
+    revision_id: string
+    design_code: string
+    revision_number: number | null
+  }[] | null
   // mold_masters DEPRECATED — Products = MoldMasters = Tray
 }
 
@@ -217,7 +222,7 @@ function ProductsPageContent() {
 
     let query = supabase
       .from('products')
-      .select('*, companies!products_company_id_fkey(company_name, company_code)', { count: 'exact' })
+      .select('*, companies!products_company_id_fkey(company_name, company_code), design_revisions(revision_id, design_code, revision_number)', { count: 'exact' })
       .order(sortCol, { ascending: sortDir === 'asc' })
 
     if (statusFilter !== 'ALL') {
@@ -581,7 +586,36 @@ function ProductsPageContent() {
                   >
                     <td style={{ padding: '6px 10px', fontSize: 13, fontFamily: 'monospace', fontWeight: 700 }}><Link href={`/master/products/${p.product_id}`} style={{ color: 'var(--accent)', textDecoration: 'none' }}>{p.product_code}</Link></td>
                     <td style={{ padding: '6px 10px', fontSize: 12 }}><div style={{ fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'var(--font-jp)' }}>{p.product_name || '—'}</div></td>
-                    <td style={{ padding: '6px 10px', fontSize: 11, fontFamily: 'monospace', fontWeight: 600, color: 'var(--text-muted)' }}>—</td>
+                    <td style={{ padding: '6px 10px', fontSize: 11, fontFamily: 'monospace' }}>
+                      {p.design_revisions && p.design_revisions.length > 0 ? (
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                          {p.design_revisions.slice(0, 3).map(dr => (
+                            <Link
+                              key={dr.revision_id}
+                              href={`/engineering/designs/revisions/${dr.revision_id}`}
+                              style={{
+                                color: 'var(--accent)',
+                                background: 'color-mix(in srgb, var(--accent) 10%, transparent)',
+                                border: '1px solid color-mix(in srgb, var(--accent) 30%, transparent)',
+                                padding: '1px 5px',
+                                borderRadius: 4,
+                                fontSize: 11,
+                                fontWeight: 600,
+                                textDecoration: 'none',
+                              }}
+                              onClick={e => e.stopPropagation()}
+                            >
+                              {dr.design_code}
+                            </Link>
+                          ))}
+                          {p.design_revisions.length > 3 && (
+                            <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>+{p.design_revisions.length - 3}</span>
+                          )}
+                        </div>
+                      ) : (
+                        <span style={{ color: 'var(--text-muted)' }}>—</span>
+                      )}
+                    </td>
                     <td style={{ padding: '6px 10px', fontSize: 11 }}>{p.companies ? <div><span style={{ fontWeight: 600, color: 'var(--text-primary)', fontFamily: 'var(--font-jp)' }}>{p.companies.company_name}</span></div> : <span style={{ color: 'var(--text-muted)' }}>—</span>}</td>
                     <td style={{ padding: '6px 10px', fontSize: 11, fontFamily: 'monospace', color: 'var(--text-secondary)' }}>{p.customer_product_name || <span style={{ color: 'var(--text-muted)' }}>—</span>}</td>
                     <td style={{ padding: '6px 10px', fontSize: 12, fontFamily: 'monospace', color: 'var(--text-primary)', textAlign: 'center' }}>{p.pocket_count != null ? p.pocket_count : <span style={{ color: 'var(--text-muted)' }}>—</span>}</td>

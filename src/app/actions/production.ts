@@ -339,7 +339,7 @@ export async function getProductionPlansByDate(dateStr: string) {
         .select(`
             *,
             machines(machine_id, machine_name, machine_code),
-            physical_molds(physical_mold_id, system_code),
+            physical_molds:physical_mold_id(physical_mold_id, system_code),
             order_lines(
                 line_id, product_id, due_date, quantity,
                 products(product_code, product_name),
@@ -380,7 +380,7 @@ export async function getProductionPlansByDateRange(startDateStr: string, endDat
         .select(`
             *,
             machines(machine_id, machine_name, machine_code),
-            physical_molds(physical_mold_id, system_code),
+            physical_molds:physical_mold_id(physical_mold_id, system_code),
             order_lines(
                 line_id, product_id, due_date, quantity,
                 products(product_code, product_name),
@@ -430,7 +430,7 @@ export async function getTodayProductionPlans() {
         .select(`
             *,
             machines(machine_id, machine_name, machine_code),
-            physical_molds(physical_mold_id, system_code),
+            physical_molds:physical_mold_id(physical_mold_id, system_code),
             order_lines(
                 line_id, product_id, due_date, quantity,
                 products(product_code, product_name),
@@ -821,7 +821,7 @@ export async function getProductionPlansByOrderId(orderId: string) {
         .select(`
             *,
             machines(machine_id, machine_code, machine_name),
-            physical_molds(physical_mold_id, system_code),
+            physical_molds:physical_mold_id(physical_mold_id, system_code),
             order_lines!inner(line_id, order_id, product_id, quantity)
         `)
         .eq('order_lines.order_id', orderId)

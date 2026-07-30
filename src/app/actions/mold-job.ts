@@ -216,6 +216,7 @@ export interface CreateQuickJobInput {
     job_name: string
     job_type_id: string
     responsible_id?: string | null
+    is_facility_job?: boolean
 }
 
 export async function createQuickJob(input: CreateQuickJobInput): Promise<{
@@ -240,6 +241,10 @@ export async function createQuickJob(input: CreateQuickJobInput): Promise<{
     const timeStr = `${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`
     const jobCode = `QJ-${dateStr}-${timeStr}`
 
+    const notesValue = input.is_facility_job
+        ? '社内作業 (Internal Facility Job)'
+        : 'PENDING_MOLD_LINK'
+
     const { data: job, error: jobError } = await supabase
         .from('jobs')
         .insert({
@@ -250,6 +255,7 @@ export async function createQuickJob(input: CreateQuickJobInput): Promise<{
             job_status: 'NEW',
             overall_progress: 0,
             priority: 5,
+            notes: notesValue,
             start_date: now.toISOString().split('T')[0],
         })
         .select('job_id, job_code')
@@ -271,6 +277,56 @@ export async function createQuickJob(input: CreateQuickJobInput): Promise<{
     revalidatePath('/equipment/jobs')
     revalidatePath('/worklogs')
     return { success: true, job_id: job.job_id, job_code: job.job_code }
+}
+
+export async function linkJobToPhysicalMoldAction(job_id: string, physical_mold_id: string) {
+    const supabase = await createClient()
+
+    const { data: mold, error: moldErr } = await supabase
+        .from('physical_molds')
+        .select(`
+            physical_mold_id,
+            mold_revision_id,
+            mold_revisions(
+                design_revision_id,
+                product_id,
+                design_revisions(company_id)
+            )
+        `)
+        .eq('physical_mold_id', physical_mold_id)
+        .single()
+
+    if (moldErr || !mold) {
+        return { success: false, error: moldErr?.message || 'Physical mold not found' }
+    }
+
+    const moldRevision = mold.mold_revisions as any
+    const designRevisionId = moldRevision?.design_revision_id || null
+    const productId = moldRevision?.product_id || null
+    const companyId = moldRevision?.design_revisions?.company_id || null
+
+    const updatePayload: any = {
+        physical_mold_id,
+        updated_at: new Date().toISOString(),
+        notes: null
+    }
+
+    if (designRevisionId) updatePayload.design_revision_id = designRevisionId
+    if (productId) updatePayload.product_id = productId
+    if (companyId) updatePayload.company_id = companyId
+
+    const { error: updateErr } = await supabase
+        .from('jobs')
+        .update(updatePayload)
+        .eq('job_id', job_id)
+
+    if (updateErr) {
+        return { success: false, error: updateErr.message }
+    }
+
+    revalidatePath('/equipment/jobs')
+    revalidatePath(`/equipment/jobs/${job_id}`)
+    return { success: true }
 }
 
 export async function deleteMoldJobAction(jobId: string) {

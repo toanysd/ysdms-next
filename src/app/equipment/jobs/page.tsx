@@ -16,6 +16,7 @@ import { SearchSuggestions } from '@/components/ui/SearchSuggestions'
 import { useSearchHistory } from '@/hooks/useSearchHistory'
 import Link from 'next/link'
 import { CreateJobModal } from '@/components/equipment/CreateJobModal'
+import { QuickLinkMoldModal } from '@/components/equipment/QuickLinkMoldModal'
 
 type JobRow = {
   job_id: string
@@ -66,6 +67,7 @@ function JobsPageContent() {
   const [sortDir, setSortDir] = useState<'asc'|'desc'>((urlSearchParams.get('dir') as 'asc'|'desc') || 'desc')
   
   const [showCreateModal, setShowCreateModal] = useState(false)
+  const [linkMoldModalJob, setLinkMoldModalJob] = useState<{ jobId: string; jobCode: string; jobName: string } | null>(null)
 
   // Pagination & Search
   const [page, setPage] = useState(1)
@@ -237,13 +239,23 @@ function JobsPageContent() {
           </div>
         </div>
 
-        <button
-          className="btn btn-primary"
-          onClick={() => setShowCreateModal(true)}
-        >
-          <Plus size={14} />
-          {t('createJob')}
-        </button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <Link
+            href="/equipment/jobs/quick-create"
+            className="btn btn-primary"
+            style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 6 }}
+          >
+            <Plus size={14} />
+            <span style={{ fontFamily: 'var(--font-jp)' }}>一括登録 (Tạo nhanh 1-Trang)</span>
+          </Link>
+          <button
+            className="btn btn-secondary"
+            onClick={() => setShowCreateModal(true)}
+          >
+            <Plus size={14} />
+            {t('createJob')}
+          </button>
+        </div>
       </div>
 
       {/* ── Search & Filters ── */}
@@ -366,7 +378,25 @@ function JobsPageContent() {
                               </Link>
                             </div>
                           )}
-                          {!job.physical_molds && !job.products && <span style={{ color: 'var(--text-muted)' }}>—</span>}
+                          {!job.physical_molds && !job.products && (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                              {job.job_name.includes('社内作業') ? (
+                                <span className="badge badge--neutral" style={{ fontSize: 9 }}>🧹 社内作業</span>
+                              ) : (
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                  <span className="badge badge--warning" style={{ fontSize: 9 }}>⚠️ Chưa gắn Khuôn</span>
+                                  <button
+                                    type="button"
+                                    className="btn btn-secondary"
+                                    style={{ height: 22, padding: '0 6px', fontSize: 10, color: 'var(--accent)', fontWeight: 600 }}
+                                    onClick={() => setLinkMoldModalJob({ jobId: job.job_id, jobCode: job.job_code, jobName: job.job_name })}
+                                  >
+                                    + Gán Khuôn
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          )}
                         </div>
                       </td>
                       <td>
@@ -447,6 +477,16 @@ function JobsPageContent() {
             setShowCreateModal(false)
             fetchJobs()
           }}
+        />
+      )}
+
+      {linkMoldModalJob && (
+        <QuickLinkMoldModal
+          jobId={linkMoldModalJob.jobId}
+          jobCode={linkMoldModalJob.jobCode}
+          jobName={linkMoldModalJob.jobName}
+          onClose={() => setLinkMoldModalJob(null)}
+          onSuccess={() => fetchJobs()}
         />
       )}
     </div>

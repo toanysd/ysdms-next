@@ -289,6 +289,8 @@ input:focus, select:focus, textarea:focus {
 }
 input::placeholder, textarea::placeholder {
   color: var(--text-muted);
+  opacity: 0.4;
+  font-style: italic;
 }
 
 /* ── Data Table ────────────────────────────────────────────────────── */

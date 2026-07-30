@@ -343,7 +343,12 @@ FK:  outsource_company   UUID → companies(company_id)
 
 ---
 
-## 🔑 Bảng `job_steps` — Các công đoạn của Job
+## 🔑 Bảng `job_steps` — Thành phần (Components) của Job
+> ⚠️ **Kiến trúc:** `job_steps` = **Components/Thành phần** của Job, KHÔNG phải công đoạn tuần tự.
+> - Với Job khuôn: MOLD, PLUG, CUTTER, WATER_BASE... (thiết bị phụ kiện)
+> - Các components thực hiện **SONG SONG**, chỉ cần đúng kỳ hạn.
+> - Tên bảng giữ nguyên `job_steps` để tránh phá vỡ triggers/RLS hiện tại.
+> - UI gọi là "Components" hoặc "Cấu thành Bộ khuôn" (Section 5 trong quick-create).
 
 ## 🔑 Bảng `item_types` — Loại Hạng mục (Level 2)
 
@@ -368,7 +373,7 @@ PK:  processing_code_id   INTEGER
 
 ---
 
-## 🔑 Bảng `job_steps` — Các Hạng mục (Level 2) của Job
+## 🔑 Bảng `job_steps` — Thành phần (Level 2) của Job
 
 ```
 PK:  step_id              UUID
@@ -376,19 +381,38 @@ FK:  job_id               UUID → jobs(job_id) NOT NULL
 FK:  item_type_id         INTEGER → item_types(item_type_id)   ← Loại hạng mục (MOLD, PLUG...)
 FK:  processing_status_id INTEGER → processing_statuses(status_id)
 FK:  outsource_company    UUID → companies(company_id)
+FK:  assigned_to          UUID → employees(employee_id)
+FK:  machine_id           UUID → machines(machine_id)
      step_no              INTEGER NOT NULL
      step_name            TEXT NOT NULL
      step_status          TEXT
-     track                TEXT          ← (MOLD, PLUG, CUTTER...)
-     deadline             TIMESTAMPTZ   ← Kỳ hạn riêng của từng hạng mục
+     track                TEXT          ← (MOLD, PLUG, CUTTER...) — component track
+     type_code            TEXT          ← (MOLD, PLUG, CUTTER...) — component type code
+     material_spec        TEXT          ← Vật liệu/quy cách (A5052, SKD11, ベニヤ木板...)
+     quantity             INTEGER       ← Số lượng (default 1)
+     arrangement          TEXT          ← 手配 ('REQUIRED' / 'NOT_REQUIRED')
+     condition            TEXT          ← 新規/既存 ('NEW' / 'EXISTING')
+     manufacture_location TEXT          ← 内製/外注 ('IN_HOUSE' / 'OUTSOURCED')
+     deadline             TIMESTAMPTZ   ← Kỳ hạn riêng của từng component
      drawing_receipt_date TIMESTAMPTZ   ← Ngày nhận bản vẽ
      estimated_hours      NUMERIC(6,1)
      planned_hours        NUMERIC(6,1)
-     actual_hours         NUMERIC(6,1)
+     actual_hours         NUMERIC(6,1)  ← Tự động tính từ SUM(work_logs.hours_spent)
+     planned_start        TIMESTAMPTZ
+     planned_end          TIMESTAMPTZ
+     baseline_start       TIMESTAMPTZ
+     baseline_end         TIMESTAMPTZ
+     progress_percent     INTEGER
      machining_location   TEXT
      set_info             TEXT
      tehai_info           TEXT
      notes                TEXT
+```
+
+### Quan hệ job_steps ↔ work_logs
+```
+work_logs.job_step_id → job_steps.step_id   (FK — liên kết chính)
+work_logs KHÔNG CÓ trường track/step_no — phải JOIN qua job_step_id
 ```
 
 ---

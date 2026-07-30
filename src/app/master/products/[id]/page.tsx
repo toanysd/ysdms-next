@@ -11,6 +11,7 @@ import { ProductDetailHeader } from './ProductDetailHeader'
 import { ProductTabNavigation, type TabId } from './ProductTabNavigation'
 import { OverviewTab } from './tabs/OverviewTab'
 import { OrdersTab } from './tabs/OrdersTab'
+import { DesignsTab } from './tabs/DesignsTab'
 
 export type ProductDetailData = {
   product_id: string
@@ -82,7 +83,7 @@ function TabContent({
     case 'orders':
       return <OrdersTab productId={product.product_id} />
     case 'designs':
-      return <PlaceholderTab name={tTabs('designs')} />
+      return <DesignsTab product={product} />
     default:
       return null
   }

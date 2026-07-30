@@ -1063,6 +1063,7 @@ export default function MoldMasterDesignsPage() {
       {/* ── Bottom Section: Molds & Jobs ── */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: 16, marginTop: 16 }}>
         <DesignPhysicalMoldsList 
+          productId={moldMasterId}
           productCode={moldMaster?.product_code}
           selectedRevisionId={selectedRevisionId}
           selectedMoldId={selectedMoldId}
