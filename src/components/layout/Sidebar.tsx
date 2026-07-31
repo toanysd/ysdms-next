@@ -66,6 +66,7 @@ const NAV_SECTIONS: NavSection[] = [
     items: [
       { href: '/equipment/dashboard', icon: Home, tKey: 'items.overview', exact: true },
       { href: '/equipment/jobs/quick-create', icon: PlusCircle, tKey: 'items.quickCreate' },
+      { href: '/equipment/unified', icon: Layers, tKey: 'items.equipmentUnified' },
       { href: '/equipment/molds', icon: Box, tKey: 'items.molds' },
       { href: '/equipment/jobs', icon: Briefcase, tKey: 'items.jobs' },
       { href: '/equipment/schedule', icon: GanttChart, tKey: 'items.schedule' },

@@ -102,6 +102,25 @@ const DEFAULT_JOB_TYPES: JobType[] = [
   { job_type_id: '9', job_type_name_ja: 'その他', job_type_name_vi: 'Khác' }
 ]
 
+// ── Derive job_category from job_type_id for conditional form sections ──
+const JOB_TYPE_TO_CATEGORY: Record<string, string> = {
+  '1': 'MOLD_NEW',
+  '2': 'MOLD_MODIFY',
+  '3': 'CUTTER_NEW',
+  '4': 'MAINTENANCE',
+  '5': 'EQUIPMENT_NEW',
+  '6': 'EQUIPMENT_NEW',
+  '7': 'EQUIPMENT_NEW',
+  '8': 'EQUIPMENT_REPAIR',
+  '9': 'OTHER',
+  '10': 'OTHER',
+}
+
+// Categories that require Product/Design/PhysicalMold sections (1-3)
+const CATEGORIES_NEEDING_PRODUCT_DESIGN_MOLD = new Set([
+  'MOLD_NEW', 'MOLD_MODIFY', 'CUTTER_NEW',
+])
+
 // ── Standard Presets for Quick Add Mold Kit Components ──
 const COMPONENT_CHIPS = [
   { type_code: 'MOLD', labelJA: 'MOLD (本型)', labelVI: 'Khuôn chính' },
@@ -925,6 +944,7 @@ export default function QuickCreateMoldJobPage() {
       job_code: jobCode,
       job_name: jobName,
       job_type_id: jobTypeId || null,
+      job_category: JOB_TYPE_TO_CATEGORY[jobTypeId] || 'OTHER',
       responsible_id: responsibleId || undefined,
       start_date: startDate || undefined,
       deadline: deadline || undefined,
@@ -1126,6 +1146,7 @@ export default function QuickCreateMoldJobPage() {
             <form onSubmit={handleFormSubmit} onKeyDown={handleFormKeyDown} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               
               {/* ── Section 1: 得意先 & 製品情報 (Master Data - Blue Accent) ── */}
+              {CATEGORIES_NEEDING_PRODUCT_DESIGN_MOLD.has(JOB_TYPE_TO_CATEGORY[jobTypeId] || 'MOLD_NEW') && (
               <div className="card-flat" style={{ padding: '10px 14px', borderLeft: '4px solid #3B82F6' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
                   <Building2 size={15} style={{ color: '#3B82F6' }} />
@@ -1331,8 +1352,11 @@ export default function QuickCreateMoldJobPage() {
                   </div>
                 </div>
               </div>
+              )}
 
               {/* ── Section 2: 設計 & 寸法パラメータ (CAD Specs - Purple Accent) ── */}
+              {CATEGORIES_NEEDING_PRODUCT_DESIGN_MOLD.has(JOB_TYPE_TO_CATEGORY[jobTypeId] || 'MOLD_NEW') && (
+              <>
               <div className="card-flat" style={{ padding: '10px 14px', borderLeft: '4px solid #8B5CF6' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
                   <PenTool size={15} style={{ color: '#8B5CF6' }} />
@@ -1445,6 +1469,7 @@ export default function QuickCreateMoldJobPage() {
                   </div>
                 </div>
               </div>
+              </>)}
 
               {/* ── Section 4: ジョブ指示 & 期間 (Job Directive - Emerald Accent) ── */}
               <div className="card-flat" style={{ padding: '10px 14px', borderLeft: '4px solid #10B981' }}>
@@ -2127,6 +2152,7 @@ export default function QuickCreateMoldJobPage() {
           job_code: jobCode,
           job_name: jobName,
           job_type_id: jobTypeId || null,
+          job_category: JOB_TYPE_TO_CATEGORY[jobTypeId] || 'OTHER',
           responsible_id: responsibleId || undefined,
           start_date: startDate || undefined,
           deadline: deadline || undefined,

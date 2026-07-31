@@ -69,6 +69,7 @@ export type QuickMoldJobInput = {
   job_code: string
   job_name: string
   job_type_id?: string | null
+  job_category?: string | null
   responsible_id?: string | null
   start_date?: string | null
   deadline?: string | null
@@ -221,6 +222,7 @@ export async function createQuickMoldJobWorkflow(input: QuickMoldJobInput) {
         job_code: input.job_code.trim(),
         job_name: input.job_name.trim(),
         job_type_id: input.job_type_id || '1',
+        job_category: input.job_category || 'MOLD_NEW',
         product_id: productId,
         design_revision_id: designRevisionId,
         physical_mold_id: physicalMoldId,
@@ -417,6 +419,7 @@ export async function updateQuickMoldJobWorkflow(jobId: string, input: QuickMold
       job_code: input.job_code.trim(),
       job_name: input.job_name.trim(),
       job_type_id: input.job_type_id || '1',
+      job_category: input.job_category || 'MOLD_NEW',
       responsible_id: input.responsible_id || null,
       company_id: companyId || undefined,
       start_date: input.start_date || null,

@@ -100,6 +100,7 @@
       "moldOrders": "金型発注",
       "designs": "金型設計",
       "aluminum": "アルミ材",
+      "equipmentUnified": "設備一覧",
       "molds": "金型管理",
       "jobs": "加工ジョブ",
       "schedule": "スケジュール",
@@ -395,7 +396,7 @@
     "engineeringDashboard": "設計・技術ダッシュボード",
     "designList": "設計一覧",
     "revisions": "リビジョン",
-    "designCode": "金型コード\n                Mã SP (Nội bộ)\n                \n                  {moldMaster.product_code}\n                \n              \n              \n                金型名\n                Tên SP (Nội bộ)\n                \n                  {moldMaster.product_name_internal || moldMaster.product_name || '—'}\n                \n              \n              \n                得意先\n                Khách hàng\n                \n                  {companyCode && {companyCode}}\n                  {companyName}\n                \n              \n              \n                顧客製品名\n                Tên SP KH\n                \n                  {customerProductName}\n                \n              \n            \n          \n\n          {/* Right: Workflow Links */}\n          \n            \n              \n              関連リンク / LIÊN KẾT NHANH\n            \n            \n              {/* ← Product */}\n              \n                \n                \n                  製品\n                  Sản phẩm\n                \n              \n              {/* ← Customer */}\n              {moldMaster.company_id && (\n                \n                  \n                  \n                    得意先\n                    Khách hàng\n                  \n                \n              )}\n              {/* → Jobs */}\n              \n                \n                \n                  ジョブ\n                  Jobs\n                \n              \n              {/* → Physical Molds */}\n              \n                \n                \n                  金型\n                  Khuôn VL\n                \n              \n            \n          \n        \n      )}\n\n      {/* ── Toolbar ── */}\n      \n        \n          設計版一覧 Danh sách phiên bản\n          {!loading && ({revisions.length})}\n        \n        \n          \n          新規版\n        \n      \n\n      {/* ── Revisions Table ── */}\n      {loading ? (\n        \n          読み込み中... / Đang tải dữ liệu...\n        \n      ) : error ? (\n        \n          エラー / Lỗi: {error}\n        \n      ) : revisions.length === 0 ? (\n        \n          設計版なし\n          Chưa có phiên bản thiết kế nào\n        \n      ) : (\n        \n          \n            \n              \n                Rev #\n                Design Code\n                ステータス\n                サイズ L×W×H\n                Cavity\n                設計者\n                設計日\n                承認日\n                操作\n              \n            \n            \n              {revisions.map(rev => {\n                const isSelected = selectedRevisionId === rev.revision_id\n                return (\n                 {\n                    if (isSelected) {\n                      setSelectedRevisionId(null)\n                      setSelectedMoldId(null)\n                    } else {\n                      setSelectedRevisionId(rev.revision_id)\n                      setSelectedMoldId(null)\n                    }\n                  }}\n                  style={{\n                    cursor: 'pointer',\n                    background: isSelected ? 'color-mix(in srgb, var(--accent) 8%, transparent)' : undefined,\n                    borderLeft: isSelected ? '3px solid var(--accent)' : '3px solid transparent'\n                  }}\n                  className=\"hover:bg-[var(--bg-surface-2)] transition-colors\"\n                >\n                   e.stopPropagation()}>\n                    \n                      {rev.revision_number ?? '—'}\n                    \n                  \n                   e.stopPropagation()}>\n                    \n                      {rev.design_code}\n                    \n                  \n                  {renderBadge(rev.status)}\n                  \n                    {dimStr(rev.design_length, rev.design_width, rev.design_height)}\n                  \n                  {rev.cavity_count ?? '—'}\n                  {rev.employees?.employee_name ?? rev.designer ?? '—'}\n                  {fmtDate(rev.design_date)}\n                  {fmtDate(rev.approved_date)}\n                   e.stopPropagation()}>\n                    \n                       setJobModalRevId(rev.revision_id)}\n                        style={{\n                          width: 28, height: 28, display: 'inline-flex', alignItems: 'center', justifyContent: 'center',\n                          borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-default)',\n                          background: 'var(--bg-surface)', color: 'var(--accent)', cursor: 'pointer',\n                        }}\n                      >\n                        \n                      \n                       openEditModal(rev)}\n                        style={{\n                          width: 28, height: 28, display: 'inline-flex', alignItems: 'center', justifyContent: 'center',\n                          borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-default)',\n                          background: 'var(--bg-surface)', color: 'var(--accent)', cursor: 'pointer',\n                        }}\n                      >\n                        \n                      \n                       handleDelete(rev.revision_id, `Rev ${rev.revision_number}`)}\n                        style={{\n                          width: 28, height: 28, display: 'inline-flex', alignItems: 'center', justifyContent: 'center',\n                          borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-default)',\n                          background: 'var(--bg-surface)', color: 'var(--status-error)', cursor: 'pointer',\n                        }}\n                      >\n                        \n                      \n                    \n                  \n                \n              )})}\n            \n          \n        \n      )}\n\n      {/* ═══════════════════════════════════════════════\n         ADD / EDIT MODAL — 720px, 5 sections\n         ═══════════════════════════════════════════════ */}\n      {showModal && (\n         setShowModal(false)}\n        >\n           e.stopPropagation()}\n          >\n            {/* Modal header */}\n            \n              \n                \n                  {editingId ? '設計版 編集' : '新規 設計版'}\n                \n                \n                  {editingId ? 'Chỉnh sửa phiên bản' : 'Tạo phiên bản mới'}\n                \n              \n              \n                {!editingId && revisions.length > 0 && (\n                  \n                    \n                    前回コピー\n                  \n                )}\n                 setShowModal(false)}\n                  style={{\n                    width: 30, height: 30, display: 'flex', alignItems: 'center', justifyContent: 'center',\n                    borderRadius: 'var(--radius-sm)', border: 'none', cursor: 'pointer',\n                    background: 'transparent', color: 'var(--text-muted)',\n                  }}\n                >\n                  \n                \n              \n            \n\n            {/* Modal body */}\n            \n              \n\n              {/* ── Section 1: プロジェクト情報 ── */}\n              \n                \n                  \n                  プロジェクト情報\n                  Thông tin dự án\n                \n                \n                  \n                    {/* Design Code */}\n                    \n                      \n                        設計コード *",
+    "designCode": "設計コード",
     "revision": "版数",
     "trangThai": "ステータス",
     "nvThietKe": "設計者",
@@ -436,6 +437,32 @@
     "noRelatedJobs": "関連するジョブがありません",
     "systemCode": "システムコード",
     "displayName": "名称",
+    "loadingRevisionInfo": "設計リビジョン情報を読み込み中...",
+    "errorLoading": "エラーが発生しました",
+    "revisionNotFound": "設計リビジョンが見つかりません",
+    "back": "戻る",
+    "list": "一覧",
+    "cancel": "キャンセル",
+    "saving": "保存中...",
+    "save": "保存",
+    "createMold": "金型登録",
+    "createJob": "ジョブ作成",
+    "edit": "編集",
+    "designedBy": "設計担当者",
+    "designDate": "設計日",
+    "relatedLinks": "関連リンク",
+    "productMaster": "製品マスタ",
+    "designListTab": "設計リビジョン一覧",
+    "customerInfo": "顧客情報",
+    "overview": "概要",
+    "Status": {
+      "DRAFT": "下書き",
+      "SUBMITTED": "提出済",
+      "RELEASED": "リリース",
+      "APPROVED": "承認済",
+      "REJECTED": "却下",
+      "SUPERSEDED": "旧版"
+    },
     "status": {
       "DRAFT": "下書き",
       "SUBMITTED": "提出済",
@@ -640,6 +667,50 @@
     "quickJobNamePlaceholder": "例: K-0123 新規",
     "selectType": "-- 種類 --",
     "unnamedStep": "(無名)"
+  },
+  "EquipmentUnified": {
+    "title": "設備統合管理",
+    "subtitle": "金型・抜型・水冷盤等の統合検索・管理",
+    "searchPlaceholder": "コード・名称で検索...",
+    "filterAll": "すべて",
+    "filterMold": "金型",
+    "filterCutter": "抜型",
+    "filterWaterBase": "水冷盤",
+    "filterPressureBase": "圧空盤",
+    "filterFrame": "枠",
+    "filterStacking": "熱かしめ",
+    "cols": {
+      "code": "コード",
+      "name": "名称",
+      "type": "種別",
+      "dimensions": "寸法",
+      "material": "材質",
+      "customer": "顧客",
+      "location": "棚位置",
+      "status": "状態",
+      "actions": "操作"
+    },
+    "typeLabels": {
+      "MOLD": "金型",
+      "CUTTER_SEPARATE": "別抜型",
+      "CUTTER_INLINE": "インライン抜型",
+      "WATER_BASE": "水冷盤",
+      "PRESSURE_BASE": "圧空盤",
+      "FRAME": "枠",
+      "STACKING": "熱かしめ"
+    },
+    "statusLabels": {
+      "NORMAL": "正常",
+      "STORAGE": "保管中",
+      "ACTIVE": "使用中",
+      "LOAN": "貸出中",
+      "DISPOSED": "廃棄",
+      "MAINTENANCE": "修理中"
+    },
+    "noData": "データがありません",
+    "loading": "読み込み中...",
+    "totalRecords": "{count}件",
+    "details": "詳細"
   },
   "Equipment": {
     "quanLyJobGiaCong": "加工ジョブ管理",
@@ -859,8 +930,9 @@
         "allLinked": "🟢 すべての金型製作ジョブは正常に割り当てられています！",
         "linkBtn": "+ 金型割り当て",
         "deadline": "納期"
-      },
-      "surfaceTreatment": {
+      }
+    },
+    "surfaceTreatment": {
         "title": "表面処理・補助設備",
         "teflonTitle": "🧪 表面処理 (テフロンコーティング)",
         "teflonDesc": "外部パートナーへのテフロンコーティング依頼および完了状態の管理",
@@ -868,9 +940,8 @@
         "cuttersUnit": "1,283 抜型",
         "plugsTitle": "🔨 補助木型 (Plugs)",
         "plugsDesc": "成形金型に付属する木型セットの管理"
-      }
-    },
-    "QuickCreate": {
+      },
+      "QuickCreate": {
       "title": "クイック金型・ジョブ一括登録・編集",
       "createMode": "✨ 新規登録モード (CREATE MODE)",
       "editMode": "✏️ 更新モード (EDIT MODE)",
@@ -1016,6 +1087,11 @@
     }
   },
   "Master": {
+    "backToListTitle": "一覧へ戻る",
+    "customerDetailTitle": "顧客詳細",
+    "parentCompany": "親会社",
+    "childCompany": "子会社",
+    "addChildCompany": "子会社追加",
     "Products": {
       "Header": {
         "title": "製品",

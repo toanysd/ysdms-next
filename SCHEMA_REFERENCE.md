@@ -1,7 +1,7 @@
 # YSDMS NextGen — Database Schema Reference
 > **AI AGENT: Đọc file này TRƯỚC KHI viết bất kỳ Supabase query nào.**
 > Đây là nguồn duy nhất (single source of truth) về cấu trúc DB.
-> **Cập nhật lần cuối: 2026-07-09** — Thêm design_revision_id (nullable FK) vào order_lines. Bổ sung lot_no (orders), ship_date/packing_style/shipping_notes (order_lines).
+> **Cập nhật lần cuối: 2026-07-31** — Thêm bảng `equipment`, `equipment_history`, `equipment_assignments`. Thêm cột `job_category`, `equipment_id`, `case_id` vào `jobs`. Backfill `job_category` cho 1,183 jobs (migration `20260731060000`).
 
 ---
 
@@ -47,6 +47,12 @@ mold_masters ── mold_revisions ──┬── design_revisions (via design_
                                  └── physical_molds (via mold_revision_id FK)
 
 cutter_masters ── cutters (cutter_master_id FK)
+
+equipment ──┬── equipment_history (equipment_id FK)
+            └── equipment_assignments (primary/related equipment_id FK, N:N)
+
+jobs ──── equipment (equipment_id FK, optional)
+     ──── business_cases (case_id FK, optional)
 ```
 
 ---
@@ -544,4 +550,95 @@ FK:  roll_id           UUID → plastic_receipt_roll(id)
 FK:  work_log_id       UUID → work_logs(id)
      operator_name     TEXT
      note              TEXT
+```
+
+---
+
+## 🔑 Bảng `equipment` — Thiết Bị Sản Xuất Thống Nhất (Phase 3)
+
+> ⚠️ **Kiến trúc V3**: Bảng `equipment` quản lý TOÀN BỘ thiết bị sản xuất
+> (khuôn, dao cắt, đế làm mát, đế khí nén, khung, stacking) ngang hàng.
+> Sẽ dần thay thế `physical_molds` và `cutters` qua migration Phase 2.
+
+```
+PK:  equipment_id          UUID
+     equipment_code        TEXT UNIQUE NOT NULL    ← Mã hệ thống (K-0123, WB-470X400, CT-001)
+     display_name          TEXT NOT NULL           ← Tên hiển thị
+     equipment_type        TEXT NOT NULL           ← 'MOLD','CUTTER_INLINE','CUTTER_SEPARATE','WATER_BASE','PRESSURE_BASE','FRAME','STACKING'
+     sub_type              TEXT                    ← Phân loại phụ
+     physical_stamp        TEXT                    ← Ký hiệu đóng dấu trên thiết bị
+     dimensions            TEXT                    ← Kích thước tổng quát
+     actual_length_mm      TEXT
+     actual_width_mm       TEXT
+     actual_height_mm      TEXT
+     actual_weight         TEXT
+     material_spec         TEXT                    ← Vật liệu (A5052, SKD11...)
+     piece_count           INTEGER
+     copy_number           INTEGER
+FK:  company_id            UUID → companies(company_id)
+FK:  keeper_company_id     UUID → companies(company_id)
+FK:  design_revision_id    UUID → design_revisions(revision_id)
+FK:  cav_type_id           UUID → cav_types(cav_type_id)
+     mold_master_id        UUID                   ← Backward compat (no FK, mold_masters DROPped)
+FK:  mold_revision_id      UUID → mold_revisions(revision_id)
+FK:  current_rack_layer_id UUID → rack_layers(id)
+     device_status         TEXT DEFAULT 'NORMAL'
+     usage_status          TEXT DEFAULT 'STORAGE'
+     on_checklist          BOOLEAN DEFAULT FALSE
+     mold_type             TEXT
+     manufacturing_date    DATE
+     entry_date            DATE
+     returned_date         DATE
+     disposed_date         DATE
+     qr_uuid               UUID
+     legacy_physical_mold_id UUID
+     legacy_cutter_id      UUID
+     legacy_id             TEXT
+     legacy_specs          JSONB
+     notes                 TEXT
+```
+
+---
+
+## 🔑 Bảng `equipment_history` — Lịch Sử IN/OUT & Sửa Chữa
+
+```
+PK:  history_id            UUID
+FK:  equipment_id          UUID → equipment(equipment_id) ON DELETE CASCADE
+     action_type           TEXT NOT NULL    ← 'IN','OUT','LOAN','RETURN','REPAIR','MAINTENANCE','DISPOSE','TRANSFER'
+     action_date           DATE NOT NULL
+     from_location         TEXT
+     to_location           TEXT
+FK:  from_company_id       UUID → companies(company_id)
+FK:  to_company_id         UUID → companies(company_id)
+FK:  job_id                UUID → jobs(job_id)
+     description           TEXT
+FK:  performed_by          UUID → employees(employee_id)
+```
+
+---
+
+## 🔑 Bảng `equipment_assignments` — Quan Hệ N:N Thiết Bị
+
+> Set lắp máy & Dùng chung: Khuôn A đi kèm Dao X + Đế Y; Đế Y dùng cho nhiều khuôn.
+
+```
+PK:  assignment_id         UUID
+FK:  primary_equipment_id  UUID → equipment(equipment_id) ON DELETE CASCADE
+FK:  related_equipment_id  UUID → equipment(equipment_id) ON DELETE CASCADE
+     relationship_type     TEXT DEFAULT 'SET_MEMBER'   ← 'SET_MEMBER' | 'COMPATIBLE'
+     is_default            BOOLEAN DEFAULT TRUE
+     notes                 TEXT
+UNIQUE: (primary_equipment_id, related_equipment_id)
+CHECK:  primary_equipment_id <> related_equipment_id
+```
+
+---
+
+## 🔑 Cột mới trên bảng `jobs` (2026-07-31)
+
+```
+     job_category          TEXT    ← 'MOLD_NEW','MOLD_MODIFY','CUTTER_NEW','EQUIPMENT_NEW','EQUIPMENT_REPAIR','MAINTENANCE','INTERNAL_OPS','OTHER'
+FK:  equipment_id          UUID → equipment(equipment_id)
+FK:  case_id               UUID → business_cases(id)
 ```

@@ -100,6 +100,7 @@
       "moldOrders": "Đơn hàng khuôn",
       "designs": "Thiết kế khuôn",
       "aluminum": "Nhôm định hình",
+      "equipmentUnified": "Danh sách Thiết bị",
       "molds": "Khuôn vật lý",
       "jobs": "Tiến độ gia công",
       "schedule": "Tiến độ Gantt",
@@ -436,6 +437,32 @@
     "noRelatedJobs": "Không có Job liên quan",
     "systemCode": "Mã hệ thống",
     "displayName": "Tên hiển thị",
+    "loadingRevisionInfo": "Đang tải thông tin phiên bản thiết kế...",
+    "errorLoading": "Lỗi tải thông tin",
+    "revisionNotFound": "Không tìm thấy phiên bản thiết kế",
+    "back": "Quay lại",
+    "list": "Danh sách",
+    "cancel": "Hủy",
+    "saving": "Đang lưu...",
+    "save": "Lưu",
+    "createMold": "Tạo khuôn",
+    "createJob": "Tạo công việc",
+    "edit": "Chỉnh sửa",
+    "designedBy": "Người thiết kế",
+    "designDate": "Ngày thiết kế",
+    "relatedLinks": "Liên kết liên quan",
+    "productMaster": "Master sản phẩm",
+    "designListTab": "Danh sách phiên bản",
+    "customerInfo": "Thông tin khách hàng",
+    "overview": "Tổng quan",
+    "Status": {
+      "DRAFT": "Nháp",
+      "SUBMITTED": "Đã nộp",
+      "RELEASED": "Đã phát hành",
+      "APPROVED": "Đã duyệt",
+      "REJECTED": "Từ chối",
+      "SUPERSEDED": "Phiên bản cũ"
+    },
     "status": {
       "DRAFT": "Nháp",
       "SUBMITTED": "Đã nộp",
@@ -640,6 +667,50 @@
     "quickJobNamePlaceholder": "VD: K-0123 Mới",
     "selectType": "-- Loại --",
     "unnamedStep": "(Không tên)"
+  },
+  "EquipmentUnified": {
+    "title": "Quản lý Thiết bị Thống nhất",
+    "subtitle": "Tìm kiếm và quản lý tổng hợp: Khuôn, Dao cắt, Đế làm mát...",
+    "searchPlaceholder": "Tìm theo mã hoặc tên...",
+    "filterAll": "Tất cả",
+    "filterMold": "Khuôn",
+    "filterCutter": "Dao cắt",
+    "filterWaterBase": "Đế làm mát",
+    "filterPressureBase": "Đế áp lực",
+    "filterFrame": "Khung",
+    "filterStacking": "Đầu hàn",
+    "cols": {
+      "code": "Mã",
+      "name": "Tên",
+      "type": "Loại",
+      "dimensions": "Kích thước",
+      "material": "Vật liệu",
+      "customer": "Khách hàng",
+      "location": "Vị trí kệ",
+      "status": "Trạng thái",
+      "actions": "Thao tác"
+    },
+    "typeLabels": {
+      "MOLD": "Khuôn",
+      "CUTTER_SEPARATE": "Dao cắt riêng",
+      "CUTTER_INLINE": "Dao cắt inline",
+      "WATER_BASE": "Đế làm mát",
+      "PRESSURE_BASE": "Đế áp lực",
+      "FRAME": "Khung",
+      "STACKING": "Đầu hàn"
+    },
+    "statusLabels": {
+      "NORMAL": "Bình thường",
+      "STORAGE": "Đang lưu kho",
+      "ACTIVE": "Đang sử dụng",
+      "LOAN": "Cho mượn",
+      "DISPOSED": "Đã thanh lý",
+      "MAINTENANCE": "Đang sửa chữa"
+    },
+    "noData": "Không có dữ liệu",
+    "loading": "Đang tải...",
+    "totalRecords": "{count} bản ghi",
+    "details": "Chi tiết"
   },
   "Equipment": {
     "quanLyJobGiaCong": "Quản lý Job gia công",
@@ -859,8 +930,9 @@
         "allLinked": "🟢 100% các Job chế tạo khuôn đã được gắn mã đầy đủ!",
         "linkBtn": "+ Gán Khuôn",
         "deadline": "Hạn chót"
-      },
-      "surfaceTreatment": {
+      }
+    },
+    "surfaceTreatment": {
         "title": "Xử Lý Bề Mặt & Thiết Bị Phụ Trợ",
         "teflonTitle": "🧪 Xử lý Bề mặt (Teflon Coating)",
         "teflonDesc": "Theo dõi khuôn đang mạ Teflon bên ngoài đối tác hoặc chờ gửi mạ.",
@@ -868,9 +940,8 @@
         "cuttersUnit": "1,283 Dao cắt",
         "plugsTitle": "🔨 Chày gỗ phụ trợ (Plugs)",
         "plugsDesc": "Quản lý các bộ chày gỗ đi kèm khuôn định hình."
-      }
-    },
-    "QuickCreate": {
+      },
+      "QuickCreate": {
       "title": "Tạo & Cập nhật Nhanh Gói 6 Lớp (Khuôn & Job)",
       "createMode": "✨ CHẾ ĐỘ TẠO MỚI (CREATE MODE)",
       "editMode": "✏️ CHẾ ĐỘ CẬP NHẬT (EDIT MODE)",
@@ -1016,6 +1087,11 @@
     }
   },
   "Master": {
+    "backToListTitle": "Về danh sách",
+    "customerDetailTitle": "Chi tiết khách hàng",
+    "parentCompany": "Công ty mẹ",
+    "childCompany": "Công ty con",
+    "addChildCompany": "Thêm công ty con",
     "Products": {
       "Header": {
         "title": "Sản phẩm",
