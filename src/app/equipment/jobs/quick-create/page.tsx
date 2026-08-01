@@ -1799,7 +1799,7 @@ export default function QuickCreateMoldJobPage() {
                   const activeStepObj = selectedStepNo != null ? steps.find(s => s.step_no === selectedStepNo) : null
 
                   return (
-                    <div style={{ display: 'grid', gridTemplateColumns: '55% 45%', gap: 10 }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '38% 62%', gap: 10 }}>
                       
                       {/* Column 1: Process Step Gantt Schedule Form */}
                       <div>
@@ -1807,11 +1807,11 @@ export default function QuickCreateMoldJobPage() {
                           <table className="data-table" style={{ width: '100%', fontSize: 11 }}>
                             <thead>
                               <tr style={{ background: 'var(--bg-surface-2)' }}>
-                                <th style={{ width: 36, textAlign: 'center', padding: '4px 6px' }}>{t('stepNo')}</th>
-                                <th style={{ padding: '4px 8px' }}>{t('stepName')}</th>
-                                <th style={{ width: 80, padding: '4px 8px' }}>{t('estimatedHours')}</th>
-                                <th style={{ width: 110, padding: '4px 8px' }}>{t('assignedPerson')}</th>
-                                <th style={{ width: 28, textAlign: 'center', padding: '4px 6px' }}></th>
+                                <th style={{ width: 30, textAlign: 'center', padding: '4px 4px' }}>{t('stepNo')}</th>
+                                <th style={{ padding: '4px 6px' }}>{t('stepName')}</th>
+                                <th style={{ width: 60, padding: '4px 4px' }}>{t('estimatedHours')}</th>
+                                <th style={{ width: 95, padding: '4px 4px' }}>{t('assignedPerson')}</th>
+                                <th style={{ width: 24, textAlign: 'center', padding: '4px 2px' }}></th>
                               </tr>
                             </thead>
                             <tbody>
@@ -1840,21 +1840,21 @@ export default function QuickCreateMoldJobPage() {
                                   return (
                                     <tr 
                                       key={idx}
-                                      onClick={() => setSelectedStepNo(isSelected ? null : st.step_no)}
+                                      onClick={() => setSelectedStepNo(st.step_no)}
                                       style={{ 
                                         cursor: 'pointer',
                                         backgroundColor: isSelected ? 'color-mix(in srgb, var(--accent) 18%, transparent)' : undefined,
                                         borderLeft: isSelected ? '4px solid var(--accent)' : '4px solid transparent'
                                       }}
                                     >
-                                      <td style={{ textAlign: 'center', fontWeight: 700, padding: '4px 6px', fontFamily: 'monospace' }}>
+                                      <td style={{ textAlign: 'center', fontWeight: 700, padding: '4px 4px', fontFamily: 'monospace' }}>
                                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2 }}>
                                           {st.step_no}
                                           {stepLogCount > 0 && (
                                             <span style={{ 
                                               fontSize: 8, fontWeight: 700, 
                                               background: 'var(--accent)', color: '#fff', 
-                                              borderRadius: '50%', width: 14, height: 14, 
+                                              borderRadius: '50%', width: 13, height: 13, 
                                               display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                                               flexShrink: 0
                                             }}>
@@ -1863,14 +1863,15 @@ export default function QuickCreateMoldJobPage() {
                                           )}
                                         </div>
                                       </td>
-                                      <td style={{ padding: '4px 8px' }}>
+                                      <td style={{ padding: '4px 4px' }}>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                                           <select
                                             className="form-input"
-                                            style={{ height: 24, fontSize: 11, padding: '2px 6px', width: '100%', fontWeight: isSelected ? 700 : 400 }}
+                                            style={{ height: 24, fontSize: 10, padding: '2px 4px', width: '100%', fontWeight: isSelected ? 700 : 400 }}
                                             value={st.step_name}
-                                            onChange={e => { e.stopPropagation(); updateStep(idx, 'step_name', e.target.value) }}
-                                            onClick={e => e.stopPropagation()}
+                                            onFocus={() => setSelectedStepNo(st.step_no)}
+                                            onClick={() => setSelectedStepNo(st.step_no)}
+                                            onChange={e => { setSelectedStepNo(st.step_no); updateStep(idx, 'step_name', e.target.value) }}
                                           >
                                             <optgroup label="── 構成機器 (Section 5 Kit) ──">
                                               <option value="金型">金型 (MOLD)</option>
@@ -1896,25 +1897,27 @@ export default function QuickCreateMoldJobPage() {
                                           )}
                                         </div>
                                       </td>
-                                      <td style={{ padding: '4px 8px' }}>
+                                      <td style={{ padding: '4px 4px' }}>
                                         <input
                                           type="number"
                                           step="any"
                                           className="form-input"
-                                          style={{ height: 24, fontSize: 11, padding: '2px 6px' }}
+                                          style={{ height: 24, fontSize: 10, padding: '2px 4px' }}
                                           value={st.estimated_hours || ''}
-                                          onChange={e => { e.stopPropagation(); updateStep(idx, 'estimated_hours', e.target.value ? Number(e.target.value) : null) }}
-                                          onClick={e => e.stopPropagation()}
-                                          placeholder="Giờ"
+                                          onFocus={() => setSelectedStepNo(st.step_no)}
+                                          onClick={() => setSelectedStepNo(st.step_no)}
+                                          onChange={e => { setSelectedStepNo(st.step_no); updateStep(idx, 'estimated_hours', e.target.value ? Number(e.target.value) : null) }}
+                                          placeholder="h"
                                         />
                                       </td>
-                                      <td style={{ padding: '4px 8px' }}>
+                                      <td style={{ padding: '4px 4px' }}>
                                         <select
                                           className="form-input"
-                                          style={{ height: 24, fontSize: 11, padding: '2px 6px' }}
+                                          style={{ height: 24, fontSize: 10, padding: '2px 4px' }}
                                           value={st.assigned_to || ''}
-                                          onChange={e => { e.stopPropagation(); updateStep(idx, 'assigned_to', e.target.value) }}
-                                          onClick={e => e.stopPropagation()}
+                                          onFocus={() => setSelectedStepNo(st.step_no)}
+                                          onClick={() => setSelectedStepNo(st.step_no)}
+                                          onChange={e => { setSelectedStepNo(st.step_no); updateStep(idx, 'assigned_to', e.target.value) }}
                                         >
                                           <option value="">— {t('unassigned')} —</option>
                                           {employees.map(emp => (
@@ -1924,7 +1927,7 @@ export default function QuickCreateMoldJobPage() {
                                           ))}
                                         </select>
                                       </td>
-                                      <td style={{ textAlign: 'center', padding: '4px 6px' }}>
+                                      <td style={{ textAlign: 'center', padding: '4px 2px' }}>
                                         <button
                                           type="button"
                                           onClick={(e) => { e.stopPropagation(); removeStep(idx) }}
@@ -2007,16 +2010,16 @@ export default function QuickCreateMoldJobPage() {
                             </button>
                           </div>
                         ) : (
-                          <div style={{ overflowX: 'auto', border: '1px solid var(--border-default)', borderRadius: 6, maxHeight: 180, overflowY: 'auto' }}>
+                          <div style={{ overflowX: 'auto', border: '1px solid var(--border-default)', borderRadius: 6, maxHeight: 220, overflowY: 'auto' }}>
                             <table className="data-table" style={{ width: '100%', fontSize: 10 }}>
                               <thead>
                                 <tr style={{ background: 'var(--bg-surface-2)' }}>
-                                  <th style={{ padding: '3px 6px' }}>{t('workDate')}</th>
-                                  <th style={{ padding: '3px 6px' }}>{t('worker')}</th>
-                                  <th style={{ padding: '3px 6px' }}>工程</th>
-                                  <th style={{ padding: '3px 6px', textAlign: 'center' }}>{t('actualHours')}</th>
+                                  <th style={{ width: 75, padding: '3px 4px', whiteSpace: 'nowrap' }}>{t('workDate')}</th>
+                                  <th style={{ width: 90, padding: '3px 4px', whiteSpace: 'nowrap' }}>{t('worker')}</th>
+                                  <th style={{ width: 75, padding: '3px 4px', whiteSpace: 'nowrap' }}>工程</th>
+                                  <th style={{ width: 45, padding: '3px 4px', textAlign: 'center', whiteSpace: 'nowrap' }}>{t('actualHours')}</th>
                                   <th style={{ padding: '3px 6px' }}>{t('statusNotes')}</th>
-                                  <th style={{ padding: '3px 4px', textAlign: 'center', width: 44 }}>Thao tác</th>
+                                  <th style={{ padding: '3px 4px', textAlign: 'center', width: 40, whiteSpace: 'nowrap' }}>Thao tác</th>
                                 </tr>
                               </thead>
                               <tbody>
@@ -2027,21 +2030,26 @@ export default function QuickCreateMoldJobPage() {
                                     || '—'
                                   return (
                                     <tr key={log.log_id}>
-                                      <td style={{ padding: '3px 6px', fontFamily: 'monospace' }}>
+                                      <td style={{ padding: '3px 4px', fontFamily: 'monospace', whiteSpace: 'nowrap' }}>
                                         {log.work_date ? log.work_date.substring(0, 10) : '—'}
                                       </td>
-                                      <td style={{ padding: '3px 6px', fontWeight: 600 }}>
+                                      <td style={{ padding: '3px 4px', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 90 }}>
                                         {log.employees?.employee_name || '—'}
                                       </td>
-                                      <td style={{ padding: '3px 6px', fontSize: 9, color: 'var(--text-secondary)' }}>
+                                      <td style={{ padding: '3px 4px', fontSize: 9, color: 'var(--text-secondary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 75 }}>
                                         {procName}
                                       </td>
-                                      <td style={{ padding: '3px 6px', textAlign: 'center', fontWeight: 700, color: 'var(--accent)' }}>
+                                      <td style={{ padding: '3px 4px', textAlign: 'center', fontWeight: 700, color: 'var(--accent)', whiteSpace: 'nowrap' }}>
                                         {log.hours_spent}h
                                       </td>
                                       <td style={{ padding: '3px 6px' }}>
                                         {log.is_finished ? (
-                                          <span className="badge badge--success" style={{ fontSize: 8 }}>完了</span>
+                                          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                                            <span className="badge badge--success" style={{ fontSize: 8, flexShrink: 0 }}>完了</span>
+                                            {(log.notes || log.description) && (
+                                              <span style={{ color: 'var(--text-muted)' }}>{log.notes || log.description}</span>
+                                            )}
+                                          </div>
                                         ) : (
                                           <span style={{ color: 'var(--text-muted)' }}>{log.notes || log.description || '—'}</span>
                                         )}
