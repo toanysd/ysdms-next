@@ -53,7 +53,8 @@ type DesignRevItem = {
   has_separate_cutter: boolean | null
   customer_tray_name: string | null
   tray_info: string | null
-  change_summary: string | null
+  version_note?: string | null
+  change_summary?: string | null
   created_at: string
   designer: string | null
 }
@@ -69,7 +70,7 @@ type CustomerInfo = {
 type RecentOrderLine = {
   line_id: string
   quantity: number
-  unit_price: number | null
+  unit: string | null
   created_at: string
   orders: {
     order_id: string
@@ -230,7 +231,7 @@ export function TabOverview(props: TabOverviewProps) {
             design_length, design_width, design_height, design_depth,
             cutline_length, cutline_width, cavity_count, cavity_pitch_mm, machine_feed_pitch_mm,
             plastic_type_designed, corner_r, chamfer_c, draft_angle, orientation, setup_type, plug_type,
-            has_separate_cutter, customer_tray_name, tray_info, change_summary, created_at, designer
+            has_separate_cutter, customer_tray_name, tray_info, version_note, created_at, designer
           `)
           .eq('product_id', productId)
           .order('created_at', { ascending: false })
@@ -311,7 +312,7 @@ export function TabOverview(props: TabOverviewProps) {
         const { data: lines, count: lCount } = await supabase
           .from('order_lines')
           .select(`
-            line_id, quantity, unit_price, created_at,
+            line_id, quantity, unit, created_at,
             orders(order_id, order_no, order_date, order_status)
           `, { count: 'exact' })
           .eq('product_id', productId)
@@ -574,14 +575,14 @@ export function TabOverview(props: TabOverviewProps) {
                 return (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                     {/* Change summary banner if exists */}
-                    {activeRev.change_summary && (
+                    {(activeRev.change_summary || activeRev.version_note) && (
                       <div style={{
                         padding: '6px 10px', background: 'var(--tint-orange-bg)',
                         border: '1px solid var(--tint-orange-border)', borderRadius: 6,
                         fontSize: 11, color: 'var(--tint-orange-text)', display: 'flex', alignItems: 'center', gap: 6
                       }}>
                         <AlertTriangle size={12} />
-                        <span><strong>{tPC('changeSummary')}:</strong> {activeRev.change_summary}</span>
+                        <span><strong>{tPC('changeSummary')}:</strong> {activeRev.change_summary || activeRev.version_note}</span>
                       </div>
                     )}
 
