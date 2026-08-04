@@ -766,20 +766,32 @@ export function TabOverview(props: TabOverviewProps) {
             </div>
           </div>
 
-          {/* ═══ Equipment Overview Cards (PA2+ with binding classification) ═══ */}
+          {/* ═══ Equipment Overview Cards (Categorized Group Columns with Uniform Ordering) ═══ */}
           {(() => {
-            // Classify equipment by binding to selected revision
             const getMoldRevId = (m: MoldDetail) => m.mold_revisions?.design_revision_id || null
-            const activeMolds = moldDetails.filter(m => getMoldRevId(m) === selectedRevId)
-            const legacyMolds = moldDetails.filter(m => getMoldRevId(m) !== selectedRevId)
-            const activeEquip = equipDetails.filter(e => e.design_revision_id === selectedRevId)
-            const legacyEquip = equipDetails.filter(e => e.design_revision_id !== selectedRevId)
-            const activeCutters = cutterDetails.filter(c => c.linked_rev_id === selectedRevId)
-            const legacyCutters = cutterDetails.filter(c => c.linked_rev_id !== selectedRevId)
-
-            const totalActive = activeMolds.length + activeEquip.length + activeCutters.length
-            const totalLegacy = legacyMolds.length + legacyEquip.length + legacyCutters.length
             const grandTotal = moldDetails.length + equipDetails.length + cutterDetails.length
+
+            // Sort helper: Active ([現行]) -> Shared ([共有]) -> Legacy ([旧版]) -> Disposed ([廃棄])
+            const sortMolds = [...moldDetails].sort((a, b) => {
+              const aActive = getMoldRevId(a) === selectedRevId ? 0 : 1
+              const bActive = getMoldRevId(b) === selectedRevId ? 0 : 1
+              if (aActive !== bActive) return aActive - bActive
+              return (a.system_code || '').localeCompare(b.system_code || '')
+            })
+
+            const sortCutters = [...cutterDetails].sort((a, b) => {
+              const aActive = a.linked_rev_id === selectedRevId ? 0 : 1
+              const bActive = b.linked_rev_id === selectedRevId ? 0 : 1
+              if (aActive !== bActive) return aActive - bActive
+              return (a.cutter_no || '').localeCompare(b.cutter_no || '')
+            })
+
+            const sortEquip = [...equipDetails].sort((a, b) => {
+              const aActive = a.design_revision_id === selectedRevId ? 0 : 1
+              const bActive = b.design_revision_id === selectedRevId ? 0 : 1
+              if (aActive !== bActive) return aActive - bActive
+              return (a.equipment_code || '').localeCompare(b.equipment_code || '')
+            })
 
             const bindingBadge = (type: 'active' | 'legacy' | 'disposed' | 'shared') => {
               const cfg = {
@@ -799,16 +811,18 @@ export function TabOverview(props: TabOverviewProps) {
                   key={m.physical_mold_id}
                   onClick={() => setPreviewItem({ type: 'mold', data: m })}
                   style={{
-                    border: '1px solid var(--border-default)', borderRadius: 8, overflow: 'hidden',
-                    opacity: binding === 'legacy' ? 0.7 : 1, transition: 'all 0.15s ease', cursor: 'pointer'
+                    border: binding === 'active' ? '1.5px solid var(--accent)' : '1px solid var(--border-default)',
+                    borderRadius: 8, overflow: 'hidden',
+                    background: binding === 'active' ? 'var(--tint-teal-bg)' : 'var(--bg-surface)',
+                    opacity: binding === 'legacy' ? 0.75 : 1, transition: 'all 0.15s ease', cursor: 'pointer'
                   }}
                 >
                   <div style={{
-                    height: 48, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center',
                     background: 'linear-gradient(135deg, var(--tint-orange-bg) 0%, var(--bg-surface-2) 100%)',
                     borderBottom: '1px solid var(--border-subtle)', gap: 6
                   }}>
-                    <Wrench size={22} style={{ color: 'var(--tint-orange-text)', opacity: 0.5 }} />
+                    <Wrench size={18} style={{ color: 'var(--tint-orange-text)', opacity: 0.6 }} />
                     <span style={{ fontSize: 9, fontWeight: 700, color: 'var(--tint-orange-text)', textTransform: 'uppercase' }}>{tPC('moldThumbnail')}</span>
                   </div>
                   <div style={{ padding: '6px 10px', display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -848,16 +862,18 @@ export function TabOverview(props: TabOverviewProps) {
                   key={c.cutter_id}
                   onClick={() => setPreviewItem({ type: 'cutter', data: c })}
                   style={{
-                    border: '1px solid var(--border-default)', borderRadius: 8, overflow: 'hidden',
-                    opacity: binding === 'legacy' ? 0.7 : 1, transition: 'all 0.15s ease', cursor: 'pointer'
+                    border: binding === 'active' ? '1.5px solid var(--accent)' : '1px solid var(--border-default)',
+                    borderRadius: 8, overflow: 'hidden',
+                    background: binding === 'active' ? 'var(--tint-teal-bg)' : 'var(--bg-surface)',
+                    opacity: binding === 'legacy' ? 0.75 : 1, transition: 'all 0.15s ease', cursor: 'pointer'
                   }}
                 >
                   <div style={{
-                    height: 48, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center',
                     background: 'linear-gradient(135deg, var(--tint-purple-bg) 0%, var(--bg-surface-2) 100%)',
                     borderBottom: '1px solid var(--border-subtle)', gap: 6
                   }}>
-                    <Scissors size={22} style={{ color: 'var(--tint-purple-text)', opacity: 0.5 }} />
+                    <Scissors size={18} style={{ color: 'var(--tint-purple-text)', opacity: 0.6 }} />
                     <span style={{ fontSize: 9, fontWeight: 700, color: 'var(--tint-purple-text)', textTransform: 'uppercase' }}>{tPC('cutterThumbnail')}</span>
                   </div>
                   <div style={{ padding: '6px 10px', display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -899,16 +915,18 @@ export function TabOverview(props: TabOverviewProps) {
                   key={eq.equipment_id}
                   onClick={() => setPreviewItem({ type: 'equip', data: eq })}
                   style={{
-                    border: '1px solid var(--border-default)', borderRadius: 8, overflow: 'hidden',
-                    opacity: binding === 'legacy' ? 0.7 : 1, transition: 'all 0.15s ease', cursor: 'pointer'
+                    border: binding === 'active' ? '1.5px solid var(--accent)' : '1px solid var(--border-default)',
+                    borderRadius: 8, overflow: 'hidden',
+                    background: binding === 'active' ? 'var(--tint-teal-bg)' : 'var(--bg-surface)',
+                    opacity: binding === 'legacy' ? 0.75 : 1, transition: 'all 0.15s ease', cursor: 'pointer'
                   }}
                 >
                   <div style={{
-                    height: 48, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center',
                     background: `linear-gradient(135deg, ${tintBg} 0%, var(--bg-surface-2) 100%)`,
                     borderBottom: '1px solid var(--border-subtle)', gap: 6
                   }}>
-                    <Icon size={22} style={{ color: tintText, opacity: 0.5 }} />
+                    <Icon size={18} style={{ color: tintText, opacity: 0.6 }} />
                     <span style={{ fontSize: 9, fontWeight: 700, color: tintText, textTransform: 'uppercase' }}>{typeLabel}</span>
                   </div>
                   <div style={{ padding: '6px 10px', display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -944,46 +962,73 @@ export function TabOverview(props: TabOverviewProps) {
                   </span>
                 </div>
 
-                <div style={{ padding: 12, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <div style={{ padding: 12 }}>
                   {grandTotal === 0 ? (
                     <div style={{ textAlign: 'center', padding: '16px 0', color: 'var(--text-muted)', fontSize: 12 }}>
                       {tPC('noEquipmentLinked')}
                     </div>
                   ) : (
-                    <>
-                      {/* Active Equipment (for selected revision) */}
-                      {totalActive > 0 && (
-                        <>
-                          <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--tint-teal-text)', display: 'flex', alignItems: 'center', gap: 4 }}>
-                            <CircleDot size={10} /> {tPC('equipForRevision')} ({totalActive})
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 14 }}>
+                      {/* Column 1: Physical Molds */}
+                      {moldDetails.length > 0 && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                          <div style={{
+                            fontSize: 11, fontWeight: 700, color: 'var(--tint-orange-text)',
+                            display: 'flex', alignItems: 'center', gap: 5, paddingBottom: 4,
+                            borderBottom: '2px solid var(--tint-orange-border)'
+                          }}>
+                            <Wrench size={12} />
+                            <span>{tPC('moldsGroupTitle') || '金型 (Molds)'}</span>
+                            <span className="badge badge--neutral font-mono font-bold" style={{ fontSize: 9, marginLeft: 'auto' }}>
+                              {moldDetails.length}
+                            </span>
                           </div>
-                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 8 }}>
-                            {activeMolds.map(m => renderMoldCard(m, 'active'))}
-                            {activeCutters.map(c => renderCutterCard(c, 'active'))}
-                            {activeEquip.map(eq => renderEquipCard(eq, 'active'))}
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                            {sortMolds.map(m => renderMoldCard(m, getMoldRevId(m) === selectedRevId ? 'active' : 'legacy'))}
                           </div>
-                        </>
+                        </div>
                       )}
 
-                      {/* Legacy / Shared Equipment */}
-                      {totalLegacy > 0 && (
-                        <>
+                      {/* Column 2: Cutters / 抜型 */}
+                      {cutterDetails.length > 0 && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                           <div style={{
-                            fontSize: 10, fontWeight: 600, color: 'var(--text-muted)',
-                            display: 'flex', alignItems: 'center', gap: 4,
-                            borderTop: totalActive > 0 ? '1px dashed var(--border-default)' : 'none',
-                            paddingTop: totalActive > 0 ? 8 : 0
+                            fontSize: 11, fontWeight: 700, color: 'var(--tint-purple-text)',
+                            display: 'flex', alignItems: 'center', gap: 5, paddingBottom: 4,
+                            borderBottom: '2px solid var(--tint-purple-border)'
                           }}>
-                            <Layers size={10} /> {tPC('equipOlderRevisions')} ({totalLegacy})
+                            <Scissors size={12} />
+                            <span>{tPC('cuttersGroupTitle') || '抜型 (Cutting Dies)'}</span>
+                            <span className="badge badge--neutral font-mono font-bold" style={{ fontSize: 9, marginLeft: 'auto' }}>
+                              {cutterDetails.length}
+                            </span>
                           </div>
-                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 8 }}>
-                            {legacyMolds.map(m => renderMoldCard(m, 'legacy'))}
-                            {legacyCutters.map(c => renderCutterCard(c, 'legacy'))}
-                            {legacyEquip.map(eq => renderEquipCard(eq, 'legacy'))}
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                            {sortCutters.map(c => renderCutterCard(c, c.linked_rev_id === selectedRevId ? 'active' : 'legacy'))}
                           </div>
-                        </>
+                        </div>
                       )}
-                    </>
+
+                      {/* Column 3: Plugs & Auxiliary Equipment */}
+                      {equipDetails.length > 0 && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                          <div style={{
+                            fontSize: 11, fontWeight: 700, color: 'var(--tint-blue-text)',
+                            display: 'flex', alignItems: 'center', gap: 5, paddingBottom: 4,
+                            borderBottom: '2px solid var(--tint-blue-border)'
+                          }}>
+                            <Pin size={12} />
+                            <span>{tPC('auxEquipGroupTitle') || 'プラグ・その他設備'}</span>
+                            <span className="badge badge--neutral font-mono font-bold" style={{ fontSize: 9, marginLeft: 'auto' }}>
+                              {equipDetails.length}
+                            </span>
+                          </div>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                            {sortEquip.map(eq => renderEquipCard(eq, eq.design_revision_id === selectedRevId ? 'active' : 'legacy'))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   )}
                 </div>
               </div>
