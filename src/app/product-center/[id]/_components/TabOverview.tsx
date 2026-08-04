@@ -768,7 +768,11 @@ export function TabOverview(props: TabOverviewProps) {
 
           {/* ═══ Equipment Overview Cards (Categorized Group Columns with Uniform Ordering) ═══ */}
           {(() => {
-            const getMoldRevId = (m: MoldDetail) => m.mold_revisions?.design_revision_id || null
+            const getMoldRevId = (m: MoldDetail) => {
+              const linkedRevId = m.mold_revisions?.design_revision_id
+              if (linkedRevId) return linkedRevId
+              return (m as any).mold_revision_id || null
+            }
             const grandTotal = moldDetails.length + equipDetails.length + cutterDetails.length
 
             // Sort helper: Active ([現行]) -> Shared ([共有]) -> Legacy ([旧版]) -> Disposed ([廃棄])
