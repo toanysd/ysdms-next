@@ -144,12 +144,12 @@ function InfoRow({ label, value, mono, accent }: { label: string; value: string 
 }
 
 /* ────────── helper: spec pill ────────── */
-function SpecPill({ label, value, bg, color, border, isDiff }: { label: string; value: string; bg: string; color: string; border: string; isDiff?: boolean }) {
+function SpecPill({ label, value, bg, color, border, isDiff, diffLabel }: { label: string; value: string; bg: string; color: string; border: string; isDiff?: boolean; diffLabel?: string }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
         <span style={{ color: 'var(--text-muted)', fontSize: 11, fontWeight: 600 }}>{label}</span>
-        {isDiff && <span className="badge badge--warning" style={{ fontSize: 7, padding: '0 4px' }}>Diff</span>}
+        {isDiff && <span className="badge badge--warning" style={{ fontSize: 7, padding: '0 4px' }}>{diffLabel || 'Diff'}</span>}
       </div>
       <span style={{
         background: isDiff ? 'var(--tint-orange-bg)' : bg,
@@ -399,13 +399,13 @@ export function TabOverview(props: TabOverviewProps) {
           <div style={{ width: 1, height: 14, background: 'var(--border-default)' }} />
           <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
             <Truck size={12} style={{ color: 'var(--tint-teal-text)' }} />
-            <span style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 600 }}>Delivered</span>
+            <span style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 600 }}>{tPC('kpiDelivered')}</span>
             <span style={{ fontSize: 13, fontWeight: 700, fontFamily: 'monospace', color: 'var(--text-primary)' }}>{totalDelivered.toLocaleString()}</span>
           </div>
           <div style={{ width: 1, height: 14, background: 'var(--border-default)' }} />
           <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
             <CheckCircle2 size={12} style={{ color: 'var(--tint-blue-text)' }} />
-            <span style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 600 }}>On-Time</span>
+            <span style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 600 }}>{tPC('kpiOnTime')}</span>
             <span style={{ fontSize: 13, fontWeight: 700, fontFamily: 'monospace', color: 'var(--text-primary)' }}>{onTimeRate}%</span>
           </div>
         </div>
@@ -587,12 +587,12 @@ export function TabOverview(props: TabOverviewProps) {
 
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px 16px', fontSize: 12 }}>
                       {/* Row 1: Core dimensions */}
-                      {trayDims && <SpecPill label={tPC('trayDimensions')} value={`${trayDims} mm`} bg="var(--tint-green-bg)" color="var(--tint-green-text)" border="var(--tint-green-border)" isDiff={trayDimsDiff} />}
-                      {cutlineDims && <SpecPill label={tPC('cutlineDimensions')} value={`${cutlineDims} mm`} bg="var(--tint-blue-bg)" color="var(--tint-blue-text)" border="var(--tint-blue-border)" isDiff={cutlineDimsDiff} />}
+                      {trayDims && <SpecPill label={tPC('trayDimensions')} value={`${trayDims} mm`} bg="var(--tint-green-bg)" color="var(--tint-green-text)" border="var(--tint-green-border)" isDiff={trayDimsDiff} diffLabel={tPC('fieldChanged')} />}
+                      {cutlineDims && <SpecPill label={tPC('cutlineDimensions')} value={`${cutlineDims} mm`} bg="var(--tint-blue-bg)" color="var(--tint-blue-text)" border="var(--tint-blue-border)" isDiff={cutlineDimsDiff} diffLabel={tPC('fieldChanged')} />}
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 3, ...diffFieldStyle(cavityDiff) }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                           <span style={{ color: 'var(--text-muted)', fontSize: 11, fontWeight: 600 }}>{tPC('cavityAndPitch')}</span>
-                          {cavityDiff && <span className="badge badge--warning" style={{ fontSize: 7, padding: '0 4px' }}>Diff</span>}
+                          {cavityDiff && <span className="badge badge--warning" style={{ fontSize: 7, padding: '0 4px' }}>{tPC('fieldChanged')}</span>}
                         </div>
                         <span style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: 13, fontFamily: 'monospace' }}>
                           {activeRev.cavity_count || '—'} cav
@@ -604,7 +604,7 @@ export function TabOverview(props: TabOverviewProps) {
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 3, ...diffFieldStyle(plasticDiff) }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                           <span style={{ color: 'var(--text-muted)', fontSize: 11, fontWeight: 600 }}>{tPC('designedMaterial')}</span>
-                          {plasticDiff && <span className="badge badge--warning" style={{ fontSize: 7, padding: '0 4px' }}>Diff</span>}
+                          {plasticDiff && <span className="badge badge--warning" style={{ fontSize: 7, padding: '0 4px' }}>{tPC('fieldChanged')}</span>}
                         </div>
                         {(activeRev.plastic_type_designed || primaryPlasticCode) ? (
                           <span style={{ background: plasticDiff ? 'var(--tint-orange-bg)' : 'var(--bg-surface-2)', border: plasticDiff ? '1px solid var(--tint-orange-border)' : '1px solid var(--border-default)', padding: '3px 8px', borderRadius: 5, fontFamily: 'monospace', fontWeight: 700, fontSize: 12, display: 'inline-block' }}>
@@ -615,7 +615,7 @@ export function TabOverview(props: TabOverviewProps) {
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 3, ...diffFieldStyle(feedPitchDiff) }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                           <span style={{ color: 'var(--text-muted)', fontSize: 11, fontWeight: 600 }}>{tPC('feedPitch')}</span>
-                          {feedPitchDiff && <span className="badge badge--warning" style={{ fontSize: 7, padding: '0 4px' }}>Diff</span>}
+                          {feedPitchDiff && <span className="badge badge--warning" style={{ fontSize: 7, padding: '0 4px' }}>{tPC('fieldChanged')}</span>}
                         </div>
                         <span style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: 13, color: 'var(--text-primary)' }}>
                           {activeRev.machine_feed_pitch_mm ? `${activeRev.machine_feed_pitch_mm} mm` : '—'}
@@ -624,7 +624,7 @@ export function TabOverview(props: TabOverviewProps) {
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 3, ...diffFieldStyle(customerTrayNameDiff) }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                           <span style={{ color: 'var(--text-muted)', fontSize: 11, fontWeight: 600 }}>{tPC('customerTrayName')}</span>
-                          {customerTrayNameDiff && <span className="badge badge--warning" style={{ fontSize: 7, padding: '0 4px' }}>Diff</span>}
+                          {customerTrayNameDiff && <span className="badge badge--warning" style={{ fontSize: 7, padding: '0 4px' }}>{tPC('fieldChanged')}</span>}
                         </div>
                         <span style={{ fontSize: 12, color: 'var(--text-primary)', fontWeight: 500 }}>
                           {activeRev.customer_tray_name || '—'}
@@ -635,7 +635,7 @@ export function TabOverview(props: TabOverviewProps) {
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 3, ...diffFieldStyle(cornerRDiff) }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                           <span style={{ color: 'var(--text-muted)', fontSize: 11, fontWeight: 600 }}>{tPC('cornerRadiusLabel')}</span>
-                          {cornerRDiff && <span className="badge badge--warning" style={{ fontSize: 7, padding: '0 4px' }}>Diff</span>}
+                          {cornerRDiff && <span className="badge badge--warning" style={{ fontSize: 7, padding: '0 4px' }}>{tPC('fieldChanged')}</span>}
                         </div>
                         <span style={{ fontFamily: 'monospace', fontWeight: 600, fontSize: 12, color: 'var(--text-primary)' }}>
                           {activeRev.corner_r != null ? `R${activeRev.corner_r}` : '—'}
@@ -644,7 +644,7 @@ export function TabOverview(props: TabOverviewProps) {
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 3, ...diffFieldStyle(chamferCDiff) }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                           <span style={{ color: 'var(--text-muted)', fontSize: 11, fontWeight: 600 }}>{tPC('chamferLabel')}</span>
-                          {chamferCDiff && <span className="badge badge--warning" style={{ fontSize: 7, padding: '0 4px' }}>Diff</span>}
+                          {chamferCDiff && <span className="badge badge--warning" style={{ fontSize: 7, padding: '0 4px' }}>{tPC('fieldChanged')}</span>}
                         </div>
                         <span style={{ fontFamily: 'monospace', fontWeight: 600, fontSize: 12, color: 'var(--text-primary)' }}>
                           {activeRev.chamfer_c != null ? `C${activeRev.chamfer_c}` : '—'}
@@ -653,7 +653,7 @@ export function TabOverview(props: TabOverviewProps) {
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 3, ...diffFieldStyle(draftAngleDiff) }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                           <span style={{ color: 'var(--text-muted)', fontSize: 11, fontWeight: 600 }}>{tPC('draftAngleLabel')}</span>
-                          {draftAngleDiff && <span className="badge badge--warning" style={{ fontSize: 7, padding: '0 4px' }}>Diff</span>}
+                          {draftAngleDiff && <span className="badge badge--warning" style={{ fontSize: 7, padding: '0 4px' }}>{tPC('fieldChanged')}</span>}
                         </div>
                         <span style={{ fontFamily: 'monospace', fontWeight: 600, fontSize: 12, color: 'var(--text-primary)' }}>
                           {activeRev.draft_angle != null ? `${activeRev.draft_angle}°` : '—'}
@@ -664,21 +664,21 @@ export function TabOverview(props: TabOverviewProps) {
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 3, ...diffFieldStyle(orientationDiff) }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                           <span style={{ color: 'var(--text-muted)', fontSize: 11, fontWeight: 600 }}>{tPC('orientationLabel')}</span>
-                          {orientationDiff && <span className="badge badge--warning" style={{ fontSize: 7, padding: '0 4px' }}>Diff</span>}
+                          {orientationDiff && <span className="badge badge--warning" style={{ fontSize: 7, padding: '0 4px' }}>{tPC('fieldChanged')}</span>}
                         </div>
                         <span style={{ fontSize: 12, color: 'var(--text-primary)', fontWeight: 500 }}>{activeRev.orientation || '—'}</span>
                       </div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 3, ...diffFieldStyle(setupTypeDiff) }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                           <span style={{ color: 'var(--text-muted)', fontSize: 11, fontWeight: 600 }}>{tPC('setupTypeLabel')}</span>
-                          {setupTypeDiff && <span className="badge badge--warning" style={{ fontSize: 7, padding: '0 4px' }}>Diff</span>}
+                          {setupTypeDiff && <span className="badge badge--warning" style={{ fontSize: 7, padding: '0 4px' }}>{tPC('fieldChanged')}</span>}
                         </div>
                         <span style={{ fontSize: 12, color: 'var(--text-primary)', fontWeight: 500 }}>{activeRev.setup_type || '—'}</span>
                       </div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 3, ...diffFieldStyle(plugTypeDiff) }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                           <span style={{ color: 'var(--text-muted)', fontSize: 11, fontWeight: 600 }}>{tPC('plugTypeLabel')}</span>
-                          {plugTypeDiff && <span className="badge badge--warning" style={{ fontSize: 7, padding: '0 4px' }}>Diff</span>}
+                          {plugTypeDiff && <span className="badge badge--warning" style={{ fontSize: 7, padding: '0 4px' }}>{tPC('fieldChanged')}</span>}
                         </div>
                         <span style={{ fontSize: 12, color: 'var(--text-primary)', fontWeight: 500 }}>{activeRev.plug_type || '—'}</span>
                       </div>
@@ -687,7 +687,7 @@ export function TabOverview(props: TabOverviewProps) {
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 3, ...diffFieldStyle(separateCutterDiff) }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                           <span style={{ color: 'var(--text-muted)', fontSize: 11, fontWeight: 600 }}>{tPC('hasSeparateCutterLabel')}</span>
-                          {separateCutterDiff && <span className="badge badge--warning" style={{ fontSize: 7, padding: '0 4px' }}>Diff</span>}
+                          {separateCutterDiff && <span className="badge badge--warning" style={{ fontSize: 7, padding: '0 4px' }}>{tPC('fieldChanged')}</span>}
                         </div>
                         <span style={{ fontSize: 12, color: 'var(--text-primary)', fontWeight: 500 }}>
                           {activeRev.has_separate_cutter == null ? '—' : activeRev.has_separate_cutter ? tPC('yesLabel') : tPC('noLabel')}
@@ -697,7 +697,7 @@ export function TabOverview(props: TabOverviewProps) {
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 3, gridColumn: 'span 2', ...diffFieldStyle(trayInfoDiff) }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                             <span style={{ color: 'var(--text-muted)', fontSize: 11, fontWeight: 600 }}>{tPC('trayInfoLabel')}</span>
-                            {trayInfoDiff && <span className="badge badge--warning" style={{ fontSize: 7, padding: '0 4px' }}>Diff</span>}
+                            {trayInfoDiff && <span className="badge badge--warning" style={{ fontSize: 7, padding: '0 4px' }}>{tPC('fieldChanged')}</span>}
                           </div>
                           <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{activeRev.tray_info}</span>
                         </div>
