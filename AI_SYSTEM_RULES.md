@@ -145,3 +145,70 @@ Hệ thống này được thiết lập theo cơ chế đặc biệt: **"Portab
 ### RULE-UI-9 — Ổ C đầy: dùng node trực tiếp
 - **❌** `npx tsc --noEmit` (ENOSPC nếu C: đầy)
 - **✅** `node ".\node_modules\typescript\bin\tsc" --noEmit`
+
+### RULE-UI-10 — Paper Style Spec Layout (Bố cục Thông số Kỹ thuật kiểu Trang giấy)
+> Áp dụng từ 2026-08-04. Dùng cho mọi grid hiển thị thông số kỹ thuật thiết kế (design specs, dimensions, process params).
+> Tham khảo: Product Center `/product-center/[id]` → `TabOverview.tsx` → `SpecCell` component.
+
+**Nguyên tắc cốt lõi: Hiển thị như văn bản trên trang giấy — KHÔNG trang trí thừa.**
+
+#### A. SpecCell — Ô thông số inline (Component pattern)
+```tsx
+// ✅ ĐÚNG — Paper Style: không padding, không border, không background
+<div style={{
+  display: 'flex', alignItems: 'baseline', gap: 5,
+  gridColumn: span ? `span ${span}` : undefined,
+  lineHeight: 1.5,
+}}>
+  <span style={{
+    fontSize: 10, fontWeight: 600, color: '#64748B',
+    fontFamily: 'var(--font-jp)',
+    whiteSpace: 'nowrap', minWidth: 78, flexShrink: 0,  // ← Căn lề cố định
+  }}>
+    {label}
+  </span>
+  <span style={{
+    fontSize: 13, fontWeight: 700,
+    fontFamily: mono ? 'monospace' : 'var(--font-jp)',
+    color: isEmpty ? '#94A3B8' : '#0F172A',
+  }}>
+    {value}
+  </span>
+</div>
+
+// ❌ SAI — Thừa visual chrome
+<div style={{ padding: '4px 8px', borderRadius: 6, background: '...', border: '1px solid ...' }}>
+```
+
+#### B. Quy tắc bố cục chi tiết
+| Thuộc tính | Giá trị | Lý do |
+|---|---|---|
+| **Grid container** | `gap: '2px 12px'` | Dòng sát nhau, cột thoáng vừa đủ |
+| **Label** | `fontSize: 10`, `fontWeight: 600`, `color: '#64748B'` | Nhỏ, nhạt — phân biệt với value |
+| **Label minWidth** | `78px` + `flexShrink: 0` | Căn lề dọc — value thẳng hàng |
+| **Value** | `fontSize: 13`, `fontWeight: 700`, `color: '#0F172A'` | Đậm, nổi bật, dễ đọc |
+| **Value monospace** | `fontFamily: 'monospace'` cho số/kích thước | Số thẳng hàng tự nhiên |
+| **Empty value** | `'—'` với `color: '#94A3B8'` | Nhạt hơn nữa = rõ ràng là trống |
+| **Dấu `:`** | **KHÔNG dùng** | Kích cỡ + trọng lượng font đủ phân tách |
+| **Padding ô** | **0** (không padding) | Giống trang giấy |
+| **Border ô** | **Không có** | Giống trang giấy |
+| **Background ô** | **Không có** (transparent) | Giống trang giấy |
+| **Ngoại lệ duy nhất** | Diff highlight: `background: 'var(--tint-orange-bg)'` | Chỉ khi so sánh phiên bản |
+
+#### C. InfoRow — Dòng key-value dọc (Panel trái)
+```tsx
+// ✅ ĐÚNG — Paper Style cho panel hẹp
+<div style={{
+  display: 'flex', justifyContent: 'space-between', alignItems: 'baseline',
+  padding: '1px 0', lineHeight: 1.5,  // ← Không border-bottom, không background
+}}>
+  <span style={{ fontSize: 10, color: '#64748B', fontWeight: 600 }}>{label}</span>
+  <span style={{ fontSize: 13, fontWeight: 700, color: '#0F172A' }}>{value}</span>
+</div>
+```
+
+#### D. Khi nào KHÔNG dùng Paper Style
+- **Bảng dữ liệu (data-table):** Vẫn dùng `className="data-table"` với border + stripe
+- **Form nhập liệu:** Vẫn dùng `form-input`, `form-section` với border + padding
+- **KPI Cards / Dashboard:** Vẫn dùng `card-flat` với padding + border
+- Paper Style CHỈ dùng cho **hiển thị thông số read-only** dạng grid thông tin

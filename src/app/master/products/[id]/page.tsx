@@ -42,13 +42,59 @@ export type ProductDetailData = {
     revision_number: number | null
     status: string | null
     design_date: string | null
+    version_note: string | null
+    design_length: number | null
+    design_width: number | null
+    design_height: number | null
+    design_depth: number | null
+    cutline_length: number | null
+    cutline_width: number | null
+    cavity_count: number | null
+    pocket_numbers: number | null
+    pitch_mm: number | null
+    cavity_pitch_mm: number | null
+    machine_feed_pitch_mm: number | null
+    corner_r: string | null
+    chamfer_c: string | null
+    draft_angle: string | null
+    undercut_spec: string | null
+    under_depth: string | null
+    orientation: string | null
+    setup_type: string | null
+    has_plug: boolean | null
+    plug_type: string | null
+    has_separate_cutter: boolean | null
+    plastic_type_designed: string | null
+    change_summary: string | null
+    designer: string | null
+    customer_drawing_no: string | null
     plastic_master?: {
       plastic_code: string | null
       thickness_mm: number | null
       color_name_normalized: string | null
     } | null
+    mold_revisions?: {
+      mold_revision_id: string
+      physical_molds?: {
+        physical_mold_id: string
+        system_code: string
+        display_name: string
+        physical_stamp: string | null
+        usage_status: string | null
+        piece_count: number | null
+      }[] | null
+    }[] | null
+    cutters?: {
+      cutter_id: string
+      cutter_no: string
+      cutter_name: string
+      cutter_type: string | null
+      usage_status: string | null
+    }[] | null
   }[] | null
 }
+
+export type DesignRevisionItem = NonNullable<ProductDetailData['design_revisions']>[number]
 
 export type Company = {
   company_id: string
@@ -68,18 +114,19 @@ function PlaceholderTab({ name }: { name: string }) {
 }
 
 function TabContent({
-  tab, product, isEditing, formData, setFormData, companies
+  tab, product, isEditing, formData, setFormData, companies, onRefresh
 }: {
   tab: TabId; product: ProductDetailData;
   isEditing: boolean;
   formData: Partial<ProductDetailData>;
   setFormData: React.Dispatch<React.SetStateAction<Partial<ProductDetailData>>>;
   companies: Company[];
+  onRefresh?: () => void;
 }) {
   const tTabs = useTranslations('Master.Products.Tabs')
   switch (tab) {
     case 'overview':
-      return <OverviewTab product={product} isEditing={isEditing} formData={formData} setFormData={setFormData} companies={companies} />
+      return <OverviewTab product={product} isEditing={isEditing} formData={formData} setFormData={setFormData} companies={companies} onRefresh={onRefresh} />
     case 'orders':
       return <OrdersTab productId={product.product_id} />
     case 'designs':
@@ -115,7 +162,18 @@ export default function ProductDetailPage() {
       .select(`
         *,
         companies:companies!products_company_id_fkey(company_id, company_name, company_code),
-        design_revisions(revision_id, design_code, revision_number, status, design_date, plastic_master(plastic_code, thickness_mm, color_name_normalized))
+        design_revisions(
+          revision_id, design_code, revision_number, status, design_date, version_note,
+          design_length, design_width, design_height, design_depth,
+          cutline_length, cutline_width,
+          cavity_count, pocket_numbers, pitch_mm, cavity_pitch_mm, machine_feed_pitch_mm,
+          corner_r, chamfer_c, draft_angle, undercut_spec, under_depth,
+          orientation, setup_type, has_plug, plug_type, has_separate_cutter, plastic_type_designed,
+          change_summary, designer, customer_drawing_no,
+          plastic_master(plastic_code, thickness_mm, color_name_normalized),
+          mold_revisions(mold_revision_id, physical_molds(physical_mold_id, system_code, display_name, physical_stamp, usage_status, piece_count)),
+          cutters(cutter_id, cutter_no, cutter_name, cutter_type, usage_status)
+        )
       `)
       .eq('product_id', productId)
       .single()
@@ -257,6 +315,7 @@ export default function ProductDetailPage() {
           formData={formData} 
           setFormData={setFormData} 
           companies={companies}
+          onRefresh={fetchProduct}
         />
       </div>
 

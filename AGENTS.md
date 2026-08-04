@@ -156,6 +156,18 @@ const STATUS_CONFIG = {
 }
 ```
 
+### 📄 Paper Style Spec Layout (Thông số kỹ thuật kiểu Trang giấy)
+> Chi tiết đầy đủ: xem `AI_SYSTEM_RULES.md` → **RULE-UI-10**
+
+Dùng cho **mọi grid hiển thị thông số kỹ thuật read-only** (design specs, dimensions, process params).
+- **KHÔNG padding, KHÔNG border, KHÔNG background** — hiển thị như văn bản trên trang giấy
+- **Label:** `fontSize: 10`, `color: '#64748B'`, `minWidth: 78px`, `flexShrink: 0` → căn lề dọc
+- **Value:** `fontSize: 13`, `fontWeight: 700`, `color: '#0F172A'`, `monospace` cho số
+- **Grid gap:** `2px 12px` — dòng sát nhau, cột vừa đủ
+- **Dấu `:`:** KHÔNG dùng — kích cỡ + trọng lượng font đủ phân tách
+- **Ngoại lệ:** Chỉ highlight diff bằng `background: 'var(--tint-orange-bg)'`
+- **Tham khảo:** `/product-center/[id]/_components/TabOverview.tsx` → `SpecCell`, `InfoRow`
+
 ---
 
 ## 7. SUPABASE QUERY RULES
