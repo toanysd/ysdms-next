@@ -20,10 +20,10 @@ const SILICONE_LABELS: Record<string, { ja: string; color: string; bg: string }>
   with_silicone: { ja: 'シリコン有', color: 'var(--status-info)', bg: 'color-mix(in srgb, var(--status-info) 12%, transparent)' },
   unknown:       { ja: '未確認',   color: 'var(--text-muted)',     bg: 'var(--bg-surface-2)' },
 }
-const REVIEW_LABELS: Record<string, { ja: string; vi: string; color: string; bg: string }> = {
-  draft:     { ja: '未確認', vi: 'Chưa xác nhận', color: 'var(--text-muted)',       bg: 'var(--bg-surface-2)' },
-  checked:   { ja: '確認済', vi: 'Đã kiểm tra',   color: 'var(--status-warning)',  bg: 'color-mix(in srgb, var(--status-warning) 12%, transparent)' },
-  confirmed: { ja: '承認済', vi: 'Đã xác nhận',   color: 'var(--status-success)',  bg: 'color-mix(in srgb, var(--status-success) 12%, transparent)' },
+const REVIEW_LABELS: Record<string, { ja: string; color: string; bg: string }> = {
+  draft:     { ja: '未確認', color: 'var(--text-muted)',       bg: 'var(--bg-surface-2)' },
+  checked:   { ja: '確認済', color: 'var(--status-warning)',  bg: 'color-mix(in srgb, var(--status-warning) 12%, transparent)' },
+  confirmed: { ja: '承認済', color: 'var(--status-success)',  bg: 'color-mix(in srgb, var(--status-success) 12%, transparent)' },
 }
 const COLOR_JA: Record<string, string> = {
   natural: 'ナチュラル', clear: 'クリア', black: '黒', white: '白',
@@ -195,12 +195,12 @@ export default function PlasticsMasterPage() {
           <table className="data-table w-full" style={{ borderCollapse: 'collapse', minWidth: 1100 }}>
             <thead>
               <tr style={{ background: 'var(--bg-surface-2)' }}>
-                <ThSort col="plastic_code" ja="標準コード" vi="Mã chuẩn" w={220} />
-                <ThSort col="plastic_family" ja="材質" vi="Họ nhựa" w={80} />
-                <ThSort col="thickness_mm" ja="厚さ" vi="mm" w={60} align="right" />
-                <ThSort col="width_mm" ja="幅" vi="mm" w={60} align="right" />
-                <ThSort col="standard_length_m" ja="標準長" vi="m" w={65} align="right" />
-                <ThSort col="color_name_normalized" ja="色" vi="Màu" w={90} />
+                <ThSort col="plastic_code" ja="標準コード" w={220} />
+                <ThSort col="plastic_family" ja="材質" w={80} />
+                <ThSort col="thickness_mm" ja="厚さ" w={60} align="right" />
+                <ThSort col="width_mm" ja="幅" w={60} align="right" />
+                <ThSort col="standard_length_m" ja="標準長" w={65} align="right" />
+                <ThSort col="color_name_normalized" ja="色" w={90} />
                 <th style={{ padding: '6px 8px', fontSize: 10, fontWeight: 700, color: 'var(--text-muted)', textAlign: 'center', borderBottom: '1px solid var(--border-default)', fontFamily: 'var(--font-jp)' }}>導電性</th>
                 <th style={{ padding: '6px 8px', fontSize: 10, fontWeight: 700, color: 'var(--text-muted)', textAlign: 'center', borderBottom: '1px solid var(--border-default)', fontFamily: 'var(--font-jp)' }}>ｼﾘｺﾝ</th>
                 <th style={{ padding: '6px 8px', fontSize: 10, fontWeight: 700, color: 'var(--text-muted)', textAlign: 'center', borderBottom: '1px solid var(--border-default)', fontFamily: 'var(--font-jp)' }}>確認</th>

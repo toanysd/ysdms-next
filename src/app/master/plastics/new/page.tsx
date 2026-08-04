@@ -40,9 +40,6 @@ export default function NewPlasticPage() {
             <span style={{ fontFamily: 'var(--font-jp)', fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>
               新規プラ材料登録
             </span>
-            <span style={{ fontSize: 9, color: 'var(--text-muted)' }}>
-              Đăng ký Cuộn Nhựa mới
-            </span>
           </div>
         </div>
       </div>
@@ -52,14 +49,14 @@ export default function NewPlasticPage() {
         <form action={addPlasticAction} style={{ padding: '24px 24px', display: 'flex', flexDirection: 'column', gap: 24 }}>
           
           <div className="form-section">
-            <div className="form-section-title">Thông số cơ bản / 基本仕様</div>
+            <div className="form-section-title">基本仕様</div>
             <div className="form-section-body">
               <div className="form-grid-4">
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                   <label className="form-label">
                     {t('Master.maNhuaVdPetfr02')}
                   </label>
-                  <input type="text" name="code" required className="form-input" placeholder="VD: PET-FR-02" />
+                  <input type="text" name="code" required className="form-input" placeholder="PET-FR-02" />
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
@@ -67,12 +64,12 @@ export default function NewPlasticPage() {
                     {t('Master.familyPsPetPp')}
                   </label>
                   <select name="family" required className="form-input">
-                    <option value="">Chọn Family</option>
+                    <option value="">選択してください</option>
                     <option value="PS">PS</option>
                     <option value="PET">PET</option>
                     <option value="PP">PP</option>
                     <option value="PVC">PVC</option>
-                    <option value="OTHER">Khác</option>
+                    <option value="OTHER">その他</option>
                   </select>
                 </div>
 
@@ -94,7 +91,7 @@ export default function NewPlasticPage() {
                   <label className="form-label">
                     {t('Master.mauSacVdTBk')}
                   </label>
-                  <input type="text" name="color" className="form-input" placeholder="VD: T (Trong suốt)" />
+                  <input type="text" name="color" className="form-input" placeholder="例: T (透明)" />
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>

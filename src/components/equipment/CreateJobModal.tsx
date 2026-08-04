@@ -6,6 +6,8 @@ import { X, Hammer, AlertCircle } from 'lucide-react'
 import { createMoldJobAction } from '@/app/actions/mold-job'
 import { useRouter } from 'next/navigation'
 
+import { useTranslations } from 'next-intl'
+
 type PhysicalMold = {
   physical_mold_id: string
   display_name: string
@@ -43,6 +45,8 @@ export function CreateJobModal({
 }: Props) {
   const supabase = createClient()
   const router = useRouter()
+  const tEquipment = useTranslations('Equipment')
+  const tCommon = useTranslations('Common')
 
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -199,16 +203,16 @@ export function CreateJobModal({
   const handleSave = async () => {
     setError(null)
     if (jobCategory === 'MOLD') {
-      if (!selectedMoldId && !confirm('物理金型が選択されていません。このままジョブを作成しますか？ / Chưa chọn khuôn vật lý. Bạn có chắc chắn muốn tạo job không?')) {
+      if (!selectedMoldId && !confirm(tEquipment('confirmCreateWithoutMold'))) {
           return
       }
       if (!selectedDesignId) {
-          setError('設計版は必須です / Bắt buộc phải có Phiên bản thiết kế')
+          setError(tEquipment('errDesignReq'))
           return
       }
     }
     if (!jobTypeId) {
-        setError('ジョブタイプは必須です / Bắt buộc chọn Loại Job')
+        setError(tEquipment('errJobTypeReq'))
         return
     }
 
@@ -252,7 +256,7 @@ export function CreateJobModal({
           <div className="flex items-center gap-2">
             <Hammer size={16} style={{ color: 'var(--accent)' }} />
             <h3 className="m-0 text-sm font-bold" style={{ color: 'var(--text-primary)' }}>
-              新規ジョブ作成 <span className="text-[11px] font-normal" style={{ color: 'var(--text-muted)' }}>/ Tạo Job mới</span>
+              {tEquipment('createJobModalTitle')}
             </h3>
           </div>
           <button onClick={onClose} className="bg-transparent border-none cursor-pointer" style={{ color: 'var(--text-muted)' }}>
@@ -271,7 +275,7 @@ export function CreateJobModal({
 
           {loading ? (
             <div className="text-center py-5 text-xs" style={{ color: 'var(--text-muted)' }}>
-                データを読み込み中... / Đang tải dữ liệu...
+                {tCommon('loading')}
             </div>
           ) : (
             <>
@@ -285,7 +289,7 @@ export function CreateJobModal({
                       checked={jobCategory === 'MOLD'} 
                       onChange={() => setJobCategory('MOLD')} 
                     />
-                    <span className="text-[12px] font-semibold">金型加工 / Gia công Khuôn</span>
+                    <span className="text-[12px] font-semibold">{tEquipment('categoryMold')}</span>
                   </label>
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input 
@@ -294,7 +298,7 @@ export function CreateJobModal({
                       checked={jobCategory === 'GENERAL'} 
                       onChange={() => setJobCategory('GENERAL')} 
                     />
-                    <span className="text-[12px] font-semibold">その他業務 / Nghiệp vụ khác</span>
+                    <span className="text-[12px] font-semibold">{tEquipment('categoryGeneral')}</span>
                   </label>
                 </div>
               )}
@@ -302,8 +306,7 @@ export function CreateJobModal({
               {/* Context Warning */}
               {jobCategory === 'MOLD' && initialDesignRevisionId && !selectedMoldId && (
                 <div className="px-3 py-2 text-[11px] rounded" style={{ background: 'var(--bg-warning)', color: 'var(--status-warning)' }}>
-                  ※ 物理金型がリンクされていません。下に金型を選択するか、先に物理金型を登録してください。<br/>
-                  (Chưa có khuôn vật lý được liên kết. Vui lòng chọn bên dưới hoặc đăng ký khuôn vật lý mới trước).
+                  {tEquipment('unlinkedMoldWarning')}
                 </div>
               )}
 
@@ -311,7 +314,7 @@ export function CreateJobModal({
               {jobCategory === 'MOLD' && (
                 <div>
                   <label className="block text-[11px] font-semibold mb-1">
-                      対象設計版 / Phiên bản thiết kế <span className="text-red-500">*</span>
+                      {tEquipment('targetDesign')} <span style={{ color: 'var(--status-error)' }}>*</span>
                   </label>
                   <select 
                       className="form-select" 
@@ -319,7 +322,7 @@ export function CreateJobModal({
                       onChange={e => setSelectedDesignId(e.target.value)}
                       disabled={!!initialDesignRevisionId} // Lock if opened from Design
                   >
-                    <option value="">-- 選択 / Chọn --</option>
+                    <option value="">-- {tCommon('selectPlaceholder')} --</option>
                     {designRevisions.map(d => (
                       <option key={d.revision_id} value={d.revision_id}>
                         {d.design_code} (Rev {d.revision_number})
@@ -328,7 +331,7 @@ export function CreateJobModal({
                   </select>
                   {!!initialDesignRevisionId && (
                       <div className="text-[10px] mt-1" style={{ color: 'var(--text-muted)' }}>
-                          ※ 設計画面から開いたため、設計版は固定されています。
+                          {tEquipment('designLockedHint')}
                       </div>
                   )}
                 </div>
@@ -338,7 +341,7 @@ export function CreateJobModal({
               {jobCategory === 'MOLD' && (
                 <div>
                   <label className="block text-[11px] font-semibold mb-1">
-                      対象物理金型 / Khuôn vật lý
+                      {tEquipment('targetMold')}
                   </label>
                   <div className="flex gap-2">
                       <select 
@@ -347,10 +350,10 @@ export function CreateJobModal({
                           onChange={e => setSelectedMoldId(e.target.value)}
                           disabled={!!initialPhysicalMoldId}
                       >
-                      <option value="">-- 未選択 / Chưa chọn --</option>
+                      <option value="">{tEquipment('unselectedOption')}</option>
                       {physicalMolds.map(m => (
                           <option key={m.physical_mold_id} value={m.physical_mold_id}>
-                          {m.display_name} ({m.system_code}) - Hiện tại: {m.mold_revisions?.revision_code}
+                          {m.display_name} ({m.system_code}) - {tEquipment('currentRevision')}: {m.mold_revisions?.revision_code}
                           </option>
                       ))}
                       </select>
@@ -359,7 +362,7 @@ export function CreateJobModal({
                               className="btn btn-secondary"
                               onClick={() => {
                                   // Close this modal and open mold creation, or navigate there
-                                  if (confirm('物理金型の登録画面へ移動しますか？作成後、再度ジョブを作成してください。\nBạn có muốn chuyển đến màn hình đăng ký khuôn? Sau khi tạo xong hãy quay lại tạo job.')) {
+                                  if (confirm(tEquipment('confirmNavRegisterMold'))) {
                                       const d = designRevisions.find(d => d.revision_id === selectedDesignId)
                                       const revCode = d?.design_code || ''
                                       if (productId) {
@@ -371,7 +374,7 @@ export function CreateJobModal({
                                   }
                               }}
                           >
-                              新規金型登録
+                              {tEquipment('Molds.newRegister')}
                           </button>
                       )}
                   </div>
@@ -381,14 +384,14 @@ export function CreateJobModal({
               {/* Job Type */}
               <div>
                 <label className="block text-[11px] font-semibold mb-1">
-                    ジョブタイプ / Loại Job <span className="text-red-500">*</span>
+                    {tEquipment('jobType')} <span style={{ color: 'var(--status-error)' }}>*</span>
                 </label>
                 <select 
                     className="form-select" 
                     value={jobTypeId} 
                     onChange={e => setJobTypeId(e.target.value)}
                 >
-                  <option value="">-- 選択 / Chọn --</option>
+                  <option value="">-- {tCommon('selectPlaceholder')} --</option>
                   {jobTypes.map(t => (
                     <option key={t.job_type_id} value={t.job_type_id}>
                       {t.job_type_name_ja}
@@ -400,12 +403,12 @@ export function CreateJobModal({
               {/* Job Name (Optional override) */}
               <div>
                 <label className="block text-[11px] font-semibold mb-1">
-                    ジョブ名 / Tên Job (Tùy chọn)
+                    {tEquipment('jobNameOptional')}
                 </label>
                 <input 
                     type="text" 
                     className="form-input" 
-                    placeholder="自動生成されます / Tự động tạo nếu để trống"
+                    placeholder={tEquipment('autoGeneratedPlaceholder')}
                     value={jobName}
                     onChange={e => setJobName(e.target.value)}
                 />
@@ -414,7 +417,7 @@ export function CreateJobModal({
               {/* Notes */}
               <div>
                 <label className="block text-[11px] font-semibold mb-1">
-                    備考 / Ghi chú
+                    {tCommon('notes')}
                 </label>
                 <textarea 
                     className="form-textarea" 
@@ -429,9 +432,9 @@ export function CreateJobModal({
 
         {/* Footer */}
         <div className="flex justify-end gap-2 px-4 py-3 border-t" style={{ borderColor: 'var(--border-default)' }}>
-          <button className="btn btn-secondary" onClick={onClose} disabled={saving}>キャンセル / Hủy</button>
+          <button className="btn btn-secondary" onClick={onClose} disabled={saving}>{tCommon('cancel')}</button>
           <button className="btn btn-primary" onClick={handleSave} disabled={saving || loading}>
-            {saving ? '保存中...' : '作成 / Tạo Job'}
+            {saving ? tCommon('loading') : tEquipment('createJobBtn')}
           </button>
         </div>
       </div>

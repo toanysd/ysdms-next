@@ -69,7 +69,7 @@ export default function ShipmentDetailPage() {
       <div className="card-flat" style={{ padding: 20, textAlign: 'center' }}>
         <AlertTriangle size={24} style={{ color: 'var(--status-error)', marginBottom: 8 }} />
         <div style={{ fontSize: 13, color: 'var(--status-error)', fontWeight: 600 }}>
-          {error || '出荷データが見つかりません / Không tìm thấy phiếu xuất'}
+          {error || '出荷データが見つかりません'}
         </div>
         <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>
           ID: {shipmentId}

@@ -20,7 +20,8 @@ interface Props {
 }
 
 export function MoldRevisionForm({ initialData, moldBaseId, moldBaseCode, suggestedLabel }: Props) {
-  const t = useTranslations()
+  const t = useTranslations('Master')
+  const tCommon = useTranslations('Common')
   const router = useRouter()
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -58,7 +59,7 @@ export function MoldRevisionForm({ initialData, moldBaseId, moldBaseCode, sugges
     defaultValues,
   })
 
-  // Theo dõi version_label để cập nhật revision_code tương ứng (nếu chưa lưu)
+  // Track version_label to update revision_code accordingly (if not saved)
   React.useEffect(() => {
     if (!isEdit) {
       const subscription = watch((value, { name, type }) => {
@@ -75,11 +76,11 @@ export function MoldRevisionForm({ initialData, moldBaseId, moldBaseCode, sugges
     try {
       const result = await upsertMoldRevisionAction(data)
       if (result.success) {
-        alert(isEdit ? 'Cập nhật phiên bản thành công!' : 'Tạo phiên bản mới thành công!')
+        alert(isEdit ? t('updateSuccess') : t('createSuccess'))
         router.push(`/master/mold/${moldBaseId}`)
         router.refresh()
       } else {
-        alert(result.error || 'Đã có lỗi xảy ra')
+        alert(result.error || t('errorOccurred'))
       }
     } catch (error: any) {
       alert(error.message)
@@ -105,7 +106,7 @@ export function MoldRevisionForm({ initialData, moldBaseId, moldBaseCode, sugges
           {(() => {
             const msg = (errors[name as keyof MoldRevisionFormValues] as any)?.message;
             if (!msg) return null;
-            return msg.startsWith('req') || msg.startsWith('invalid') ? t(`Common.validation.${msg}`) : msg;
+            return msg.startsWith('req') || msg.startsWith('invalid') ? tCommon(`validation.${msg}`) : msg;
           })()}
         </p>
       )}
@@ -122,7 +123,7 @@ export function MoldRevisionForm({ initialData, moldBaseId, moldBaseCode, sugges
             <ArrowLeft size={18} />
           </button>
           <h2 className="text-[14px] font-bold text-[var(--mcs-text)] flex flex-col">
-            <span>{isEdit ? t('Master.editDesignRevision') : t('Master.addDesignRevision')}</span>
+            <span>{isEdit ? t('editDesignRevision') : t('addDesignRevision')}</span>
           </h2>
         </div>
         <div className="flex items-center gap-2">
@@ -132,7 +133,7 @@ export function MoldRevisionForm({ initialData, moldBaseId, moldBaseCode, sugges
             className="btn-primary h-[32px] px-6 flex items-center gap-2 text-xs font-bold disabled:opacity-50"
           >
             {isSubmitting ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
-            <span>{t('Master.save')}</span>
+            <span>{t('save')}</span>
           </button>
         </div>
       </div>
@@ -142,103 +143,103 @@ export function MoldRevisionForm({ initialData, moldBaseId, moldBaseCode, sugges
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           
-          {/* CỘT 1: Thông tin cơ bản */}
+          {/* Column 1: Basic Information */}
           <div className="flex flex-col gap-4">
             <div className="bg-white p-4 rounded-lg border border-[var(--mcs-border)] shadow-sm">
               <h3 className="text-[13px] font-bold text-[var(--mcs-primary)] mb-4 flex items-center gap-2 border-b border-[var(--mcs-border)] pb-2">
-                <FileText size={16} /> {t('Master.identityInfo')}
+                <FileText size={16} /> {t('identityInfo')}
               </h3>
               
               <div className="space-y-4">
                 <div className="flex flex-col gap-1 w-full pb-2 border-b border-[var(--mcs-border)]">
-                  <label className="text-[12px] font-bold text-amber-600 flex flex-col">
-                    {t('Master.tray')}
+                  <label className="text-[12px] font-bold flex flex-col" style={{ color: 'var(--status-warning)' }}>
+                    {t('tray')}
                   </label>
                   <ProductSearchInput 
                     defaultValue={watch('product_id') || ''} 
                     onSelect={(product) => setValue('product_id', product ? product.id : '', { shouldValidate: true })}
                   />
                   <p className="text-[10px] text-[var(--mcs-text-muted)] mt-1 italic">
-                    {t('Master.trayExplanation')}
+                    {t('trayExplanation')}
                   </p>
                 </div>
                 
-                <Input name="revision_code" label={t('Master.revisionCode')} required />
+                <Input name="revision_code" label={t('revisionCode')} required />
                 <div className="grid grid-cols-2 gap-3">
-                  <Input name="version_label" label={t('Master.versionLabel')} required />
-                  <Input name="approved_date" type="date" label={t('Master.approvedDate')} />
+                  <Input name="version_label" label={t('versionLabel')} required />
+                  <Input name="approved_date" type="date" label={t('approvedDate')} />
                 </div>
                 <div className="flex flex-col gap-1">
                   <label className="text-[12px] font-bold">
-                    {t('Master.notes')}
+                    {t('notes')}
                   </label>
                   <textarea
                     {...register('version_note')}
                     className="w-full h-[60px] text-sm p-2 border border-[var(--mcs-border)] rounded focus:border-[var(--mcs-primary)] outline-none resize-none"
-                    placeholder={t('Master.notesPlaceholder')}
+                    placeholder={t('notesPlaceholder')}
                   />
                 </div>
               </div>
             </div>
 
-            {/* Thông tin Tham chiếu Khách hàng */}
+            {/* Customer Reference Information */}
             <div className="bg-white p-4 rounded-lg border border-[var(--mcs-border)] shadow-sm">
-              <h3 className="text-[13px] font-bold text-amber-600 mb-4 flex items-center gap-2 border-b border-[var(--mcs-border)] pb-2">
-                <Package size={16} /> {t('Master.customerReference')}
+              <h3 className="text-[13px] font-bold mb-4 flex items-center gap-2 border-b border-[var(--mcs-border)] pb-2" style={{ color: 'var(--status-warning)' }}>
+                <Package size={16} /> {t('customerReference')}
               </h3>
               
               <div className="space-y-4">
-                <Input name="customer_drawing_no" label={t('Master.customerDrawingNo')} />
-                <Input name="customer_equipment_no" label={t('Master.customerEquipmentNo')} />
-                <Input name="customer_tray_name" label={t('Master.customerTrayName')} />
+                <Input name="customer_drawing_no" label={t('customerDrawingNo')} />
+                <Input name="customer_equipment_no" label={t('customerEquipmentNo')} />
+                <Input name="customer_tray_name" label={t('customerTrayName')} />
               </div>
             </div>
           </div>
 
-          {/* CỘT 2: Kích thước 3D & Trọng lượng */}
+          {/* Column 2: 3D Dimensions & Weight */}
           <div className="flex flex-col gap-4">
             <div className="bg-white p-4 rounded-lg border border-[var(--mcs-border)] shadow-sm h-full">
               <h3 className="text-[13px] font-bold text-[var(--mcs-success)] mb-4 flex items-center gap-2 border-b border-[var(--mcs-border)] pb-2">
-                <Wrench size={16} /> {t('Master.dimensionsAndSpecs')}
+                <Wrench size={16} /> {t('dimensionsAndSpecs')}
               </h3>
               
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-3">
-                  <Input name="design_length" type="number" label={t('Master.designLength')} />
-                  <Input name="design_width" type="number" label={t('Master.designWidth')} />
-                  <Input name="design_height" type="number" label={t('Master.designHeight')} />
-                  <Input name="design_depth" type="number" label={t('Master.designDepth')} />
-                  <Input name="design_weight" type="number" label={t('Master.designWeight')} />
+                  <Input name="design_length" type="number" label={t('designLength')} />
+                  <Input name="design_width" type="number" label={t('designWidth')} />
+                  <Input name="design_height" type="number" label={t('designHeight')} />
+                  <Input name="design_depth" type="number" label={t('designDepth')} />
+                  <Input name="design_weight" type="number" label={t('designWeight')} />
                 </div>
                 
                 <hr className="border-[var(--mcs-border)] my-2" />
                 
                 <div className="grid grid-cols-2 gap-3">
-                  <Input name="cutline_x" type="number" label={t('Master.cutlineX')} />
-                  <Input name="cutline_y" type="number" label={t('Master.cutlineY')} />
+                  <Input name="cutline_x" type="number" label={t('cutlineX')} />
+                  <Input name="cutline_y" type="number" label={t('cutlineY')} />
                 </div>
               </div>
             </div>
           </div>
 
-          {/* CỘT 3: Chi tiết Kỹ thuật */}
+          {/* Column 3: Technical Details */}
           <div className="flex flex-col gap-4">
             <div className="bg-white p-4 rounded-lg border border-[var(--mcs-border)] shadow-sm h-full">
-              <h3 className="text-[13px] font-bold text-blue-600 mb-4 flex items-center gap-2 border-b border-[var(--mcs-border)] pb-2">
-                <Layers size={16} /> {t('Master.engineeringAndFinish')}
+              <h3 className="text-[13px] font-bold mb-4 flex items-center gap-2 border-b border-[var(--mcs-border)] pb-2" style={{ color: 'var(--accent)' }}>
+                <Layers size={16} /> {t('engineeringAndFinish')}
               </h3>
               
               <div className="space-y-4">
-                <Input name="design_for_plastic_type" label={t('Master.designForPlasticType')} />
-                <Input name="cavid" label={t('Master.cavid')} />
+                <Input name="design_for_plastic_type" label={t('designForPlasticType')} />
+                <Input name="cavid" label={t('cavid')} />
                 
                 <div className="grid grid-cols-2 gap-3">
-                  <Input name="corner_r" label={t('Master.cornerR')} />
-                  <Input name="chamfer_c" label={t('Master.chamferC')} />
+                  <Input name="corner_r" label={t('cornerR')} />
+                  <Input name="chamfer_c" label={t('chamferC')} />
                 </div>
                 
-                <Input name="draft_angle" label={t('Master.draftAngle')} />
-                <Input name="data_input" label={t('Master.dataInput')} />
+                <Input name="draft_angle" label={t('draftAngle')} />
+                <Input name="data_input" label={t('dataInput')} />
               </div>
             </div>
           </div>

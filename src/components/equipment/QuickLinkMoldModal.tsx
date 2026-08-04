@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { X, Search, Loader2, Link2, Check } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { linkJobToPhysicalMoldAction } from '@/app/actions/mold-job'
 
 type PhysicalMoldOption = {
@@ -25,6 +26,8 @@ export function QuickLinkMoldModal({
   onClose: () => void
   onSuccess: () => void
 }) {
+  const t = useTranslations('Equipment.QuickLinkMold')
+  const tCommon = useTranslations('Common')
   const supabase = createClient()
   const [search, setSearch] = useState('')
   const [molds, setMolds] = useState<PhysicalMoldOption[]>([])
@@ -72,7 +75,7 @@ export function QuickLinkMoldModal({
     const res = await linkJobToPhysicalMoldAction(jobId, selectedMoldId)
     setSubmitting(false)
     if (!res.success) {
-      setError(res.error || 'Failed to link mold')
+      setError(res.error || t('failedToLink'))
     } else {
       onSuccess()
       onClose()
@@ -95,11 +98,11 @@ export function QuickLinkMoldModal({
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <Link2 size={18} style={{ color: 'var(--accent)' }} />
             <div>
-              <h2 style={{ margin: 0, fontSize: 14, fontWeight: 700, fontFamily: 'var(--font-jp)' }}>
-                Bổ sung Liên kết Khuôn vật lý
+              <h2 style={{ margin: 0, fontSize: 14, fontWeight: 700, fontFamily: 'var(--font-jp)', color: 'var(--text-primary)' }}>
+                {t('title')}
               </h2>
               <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
-                Job: <strong style={{ color: 'var(--accent)' }}>[{jobCode}] {jobName}</strong>
+                {t('jobPrefix')} <strong style={{ color: 'var(--accent)' }}>[{jobCode}] {jobName}</strong>
               </span>
             </div>
           </div>
@@ -116,7 +119,7 @@ export function QuickLinkMoldModal({
               type="text"
               className="form-input"
               style={{ paddingLeft: 30 }}
-              placeholder="Nhập tên khuôn hoặc mã hệ thống (system_code)..."
+              placeholder={t('searchPlaceholder')}
               value={search}
               onChange={e => setSearch(e.target.value)}
             />
@@ -134,11 +137,11 @@ export function QuickLinkMoldModal({
           {loading ? (
             <div style={{ padding: 30, textAlign: 'center', color: 'var(--text-muted)', fontSize: 12 }}>
               <Loader2 size={20} className="animate-spin" style={{ margin: '0 auto 8px', color: 'var(--accent)' }} />
-              Đang tìm kiếm danh sách khuôn...
+              {t('searching')}
             </div>
           ) : molds.length === 0 ? (
             <div style={{ padding: 30, textAlign: 'center', color: 'var(--text-muted)', fontSize: 12 }}>
-              Không tìm thấy khuôn vật lý nào khớp từ khóa.
+              {t('noMoldsFound')}
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -165,7 +168,7 @@ export function QuickLinkMoldModal({
                         {m.display_name}
                       </div>
                       <div style={{ fontSize: 11, fontFamily: 'monospace', color: 'var(--text-secondary)', marginTop: 2 }}>
-                        Mã hệ thống: {m.system_code}
+                        {t('systemCodeLabel')} {m.system_code}
                       </div>
                     </div>
                     {isSelected && (
@@ -182,7 +185,7 @@ export function QuickLinkMoldModal({
 
         {/* Footer */}
         <div style={{ padding: '12px 18px', borderTop: '1px solid var(--border-default)', display: 'flex', justifyContent: 'flex-end', gap: 8, background: 'var(--bg-surface-2)' }}>
-          <button className="btn btn-secondary" onClick={onClose} disabled={submitting}>Hủy</button>
+          <button className="btn btn-secondary" onClick={onClose} disabled={submitting}>{tCommon('cancel')}</button>
           <button
             className="btn btn-primary"
             disabled={!selectedMoldId || submitting}
@@ -190,10 +193,11 @@ export function QuickLinkMoldModal({
             style={{ display: 'flex', alignItems: 'center', gap: 6 }}
           >
             {submitting ? <Loader2 size={14} className="animate-spin" /> : <Link2 size={14} />}
-            <span>Liên kết ngay</span>
+            <span>{t('linkBtn')}</span>
           </button>
         </div>
       </div>
     </div>
   )
 }
+

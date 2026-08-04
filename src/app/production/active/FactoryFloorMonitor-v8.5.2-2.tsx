@@ -66,9 +66,7 @@ export default async function FactoryFloorMonitor() {
                         return (
                             <div
                                 key={machine.id}
-                                className={`flex flex-col border-2 rounded-xl overflow-hidden shadow-lg transition-all
-                                    ${isRunning ? 'border-emerald-500 bg-emerald-500/5' : 'border-[var(--mcs-border)] bg-[var(--mcs-surface)] opacity-80'}
-                                `}
+                                className={`flex flex-col border-2 rounded-xl overflow-hidden shadow-lg transition-all ${isRunning ? 'border-emerald-500 bg-emerald-500/5' : 'border-[var(--mcs-border)] bg-[var(--mcs-surface)] opacity-80'}`}
                             >
                                 {/* Machine Header */}
                                 <div className={`p-4 flex justify-between items-center ${isRunning ? 'bg-emerald-500 text-white' : 'bg-[var(--mcs-surface-2)] border-b border-[var(--mcs-border)]'}`}>
@@ -80,7 +78,7 @@ export default async function FactoryFloorMonitor() {
                                         </div>
                                     </div>
                                     <div className={`px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest border-2 ${isRunning ? 'bg-white text-emerald-600 border-white' : 'bg-[var(--mcs-surface)] text-[var(--mcs-text-muted)] border-[var(--mcs-border)]'}`}>
-                                        {isRunning ? '稼働中 (RUNNING)' : '征E��中 (IDLE)'}
+                                        {isRunning ? '稼働中 (RUNNING)' : '待機中 (IDLE)'}
                                     </div>
                                 </div>
 
@@ -89,25 +87,25 @@ export default async function FactoryFloorMonitor() {
                                     {isRunning ? (
                                         <div className="space-y-4">
                                             <div>
-                                                <div className="text-xs font-bold text-[var(--mcs-text-muted)] uppercase tracking-wider mb-1">品番 (Mã Sản Phẩm / Item)</div>
+                                                <div className="text-xs font-bold text-[var(--mcs-text-muted)] uppercase tracking-wider mb-1">品番</div>
                                                 <div className="text-xl font-black text-[var(--mcs-text)]">{machine.currentJob.order_items.product_pn_raw}</div>
                                             </div>
 
                                             <div className="grid grid-cols-2 gap-4 pt-4 border-t border-emerald-500/20">
                                                 <div>
-                                                    <div className="text-[10px] font-bold text-[var(--mcs-text-muted)] uppercase tracking-wider mb-1 flex items-center gap-1"><User size={12} /> 作業老EThợ Máy)</div>
+                                                    <div className="text-[10px] font-bold text-[var(--mcs-text-muted)] uppercase tracking-wider mb-1 flex items-center gap-1"><User size={12} /> 作業者</div>
                                                     <div className="font-bold text-[var(--mcs-text)] truncate">{machine.currentJob.operator_name || 'N/A'}</div>
                                                 </div>
                                                 <div>
-                                                    <div className="text-[10px] font-bold text-[var(--mcs-text-muted)] uppercase tracking-wider mb-1 flex items-center gap-1"><Clock size={12} /> 開始時閁EGiềEBắt Đầu)</div>
-                                                    <div className="font-bold text-[var(--mcs-text)]">{new Date(machine.currentJob.start_time).toLocaleTimeString('vi-VN')}</div>
+                                                    <div className="text-[10px] font-bold text-[var(--mcs-text-muted)] uppercase tracking-wider mb-1 flex items-center gap-1"><Clock size={12} /> 開始時間</div>
+                                                    <div className="font-bold text-[var(--mcs-text)]">{new Date(machine.currentJob.start_time).toLocaleTimeString()}</div>
                                                 </div>
                                             </div>
                                         </div>
                                     ) : (
                                         <div className="flex flex-col items-center justify-center text-center space-y-3 h-full">
                                             <Cog size={48} className="text-[var(--mcs-border)] animate-spin-slow" style={{ animationDuration: '8s' }} />
-                                            <p className="text-lg font-bold text-[var(--mcs-text-muted)] uppercase tracking-widest">稼働準備完亁E(Sẵn Sàng Hứng Tải)</p>
+                                            <p className="text-lg font-bold text-[var(--mcs-text-muted)] uppercase tracking-widest">稼働準備完了</p>
                                         </div>
                                     )}
                                 </div>

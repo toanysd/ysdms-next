@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import { AsyncSearchableSelect } from '@/components/ui/AsyncSearchableSelect'
 import { Plus, Trash2, Save, X, ArrowLeft, Send, ChevronDown, ChevronUp } from 'lucide-react'
 import { upsertOrderAction, OrderHeaderInput, OrderLineInput } from '@/app/actions/orders'
-import { BilingualLabel } from '@/components/ui/BilingualLabel'
+import { useTranslations } from 'next-intl'
 
 type DesignRevisionOption = {
   revision_id: string
@@ -29,6 +29,8 @@ type OrderFormProps = {
 }
 
 export function OrderForm({ initialOrder, isEditing = false, onCancel, onSuccess }: OrderFormProps) {
+  const t = useTranslations('Orders')
+  const tCommon = useTranslations('Common')
   const router = useRouter()
   const supabase = createClient()
   const [loading, setLoading] = useState(false)
@@ -248,25 +250,25 @@ export function OrderForm({ initialOrder, isEditing = false, onCancel, onSuccess
     setError(null)
 
     if (!header.company_id) {
-      setError('得意先を選択してください')
+      setError(t('errorSelectCustomer'))
       setLoading(false)
       return
     }
 
     if (lines.length === 0) {
-      setError('少なくとも1つの明細が必要です')
+      setError(t('errorLineRequired'))
       setLoading(false)
       return
     }
 
     for (let i = 0; i < lines.length; i++) {
       if (!lines[i].product_id) {
-        setError(`明細 #${lines[i].line_no}：品番を選択してください#${lines[i].line_no} chưa chọn sản phẩm`)
+        setError(t('errorProductRequired', { lineNo: lines[i].line_no }))
         setLoading(false)
         return
       }
       if (lines[i].quantity <= 0) {
-        setError(`明細 #${lines[i].line_no}：数量を入力してください#${lines[i].line_no} chưa nhập số lượng hợp lệ`)
+        setError(t('errorQtyRequired', { lineNo: lines[i].line_no }))
         setLoading(false)
         return
       }
@@ -281,7 +283,7 @@ export function OrderForm({ initialOrder, isEditing = false, onCancel, onSuccess
       if (onSuccess) onSuccess(orderId)
       else router.push(`/orders/${orderId}`)
     } else {
-      setError(submitError || '保存中にエラーが発生しました')
+      setError(submitError || t('errorSave'))
     }
     setLoading(false)
   }
@@ -293,7 +295,7 @@ export function OrderForm({ initialOrder, isEditing = false, onCancel, onSuccess
 
   const handleConfirmOrder = (e: React.MouseEvent) => {
     e.preventDefault()
-    if (confirm('「この受注を確定しますか？確定後、生産計画に反映されます。」\nBạn có chắc chắn xác nhận đơn hàng này? Sau khi xác nhận, đơn sẽ được đưa vào kế hoạch sản xuất.')) {
+    if (confirm(t('confirmOrderConfirm'))) {
       submitOrder('CONFIRMED')
     }
   }
@@ -324,19 +326,19 @@ export function OrderForm({ initialOrder, isEditing = false, onCancel, onSuccess
       <div className="card-flat" style={{ padding: '16px 20px', marginBottom: 16 }}>
         <div style={{ borderBottom: '1px solid var(--border-default)', paddingBottom: 8, marginBottom: 16 }}>
           <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)' }}>
-            <BilingualLabel ja="共通情報" vi="Thông tin chung" />
+            {t('commonInfo')}
           </h3>
         </div>
         <div className="grid grid-cols-6 gap-x-4 gap-y-3">
           {/* Hàng 1 */}
           <div className="form-field col-span-2">
             <label className="form-label" style={{ marginBottom: 4 }}>
-              <BilingualLabel ja="得意先 *" vi="Khách hàng (*)" />
+              {t('customerRequired')}
             </label>
             <AsyncSearchableSelect
               value={header.company_id || null}
               onChange={(v) => setHeader({ ...header, company_id: v || '' })}
-              placeholder="得意先を選択..."
+              placeholder={t('customerPlaceholder')}
               fetchOptions={async (q) => {
                 const { data } = await supabase
                   .from('companies')
@@ -354,31 +356,31 @@ export function OrderForm({ initialOrder, isEditing = false, onCancel, onSuccess
 
           <div className="form-field col-span-1">
             <label className="form-label" style={{ marginBottom: 4 }}>
-              <BilingualLabel ja="受注番号" vi="Mã ĐH nội bộ" />
+              {t('internalOrderNo')}
             </label>
-            <input type="text" className="form-input" style={{ fontFamily: 'monospace', fontSize: 13 }} placeholder="自動生成" value={header.order_no} onChange={e => setHeader({...header, order_no: e.target.value})} />
+            <input type="text" className="form-input" style={{ fontFamily: 'monospace', fontSize: 13 }} placeholder={t('autoGenerate')} value={header.order_no} onChange={e => setHeader({...header, order_no: e.target.value})} />
           </div>
 
           <div className="form-field col-span-1">
             <label className="form-label" style={{ marginBottom: 4 }}>
-              <BilingualLabel ja="要求No. (PO)" vi="Số PO Khách" />
+              {t('customerPO')}
             </label>
             <input type="text" className="form-input" style={{ fontSize: 13 }} value={header.customer_order_no || ''} onChange={e => setHeader({...header, customer_order_no: e.target.value})} />
           </div>
 
           <div className="form-field col-span-1">
             <label className="form-label" style={{ marginBottom: 4 }}>
-              <BilingualLabel ja="受注種別" vi="Loại đơn hàng" />
+              {t('orderType')}
             </label>
             <select className="form-input" style={{ fontSize: 13 }} value={header.order_type || 'PRODUCT'} onChange={e => setHeader({...header, order_type: e.target.value})}>
-              <option value="PRODUCT">製品 (トレイ)</option>
-              <option value="MOLD">金型</option>
+              <option value="PRODUCT">{t('orderTypeProduct')}</option>
+              <option value="MOLD">{t('orderTypeMold')}</option>
             </select>
           </div>
 
           <div className="form-field col-span-1">
             <label className="form-label" style={{ marginBottom: 4 }}>
-              <BilingualLabel ja="受注日" vi="Ngày đặt hàng" />
+              {t('orderDate')}
             </label>
             <input type="date" className="form-input" style={{ fontSize: 13 }} value={header.order_date || ''} onChange={e => setHeader({...header, order_date: e.target.value})} />
           </div>
@@ -386,19 +388,19 @@ export function OrderForm({ initialOrder, isEditing = false, onCancel, onSuccess
           {/* Hàng 2 */}
           <div className="form-field col-span-1">
             <label className="form-label" style={{ marginBottom: 4 }}>
-              <BilingualLabel ja="伝票/LOT No." vi="Mã phiếu xuất" />
+              {t('lotNo')}
             </label>
             <input type="text" className="form-input" style={{ fontSize: 13 }} value={header.lot_no || ''} onChange={e => setHeader({...header, lot_no: e.target.value})} />
           </div>
 
           <div className="form-field col-span-3">
             <label className="form-label" style={{ marginBottom: 4 }}>
-              <BilingualLabel ja="備考" vi="Ghi chú chung" />
+              {t('notes')}
             </label>
             <textarea 
               className="form-textarea" 
               style={{ height: '36px', minHeight: '36px', resize: 'vertical', fontSize: 13, padding: '8px 12px' }} 
-              placeholder="備考を入力..."
+              placeholder={t('notesPlaceholder')}
               value={header.notes || ''} 
               onChange={e => setHeader({...header, notes: e.target.value})} 
             />
@@ -434,7 +436,7 @@ export function OrderForm({ initialOrder, isEditing = false, onCancel, onSuccess
       <div style={{ marginBottom: 20 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
           <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)' }}>
-            <BilingualLabel ja="受注明細" vi="Chi tiết sản phẩm" />
+            {t('orderDetails')}
           </h3>
         </div>
 
@@ -456,7 +458,7 @@ export function OrderForm({ initialOrder, isEditing = false, onCancel, onSuccess
                 <button 
                   type="button" 
                   onClick={() => handleRemoveLine(idx)} 
-                  style={{ position: 'absolute', top: 12, right: 12, color: 'var(--error)', background: 'none', border: 'none', cursor: 'pointer', opacity: 0.7 }}
+                  style={{ position: 'absolute', top: 12, right: 12, color: 'var(--status-error)', background: 'none', border: 'none', cursor: 'pointer', opacity: 0.7 }}
                 >
                   <Trash2 size={16} />
                 </button>
@@ -464,11 +466,11 @@ export function OrderForm({ initialOrder, isEditing = false, onCancel, onSuccess
                 <div className="grid grid-cols-7 gap-4" style={{ paddingLeft: 32, paddingRight: 32 }}>
                   {/* Hàng 1 */}
                   <div className="col-span-3 form-field">
-                    <label className="form-label" style={{ fontSize: 11, marginBottom: 4 }}><BilingualLabel ja="品番 *" vi="Sản phẩm (*)" /></label>
+                    <label className="form-label" style={{ fontSize: 11, marginBottom: 4 }}>{t('productName')} *</label>
                     <AsyncSearchableSelect
                       value={line.product_id}
                       onChange={(v) => handleLineChange(idx, 'product_id', v)}
-                      placeholder="品番を検索..."
+                      placeholder={t('searchProductPlaceholder')}
                       fetchOptions={async (q) => {
                         const { data } = await supabase
                           .from('products')
@@ -484,45 +486,45 @@ export function OrderForm({ initialOrder, isEditing = false, onCancel, onSuccess
                     />
                   </div>
                   <div className="col-span-1 form-field">
-                    <label className="form-label" style={{ fontSize: 11, marginBottom: 4 }}><BilingualLabel ja="数量 *" vi="Số lượng (*)" /></label>
+                    <label className="form-label" style={{ fontSize: 11, marginBottom: 4 }}>{t('quantity')} *</label>
                     <input type="number" className="form-input" style={{ fontSize: 13 }} required value={line.quantity || ''} onChange={e => handleLineChange(idx, 'quantity', parseInt(e.target.value) || 0)} />
                   </div>
                   <div className="col-span-1 form-field">
-                    <label className="form-label" style={{ fontSize: 11, marginBottom: 4 }}><BilingualLabel ja="有償/無償" vi="Loại phí" /></label>
+                    <label className="form-label" style={{ fontSize: 11, marginBottom: 4 }}>{t('itemType')}</label>
                     <select className="form-input" style={{ fontSize: 13 }} value={line.charge_type || 'PAID'} onChange={e => {
                       handleLineChange(idx, 'charge_type', e.target.value)
                       handleLineChange(idx, 'is_free_sample', e.target.value !== 'PAID')
                     }}>
-                      <option value="PAID">有償</option>
-                      <option value="FREE">無償</option>
-                      <option value="OFFICE_SAMPLE">事務所用</option>
+                      <option value="PAID">{t('chargeTypePaid')}</option>
+                      <option value="FREE">{t('chargeTypeFree')}</option>
+                      <option value="OFFICE_SAMPLE">{t('chargeTypeOffice')}</option>
                     </select>
                   </div>
                   <div className="col-span-1 form-field">
-                    <label className="form-label" style={{ fontSize: 11, marginBottom: 4 }}><BilingualLabel ja="出荷日" vi="Ngày xuất" /></label>
+                    <label className="form-label" style={{ fontSize: 11, marginBottom: 4 }}>{t('ngayXuat')}</label>
                     <input type="date" className="form-input" style={{ fontSize: 13 }} value={line.ship_date || ''} onChange={e => handleLineChange(idx, 'ship_date', e.target.value)} />
                   </div>
                   <div className="col-span-1 form-field">
-                    <label className="form-label" style={{ fontSize: 11, marginBottom: 4, fontWeight: 700, color: 'var(--accent)' }}><BilingualLabel ja="納期" vi="Ngày nhận" /></label>
+                    <label className="form-label" style={{ fontSize: 11, marginBottom: 4, fontWeight: 700, color: 'var(--accent)' }}>{t('deliveryDate')}</label>
                     <input type="date" className="form-input" style={{ fontSize: 13, borderColor: 'var(--accent-light)', fontWeight: 600 }} value={line.due_date || ''} onChange={e => handleLineChange(idx, 'due_date', e.target.value)} />
                   </div>
 
                   {/* Hàng 2 */}
                   <div className="col-span-3 form-field">
-                    <label className="form-label" style={{ fontSize: 11, marginBottom: 4 }}><BilingualLabel ja="納品先" vi="Điểm giao" /></label>
+                    <label className="form-label" style={{ fontSize: 11, marginBottom: 4 }}>{t('iaIemGiaoHang')}</label>
                     <select className="form-input" style={{ fontSize: 13 }} value={line.delivery_site_id || ''} onChange={e => handleLineChange(idx, 'delivery_site_id', e.target.value)}>
-                      <option value="">-- 納品先を選択 --</option>
+                      <option value="">{t('selectDeliverySitePlaceholder')}</option>
                       {availableSites.map(s => (
                         <option key={s.value} value={s.value}>{s.label}</option>
                       ))}
                     </select>
                   </div>
                   <div className="col-span-1 form-field">
-                    <label className="form-label" style={{ fontSize: 11, marginBottom: 4 }}><BilingualLabel ja="荷姿" vi="Quy cách đóng gói" /></label>
-                    <input type="text" className="form-input" style={{ fontSize: 13 }} placeholder="例: 各15枚" value={line.packing_style || ''} onChange={e => handleLineChange(idx, 'packing_style', e.target.value)} />
+                    <label className="form-label" style={{ fontSize: 11, marginBottom: 4 }}>{t('soThung')}</label>
+                    <input type="text" className="form-input" style={{ fontSize: 13 }} placeholder={t('packingStylePlaceholder')} value={line.packing_style || ''} onChange={e => handleLineChange(idx, 'packing_style', e.target.value)} />
                   </div>
                   <div className="col-span-3 form-field">
-                    <label className="form-label" style={{ fontSize: 11, marginBottom: 4 }}><BilingualLabel ja="梱包備考" vi="Ghi chú đóng gói" /></label>
+                    <label className="form-label" style={{ fontSize: 11, marginBottom: 4 }}>{t('packingNotes')}</label>
                     <input type="text" className="form-input" style={{ fontSize: 13 }} value={line.shipping_notes || ''} onChange={e => handleLineChange(idx, 'shipping_notes', e.target.value)} />
                   </div>
                 </div>
@@ -543,16 +545,15 @@ export function OrderForm({ initialOrder, isEditing = false, onCancel, onSuccess
                           display: 'inline-flex', alignItems: 'center', gap: 4,
                         }}
                         onClick={() => hasMultipleRevs && setShowRevisionPicker(prev => ({ ...prev, [idx]: !prev[idx] }))}
-                        title={hasMultipleRevs ? '複数の設計版があります — クリックして選択' : '単一設計版'}
                       >
-                        設計: {selectedRev.design_code}
+                        {t('designRevPrefix')} {selectedRev.design_code}
                         {selectedRev.plastic_type_designed && ` (${selectedRev.plastic_type_designed})`}
                         {hasMultipleRevs && (
                           isRevPickerOpen ? <ChevronUp size={10} /> : <ChevronDown size={10} />
                         )}
                         {hasMultipleRevs && (
                           <span style={{ fontSize: 9, opacity: 0.7 }}>
-                            ({revInfo!.revs.length}版)
+                            ({revInfo!.revs.length})
                           </span>
                         )}
                       </span>
@@ -575,7 +576,7 @@ export function OrderForm({ initialOrder, isEditing = false, onCancel, onSuccess
                       borderRadius: 'var(--radius-sm)', padding: 6, maxHeight: 150, overflowY: 'auto' 
                     }}>
                       <div style={{ fontSize: 10, color: 'var(--text-muted)', marginBottom: 4, paddingLeft: 4 }}>
-                        設計版を選択:
+                        {t('selectDesignRev')}
                       </div>
                       {revInfo.revs.map(rev => {
                         const isSelected = line.design_revision_id === rev.revision_id
@@ -625,12 +626,12 @@ export function OrderForm({ initialOrder, isEditing = false, onCancel, onSuccess
 
         {lines.length === 0 && (
           <div style={{ textAlign: 'center', padding: '30px', color: 'var(--text-muted)', background: 'var(--bg-surface)', borderRadius: 8, marginTop: 8 }}>
-            明細がありません。「行を追加」ボタンをクリックしてください。
+            {t('noOrderLinesInstruction')}
           </div>
         )}
 
         <button type="button" className="btn btn-secondary" style={{ padding: '6px 12px', fontSize: 12, marginTop: 12 }} onClick={handleAddLine}>
-          <Plus size={15} style={{ marginRight: 6 }} /> 行を追加
+          <Plus size={15} style={{ marginRight: 6 }} /> {t('addLine')}
         </button>
       </div>
 
@@ -638,16 +639,16 @@ export function OrderForm({ initialOrder, isEditing = false, onCancel, onSuccess
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <button type="button" className="btn btn-secondary" onClick={onCancel || (() => router.back())} disabled={loading}>
           {onCancel ? <X size={16} style={{ marginRight: 6 }} /> : <ArrowLeft size={16} style={{ marginRight: 6 }} />}
-          キャンセル
+          {tCommon('cancel')}
         </button>
         <div style={{ display: 'flex', gap: 12 }}>
           <button type="button" className="btn btn-secondary" onClick={handleSaveDraft} disabled={loading}>
             <Save size={16} style={{ marginRight: 6 }} />
-            {loading ? '保存中...' : '下書き保存'}
+            {loading ? t('saving') : t('saveDraft')}
           </button>
           <button type="button" className="btn btn-primary" onClick={handleConfirmOrder} disabled={loading}>
             <Send size={16} style={{ marginRight: 6 }} />
-            {loading ? '保存中...' : '受注確定'}
+            {loading ? t('saving') : t('confirmOrder')}
           </button>
         </div>
       </div>

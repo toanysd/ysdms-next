@@ -133,7 +133,7 @@ export default async function MoldDetailPage({ params }: Props) {
           {revisions.length === 0 ? (
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--text-muted)', gap: 8, padding: 48 }}>
               <FileText size={32} style={{ opacity: 0.5 }} />
-              <span>Chưa có phiên bản thiết kế nào. Hãy tạo Revision đầu tiên!</span>
+              <span>デザインリビジョンがまだありません。</span>
             </div>
           ) : (
             <table className="data-table">

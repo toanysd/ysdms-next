@@ -1,10 +1,12 @@
 import { getLoadingBoardData } from './_actions/board'
 import LoadingBoardClient from './_components/LoadingBoardClient'
 import { addDays, format } from 'date-fns'
+import { getTranslations } from 'next-intl/server'
 
 export const dynamic = 'force-dynamic'
 
 export default async function LoadingBoardPage() {
+  const t = await getTranslations('LoadingBoard')
   const today = new Date()
   const endDate = addDays(today, 6) // Rolling 7 days
 
@@ -14,18 +16,18 @@ export default async function LoadingBoardPage() {
   const { machines, pendingOrders, productionPlans } = await getLoadingBoardData(startDateStr, endDateStr)
 
   return (
-    <div className="min-h-screen bg-[var(--mcs-surface)] dark:bg-slate-950 flex flex-col">
-      <header className="border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-6 py-4 flex justify-between items-center shadow-sm z-10">
+    <div className="min-h-screen bg-[var(--bg-surface)] flex flex-col">
+      <header className="border-b border-[var(--border-default)] bg-[var(--bg-surface)] px-6 py-4 flex justify-between items-center shadow-sm z-10">
         <div>
-          <h1 className="text-2xl font-black text-slate-800 dark:text-slate-100 tracking-tight">Machine Loading Board</h1>
-          <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mt-1">Smart Scheduling (Rolling 7-Days)</p>
+          <h1 className="text-xl font-bold text-[var(--text-primary)] tracking-tight">{t('title')}</h1>
+          <p className="text-xs font-medium text-[var(--text-muted)] mt-0.5">{t('subtitle')}</p>
         </div>
         <div className="flex gap-4 items-center">
-          <div className="text-sm font-bold text-slate-600 dark:text-slate-300">
-            {format(today, 'MMM dd, yyyy')} - {format(endDate, 'MMM dd, yyyy')}
+          <div className="text-xs font-mono font-bold text-[var(--text-secondary)]">
+            {format(today, 'yyyy/MM/dd')} - {format(endDate, 'yyyy/MM/dd')}
           </div>
-          <button className="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded font-bold text-xs transition-colors">
-            Week Nav ◀ ▶
+          <button className="btn btn-secondary text-xs px-3 py-1.5 font-bold">
+            {t('weekNav')}
           </button>
         </div>
       </header>

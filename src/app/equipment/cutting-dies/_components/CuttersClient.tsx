@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Plus, Search, Edit2, Trash2, Box } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { upsertCutter, deleteCutter } from '../actions'
 import { Pagination } from '@/components/ui/Pagination'
 
@@ -51,6 +52,7 @@ export default function CuttersClient({
   initialPage?: number
   initialSearch?: string
 }) {
+  const t = useTranslations('Cutters')
   const router = useRouter()
   const [cutters, setCutters] = useState<Cutter[]>(initialCutters)
   const [search, setSearch] = useState(initialSearch)
@@ -66,6 +68,7 @@ export default function CuttersClient({
     }, 500)
     return () => clearTimeout(timer)
   }, [search, page, router])
+
   const [isModalOpen, setModalOpen] = useState(false)
   const [editingCutter, setEditingCutter] = useState<Cutter | null>(null)
   
@@ -147,141 +150,122 @@ export default function CuttersClient({
     if (res.success) {
       window.location.reload()
     } else {
-      alert(`エラー (Lỗi): ${res.error}`)
+      alert(`${t('error')}: ${res.error}`)
     }
     setIsSubmitting(false)
   }
 
   const handleDelete = async (id: string, code: string) => {
-    if (!confirm(`抜型 [${code}] を削除してもよろしいですか？\nBạn có chắc chắn muốn xóa Dao cắt [${code}] không?`)) return
+    if (!confirm(t('deleteConfirm', { code }))) return
     const res = await deleteCutter(id)
     if (res.success) {
       setCutters(prev => prev.filter(c => c.cutter_id !== id))
     } else {
-      alert(`エラー (Lỗi): ${res.error}`)
+      alert(`${t('error')}: ${res.error}`)
     }
   }
 
   return (
-    <div className="flex flex-col h-full bg-[#ECEEF1]">
-      {/* PageHeader (36px + padding) */}
-      <div className="bg-[#F7F8FA] px-4 py-3 border-b border-slate-200 flex items-center justify-between shrink-0 shadow-sm z-10">
+    <div className="flex flex-col h-full bg-[var(--bg-surface-2)]">
+      {/* PageHeader */}
+      <div className="bg-[var(--bg-surface)] px-4 py-3 border-b border-[var(--border-default)] flex items-center justify-between shrink-0 shadow-sm z-10">
         <div className="flex items-center gap-2">
-          <Box size={18} className="text-slate-600" />
-          <h1 className="text-base font-bold text-slate-800">
-            抜型管理 <span className="text-[13px] font-normal text-slate-500 ml-1">/ Quản lý Dao cắt</span>
+          <Box size={18} className="text-[var(--accent)]" />
+          <h1 className="text-base font-bold text-[var(--text-primary)]">
+            {t('title')}
           </h1>
         </div>
 
         <button 
           onClick={() => handleOpenModal()}
-          className="h-8 px-4 bg-slate-800 text-white font-medium text-[13px] rounded hover:bg-slate-700 transition-colors flex items-center gap-1.5 shadow-sm"
+          className="btn btn-primary h-8 px-4 text-[13px] flex items-center gap-1.5 shadow-sm"
         >
           <Plus size={14} />
-          <span className="font-semibold">新規登録</span>
-          <span className="text-[11px] text-slate-300 font-normal">(Thêm mới)</span>
+          <span className="font-bold">{t('addNew')}</span>
         </button>
       </div>
 
       {/* Main Content */}
       <div className="flex-1 p-4 overflow-y-auto">
-        <div className="mb-4 flex justify-between items-center bg-white p-2 border border-slate-200 rounded shadow-sm">
+        <div className="mb-4 flex justify-between items-center bg-[var(--bg-surface)] p-2 border border-[var(--border-default)] rounded shadow-sm">
           {/* Search */}
           <div className="relative">
-            <Search size={16} className="absolute left-3 top-[10px] text-slate-400" />
+            <Search size={16} className="absolute left-3 top-[10px] text-[var(--text-muted)]" />
             <input 
               value={search}
               onChange={e => {
                 setSearch(e.target.value)
                 setPage(1)
               }}
-              placeholder="Search by code or name... / Tìm kiếm"
-              className="pl-9 pr-3 py-2 border rounded-md text-sm w-[300px] outline-none focus:border-[#008A90] focus:ring-1 focus:ring-[#008A90] transition-colors shadow-sm"
+              placeholder={t('searchPlaceholder')}
+              className="form-input pl-9 pr-3 py-2 text-sm w-[300px] shadow-sm"
             />
           </div>
         </div>
 
-        <div className="bg-white rounded shadow-sm border border-slate-200 overflow-hidden">
-          <table className="w-full text-left text-[13px] whitespace-nowrap">
-            <thead className="bg-[#F7F8FA] border-b border-slate-200 text-slate-600">
+        <div className="bg-[var(--bg-surface)] rounded shadow-sm border border-[var(--border-default)] overflow-hidden">
+          <table className="data-table w-full text-left text-[13px] whitespace-nowrap">
+            <thead>
               <tr>
                 <th className="px-3 py-2 text-center w-12 text-[10px] uppercase font-bold tracking-wider">No.</th>
-                <th className="px-3 py-2 font-bold">
-                  抜型コード <span className="font-normal text-slate-400 text-[11px] block">Mã dao</span>
-                </th>
-                <th className="px-3 py-2 font-bold">
-                  名称 <span className="font-normal text-slate-400 text-[11px] block">Tên dao</span>
-                </th>
-                <th className="px-3 py-2 font-bold">
-                  顧客 <span className="font-normal text-slate-400 text-[11px] block">Khách hàng</span>
-                </th>
-                <th className="px-3 py-2 font-bold">
-                  金型設計 <span className="font-normal text-slate-400 text-[11px] block">Thiết kế khuôn</span>
-                </th>
-                <th className="px-3 py-2 font-bold">
-                  種類 <span className="font-normal text-slate-400 text-[11px] block">Loại</span>
-                </th>
-                <th className="px-3 py-2 font-bold">
-                  ベース <span className="font-normal text-slate-400 text-[11px] block">Đế dao</span>
-                </th>
-                <th className="px-3 py-2 font-bold">
-                  寸法 (L x W x H) <span className="font-normal text-slate-400 text-[11px] block">Kích thước</span>
-                </th>
-                <th className="px-3 py-2 font-bold">
-                  状態 <span className="font-normal text-slate-400 text-[11px] block">Trạng thái</span>
-                </th>
+                <th className="px-3 py-2 font-bold">{t('cutterNo')}</th>
+                <th className="px-3 py-2 font-bold">{t('cutterName')}</th>
+                <th className="px-3 py-2 font-bold">{t('customer')}</th>
+                <th className="px-3 py-2 font-bold">{t('moldDesign')}</th>
+                <th className="px-3 py-2 font-bold">{t('type')}</th>
+                <th className="px-3 py-2 font-bold">{t('baseType')}</th>
+                <th className="px-3 py-2 font-bold">{t('dimensions')}</th>
+                <th className="px-3 py-2 font-bold">{t('status')}</th>
                 <th className="px-3 py-2 text-right"></th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody>
               {filteredCutters.map((c, idx) => {
-                let statusColor = 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                let statusJa = '使用中'
+                let badgeClass = 'badge badge--success'
+                let statusLabel = t('statusActive')
                 if (c.usage_status === 'NEEDS_MAINTENANCE') {
-                  statusColor = 'bg-amber-50 text-amber-700 border-amber-200'
-                  statusJa = 'メンテ要'
+                  badgeClass = 'badge badge--warning'
+                  statusLabel = t('statusMaintenance')
                 }
                 if (c.usage_status === 'DISCARDED') {
-                  statusColor = 'bg-slate-100 text-slate-600 border-slate-300'
-                  statusJa = '廃棄済'
+                  badgeClass = 'badge badge--neutral'
+                  statusLabel = t('statusDiscarded')
                 }
 
                 return (
-                  <tr key={c.cutter_id} className="hover:bg-[#F0F1F3] transition-colors group">
-                    <td className="px-3 py-2 text-center text-slate-400 font-mono text-[11px]">{idx + 1}</td>
-                    <td className="px-3 py-2 font-bold text-slate-800">{c.cutter_no}</td>
-                    <td className="px-3 py-2 text-slate-700">{c.cutter_name}</td>
-                    <td className="px-3 py-2 text-slate-600">
-                      {c.companies?.company_short_name || <span className="text-slate-300">-</span>}
+                  <tr key={c.cutter_id} className="hover:bg-[var(--bg-surface-hover)] transition-colors group">
+                    <td className="px-3 py-2 text-center text-[var(--text-muted)] font-mono text-[11px]">{idx + 1}</td>
+                    <td className="px-3 py-2 font-bold font-mono text-[14px] text-[var(--accent)]">{c.cutter_no}</td>
+                    <td className="px-3 py-2 text-[var(--text-primary)] font-semibold">{c.cutter_name}</td>
+                    <td className="px-3 py-2 text-[var(--text-primary)]">
+                      {c.companies?.company_short_name || <span className="text-[var(--text-muted)]">-</span>}
                     </td>
-                    <td className="px-3 py-2 text-slate-600">
+                    <td className="px-3 py-2 text-[var(--text-primary)]">
                       {c.mold_designs?.design_code ? (
-                        <span className="font-mono text-[11px] px-1.5 py-0.5 bg-slate-100 rounded border border-slate-200">
+                        <span className="font-mono text-[12px] font-bold px-1.5 py-0.5 bg-[var(--bg-surface-2)] rounded border border-[var(--border-default)]">
                           {c.mold_designs.design_code}
                         </span>
-                      ) : <span className="text-slate-300">-</span>}
+                      ) : <span className="text-[var(--text-muted)]">-</span>}
                     </td>
-                    <td className="px-3 py-2 text-slate-600">
-                      <div className="font-semibold">{c.cutter_type === 'INLINE' ? 'インライン' : '別抜き'}</div>
-                      <div className="text-[11px] text-slate-400">{c.cutter_type === 'INLINE' ? '(Inline)' : '(Separate)'}</div>
+                    <td className="px-3 py-2 text-[var(--text-primary)]">
+                      <div className="font-semibold text-[13px]">{c.cutter_type === 'INLINE' ? t('typeInline') : t('typeSeparate')}</div>
                     </td>
-                    <td className="px-3 py-2 text-slate-600">
-                      <div className="font-semibold">{c.base_type === 'ALUMINUM' ? 'アルミ' : '木製12mm'}</div>
-                      <div className="text-[11px] text-slate-400">{c.base_type === 'ALUMINUM' ? '(Nhôm)' : '(Gỗ)'}</div>
+                    <td className="px-3 py-2 text-[var(--text-primary)]">
+                      <div className="font-semibold text-[13px]">{c.base_type === 'ALUMINUM' ? t('baseAluminum') : t('baseWood')}</div>
                     </td>
-                    <td className="px-3 py-2 text-slate-600 tabular-nums">
+                    <td className="px-3 py-2 text-[var(--text-primary)] font-mono text-[13px]">
                       {c.cutter_length_mm || '-'} x {c.cutter_width_mm || '-'} x {c.cutter_height_mm || '-'}
                     </td>
                     <td className="px-3 py-2">
-                      <span className={`px-2 py-0.5 text-[10px] font-bold border rounded-sm ${statusColor}`}>
-                        {statusJa}
+                      <span className={badgeClass}>
+                        {statusLabel}
                       </span>
                     </td>
                     <td className="px-3 py-2 text-right space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button onClick={() => handleOpenModal(c)} className="p-1 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors" title="Sửa">
+                      <button onClick={() => handleOpenModal(c)} className="p-1 text-[var(--text-muted)] hover:text-[var(--accent)] rounded transition-colors" title={t('edit')}>
                         <Edit2 size={14} />
                       </button>
-                      <button onClick={() => handleDelete(c.cutter_id, c.cutter_no)} className="p-1 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors" title="Xóa">
+                      <button onClick={() => handleDelete(c.cutter_id, c.cutter_no)} className="p-1 text-[var(--text-muted)] hover:text-[var(--status-error)] rounded transition-colors" title={t('delete')}>
                         <Trash2 size={14} />
                       </button>
                     </td>
@@ -290,8 +274,8 @@ export default function CuttersClient({
               })}
               {filteredCutters.length === 0 && (
                 <tr>
-                  <td colSpan={10} className="px-3 py-8 text-center text-slate-500">
-                    データがありません (Không có dữ liệu)
+                  <td colSpan={10} className="px-3 py-8 text-center text-[var(--text-muted)] font-medium">
+                    {t('noData')}
                   </td>
                 </tr>
               )}
@@ -306,63 +290,63 @@ export default function CuttersClient({
         </div>
       </div>
 
-      {/* Modal - Compact Style */}
+      {/* Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
-          <div className="bg-white rounded-md shadow-xl w-full max-w-2xl overflow-hidden animate-in fade-in zoom-in-95">
-            <div className="px-5 py-3 border-b border-slate-200 flex justify-between items-center bg-[#F7F8FA]">
-              <h2 className="text-[14px] font-bold text-slate-800">
-                {editingCutter ? '抜型編集 (Sửa Dao Cắt)' : '抜型登録 (Thêm Dao Cắt)'}
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+          <div className="bg-[var(--bg-surface)] rounded-md shadow-xl w-full max-w-2xl overflow-hidden border border-[var(--border-default)] animate-in fade-in zoom-in-95">
+            <div className="px-5 py-3 border-b border-[var(--border-default)] flex justify-between items-center bg-[var(--bg-surface-2)]">
+              <h2 className="text-[14px] font-bold text-[var(--text-primary)]">
+                {editingCutter ? t('editTitle') : t('createTitle')}
               </h2>
-              <button onClick={() => setModalOpen(false)} className="text-slate-400 hover:text-slate-600">✕</button>
+              <button onClick={() => setModalOpen(false)} className="text-[var(--text-muted)] hover:text-[var(--text-primary)]">✕</button>
             </div>
             <form onSubmit={handleSubmit} className="p-5 space-y-4 max-h-[80vh] overflow-y-auto text-[13px]">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <label className="text-[11px] font-bold text-slate-600">抜型コード <span className="font-normal">(Mã Dao)</span> <span className="text-red-500">*</span></label>
+                  <label className="text-[12px] font-semibold text-[var(--text-muted)]">{t('cutterNo')} <span className="text-[var(--status-error)]">*</span></label>
                   <input 
                     required
                     type="text" 
                     value={form.cutter_no}
                     onChange={e => setForm({...form, cutter_no: e.target.value})}
-                    className="w-full px-2.5 py-1.5 border border-slate-300 rounded-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-colors" 
+                    className="form-input w-full text-[13px] font-mono font-bold text-[var(--accent)]" 
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[11px] font-bold text-slate-600">名称 <span className="font-normal">(Tên Dao)</span> <span className="text-red-500">*</span></label>
+                  <label className="text-[12px] font-semibold text-[var(--text-muted)]">{t('cutterName')} <span className="text-[var(--status-error)]">*</span></label>
                   <input 
                     required
                     type="text" 
                     value={form.cutter_name}
                     onChange={e => setForm({...form, cutter_name: e.target.value})}
-                    className="w-full px-2.5 py-1.5 border border-slate-300 rounded-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-colors" 
+                    className="form-input w-full text-[13px] font-semibold" 
                   />
                 </div>
               </div>
 
-              {/* Ràng buộc (Relationships) */}
-              <div className="grid grid-cols-2 gap-4 p-3 bg-[#F0F1F3] rounded-sm border border-slate-200">
+              {/* Ràng buộc */}
+              <div className="grid grid-cols-2 gap-4 p-3 bg-[var(--bg-surface-2)] rounded-sm border border-[var(--border-default)]">
                 <div className="space-y-1">
-                  <label className="text-[11px] font-bold text-slate-600">顧客 <span className="font-normal">(Khách hàng sở hữu)</span></label>
+                  <label className="text-[12px] font-semibold text-[var(--text-muted)]">{t('customer')}</label>
                   <select 
                     value={form.company_id}
                     onChange={e => setForm({...form, company_id: e.target.value})}
-                    className="w-full px-2.5 py-1.5 border border-slate-300 rounded-sm focus:border-blue-500 outline-none bg-white"
+                    className="form-input w-full text-[13px]"
                   >
-                    <option value="">-- 指定なし (Không có) --</option>
+                    <option value="">{t('unspecified')}</option>
                     {companies.map(c => (
                       <option key={c.company_id} value={c.company_id}>{c.company_short_name || c.company_name}</option>
                     ))}
                   </select>
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[11px] font-bold text-slate-600">金型設計 <span className="font-normal">(Thiết kế khuôn liên kết)</span></label>
+                  <label className="text-[12px] font-semibold text-[var(--text-muted)]">{t('moldDesign')}</label>
                   <select 
                     value={form.design_revision_id}
                     onChange={e => setForm({...form, design_revision_id: e.target.value})}
-                    className="w-full px-2.5 py-1.5 border border-slate-300 rounded-sm focus:border-blue-500 outline-none bg-white"
+                    className="form-input w-full text-[13px]"
                   >
-                    <option value="">-- 共通抜型 (Dùng chung) --</option>
+                    <option value="">{t('commonCutter')}</option>
                     {moldDesigns.map(m => (
                       <option key={m.design_id} value={m.design_id}>{m.design_code}</option>
                     ))}
@@ -370,114 +354,113 @@ export default function CuttersClient({
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4 border-t border-slate-100 pt-3">
+              <div className="grid grid-cols-2 gap-4 border-t border-[var(--border-default)] pt-3">
                 <div className="space-y-1">
-                  <label className="text-[11px] font-bold text-slate-600">種類 <span className="font-normal">(Loại cắt)</span></label>
+                  <label className="text-[12px] font-semibold text-[var(--text-muted)]">{t('type')}</label>
                   <select 
                     value={form.cutter_type}
                     onChange={e => setForm({...form, cutter_type: e.target.value})}
-                    className="w-full px-2.5 py-1.5 border border-slate-300 rounded-sm focus:border-blue-500 outline-none bg-white"
+                    className="form-input w-full text-[13px]"
                   >
-                    <option value="INLINE">インライン (Inline - Cắt trên máy ép)</option>
-                    <option value="SEPARATE">別抜き (Separate - Cắt rời thủ công)</option>
+                    <option value="INLINE">{t('typeInline')}</option>
+                    <option value="SEPARATE">{t('typeSeparate')}</option>
                   </select>
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[11px] font-bold text-slate-600">ベース <span className="font-normal">(Loại đế)</span></label>
+                  <label className="text-[12px] font-semibold text-[var(--text-muted)]">{t('baseType')}</label>
                   <select 
                     value={form.base_type}
                     onChange={e => setForm({...form, base_type: e.target.value})}
-                    className="w-full px-2.5 py-1.5 border border-slate-300 rounded-sm focus:border-blue-500 outline-none bg-white"
+                    className="form-input w-full text-[13px]"
                   >
-                    <option value="WOOD_12MM">木製12mm (Đế gỗ ván 12mm)</option>
-                    <option value="ALUMINUM">アルミベース (Đế Nhôm - Có thể chỉnh pitch)</option>
+                    <option value="WOOD_12MM">{t('baseWood')}</option>
+                    <option value="ALUMINUM">{t('baseAluminum')}</option>
                   </select>
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <label className="text-[11px] font-bold text-slate-600">面付け <span className="font-normal">(Số khoang / Cavity)</span></label>
+                  <label className="text-[12px] font-semibold text-[var(--text-muted)]">{t('cavityCount')}</label>
                   <input 
                     type="text" 
                     value={form.cavity_count}
                     onChange={e => setForm({...form, cavity_count: e.target.value})}
-                    className="w-full px-2.5 py-1.5 border border-slate-300 rounded-sm focus:border-blue-500 outline-none" 
+                    className="form-input w-full text-[13px] font-mono" 
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[11px] font-bold text-slate-600">ピッチ <span className="font-normal">(Pitch) - mm</span></label>
+                  <label className="text-[12px] font-semibold text-[var(--text-muted)]">{t('pitch')}</label>
                   <input 
                     type="number" step="0.1"
                     value={form.pitch_mm}
                     onChange={e => setForm({...form, pitch_mm: e.target.value})}
-                    className="w-full px-2.5 py-1.5 border border-slate-300 rounded-sm focus:border-blue-500 outline-none" 
+                    className="form-input w-full text-[13px] font-mono" 
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-4 border-t border-slate-100 pt-3">
+              <div className="grid grid-cols-3 gap-4 border-t border-[var(--border-default)] pt-3">
                 <div className="space-y-1">
-                  <label className="text-[11px] font-bold text-slate-600">長さ <span className="font-normal">(Chiều dài - mm)</span></label>
+                  <label className="text-[12px] font-semibold text-[var(--text-muted)]">{t('length')}</label>
                   <input 
                     type="number" step="0.1"
                     value={form.cutter_length_mm}
                     onChange={e => setForm({...form, cutter_length_mm: e.target.value})}
-                    className="w-full px-2.5 py-1.5 border border-slate-300 rounded-sm focus:border-blue-500 outline-none" 
+                    className="form-input w-full text-[13px] font-mono" 
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[11px] font-bold text-slate-600">幅 <span className="font-normal">(Bề rộng - mm)</span></label>
+                  <label className="text-[12px] font-semibold text-[var(--text-muted)]">{t('width')}</label>
                   <input 
                     type="number" step="0.1"
                     value={form.cutter_width_mm}
                     onChange={e => setForm({...form, cutter_width_mm: e.target.value})}
-                    className="w-full px-2.5 py-1.5 border border-slate-300 rounded-sm focus:border-blue-500 outline-none" 
+                    className="form-input w-full text-[13px] font-mono" 
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[11px] font-bold text-slate-600">高さ <span className="font-normal">(Cao dao - mm)</span></label>
+                  <label className="text-[12px] font-semibold text-[var(--text-muted)]">{t('height')}</label>
                   <input 
                     type="number" step="0.1"
                     value={form.cutter_height_mm}
                     onChange={e => setForm({...form, cutter_height_mm: e.target.value})}
-                    className="w-full px-2.5 py-1.5 border border-slate-300 rounded-sm focus:border-blue-500 outline-none" 
-                    placeholder="45, 60, 80..."
+                    className="form-input w-full text-[13px] font-mono" 
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4 border-t border-slate-100 pt-3">
+              <div className="grid grid-cols-2 gap-4 border-t border-[var(--border-default)] pt-3">
                 <div className="space-y-1">
-                  <label className="text-[11px] font-bold text-slate-600">状態 <span className="font-normal">(Trạng thái)</span></label>
+                  <label className="text-[12px] font-semibold text-[var(--text-muted)]">{t('status')}</label>
                   <select 
                     value={form.usage_status}
                     onChange={e => setForm({...form, usage_status: e.target.value})}
-                    className="w-full px-2.5 py-1.5 border border-slate-300 rounded-sm focus:border-blue-500 outline-none bg-white"
+                    className="form-input w-full text-[13px]"
                   >
-                    <option value="ACTIVE">使用中 (Đang dùng)</option>
-                    <option value="NEEDS_MAINTENANCE">メンテ要 (Cần bảo dưỡng)</option>
-                    <option value="DISCARDED">廃棄済 (Loại bỏ)</option>
+                    <option value="ACTIVE">{t('statusActive')}</option>
+                    <option value="NEEDS_MAINTENANCE">{t('statusMaintenance')}</option>
+                    <option value="DISCARDED">{t('statusDiscarded')}</option>
                   </select>
                 </div>
               </div>
 
               <div className="space-y-1">
-                <label className="text-[11px] font-bold text-slate-600">備考 <span className="font-normal">(Ghi chú)</span></label>
+                <label className="text-[12px] font-semibold text-[var(--text-muted)]">{t('notes')}</label>
                 <textarea 
                   value={form.notes}
                   onChange={e => setForm({...form, notes: e.target.value})}
-                  className="w-full px-2.5 py-1.5 border border-slate-300 rounded-sm focus:border-blue-500 outline-none" 
+                  className="form-textarea w-full text-[13px]" 
                   rows={2}
                 />
               </div>
 
               <div className="pt-3 flex gap-2 justify-end">
-                <button type="button" onClick={() => setModalOpen(false)} className="px-4 py-1.5 border border-slate-300 text-slate-600 rounded-sm hover:bg-slate-50 transition-colors font-medium">
-                  キャンセル (Hủy)
+                <button type="button" onClick={() => setModalOpen(false)} className="btn btn-secondary text-[13px]">
+                  {t('cancel')}
                 </button>
-                <button type="submit" disabled={isSubmitting} className="px-4 py-1.5 bg-slate-800 text-white rounded-sm hover:bg-slate-700 transition-colors disabled:opacity-50 font-medium">
-                  {isSubmitting ? '保存中...' : '保存 (Lưu)'}
+                <button type="submit" disabled={isSubmitting} className="btn btn-primary text-[13px]">
+                  {isSubmitting ? t('saving') : t('save')}
                 </button>
               </div>
             </form>
@@ -487,3 +470,4 @@ export default function CuttersClient({
     </div>
   )
 }
+

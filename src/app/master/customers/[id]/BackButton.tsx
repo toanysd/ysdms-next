@@ -11,7 +11,7 @@ export function BackButton() {
         background: 'none', border: 'none', cursor: 'pointer', padding: 2,
         color: 'var(--text-muted)', display: 'flex', alignItems: 'center',
       }}
-      title="前のページに戻る / Quay lại trang trước"
+      title="前のページに戻る"
     >
       <ArrowLeft size={17} />
     </button>

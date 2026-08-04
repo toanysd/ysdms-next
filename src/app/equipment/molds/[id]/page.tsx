@@ -108,9 +108,9 @@ function TabContent({
     case 'location':  return <LocationTab mold={mold} />
     case 'transfer':  return <TransferTab mold={mold} />
     case 'jobs':      return <JobsTab mold={mold} />
-    case 'teflon':    return <PlaceholderTab name="テフロン / Teflon" />
-    case 'photos':    return <PlaceholderTab name="写真 / Ảnh" />
-    case 'maintenance': return <PlaceholderTab name="保守 / Bảo trì" />
+    case 'teflon':    return <PlaceholderTab name="テフロン" />
+    case 'photos':    return <PlaceholderTab name="写真" />
+    case 'maintenance': return <PlaceholderTab name="保守" />
     default:          return null
   }
 }
@@ -124,7 +124,7 @@ function PlaceholderTab({ name }: { name: string }) {
         {name}
       </div>
       <div style={{ fontSize: 11 }}>
-        開発中 / Đang phát triển...
+        開発中...
       </div>
     </div>
   )
@@ -285,7 +285,7 @@ export default function MoldDetailPage() {
       <div className="card-flat" style={{ padding: 20, textAlign: 'center' }}>
         <AlertTriangle size={24} style={{ color: 'var(--status-error)', marginBottom: 8 }} />
         <div style={{ fontSize: 13, color: 'var(--status-error)', fontWeight: 600 }}>
-          {error || '金型が見つかりません / Không tìm thấy khuôn'}
+          {error || '金型が見つかりません'}
         </div>
         <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>
           ID: {moldId}
@@ -314,7 +314,7 @@ export default function MoldDetailPage() {
         padding: '2px 0 4px',
       }}>
         <span style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 600, marginRight: 4, fontFamily: 'var(--font-jp)' }}>
-          関連 / Liên kết:
+          関連:
         </span>
         
         {/* ← Product */}
@@ -329,7 +329,7 @@ export default function MoldDetailPage() {
               fontSize: 11, color: 'var(--accent)', textDecoration: 'none',
               fontWeight: 600, transition: 'all 0.15s',
             }}
-            title="製品マスターを開く / Xem sản phẩm"
+            title="製品マスターを開く"
           >
             <Box size={12} style={{ color: 'var(--accent)' }} />
             <span style={{ fontFamily: 'var(--font-jp)' }}>製品</span>
@@ -348,7 +348,7 @@ export default function MoldDetailPage() {
               fontSize: 11, color: 'var(--accent)', textDecoration: 'none',
               fontWeight: 600, transition: 'all 0.15s',
             }}
-            title="すべての設計版を開く / Xem tất cả phiên bản thiết kế của sản phẩm này"
+            title="すべての設計版を開く"
           >
             <Layers size={12} style={{ color: 'var(--text-secondary)' }} />
             <span style={{ fontFamily: 'var(--font-jp)' }}>設計一覧</span>
@@ -370,7 +370,7 @@ export default function MoldDetailPage() {
               fontSize: 11, color: 'var(--accent)', textDecoration: 'none',
               fontWeight: 600, transition: 'all 0.15s',
             }}
-            title="設計版を開く / Xem phiên bản thiết kế"
+            title="設計版を開く"
           >
             <FileCog size={12} style={{ color: 'var(--text-secondary)' }} />
             <span style={{ fontFamily: 'var(--font-jp)' }}>設計版</span>
@@ -390,7 +390,7 @@ export default function MoldDetailPage() {
               fontSize: 11, color: 'var(--accent)', textDecoration: 'none',
               fontWeight: 600, transition: 'all 0.15s',
             }}
-            title="加工ジョブを開く / Xem công việc gia công"
+            title="加工ジョブを開く"
           >
             <Briefcase size={12} style={{ color: 'var(--text-secondary)' }} />
             <span style={{ fontFamily: 'var(--font-jp)' }}>ジョブ</span>

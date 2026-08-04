@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/server'
 import ProductsClientPage from './_components/ProductsClientPage'
 
 export const metadata = {
-  title: 'Quản lý Khay (Sản phẩm) | YSDMS Next-Gen',
+  title: 'トレイ（製品）管理 | YSDMS NextGen',
 }
 
 export const revalidate = 0

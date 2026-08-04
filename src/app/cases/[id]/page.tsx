@@ -232,34 +232,33 @@ export default function CaseDetailPage() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10 }}>
               <div className="kpi-card">
-                <div style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: 'var(--font-jp)' }}>種別</div>
-                <div style={{ fontSize: 13, fontWeight: 700, marginTop: 4, fontFamily: 'var(--font-jp)' }}>
+                <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)' }}>{t('Cases.type')}</div>
+                <div style={{ fontSize: 13, fontWeight: 700, marginTop: 4, color: 'var(--text-primary)' }}>
                   {caseData.case_type ? t(`Cases.Types.${caseData.case_type}`) : '—'}
                 </div>
-                <div style={{ fontSize: 10, color: 'var(--text-muted)' }}>Loại sự việc</div>
               </div>
               <div className="kpi-card">
-                <div style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: 'var(--font-jp)' }}>得意先</div>
-                <div style={{ fontSize: 13, fontWeight: 700, marginTop: 4 }}>
+                <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)' }}>{t('Cases.customer')}</div>
+                <div style={{ fontSize: 13, fontWeight: 700, marginTop: 4, color: 'var(--text-primary)' }}>
                   {caseData.companies?.company_name ?? '—'}
                 </div>
-                <div style={{ fontSize: 10, color: 'var(--text-muted)', fontFamily: 'monospace' }}>
-                  {caseData.companies?.company_code}
-                </div>
+                {caseData.companies?.company_code && (
+                  <div style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: 'monospace' }}>
+                    ({caseData.companies.company_code})
+                  </div>
+                )}
               </div>
               <div className="kpi-card">
-                <div style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: 'var(--font-jp)' }}>希望納期</div>
-                <div style={{ fontSize: 14, fontWeight: 700, marginTop: 4, fontFamily: 'monospace' }}>
+                <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)' }}>{t('Cases.requestedDueDate')}</div>
+                <div style={{ fontSize: 14, fontWeight: 700, marginTop: 4, fontFamily: 'monospace', color: 'var(--text-primary)' }}>
                   {formatDate(caseData.requested_due_date)}
                 </div>
-                <div style={{ fontSize: 10, color: 'var(--text-muted)' }}>Hạn yêu cầu giao</div>
               </div>
               <div className="kpi-card">
-                <div style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: 'var(--font-jp)' }}>作成日</div>
-                <div style={{ fontSize: 14, fontWeight: 700, marginTop: 4, fontFamily: 'monospace' }}>
+                <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)' }}>{t('Cases.createdDate')}</div>
+                <div style={{ fontSize: 14, fontWeight: 700, marginTop: 4, fontFamily: 'monospace', color: 'var(--text-primary)' }}>
                   {formatDate(caseData.created_at)}
                 </div>
-                <div style={{ fontSize: 10, color: 'var(--text-muted)' }}>Ngày tạo</div>
               </div>
             </div>
 

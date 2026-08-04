@@ -2,8 +2,10 @@ import React, { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { OrderDetailData } from '../page'
 import { Loader2, Printer } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 
 export function ProductionInstructionsTab({ order }: { order: OrderDetailData }) {
+  const t = useTranslations('Orders')
   const supabase = createClient()
   const [loading, setLoading] = useState(true)
   const [instructions, setInstructions] = useState<any[]>([])
@@ -41,7 +43,7 @@ export function ProductionInstructionsTab({ order }: { order: OrderDetailData })
     return (
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px 0', gap: 8, color: 'var(--text-muted)' }}>
         <Loader2 size={16} className="animate-spin" />
-        <span style={{ fontSize: 13 }}>読み込み中...</span>
+        <span style={{ fontSize: 13 }}>{t('loading')}</span>
       </div>
     )
   }
@@ -49,27 +51,27 @@ export function ProductionInstructionsTab({ order }: { order: OrderDetailData })
   return (
     <div className="card-flat" style={{ padding: '16px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-        <div style={{ fontSize: 14, fontWeight: 700, fontFamily: 'var(--font-jp)' }}>
-          製造指示一覧{instructions.length})
+        <div style={{ fontSize: 14, fontWeight: 700 }}>
+          {t('productionInstructionsList', { count: instructions.length })}
         </div>
       </div>
 
       {instructions.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-muted)', fontSize: 13 }}>
-          製造指示がありません
+          {t('noProductionInstructions')}
         </div>
       ) : (
         <div className="custom-scrollbar" style={{ overflowX: 'auto' }}>
           <table className="data-table">
             <thead>
               <tr>
-                <th style={{ width: 120 }}>PO Code</th>
-                <th style={{ width: 150 }}>状態</th>
-                <th style={{ width: 100, textAlign: 'right' }}>計画</th>
-                <th style={{ width: 100, textAlign: 'right' }}>実績</th>
-                <th style={{ width: 120, textAlign: 'center' }}>開始(予定)</th>
-                <th style={{ width: 180 }}>材料 (種別/厚み/幅)</th>
-                <th>操作</th>
+                <th style={{ width: 120 }}>{t('poCode')}</th>
+                <th style={{ width: 150 }}>{t('trangThai')}</th>
+                <th style={{ width: 100, textAlign: 'right' }}>{t('plannedQty')}</th>
+                <th style={{ width: 100, textAlign: 'right' }}>{t('actualQty')}</th>
+                <th style={{ width: 120, textAlign: 'center' }}>{t('plannedStart')}</th>
+                <th style={{ width: 180 }}>{t('materialSpec')}</th>
+                <th>{t('action')}</th>
               </tr>
             </thead>
             <tbody>
@@ -94,8 +96,8 @@ export function ProductionInstructionsTab({ order }: { order: OrderDetailData })
                     {po.material_type ? `${po.material_type} / ${po.material_thickness} / ${po.material_width}` : '-'}
                   </td>
                   <td>
-                    <button className="btn btn-secondary" style={{ padding: '4px 8px', fontSize: 11 }} onClick={() => alert('PO印刷機能は開発中です')}>
-                      <Printer size={12} /> 印刷
+                    <button className="btn btn-secondary" style={{ padding: '4px 8px', fontSize: 11 }} onClick={() => alert(t('printDevWarning'))}>
+                      <Printer size={12} /> {t('print')}
                     </button>
                   </td>
                 </tr>

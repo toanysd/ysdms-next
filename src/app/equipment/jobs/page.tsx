@@ -208,6 +208,16 @@ function JobsPageContent() {
     )
   }
 
+  const getJobStatusLabel = (key: string) => {
+    switch (key) {
+      case 'NEW': return t('statusLabels.NEW')
+      case 'IN_PROGRESS': return t('statusLabels.IN_PROGRESS')
+      case 'COMPLETED': return t('statusLabels.COMPLETED')
+      case 'CANCELLED': return t('statusLabels.CANCELLED')
+      default: return key
+    }
+  }
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', gap: 'var(--space-4)' }}>
       {/* ── Header ── */}
@@ -246,7 +256,7 @@ function JobsPageContent() {
             style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 6 }}
           >
             <Plus size={14} />
-            <span style={{ fontFamily: 'var(--font-jp)' }}>一括登録 (Tạo nhanh 1-Trang)</span>
+            <span style={{ fontFamily: 'var(--font-jp)' }}>一括登録 (1ページ)</span>
           </Link>
           <button
             className="btn btn-secondary"
@@ -384,14 +394,14 @@ function JobsPageContent() {
                                 <span className="badge badge--neutral" style={{ fontSize: 9 }}>🧹 社内作業</span>
                               ) : (
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                                  <span className="badge badge--warning" style={{ fontSize: 9 }}>⚠️ Chưa gắn Khuôn</span>
+                                  <span className="badge badge--warning" style={{ fontSize: 9 }}>⚠️ 金型未割り当て</span>
                                   <button
                                     type="button"
                                     className="btn btn-secondary"
                                     style={{ height: 22, padding: '0 6px', fontSize: 10, color: 'var(--accent)', fontWeight: 600 }}
                                     onClick={() => setLinkMoldModalJob({ jobId: job.job_id, jobCode: job.job_code, jobName: job.job_name })}
                                   >
-                                    + Gán Khuôn
+                                    + 金型割当
                                   </button>
                                 </div>
                               )}
@@ -404,7 +414,7 @@ function JobsPageContent() {
                           {(job.design_revisions?.design_length || job.physical_molds?.actual_length_mm) ? (
                             <>
                               {job.design_revisions?.design_length && <span>TK: {job.design_revisions.design_length}×{job.design_revisions.design_width}×{job.design_revisions.design_height}</span>}
-                              {job.physical_molds?.actual_length_mm && <span>Thực: {job.physical_molds.actual_length_mm}×{job.physical_molds.actual_width_mm}×{job.physical_molds.actual_height_mm}</span>}
+                              {job.physical_molds?.actual_length_mm && <span>実測: {job.physical_molds.actual_length_mm}×{job.physical_molds.actual_width_mm}×{job.physical_molds.actual_height_mm}</span>}
                             </>
                           ) : '—'}
                         </div>
@@ -424,7 +434,7 @@ function JobsPageContent() {
                       <td>{job.companies?.company_name || '—'}</td>
                       <td>
                         <span className="badge" style={{ backgroundColor: st.color, color: '#fff' }}>
-                          {st ? t(`statusLabels.${st.key}`) : job.job_status}
+                          {st ? getJobStatusLabel(st.key) : job.job_status}
                         </span>
                       </td>
                       <td>

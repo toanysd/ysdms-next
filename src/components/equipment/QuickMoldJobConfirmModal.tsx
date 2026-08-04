@@ -36,7 +36,7 @@ export function QuickMoldJobConfirmModal({
       const oldV = String(initialData[key] ?? '')
       const newV = String(formData[key] ?? '')
       if (oldV !== newV && (oldV !== '' || newV !== '')) {
-        diffs.push({ field: String(key), label: t(labelKey as any), oldVal: oldV || '(Rỗng)', newVal: newV || '(Rỗng)' })
+        diffs.push({ field: String(key), label: t(labelKey as any), oldVal: oldV || t('emptyValue'), newVal: newV || t('emptyValue') })
       }
     }
 
@@ -160,7 +160,7 @@ export function QuickMoldJobConfirmModal({
               <strong style={{ color: '#8B5CF6', display: 'block', marginBottom: 4 }}>{t('step2Title')}:</strong>
               <div>• {t('designCodeLabel')}: <strong>{formData.design_code}</strong></div>
               <div>• L x W x H: {formData.design_length || '—'} x {formData.design_width || '—'} x {formData.design_height || '—'} mm</div>
-              <div>• Cutline: {formData.cutline_length || '—'} x {formData.cutline_width || '—'}</div>
+              <div>• {t('confirmCutline')}: {formData.cutline_length || '—'} x {formData.cutline_width || '—'}</div>
             </div>
 
             <div className="card-flat" style={{ padding: 10, fontSize: 11, background: 'var(--bg-surface-2)' }}>
@@ -184,8 +184,8 @@ export function QuickMoldJobConfirmModal({
               const allSteps = formData.steps || []
               return (
                 <>
-                  <div>• Components ({componentSteps.length}): {componentSteps.map(c => `${c.step_name} [${c.type_code}]`).join(', ') || '—'}</div>
-                  <div>• All ({allSteps.length}): {allSteps.map(s => s.step_name).join(' ➔ ') || '—'}</div>
+                  <div>• {t('confirmComponents', { count: componentSteps.length })}: {componentSteps.map(c => `${c.step_name} [${c.type_code}]`).join(', ') || '—'}</div>
+                  <div>• {t('confirmAllSteps', { count: allSteps.length })}: {allSteps.map(s => s.step_name).join(' ➔ ') || '—'}</div>
                 </>
               )
             })()}

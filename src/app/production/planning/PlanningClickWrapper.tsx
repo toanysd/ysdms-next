@@ -109,7 +109,7 @@ export default function PlanningClickWrapper({
                     {children}
                 </div>
 
-                {/* Modal Chọn Đơn Hàng */}
+                {/* Order Selection Modal */}
                 {panelOpen && (
                     <OrderSelectionModal 
                         pendingItems={pendingItems}
@@ -126,7 +126,7 @@ export default function PlanningClickWrapper({
                     />
                 )}
 
-                {/* Modal Chỉnh Sửa */}
+                {/* Edit Modal */}
                 {editingPlan && (
                     <EditModal 
                         planData={editingPlan.planData}

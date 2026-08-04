@@ -9,10 +9,10 @@ export default function PlasticsLayout({ children }: { children: React.ReactNode
   const pathname = usePathname()
 
   const navItems = [
-    { href: '/plastics/inventory', label: 'Tồn kho (Cuộn)', icon: <Layers size={16} />, ja: '在庫管理' },
-    { href: '/plastics/master', label: 'Master Nhựa', icon: <Box size={16} />, ja: 'プラスチックM' },
-    { href: '/plastics/receipts', label: 'Nhập kho', icon: <Package size={16} />, ja: '入荷' },
-    { href: '/plastics/usage', label: 'Sử dụng & Hao hụt', icon: <ClipboardList size={16} />, ja: '使用・ロス' },
+    { href: '/plastics/inventory', label: '在庫管理', icon: <Layers size={16} /> },
+    { href: '/plastics/master', label: 'プラスチックM', icon: <Box size={16} /> },
+    { href: '/plastics/receipts', label: '入荷', icon: <Package size={16} /> },
+    { href: '/plastics/usage', label: '使用・ロス', icon: <ClipboardList size={16} /> },
   ]
 
   return (
@@ -25,9 +25,6 @@ export default function PlasticsLayout({ children }: { children: React.ReactNode
               <h1 className="text-[15px] font-bold" style={{ fontFamily: 'var(--font-jp)', color: 'var(--text-primary)', lineHeight: 1.2 }}>
                 プラスチック管理
               </h1>
-              <div className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
-                Quản lý Hệ sinh thái Nhựa
-              </div>
             </div>
           </div>
           <div className="h-6 w-px bg-[var(--border-default)]"></div>
@@ -46,8 +43,7 @@ export default function PlasticsLayout({ children }: { children: React.ReactNode
                   style={{ textDecoration: 'none' }}
                 >
                   {item.icon}
-                  <span style={{ fontFamily: 'var(--font-jp)' }}>{item.ja}</span>
-                  <span className="opacity-70 text-[10px] hidden sm:inline ml-1 font-normal">{item.label}</span>
+                  <span style={{ fontFamily: 'var(--font-jp)' }}>{item.label}</span>
                 </Link>
               )
             })}

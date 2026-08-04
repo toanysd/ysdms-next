@@ -32,6 +32,7 @@ type NavSection = {
 const NAV_TOP: NavItem[] = [
   { href: '/dashboard', icon: Home, tKey: 'top.dashboard' },
   { href: '/worklogs', icon: ClipboardEdit, tKey: 'top.worklogs' },
+  { href: '/product-center', icon: DatabaseZap, tKey: 'top.productCenter' },
 ]
 
 const NAV_SECTIONS: NavSection[] = [
@@ -77,6 +78,7 @@ const NAV_SECTIONS: NavSection[] = [
       { href: '/equipment/lifecycle', icon: Archive, tKey: 'items.lifecycle' },
       { href: '/equipment/plastics', icon: Package, tKey: 'items.plastics' },
       { href: '/worklogs', icon: ClipboardList, tKey: 'items.worklogs' },
+      { href: '/product-center', icon: DatabaseZap, tKey: 'items.productCenter' },
     ]
   },
   // ── 4. Phòng Định hình (Thermoforming Dept) ────────────────────────

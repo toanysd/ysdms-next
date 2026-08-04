@@ -51,15 +51,13 @@ export default async function NewMoldBasePage() {
               <label className="text-[12px] font-bold">
                 {t('Master.moldName')}
               </label>
-              <input type="text" name="name" className="w-full h-[34px] form-input" placeholder="VD: Khay linh kiện A" />
+              <input type="text" name="name" className="w-full h-[34px] form-input" placeholder="例: パーツトレイA" />
             </div>
 
-            <div className="flex flex-col gap-1">
-              <label className="text-[12px] font-bold">
-                {t('Master.customer')}
-              </label>
-              <select name="company_id" className="w-full h-[34px] bg-white text-sm form-input">
-                <option value="">-- Chưa gán khách hàng --</option>
+            <div>
+              <label className="text-[12px] font-bold block mb-1">{t('Master.customer')}</label>
+              <select name="company_id" className="w-full h-[34px] form-select">
+                <option value="">-- 未設定 --</option>
                 {companies?.map(c => (
                   <option key={c.company_id} value={c.company_id}>
                     [{c.company_code}] {c.company_name}

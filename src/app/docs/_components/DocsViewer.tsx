@@ -11,10 +11,10 @@ export default function DocsViewer() {
     <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
       {/* Tabs Nav */}
       <div className="flex bg-white border-b border-slate-200 px-6 shrink-0 overflow-x-auto custom-scrollbar">
-        <TabButton active={activeTab === 'WORKFLOW'} onClick={() => setActiveTab('WORKFLOW')} title="Luồng Nghiệp Vụ (Workflow)" icon="🔄" />
-        <TabButton active={activeTab === 'DATABASE'} onClick={() => setActiveTab('DATABASE')} title="Cấu Trúc CSDL (ERD)" icon="🗄️" />
-        <TabButton active={activeTab === 'TABLE_DICT'} onClick={() => setActiveTab('TABLE_DICT')} title="Từ Điển Các Bảng (Dictionary)" icon="📚" />
-        <TabButton active={activeTab === 'GUIDE'} onClick={() => setActiveTab('GUIDE')} title="Quy Trình Nhập Liệu" icon="📝" />
+        <TabButton active={activeTab === 'WORKFLOW'} onClick={() => setActiveTab('WORKFLOW')} title="業務フロー (Workflow)" icon="🔄" />
+        <TabButton active={activeTab === 'DATABASE'} onClick={() => setActiveTab('DATABASE')} title="データベース構造 (ERD)" icon="🗄️" />
+        <TabButton active={activeTab === 'TABLE_DICT'} onClick={() => setActiveTab('TABLE_DICT')} title="テーブル辞書 (Dictionary)" icon="📚" />
+        <TabButton active={activeTab === 'GUIDE'} onClick={() => setActiveTab('GUIDE')} title="入力手順ガイド" icon="📝" />
       </div>
 
       {/* Content Area */}
@@ -50,54 +50,54 @@ function WorkflowTab() {
       <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
         <h2 className="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2">
           <span className="w-2 h-6 bg-indigo-500 rounded-full"></span>
-          Chuỗi Giá Trị "Product-Centric" YSDMS
+          YSDMS "Product-Centric" バリューチェーン
         </h2>
         
         <div className="space-y-6">
           <div className="bg-slate-50 p-6 rounded-xl border border-slate-200 relative overflow-hidden">
             <div className="absolute top-0 left-0 w-2 h-full bg-blue-500"></div>
-            <h3 className="font-bold text-blue-700 mb-2">1. Giai đoạn Kinh Doanh (Sales / Orders)</h3>
-            <p className="text-sm text-slate-600 mb-4">Mọi luồng dữ liệu bắt đầu từ Khách hàng. Sales nhận yêu cầu tạo Khay mới hoặc sản xuất lại Khay cũ.</p>
+            <h3 className="font-bold text-blue-700 mb-2">1. 営業段階 (Sales / Orders)</h3>
+            <p className="text-sm text-slate-600 mb-4">全データフローは顧客から始まります。営業担当者が新規トレイの作成またはリピート生産の依頼を受けます。</p>
             <div className="flex flex-wrap gap-2 text-xs">
-              <span className="bg-white px-3 py-1 rounded-full border border-slate-300 font-mono text-slate-700">Tạo Khay (product_master)</span>
-              <span className="bg-white px-3 py-1 rounded-full border border-slate-300 font-mono text-slate-700">Chọn Khách Hàng (customers)</span>
+              <span className="bg-white px-3 py-1 rounded-full border border-slate-300 font-mono text-slate-700">トレイ作成 (product_master)</span>
+              <span className="bg-white px-3 py-1 rounded-full border border-slate-300 font-mono text-slate-700">顧客選択 (customers)</span>
             </div>
           </div>
 
-          <div className="flex justify-center -my-3 relative z-10"><span className="bg-indigo-100 text-indigo-600 px-2 py-1 rounded text-xs font-bold">Chuyển Hồ Sơ</span></div>
+          <div className="flex justify-center -my-3 relative z-10"><span className="bg-indigo-100 text-indigo-600 px-2 py-1 rounded text-xs font-bold">ドキュメント転送</span></div>
 
           <div className="bg-slate-50 p-6 rounded-xl border border-slate-200 relative overflow-hidden">
             <div className="absolute top-0 left-0 w-2 h-full bg-indigo-500"></div>
-            <h3 className="font-bold text-indigo-700 mb-2">2. Giai đoạn Thiết Kế Kỹ Thuật (Engineering)</h3>
-            <p className="text-sm text-slate-600 mb-4">Kỹ sư tiếp nhận Khay, lên bản vẽ, tính toán vật liệu. Chốt các thông số Khuôn gốc (Base) và Phiên bản (Revision).</p>
+            <h3 className="font-bold text-indigo-700 mb-2">2. エンジニアリング設計段階 (Engineering)</h3>
+            <p className="text-sm text-slate-600 mb-4">トレイの仕様を受け取り、図面作成および材料計算を行います。金型ベースとリビジョンのパラメータを確定します。</p>
             <div className="flex flex-wrap gap-2 text-xs">
-              <span className="bg-indigo-50 text-indigo-700 px-3 py-1 rounded-full border border-indigo-200 font-mono">Định nghĩa Khuôn (mold_base)</span>
-              <span className="bg-indigo-50 text-indigo-700 px-3 py-1 rounded-full border border-indigo-200 font-mono">Bản vẽ (mold_design_revision)</span>
-              <span className="bg-indigo-50 text-indigo-700 px-3 py-1 rounded-full border border-indigo-200 font-mono">Định mức Nhựa (mold_plastic_bom)</span>
+              <span className="bg-indigo-50 text-indigo-700 px-3 py-1 rounded-full border border-indigo-200 font-mono">金型定義 (mold_base)</span>
+              <span className="bg-indigo-50 text-indigo-700 px-3 py-1 rounded-full border border-indigo-200 font-mono">設計図面 (mold_design_revision)</span>
+              <span className="bg-indigo-50 text-indigo-700 px-3 py-1 rounded-full border border-indigo-200 font-mono">樹脂BOM (mold_plastic_bom)</span>
             </div>
           </div>
 
-          <div className="flex justify-center -my-3 relative z-10"><span className="bg-teal-100 text-teal-700 px-2 py-1 rounded text-xs font-bold">Duyệt & Ra Lệnh</span></div>
+          <div className="flex justify-center -my-3 relative z-10"><span className="bg-teal-100 text-teal-700 px-2 py-1 rounded text-xs font-bold">承認・指示</span></div>
 
           <div className="bg-slate-50 p-6 rounded-xl border border-slate-200 relative overflow-hidden">
             <div className="absolute top-0 left-0 w-2 h-full bg-teal-500"></div>
-            <h3 className="font-bold text-teal-700 mb-2">3. Kế Hoạch & Chuẩn Bị (Planning & Prep)</h3>
-            <p className="text-sm text-slate-600 mb-4">Lập kế hoạch sản xuất, xếp lịch máy, kiểm tra tồn kho nhựa. Đồng thời, bộ phận kho Khuôn gia công Khuôn thực tế.</p>
+            <h3 className="font-bold text-teal-700 mb-2">3. 計画 & 準備段階 (Planning & Prep)</h3>
+            <p className="text-sm text-slate-600 mb-4">生産計画の作成、マシン割り当て、樹脂在庫の確認を行います。同時に物理金型を製造します。</p>
             <div className="flex flex-wrap gap-2 text-xs">
-              <span className="bg-teal-50 text-teal-700 px-3 py-1 rounded-full border border-teal-200 font-mono">Gia công Khuôn Vật Lý (mold_physical)</span>
-              <span className="bg-teal-50 text-teal-700 px-3 py-1 rounded-full border border-teal-200 font-mono">Kiểm tra Nhựa (plastic_roll)</span>
+              <span className="bg-teal-50 text-teal-700 px-3 py-1 rounded-full border border-teal-200 font-mono">物理金型加工 (mold_physical)</span>
+              <span className="bg-teal-50 text-teal-700 px-3 py-1 rounded-full border border-teal-200 font-mono">樹脂確認 (plastic_roll)</span>
             </div>
           </div>
 
-          <div className="flex justify-center -my-3 relative z-10"><span className="bg-emerald-100 text-emerald-700 px-2 py-1 rounded text-xs font-bold">Thực thi tại xưởng</span></div>
+          <div className="flex justify-center -my-3 relative z-10"><span className="bg-emerald-100 text-emerald-700 px-2 py-1 rounded text-xs font-bold">現場実行</span></div>
 
           <div className="bg-slate-50 p-6 rounded-xl border border-slate-200 relative overflow-hidden">
             <div className="absolute top-0 left-0 w-2 h-full bg-emerald-500"></div>
-            <h3 className="font-bold text-emerald-700 mb-2">4. Sản Xuất Định Hình (Mass Production)</h3>
-            <p className="text-sm text-slate-600 mb-4">Khuôn được lắp lên máy, cấp nhựa. Công nhân chạy máy, ghi nhận sản lượng OK/NG.</p>
+            <h3 className="font-bold text-emerald-700 mb-2">4. 成形量産段階 (Mass Production)</h3>
+            <p className="text-sm text-slate-600 mb-4">金型をマシンにセットし、樹脂を供給して量産を開始します。OK/NG数量を記録します。</p>
             <div className="flex flex-wrap gap-2 text-xs">
-              <span className="bg-emerald-50 text-emerald-700 px-3 py-1 rounded-full border border-emerald-200 font-mono">Ghi nhận năng suất (production_logs)</span>
-              <span className="bg-emerald-50 text-emerald-700 px-3 py-1 rounded-full border border-emerald-200 font-mono">Tiêu hao nhựa (inventory_txn)</span>
+              <span className="bg-emerald-50 text-emerald-700 px-3 py-1 rounded-full border border-emerald-200 font-mono">実績記録 (production_logs)</span>
+              <span className="bg-emerald-50 text-emerald-700 px-3 py-1 rounded-full border border-emerald-200 font-mono">樹脂消費 (inventory_txn)</span>
             </div>
           </div>
         </div>
@@ -112,7 +112,7 @@ function ERDTab() {
       <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
         <h2 className="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2">
           <span className="w-2 h-6 bg-teal-500 rounded-full"></span>
-          Sơ đồ Thực Thể Liên Kết (Core ERD)
+          エンティティ関係図 (Core ERD)
         </h2>
         
         <div className="flex justify-center">
@@ -184,15 +184,15 @@ function TableNode({ name, type, color, fields }: { name: string, type: string, 
 
 function TableDictionaryTab() {
   const tables = [
-    { name: 'product_master', role: 'Sản Phẩm (Khay)', desc: 'Chứa định danh khay (Tray). Đại diện cho cái mà khách hàng mua. VD: IRI-003, JAE-001 Tray.' },
-    { name: 'mold_base', role: 'Khuôn Gốc', desc: 'Đại diện cho 1 bộ khuôn về mặt khái niệm (Family). Thường dùng làm mã chung (Base Code) chưa tính đến các phiên bản (R1, R2).' },
-    { name: 'mold_design_revision', role: 'Bản Vẽ Thiết Kế', desc: 'TRÁI TIM của hệ thống. Chứa toàn bộ thông số kỹ thuật (Kích thước, Số pocket, Bản vẽ). 1 Mold Base có thể có nhiều Revision.' },
-    { name: 'product_mold_map', role: 'Cầu nối Khay - Khuôn', desc: 'Bảng N:N. Kết nối 1 Khay với 1 (hoặc nhiều) Bản Vẽ Khuôn. Cho phép 1 Khuôn có thể đúc ra nhiều loại Khay khác nhau.' },
-    { name: 'mold_physical', role: 'Khuôn Vật Lý (Tài Sản)', desc: 'Khối kim loại thực tế đang nằm trên kệ. Chứa thông tin vị trí lưu kho, mạ Teflon, trạng thái hỏng hóc. Tham chiếu tới 1 Revision.' },
-    { name: 'plastic_master', role: 'Danh Mục Nhựa', desc: 'Định nghĩa các loại nhựa: PS, PET, độ dày, chiều rộng.' },
-    { name: 'plastic_roll', role: 'Cuộn Nhựa Thực Tế', desc: 'Từng cuộn nhựa cụ thể (có QR code riêng, trọng lượng tịnh). Dùng cho WMS.' },
-    { name: 'inventory_txn', role: 'Lịch Sử Xuất Nhập Nhựa', desc: 'Ghi nhận lượng nhựa tiêu hao mỗi lần chạy máy hoặc xuất kho.' },
-    { name: 'mold_plastic_bom', role: 'Định Mức (BOM)', desc: 'Xác định: Bản vẽ (Revision) này khi chạy sẽ dùng Loại Nhựa nào (plastic_master), tỷ lệ hao hụt bao nhiêu.' },
+    { name: 'product_master', role: '製品 (トレイ)', desc: 'トレイの識別情報を格納。顧客が購入する対象を表します。例: IRI-003, JAE-001 Tray。' },
+    { name: 'mold_base', role: '金型ベース', desc: '金型セットの概念的ファミリを表します。リビジョン前の共通ベースコード。' },
+    { name: 'mold_design_revision', role: '設計リビジョン', desc: 'システムのコア。全技術仕様（寸法、ポケット数、図面）を保持します。' },
+    { name: 'product_mold_map', role: 'トレイ・金型マッピング', desc: 'N:Nリレーション。1つのトレイを1つ以上の金型設計に接続します。' },
+    { name: 'mold_physical', role: '物理金型 (資産)', desc: 'ラック上の実際の金型。保管場所、テフロンメッキ、状態を管理します。' },
+    { name: 'plastic_master', role: '樹脂マスタ', desc: '樹脂タイプ（PS, PET）、厚み、幅を定義します。' },
+    { name: 'plastic_roll', role: '実物樹脂ロール', desc: '個々の樹脂ロール（QRコード、正味重量）。WMSで使用。' },
+    { name: 'inventory_txn', role: '樹脂入出庫履歴', desc: '成形または出庫ごとの樹脂消費量を記録します。' },
+    { name: 'mold_plastic_bom', role: 'BOM (部品表)', desc: '設計リビジョンで使用する樹脂タイプとロス率を定義します。' },
   ]
 
   return (
@@ -220,23 +220,23 @@ function GuideTab() {
       <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
         <h2 className="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2">
           <span className="w-2 h-6 bg-amber-500 rounded-full"></span>
-          Hướng Dẫn Nhập Liệu Chuẩn
+          標準入力ガイド
         </h2>
         
         <div className="space-y-4 text-sm text-slate-700">
           <div className="p-4 border-l-4 border-blue-500 bg-blue-50 rounded-r-lg">
-            <h3 className="font-bold text-blue-800 mb-2">Bước 1: Kinh Doanh (Tạo Khay)</h3>
-            <p>Vào menu <strong>Quản lý Khay</strong>. Điền Mã Khay, Tên Khay, Khách hàng. Thao tác này lưu vào <code>product_master</code>.</p>
+            <h3 className="font-bold text-blue-800 mb-2">ステップ 1: 営業 (トレイ作成)</h3>
+            <p><strong>トレイ管理</strong> メニューでトレイコード、名称、顧客を入力します。この操作により <code>product_master</code> に保存されます。</p>
           </div>
           
           <div className="p-4 border-l-4 border-indigo-500 bg-indigo-50 rounded-r-lg">
-            <h3 className="font-bold text-indigo-800 mb-2">Bước 2: Thiết Kế (Khai Báo Khuôn)</h3>
-            <p>Trong cùng Form đó, chuyển qua Tab <strong>Hồ sơ Thiết kế</strong>. Điền Mã Khuôn dự kiến. Khi bấm Lưu, hệ thống tự động sinh <code>mold_base</code> và <code>mold_design_revision</code>, tự động liên kết chúng qua <code>product_mold_map</code>.</p>
+            <h3 className="font-bold text-indigo-800 mb-2">ステップ 2: 設計 (金型登録)</h3>
+            <p><strong>設計情報</strong> タブで予定金型コードを入力します。保存時に自動的に <code>mold_base</code> と <code>mold_design_revision</code> が作成され、マッピングされます。</p>
           </div>
 
           <div className="p-4 border-l-4 border-emerald-500 bg-emerald-50 rounded-r-lg">
-            <h3 className="font-bold text-emerald-800 mb-2">Bước 3: Gia Công (Tạo Khuôn Thực)</h3>
-            <p>Xưởng Khuôn tiến hành gia công. Khi gia công xong mảnh kim loại, vào kho Khuôn (Warehouse), tạo <code>mold_physical</code>, dán mã QR, và gán nó vào <code>revision_id</code> tương ứng để đem đi sản xuất.</p>
+            <h3 className="font-bold text-emerald-800 mb-2">ステップ 3: 加工 (物理金型作成)</h3>
+            <p>金型加工が完了したら、金型倉庫で <code>mold_physical</code> を作成し、QRコードを貼り付けてリビジョンに割り当てます。</p>
           </div>
         </div>
       </div>

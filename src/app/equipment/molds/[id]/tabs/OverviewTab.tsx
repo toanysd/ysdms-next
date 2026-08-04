@@ -218,7 +218,7 @@ export function OverviewTab({
             <InfoRow icon={FileText} labelKey="revisionName" value={rev.revision_name} />
             {product && (
               <InfoRow icon={Layers} labelKey="productRef" value={
-                <Link href={`/master/products/${product.product_id}`} title={`Mở sản phẩm: ${product.product_code}`} className="text-[var(--accent)] hover:underline font-mono">
+                <Link href={`/master/products/${product.product_id}`} title={`製品詳細: ${product.product_code}`} className="text-[var(--accent)] hover:underline font-mono">
                   {product.product_code}
                 </Link>
               } />
@@ -256,7 +256,7 @@ export function OverviewTab({
                     </div>
                     <div className="flex gap-1 flex-wrap mt-1">
                       <span className="badge badge--neutral text-[9px]">{rev.design_revisions.plastic_master.thickness_mm} mm</span>
-                      {rev.design_revisions.plastic_master.color_name_normalized && <span className="badge badge--neutral text-[9px]">Màu: {rev.design_revisions.plastic_master.color_name_normalized}</span>}
+                      {rev.design_revisions.plastic_master.color_name_normalized && <span className="badge badge--neutral text-[9px]">色: {rev.design_revisions.plastic_master.color_name_normalized}</span>}
                     </div>
                   </div>
                 )}
@@ -330,7 +330,7 @@ export function OverviewTab({
                 <Link
                   key={job.job_id}
                   href={`/equipment/jobs/${job.job_id}`}
-                  title={`Mở chi tiết job: ${job.job_code}`}
+                  title={`ジョブ詳細: ${job.job_code}`}
                   className="flex items-center justify-between p-2 rounded hover:bg-[var(--bg-surface-2)] transition-colors border border-transparent hover:border-[var(--border-subtle)]"
                 >
                   <div>

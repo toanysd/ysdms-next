@@ -50,24 +50,24 @@ export async function GET(request: Request) {
       
       <table class="table">
         <tr>
-          <th>金型名称 (Tên khuôn)</th>
+          <th>金型名称</th>
           <td><strong>SMK-225 (Mock)</strong></td>
         </tr>
         <tr>
-          <th>製品名称 (Tên sản phẩm)</th>
+          <th>製品名称</th>
           <td>SMK-225</td>
         </tr>
         <tr>
-          <th>管理番号 (Mã quản lý)</th>
+          <th>管理番号</th>
           <td>${moldId}</td>
         </tr>
         <tr>
-          <th>数量 (Số lượng)</th>
+          <th>数量</th>
           <td>1 面</td>
         </tr>
         <tr>
-          <th>状態 (Trạng thái)</th>
-          <td>良好 (Tốt)</td>
+          <th>状態</th>
+          <td>良好</td>
         </tr>
       </table>
 

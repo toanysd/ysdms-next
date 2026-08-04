@@ -117,7 +117,10 @@ export default async function ProductionTrackPage({
             <div><span className="text-[var(--mcs-text-muted)]">{t('plannedQty')}:</span> <b>{itemData.quantity.toLocaleString()} pcs</b></div>
             <div><span className="text-[var(--mcs-text-muted)]">{t('machine')}:</span> <b>{logData.machines?.machine_code}</b></div>
             <div><span className="text-[var(--mcs-text-muted)]">{t('operator')}:</span> <b>{logData.employees?.employee_name_short || logData.employees?.employee_name || 'N/A'}</b></div>
-            <div className="col-span-2"><span className="text-[var(--mcs-text-muted)]">{t('startTime')}:</span> <b>{new Date(logData.start_time || '').toLocaleString('vi-VN')}</b></div>
+            <div className="col-span-2">
+              <span className="text-[var(--mcs-text-muted)]">{t('startTime')}:</span>{' '}
+              <b>{logData.start_time ? new Date(logData.start_time).toLocaleString() : '—'}</b>
+            </div>
           </div>
         </div>
 

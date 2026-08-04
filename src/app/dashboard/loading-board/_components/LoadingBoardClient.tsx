@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { DndContext, DragEndEvent, useDraggable, useDroppable, DragStartEvent, DragOverlay } from '@dnd-kit/core'
 import { MachineInstance, PendingOrder, ProductionPlan, MoldPhysical } from '@/types/loading-board'
 import { createProductionPlan, getCompatibleMolds } from '../_actions/board'
@@ -14,6 +15,7 @@ interface Props {
 }
 
 export default function LoadingBoardClient({ initialMachines, initialPendingOrders, initialPlans, startDateStr }: Props) {
+  const t = useTranslations('LoadingBoard')
   const [activeId, setActiveId] = useState<string | null>(null)
   const [modalOpen, setModalOpen] = useState(false)
   const [dropData, setDropData] = useState<any>(null)
@@ -58,14 +60,14 @@ export default function LoadingBoardClient({ initialMachines, initialPendingOrde
       <div className="flex h-full overflow-hidden">
         
         {/* SIDEBAR */}
-        <div className="w-80 bg-slate-50 dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col shadow-sm z-10">
-          <div className="p-4 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950">
-            <h2 className="font-black text-slate-700 dark:text-slate-200 flex justify-between items-center">
-              Pending Orders
-              <span className="bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-2 py-0.5 rounded text-xs">{initialPendingOrders.length}</span>
+        <div className="w-80 bg-[var(--bg-surface-2)] border-r border-[var(--border-default)] flex flex-col shadow-sm z-10">
+          <div className="p-4 border-b border-[var(--border-default)] bg-[var(--bg-surface)]">
+            <h2 className="font-bold text-[var(--text-primary)] text-sm flex justify-between items-center">
+              {t('pendingOrders')}
+              <span className="badge badge--neutral text-xs font-mono">{initialPendingOrders.length}</span>
             </h2>
           </div>
-          <div className="flex-1 overflow-y-auto p-4 space-y-3">
+          <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
             {initialPendingOrders.map(order => (
               <DraggableOrderCard key={order.order_item_id} order={order} />
             ))}
@@ -73,18 +75,18 @@ export default function LoadingBoardClient({ initialMachines, initialPendingOrde
         </div>
 
         {/* BOARD MATRIX */}
-        <div className="flex-1 overflow-auto bg-slate-100/50 dark:bg-slate-950 p-6 relative">
-          <div className="inline-block min-w-max bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+        <div className="flex-1 overflow-auto bg-[var(--bg-surface-2)] p-6 relative">
+          <div className="inline-block min-w-max bg-[var(--bg-surface)] rounded-xl border border-[var(--border-default)] shadow-sm overflow-hidden">
             
             {/* Header Row (Machines) */}
-            <div className="flex border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950">
-              <div className="w-32 shrink-0 border-r border-slate-200 dark:border-slate-800 p-3 sticky left-0 bg-slate-50 dark:bg-slate-950 z-10">
+            <div className="flex border-b border-[var(--border-default)] bg-[var(--bg-surface-2)]">
+              <div className="w-32 shrink-0 border-r border-[var(--border-default)] p-3 sticky left-0 bg-[var(--bg-surface-2)] z-10">
                 {/* Corner */}
               </div>
               {initialMachines.map(m => (
-                <div key={m.id} className="w-48 shrink-0 border-r border-slate-200 dark:border-slate-800 p-3 text-center">
-                  <div className="font-black text-slate-800 dark:text-slate-100 text-lg">{m.internal_code}</div>
-                  <div className={`text-[10px] font-bold mt-1 uppercase tracking-wider rounded px-2 py-0.5 inline-block ${m.status === 'ACTIVE' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
+                <div key={m.id} className="w-48 shrink-0 border-r border-[var(--border-default)] p-3 text-center">
+                  <div className="font-mono font-bold text-[var(--text-primary)] text-base">{m.internal_code}</div>
+                  <div className={`text-[10px] font-bold mt-1 uppercase tracking-wider rounded px-2 py-0.5 inline-block ${m.status === 'ACTIVE' ? 'badge badge--success' : 'badge badge--error'}`}>
                     {m.status}
                   </div>
                 </div>
@@ -92,15 +94,15 @@ export default function LoadingBoardClient({ initialMachines, initialPendingOrde
             </div>
 
             {/* Matrix Body */}
-            {rows.map((row, rIdx) => {
+            {rows.map((row) => {
               const isDay = row.shift === 'DAY'
               return (
-                <div key={`${row.dateStr}-${row.shift}`} className={`flex border-b border-slate-100 dark:border-slate-800/50 ${isDay ? 'bg-white dark:bg-slate-900' : 'bg-slate-50/50 dark:bg-slate-950'}`}>
+                <div key={`${row.dateStr}-${row.shift}`} className={`flex border-b border-[var(--border-subtle)] ${isDay ? 'bg-[var(--bg-surface)]' : 'bg-[var(--bg-surface-2)]'}`}>
                   
                   {/* Row Header (Date/Shift) */}
-                  <div className="w-32 shrink-0 border-r border-slate-200 dark:border-slate-800 p-3 flex flex-col justify-center sticky left-0 z-10 bg-inherit shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)]">
-                    <div className="font-bold text-slate-700 dark:text-slate-300 text-sm">{format(parseISO(row.dateStr), 'MMM dd')}</div>
-                    <div className={`text-xs font-black uppercase mt-1 ${isDay ? 'text-amber-500' : 'text-indigo-400'}`}>{row.shift}</div>
+                  <div className="w-32 shrink-0 border-r border-[var(--border-default)] p-3 flex flex-col justify-center sticky left-0 z-10 bg-inherit shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)]">
+                    <div className="font-mono font-bold text-[var(--text-primary)] text-xs">{format(parseISO(row.dateStr), 'MM/dd')}</div>
+                    <div className={`text-[10px] font-bold uppercase mt-1 ${isDay ? 'text-[var(--status-warning)]' : 'text-[var(--status-info)]'}`}>{row.shift}</div>
                   </div>
 
                   {/* Cells */}
@@ -110,16 +112,16 @@ export default function LoadingBoardClient({ initialMachines, initialPendingOrde
                     return (
                       <DroppableCell key={cellId} id={cellId} isDown={m.status !== 'ACTIVE'}>
                         {m.status !== 'ACTIVE' ? (
-                          <div className="w-full h-full flex items-center justify-center opacity-20 bg-stripes">
-                            <span className="text-4xl">❌</span>
+                          <div className="w-full h-full flex items-center justify-center opacity-20">
+                            <span className="text-2xl">❌</span>
                           </div>
                         ) : (
                           <div className="space-y-2 p-1 w-full min-h-[80px]">
                             {cellPlans.map(plan => (
-                              <div key={plan.id} className="bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-2 rounded shadow-sm text-xs relative group cursor-pointer hover:border-emerald-400 transition-colors">
-                                <div className="font-bold text-slate-800 dark:text-slate-200 truncate pr-4">{plan.product_pn_raw}</div>
-                                <div className="text-slate-500 font-medium mt-1">Qty: {plan.planned_quantity}</div>
-                                <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-emerald-500"></div>
+                              <div key={plan.id} className="card-flat p-2 text-xs relative group cursor-pointer hover:border-[var(--accent)] transition-colors">
+                                <div className="font-bold text-[var(--text-primary)] truncate pr-4">{plan.product_pn_raw}</div>
+                                <div className="text-[var(--text-muted)] font-mono text-[11px] mt-1">{t('qty', { qty: plan.planned_quantity })}</div>
+                                <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-[var(--status-success)]"></div>
                               </div>
                             ))}
                           </div>
@@ -145,7 +147,6 @@ export default function LoadingBoardClient({ initialMachines, initialPendingOrde
             onClose={() => setModalOpen(false)} 
             onSuccess={() => {
               setModalOpen(false)
-              // We'd rely on revalidatePath to refresh the board, or update local state
             }} 
           />
         )}
@@ -155,17 +156,17 @@ export default function LoadingBoardClient({ initialMachines, initialPendingOrde
 }
 
 function DraggableOrderCard({ order, isOverlay = false }: { order: PendingOrder, isOverlay?: boolean }) {
+  const t = useTranslations('LoadingBoard')
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: order.order_item_id,
   })
 
   const style = transform ? { transform: `translate3d(${transform.x}px, ${transform.y}px, 0)` } : undefined
   
-  // Urgency styling (Anti-pattern but used as MES Convention)
-  let borderLeftColor = 'border-l-slate-300'
-  if (order.urgency === 'CRITICAL') borderLeftColor = 'border-l-red-500'
-  if (order.urgency === 'WARNING') borderLeftColor = 'border-l-amber-500'
-  if (order.urgency === 'NORMAL') borderLeftColor = 'border-l-emerald-500'
+  let badgeClass = 'badge badge--neutral'
+  if (order.urgency === 'CRITICAL') badgeClass = 'badge badge--error'
+  if (order.urgency === 'WARNING') badgeClass = 'badge badge--warning'
+  if (order.urgency === 'NORMAL') badgeClass = 'badge badge--success'
 
   return (
     <div 
@@ -174,23 +175,20 @@ function DraggableOrderCard({ order, isOverlay = false }: { order: PendingOrder,
       {...listeners} 
       {...attributes}
       className={`
-        bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl
-        border border-slate-200/60 dark:border-slate-700/60
-        border-l-4 ${borderLeftColor}
-        p-3 rounded-lg shadow-sm cursor-grab active:cursor-grabbing
+        card-flat p-3 cursor-grab active:cursor-grabbing
         transition-opacity hover:shadow-md
         ${isDragging && !isOverlay ? 'opacity-30' : 'opacity-100'}
         ${isOverlay ? 'shadow-2xl scale-105 rotate-2 cursor-grabbing' : ''}
       `}
     >
       <div className="flex justify-between items-start">
-        <div className="font-black text-slate-800 dark:text-slate-100">{order.product_pn_raw}</div>
-        {order.urgency === 'CRITICAL' && <div className="text-[10px] bg-red-100 text-red-700 font-bold px-1.5 py-0.5 rounded animate-pulse">URGENT</div>}
+        <div className="font-bold text-[var(--text-primary)] text-xs">{order.product_pn_raw}</div>
+        {order.urgency === 'CRITICAL' && <div className={`${badgeClass} text-[10px] animate-pulse`}>{t('urgent')}</div>}
       </div>
-      <div className="text-xs text-slate-500 dark:text-slate-400 mt-1 font-mono">{order.slip_no}</div>
-      <div className="flex justify-between mt-3 text-sm font-bold text-slate-700 dark:text-slate-300">
-        <span>Qty: {order.quantity}</span>
-        {order.delivery_date && <span>DL: {format(parseISO(order.delivery_date), 'MM/dd')}</span>}
+      <div className="text-xs text-[var(--text-muted)] mt-1 font-mono">{order.slip_no}</div>
+      <div className="flex justify-between mt-2 text-xs font-mono font-bold text-[var(--text-secondary)]">
+        <span>{t('qty', { qty: order.quantity })}</span>
+        {order.delivery_date && <span>{t('dl', { date: format(parseISO(order.delivery_date), 'MM/dd') })}</span>}
       </div>
     </div>
   )
@@ -203,8 +201,8 @@ function DroppableCell({ id, isDown, children }: { id: string, isDown: boolean, 
     <div 
       ref={setNodeRef} 
       className={`
-        w-48 shrink-0 border-r border-slate-100 dark:border-slate-800/50 flex items-start justify-center transition-colors
-        ${isOver && !isDown ? 'bg-emerald-50 dark:bg-emerald-900/20 ring-2 ring-inset ring-emerald-400' : ''}
+        w-48 shrink-0 border-r border-[var(--border-subtle)] flex items-start justify-center transition-colors
+        ${isOver && !isDown ? 'bg-[var(--tint-teal-bg)] ring-2 ring-inset ring-[var(--accent)]' : ''}
       `}
     >
       {children}
@@ -213,6 +211,7 @@ function DroppableCell({ id, isDown, children }: { id: string, isDown: boolean, 
 }
 
 function ConfirmModal({ data, onClose, onSuccess }: { data: any, onClose: () => void, onSuccess: () => void }) {
+  const t = useTranslations('LoadingBoard')
   const [loading, setLoading] = useState(false)
   const [moldId, setMoldId] = useState('')
   const [molds, setMolds] = useState<MoldPhysical[]>([])
@@ -248,31 +247,31 @@ function ConfirmModal({ data, onClose, onSuccess }: { data: any, onClose: () => 
   }
 
   return (
-    <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center animate-in fade-in">
-      <div className="bg-white dark:bg-slate-900 w-full max-w-md rounded-2xl shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-800">
-        <div className="bg-emerald-50 dark:bg-emerald-900/30 p-4 border-b border-emerald-100 dark:border-emerald-800">
-          <h2 className="text-lg font-black text-emerald-800 dark:text-emerald-300 flex items-center gap-2">
-            ⚙️ Xác nhận Xếp Lịch
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center animate-in fade-in">
+      <div className="bg-[var(--bg-surface)] w-full max-w-md rounded-xl shadow-2xl overflow-hidden border border-[var(--border-default)]">
+        <div className="card-header-tint p-4 border-b border-[var(--border-default)]">
+          <h2 className="text-base font-bold text-[var(--text-primary)] flex items-center gap-2">
+            {t('confirmModalTitle')}
           </h2>
         </div>
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           
-          <div className="grid grid-cols-2 gap-4 text-sm bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-100 dark:border-slate-800">
-            <div><span className="text-slate-500 block mb-1">Máy Ép:</span> <span className="font-black text-slate-800 dark:text-slate-100">{data.machine.internal_code}</span></div>
-            <div><span className="text-slate-500 block mb-1">Ca / Ngày:</span> <span className="font-black text-slate-800 dark:text-slate-100">{data.shift} | {format(parseISO(data.dateStr), 'MM/dd')}</span></div>
-            <div className="col-span-2 border-t border-slate-200 dark:border-slate-700 my-2 pt-2"></div>
-            <div className="col-span-2"><span className="text-slate-500 block mb-1">Sản phẩm:</span> <span className="font-black text-slate-800 dark:text-slate-100">{data.order.product_pn_raw}</span></div>
+          <div className="grid grid-cols-2 gap-4 text-xs bg-[var(--bg-surface-2)] p-4 rounded-xl border border-[var(--border-subtle)]">
+            <div><span className="text-[var(--text-muted)] block mb-1">{t('machine')}:</span> <span className="font-mono font-bold text-[var(--text-primary)]">{data.machine.internal_code}</span></div>
+            <div><span className="text-[var(--text-muted)] block mb-1">{t('shiftDate')}:</span> <span className="font-mono font-bold text-[var(--text-primary)]">{data.shift} | {format(parseISO(data.dateStr), 'MM/dd')}</span></div>
+            <div className="col-span-2 border-t border-[var(--border-subtle)] my-2 pt-2"></div>
+            <div className="col-span-2"><span className="text-[var(--text-muted)] block mb-1">{t('product')}:</span> <span className="font-bold text-[var(--text-primary)]">{data.order.product_pn_raw}</span></div>
           </div>
 
           <div>
-            <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1">Khuôn Tương Thích ▾</label>
+            <label className="block text-xs font-bold text-[var(--text-muted)] mb-1">{t('compatibleMold')}</label>
             <select 
               value={moldId} 
               onChange={e => setMoldId(e.target.value)}
-              className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-shadow"
+              className="form-select w-full"
               required
             >
-              <option value="" disabled>Chọn Khuôn...</option>
+              <option value="" disabled>{t('selectMold')}</option>
               {molds.map(m => (
                 <option key={m.id} value={m.id}>{m.physical_code} (Cav: {m.cavity})</option>
               ))}
@@ -281,33 +280,33 @@ function ConfirmModal({ data, onClose, onSuccess }: { data: any, onClose: () => 
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1">Kế hoạch (Qty)</label>
+              <label className="block text-xs font-bold text-[var(--text-muted)] mb-1">{t('plannedQty')}</label>
               <input 
                 name="qty" 
                 type="number" 
                 defaultValue={data.order.quantity} 
                 max={data.order.quantity}
-                className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 outline-none"
+                className="form-input w-full font-mono font-bold"
                 required 
               />
             </div>
             <div>
-              <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1">Operator</label>
+              <label className="block text-xs font-bold text-[var(--text-muted)] mb-1">{t('operator')}</label>
               <input 
                 name="operator" 
                 type="text" 
-                placeholder="Tên thợ..."
-                className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 outline-none"
+                placeholder={t('operatorPlaceholder')}
+                className="form-input w-full"
               />
             </div>
           </div>
 
-          <div className="flex justify-end gap-3 pt-4 mt-6 border-t border-slate-100 dark:border-slate-800">
-            <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-bold text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800 rounded-lg transition-colors">
-              Hủy
+          <div className="flex justify-end gap-3 pt-4 mt-6 border-t border-[var(--border-default)]">
+            <button type="button" onClick={onClose} className="btn btn-secondary text-xs px-4 py-2">
+              {t('cancel')}
             </button>
-            <button type="submit" disabled={loading} className="px-4 py-2 text-sm font-bold bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg transition-colors flex items-center gap-2 shadow-md shadow-emerald-500/20">
-              {loading ? 'Đang lưu...' : '✅ Xác nhận Lịch'}
+            <button type="submit" disabled={loading} className="btn btn-primary text-xs px-4 py-2 flex items-center gap-2">
+              {loading ? t('saving') : t('confirm')}
             </button>
           </div>
         </form>

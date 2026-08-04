@@ -25,30 +25,29 @@ export function OrderDetailHeader({
   const statusCfg = STATUS_CONFIG[order.order_status] || { labelKey: '', badgeClass: 'badge badge--neutral' }
 
   return (
-    <div className="card-flat" style={{ padding: '16px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-        <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: 6, textTransform: 'uppercase' }}>
-          <Edit size={12} />
-          <span>{t('Common.order')}</span>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <h1 style={{ fontSize: 20, margin: 0, fontFamily: 'monospace', color: 'var(--text-primary)', fontWeight: 700 }}>
+    <div className="card-flat" style={{ padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <h1 style={{ fontSize: 18, margin: 0, fontFamily: 'monospace', color: 'var(--accent)', fontWeight: 700 }}>
             {order.order_no}
           </h1>
           <span className={statusCfg.badgeClass} style={{ fontSize: 12 }}>
-            <span style={{ fontFamily: 'var(--font-jp)', fontWeight: 700 }}>{statusCfg.labelKey ? t(`Orders.${statusCfg.labelKey}`) : order.order_status}</span>
+            <span style={{ fontWeight: 700 }}>{statusCfg.labelKey ? t(`Orders.${statusCfg.labelKey}`) : order.order_status}</span>
           </span>
         </div>
-        <div style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
-          {t('Common.customer')}: {' '}
+        
+        <div style={{ fontSize: 13, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 6 }}>
+          <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-muted)' }}>{t('Common.customer')}:</span>
           {order.company_id ? (
-            <Link href={`/master/customers/${order.company_id}`} className="hover:underline font-bold" style={{ color: 'var(--accent)' }}>
+            <Link href={`/master/customers/${order.company_id}`} className="hover:underline font-bold" style={{ color: 'var(--text-primary)' }}>
               {order.companies?.company_name || '—'}
             </Link>
           ) : (
-            <span style={{ fontWeight: 600 }}>{order.companies?.company_name || '—'}</span>
+            <span style={{ fontWeight: 700 }}>{order.companies?.company_name || '—'}</span>
           )}
-          {order.companies?.company_code && <span style={{ marginLeft: 6, fontSize: 11, fontFamily: 'monospace', color: 'var(--text-muted)' }}>({order.companies.company_code})</span>}
+          {order.companies?.company_code && (
+            <span style={{ fontSize: 12, fontFamily: 'monospace', fontWeight: 600, color: 'var(--text-muted)' }}>({order.companies.company_code})</span>
+          )}
         </div>
       </div>
 
@@ -60,6 +59,7 @@ export function OrderDetailHeader({
               target="_blank" 
               rel="noreferrer"
               className="btn btn-secondary"
+              style={{ fontSize: 12, padding: '4px 10px' }}
             >
               📊 {t('Common.exportExcel')}
             </a>
@@ -67,11 +67,12 @@ export function OrderDetailHeader({
               href={`/orders/${order.order_id}/print`}
               target="_blank"
               className="btn btn-secondary"
+              style={{ fontSize: 12, padding: '4px 10px' }}
             >
               🖨️ {t('Common.print')}
             </Link>
-            <button className="btn btn-secondary" onClick={() => setIsEditing(true)}>
-              <Edit size={14} /> {t('Common.edit')}
+            <button className="btn btn-secondary" style={{ fontSize: 12, padding: '4px 10px' }} onClick={() => setIsEditing(true)}>
+              <Edit size={13} /> {t('Common.edit')}
             </button>
           </>
         ) : null}

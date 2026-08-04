@@ -1,7 +1,6 @@
 'use client'
 
 import { useTranslations } from 'next-intl'
-
 import { useState } from 'react'
 import { Plus, Edit2, Trash2 } from 'lucide-react'
 import { upsertContactAction, deleteContactAction } from '@/app/actions/customer'
@@ -10,7 +9,9 @@ import { Database } from '@/types/database.types'
 type Contact = Database['public']['Tables']['company_contacts']['Row']
 
 export function ContactList({ companyId, contacts }: { companyId: string, contacts: Contact[] }) {
-  const t = useTranslations()
+  const tCust = useTranslations('Customers')
+  const tMaster = useTranslations('Master')
+  const tCommon = useTranslations('Common')
 
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingItem, setEditingItem] = useState<Contact | null>(null)
@@ -49,7 +50,7 @@ export function ContactList({ companyId, contacts }: { companyId: string, contac
   }
 
   const handleSave = async () => {
-    if (!formData.contact_name.trim()) return alert('Vui lòng nhập tên người liên hệ')
+    if (!formData.contact_name.trim()) return alert(tCust('contactPerson'))
 
     setIsLoading(true)
     const payload = {
@@ -63,73 +64,72 @@ export function ContactList({ companyId, contacts }: { companyId: string, contac
     if (res.success) {
       setIsModalOpen(false)
     } else {
-      alert(res.error || 'Có lỗi xảy ra')
+      alert(res.error || tCommon('save') + ' Error')
     }
   }
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Bạn có chắc chắn muốn xóa người liên hệ này?')) return
+    if (!confirm(tMaster('confirmDelete'))) return
     setIsLoading(true)
     const res = await deleteContactAction(id, companyId)
     setIsLoading(false)
-    if (!res.success) alert(res.error || 'Có lỗi xảy ra')
+    if (!res.success) alert(res.error || tCommon('delete') + ' Error')
   }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', padding: '16px 18px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, flexShrink: 0 }}>
         <div>
-          <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)' }}>担当者一覧</h3>
-          <p style={{ fontSize: 11, color: 'var(--text-muted)' }}>Danh sách người liên hệ</p>
+          <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)' }}>{tCust('contactList')}</h3>
         </div>
         <button onClick={openAdd} className="btn btn-primary" style={{ gap: 4 }}>
-          <Plus size={14} /> 追加 / Thêm
+          <Plus size={14} /> {tCommon('addNew')}
         </button>
       </div>
 
       <div style={{ flex: 1, overflowY: 'auto' }} className="custom-scrollbar">
         {contacts.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-muted)', fontSize: 13 }}>
-            データがありません / Chưa có dữ liệu
+            {tCommon('noData')}
           </div>
         ) : (
           <table className="data-table">
             <thead>
               <tr>
-                <th>
-                  {t('Master.chinh')}
+                <th style={{ width: 80, textAlign: 'center' }}>
+                  {tMaster('chinh')}
                 </th>
                 <th>
-                  {t('Master.ten')}
+                  {tCust('contactPerson')}
                 </th>
                 <th>
-                  {t('Master.chucVu')}
+                  {tMaster('chucVu')}
                 </th>
                 <th>
-                  {t('Master.st')}
+                  {tCust('tel')}
                 </th>
                 <th>
-                  {t('Master.email')}
+                  {tMaster('email')}
                 </th>
-                <th style={{ width: 80, textAlign: 'center' }}>操作</th>
+                <th style={{ width: 80, textAlign: 'center' }}>{tMaster('thaoTac')}</th>
               </tr>
             </thead>
             <tbody>
               {contacts.map(c => (
                 <tr key={c.contact_id}>
                   <td style={{ textAlign: 'center' }}>
-                    {c.is_primary && <span className="badge badge--success">Primary</span>}
+                    {c.is_primary && <span className="badge badge--success font-bold">Primary</span>}
                   </td>
-                  <td style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{c.contact_name}</td>
-                  <td>{c.contact_role}</td>
-                  <td>{c.contact_tel}</td>
-                  <td>{c.contact_email}</td>
+                  <td style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{c.contact_name}</td>
+                  <td style={{ color: 'var(--text-secondary)' }}>{c.contact_role}</td>
+                  <td className="font-mono text-[13px]">{c.contact_tel}</td>
+                  <td className="font-mono text-[12px]">{c.contact_email}</td>
                   <td style={{ textAlign: 'center' }}>
                     <div style={{ display: 'flex', justifyContent: 'center', gap: 8 }}>
                       <button onClick={() => openEdit(c)} style={{ color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer' }}>
                         <Edit2 size={14} />
                       </button>
-                      <button onClick={() => handleDelete(c.contact_id)} style={{ color: 'var(--text-error)', background: 'none', border: 'none', cursor: 'pointer' }}>
+                      <button onClick={() => handleDelete(c.contact_id)} style={{ color: 'var(--status-error)', background: 'none', border: 'none', cursor: 'pointer' }}>
                         <Trash2 size={14} />
                       </button>
                     </div>
@@ -144,57 +144,59 @@ export function ContactList({ companyId, contacts }: { companyId: string, contac
       {isModalOpen && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div style={{ background: 'var(--bg-surface)', padding: 20, borderRadius: 'var(--radius-md)', width: 400, boxShadow: 'var(--shadow-lg)' }}>
-            <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 16 }}>
-              {editingItem ? '編集 / Sửa' : '追加 / Thêm mới'}
+            <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 16, color: 'var(--text-primary)' }}>
+              {editingItem ? tCommon('edit') : tCommon('addNew')}
             </h3>
             
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               <div>
-                <label style={{ display: 'block', fontSize: 11, marginBottom: 4 }}>担当者名 / Tên liên hệ <span style={{ color: 'var(--text-error)' }}>*</span></label>
+                <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', marginBottom: 4 }}>
+                  {tCust('contactPerson')} <span style={{ color: 'var(--status-error)' }}>*</span>
+                </label>
                 <input
-                  className="form-input"
+                  className="form-input text-[13px]"
                   value={formData.contact_name}
                   onChange={e => setFormData({ ...formData, contact_name: e.target.value })}
-                  placeholder="Nguyễn Văn A"
+                  placeholder="山田 太郎"
                 />
               </div>
               
               <div className="form-grid-2">
                 <div>
-                  <label style={{ display: 'block', fontSize: 11, marginBottom: 4 }}>役職 / Chức vụ</label>
+                  <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', marginBottom: 4 }}>{tMaster('chucVu')}</label>
                   <input
-                    className="form-input"
+                    className="form-input text-[13px]"
                     value={formData.contact_role}
                     onChange={e => setFormData({ ...formData, contact_role: e.target.value })}
                     placeholder="Manager"
                   />
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontSize: 11, marginBottom: 4 }}>優先 / Liên hệ chính</label>
+                  <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', marginBottom: 4 }}>Primary</label>
                   <label style={{ display: 'flex', alignItems: 'center', gap: 8, height: 32 }}>
                     <input
                       type="checkbox"
                       checked={formData.is_primary}
                       onChange={e => setFormData({ ...formData, is_primary: e.target.checked })}
                     />
-                    <span style={{ fontSize: 13 }}>Primary</span>
+                    <span style={{ fontSize: 13, fontWeight: 600 }}>Primary</span>
                   </label>
                 </div>
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: 11, marginBottom: 4 }}>電話番号 / SĐT</label>
+                <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', marginBottom: 4 }}>{tCust('tel')}</label>
                 <input
-                  className="form-input"
+                  className="form-input font-mono text-[13px]"
                   value={formData.contact_tel}
                   onChange={e => setFormData({ ...formData, contact_tel: e.target.value })}
                 />
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: 11, marginBottom: 4 }}>メール / Email</label>
+                <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', marginBottom: 4 }}>{tMaster('email')}</label>
                 <input
-                  className="form-input"
+                  className="form-input font-mono text-[13px]"
                   type="email"
                   value={formData.contact_email}
                   onChange={e => setFormData({ ...formData, contact_email: e.target.value })}
@@ -203,11 +205,11 @@ export function ContactList({ companyId, contacts }: { companyId: string, contac
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 20 }}>
-              <button onClick={() => setIsModalOpen(false)} className="btn btn-secondary" disabled={isLoading}>
-                キャンセル / Hủy
+              <button onClick={() => setIsModalOpen(false)} className="btn btn-secondary text-[12px]" disabled={isLoading}>
+                {tCommon('cancel')}
               </button>
-              <button onClick={handleSave} className="btn btn-primary" disabled={isLoading}>
-                {isLoading ? '...' : '保存 / Lưu'}
+              <button onClick={handleSave} className="btn btn-primary text-[12px]" disabled={isLoading}>
+                {isLoading ? tCommon('loading') : tCommon('save')}
               </button>
             </div>
           </div>
@@ -216,3 +218,4 @@ export function ContactList({ companyId, contacts }: { companyId: string, contac
     </div>
   )
 }
+

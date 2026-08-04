@@ -1,9 +1,8 @@
 export const dynamic = 'force-dynamic'
 
-// @ts-nocheck
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
-import { Plus, Users, Edit, X, Search, ChevronRight } from 'lucide-react'
+import { Plus, Users, ChevronRight } from 'lucide-react'
 import { Suspense } from 'react'
 import { SearchBox } from '@/components/ui/SearchBox'
 import { Pagination } from '@/components/ui/Pagination'
@@ -33,6 +32,7 @@ export default async function CustomersPage(props: {
   const showAll = typeFilter === 'all'
 
   const t = await getTranslations('Customers')
+  const tMaster = await getTranslations('Master')
   const tCommon = await getTranslations('Common')
 
   const supabase = await createClient()
@@ -59,11 +59,6 @@ export default async function CustomersPage(props: {
 
   // Fix: Nếu range vượt quá kết quả (lỗi 416), retry với page 1
   if (error?.message?.includes('range not satisfiable') || error?.code === 'PGRST103') {
-    const retryResult = await supabase
-      .from('companies')
-      .select('company_id, company_code, company_name, company_name_romaji, company_type, tel, is_active, parent_company_id, legacy_id', { count: 'exact' })
-    let retryQuery = retryResult
-    // Re-apply filters on a new query
     const retryDbQuery = supabase
       .from('companies')
       .select('company_id, company_code, company_name, company_name_romaji, company_type, tel, is_active, parent_company_id, legacy_id', { count: 'exact' })
@@ -91,17 +86,17 @@ export default async function CustomersPage(props: {
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <Users size={20} style={{ color: 'var(--accent)' }} />
           <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <span style={{ fontSize: 16, fontWeight: 600 }}>{t('title')}</span>
+            <h1 className="text-[15px] font-bold" style={{ color: 'var(--text-primary)' }}>{t('title')}</h1>
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <Suspense fallback={<div style={{ width: 250, height: 36, background: 'var(--bg-surface-2)', borderRadius: 4 }} />}>
-            <SearchBox placeholder={tCommon('searchByCodeOrName')} historyKey='search_customers' />
+            <SearchBox placeholder={tMaster('searchCompany')} historyKey='search_customers' />
           </Suspense>
           <Link href="/master/customers/new">
-            <button className="btn btn-primary">
+            <button className="btn btn-primary flex items-center gap-1.5 cursor-pointer">
               <Plus size={14} />
-              <span style={{ fontWeight: 600 }}>{tCommon('addNew')}</span>
+              <span>{tCommon('addNew')}</span>
             </button>
           </Link>
         </div>
@@ -116,21 +111,21 @@ export default async function CustomersPage(props: {
               className={`tab-item ${showAll ? 'tab-item--active' : ''}`}
               style={{ flex: 1, padding: '8px 4px', textDecoration: 'none' }}
             >
-              <span style={{ fontWeight: 600 }}>{tCommon('all')} {showAll && `(${totalRecords})`}</span>
+              <span style={{ fontWeight: 700 }}>{tCommon('all')} {showAll && `(${totalRecords})`}</span>
             </Link>
             <Link 
               href={`/master/customers?q=${query}&type=CUSTOMER`}
               className={`tab-item ${typeFilter === 'CUSTOMER' && !showAll ? 'tab-item--active' : ''}`}
               style={{ flex: 1, padding: '8px 4px', textDecoration: 'none' }}
             >
-              <span style={{ fontWeight: 600 }}>{t('customer')} {typeFilter === 'CUSTOMER' && !showAll && `(${totalRecords})`}</span>
+              <span style={{ fontWeight: 700 }}>{t('customer')} {typeFilter === 'CUSTOMER' && !showAll && `(${totalRecords})`}</span>
             </Link>
             <Link 
               href={`/master/customers?q=${query}&type=VENDOR`}
               className={`tab-item ${typeFilter === 'VENDOR' && !showAll ? 'tab-item--active' : ''}`}
               style={{ flex: 1, padding: '8px 4px', textDecoration: 'none' }}
             >
-              <span style={{ fontWeight: 600 }}>{t('vendor')} {typeFilter === 'VENDOR' && !showAll && `(${totalRecords})`}</span>
+              <span style={{ fontWeight: 700 }}>{t('vendor')} {typeFilter === 'VENDOR' && !showAll && `(${totalRecords})`}</span>
             </Link>
           </div>
         </div>
@@ -142,38 +137,27 @@ export default async function CustomersPage(props: {
           <table className="data-table">
             <thead>
               <tr>
-                <th style={{ width: 140 }}>
-                  <span style={{ fontWeight: 600 }}>{t('customerCode')}</span>
-                </th>
-                <th style={{ width: 300 }}>
-                  <span style={{ fontWeight: 600 }}>{t('companyName')}</span>
-                </th>
-                <th style={{ width: 200 }} className="hidden md:table-cell">
-                  <span style={{ fontWeight: 600 }}>{t('companyNameRomaji')}</span>
-                </th>
-                <th style={{ width: 120 }}>
-                  <span style={{ fontWeight: 600 }}>{t('type')}</span>
-                </th>
-                <th style={{ width: 150 }} className="hidden lg:table-cell">
-                  <span style={{ fontWeight: 600 }}>{t('tel')}</span>
-                </th>
-                <th style={{ width: 120, textAlign: 'center' }}>
-                  <span style={{ fontWeight: 600 }}>{tCommon('status')}</span>
-                </th>
+                <th>{t('customerCode')}</th>
+                <th>{t('companyName')}</th>
+                <th className="hidden md:table-cell">{t('companyNameRomaji')}</th>
+                <th>{t('type')}</th>
+                <th className="hidden lg:table-cell">{t('tel')}</th>
+                <th style={{ textAlign: 'center' }}>{tCommon('status')}</th>
+                <th style={{ textAlign: 'right' }}></th>
               </tr>
             </thead>
             <tbody>
               {error && (
                 <tr>
-                  <td colSpan={5} style={{ padding: 16, color: 'var(--status-error)' }}>
-                    Lỗi dữ liệu: {error.message}
+                  <td colSpan={7} style={{ padding: 16, color: 'var(--status-error)' }}>
+                    {error.message}
                   </td>
                 </tr>
               )}
               {!error && (!companies || companies.length === 0) && (
                 <tr>
-                  <td colSpan={5} style={{ textAlign: 'center', padding: '32px 0', color: 'var(--text-muted)' }}>
-                    データがありません / Không có dữ liệu
+                  <td colSpan={7} style={{ textAlign: 'center', padding: '32px 0', color: 'var(--text-muted)' }}>
+                    {tCommon('noData')}
                   </td>
                 </tr>
               )}
@@ -181,7 +165,7 @@ export default async function CustomersPage(props: {
                 <tr key={item.company_id}>
                   <td>
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
-                      <Link href={`/master/customers/${item.company_id}`} style={{ color: 'var(--accent)', fontFamily: 'monospace', fontWeight: 700, fontSize: 13, textDecoration: 'none' }} className="hover:underline">
+                      <Link href={`/master/customers/${item.company_id}`} style={{ color: 'var(--accent)', fontFamily: 'monospace', fontWeight: 800, fontSize: 13, textDecoration: 'none' }} className="hover:underline">
                         {item.company_code}
                       </Link>
                       {item.legacy_id && (
@@ -193,27 +177,35 @@ export default async function CustomersPage(props: {
                   </td>
                   <td>
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
-                      <span style={{ fontWeight: 600 }}>{item.company_name}</span>
+                      <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{item.company_name}</span>
                       {item.company_name_romaji && (
                         <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{item.company_name_romaji}</span>
                       )}
                     </div>
                   </td>
+                  <td className="hidden md:table-cell">
+                    <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{item.company_name_romaji || '—'}</span>
+                  </td>
                   <td>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-                      {item.company_type?.map((t: string) => (
-                        <span key={t} className={
-                          t === 'CUSTOMER' ? 'badge badge--info' :
-                          t === 'VENDOR' ? 'badge badge--warning' :
-                          'badge badge--neutral'
+                      {item.company_type?.map((tVal: string) => (
+                        <span key={tVal} className={
+                          tVal === 'CUSTOMER' ? 'badge badge--info font-bold' :
+                          tVal === 'VENDOR' ? 'badge badge--warning font-bold' :
+                          'badge badge--neutral font-bold'
                         }>
-                          {t}
+                          {tVal}
                         </span>
                       ))}
                     </div>
                   </td>
-                  <td style={{ fontFamily: 'monospace', color: 'var(--text-secondary)' }}>
+                  <td className="hidden lg:table-cell font-mono text-[13px]" style={{ color: 'var(--text-secondary)' }}>
                     {item.tel || '—'}
+                  </td>
+                  <td style={{ textAlign: 'center' }}>
+                    <span className={`badge ${item.is_active ? 'badge--success' : 'badge--neutral'}`}>
+                      {item.is_active ? tMaster('activeStatus') : tMaster('inactiveStatus')}
+                    </span>
                   </td>
                   <td style={{ textAlign: 'right' }}>
                     <Link href={`/master/customers/${item.company_id}`} style={{ color: 'var(--text-muted)', display: 'inline-flex', padding: 4 }}>
@@ -238,3 +230,4 @@ export default async function CustomersPage(props: {
     </div>
   )
 }
+

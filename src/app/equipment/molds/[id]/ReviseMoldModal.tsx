@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { X, RefreshCw, AlertCircle } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { revisePhysicalMoldAction } from '@/app/actions/mold-revise'
 import type { MoldDetailData } from './page'
 
@@ -19,6 +20,7 @@ type Props = {
 }
 
 export function ReviseMoldModal({ mold, onClose, onSuccess }: Props) {
+  const t = useTranslations()
   const supabase = createClient()
   const productId = mold.mold_revisions?.product_id
 
@@ -34,7 +36,7 @@ export function ReviseMoldModal({ mold, onClose, onSuccess }: Props) {
 
   const loadDesigns = useCallback(async () => {
     if (!productId) {
-        setError('製品が見つかりません。/ Không tìm thấy sản phẩm.')
+        setError(t('Equipment.errProductNotFound'))
         setLoading(false)
         return
     }
@@ -52,7 +54,7 @@ export function ReviseMoldModal({ mold, onClose, onSuccess }: Props) {
     } finally {
       setLoading(false)
     }
-  }, [productId, supabase])
+  }, [productId, supabase, t])
 
   useEffect(() => {
     loadDesigns()
@@ -63,7 +65,7 @@ export function ReviseMoldModal({ mold, onClose, onSuccess }: Props) {
     if (selectedDesignId) {
         const d = designRevisions.find(x => x.revision_id === selectedDesignId)
         if (d) {
-            setDisplayName(`${mold.mold_revisions?.products?.product_code || 'Khuôn'} - R${d.revision_number}`)
+            setDisplayName(`${mold.mold_revisions?.products?.product_code || '金型'} - R${d.revision_number}`)
         }
     }
   }, [selectedDesignId, designRevisions, mold])
@@ -71,11 +73,11 @@ export function ReviseMoldModal({ mold, onClose, onSuccess }: Props) {
   const handleSave = async () => {
     setError(null)
     if (!selectedDesignId) {
-        setError('新しい設計版を選択してください。/ Vui lòng chọn phiên bản thiết kế mới.')
+        setError(t('Equipment.errSelectNewDesign'))
         return
     }
     if (!displayName) {
-        setError('新しい金型名を入力してください。/ Vui lòng nhập tên khuôn mới.')
+        setError(t('Equipment.errEnterNewMoldName'))
         return
     }
 
@@ -101,17 +103,17 @@ export function ReviseMoldModal({ mold, onClose, onSuccess }: Props) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={onClose}>
-      <div className="bg-white rounded-lg shadow-lg w-[450px]" onClick={e => e.stopPropagation()}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={onClose}>
+      <div className="bg-[var(--bg-surface)] rounded-lg shadow-xl w-[450px] border border-[var(--border-default)]" onClick={e => e.stopPropagation()}>
         {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b" style={{ borderColor: 'var(--border-default)' }}>
+        <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--border-default)]">
           <div className="flex items-center gap-2">
-            <RefreshCw size={16} style={{ color: 'var(--accent)' }} />
-            <h3 className="m-0 text-sm font-bold" style={{ color: 'var(--text-primary)' }}>
-              金型のリビジョン更新 <span className="text-[11px] font-normal" style={{ color: 'var(--text-muted)' }}>/ Cập nhật phiên bản Khuôn vật lý</span>
+            <RefreshCw size={16} className="text-[var(--accent)]" />
+            <h3 className="m-0 text-sm font-bold text-[var(--text-primary)]">
+              {t('Equipment.reviseMoldTitle')}
             </h3>
           </div>
-          <button onClick={onClose} className="bg-transparent border-none cursor-pointer" style={{ color: 'var(--text-muted)' }}>
+          <button onClick={onClose} className="bg-transparent border-none cursor-pointer text-[var(--text-muted)] hover:text-[var(--text-primary)]">
             <X size={16} />
           </button>
         </div>
@@ -119,37 +121,37 @@ export function ReviseMoldModal({ mold, onClose, onSuccess }: Props) {
         {/* Body */}
         <div className="p-4 flex flex-col gap-3">
           {error && (
-            <div className="px-3 py-2 text-xs rounded flex items-center gap-1.5" style={{ background: 'var(--bg-error)', color: 'var(--status-error)' }}>
+            <div className="px-3 py-2 text-xs rounded flex items-center gap-1.5 bg-[var(--bg-error)] text-[var(--status-error)]">
                 <AlertCircle size={14} />
                 {error}
             </div>
           )}
 
           {loading ? (
-            <div className="text-center p-5 text-xs" style={{ color: 'var(--text-muted)' }}>
-                データを読み込み中... / Đang tải dữ liệu...
+            <div className="text-center p-5 text-xs text-[var(--text-muted)]">
+                {t('Common.loading')}
             </div>
           ) : (
             <>
               {/* Current Status */}
-              <div className="px-3 py-2 rounded text-xs" style={{ background: 'var(--bg-surface-2)' }}>
-                  <div style={{ color: 'var(--text-secondary)' }}>現在の設計 / Thiết kế hiện tại:</div>
-                  <div className="font-semibold">{mold.mold_revisions?.revision_code || 'N/A'}</div>
-                  <div className="mt-1" style={{ color: 'var(--text-secondary)' }}>現在の金型名 / Tên khuôn hiện tại:</div>
-                  <div className="font-semibold">{mold.display_name}</div>
+              <div className="px-3 py-2 rounded text-xs bg-[var(--bg-surface-2)]">
+                  <div className="text-[var(--text-muted)] font-semibold">{t('Equipment.currentDesign')}:</div>
+                  <div className="font-mono font-bold text-[var(--accent)] text-[13px]">{mold.mold_revisions?.revision_code || 'N/A'}</div>
+                  <div className="mt-1 text-[var(--text-muted)] font-semibold">{t('Equipment.currentMoldName')}:</div>
+                  <div className="font-bold text-[var(--text-primary)] text-[13px]">{mold.display_name}</div>
               </div>
 
               {/* Design Revision */}
               <div>
-                <label className="block text-[11px] font-semibold mb-1">
-                    新しい設計版 / Phiên bản thiết kế mới <span className="text-red-500">*</span>
+                <label className="form-label">
+                    {t('Equipment.newDesignRevision')} <span className="text-red-500">*</span>
                 </label>
                 <select 
-                    className="form-select" 
+                    className="form-select font-mono font-bold" 
                     value={selectedDesignId} 
                     onChange={e => setSelectedDesignId(e.target.value)}
                 >
-                  <option value="">-- 選択 / Chọn --</option>
+                  <option value="">{t('Common.selectPlaceholder')}</option>
                   {designRevisions.map(d => (
                     <option key={d.revision_id} value={d.revision_id}>
                       {d.design_code} (Rev {d.revision_number})
@@ -160,12 +162,12 @@ export function ReviseMoldModal({ mold, onClose, onSuccess }: Props) {
 
               {/* New Display Name */}
               <div>
-                <label className="block text-[11px] font-semibold mb-1">
-                    新しい金型名 / Tên khuôn mới <span className="text-red-500">*</span>
+                <label className="form-label">
+                    {t('Equipment.newMoldName')} <span className="text-red-500">*</span>
                 </label>
                 <input 
                     type="text" 
-                    className="form-input" 
+                    className="form-input font-bold" 
                     value={displayName}
                     onChange={e => setDisplayName(e.target.value)}
                 />
@@ -173,15 +175,15 @@ export function ReviseMoldModal({ mold, onClose, onSuccess }: Props) {
 
               {/* Notes */}
               <div>
-                <label className="block text-[11px] font-semibold mb-1">
-                    更新理由・備考 / Lý do / Ghi chú
+                <label className="form-label">
+                    {t('Equipment.reviseReason')}
                 </label>
                 <textarea 
                     className="form-textarea" 
                     rows={3}
                     value={notes}
                     onChange={e => setNotes(e.target.value)}
-                    placeholder="例：設変による金型改修 / Vd: Sửa khuôn theo thay đổi thiết kế"
+                    placeholder={t('Equipment.reviseReasonPlaceholder')}
                 />
               </div>
             </>
@@ -189,13 +191,15 @@ export function ReviseMoldModal({ mold, onClose, onSuccess }: Props) {
         </div>
 
         {/* Footer */}
-        <div className="flex justify-end gap-2 px-4 py-3 border-t" style={{ borderColor: 'var(--border-default)' }}>
-          <button className="btn btn-secondary" onClick={onClose} disabled={saving}>キャンセル / Hủy</button>
+        <div className="flex justify-end gap-2 px-4 py-3 border-t border-[var(--border-default)]">
+          <button className="btn btn-secondary" onClick={onClose} disabled={saving}>{t('Common.cancel')}</button>
           <button className="btn btn-primary" onClick={handleSave} disabled={saving || loading}>
-            {saving ? '保存中...' : '更新 / Cập nhật'}
+            {saving ? t('Common.saving') : t('Common.update')}
           </button>
         </div>
       </div>
     </div>
   )
 }
+
+

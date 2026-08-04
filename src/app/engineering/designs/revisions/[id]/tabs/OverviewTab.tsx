@@ -114,9 +114,9 @@ export function OverviewTab({
       <div className="flex gap-1 flex-wrap mt-1">
         <span className="badge badge--info text-[9px]">{p.plastic_family}</span>
         <span className="badge badge--neutral text-[9px]">{p.thickness_mm}x{p.width_mm}</span>
-        {p.color_name_normalized && <span className="badge badge--neutral text-[9px]">Màu: {p.color_name_normalized}</span>}
-        {p.electrical_property === 'conductive' && <span className="badge badge--success text-[9px]">Dẫn điện</span>}
-        {p.electrical_property === 'antistatic' && <span className="badge badge--warning text-[9px]">Chống TM</span>}
+        {p.color_name_normalized && <span className="badge badge--neutral text-[9px]">色: {p.color_name_normalized}</span>}
+        {p.electrical_property === 'conductive' && <span className="badge badge--success text-[9px]">導電性</span>}
+        {p.electrical_property === 'antistatic' && <span className="badge badge--warning text-[9px]">帯電防止</span>}
       </div>
     )
   }
@@ -175,7 +175,7 @@ export function OverviewTab({
                       (c.cav_length_mm === Number(formData.design_width) && c.cav_width_mm === Number(formData.design_length))
                     )?.cav_code
                   }</span>
-                ) : <span className="text-[10px] text-slate-400">Không khớp chuẩn</span>}
+                ) : <span className="text-[10px] text-slate-400">標準不一致</span>}
               </div>
             )}
           </div>
@@ -305,11 +305,11 @@ export function OverviewTab({
                 <Link
                   key={mold.physical_mold_id}
                   href={`/equipment/molds/${mold.physical_mold_id}`}
-                  title={`Mở chi tiết khuôn: ${mold.system_code}`}
+                  title={`金型詳細: ${mold.system_code}`}
                   className="flex items-center justify-between p-2 rounded hover:bg-[var(--bg-surface-2)] transition-colors border border-transparent hover:border-[var(--border-subtle)]"
                 >
                   <div className="flex flex-col">
-                    <span className="text-[12px] font-bold font-mono text-[var(--accent)] hover:underline">Mở khuôn: {mold.system_code}</span>
+                    <span className="text-[12px] font-bold font-mono text-[var(--accent)] hover:underline">{mold.system_code}</span>
                   </div>
                   <span className="text-[9px] badge badge--neutral">{mold.device_status || 'NORMAL'}</span>
                 </Link>
@@ -332,11 +332,11 @@ export function OverviewTab({
                 <Link
                   key={job.job_id}
                   href={`/equipment/jobs/${job.job_id}`}
-                  title={`Mở chi tiết job: ${job.job_code}`}
+                  title={`ジョブ詳細: ${job.job_code}`}
                   className="flex items-center justify-between p-2 rounded hover:bg-[var(--bg-surface-2)] transition-colors border border-transparent hover:border-[var(--border-subtle)]"
                 >
                   <div className="flex flex-col">
-                    <span className="text-[12px] font-bold font-mono text-[var(--accent)] hover:underline">Mở job: {job.job_code}</span>
+                    <span className="text-[12px] font-bold font-mono text-[var(--accent)] hover:underline">{job.job_code}</span>
                     <span className="text-[10px] text-[var(--text-muted)] truncate max-w-[150px]">{job.job_name}</span>
                   </div>
                   <span className="text-[9px] badge badge--neutral">{job.job_status || 'NEW'}</span>

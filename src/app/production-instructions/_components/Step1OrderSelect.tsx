@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { searchOrders } from '@/app/actions/production-instructions'
 import type { PIFormData } from '../new/page'
 
@@ -25,6 +26,7 @@ interface OrderResult {
 interface Props { form: PIFormData; update: (p: Partial<PIFormData>) => void; onNext: () => void }
 
 export default function Step1OrderSelect({ form, update, onNext }: Props) {
+  const t = useTranslations('ProductionInstructions')
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<OrderResult[]>([])
   const [searching, setSearching] = useState(false)
@@ -62,50 +64,54 @@ export default function Step1OrderSelect({ form, update, onNext }: Props) {
 
   return (
     <div className="space-y-4">
-      <h2 className="text-lg font-semibold text-gray-800">受注を選択</h2>
+      <h2 className="text-lg font-bold text-[var(--text-primary)]">{t('selectOrder')}</h2>
 
       <div className="flex gap-2">
         <input
           type="text"
-          placeholder="受注No. または 品番で検索"
+          placeholder={t('searchOrderPlaceholder')}
           value={query}
           onChange={e => setQuery(e.target.value)}
           onKeyDown={e => e.key === 'Enter' && search()}
-          className="flex-1 px-3 py-2 border border-gray-300 rounded-md text-sm"
+          className="form-input form-input-search flex-1"
         />
         <button
           onClick={search}
           disabled={searching}
-          className="px-4 py-2 bg-gray-100 border border-gray-300 rounded-md text-sm hover:bg-gray-200 disabled:opacity-50"
+          className="btn btn-secondary font-bold text-xs"
         >
-          {searching ? '検索中...' : '検索'}
+          {searching ? t('searching') : t('search')}
         </button>
       </div>
 
       {results.length > 0 && (
-        <div className="border border-gray-200 rounded-md overflow-hidden">
-          <table className="w-full text-sm">
-            <thead className="bg-gray-50">
+        <div className="border border-[var(--border-default)] rounded-md overflow-hidden">
+          <table className="data-table">
+            <thead>
               <tr>
-                {['受注No.', '品番', '品名', '客先', ''].map(h => (
-                  <th key={h} className="px-3 py-2 text-left text-xs font-semibold text-gray-600">{h}</th>
-                ))}
+                <th>{t('orderNo')}</th>
+                <th>{t('productCode')}</th>
+                <th>{t('productName')}</th>
+                <th>{t('customer')}</th>
+                <th></th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody>
               {results.map(o => (
                 <tr
                   key={o.order_id}
                   onClick={() => select(o)}
-                  className={`cursor-pointer hover:bg-blue-50 transition-colors ${
-                    form.order_id === o.order_id ? 'bg-blue-50 ring-1 ring-inset ring-blue-400' : ''
+                  className={`cursor-pointer ${
+                    form.order_id === o.order_id ? 'bg-[var(--tint-blue-bg)] font-bold' : ''
                   }`}
                 >
-                  <td className="px-3 py-2 font-mono">{o.order_no}</td>
-                  <td className="px-3 py-2">{o.products?.product_code}</td>
-                  <td className="px-3 py-2 text-gray-600">{o.products?.product_name}</td>
-                  <td className="px-3 py-2">{o.companies?.company_name}</td>
-                  <td className="px-3 py-2 text-blue-600">{form.order_id === o.order_id ? '✓ 選択中' : '選択'}</td>
+                  <td className="font-mono text-[var(--accent)] font-bold">{o.order_no}</td>
+                  <td className="font-mono font-bold text-[var(--text-primary)]">{o.products?.product_code}</td>
+                  <td className="text-[var(--text-primary)]">{o.products?.product_name}</td>
+                  <td>{o.companies?.company_name}</td>
+                  <td className="text-[var(--accent)] font-bold">
+                    {form.order_id === o.order_id ? `✓ ${t('selected')}` : t('selectAction')}
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -114,12 +120,12 @@ export default function Step1OrderSelect({ form, update, onNext }: Props) {
       )}
 
       {form.order_id && (
-        <div className="bg-blue-50 border border-blue-200 rounded-md p-3 text-sm space-y-1">
-          <p className="font-semibold text-blue-800">選択中の受注</p>
-          <p>受注No.: <span className="font-mono">{form.order_no}</span></p>
-          <p>品番: {form.product_code} — {form.product_name}</p>
-          <p>材料: {form.material_spec || '—'}</p>
-          <p>テンプレート: <span className="font-semibold">{form.template_type}</span></p>
+        <div className="card-flat bg-[var(--tint-teal-bg)] border-[var(--accent)]/30 p-4 text-sm space-y-1.5">
+          <p className="font-bold text-[var(--accent)] text-base">{t('selectedOrderDetails')}</p>
+          <p className="text-[var(--text-primary)]">{t('orderNo')}: <span className="font-mono font-bold text-[var(--accent)]">{form.order_no}</span></p>
+          <p className="text-[var(--text-primary)]">{t('productCode')}: <span className="font-mono font-bold">{form.product_code}</span> — {form.product_name}</p>
+          <p className="text-[var(--text-primary)]">{t('material')}: <span className="font-semibold">{form.material_spec || '—'}</span></p>
+          <p className="text-[var(--text-primary)]">{t('template')}: <span className="badge badge--info font-mono font-bold">{form.template_type}</span></p>
         </div>
       )}
 
@@ -127,11 +133,12 @@ export default function Step1OrderSelect({ form, update, onNext }: Props) {
         <button
           onClick={onNext}
           disabled={!canNext}
-          className="px-6 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed"
+          className="btn btn-primary font-bold px-6"
         >
-          次へ →
+          {t('next')} →
         </button>
       </div>
     </div>
   )
 }
+

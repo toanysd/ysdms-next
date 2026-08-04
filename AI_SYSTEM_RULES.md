@@ -118,6 +118,8 @@ Hệ thống này được thiết lập theo cơ chế đặc biệt: **"Portab
 - Cấu trúc: `.detail-layout > .detail-panel-left (240px) + .detail-panel-right (flex-1)`
 - Tabs: `.tab-nav > .tab-item` + `.tab-item--active`
 - **KHÔNG hardcode `bg-white`** — dùng `var(--bg-surface)`
+- **Surface hierarchy** (cập nhật 2026-08-03): `--bg-surface: #FFFFFF` (crisp white) trên `--bg-page: #ECEEF1` (soft gray). Card/form nổi rõ ràng trên nền page, theo mô hình GitHub Primer / Linear.
+- **Border radius** (cập nhật 2026-08-03): `--radius-sm: 6px` (mềm hơn cho buttons/inputs).
 
 ### RULE-UI-6 — Responsive (đã xây trong globals.css)
 - `< 640px`: grid collapse 1 col, layout stack vertical, panel-left collapsed

@@ -1,6 +1,5 @@
 export const dynamic = 'force-dynamic'
 
-// @ts-nocheck
 import { getTranslations } from 'next-intl/server'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
@@ -34,7 +33,8 @@ export default async function PlasticMasterPage(props: {
   const showAll = familyFilter === 'all'
 
   const supabase = await createClient()
-  const t = await getTranslations('Master')
+  const tMaster = await getTranslations('Master')
+  const tCommon = await getTranslations('Common')
   const from = (page - 1) * PAGE_SIZE
   const to = from + PAGE_SIZE - 1
 
@@ -65,17 +65,19 @@ export default async function PlasticMasterPage(props: {
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <Package size={20} style={{ color: 'var(--accent)' }} />
           <div style={{ display: 'flex', flexDirection: 'column' }}>
-            {t('Master.danhMucVatTuNhua')}
+            <h1 className="text-[15px] font-bold" style={{ color: 'var(--text-primary)' }}>
+              {tMaster('danhMucVatTuNhua')}
+            </h1>
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <Suspense fallback={<div style={{ width: 250, height: 36, background: 'var(--bg-surface-2)', borderRadius: 4 }} />}>
-            <SearchBox placeholder="Tìm mã hoặc family..." />
+            <SearchBox placeholder={tMaster('searchCompany')} />
           </Suspense>
           <Link href="/master/plastics/new">
-            <button className="btn btn-primary">
+            <button className="btn btn-primary flex items-center gap-1.5 cursor-pointer">
               <Plus size={14} />
-              {t('Master.maNhua')}
+              <span>{tCommon('addNew')}</span>
             </button>
           </Link>
         </div>
@@ -86,66 +88,54 @@ export default async function PlasticMasterPage(props: {
           <table className="data-table">
             <thead>
               <tr>
-                <th style={{ width: 150 }}>
-                  {t('Master.maNhua')}
-                </th>
-                <th style={{ width: 120 }}>
-                  {t('Master.family')}
-                </th>
-                <th style={{ width: 150 }}>
-                  {t('Master.dayXKho')}
-                </th>
-                <th style={{ width: 150 }}>
-                  {t('Master.mauGrade')}
-                </th>
-                <th style={{ width: 150, textAlign: 'right' }}>
-                  {t('Master.minStock')}
-                </th>
-                <th style={{ width: 120, textAlign: 'center' }}>
-                  {t('Master.trangThai')}
-                </th>
-                <th style={{ width: 60, textAlign: 'right' }}></th>
+                <th>{tMaster('maNhua')}</th>
+                <th>{tMaster('family')}</th>
+                <th>{tMaster('dayXKho')}</th>
+                <th>{tMaster('mauGrade')}</th>
+                <th style={{ textAlign: 'right' }}>{tMaster('minStock')}</th>
+                <th style={{ textAlign: 'center' }}>{tMaster('trangThai')}</th>
+                <th style={{ textAlign: 'right' }}></th>
               </tr>
             </thead>
             <tbody>
               {error && (
                 <tr>
                   <td colSpan={7} style={{ padding: 16, color: 'var(--status-error)' }}>
-                    Lỗi dữ liệu: {error.message}
+                    {error.message}
                   </td>
                 </tr>
               )}
               {!error && (!plastics || plastics.length === 0) && (
                 <tr>
                   <td colSpan={7} style={{ textAlign: 'center', padding: '32px 0', color: 'var(--text-muted)' }}>
-                    チE�Eタがありません / Không có dữ liệu
+                    {tCommon('noData')}
                   </td>
                 </tr>
               )}
               {plastics?.map((item: any) => (
                 <tr key={item.id}>
                   <td>
-                    <Link href={`/master/plastics/${item.id}`} style={{ color: 'var(--accent)', fontFamily: 'monospace', fontWeight: 700, fontSize: 13, textDecoration: 'none' }} className="hover:underline">
+                    <Link href={`/master/plastics/${item.id}`} style={{ color: 'var(--accent)', fontFamily: 'monospace', fontWeight: 800, fontSize: 13, textDecoration: 'none' }} className="hover:underline">
                       {item.code}
                     </Link>
                   </td>
                   <td>
-                    <span className="badge badge--neutral">
+                    <span className="badge badge--neutral font-bold">
                       {item.family}
                     </span>
                   </td>
-                  <td style={{ fontFamily: 'monospace' }}>
+                  <td style={{ fontFamily: 'monospace', fontWeight: 700, color: 'var(--text-primary)' }}>
                     {item.thickness_mm} <span style={{ color: 'var(--text-muted)' }}>x </span> {item.width_mm}
                   </td>
                   <td style={{ color: 'var(--text-secondary)' }}>
                     {item.color || '-'} {item.grade ? <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>({item.grade})</span> : ''}
                   </td>
-                  <td style={{ textAlign: 'right', fontFamily: 'monospace', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                  <td style={{ textAlign: 'right', fontFamily: 'monospace', fontWeight: 800, color: 'var(--text-primary)', fontSize: 13 }}>
                     {item.reorder_point_kg > 0 ? item.reorder_point_kg.toLocaleString() : '-'}
                   </td>
                   <td style={{ textAlign: 'center' }}>
                     <span className={`badge ${item.is_active ? 'badge--success' : 'badge--neutral'}`}>
-                      {item.is_active ? 'ACTIVE' : 'INACTIVE'}
+                      {item.is_active ? tMaster('activeStatus') : tMaster('inactiveStatus')}
                     </span>
                   </td>
                   <td style={{ textAlign: 'right' }}>
@@ -171,3 +161,4 @@ export default async function PlasticMasterPage(props: {
     </div>
   )
 }
+

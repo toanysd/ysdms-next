@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
+import { useTranslations } from 'next-intl'
 import { createClient } from '@/lib/supabase/client'
 import {
   Plus,
@@ -36,15 +37,15 @@ type Rack = {
 }
 
 const LOCATIONS = [
-  { value: 'MOLD_STORAGE', ja: '金型倉庫', vi: 'Kho khuôn' },
-  { value: '1F_FACTORY', ja: '1F工場', vi: 'Nhà máy tầng 1' },
-  { value: 'WAREHOUSE', ja: '倉庫', vi: 'Nhà kho' },
+  { value: 'MOLD_STORAGE', key: 'locMoldStorage' },
+  { value: '1F_FACTORY', key: 'loc1FFactory' },
+  { value: 'WAREHOUSE', key: 'locWarehouse' },
 ] as const
 
 type LocationValue = (typeof LOCATIONS)[number]['value']
 
 function getLocationLabel(loc: string) {
-  return LOCATIONS.find((l) => l.value === loc) ?? { value: loc, ja: loc, vi: loc }
+  return LOCATIONS.find((l) => l.value === loc) ?? { value: loc, key: loc }
 }
 
 function getLocationColor(loc: string): string {
@@ -64,6 +65,8 @@ function getLocationColor(loc: string): string {
 /*  Main Page                                                          */
 /* ------------------------------------------------------------------ */
 export default function RacksPage() {
+  const tMaster = useTranslations('Master')
+  const tCommon = useTranslations('Common')
   const supabase = createClient()
 
   const [racks, setRacks] = useState<Rack[]>([])
@@ -99,84 +102,84 @@ export default function RacksPage() {
       setError(null)
     }
     setLoading(false)
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [supabase])
 
   useEffect(() => {
     fetchRacks()
   }, [fetchRacks])
 
-  /* ---- Toggle expand ---- */
+  /* ---- Handlers ---- */
   const toggle = (id: string) => {
     setExpandedIds((prev) => {
       const next = new Set(prev)
-      next.has(id) ? next.delete(id) : next.add(id)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
       return next
     })
   }
 
   /* ---- Add Rack ---- */
-  const handleAddRack = async () => {
-    if (!newRack.rack_code.trim() || !newRack.rack_name.trim()) return
+  const handleAddRack = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!newRack.rack_code.trim()) return
     setSaving(true)
-    const { error: err } = await supabase.from('racks').insert({
-      rack_code: newRack.rack_code.trim(),
-      rack_name: newRack.rack_name.trim(),
-      location_in_factory: newRack.location_in_factory,
-      notes: newRack.notes.trim() || null,
-    })
+
+    const { error: err } = await supabase.from('racks').insert([
+      {
+        rack_code: newRack.rack_code.trim().toUpperCase(),
+        rack_name: newRack.rack_name.trim() || newRack.rack_code.trim().toUpperCase(),
+        location_in_factory: newRack.location_in_factory,
+        notes: newRack.notes.trim() || null,
+      },
+    ])
+
     setSaving(false)
     if (err) {
       alert('Error: ' + err.message)
-      return
+    } else {
+      setNewRack({ rack_code: '', rack_name: '', location_in_factory: 'MOLD_STORAGE', notes: '' })
+      setShowAddRack(false)
+      fetchRacks()
     }
-    setNewRack({ rack_code: '', rack_name: '', location_in_factory: 'MOLD_STORAGE', notes: '' })
-    setShowAddRack(false)
-    fetchRacks()
   }
 
   /* ---- Add Layer ---- */
-  const handleAddLayer = async (rack: Rack) => {
+  const handleAddLayer = async (rackId: string, layerNumber: number, layerCode: string, notes: string) => {
     setSaving(true)
-    const nextNum = rack.rack_layers.length > 0
-      ? Math.max(...rack.rack_layers.map((l) => l.layer_number)) + 1
-      : 1
-    const layerCode = `${rack.rack_code}-L${nextNum}`
 
-    const { error: err } = await supabase.from('rack_layers').insert({
-      rack_id: rack.id,
-      layer_number: nextNum,
-      layer_code: layerCode,
-    })
+    const { error: err } = await supabase.from('rack_layers').insert([
+      {
+        rack_id: rackId,
+        layer_number: layerNumber,
+        layer_code: layerCode.trim().toUpperCase(),
+        notes: notes.trim() || null,
+      },
+    ])
+
     setSaving(false)
     if (err) {
       alert('Error: ' + err.message)
-      return
+    } else {
+      setAddLayerRackId(null)
+      fetchRacks()
     }
-    setAddLayerRackId(null)
-    // Auto-expand
-    setExpandedIds((prev) => new Set(prev).add(rack.id))
-    fetchRacks()
   }
 
   /* ---- Delete Layer ---- */
   const handleDeleteLayer = async (layerId: string) => {
-    if (!confirm('この段を削除しますか？ / Xoá tầng này?')) return
+    if (!confirm(tMaster('deleteLayerConfirm'))) return
     const { error: err } = await supabase.from('rack_layers').delete().eq('id', layerId)
-    if (err) {
-      alert('Error: ' + err.message)
-      return
-    }
+    if (err) { alert('Error: ' + err.message); return }
     fetchRacks()
   }
 
   /* ---- Delete Rack ---- */
   const handleDeleteRack = async (rack: Rack) => {
-    if (!confirm(`棚 ${rack.rack_code} を削除しますか？ / Xoá giá ${rack.rack_code}?`)) return
-    // Delete layers first
     if (rack.rack_layers.length > 0) {
-      const { error: layerErr } = await supabase.from('rack_layers').delete().eq('rack_id', rack.id)
-      if (layerErr) { alert('Error: ' + layerErr.message); return }
+      alert(tMaster('deleteRackConfirm'))
+      return
     }
+    if (!confirm(tMaster('deleteRackConfirm'))) return
     const { error: err } = await supabase.from('racks').delete().eq('id', rack.id)
     if (err) { alert('Error: ' + err.message); return }
     fetchRacks()
@@ -190,29 +193,25 @@ export default function RacksPage() {
       {/* ---- Page Header ---- */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <h1
-            className="text-[15px] font-bold"
-            style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-jp)' }}
-          >
-            棚管理
-          </h1>
-          <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
-            Quản lý Giá khuôn &amp; Tầng
-          </span>
+          <Layers size={20} style={{ color: 'var(--accent)' }} />
+          <div>
+            <h1
+              className="text-[15px] font-bold leading-tight"
+              style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-jp)' }}
+            >
+              {tMaster('rackMaster')}
+            </h1>
+            <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
+              {tMaster('rackMasterSub')}
+            </span>
+          </div>
         </div>
         <button
           onClick={() => setShowAddRack(true)}
-          className="h-[32px] px-3 text-[12px] rounded flex items-center gap-1.5 font-bold"
-          style={{
-            background: 'var(--accent)',
-            color: '#fff',
-            border: 'none',
-            cursor: 'pointer',
-          }}
+          className="btn btn-primary h-[32px] px-3 text-[12px] rounded flex items-center gap-1.5 font-bold cursor-pointer"
         >
           <Plus size={14} />
-          <span style={{ fontFamily: 'var(--font-jp)' }}>棚を追加</span>
-          <span className="text-[10px] opacity-80 ml-0.5">Thêm giá</span>
+          <span>{tMaster('addRack')}</span>
         </button>
       </div>
 
@@ -233,14 +232,11 @@ export default function RacksPage() {
                   background: getLocationColor(loc.value),
                 }}
               />
-              <span className="text-[12px] font-bold" style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-jp)' }}>
-                {loc.ja}
-              </span>
-              <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
-                {loc.vi}
+              <span className="text-[12px] font-bold" style={{ color: 'var(--text-primary)' }}>
+                {tMaster(loc.key)}
               </span>
               <span
-                className="text-[12px] font-bold ml-1"
+                className="text-[12px] font-mono font-bold ml-1"
                 style={{ color: getLocationColor(loc.value) }}
               >
                 {count}
@@ -250,7 +246,7 @@ export default function RacksPage() {
         })}
         <div className="flex-1" />
         <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
-          合計 / Tổng: <strong style={{ color: 'var(--text-primary)' }}>{racks.length}</strong> 棚
+          {tMaster('totalRacks')}: <strong style={{ color: 'var(--text-primary)' }} className="font-mono">{racks.length}</strong>
         </span>
       </div>
 
@@ -258,7 +254,7 @@ export default function RacksPage() {
       {loading && (
         <div className="card-flat flex items-center justify-center" style={{ padding: '40px 16px' }}>
           <Loader2 size={20} className="animate-spin" style={{ color: 'var(--text-muted)' }} />
-          <span className="text-[12px] ml-2" style={{ color: 'var(--text-muted)' }}>読み込み中...</span>
+          <span className="text-[12px] ml-2" style={{ color: 'var(--text-muted)' }}>{tCommon('loading')}</span>
         </div>
       )}
 
@@ -267,7 +263,7 @@ export default function RacksPage() {
           className="card-flat text-center"
           style={{ padding: '16px', color: 'var(--status-error)', fontSize: 12 }}
         >
-          エラー: {error}
+          {error}
         </div>
       )}
 
@@ -287,7 +283,7 @@ export default function RacksPage() {
             >
               <Package size={32} style={{ color: 'var(--text-muted)', margin: '0 auto 8px' }} />
               <p className="text-[13px]" style={{ color: 'var(--text-muted)' }}>
-                棚が登録されていません / Chưa có giá khuôn nào
+                {tMaster('noRacks')}
               </p>
             </div>
           )}
@@ -365,7 +361,7 @@ export default function RacksPage() {
                     <span className="text-[11px] font-bold" style={{ color: 'var(--text-primary)' }}>
                       {rack.rack_layers.length}
                     </span>
-                    <span className="text-[9px]" style={{ color: 'var(--text-muted)' }}>段</span>
+                    <span className="text-[9px]" style={{ color: 'var(--text-muted)' }}>{tMaster('layerUnit')}</span>
                   </div>
 
                   {/* Location badge */}
@@ -380,7 +376,7 @@ export default function RacksPage() {
                   >
                     <MapPin size={10} style={{ color: locColor }} />
                     <span className="text-[10px] font-bold" style={{ color: locColor }}>
-                      {loc.ja}
+                      {tMaster(loc.key)}
                     </span>
                   </div>
                 </div>
@@ -399,7 +395,7 @@ export default function RacksPage() {
                         className="text-center text-[11px]"
                         style={{ padding: '16px 12px', color: 'var(--text-muted)' }}
                       >
-                        段が未登録 / Chưa có tầng nào
+                        {tMaster('noLayers')}
                       </div>
                     ) : (
                       <div style={{ padding: '6px 12px 4px' }}>
@@ -469,7 +465,7 @@ export default function RacksPage() {
                                 color: 'var(--text-muted)',
                                 flexShrink: 0,
                               }}
-                              title="段を削除 / Xoá tầng"
+                              title={tMaster('deleteLayer')}
                             >
                               <Trash2 size={12} />
                             </button>
@@ -491,7 +487,7 @@ export default function RacksPage() {
                       <button
                         onClick={(e) => {
                           e.stopPropagation()
-                          handleAddLayer(rack)
+                          setAddLayerRackId(rack.id)
                         }}
                         disabled={saving}
                         className="rounded flex items-center gap-1"
@@ -507,8 +503,7 @@ export default function RacksPage() {
                         }}
                       >
                         <Plus size={12} />
-                        <span style={{ fontFamily: 'var(--font-jp)' }}>段を追加</span>
-                        <span className="text-[9px] opacity-70 ml-0.5">Thêm tầng</span>
+                        <span>{tMaster('addLayer')}</span>
                       </button>
 
                       <button
@@ -528,7 +523,7 @@ export default function RacksPage() {
                         }}
                       >
                         <Trash2 size={11} />
-                        <span style={{ fontFamily: 'var(--font-jp)' }}>棚を削除</span>
+                        <span>{tMaster('deleteRack')}</span>
                       </button>
                     </div>
                   </div>
@@ -579,12 +574,9 @@ export default function RacksPage() {
               <div>
                 <div
                   className="text-[13px] font-bold"
-                  style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-jp)' }}
+                  style={{ color: 'var(--text-primary)' }}
                 >
-                  新しい棚を追加
-                </div>
-                <div className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
-                  Thêm giá khuôn mới
+                  {tMaster('addNewRack')}
                 </div>
               </div>
               <button
@@ -612,15 +604,15 @@ export default function RacksPage() {
               <div>
                 <label
                   className="text-[11px] font-bold block mb-1"
-                  style={{ color: 'var(--text-secondary)', fontFamily: 'var(--font-jp)' }}
+                  style={{ color: 'var(--text-secondary)' }}
                 >
-                  棚コード <span className="font-normal" style={{ color: 'var(--text-muted)' }}>Mã giá</span>
+                  {tMaster('rackCode')}
                 </label>
                 <input
                   type="text"
                   value={newRack.rack_code}
                   onChange={(e) => setNewRack((p) => ({ ...p, rack_code: e.target.value }))}
-                  placeholder="例: M-01"
+                  placeholder={tMaster('exampleRackCode')}
                   className="rounded"
                   style={{
                     width: '100%',
@@ -640,15 +632,15 @@ export default function RacksPage() {
               <div>
                 <label
                   className="text-[11px] font-bold block mb-1"
-                  style={{ color: 'var(--text-secondary)', fontFamily: 'var(--font-jp)' }}
+                  style={{ color: 'var(--text-secondary)' }}
                 >
-                  棚名称 <span className="font-normal" style={{ color: 'var(--text-muted)' }}>Tên giá</span>
+                  {tMaster('rackName')}
                 </label>
                 <input
                   type="text"
                   value={newRack.rack_name}
                   onChange={(e) => setNewRack((p) => ({ ...p, rack_name: e.target.value }))}
-                  placeholder="例: Mold Rack 1"
+                  placeholder={tMaster('exampleRackName')}
                   className="rounded"
                   style={{
                     width: '100%',
@@ -667,9 +659,9 @@ export default function RacksPage() {
               <div>
                 <label
                   className="text-[11px] font-bold block mb-1"
-                  style={{ color: 'var(--text-secondary)', fontFamily: 'var(--font-jp)' }}
+                  style={{ color: 'var(--text-secondary)' }}
                 >
-                  設置場所 <span className="font-normal" style={{ color: 'var(--text-muted)' }}>Vị trí</span>
+                  {tMaster('locationInFactory')}
                 </label>
                 <select
                   value={newRack.location_in_factory}
@@ -688,7 +680,7 @@ export default function RacksPage() {
                 >
                   {LOCATIONS.map((loc) => (
                     <option key={loc.value} value={loc.value}>
-                      {loc.ja} / {loc.vi}
+                      {tMaster(loc.key)}
                     </option>
                   ))}
                 </select>
@@ -698,15 +690,15 @@ export default function RacksPage() {
               <div>
                 <label
                   className="text-[11px] font-bold block mb-1"
-                  style={{ color: 'var(--text-secondary)', fontFamily: 'var(--font-jp)' }}
+                  style={{ color: 'var(--text-secondary)' }}
                 >
-                  備考 <span className="font-normal" style={{ color: 'var(--text-muted)' }}>Ghi chú</span>
+                  {tCommon('notes')}
                 </label>
                 <input
                   type="text"
                   value={newRack.notes}
                   onChange={(e) => setNewRack((p) => ({ ...p, notes: e.target.value }))}
-                  placeholder="任意 / Tuỳ chọn"
+                  placeholder={tMaster('optional')}
                   className="rounded"
                   style={{
                     width: '100%',
@@ -744,10 +736,9 @@ export default function RacksPage() {
                   background: 'var(--bg-surface)',
                   color: 'var(--text-secondary)',
                   cursor: 'pointer',
-                  fontFamily: 'var(--font-jp)',
                 }}
               >
-                キャンセル
+                {tCommon('cancel')}
               </button>
               <button
                 onClick={handleAddRack}
@@ -762,11 +753,10 @@ export default function RacksPage() {
                   background: !newRack.rack_code.trim() || !newRack.rack_name.trim() ? 'var(--border-default)' : 'var(--accent)',
                   color: '#fff',
                   cursor: !newRack.rack_code.trim() || !newRack.rack_name.trim() ? 'not-allowed' : 'pointer',
-                  fontFamily: 'var(--font-jp)',
                 }}
               >
                 {saving && <Loader2 size={12} className="animate-spin" />}
-                追加する
+                {tCommon('add')}
               </button>
             </div>
           </div>

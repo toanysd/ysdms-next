@@ -5,7 +5,7 @@ import { revalidatePath } from 'next/cache'
 
 export async function createWorklog(
   formData: FormData
-): Promise<{ error: string } | void> {
+): Promise<{ error?: string; errorKey?: string } | void> {
   const supabase = await createClient()
 
   // ── Parse & validate ────────────────────────────────────────────────
@@ -16,13 +16,13 @@ export async function createWorklog(
   const is_finished = formData.get('is_finished') === 'true'
   const notes       = (formData.get('notes') as string | null)?.trim() || null
 
-  if (!work_date)   return { error: '作業日を入力してください / Vui lòng nhập ngày làm việc.' }
-  if (!employee_id) return { error: '担当者を選択してください / Vui lòng chọn nhân viên.' }
-  if (!job_step_id) return { error: '工程を選択してください / Vui lòng chọn bước công việc.' }
+  if (!work_date)   return { errorKey: 'validation.reqWorkDate', error: 'Work date is required' }
+  if (!employee_id) return { errorKey: 'validation.reqEmployee', error: 'Employee is required' }
+  if (!job_step_id) return { errorKey: 'validation.reqStep', error: 'Step is required' }
 
   const hours_spent = hours_raw ? parseFloat(hours_raw) : null
   if (!hours_spent || isNaN(hours_spent) || hours_spent <= 0) {
-    return { error: '作業時間は0より大きい値を入力してください / Số giờ phải lớn hơn 0.' }
+    return { errorKey: 'validation.reqHours', error: 'Hours must be greater than 0' }
   }
 
   // ── Lookup job_id từ job_steps ──────────────────────────────────────
@@ -33,7 +33,7 @@ export async function createWorklog(
     .single()
 
   if (stepError || !step?.job_id) {
-    return { error: '工程情報の取得に失敗しました / Không lấy được thông tin bước công việc.' }
+    return { errorKey: 'validation.stepNotFound', error: 'Job step info not found' }
   }
 
   const job_id = step.job_id

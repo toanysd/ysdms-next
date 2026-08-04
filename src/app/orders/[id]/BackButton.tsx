@@ -1,9 +1,11 @@
 import Link from 'next/link'
 import { ArrowLeft, ArrowUpFromLine } from 'lucide-react'
 import { useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 
 export function OrderBackButton() {
   const router = useRouter()
+  const t = useTranslations('Cases')
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
       <button 
@@ -12,7 +14,7 @@ export function OrderBackButton() {
         style={{ height: 32, padding: '0 12px' }}
       >
         <ArrowLeft size={14} />
-        <span style={{ fontFamily: 'var(--font-jp)' }}>戻る</span>
+        <span>{t('back')}</span>
       </button>
       
       <Link 
@@ -21,7 +23,7 @@ export function OrderBackButton() {
         style={{ height: 32, padding: '0 12px', textDecoration: 'none' }}
       >
         <ArrowUpFromLine size={14} />
-        <span style={{ fontFamily: 'var(--font-jp)' }}>一覧</span>
+        <span>{t('list')}</span>
       </Link>
     </div>
   )

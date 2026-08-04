@@ -1,17 +1,16 @@
 'use client'
 
 import React, { useEffect, useState, useCallback } from 'react'
-import { useTranslations, useLocale } from 'next-intl'
+import { useTranslations } from 'next-intl'
 import Link from 'next/link'
 import {
-  Package, Wrench, Hammer, FileText, Building2, Layers, Plus,
-  CheckCircle2, Clock, AlertCircle, ExternalLink, RefreshCw, BarChart2
+  Package, Wrench, Hammer, FileText, Building2, Plus,
+  ExternalLink, RefreshCw
 } from 'lucide-react'
 import { getDashboardData, RealDashboardData } from '@/app/actions/dashboard'
 
 export default function DashboardPage() {
   const t = useTranslations('Dashboard')
-  const locale = useLocale()
 
   const [data, setData] = useState<RealDashboardData | null>(null)
   const [loading, setLoading] = useState(true)
@@ -34,9 +33,9 @@ export default function DashboardPage() {
 
   const renderJobStatusBadge = (st: string | null) => {
     const status = st || 'DRAFT'
-    if (status === 'COMPLETED') return <span className="badge badge--success">完了 / Complete</span>
-    if (status === 'IN_PROGRESS') return <span className="badge badge--warning">進行中 / In Progress</span>
-    if (status === 'PLANNED') return <span className="badge badge--info">計画中 / Planned</span>
+    if (status === 'COMPLETED') return <span className="badge badge--success">{t('statusCompleted')}</span>
+    if (status === 'IN_PROGRESS') return <span className="badge badge--warning">{t('statusInProgress')}</span>
+    if (status === 'PLANNED') return <span className="badge badge--info">{t('statusPlanned')}</span>
     return <span className="badge badge--neutral">{status}</span>
   }
 
@@ -49,10 +48,10 @@ export default function DashboardPage() {
           <Package size={22} style={{ color: 'var(--accent)' }} />
           <div>
             <h1 style={{ fontSize: 16, fontWeight: 700, fontFamily: 'var(--font-jp)', color: 'var(--text-primary)', margin: 0 }}>
-              製品・生産統括ダッシュボード
+              {t('title')}
             </h1>
             <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
-              Bảng điều khiển tổng quan lấy Sản phẩm Master & Chỉ thị Gia công làm trung tâm
+              {t('subtitle')}
             </span>
           </div>
         </div>
@@ -62,10 +61,10 @@ export default function DashboardPage() {
             onClick={loadData}
             className="btn btn-secondary"
             style={{ height: 30, padding: '0 10px', gap: 4, fontSize: 11 }}
-            title="Dữ liệu mới"
+            title={t('updateBtn')}
           >
             <RefreshCw size={12} className={loading ? 'animate-spin' : ''} />
-            <span>更新</span>
+            <span>{t('updateBtn')}</span>
           </button>
           <Link
             href="/equipment/jobs/quick-create"
@@ -73,7 +72,7 @@ export default function DashboardPage() {
             style={{ height: 30, padding: '0 12px', gap: 6, fontSize: 12, textDecoration: 'none' }}
           >
             <Plus size={14} />
-            <span>一括登録 (Tạo nhanh 1-Trang)</span>
+            <span>{t('quickCreateBtn')}</span>
           </Link>
           <Link
             href="/worklog"
@@ -81,19 +80,19 @@ export default function DashboardPage() {
             style={{ height: 30, padding: '0 12px', gap: 6, fontSize: 12, textDecoration: 'none' }}
           >
             <FileText size={14} />
-            <span>作業日報 (Nippo)</span>
+            <span>{t('worklogBtn')}</span>
           </Link>
         </div>
       </div>
 
-      {/* ── Row 1: Real KPI Cards (4 Cards) ── */}
+      {/* ── Row 1: Real KPI Cards (4 Cards with Visual Anchor Tints) ── */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, flexShrink: 0 }}>
         
         {/* KPI 1: Products */}
-        <div className="card-flat" style={{ padding: '14px 16px', borderTop: '3px solid var(--accent)' }}>
+        <div className="card-flat" style={{ padding: '14px 16px', background: 'var(--tint-teal-bg)' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--accent)', fontFamily: 'var(--font-jp)' }}>
-              製品マスター (Master SP)
+              {t('kpiProducts')}
             </span>
             <Package size={16} style={{ color: 'var(--accent)', opacity: 0.8 }} />
           </div>
@@ -102,16 +101,16 @@ export default function DashboardPage() {
               {loading ? '...' : (data?.kpis.totalProducts || 0).toLocaleString()}
             </span>
             <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>
-              {loading ? '' : `${(data?.kpis.totalDesignRevisions || 0).toLocaleString()} bản vẽ CAD`}
+              {loading ? '' : t('kpiDesignRevisions', { count: (data?.kpis.totalDesignRevisions || 0).toLocaleString() })}
             </span>
           </div>
         </div>
 
         {/* KPI 2: Physical Molds */}
-        <div className="card-flat" style={{ padding: '14px 16px', borderTop: '3px solid var(--status-info)' }}>
+        <div className="card-flat" style={{ padding: '14px 16px', background: 'var(--tint-blue-bg)' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--status-info)', fontFamily: 'var(--font-jp)' }}>
-              保有金型 (Khuôn Vật Lý)
+              {t('kpiPhysicalMolds')}
             </span>
             <Wrench size={16} style={{ color: 'var(--status-info)', opacity: 0.8 }} />
           </div>
@@ -120,16 +119,16 @@ export default function DashboardPage() {
               {loading ? '...' : (data?.kpis.totalPhysicalMolds || 0).toLocaleString()}
             </span>
             <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>
-              {loading ? '' : `${(data?.kpis.totalCutters || 0).toLocaleString()} dao cắt`}
+              {loading ? '' : t('kpiCutters', { count: (data?.kpis.totalCutters || 0).toLocaleString() })}
             </span>
           </div>
         </div>
 
         {/* KPI 3: Mold Jobs */}
-        <div className="card-flat" style={{ padding: '14px 16px', borderTop: '3px solid var(--status-warning)' }}>
+        <div className="card-flat" style={{ padding: '14px 16px', background: 'var(--tint-orange-bg)' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--status-warning)', fontFamily: 'var(--font-jp)' }}>
-              加工指示 (Chỉ Thị Gia Công)
+              {t('kpiJobs')}
             </span>
             <Hammer size={16} style={{ color: 'var(--status-warning)', opacity: 0.8 }} />
           </div>
@@ -138,16 +137,16 @@ export default function DashboardPage() {
               {loading ? '...' : (data?.kpis.totalJobs || 0).toLocaleString()}
             </span>
             <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>
-              {loading ? '' : `${(data?.kpis.totalWorkLogs || 0).toLocaleString()} lượt Nippo`}
+              {loading ? '' : t('kpiWorklogs', { count: (data?.kpis.totalWorkLogs || 0).toLocaleString() })}
             </span>
           </div>
         </div>
 
         {/* KPI 4: Companies */}
-        <div className="card-flat" style={{ padding: '14px 16px', borderTop: '3px solid var(--status-success)' }}>
+        <div className="card-flat" style={{ padding: '14px 16px', background: 'var(--tint-purple-bg)' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--status-success)', fontFamily: 'var(--font-jp)' }}>
-              得意先企業 (Khách Hàng)
+              {t('kpiCompanies')}
             </span>
             <Building2 size={16} style={{ color: 'var(--status-success)', opacity: 0.8 }} />
           </div>
@@ -156,7 +155,7 @@ export default function DashboardPage() {
               {loading ? '...' : (data?.kpis.totalCompanies || 0).toLocaleString()}
             </span>
             <span style={{ fontSize: 10, color: 'var(--status-success)', fontWeight: 600 }}>
-              100% Real Access Data
+              {t('kpiRealAccess')}
             </span>
           </div>
         </div>
@@ -168,8 +167,8 @@ export default function DashboardPage() {
         
         {/* Widget 1: Job Status */}
         <div className="card-flat" style={{ padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border-default)', paddingBottom: 6 }}>
-            <span style={{ fontSize: 12, fontWeight: 700, fontFamily: 'var(--font-jp)' }}>📊 ジョブ進捗 (Trạng thái Job)</span>
+          <div className="card-header-tint" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 8px', borderRadius: 4 }}>
+            <span style={{ fontSize: 12, fontWeight: 700, fontFamily: 'var(--font-jp)' }}>{t('jobStatusTitle')}</span>
             <span className="badge badge--info" style={{ fontSize: 9 }}>Real</span>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -184,8 +183,8 @@ export default function DashboardPage() {
 
         {/* Widget 2: Mold Device Status */}
         <div className="card-flat" style={{ padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border-default)', paddingBottom: 6 }}>
-            <span style={{ fontSize: 12, fontWeight: 700, fontFamily: 'var(--font-jp)' }}>🛠️ 金型状態 (Trạng thái Khuôn)</span>
+          <div className="card-header-tint" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 8px', borderRadius: 4 }}>
+            <span style={{ fontSize: 12, fontWeight: 700, fontFamily: 'var(--font-jp)' }}>{t('moldStatusTitle')}</span>
             <span className="badge badge--success" style={{ fontSize: 9 }}>Real</span>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -200,8 +199,8 @@ export default function DashboardPage() {
 
         {/* Widget 3: Asset Ratio */}
         <div className="card-flat" style={{ padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border-default)', paddingBottom: 6 }}>
-            <span style={{ fontSize: 12, fontWeight: 700, fontFamily: 'var(--font-jp)' }}>📐 技術資産 (Tài Sản Kỹ Thuật)</span>
+          <div className="card-header-tint" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 8px', borderRadius: 4 }}>
+            <span style={{ fontSize: 12, fontWeight: 700, fontFamily: 'var(--font-jp)' }}>{t('techAssetsTitle')}</span>
             <span className="badge badge--neutral" style={{ fontSize: 9 }}>Access Data</span>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: 11 }}>
@@ -222,21 +221,21 @@ export default function DashboardPage() {
 
         {/* Widget 4: Nippo Worklogs */}
         <div className="card-flat" style={{ padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border-default)', paddingBottom: 6 }}>
-            <span style={{ fontSize: 12, fontWeight: 700, fontFamily: 'var(--font-jp)' }}>📝 作業日報 (Nhật ký Nippo)</span>
+          <div className="card-header-tint" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 8px', borderRadius: 4 }}>
+            <span style={{ fontSize: 12, fontWeight: 700, fontFamily: 'var(--font-jp)' }}>{t('nippoTitle')}</span>
             <span className="badge badge--warning" style={{ fontSize: 9 }}>Active</span>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: 11 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span style={{ color: 'var(--text-secondary)' }}>Tổng lượt ghi nhật ký</span>
+              <span style={{ color: 'var(--text-secondary)' }}>{t('nippoTotalLogs')}</span>
               <span style={{ fontWeight: 700, fontFamily: 'monospace', color: 'var(--accent)' }}>6,980</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span style={{ color: 'var(--text-secondary)' }}>Nhân viên tham gia</span>
+              <span style={{ color: 'var(--text-secondary)' }}>{t('nippoEmployees')}</span>
               <span style={{ fontWeight: 700, fontFamily: 'monospace' }}>45+</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span style={{ color: 'var(--text-secondary)' }}>Công đoạn tiêu chuẩn</span>
+              <span style={{ color: 'var(--text-secondary)' }}>{t('nippoProcesses')}</span>
               <span style={{ fontWeight: 700, fontFamily: 'monospace' }}>44</span>
             </div>
           </div>
@@ -249,15 +248,15 @@ export default function DashboardPage() {
         
         {/* Left: 10 Recent Real Jobs */}
         <div className="card-flat" style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden', padding: 0 }}>
-          <div style={{ padding: '10px 14px', borderBottom: '1px solid var(--border-default)', background: 'var(--bg-surface-2)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div className="card-header-tint" style={{ padding: '10px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <Hammer size={14} style={{ color: 'var(--accent)' }} />
               <h3 style={{ margin: 0, fontSize: 13, fontWeight: 700, fontFamily: 'var(--font-jp)' }}>
-                直近の加工ジョブ (10 Chỉ thị gia công gần đây nhất)
+                {t('recentJobs.title')}
               </h3>
             </div>
             <Link href="/equipment/jobs" style={{ fontSize: 11, color: 'var(--accent)', textDecoration: 'none', fontWeight: 600 }}>
-              すべて見る ➔
+              {t('recentJobs.viewAll')}
             </Link>
           </div>
 
@@ -265,24 +264,24 @@ export default function DashboardPage() {
             <table className="data-table">
               <thead>
                 <tr>
-                  <th style={{ width: 110 }}>ジョブコード</th>
-                  <th>ジョブ名 / Tên Job</th>
-                  <th style={{ width: 120 }}>対象金型 / Khuôn</th>
-                  <th style={{ width: 100 }}>納期 / Hạn chót</th>
-                  <th style={{ width: 110, textAlign: 'center' }}>ステータス</th>
+                  <th style={{ width: 110 }}>{t('recentJobs.colCode')}</th>
+                  <th>{t('recentJobs.colName')}</th>
+                  <th style={{ width: 120 }}>{t('recentJobs.colMold')}</th>
+                  <th style={{ width: 100 }}>{t('recentJobs.colDeadline')}</th>
+                  <th style={{ width: 110, textAlign: 'center' }}>{t('recentJobs.colStatus')}</th>
                 </tr>
               </thead>
               <tbody>
                 {loading ? (
                   <tr>
                     <td colSpan={5} style={{ textAlign: 'center', padding: 30, color: 'var(--text-muted)', fontSize: 12 }}>
-                      Dữ liệu thực đang tải từ Supabase...
+                      {t('recentJobs.loading')}
                     </td>
                   </tr>
                 ) : data?.recentJobs.length === 0 ? (
                   <tr>
                     <td colSpan={5} style={{ textAlign: 'center', padding: 30, color: 'var(--text-muted)', fontSize: 12 }}>
-                      Chưa có Job gia công nào.
+                      {t('recentJobs.empty')}
                     </td>
                   </tr>
                 ) : (
@@ -316,27 +315,27 @@ export default function DashboardPage() {
 
         {/* Right: Master System Stats */}
         <div className="card-flat" style={{ display: 'flex', flexDirection: 'column', padding: 0, overflow: 'hidden' }}>
-          <div style={{ padding: '10px 14px', borderBottom: '1px solid var(--border-default)', background: 'var(--bg-surface-2)' }}>
+          <div className="card-header-tint" style={{ padding: '10px 14px' }}>
             <h3 style={{ margin: 0, fontSize: 13, fontWeight: 700, fontFamily: 'var(--font-jp)' }}>
-              システムマスター統計 (Thống kê Master Data Real)
+              {t('systemMasterStats.title')}
             </h3>
           </div>
           <div style={{ padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 10, flex: 1, overflowY: 'auto' }}>
             {([
-              ['products', '製品マスター (Sản phẩm master)', (data?.kpis.totalProducts || 0).toLocaleString(), '4,078 khay thực tế'],
-              ['designs', '設計リビジョン (Bản vẽ CAD)', (data?.kpis.totalDesignRevisions || 0).toLocaleString(), '4,735 bản vẽ'],
-              ['molds', '物理金型 (Khuôn vật lý)', (data?.kpis.totalPhysicalMolds || 0).toLocaleString(), '4,751 chiếc khuôn'],
-              ['cutters', '抜型 (Dao cắt vật lý)', (data?.kpis.totalCutters || 0).toLocaleString(), '1,283 chiếc dao'],
-              ['jobs', '加工指示 (Chỉ thị gia công)', (data?.kpis.totalJobs || 0).toLocaleString(), '1,183 Job chỉ thị'],
-              ['worklogs', '作業日報 (Nhật ký công việc)', (data?.kpis.totalWorkLogs || 0).toLocaleString(), '6,980 lượt Nippo'],
-              ['companies', '得意先企業 (Doanh nghiệp KH)', (data?.kpis.totalCompanies || 0).toLocaleString(), '1,991 công ty'],
+              ['products', t('systemMasterStats.masterItemProducts'), (data?.kpis.totalProducts || 0).toLocaleString(), t('systemMasterStats.masterItemProductsSub', { count: (data?.kpis.totalProducts || 0).toLocaleString() })],
+              ['designs', t('systemMasterStats.masterItemDesigns'), (data?.kpis.totalDesignRevisions || 0).toLocaleString(), t('systemMasterStats.masterItemDesignsSub', { count: (data?.kpis.totalDesignRevisions || 0).toLocaleString() })],
+              ['molds', t('systemMasterStats.masterItemMolds'), (data?.kpis.totalPhysicalMolds || 0).toLocaleString(), t('systemMasterStats.masterItemMoldsSub', { count: (data?.kpis.totalPhysicalMolds || 0).toLocaleString() })],
+              ['cutters', t('systemMasterStats.masterItemCutters'), (data?.kpis.totalCutters || 0).toLocaleString(), t('systemMasterStats.masterItemCuttersSub', { count: (data?.kpis.totalCutters || 0).toLocaleString() })],
+              ['jobs', t('systemMasterStats.masterItemJobs'), (data?.kpis.totalJobs || 0).toLocaleString(), t('systemMasterStats.masterItemJobsSub', { count: (data?.kpis.totalJobs || 0).toLocaleString() })],
+              ['worklogs', t('systemMasterStats.masterItemWorklogs'), (data?.kpis.totalWorkLogs || 0).toLocaleString(), t('systemMasterStats.masterItemWorklogsSub', { count: (data?.kpis.totalWorkLogs || 0).toLocaleString() })],
+              ['companies', t('systemMasterStats.masterItemCompanies'), (data?.kpis.totalCompanies || 0).toLocaleString(), t('systemMasterStats.masterItemCompaniesSub', { count: (data?.kpis.totalCompanies || 0).toLocaleString() })],
             ] as [string, string, string, string][]).map(([key, label, val, sub], i) => (
               <div key={key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: i < 6 ? '1px solid var(--border-subtle)' : 'none', paddingBottom: 6 }}>
                 <div>
                   <div style={{ fontSize: 12, fontWeight: 600, fontFamily: 'var(--font-jp)', color: 'var(--text-primary)' }}>{label}</div>
                   <div style={{ fontSize: 10, color: 'var(--text-muted)' }}>{sub}</div>
                 </div>
-                <span style={{ fontSize: 15, fontWeight: 700, fontFamily: 'monospace', color: 'var(--text-primary)' }}>{val}</span>
+                <span style={{ fontSize: 14, fontWeight: 700, fontFamily: 'monospace', color: 'var(--text-primary)' }}>{val}</span>
               </div>
             ))}
           </div>
@@ -344,7 +343,7 @@ export default function DashboardPage() {
           <div style={{ padding: '8px 14px', borderTop: '1px solid var(--border-default)', background: 'var(--bg-surface-2)', textAlign: 'center' }}>
             <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11, color: 'var(--status-success)', fontWeight: 600 }}>
               <div className="badge-dot badge-dot--success" />
-              <span>Database Status: ONLINE & 100% SYNCED</span>
+              <span>{t('systemMasterStats.onlineStatus')}</span>
             </div>
           </div>
         </div>

@@ -14,41 +14,40 @@ export default async function MaintenanceLogPage() {
   const fmtCurrency = (v: number) => new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY', maximumFractionDigits: 0 }).format(v)
 
   return (
-    <div className="flex flex-col h-full bg-[var(--mcs-surface)] rounded-lg overflow-hidden m-2 border border-teal-200 shadow-sm">
+    <div className="flex flex-col h-full rounded-lg overflow-hidden m-2 border border-[var(--mcs-border)] card-flat">
       {/* Header */}
-      <div className="h-[48px] bg-teal-50 px-4 flex items-center justify-between border-b border-teal-200 shrink-0">
+      <div className="h-[48px] bg-[var(--tint-teal-bg)] px-4 flex items-center justify-between border-b border-[var(--mcs-border)] shrink-0">
         <div className="flex items-center gap-2">
-          <Link href="/maintenance" className="text-teal-500 hover:text-teal-700 transition-colors" title="Back">
+          <Link href="/maintenance" className="hover:opacity-80 transition-colors" title="Back" style={{ color: 'var(--accent)' }}>
             <ArrowLeft size={18} />
           </Link>
-          <History size={20} className="text-teal-700" />
-          <h2 className="text-[14px] font-bold text-teal-900 flex flex-col">
+          <History size={20} style={{ color: 'var(--accent)' }} />
+          <h2 className="text-[14px] font-bold flex flex-col" style={{ color: 'var(--text-primary)' }}>
             {t('maintenanceLogs')}
-            <span className="text-teal-700 font-normal mt-[-2px] text-[10px]">{t('physicalMoldsLogSubtitle')}</span>
+            <span className="font-normal mt-[-2px] text-[10px]" style={{ color: 'var(--text-muted)' }}>{t('physicalMoldsLogSubtitle')}</span>
           </h2>
         </div>
 
         <div className="flex items-center gap-3">
           <div className="relative group hidden sm:block">
-            <Search className="absolute left-2 top-1.5 text-teal-400" size={16} />
+            <Search className="absolute left-2 top-1.5" style={{ color: 'var(--text-muted)' }} size={16} />
             <input
               type="text"
               disabled
               placeholder={t('searchPicPlaceholder')}
-              className="h-[30px] w-[200px] pl-8 text-xs border border-teal-200 bg-white/50 text-slate-400 rounded outline-none cursor-not-allowed"
+              className="form-input h-[30px] w-[200px] pl-8 text-[12px] opacity-50 cursor-not-allowed"
             />
           </div>
-          {/* Placeholder for Add action if needed via Client Component form later */}
-          <button className="bg-teal-700 hover:bg-teal-800 text-white h-[30px] px-3 flex items-center gap-1.5 text-xs rounded transition-colors shadow-sm font-bold opacity-50 cursor-not-allowed">
+          <button className="btn btn-primary h-[30px] px-3 flex items-center gap-1.5 text-[12px] font-bold opacity-50 cursor-not-allowed">
             <Settings size={14} />
             {t('maintenanceRecordBtn')}
           </button>
         </div>
       </div>
 
-      <div className="flex-1 overflow-auto bg-white">
-        <table className="w-full text-left border-collapse min-w-[900px]">
-          <thead className="bg-slate-50 sticky top-0 z-10 shadow-[0_1px_0_var(--mcs-border)] text-[11px] text-slate-500 whitespace-nowrap">
+      <div className="flex-1 overflow-auto">
+        <table className="data-table w-full text-left min-w-[900px]">
+          <thead>
             <tr>
               <th className="p-3 font-bold w-[120px]">{t('maintDateCol')}</th>
               <th className="p-3 font-bold">{t('physicalMoldCol')}</th>
@@ -59,30 +58,42 @@ export default async function MaintenanceLogPage() {
               <th className="p-3 font-bold w-[150px]">{t('performedByCol')}</th>
             </tr>
           </thead>
-          <tbody className="text-[12px]">
+          <tbody>
             {logs.map(log => (
-              <tr key={log.id} className="border-b border-slate-100 hover:bg-teal-50/20 transition-colors">
-                <td className="p-3 font-mono text-slate-600 font-bold">{new Date(log.maintenance_date).toLocaleDateString('ja-JP')}</td>
-                <td className="p-3">
-                  <span className="font-mono bg-slate-100 px-2 py-0.5 rounded text-teal-800">{log.mold_physical_id.substring(0, 8)}...</span>
+              <tr key={log.id} className="border-b border-[var(--mcs-border)] hover:bg-[var(--tint-teal-bg)]/20 transition-colors">
+                <td className="p-3 font-mono font-bold text-[13px]" style={{ color: 'var(--text-primary)' }}>
+                  {new Date(log.maintenance_date).toLocaleDateString('ja-JP')}
                 </td>
                 <td className="p-3">
-                  <span className="px-2 py-0.5 text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200 rounded uppercase">
+                  <Link href={`/equipment/molds/${log.mold_physical_id}`} className="font-mono font-bold text-[13px] hover:underline" style={{ color: 'var(--accent)' }}>
+                    {log.mold_physical_id.substring(0, 8)}...
+                  </Link>
+                </td>
+                <td className="p-3">
+                  <span className="badge badge--info text-[11px] font-bold uppercase">
                     {log.maintenance_type || 'routine'}
                   </span>
                 </td>
-                <td className="p-3 text-right font-mono text-slate-700">{log.shots_at_maintenance ? fmt(log.shots_at_maintenance) : '-'}</td>
-                <td className="p-3 text-slate-600 truncate max-w-[250px]" title={log.action_taken || ''}>{log.action_taken || '-'}</td>
-                <td className="p-3 text-right font-mono text-amber-700">{log.cost ? fmtCurrency(log.cost) : '-'}</td>
-                <td className="p-3 font-bold text-slate-700">{log.performed_by || '-'}</td>
+                <td className="p-3 text-right font-mono font-bold text-[13px]" style={{ color: 'var(--text-primary)' }}>
+                  {log.shots_at_maintenance ? fmt(log.shots_at_maintenance) : '-'}
+                </td>
+                <td className="p-3 text-[13px] truncate max-w-[250px]" style={{ color: 'var(--text-primary)' }} title={log.action_taken || ''}>
+                  {log.action_taken || '-'}
+                </td>
+                <td className="p-3 text-right font-mono font-bold text-[13px]" style={{ color: 'var(--status-warning)' }}>
+                  {log.cost ? fmtCurrency(log.cost) : '-'}
+                </td>
+                <td className="p-3 font-bold text-[13px]" style={{ color: 'var(--text-primary)' }}>
+                  {log.performed_by || '-'}
+                </td>
               </tr>
             ))}
 
             {logs.length === 0 && (
               <tr>
-                <td colSpan={7} className="p-8 text-center text-slate-400 italic">
+                <td colSpan={7} className="p-8 text-center text-[13px] italic" style={{ color: 'var(--text-muted)' }}>
                   <div className="flex flex-col items-center justify-center gap-2">
-                    <Wrench size={32} className="text-slate-300" />
+                    <Wrench size={32} style={{ color: 'var(--text-muted)' }} />
                     <p>{t('noLogData')}</p>
                   </div>
                 </td>
@@ -93,10 +104,11 @@ export default async function MaintenanceLogPage() {
       </div>
 
       {/* Footer */}
-      <div className="p-3 bg-slate-50 border-t border-slate-200 flex items-center justify-between text-[11px] text-slate-500">
+      <div className="p-3 bg-[var(--tint-teal-bg)]/50 border-t border-[var(--mcs-border)] flex items-center justify-between text-[11px] font-medium" style={{ color: 'var(--text-muted)' }}>
         <span>{t('totalLogs', { count: logs.length })}</span>
-        <span className="text-slate-400">{t('dataSourceLabel')}</span>
+        <span>{t('dataSourceLabel')}</span>
       </div>
     </div>
   )
 }
+

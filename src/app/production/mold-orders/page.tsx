@@ -352,7 +352,7 @@ export default function MoldWorkOrdersPage() {
             order_status: 'APPROVED',
             order_date: new Date().toISOString(),
             order_type: 'MOLD_ONLY',
-            notes: '自動作成された金型起工用暫定受注 / Đơn tạm sinh cho thiết kế khuôn'
+            notes: '自動作成された金型起工用暫定受注'
           })
           .select('order_id')
           .single();

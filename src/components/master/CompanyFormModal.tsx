@@ -262,24 +262,30 @@ export const CompanyFormModal: React.FC<CompanyFormModalProps> = ({ isOpen, onCl
                 <div className="grid grid-cols-2 gap-4">
                   <div className="flex flex-col gap-1">
                     <label className="text-xs font-bold">{t('companyCode')}</label>
-                    <input type="text" required value={companyCode} onChange={e => setCompanyCode(e.target.value.toUpperCase())} className="h-[32px] px-2 rounded border border-[var(--border-default)] bg-transparent w-full" placeholder="VD: YSD" />
+                    <input type="text" required value={companyCode} onChange={e => setCompanyCode(e.target.value.toUpperCase())} className="h-[32px] px-2 rounded border border-[var(--border-default)] bg-transparent w-full" placeholder={t('placeholderCode')} />
                   </div>
                   <div className="flex flex-col gap-1">
                     <label className="text-xs font-bold">{t('companyName')}</label>
-                    <input type="text" required value={companyName} onChange={e => setCompanyName(e.target.value)} className="h-[32px] px-2 rounded border border-[var(--border-default)] bg-transparent w-full" placeholder="VD: Yoshida Package" />
+                    <input type="text" required value={companyName} onChange={e => setCompanyName(e.target.value)} className="h-[32px] px-2 rounded border border-[var(--border-default)] bg-transparent w-full" placeholder={t('placeholderName')} />
                   </div>
                   <div className="flex flex-col gap-1 col-span-2">
                     <label className="text-xs font-bold">{t('companyNameRomaji')}</label>
-                    <input type="text" value={companyNameRomaji} onChange={e => setCompanyNameRomaji(e.target.value)} className="h-[32px] px-2 rounded border border-[var(--border-default)] bg-transparent w-full" placeholder="VD: Yoshida Package Co., Ltd" />
+                    <input type="text" value={companyNameRomaji} onChange={e => setCompanyNameRomaji(e.target.value)} className="h-[32px] px-2 rounded border border-[var(--border-default)] bg-transparent w-full" placeholder={t('placeholderNameRomaji')} />
                   </div>
                   
                   <div className="flex flex-col gap-2 col-span-2 mt-2">
                     <label className="text-xs font-bold">{t('companyType')}</label>
                     <div className="flex flex-wrap gap-4 bg-[var(--bg-surface-2)] p-3 rounded border border-[var(--border-default)]">
-                      {(['CUSTOMER', 'SUPPLIER', 'OUTSOURCE', 'SUBCONTRACTOR', 'MOLD_OWNER'] as const).map(typeKey => (
-                        <label key={typeKey} className="flex items-center gap-2 cursor-pointer text-sm">
-                          <input type="checkbox" checked={companyType.includes(typeKey)} onChange={() => toggleType(typeKey)} className="rounded border-gray-300" />
-                          <span className="font-bold">{t('types.' + typeKey)}</span>
+                      {([
+                        { key: 'CUSTOMER', label: t('types.CUSTOMER') },
+                        { key: 'SUPPLIER', label: t('types.SUPPLIER') },
+                        { key: 'OUTSOURCE', label: t('types.OUTSOURCE') },
+                        { key: 'SUBCONTRACTOR', label: t('types.SUBCONTRACTOR') },
+                        { key: 'MOLD_OWNER', label: t('types.MOLD_OWNER') },
+                      ] as const).map(item => (
+                        <label key={item.key} className="flex items-center gap-2 cursor-pointer text-sm">
+                          <input type="checkbox" checked={companyType.includes(item.key)} onChange={() => toggleType(item.key)} className="rounded border-[var(--border-default)]" />
+                          <span className="font-bold" style={{ color: 'var(--text-primary)' }}>{item.label}</span>
                         </label>
                       ))}
                     </div>
@@ -330,7 +336,7 @@ export const CompanyFormModal: React.FC<CompanyFormModalProps> = ({ isOpen, onCl
                         {!site.site_id.startsWith('temp-') && (
                           <button type="button" onClick={() => loadHistory(site.site_id)} className="text-[var(--text-muted)] p-1 hover:bg-[var(--bg-surface-hover)] hover:text-[var(--accent)] rounded" title={t('historyTitle')}><History size={14}/></button>
                         )}
-                        <button type="button" onClick={() => setSites(sites.filter(s => s.site_id !== site.site_id))} className="text-[var(--status-error)] p-1 hover:bg-red-50 rounded"><Trash2 size={14}/></button>
+                        <button type="button" onClick={() => setSites(sites.filter(s => s.site_id !== site.site_id))} className="text-[var(--status-error)] p-1 hover:bg-[var(--bg-surface-hover)] rounded"><Trash2 size={14}/></button>
                       </div>
                       <div className="grid grid-cols-2 gap-2 pr-12">
                         <Input label={t('siteCode')} required value={site.site_code} onChange={e => { const n = [...sites]; n[i].site_code = e.target.value; setSites(n); }} />
@@ -357,7 +363,7 @@ export const CompanyFormModal: React.FC<CompanyFormModalProps> = ({ isOpen, onCl
                   {contacts.map((contact, i) => (
                     <div key={contact.contact_id} className="bg-[var(--bg-surface-2)] p-3 rounded border border-[var(--border-default)] flex flex-col gap-2 relative">
                       {contact.contact_id.startsWith('temp-') && (
-                        <button type="button" onClick={() => setContacts(contacts.filter(c => c.contact_id !== contact.contact_id))} className="absolute top-2 right-2 text-[var(--status-error)] p-1 hover:bg-red-50 rounded"><Trash2 size={14}/></button>
+                        <button type="button" onClick={() => setContacts(contacts.filter(c => c.contact_id !== contact.contact_id))} className="absolute top-2 right-2 text-[var(--status-error)] p-1 hover:bg-[var(--bg-surface-hover)] rounded"><Trash2 size={14}/></button>
                       )}
                       <div className="grid grid-cols-2 gap-2 pr-6">
                         <Input label={t('contactName')} required value={contact.contact_name} onChange={e => { const n = [...contacts]; n[i].contact_name = e.target.value; setContacts(n); }} />

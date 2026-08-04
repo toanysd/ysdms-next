@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { ChevronDown, Search, X } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 
 export interface SelectOption {
   value: string;
@@ -14,11 +15,13 @@ export interface SearchableSelectProps {
   disabled?: boolean;
 }
 
-export const SearchableSelect: React.FC<SearchableSelectProps> = ({ options, value, onChange, placeholder = '選択してください', disabled }) => {
+export const SearchableSelect: React.FC<SearchableSelectProps> = ({ options, value, onChange, placeholder, disabled }) => {
+  const t = useTranslations('Common')
   const [isOpen, setIsOpen] = useState(false)
   const [search, setSearch] = useState('')
   const containerRef = useRef<HTMLDivElement>(null)
 
+  const effectivePlaceholder = placeholder || t('selectPlaceholder')
   const selectedOption = options.find(o => o.value === value)
 
   // Filter options
@@ -41,8 +44,8 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({ options, val
         className={`w-full h-[32px] px-2 border rounded flex items-center justify-between bg-[var(--bg-surface)] ${disabled ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'} border-[var(--border-default)]`}
         onClick={() => { if(!disabled) { setIsOpen(!isOpen); setSearch(''); } }}
       >
-        <span className={selectedOption ? 'text-[var(--text-primary)]' : 'text-[var(--text-muted)] truncate'}>
-          {selectedOption ? selectedOption.label : placeholder}
+        <span className={selectedOption ? 'text-[var(--text-primary)] font-semibold' : 'text-[var(--text-muted)] truncate'}>
+          {selectedOption ? selectedOption.label : effectivePlaceholder}
         </span>
         <div className="flex items-center gap-1 text-[var(--text-muted)]">
           {selectedOption && !disabled && (
@@ -68,19 +71,19 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({ options, val
               type="text"
               autoFocus
               className="w-full bg-transparent border-none outline-none text-[12px] text-[var(--text-primary)]"
-              placeholder="検索..."
+              placeholder={t('searchPlaceholder')}
               value={search}
               onChange={e => setSearch(e.target.value)}
             />
           </div>
           <div className="overflow-y-auto p-1 custom-scrollbar" style={{ flex: 1 }}>
             {filtered.length === 0 ? (
-              <div className="p-2 text-center text-[var(--text-muted)]">見つかりません</div>
+              <div className="p-2 text-center text-[var(--text-muted)]">{t('notFound')}</div>
             ) : (
               filtered.map(opt => (
                 <div
                   key={opt.value}
-                  className={`px-2 py-1.5 cursor-pointer rounded transition-colors ${opt.value === value ? 'bg-[var(--accent)] text-white' : 'hover:bg-[var(--bg-active)] text-[var(--text-primary)]'}`}
+                  className={`px-2 py-1.5 cursor-pointer rounded transition-colors ${opt.value === value ? 'bg-[var(--accent)] text-white font-bold' : 'hover:bg-[var(--bg-active)] text-[var(--text-primary)]'}`}
                   onClick={() => { onChange(opt.value); setIsOpen(false); }}
                 >
                   {opt.label}
@@ -93,3 +96,4 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({ options, val
     </div>
   )
 }
+

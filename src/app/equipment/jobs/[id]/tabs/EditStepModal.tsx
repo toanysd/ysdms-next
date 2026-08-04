@@ -26,18 +26,12 @@ type StepData = {
 }
 
 type Props = {
-  step: StepData | null // null means creating a new step
+  step: StepData | null
   jobId: string
   nextStepNo: number
   onClose: () => void
   onSaved: () => void
 }
-
-const STATUS_OPTIONS = [
-  { value: 'PENDING', ja: '未着手' },
-  { value: 'IN_PROGRESS', ja: '進行中' },
-  { value: 'COMPLETED', ja: '完了' },
-]
 
 export function EditStepModal({ step, jobId, nextStepNo, onClose, onSaved }: Props) {
   const t = useTranslations()
@@ -142,13 +136,13 @@ export function EditStepModal({ step, jobId, nextStepNo, onClose, onSaved }: Pro
       setStepName(p.process_name_ja)
       setTrack(p.track || '')
       setEstimatedHours(p.default_hours?.toString() || '')
-      setPlannedHours('') // DO NOT auto-fill, leave as placeholder
+      setPlannedHours('')
     }
   }
 
   const handleSaveStep = async () => {
     if (!stepName.trim()) {
-      setError('工程名を入力してください / Vui lòng nhập tên công đoạn')
+      setError(t('Equipment.valStepNameReq'))
       return
     }
 
@@ -187,7 +181,6 @@ export function EditStepModal({ step, jobId, nextStepNo, onClose, onSaved }: Pro
         if (updErr) throw new Error(updErr.message)
       }
 
-      // Recalculate overall_progress on the job
       const { data: allSteps } = await supabase.from('job_steps').select('step_status').eq('job_id', jobId)
 
       if (allSteps && allSteps.length > 0) {
@@ -207,7 +200,7 @@ export function EditStepModal({ step, jobId, nextStepNo, onClose, onSaved }: Pro
 
       onSaved()
     } catch (err: any) {
-      setError(err.message || 'エラーが発生しました')
+      setError(err.message || t('Common.updateError'))
     } finally {
       setSaving(false)
     }
@@ -215,7 +208,7 @@ export function EditStepModal({ step, jobId, nextStepNo, onClose, onSaved }: Pro
 
   const handleSaveLog = async () => {
     if (!logCode && !logNotes) {
-      alert('作業内容またはメモを入力してください / Vui lòng nhập nội dung hoặc ghi chú')
+      alert(t('Equipment.valLogContentReq'))
       return
     }
 
@@ -245,16 +238,13 @@ export function EditStepModal({ step, jobId, nextStepNo, onClose, onSaved }: Pro
       
       if (error) throw new Error(error.message)
       
-      // Calculate total actual hours and update step
       const { data: allLogs } = await supabase.from('work_logs').select('hours_spent').eq('job_step_id', step!.step_id)
       if (allLogs) {
         const total = allLogs.reduce((sum, l) => sum + (l.hours_spent || 0), 0)
         setActualHours(total.toString())
-        // Auto update actual hours in DB
         await supabase.from('job_steps').update({ actual_hours: total }).eq('step_id', step!.step_id)
       }
 
-      // Reset form
       setEditingLogId(null)
       setLogCode('')
       setLogHours('')
@@ -265,9 +255,9 @@ export function EditStepModal({ step, jobId, nextStepNo, onClose, onSaved }: Pro
       setLogStatusId('')
       
       fetchLogs()
-      onSaved() // To trigger parent refresh (Step list actual hours)
+      onSaved()
     } catch (err: any) {
-      alert('エラー / Lỗi: ' + err.message)
+      alert(t('Common.updateError') + err.message)
     } finally {
       setAddingLog(false)
     }
@@ -298,11 +288,11 @@ export function EditStepModal({ step, jobId, nextStepNo, onClose, onSaved }: Pro
   }
 
   const handleDeleteLog = async (logId: string) => {
-    if (!window.confirm('このログを削除しますか？ / Bạn có chắc muốn xoá nhật ký này?')) return
+    if (!window.confirm(t('Common.deleteConfirm'))) return
     
     const { error } = await supabase.from('work_logs').delete().eq('log_id', logId)
     if (error) {
-      alert('エラー / Lỗi: ' + error.message)
+      alert(t('Common.deleteError') + error.message)
     } else {
       fetchLogs()
       onSaved()
@@ -318,7 +308,7 @@ export function EditStepModal({ step, jobId, nextStepNo, onClose, onSaved }: Pro
 
       <div className="card" style={{
         position: 'relative', 
-        width: isNew ? 640 : 1100, // Expand if not new to show split pane
+        width: isNew ? 640 : 1100,
         maxWidth: '95vw',
         height: '90vh', 
         display: 'flex', flexDirection: 'column',
@@ -335,7 +325,7 @@ export function EditStepModal({ step, jobId, nextStepNo, onClose, onSaved }: Pro
                 #{stepNo}
               </span>
               <span style={{ fontWeight: 700, fontSize: 16 }}>
-                {isNew ? '新規工程 / Thêm công đoạn' : '工程詳細 / Chi tiết công đoạn'}
+                {isNew ? t('Equipment.themCongOan') : t('Equipment.thongTinCongOan')}
               </span>
             </div>
           </div>
@@ -372,7 +362,7 @@ export function EditStepModal({ step, jobId, nextStepNo, onClose, onSaved }: Pro
                   {t('Equipment.chonTuQuyTrinhChuan')}
                 </label>
                 <select className="form-input" onChange={e => applyStdProcess(e.target.value)} defaultValue="">
-                  <option value="">-- 手動で入力 / Nhập thủ công --</option>
+                  <option value="">-- {t('Equipment.nhapThuCong')} --</option>
                   {stdProcesses.map(p => (
                     <option key={p.id} value={p.id}>
                       [{p.track}] {p.process_name_ja} ({p.default_hours}h)
@@ -393,7 +383,7 @@ export function EditStepModal({ step, jobId, nextStepNo, onClose, onSaved }: Pro
                 <label className="form-label">
                   {t('Equipment.track')}
                 </label>
-                <input className="form-input" value={track} onChange={e => setTrack(e.target.value)} placeholder="例: MOLD, PLUG, FINISH" />
+                <input className="form-input" value={track} onChange={e => setTrack(e.target.value)} placeholder="MOLD, PLUG, FINISH..." />
               </div>
             </div>
 
@@ -403,7 +393,7 @@ export function EditStepModal({ step, jobId, nextStepNo, onClose, onSaved }: Pro
                   {t('Equipment.trangThai')}
                 </label>
                 <select className="form-input" value={processingStatusId} onChange={e => setProcessingStatusId(e.target.value)}>
-                  <option value="">-- 自動算出 / Tự động --</option>
+                  <option value="">-- {t('Equipment.tuDong')} --</option>
                   {processingStatuses.map(opt => (
                     <option key={opt.status_id} value={opt.status_id}>
                       {opt.status_code}{opt.status_name_vi ? ` / ${opt.status_name_vi}` : ''}
@@ -469,12 +459,11 @@ export function EditStepModal({ step, jobId, nextStepNo, onClose, onSaved }: Pro
               </div>
             </div>
 
-
             <div>
               <label className="form-label">
                 {t('Equipment.ghiChu')}
               </label>
-              <textarea className="form-textarea" rows={2} value={notes} onChange={e => setNotes(e.target.value)} placeholder="メモ・注意事項..." />
+              <textarea className="form-textarea" rows={2} value={notes} onChange={e => setNotes(e.target.value)} />
             </div>
 
             {/* Footer for Left Panel */}
@@ -485,7 +474,7 @@ export function EditStepModal({ step, jobId, nextStepNo, onClose, onSaved }: Pro
                     className="btn btn-secondary hover-danger" 
                     style={{ padding: '0 8px', height: 32 }}
                     onClick={async () => {
-                      if (window.confirm('この工程を削除しますか？ / Bạn có chắc chắn muốn xóa công đoạn này?')) {
+                      if (window.confirm(t('Common.deleteConfirm'))) {
                         setSaving(true)
                         const { error } = await supabase.from('job_steps').delete().eq('step_id', step!.step_id)
                         setSaving(false)
@@ -494,7 +483,7 @@ export function EditStepModal({ step, jobId, nextStepNo, onClose, onSaved }: Pro
                       }
                     }} 
                     disabled={saving}
-                    title="削除 / Xóa"
+                    title={t('Common.delete')}
                   >
                     <Trash2 size={14} style={{ color: 'var(--status-error)' }} />
                   </button>
@@ -502,14 +491,14 @@ export function EditStepModal({ step, jobId, nextStepNo, onClose, onSaved }: Pro
               </div>
               
               <div style={{ display: 'flex', gap: 8 }}>
-                <button className="btn btn-secondary" onClick={onClose} disabled={saving}>
+                <button className="btn btn-primary" onClick={handleSaveStep} disabled={saving}>
                   {t('Equipment.luu')}
                 </button>
               </div>
             </div>
           </div>
 
-          {/* Right Panel - Worklogs (Only show if editing an existing step) */}
+          {/* Right Panel - Worklogs */}
           {!isNew && (
             <div style={{ flex: '0 0 50%', display: 'flex', flexDirection: 'column', background: 'var(--bg-surface-2)' }}>
               
@@ -520,54 +509,50 @@ export function EditStepModal({ step, jobId, nextStepNo, onClose, onSaved }: Pro
                     {editingLogId ? t('Common.edit') : t('Common.addNew')}
                   </h3>
                   {editingLogId && (
-                    <button className="btn-icon" onClick={handleCancelEditLog} title="キャンセル / Hủy">
+                    <button className="btn-icon" onClick={handleCancelEditLog} title={t('Common.cancel')}>
                       <X size={16} />
                     </button>
                   )}
                 </div>
                 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
-                  {/* Row 1: Planned Date & Planned Hours */}
                   <div>
-                    <label className="form-label">予定日 / Ngày dự kiến</label>
+                    <label className="form-label">{t('Equipment.logPlannedDate')}</label>
                     <input type="date" className="form-input form-input-sm" value={logPlannedDate} onChange={e => setLogPlannedDate(e.target.value)} />
                   </div>
                   <div>
-                    <label className="form-label">予定時間(h) / Giờ dự kiến</label>
+                    <label className="form-label">{t('Equipment.logPlannedHours')}</label>
                     <input type="number" step="0.1" min="0" className="form-input form-input-sm" value={logPlannedHours} onChange={e => setLogPlannedHours(e.target.value)} />
                   </div>
                   
-                  {/* Row 2: Actual Date & Actual Hours */}
                   <div>
-                    <label className="form-label">実施日 / Ngày thực tế</label>
+                    <label className="form-label">{t('Equipment.logWorkDate')}</label>
                     <input type="date" className="form-input form-input-sm" value={logWorkDate} onChange={e => setLogWorkDate(e.target.value)} />
                   </div>
                   <div>
-                    <label className="form-label">実績時間(h) / Giờ thực tế</label>
+                    <label className="form-label">{t('Equipment.logActualHours')}</label>
                     <input type="number" step="0.1" min="0" className="form-input form-input-sm" value={logHours} onChange={e => setLogHours(e.target.value)} />
                   </div>
 
-                  {/* Row 3: Worker & Machine */}
                   <div>
-                    <label className="form-label">作業者 / Người làm</label>
+                    <label className="form-label">{t('Equipment.logWorker')}</label>
                     <select className="form-input form-input-sm" value={logWorker} onChange={e => setLogWorker(e.target.value)}>
-                      <option value="">-- 選択 / Chọn --</option>
+                      <option value="">-- {t('Common.selectPlaceholder')} --</option>
                       {employees.map(e => <option key={e.employee_id} value={e.employee_id}>{e.employee_name}</option>)}
                     </select>
                   </div>
                   <div>
-                    <label className="form-label">機械 / Máy móc</label>
+                    <label className="form-label">{t('Equipment.logMachine')}</label>
                     <select className="form-input form-input-sm" value={logMachine} onChange={e => setLogMachine(e.target.value)}>
-                      <option value="">-- 選択 / Chọn --</option>
+                      <option value="">-- {t('Common.selectPlaceholder')} --</option>
                       {machines.map(m => <option key={m.machine_id} value={m.machine_id}>[{m.machine_type}] {m.machine_name}</option>)}
                     </select>
                   </div>
 
-                  {/* Row 4: Processing Code */}
                   <div style={{ gridColumn: 'span 2' }}>
-                    <label className="form-label">作業内容 / Nội dung thao tác *</label>
+                    <label className="form-label">{t('Equipment.logProcessingCode')} *</label>
                     <select className="form-input form-input-sm" value={logCode} onChange={e => setLogCode(e.target.value)}>
-                      <option value="">-- 手動入力 / Không chọn --</option>
+                      <option value="">-- {t('Equipment.nhapThuCong')} --</option>
                       {processingCodes.map(c => (
                         <option key={c.processing_code_id} value={c.processing_code_id}>
                           {c.category ? `[${c.category}] ` : ''}{c.processing_name}
@@ -576,14 +561,13 @@ export function EditStepModal({ step, jobId, nextStepNo, onClose, onSaved }: Pro
                     </select>
                   </div>
                   <div style={{ gridColumn: 'span 2' }}>
-                    <label className="form-label">メモ / Ghi chú</label>
-                    <input type="text" className="form-input form-input-sm" value={logNotes} onChange={e => setLogNotes(e.target.value)} placeholder="備考..." />
+                    <label className="form-label">{t('Equipment.ghiChu')}</label>
+                    <input type="text" className="form-input form-input-sm" value={logNotes} onChange={e => setLogNotes(e.target.value)} />
                   </div>
-                  {/* Row 5: Status */}
                   <div style={{ gridColumn: 'span 2' }}>
-                    <label className="form-label">状態 / Trạng thái</label>
+                    <label className="form-label">{t('Equipment.trangThai')}</label>
                     <select className="form-input form-input-sm" value={logStatusId} onChange={e => setLogStatusId(e.target.value)}>
-                      <option value="">-- 選択 / Chọn --</option>
+                      <option value="">-- {t('Common.selectPlaceholder')} --</option>
                       {processingStatuses.map(s => (
                         <option key={s.status_id} value={s.status_id}>
                           {s.status_code}{s.status_name_vi ? ` / ${s.status_name_vi}` : ''}
@@ -623,7 +607,7 @@ export function EditStepModal({ step, jobId, nextStepNo, onClose, onSaved }: Pro
                   </div>
                 ) : logs.length === 0 ? (
                   <div style={{ padding: 20, textAlign: 'center', color: 'var(--text-muted)', fontSize: 12, background: 'var(--bg-surface)', borderRadius: 6 }}>
-                    記録がありません / Chưa có nhật ký nào
+                    {t('Equipment.noLogs')}
                   </div>
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -646,13 +630,13 @@ export function EditStepModal({ step, jobId, nextStepNo, onClose, onSaved }: Pro
                         <div style={{ flex: 1 }}>
                           <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8, marginBottom: 4 }}>
                             {log.planned_date && (
-                              <span className="badge badge--warning" style={{ fontSize: 11, padding: '2px 6px' }}>
-                                予: {new Date(log.planned_date).toLocaleDateString('ja-JP')} ({log.planned_hours || 0}h)
+                              <span className="badge badge--warning font-mono" style={{ fontSize: 11, padding: '2px 6px' }}>
+                                {new Date(log.planned_date).toLocaleDateString('ja-JP')} ({log.planned_hours || 0}h)
                               </span>
                             )}
                             {log.work_date && (
-                              <span className="badge badge--success" style={{ fontSize: 11, padding: '2px 6px' }}>
-                                実: {new Date(log.work_date).toLocaleDateString('ja-JP')} ({log.hours_spent || 0}h)
+                              <span className="badge badge--success font-mono" style={{ fontSize: 11, padding: '2px 6px' }}>
+                                {new Date(log.work_date).toLocaleDateString('ja-JP')} ({log.hours_spent || 0}h)
                               </span>
                             )}
                             <span style={{ fontWeight: 600, fontSize: 12 }}>
@@ -678,7 +662,7 @@ export function EditStepModal({ step, jobId, nextStepNo, onClose, onSaved }: Pro
                             e.stopPropagation();
                             handleDeleteLog(log.log_id);
                           }}
-                          title="削除 / Xoá"
+                          title={t('Common.delete')}
                         >
                           <Trash2 size={14} />
                         </button>
@@ -694,3 +678,4 @@ export function EditStepModal({ step, jobId, nextStepNo, onClose, onSaved }: Pro
     </div>
   )
 }
+

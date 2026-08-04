@@ -126,7 +126,9 @@ FK:  mold_master_id      UUID → mold_masters(mold_master_id)   ← DEPRECATED,
      pocket_count        INTEGER
      pieces_per_box      INTEGER
      box_spec            TEXT
-     notes               TEXT          ← Ghi chú / tạm chứa mô tả SP (Phase 2: product_description)
+     notes               TEXT          ← Ghi chú tự do (KHÔNG dùng cho mô tả SP)
+     product_description TEXT          ← Mô tả SP cho KD/SX (nguồn: TrayInfoForMoldDesign). Added 2026-08-03
+     first_shipment_date DATE          ← 初回出荷日 (denormalized từ jobs.ship_date). Added 2026-08-03
      date_entry          DATE
      legacy_id           TEXT
      legacy_specs        JSONB

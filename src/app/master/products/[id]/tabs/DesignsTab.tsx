@@ -14,9 +14,9 @@ export function DesignsTab({ product }: { product: ProductDetailData }) {
         <div style={{ fontSize: 13, fontWeight: 600, fontFamily: 'var(--font-jp)', color: 'var(--text-primary)' }}>
           関連する金型設計がありません
         </div>
-        <div style={{ fontSize: 11, marginTop: 4 }}>
-          Chưa có phiên bản thiết kế khuôn nào được liên kết với sản phẩm này.
-        </div>
+        <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0, fontFamily: 'var(--font-jp)' }}>
+          関連する金型デザインリビジョンはありません。
+        </p>
       </div>
     )
   }

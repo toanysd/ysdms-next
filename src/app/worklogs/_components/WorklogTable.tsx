@@ -48,8 +48,8 @@ type Props = {
 
 // ── Badge Config ──────────────────────────────────────────────────────────────
 const STATUS_CONFIG = {
-  finished:    { translationKey: 'Worklogs.finished', badgeClass: 'badge badge--success' },
-  in_progress: { translationKey: 'Worklogs.inProgress', badgeClass: 'badge badge--info' },
+  finished:    { translationKey: 'Worklogs.statusFinished', badgeClass: 'badge badge--success' },
+  in_progress: { translationKey: 'Worklogs.statusInProgress', badgeClass: 'badge badge--info' },
 }
 
 function formatDate(d: string | null) {
@@ -188,7 +188,7 @@ export default function WorklogTable({
             ))}
           </select>
 
-          {/* Nhân viên */}
+          {/* Employee */}
           <select
             className="form-select"
             style={{ minWidth: 170 }}
@@ -317,7 +317,7 @@ export default function WorklogTable({
 
                 return (
                   <tr key={log.log_id}>
-                    <td style={{ fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
+                    <td style={{ fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap', fontSize: 13, fontWeight: 700, fontFamily: 'monospace' }}>
                       {formatDate(log.work_date)}
                     </td>
                     <td>
@@ -335,7 +335,7 @@ export default function WorklogTable({
                         </Link>
                       ) : '—'}
                     </td>
-                    <td>
+                    <td style={{ fontSize: 13 }}>
                       {log.job_step ? (
                         <span>
                           <span style={{ color: 'var(--text-secondary)', marginRight: 4 }}>#{log.job_step.step_no}</span>
@@ -343,7 +343,7 @@ export default function WorklogTable({
                         </span>
                       ) : '—'}
                     </td>
-                    <td>
+                    <td style={{ fontSize: 13 }}>
                       {log.employee ? (
                         <>
                           <span style={{ fontWeight: 500 }}>{log.employee.employee_code}</span>
@@ -355,10 +355,10 @@ export default function WorklogTable({
                         </>
                       ) : '—'}
                     </td>
-                    <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
+                    <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontSize: 13, fontWeight: 700, fontFamily: 'monospace' }}>
                       {formatHours(log.hours_spent)}
                     </td>
-                    <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', color: 'var(--text-secondary)' }}>
+                    <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', color: 'var(--text-secondary)', fontSize: 13, fontWeight: 700, fontFamily: 'monospace' }}>
                       {jobTotal !== null ? formatHours(jobTotal) : '—'}
                     </td>
                     <td>
@@ -366,7 +366,7 @@ export default function WorklogTable({
                         {t(status.translationKey)}
                       </span>
                     </td>
-                    <td style={{ color: 'var(--text-secondary)', maxWidth: 200 }}>
+                    <td style={{ color: 'var(--text-secondary)', maxWidth: 200, fontSize: 13 }}>
                       <span style={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {log.notes ?? '—'}
                       </span>

@@ -9,7 +9,6 @@ import {
   Search,
   Edit2,
   Trash2,
-  X,
   Building2,
   ToggleLeft,
   ToggleRight,
@@ -39,28 +38,6 @@ interface Company {
   updated_at: string
 }
 
-interface CompanyForm {
-  company_code: string
-  company_name: string
-  company_name_romaji: string
-  company_type: CompanyType[]
-  address: string
-  tel: string
-  fax: string
-  notes: string
-}
-
-/* ═══════════════════════════════════════════════════════════════════════
-   Constants
-   ═══════════════════════════════════════════════════════════════════════ */
-const COMPANY_TYPE_LABELS: Record<CompanyType, { ja: string; vi: string }> = {
-  CUSTOMER:      { ja: '得意先',     vi: 'Khách hàng' },
-  SUPPLIER:      { ja: '仕入先',     vi: 'Nhà cung cấp' },
-  SUBCONTRACTOR: { ja: '外注',       vi: 'Gia công ngoài' },
-  INTERNAL:      { ja: '自社',       vi: 'Nội bộ' },
-  MOLD_OWNER:    { ja: '金型持主',   vi: 'Chủ khuôn' },
-}
-
 const COMPANY_TYPE_COLORS: Record<CompanyType, { bg: string; text: string }> = {
   CUSTOMER:      { bg: 'var(--status-info-bg)',    text: 'var(--status-info-text)' },
   SUPPLIER:      { bg: 'var(--status-warning-bg)', text: 'var(--status-warning-text)' },
@@ -69,14 +46,7 @@ const COMPANY_TYPE_COLORS: Record<CompanyType, { bg: string; text: string }> = {
   MOLD_OWNER:    { bg: 'var(--status-neutral-bg)', text: 'var(--text-secondary)' },
 }
 
-const FILTER_TABS: { key: CompanyType | 'ALL'; ja: string; vi: string }[] = [
-  { key: 'ALL',           ja: '全て',     vi: 'Tất cả' },
-  { key: 'CUSTOMER',      ja: '得意先',   vi: 'Khách hàng' },
-  { key: 'SUPPLIER',      ja: '仕入先',   vi: 'NCC' },
-  { key: 'SUBCONTRACTOR', ja: '外注',     vi: 'Gia công' },
-  { key: 'MOLD_OWNER',    ja: '金型持主', vi: 'Chủ khuôn' },
-]
-
+const FILTER_TAB_KEYS: (CompanyType | 'ALL')[] = ['ALL', 'CUSTOMER', 'SUPPLIER', 'SUBCONTRACTOR', 'MOLD_OWNER']
 const ALL_TYPES: CompanyType[] = ['CUSTOMER', 'SUPPLIER', 'SUBCONTRACTOR', 'INTERNAL', 'MOLD_OWNER']
 
 /* ═══════════════════════════════════════════════════════════════════════
@@ -89,7 +59,6 @@ export default function CompaniesPage() {
   /* ── State ──────────────────────────────────────────────────────────── */
   const [companies, setCompanies] = useState<Company[]>([])
   const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [activeFilter, setActiveFilter] = useState<CompanyType | 'ALL'>('ALL')
   const [modalOpen, setModalOpen] = useState(false)
@@ -125,7 +94,7 @@ export default function CompaniesPage() {
     
     setCompanies(allData)
     setLoading(false)
-  }, [])
+  }, [supabase])
 
   useEffect(() => {
     fetchCompanies()
@@ -157,13 +126,12 @@ export default function CompaniesPage() {
   /* ── Tab counts ─────────────────────────────────────────────────────── */
   const tabCounts = useMemo(() => {
     const counts: Record<string, number> = { ALL: companies.length }
-    for (const t of ALL_TYPES) {
-      counts[t] = companies.filter((c) => c.company_type?.includes(t)).length
+    for (const type of ALL_TYPES) {
+      counts[type] = companies.filter((c) => c.company_type?.includes(type)).length
     }
     return counts
   }, [companies])
 
-  /* ── Modal handlers ─────────────────────────────────────────────────── */
   /* ── Modal handlers ─────────────────────────────────────────────────── */
   const openAddModal = () => {
     setEditingId(null)
@@ -196,13 +164,24 @@ export default function CompaniesPage() {
     fetchCompanies()
   }
 
+  const getTypeLabel = (type: CompanyType) => {
+    switch (type) {
+      case 'CUSTOMER': return t('Customers.customer')
+      case 'SUPPLIER': return t('Customers.vendor')
+      case 'SUBCONTRACTOR': return t('Master.loai')
+      case 'INTERNAL': return t('Master.chinh')
+      case 'MOLD_OWNER': return t('Master.khachHangChuSoHuu')
+      default: return type
+    }
+  }
+
   /* ═══════════════════════════════════════════════════════════════════════
      Render
      ═══════════════════════════════════════════════════════════════════════ */
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-3 h-full">
       {/* ── Page Header ───────────────────────────────────────────────── */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between shrink-0">
         <div className="flex items-center gap-3">
           <Building2 size={20} style={{ color: 'var(--accent)' }} />
           <div>
@@ -210,53 +189,51 @@ export default function CompaniesPage() {
               className="text-[15px] font-bold leading-tight"
               style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-jp)' }}
             >
-              会社・得意先マスター
+              {t('Master.companyMaster')}
             </h1>
             <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
-              Quản lý Công ty &amp; Khách hàng
+              {t('Master.companyMasterSub')}
             </span>
           </div>
         </div>
         <button
           onClick={openAddModal}
-          className="h-[32px] px-3 text-[12px] font-semibold rounded flex items-center gap-1.5 cursor-pointer border-none"
-          style={{ background: 'var(--accent)', color: 'var(--text-inverse)' }}
+          className="btn btn-primary h-[32px] px-3 text-[12px] font-semibold flex items-center gap-1.5 cursor-pointer"
         >
           <Plus size={14} />
-          <span style={{ fontFamily: 'var(--font-jp)' }}>新規追加</span>
+          <span>{t('Common.addNew')}</span>
         </button>
       </div>
 
       {/* ── Filter Tabs + Search ──────────────────────────────────────── */}
-      <div className="card-flat" style={{ padding: '8px 12px' }}>
+      <div className="card-flat shrink-0" style={{ padding: '8px 12px' }}>
         <div className="flex items-center justify-between gap-3 flex-wrap">
           {/* Tabs */}
           <div className="flex items-center gap-1">
-            {FILTER_TABS.map((tab) => {
-              const isActive = activeFilter === tab.key
+            {FILTER_TAB_KEYS.map((key) => {
+              const isActive = activeFilter === key
+              const label = key === 'ALL' ? t('Common.all') : getTypeLabel(key)
               return (
                 <button
-                  key={tab.key}
-                  onClick={() => setActiveFilter(tab.key)}
+                  key={key}
+                  onClick={() => setActiveFilter(key)}
                   className="h-[28px] px-2.5 text-[11px] font-semibold rounded cursor-pointer border-none flex items-center gap-1.5"
                   style={{
                     background: isActive ? 'var(--accent-light)' : 'transparent',
                     color: isActive ? 'var(--accent)' : 'var(--text-secondary)',
-                    fontFamily: 'var(--font-jp)',
                     transition: 'all 150ms ease',
                   }}
                 >
-                  {tab.ja}
+                  {label}
                   <span
-                    className="text-[9px] rounded-full min-w-[18px] h-[16px] flex items-center justify-center"
+                    className="text-[9px] rounded-full min-w-[18px] h-[16px] flex items-center justify-center font-mono font-bold"
                     style={{
                       background: isActive ? 'var(--accent)' : 'var(--bg-surface-3)',
                       color: isActive ? 'var(--text-inverse)' : 'var(--text-muted)',
-                      fontFamily: 'var(--font-vi)',
                       padding: '0 4px',
                     }}
                   >
-                    {tabCounts[tab.key] ?? 0}
+                    {tabCounts[key] ?? 0}
                   </span>
                 </button>
               )
@@ -277,48 +254,29 @@ export default function CompaniesPage() {
             />
             <input
               type="text"
-              placeholder="コード・名前で検索..."
+              placeholder={t('Master.searchCompany')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="h-[28px] text-[12px] rounded pl-7 pr-2"
-              style={{
-                width: '220px',
-                background: 'var(--bg-surface-2)',
-                border: '1px solid var(--border-subtle)',
-                color: 'var(--text-primary)',
-              }}
+              className="form-input form-input-search text-[12px] rounded pl-7 pr-2"
+              style={{ width: '220px', height: '28px' }}
             />
           </div>
         </div>
       </div>
 
       {/* ── Data Table ────────────────────────────────────────────────── */}
-      <div className="card-flat overflow-hidden">
-        <div className="overflow-auto custom-scrollbar" style={{ maxHeight: 'calc(100vh - 220px)' }}>
+      <div className="card-flat flex-1 overflow-hidden flex flex-col min-h-0">
+        <div className="overflow-auto custom-scrollbar flex-1">
           <table className="data-table">
             <thead>
               <tr>
-                <th style={{ width: '100px' }}>
-                  {t('Master.ma')}
-                </th>
-                <th style={{ width: '220px' }}>
-                  {t('Master.tenCongTy')}
-                </th>
-                <th style={{ width: '200px' }}>
-                  {t('Master.romaji')}
-                </th>
-                <th style={{ width: '220px' }}>
-                  {t('Master.loai')}
-                </th>
-                <th style={{ width: '120px' }}>
-                  {t('Master.st')}
-                </th>
-                <th style={{ width: '70px', textAlign: 'center' }}>
-                  {t('Master.trangThai')}
-                </th>
-                <th style={{ width: '90px', textAlign: 'center' }}>
-                  {t('Master.thaoTac')}
-                </th>
+                <th>{t('Master.ma')}</th>
+                <th>{t('Master.tenCongTy')}</th>
+                <th className="hidden md:table-cell">{t('Master.romaji')}</th>
+                <th>{t('Master.loai')}</th>
+                <th className="hidden lg:table-cell">{t('Master.st')}</th>
+                <th style={{ textAlign: 'center' }}>{t('Master.trangThai')}</th>
+                <th style={{ textAlign: 'center' }}>{t('Master.thaoTac')}</th>
               </tr>
             </thead>
             <tbody>
@@ -327,7 +285,7 @@ export default function CompaniesPage() {
                   <td colSpan={7} style={{ textAlign: 'center', padding: '24px', color: 'var(--text-muted)' }}>
                     <div className="flex items-center justify-center gap-2">
                       <Loader2 size={16} className="animate-spin" />
-                      <span className="text-[12px]">読み込み中...</span>
+                      <span className="text-[12px]">{t('Common.loading')}</span>
                     </div>
                   </td>
                 </tr>
@@ -336,7 +294,7 @@ export default function CompaniesPage() {
               {!loading && filteredCompanies.length === 0 && (
                 <tr>
                   <td colSpan={7} style={{ textAlign: 'center', padding: '24px', color: 'var(--text-muted)' }}>
-                    <span className="text-[12px]">データなし / Không có dữ liệu</span>
+                    <span className="text-[12px]">{t('Common.noData')}</span>
                   </td>
                 </tr>
               )}
@@ -347,7 +305,7 @@ export default function CompaniesPage() {
                     {/* Code */}
                     <td>
                       <span
-                        className="font-mono font-bold text-[12px]"
+                        className="font-mono font-bold text-[13px]"
                         style={{ color: 'var(--accent)' }}
                       >
                         {company.company_code}
@@ -357,7 +315,7 @@ export default function CompaniesPage() {
                     {/* Name */}
                     <td>
                       <span
-                        className="font-semibold text-[12px]"
+                        className="font-bold text-[13px]"
                         style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-jp)' }}
                       >
                         {company.company_name}
@@ -365,7 +323,7 @@ export default function CompaniesPage() {
                     </td>
 
                     {/* Romaji */}
-                    <td>
+                    <td className="hidden md:table-cell">
                       <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
                         {company.company_name_romaji || '—'}
                       </span>
@@ -376,11 +334,10 @@ export default function CompaniesPage() {
                       <div className="flex flex-wrap gap-1">
                         {company.company_type?.map((type) => {
                           const colors = COMPANY_TYPE_COLORS[type]
-                          const labels = COMPANY_TYPE_LABELS[type]
                           return (
                             <span
                               key={type}
-                              className="rounded-full font-semibold"
+                              className="rounded-full font-bold"
                               style={{
                                 display: 'inline-block',
                                 fontSize: '10px',
@@ -390,7 +347,7 @@ export default function CompaniesPage() {
                                 lineHeight: '1.6',
                               }}
                             >
-                              {labels?.ja || type}
+                              {getTypeLabel(type)}
                             </span>
                           )
                         })}
@@ -398,8 +355,8 @@ export default function CompaniesPage() {
                     </td>
 
                     {/* Tel */}
-                    <td>
-                      <span className="text-[11px]" style={{ color: 'var(--text-secondary)' }}>
+                    <td className="hidden lg:table-cell">
+                      <span className="text-[12px] font-mono" style={{ color: 'var(--text-secondary)' }}>
                         {company.tel || '—'}
                       </span>
                     </td>
@@ -409,7 +366,7 @@ export default function CompaniesPage() {
                       <button
                         onClick={() => toggleActive(company)}
                         className="cursor-pointer border-none bg-transparent p-0"
-                        title={company.is_active ? '有効 / Đang hoạt động' : '無効 / Ngưng hoạt động'}
+                        title={company.is_active ? t('Master.activeStatus') : t('Master.inactiveStatus')}
                       >
                         {company.is_active ? (
                           <ToggleRight size={20} style={{ color: 'var(--status-success)' }} />
@@ -424,16 +381,13 @@ export default function CompaniesPage() {
                       <div className="flex items-center justify-center gap-1">
                         <button
                           onClick={() => openEditModal(company)}
-                          className="flex items-center justify-center rounded cursor-pointer"
+                          className="btn btn-secondary flex items-center justify-center rounded cursor-pointer"
                           style={{
                             width: '28px',
                             height: '28px',
-                            border: '1px solid var(--border-default)',
-                            background: 'var(--bg-surface)',
-                            color: 'var(--text-secondary)',
-                            transition: 'all 120ms ease',
+                            padding: 0,
                           }}
-                          title="編集 / Chỉnh sửa"
+                          title={t('Common.edit')}
                         >
                           <Edit2 size={13} />
                         </button>
@@ -449,21 +403,19 @@ export default function CompaniesPage() {
                               color: '#fff',
                             }}
                           >
-                            確認
+                            {t('Master.confirmDelete')}
                           </button>
                         ) : (
                           <button
                             onClick={() => setDeleteConfirm(company.company_id)}
-                            className="flex items-center justify-center rounded cursor-pointer"
+                            className="btn btn-secondary flex items-center justify-center rounded cursor-pointer"
                             style={{
                               width: '28px',
                               height: '28px',
-                              border: '1px solid var(--border-default)',
-                              background: 'var(--bg-surface)',
+                              padding: 0,
                               color: 'var(--text-muted)',
-                              transition: 'all 120ms ease',
                             }}
-                            title="削除 / Xóa"
+                            title={t('Common.delete')}
                           >
                             <Trash2 size={13} />
                           </button>
@@ -479,33 +431,31 @@ export default function CompaniesPage() {
         {/* Row count footer */}
         {!loading && (
           <div
-            className="flex items-center justify-between px-3 py-1.5"
+            className="flex items-center justify-between px-3 py-1.5 shrink-0"
             style={{
               borderTop: '1px solid var(--border-subtle)',
               background: 'var(--bg-surface-2)',
-              fontSize: '10px',
+              fontSize: '11px',
               color: 'var(--text-muted)',
             }}
           >
-            <span>
-              {filteredCompanies.length} / {companies.length} 件
+            <span className="font-mono">
+              {filteredCompanies.length} / {companies.length}
             </span>
-            <span style={{ fontFamily: 'var(--font-jp)' }}>
+            <span>
               {activeFilter !== 'ALL'
-                ? `フィルター: ${FILTER_TABS.find((t) => t.key === activeFilter)?.ja}`
-                : '全件表示'}
+                ? `${t('Master.filter')}: ${getTypeLabel(activeFilter)}`
+                : t('Master.allCount')}
             </span>
           </div>
         )}
       </div>
 
-      {/* ═══════════════════════════════════════════════════════════════════
-         Add / Edit Modal
-         ═══════════════════════════════════════════════════════════════════ */}
+      {/* ── Add / Edit Modal ────────────────────────────────────────────── */}
       <CompanyFormModal
         isOpen={modalOpen}
         onClose={closeModal}
-        onSaved={(id) => {
+        onSaved={() => {
           closeModal()
           fetchCompanies()
         }}
@@ -514,3 +464,4 @@ export default function CompaniesPage() {
     </div>
   )
 }
+

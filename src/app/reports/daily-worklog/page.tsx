@@ -1,5 +1,6 @@
 'use client'
 
+import { useTranslations } from 'next-intl'
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { format } from 'date-fns'
@@ -58,6 +59,7 @@ type WorkLog = {
 }
 
 export default function DailyWorklogReportPage() {
+  const t = useTranslations('Reports')
   const supabase = createClient()
   const [employees, setEmployees] = useState<Employee[]>([])
   const [selectedDate, setSelectedDate] = useState<string>(format(new Date(), 'yyyy-MM-dd'))
@@ -170,7 +172,7 @@ export default function DailyWorklogReportPage() {
       <div className="print:hidden p-4 border-b border-[var(--border-default)] bg-[var(--bg-surface)] flex items-center justify-between gap-4 sticky top-0 z-10 shadow-sm">
         <div className="flex items-center gap-4">
           <div>
-            <label className="block text-[11px] font-semibold text-[var(--text-muted)] mb-1">Ngày (日付)</label>
+            <label className="block text-[11px] font-semibold text-[var(--text-muted)] mb-1">{t('dailyWorklog.date')}</label>
             <input 
               type="date" 
               className="form-input"
@@ -180,38 +182,38 @@ export default function DailyWorklogReportPage() {
             />
           </div>
           <div>
-            <label className="block text-[11px] font-semibold text-[var(--text-muted)] mb-1">Nhân viên (作業者)</label>
+            <label className="block text-[11px] font-semibold text-[var(--text-muted)] mb-1">{t('dailyWorklog.employee')}</label>
             <select 
               className="form-input"
               value={selectedEmployeeId}
               onChange={e => setSelectedEmployeeId(e.target.value)}
               style={{ width: 220 }}
             >
-              <option value="">-- Chọn --</option>
+              <option value="">{t('dailyWorklog.selectEmployee')}</option>
               {employees.map(e => (
                 <option key={e.employee_id} value={e.employee_id}>{e.employee_name_short || e.employee_name}</option>
               ))}
             </select>
           </div>
           <div className="flex items-end h-full pt-5">
-            {loading && <span className="text-[12px] text-[var(--text-muted)]">Đang tải...</span>}
+            {loading && <span className="text-[12px] text-[var(--text-muted)]">{t('dailyWorklog.loading')}</span>}
           </div>
         </div>
         
         <div className="flex items-center gap-2 pt-5">
           <button className="btn btn-secondary flex items-center gap-2 shadow-sm" onClick={handlePrint}>
             <Printer size={16} />
-            <span>In (Print)</span>
+            <span>{t('dailyWorklog.print')}</span>
           </button>
           <button className="btn btn-primary flex items-center gap-2 shadow-sm" onClick={handlePrint}>
             <FileDown size={16} />
-            <span>Xuất file PDF</span>
+            <span>{t('dailyWorklog.exportPdf')}</span>
           </button>
         </div>
       </div>
 
       {/* ── Printable Report Body ── */}
-      <div className="flex-1 overflow-auto p-8 print:p-0 bg-gray-100 print:bg-white flex justify-center">
+      <div className="flex-1 overflow-auto p-8 print:p-0 bg-[var(--bg-base)] print:bg-white flex justify-center">
         {/* A4 Landscape Wrapper */}
         <div 
           className="bg-white shadow-md print:shadow-none print:border-none print:w-full print:max-w-none"

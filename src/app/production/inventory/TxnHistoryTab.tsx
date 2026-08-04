@@ -29,31 +29,31 @@ export default async function TxnHistoryTab({ currentParams }: { currentParams: 
             <div className="p-4 border-b border-[var(--mcs-border)] bg-[var(--mcs-surface-2)] flex justify-between items-center">
                 <div className="flex gap-2">
                     <Link href="/production/inventory?tab=history&txnType=ALL" className={`px-4 py-1.5 text-sm font-bold rounded shadow-sm transition-colors ${(!currentParams.txnType || currentParams.txnType === 'ALL') ? 'bg-gray-700 text-white' : 'bg-white border border-[var(--mcs-border)] text-gray-600 hover:bg-gray-50'}`}>
-                        Tất cả (All)
+                        ALL
                     </Link>
                     <Link href="/production/inventory?tab=history&txnType=IN" className={`px-4 py-1.5 text-sm font-bold rounded shadow-sm transition-colors ${currentParams.txnType === 'IN' ? 'bg-emerald-500 text-white' : 'bg-white border border-[var(--mcs-border)] text-gray-600 hover:bg-gray-50'}`}>
-                        Nhập kho (IN)
+                        IN
                     </Link>
                     <Link href="/production/inventory?tab=history&txnType=OUT" className={`px-4 py-1.5 text-sm font-bold rounded shadow-sm transition-colors ${currentParams.txnType === 'OUT' ? 'bg-blue-500 text-white' : 'bg-white border border-[var(--mcs-border)] text-gray-600 hover:bg-gray-50'}`}>
-                        Xuất kho (OUT)
+                        OUT
                     </Link>
                     <Link href="/production/inventory?tab=history&txnType=ADJUST" className={`px-4 py-1.5 text-sm font-bold rounded shadow-sm transition-colors ${currentParams.txnType === 'ADJUST' ? 'bg-amber-500 text-white' : 'bg-white border border-[var(--mcs-border)] text-gray-600 hover:bg-gray-50'}`}>
-                        Kiểm kê (ADJ)
+                        ADJ
                     </Link>
                 </div>
-                <div className="text-sm text-[var(--mcs-text-muted)]">Hiển thềE100 giao dịch gần nhất</div>
+                <div className="text-sm text-[var(--mcs-text-muted)]">直近 100 件の履歴を表示</div>
             </div>
 
             <div className="overflow-x-auto">
                 <table className="w-full text-sm text-left text-[var(--mcs-text)]">
                     <thead className="text-xs text-[var(--mcs-text-muted)] bg-gray-50 uppercase border-b border-[var(--mcs-border)]">
                         <tr>
-                            <th className="px-4 py-3">Ngày/Giờ</th>
-                            <th className="px-4 py-3">Loại Giao Dịch</th>
-                            <th className="px-4 py-3">Mã Khay</th>
-                            <th className="px-4 py-3 text-right">SềElượng</th>
-                            <th className="px-4 py-3">Người thao tác</th>
-                            <th className="px-4 py-3">Ghi chú / SềELô</th>
+                            <th className="px-4 py-3">日時</th>
+                            <th className="px-4 py-3">区分</th>
+                            <th className="px-4 py-3">トレイコード</th>
+                            <th className="px-4 py-3 text-right">数量</th>
+                            <th className="px-4 py-3">担当者</th>
+                            <th className="px-4 py-3">備考</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-[var(--mcs-border)]">
@@ -62,12 +62,12 @@ export default async function TxnHistoryTab({ currentParams }: { currentParams: 
                             return (
                                 <tr key={t.id} className="hover:bg-blue-50/50 transition-colors">
                                     <td className="px-4 py-3 text-xs text-gray-500 whitespace-nowrap">
-                                        {new Date(t.created_at).toLocaleString('vi-VN')}
+                                        {new Date(t.created_at).toLocaleString()}
                                     </td>
                                     <td className="px-4 py-3">
-                                        {t.txn_type === 'IN' && <span className="inline-flex items-center gap-1 text-emerald-600 font-bold text-xs bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100"><ArrowDownRight size={12}/> NHẬP (IN)</span>}
-                                        {t.txn_type === 'OUT' && <span className="inline-flex items-center gap-1 text-blue-600 font-bold text-xs bg-blue-50 px-2 py-0.5 rounded border border-blue-100"><ArrowUpRight size={12}/> XUẤT (OUT)</span>}
-                                        {t.txn_type === 'ADJUST' && <span className="inline-flex items-center gap-1 text-amber-600 font-bold text-xs bg-amber-50 px-2 py-0.5 rounded border border-amber-100"><RefreshCcw size={12}/> āECHềEH (ADJ)</span>}
+                                        {t.txn_type === 'IN' && <span className="inline-flex items-center gap-1 text-emerald-600 font-bold text-xs bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100"><ArrowDownRight size={12}/> IN</span>}
+                                        {t.txn_type === 'OUT' && <span className="inline-flex items-center gap-1 text-blue-600 font-bold text-xs bg-blue-50 px-2 py-0.5 rounded border border-blue-100"><ArrowUpRight size={12}/> OUT</span>}
+                                        {t.txn_type === 'ADJUST' && <span className="inline-flex items-center gap-1 text-amber-600 font-bold text-xs bg-amber-50 px-2 py-0.5 rounded border border-amber-100"><RefreshCcw size={12}/> ADJ</span>}
                                     </td>
                                     <td className="px-4 py-3">
                                         <div className="font-bold text-[var(--mcs-text)]">{prod.code}</div>
@@ -87,7 +87,7 @@ export default async function TxnHistoryTab({ currentParams }: { currentParams: 
                             )
                         })}
                         {(!txns || txns.length === 0) && (
-                            <tr><td colSpan={6} className="px-4 py-10 text-center text-[var(--mcs-text-muted)]">Không có giao dịch nào phù hợp với bềElọc.</td></tr>
+                            <tr><td colSpan={6} className="px-4 py-10 text-center text-[var(--mcs-text-muted)]">該当する履歴はありません。</td></tr>
                         )}
                     </tbody>
                 </table>

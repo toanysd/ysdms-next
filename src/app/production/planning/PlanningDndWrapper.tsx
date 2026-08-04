@@ -106,44 +106,44 @@ function ConfirmModal({ data, onClose, onSuccess }: { data: any, onClose: () => 
         <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center animate-in fade-in">
             <div className="bg-[var(--mcs-surface)] w-full max-w-md rounded-lg shadow-2xl overflow-hidden border border-[var(--mcs-border)]">
                 <div className="bg-[var(--mcs-primary-light)] p-4 border-b border-[var(--mcs-primary)]">
-                    <h2 className="text-[16px] font-bold text-[var(--mcs-primary-hover)]">⚙️ 計画確認 (Xác nhận xếp lịch)</h2>
+                    <h2 className="text-[16px] font-bold text-[var(--mcs-primary-hover)]">⚙️ 計画確認</h2>
                 </div>
                 <form onSubmit={handleSubmit} className="p-6 space-y-4">
                     <div className="grid grid-cols-2 gap-4 text-sm bg-[var(--mcs-surface-2)] p-4 rounded-md border border-[var(--mcs-border)]">
-                        <div><span className="text-gray-500 block text-[11px]">設備 (Máy):</span> <span className="font-bold">{data.machine.internal_code}</span></div>
-                        <div><span className="text-gray-500 block text-[11px]">日付 (Ngày):</span> <span className="font-bold">{data.shift} | {format(parseISO(data.dateStr), 'MM/dd')}</span></div>
+                        <div><span className="text-gray-500 block text-[11px]">設備:</span> <span className="font-bold">{data.machine.internal_code}</span></div>
+                        <div><span className="text-gray-500 block text-[11px]">日付:</span> <span className="font-bold">{data.shift} | {format(parseISO(data.dateStr), 'MM/dd')}</span></div>
                         <div className="col-span-2 border-t border-[var(--mcs-border)] my-1"></div>
-                        <div className="col-span-2"><span className="text-gray-500 block text-[11px]">品番 (Sản phẩm):</span> <span className="font-bold">{data.order.detail?.product_pn_raw}</span></div>
+                        <div className="col-span-2"><span className="text-gray-500 block text-[11px]">品番:</span> <span className="font-bold">{data.order.detail?.product_pn_raw}</span></div>
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
                         <div className="col-span-2">
-                            <label className="block text-[12px] font-bold mb-1">金型 (Khuôn)</label>
+                            <label className="block text-[12px] font-bold mb-1">金型</label>
                             <select 
                                 value={selectedMold} 
                                 onChange={e => setSelectedMold(e.target.value)}
                                 className="w-full bg-[var(--mcs-surface)] border border-[var(--mcs-border)] rounded px-3 py-2 text-sm"
                                 required
                             >
-                                <option value="">--- Chọn khuôn (Chưa xác định) ---</option>
+                                <option value="">--- 金型を選択 ---</option>
                                 {molds.map(m => (
-                                    <option key={m.id} value={m.id}>{m.physical_code} {m.status !== 'ACTIVE' ? '(⚠️ Bảo trì)' : ''}</option>
+                                    <option key={m.id} value={m.id}>{m.physical_code} {m.status !== 'ACTIVE' ? '(⚠️ 保全中)' : ''}</option>
                                 ))}
                             </select>
                         </div>
                         <div>
-                            <label className="block text-[12px] font-bold mb-1">計画数 (Kế hoạch Qty)</label>
+                            <label className="block text-[12px] font-bold mb-1">計画数</label>
                             <input name="qty" type="number" defaultValue={data.order.total_requested_qty - data.order.total_planned_qty} max={data.order.total_requested_qty - data.order.total_planned_qty} className="w-full bg-[var(--mcs-surface)] border border-[var(--mcs-border)] rounded px-3 py-2 text-sm" required />
                         </div>
                         <div>
-                            <label className="block text-[12px] font-bold mb-1">担当者 (Operator)</label>
-                            <input name="operator" type="text" placeholder="Tên thợ..." className="w-full bg-[var(--mcs-surface)] border border-[var(--mcs-border)] rounded px-3 py-2 text-sm" />
+                            <label className="block text-[12px] font-bold mb-1">担当者</label>
+                            <input name="operator" type="text" placeholder="担当者名..." className="w-full bg-[var(--mcs-surface)] border border-[var(--mcs-border)] rounded px-3 py-2 text-sm" />
                         </div>
                     </div>
 
                     <div className="flex justify-end gap-3 pt-4 mt-4 border-t border-[var(--mcs-border)]">
-                        <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-bold text-gray-600 bg-gray-100 rounded">Hủy</button>
-                        <button type="submit" disabled={loading} className="px-4 py-2 text-sm font-bold bg-[var(--mcs-primary)] text-white rounded shadow">{loading ? 'Saving...' : '✅ Xác nhận'}</button>
+                        <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-bold text-gray-600 bg-gray-100 rounded">キャンセル</button>
+                        <button type="submit" disabled={loading} className="px-4 py-2 text-sm font-bold bg-[var(--mcs-primary)] text-white rounded shadow">{loading ? '保存中...' : '確定'}</button>
                     </div>
                 </form>
             </div>

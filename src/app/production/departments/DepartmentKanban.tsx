@@ -8,10 +8,10 @@ type Department = { id: string; code: string; name: string };
 type Job = { id: string; order_no: string; product_name: string; status: 'TODO' | 'IN_PROGRESS' | 'DONE'; quantity: number };
 
 const DEPARTMENTS_MOCK = [
-  { id: '1', code: 'CUTTING', name: 'Cắt bế', icon: <Scissors size={16} /> },
-  { id: '2', code: 'RECYCLING', name: 'Xay rác', icon: <Recycle size={16} /> },
-  { id: '3', code: 'WAREHOUSE', name: 'Kho / Xuất hàng', icon: <Package size={16} /> },
-  { id: '4', code: 'QC', name: 'Kiểm tra chất lượng', icon: <CheckCircle size={16} /> }
+  { id: '1', code: 'CUTTING', name: '抜き加工 (Cutting)', icon: <Scissors size={16} /> },
+  { id: '2', code: 'RECYCLING', name: '粉砕 (Recycling)', icon: <Recycle size={16} /> },
+  { id: '3', code: 'WAREHOUSE', name: '出荷・倉庫 (Warehouse)', icon: <Package size={16} /> },
+  { id: '4', code: 'QC', name: '品質検査 (QC)', icon: <CheckCircle size={16} /> }
 ];
 
 export default function DepartmentKanban() {
@@ -25,9 +25,9 @@ export default function DepartmentKanban() {
     setLoading(true);
     setTimeout(() => {
       setJobs([
-        { id: 'j1', order_no: 'ORD-2607-001', product_name: 'Khay A-PET 0.5mm', status: 'TODO', quantity: 5000 },
-        { id: 'j2', order_no: 'ORD-2607-002', product_name: 'Khay PS Đen Chống Tĩnh Điện', status: 'IN_PROGRESS', quantity: 2000 },
-        { id: 'j3', order_no: 'ORD-2607-003', product_name: 'Khay PP Trắng', status: 'DONE', quantity: 15000 }
+        { id: 'j1', order_no: 'ORD-2607-001', product_name: 'A-PET 0.5mm Tray', status: 'TODO', quantity: 5000 },
+        { id: 'j2', order_no: 'ORD-2607-002', product_name: 'PS Black Conductive Tray', status: 'IN_PROGRESS', quantity: 2000 },
+        { id: 'j3', order_no: 'ORD-2607-003', product_name: 'PP White Tray', status: 'DONE', quantity: 15000 }
       ]);
       setLoading(false);
     }, 400);
@@ -94,7 +94,7 @@ export default function DepartmentKanban() {
           ))}
           {colJobs.length === 0 && (
             <div className="text-center text-[var(--mcs-text-muted)] text-sm py-8 border-2 border-dashed border-[var(--mcs-border)] rounded-md">
-              Kéo thả thẻ vào đây
+              カードをドラッグ＆ドロップ
             </div>
           )}
         </div>
@@ -110,7 +110,7 @@ export default function DepartmentKanban() {
             <KanbanSquare className="text-[var(--mcs-primary)]" />
             各部門カンバン (Department Kanban)
           </h1>
-          <p className="text-[12px] text-[var(--mcs-text-muted)] mt-1">Bảng điều phối công việc dạng kéo thả cho các bộ phận hỗ trợ</p>
+          <p className="text-[12px] text-[var(--mcs-text-muted)] mt-1">部門間サポートタスクの管理ボード</p>
         </div>
       </header>
 
@@ -134,13 +134,13 @@ export default function DepartmentKanban() {
 
       {loading ? (
         <div className="flex-1 flex items-center justify-center text-[var(--mcs-text-muted)]">
-          Đang tải dữ liệu...
+          読み込み中...
         </div>
       ) : (
         <div className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-6 overflow-hidden min-h-0">
-          {renderColumn('Chờ xử lý', 'TODO', 'bg-amber-500', '未着手')}
-          {renderColumn('Đang thực hiện', 'IN_PROGRESS', 'bg-info', '進行中')}
-          {renderColumn('Đã hoàn thành', 'DONE', 'bg-emerald-500', '完了')}
+          {renderColumn('未着手', 'TODO', 'bg-amber-500', '未着手')}
+          {renderColumn('進行中', 'IN_PROGRESS', 'bg-info', '進行中')}
+          {renderColumn('完了', 'DONE', 'bg-emerald-500', '完了')}
         </div>
       )}
     </div>

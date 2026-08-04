@@ -43,7 +43,6 @@ export default function MaterialsInventoryPage() {
             <h1 className="text-[16px] font-bold" style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-jp)' }}>
               材料在庫
             </h1>
-            <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>Vật liệu & Tồn kho</span>
           </div>
         </div>
         <button className="btn-primary h-[32px] px-3 text-[12px] font-bold">
@@ -55,7 +54,7 @@ export default function MaterialsInventoryPage() {
         <Search size={16} style={{ color: 'var(--text-muted)', marginLeft: '8px' }} />
         <input 
           type="text" 
-          placeholder="コード・名称検索... (Tìm kiếm mã / tên...)"
+          placeholder="コード・名称検索..."
           className="bg-transparent border-none outline-none flex-1 text-[13px]"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
@@ -95,7 +94,7 @@ export default function MaterialsInventoryPage() {
               </div>
               
               <div className="mt-2 flex flex-col gap-2">
-                <span className="text-[11px] uppercase font-semibold" style={{ color: 'var(--text-muted)' }}>利用可能な厚さ (Độ dày)</span>
+                <span className="text-[11px] uppercase font-semibold" style={{ color: 'var(--text-muted)' }}>利用可能な厚さ</span>
                 <div className="flex flex-wrap gap-2 items-center">
                   {mat.material_thicknesses && mat.material_thicknesses.length > 0 ? (
                     mat.material_thicknesses.map((th: any) => (

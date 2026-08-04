@@ -5,7 +5,7 @@ import EngineeringDashboard from './_components/EngineeringDashboard'
 export const dynamic = 'force-dynamic'
 
 export const metadata = {
-    title: 'Hồ sơ Thiết kế & Kỹ thuật | YSDMS NextGen',
+    title: '設計・技術管理 | YSDMS NextGen',
 }
 
 export default async function EngineeringPage() {

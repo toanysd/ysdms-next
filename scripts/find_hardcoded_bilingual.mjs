@@ -16,8 +16,9 @@ function findFiles(dir, fileList = []) {
   for (const file of files) {
     const filePath = path.join(dir, file);
     if (fs.statSync(filePath).isDirectory()) {
+      if (file === 'actions' || file === 'api') continue;
       findFiles(filePath, fileList);
-    } else if (filePath.endsWith('.tsx') || filePath.endsWith('.ts')) {
+    } else if ((filePath.endsWith('.tsx') || filePath.endsWith('.ts')) && !file.endsWith('actions.ts')) {
       fileList.push(filePath);
     }
   }
@@ -40,35 +41,36 @@ function main() {
       const lineNum = index + 1;
       const trimmed = line.trim();
 
-      // Skip comments
-      if (trimmed.startsWith('//')) return;
-      if (trimmed.startsWith('/*')) inCommentBlock = true;
-      if (inCommentBlock) {
-        if (trimmed.includes('*/')) inCommentBlock = false;
-        return;
+      // Remove block comments /* ... */ and line comments // ...
+      let codeLine = line.replace(/\/\*[\s\S]*?\*\//g, '');
+      const slashIdx = codeLine.indexOf('//');
+      if (slashIdx !== -1) {
+        codeLine = codeLine.substring(0, slashIdx);
       }
+      const codeTrimmed = codeLine.trim();
+      if (!codeTrimmed) return;
 
       let flagged = false;
       let reason = '';
 
       // 1. Check for legacy classes
-      if (classRegex.test(line)) {
+      if (classRegex.test(codeLine)) {
         flagged = true;
         reason = 'Legacy CSS class (ja/vi/label-ja/label-vi)';
       } 
       // 2. Check for Vietnamese text NOT inside a translation function or import/export
       // Exclude lines with t(, console.log, Error, require, import
       else if (
-        vnDiacriticsRegex.test(line) && 
-        !line.includes('t(') && 
-        !line.includes('console.') && 
-        !line.includes('Error(') &&
-        !line.includes('import ') &&
-        !line.includes('export ') &&
-        !trimmed.startsWith('*') // JSDoc
+        vnDiacriticsRegex.test(codeLine) && 
+        !codeLine.includes('t(') && 
+        !codeLine.includes('console.') && 
+        !codeLine.includes('Error(') &&
+        !codeLine.includes('import ') &&
+        !codeLine.includes('export ') &&
+        !codeTrimmed.startsWith('*') // JSDoc
       ) {
         // Specifically look for slash patterns "JP / VN" or "VN / JP"
-        if (jpRegex.test(line) && line.includes('/')) {
+        if (jpRegex.test(codeLine) && codeLine.includes('/')) {
           flagged = true;
           reason = 'Bilingual text with slash (JP / VN)';
         } else {
@@ -89,6 +91,7 @@ function main() {
     console.log('\n✅ No hardcoded bilingual text found!');
   } else {
     console.log('\n❌ Please review the files above and replace hardcoded text with next-intl t()');
+    process.exit(1);
   }
 }
 

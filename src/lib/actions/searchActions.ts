@@ -68,7 +68,7 @@ export async function fetchAllSearchableItems(): Promise<SearchableItem[]> {
       const code = m.system_code || base?.product_code || 'UNKNOWN'
       const name = m.display_name || base?.product_name_internal || ''
       const dims = [design?.design_length, design?.design_width, design?.design_height].filter(Boolean).join('x')
-      const keeperName = m.companies?.company_name || 'Chưa định vị'
+      const keeperName = m.companies?.company_name || '—'
       
       const searchableFields = [
         code, name, keeperName, m.device_status,

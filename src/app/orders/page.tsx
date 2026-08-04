@@ -434,7 +434,7 @@ export default function OrdersPage() {
                         type="checkbox" 
                         onChange={handleSelectAll}
                         checked={orders.filter(o => o.status === 'NEW').length > 0 && selectedOrders.length === orders.filter(o => o.status === 'NEW').length}
-                        title="Chọn tất cả đơn mới"
+                        title={t('selectAllNew')}
                       />
                     </th>
                     <th style={{ width: 140 }}>
@@ -529,7 +529,7 @@ export default function OrdersPage() {
                             <button 
                               onClick={(e) => { e.stopPropagation(); handleDeleteOrder(order.order_id, order.order_no); }}
                               style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: 4 }}
-                              title="削除"
+                              title={tCommon('delete')}
                             >
                               <Trash2 size={14} />
                             </button>

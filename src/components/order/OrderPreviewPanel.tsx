@@ -116,7 +116,7 @@ export function OrderPreviewPanel({ slipNo, orderDate, selectedCustomer, request
                             </div>
                         </div>
 
-                        {/* Ghi chú từng dòng & Báo Office Qty */}
+                        {/* Line notes & Office Qty */}
                         {(item.process_notes || item.office_qty) && (
                             <div className="col-span-12 mt-3 px-3 py-2 bg-amber-50/70 border-l-[3px] border-amber-400 rounded-r shadow-sm flex flex-col justify-center">
                                 <div className="flex items-center justify-between mb-0.5">

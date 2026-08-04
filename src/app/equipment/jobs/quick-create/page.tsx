@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { useTranslations } from 'next-intl'
+import { useTranslations, useLocale } from 'next-intl'
 import {
   ArrowLeft,
   ArrowUpFromLine,
@@ -60,7 +60,7 @@ type Employee = {
 type JobType = {
   job_type_id: string
   job_type_name_ja: string
-  job_type_name_vi: string
+  job_type_name_vi?: string
 }
 
 type ProcessingCode = {
@@ -91,15 +91,15 @@ function getSearchVariants(term: string): string[] {
 
 // ── Standard Default Job Types (Includes Equipment & Tooling Job Types) ──
 const DEFAULT_JOB_TYPES: JobType[] = [
-  { job_type_id: '1', job_type_name_ja: '新規金型', job_type_name_vi: 'Khuôn chính mới' },
-  { job_type_id: '2', job_type_name_ja: '金型改造', job_type_name_vi: 'Sửa / Cải tạo khuôn' },
-  { job_type_id: '3', job_type_name_ja: '新規抜型', job_type_name_vi: 'Dao cắt mới' },
-  { job_type_id: '4', job_type_name_ja: '金型メンテナンス', job_type_name_vi: 'Bảo dưỡng khuôn' },
-  { job_type_id: '5', job_type_name_ja: '新規水冷盤', job_type_name_vi: 'Chế tạo Đế làm mát mới (Water Base)' },
-  { job_type_id: '6', job_type_name_ja: '新規圧空盤', job_type_name_vi: 'Chế tạo Đế áp lực mới (Pressure Base)' },
-  { job_type_id: '7', job_type_name_ja: '新規枠・受け盤', job_type_name_vi: 'Chế tạo Khung / Đế đỡ mới (Frame)' },
-  { job_type_id: '8', job_type_name_ja: '設備修理・清掃', job_type_name_vi: 'Sửa chữa & Làm sạch thiết bị' },
-  { job_type_id: '9', job_type_name_ja: 'その他', job_type_name_vi: 'Khác' }
+  { job_type_id: '1', job_type_name_ja: '新規金型' },
+  { job_type_id: '2', job_type_name_ja: '金型改造' },
+  { job_type_id: '3', job_type_name_ja: '新規抜型' },
+  { job_type_id: '4', job_type_name_ja: '金型メンテナンス' },
+  { job_type_id: '5', job_type_name_ja: '新規水冷盤' },
+  { job_type_id: '6', job_type_name_ja: '新規圧空盤' },
+  { job_type_id: '7', job_type_name_ja: '新規枠・受け盤' },
+  { job_type_id: '8', job_type_name_ja: '設備修理・清掃' },
+  { job_type_id: '9', job_type_name_ja: 'その他' }
 ]
 
 // ── Derive job_category from job_type_id for conditional form sections ──
@@ -123,19 +123,19 @@ const CATEGORIES_NEEDING_PRODUCT_DESIGN_MOLD = new Set([
 
 // ── Standard Presets for Quick Add Mold Kit Components ──
 const COMPONENT_CHIPS = [
-  { type_code: 'MOLD', labelJA: 'MOLD (本型)', labelVI: 'Khuôn chính' },
-  { type_code: 'PLUG', labelJA: 'PLUG (プラグ)', labelVI: 'Chày gỗ' },
-  { type_code: 'CUTTER', labelJA: 'CUTTER (抜型)', labelVI: 'Dao cắt' },
-  { type_code: 'WATER_BASE', labelJA: '水冷ベース', labelVI: 'Đế làm mát' },
-  { type_code: 'PRESSURE_BASE', labelJA: '圧空ベース', labelVI: 'Đế áp lực' },
-  { type_code: 'STAKING', labelJA: '熱かしめ', labelVI: 'Đầu hàn nhiệt' },
-  { type_code: 'FRAME', labelJA: '枠 (フレーム)', labelVI: 'Khung định hình' },
+  { type_code: 'MOLD', labelJA: 'MOLD (本型)' },
+  { type_code: 'PLUG', labelJA: 'PLUG (プラグ)' },
+  { type_code: 'CUTTER', labelJA: 'CUTTER (抜型)' },
+  { type_code: 'WATER_BASE', labelJA: '水冷ベース' },
+  { type_code: 'PRESSURE_BASE', labelJA: '圧空ベース' },
+  { type_code: 'STAKING', labelJA: '熱かしめ' },
+  { type_code: 'FRAME', labelJA: '枠 (フレーム)' },
 ]
 
 // ── Preset Workflows ──
 const PRESET_WORKFLOWS = {
   NEW_MOLD: {
-    labelJA: '本型新規 (Khuôn chính mới)',
+    labelJA: '本型新規',
     steps: [
       { step_no: 1, step_name: '金型設計&加工', estimated_hours: null },
       { step_no: 2, step_name: '本型穴あけ', estimated_hours: null },
@@ -145,7 +145,7 @@ const PRESET_WORKFLOWS = {
     ]
   },
   MODIFY_MOLD: {
-    labelJA: '金型改造 (Sửa khuôn)',
+    labelJA: '金型改造',
     steps: [
       { step_no: 1, step_name: '改造設計', estimated_hours: null },
       { step_no: 2, step_name: '追加マシニング', estimated_hours: null },
@@ -153,7 +153,7 @@ const PRESET_WORKFLOWS = {
     ]
   },
   PROTOTYPE: {
-    labelJA: '試作金型 (Khuôn thử nghiệm)',
+    labelJA: '試作金型',
     steps: [
       { step_no: 1, step_name: '簡易型マシニング', estimated_hours: null },
       { step_no: 2, step_name: '試作穴あけ', estimated_hours: null },
@@ -166,7 +166,11 @@ export default function QuickCreateMoldJobPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const editJobIdParam = searchParams.get('editJobId')
+  const locale = useLocale()
+  const tText = useCallback((vi: string, ja: string) => locale === 'vi' ? vi : ja, [locale])
   const t = useTranslations('Equipment.QuickCreate')
+  const tCommon = useTranslations('Common')
+  const tEquipment = useTranslations('Equipment')
   const supabase = createClient()
 
   // Masters
@@ -410,12 +414,12 @@ export default function QuickCreateMoldJobPage() {
   }
 
   const handleDeleteWorklog = async (logId: string) => {
-    if (!confirm('Bạn có chắc chắn muốn xóa nhật ký này không? / この作業日報を削除しますか？')) return
+    if (!confirm(t('confirmDeleteWorkLog'))) return
 
     if (editJobId && !logId.startsWith('temp_')) {
       const { error } = await supabase.from('work_logs').delete().eq('log_id', logId)
       if (error) {
-        alert(`Lỗi khi xóa nhật ký: ${error.message}`)
+        alert(`${t('errDeleteWorklog')}: ${error.message}`)
         return
       }
       setWorkLogs(prev => prev.filter(l => l.log_id !== logId))
@@ -665,7 +669,7 @@ export default function QuickCreateMoldJobPage() {
         customerName: loadedCustomerName
       })
     } else {
-      alert(`Không thể nạp Job: ${res.error}`)
+      alert(`${t('errLoadJob')}: ${res.error}`)
     }
   }, [supabase])
 
@@ -792,8 +796,8 @@ export default function QuickCreateMoldJobPage() {
       })
 
       const msg = hasWorklogs
-        ? `Thành phần "${targetStep.step_name}" đang có nhật ký thao tác (worklog). Bạn có chắc chắn muốn xóa không?\n構成部品「${targetStep.step_name}」には作業日報があります。削除しますか？`
-        : `Bạn có chắc chắn muốn xóa thành phần "${targetStep.step_name}" không?\n構成部品「${targetStep.step_name}」を削除しますか？`
+        ? `構成部品「${targetStep.step_name}」には作業日報があります。削除しますか？`
+        : `構成部品「${targetStep.step_name}」を削除しますか？`
 
       if (!confirm(msg)) return
 
@@ -841,8 +845,8 @@ export default function QuickCreateMoldJobPage() {
     })
 
     const msg = hasWorklogs
-      ? `Thành phần/Công đoạn "${targetStep.step_name}" đang có nhật ký thao tác đi kèm. Bạn có chắc chắn muốn xóa không?\n「${targetStep.step_name}」には作業日報があります。削除しますか？`
-      : `Bạn có chắc chắn muốn xóa "${targetStep.step_name}" không?\n「${targetStep.step_name}」を削除しますか？`
+      ? `「${targetStep.step_name}」には作業日報があります。削除しますか？`
+      : `「${targetStep.step_name}」を削除しますか？`
 
     if (!confirm(msg)) return
 
@@ -964,7 +968,7 @@ export default function QuickCreateMoldJobPage() {
       if (res.success && res.job_id) {
         setCreatedResult({ jobId: res.job_id, moldId: res.physical_mold_id || '', isEdit: true })
       } else {
-        alert(`Lỗi khi cập nhật: ${res.error}`)
+        alert(`${t('errUpdate')}: ${res.error}`)
       }
     } else {
       // Create Mode
@@ -975,7 +979,7 @@ export default function QuickCreateMoldJobPage() {
       if (res.success && res.job_id) {
         setCreatedResult({ jobId: res.job_id, moldId: res.physical_mold_id || '', isEdit: false })
       } else {
-        alert(`Lỗi khi tạo mới: ${res.error}`)
+        alert(`${t('errCreate')}: ${res.error}`)
       }
     }
   }
@@ -1003,7 +1007,7 @@ export default function QuickCreateMoldJobPage() {
               style={{ height: 26, padding: '0 10px', fontSize: 11, gap: 4, background: 'var(--accent)', color: '#fff', fontWeight: 700 }}
             >
               <Save size={13} />
-              <span>Lưu / 保存</span>
+              <span>{tCommon('save')}</span>
             </button>
           </div>
 
@@ -1147,13 +1151,13 @@ export default function QuickCreateMoldJobPage() {
               
               {/* ── Section 1: 得意先 & 製品情報 (Master Data - Blue Accent) ── */}
               {CATEGORIES_NEEDING_PRODUCT_DESIGN_MOLD.has(JOB_TYPE_TO_CATEGORY[jobTypeId] || 'MOLD_NEW') && (
-              <div className="card-flat" style={{ padding: '10px 14px', borderLeft: '4px solid #3B82F6' }}>
+              <div className="card-flat" style={{ padding: '10px 14px', borderLeft: '4px solid var(--accent)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-                  <Building2 size={15} style={{ color: '#3B82F6' }} />
+                  <Building2 size={15} style={{ color: 'var(--accent)' }} />
                   <span style={{ fontSize: 13, fontWeight: 700, fontFamily: 'var(--font-jp)', color: 'var(--text-primary)' }}>
                     {t('step1Title')}
                   </span>
-                  <span style={{ fontSize: 10, color: '#3B82F6', background: 'color-mix(in srgb, #3B82F6 12%, transparent)', padding: '1px 6px', borderRadius: 4, fontWeight: 600 }}>
+                  <span className="badge badge--info" style={{ fontSize: 10 }}>
                     {t('step1Tag')}
                   </span>
                 </div>
@@ -1209,11 +1213,11 @@ export default function QuickCreateMoldJobPage() {
                           }}
                           style={{ padding: '4px 8px', fontSize: 11, color: 'var(--text-muted)', cursor: 'pointer' }}
                         >
-                          — Không chọn Khách hàng —
+                          — 顧客を選択しない —
                         </div>
                         {filteredCompanies.length === 0 ? (
                           <div style={{ padding: 8, fontSize: 11, color: 'var(--text-muted)' }}>
-                            Không tìm thấy Khách hàng tương ứng
+                            該当する顧客が見つかりません
                           </div>
                         ) : (
                           filteredCompanies.map((c, idx) => (
@@ -1331,7 +1335,7 @@ export default function QuickCreateMoldJobPage() {
                       value={primaryPlasticCode}
                       onChange={e => setPrimaryPlasticCode(e.target.value)}
                     >
-                      <option value="">— 未選択 (Không chọn) —</option>
+                      <option value="">— {tCommon('selectPlaceholder')} —</option>
                       {plasticMasters.length > 0 ? (
                         plasticMasters.map(pm => (
                           <option key={pm.plastic_id} value={pm.plastic_code}>
@@ -1345,7 +1349,7 @@ export default function QuickCreateMoldJobPage() {
                           <option value="PP 0.5t">PP 0.5t</option>
                           <option value="PS 0.4t">PS 0.4t</option>
                           <option value="A-PET 0.5t">A-PET 0.5t</option>
-                          <option value="CONDUCTIVE PS">CONDUCTIVE PS (Dẫn điện)</option>
+                          <option value="CONDUCTIVE PS">CONDUCTIVE PS</option>
                         </>
                       )}
                     </select>
@@ -1357,13 +1361,13 @@ export default function QuickCreateMoldJobPage() {
               {/* ── Section 2: 設計 & 寸法パラメータ (CAD Specs - Purple Accent) ── */}
               {CATEGORIES_NEEDING_PRODUCT_DESIGN_MOLD.has(JOB_TYPE_TO_CATEGORY[jobTypeId] || 'MOLD_NEW') && (
               <>
-              <div className="card-flat" style={{ padding: '10px 14px', borderLeft: '4px solid #8B5CF6' }}>
+              <div className="card-flat" style={{ padding: '10px 14px', borderLeft: '4px solid var(--tint-purple-bg)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-                  <PenTool size={15} style={{ color: '#8B5CF6' }} />
+                  <PenTool size={15} style={{ color: 'var(--tint-purple-bg)' }} />
                   <span style={{ fontSize: 13, fontWeight: 700, fontFamily: 'var(--font-jp)', color: 'var(--text-primary)' }}>
                     {t('step2Title')}
                   </span>
-                  <span style={{ fontSize: 10, color: '#8B5CF6', background: 'color-mix(in srgb, #8B5CF6 12%, transparent)', padding: '1px 6px', borderRadius: 4, fontWeight: 600 }}>
+                  <span className="badge badge--info" style={{ fontSize: 10 }}>
                     {t('step2Tag')}
                   </span>
                 </div>
@@ -1415,16 +1419,16 @@ export default function QuickCreateMoldJobPage() {
                   <div>
                     <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 2 }}>{t('orientationLabel')}</label>
                     <select className="form-input" style={{ height: 28, fontSize: 12, padding: '2px 6px' }} value={orientation} onChange={e => setOrientation(e.target.value)}>
-                      <option value="1. 下型">1. 下型 (Khuôn dưới)</option>
-                      <option value="2. 上型">2. 上型 (Khuôn trên)</option>
+                      <option value="1. 下型">{tText('1. Khuôn dưới', '1. 下型')}</option>
+                      <option value="2. 上型">{tText('2. Khuôn trên', '2. 上型')}</option>
                     </select>
                   </div>
 
                   <div>
                     <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 2 }}>{t('setupTypeLabel')}</label>
                     <select className="form-input" style={{ height: 28, fontSize: 12, padding: '2px 6px' }} value={setupType} onChange={e => setSetupType(e.target.value)}>
-                      <option value="1. 普通">1. 普通 (Thuận)</option>
-                      <option value="2. 逆型">2. 逆型 (Ngược)</option>
+                      <option value="1. 普通">{tText('1. Thuận', '1. 普通')}</option>
+                      <option value="2. 逆型">{tText('2. Ngược', '2. 逆型')}</option>
                     </select>
                   </div>
 
@@ -1439,13 +1443,13 @@ export default function QuickCreateMoldJobPage() {
               </div>
 
               {/* ── Section 3: 金型登録 (Physical Mold - Amber Accent) ── */}
-              <div className="card-flat" style={{ padding: '10px 14px', borderLeft: '4px solid #F59E0B' }}>
+              <div className="card-flat" style={{ padding: '10px 14px', borderLeft: '4px solid var(--status-warning)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-                  <Wrench size={15} style={{ color: '#F59E0B' }} />
+                  <Wrench size={15} style={{ color: 'var(--status-warning)' }} />
                   <span style={{ fontSize: 13, fontWeight: 700, fontFamily: 'var(--font-jp)', color: 'var(--text-primary)' }}>
                     {t('step3Title')}
                   </span>
-                  <span style={{ fontSize: 10, color: '#F59E0B', background: 'color-mix(in srgb, #F59E0B 12%, transparent)', padding: '1px 6px', borderRadius: 4, fontWeight: 600 }}>
+                  <span className="badge badge--warning" style={{ fontSize: 10 }}>
                     {t('step3Tag')}
                   </span>
                 </div>
@@ -1472,13 +1476,13 @@ export default function QuickCreateMoldJobPage() {
               </>)}
 
               {/* ── Section 4: ジョブ指示 & 期間 (Job Directive - Emerald Accent) ── */}
-              <div className="card-flat" style={{ padding: '10px 14px', borderLeft: '4px solid #10B981' }}>
+              <div className="card-flat" style={{ padding: '10px 14px', borderLeft: '4px solid var(--status-success)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-                  <Hammer size={15} style={{ color: '#10B981' }} />
+                  <Hammer size={15} style={{ color: 'var(--status-success)' }} />
                   <span style={{ fontSize: 13, fontWeight: 700, fontFamily: 'var(--font-jp)', color: 'var(--text-primary)' }}>
                     {t('step4Title')}
                   </span>
-                  <span style={{ fontSize: 10, color: '#10B981', background: 'color-mix(in srgb, #10B981 12%, transparent)', padding: '1px 6px', borderRadius: 4, fontWeight: 600 }}>
+                  <span className="badge badge--success" style={{ fontSize: 10 }}>
                     {t('step4Tag')}
                   </span>
                 </div>
@@ -1501,7 +1505,7 @@ export default function QuickCreateMoldJobPage() {
                     <select className="form-input" style={{ height: 28, fontSize: 12, padding: '2px 6px' }} value={jobTypeId} onChange={e => setJobTypeId(e.target.value)}>
                       {jobTypes.map(jt => (
                         <option key={jt.job_type_id} value={jt.job_type_id}>
-                          {jt.job_type_name_ja} ({jt.job_type_name_vi})
+                          {locale === 'vi' ? (jt.job_type_name_vi || jt.job_type_name_ja) : (jt.job_type_name_ja || jt.job_type_name_vi)}
                         </option>
                       ))}
                     </select>
@@ -1545,15 +1549,15 @@ export default function QuickCreateMoldJobPage() {
                 </div>
               </div>
 
-              {/* ── Section 5: 構成部品 & 補助設備 (Mold Kit Components - Pink Accent) ── */}
-              <div className="card-flat" style={{ padding: '10px 14px', borderLeft: '4px solid #EC4899' }}>
+              {/* ── Section 5: 構成部品 & 補助設備 (Mold Kit Components - Accent Border) ── */}
+              <div className="card-flat" style={{ padding: '10px 14px', borderLeft: '4px solid var(--accent)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <Box size={15} style={{ color: '#EC4899' }} />
+                    <Box size={15} style={{ color: 'var(--accent)' }} />
                     <span style={{ fontSize: 13, fontWeight: 700, fontFamily: 'var(--font-jp)', color: 'var(--text-primary)' }}>
                       {t('step5Title')}
                     </span>
-                    <span style={{ fontSize: 10, color: '#EC4899', background: 'color-mix(in srgb, #EC4899 12%, transparent)', padding: '1px 6px', borderRadius: 4, fontWeight: 600 }}>
+                    <span style={{ fontSize: 10, color: 'var(--accent)', background: 'var(--accent-subtle)', padding: '1px 6px', borderRadius: 4, fontWeight: 600 }}>
                       {t('step5Tag')}
                     </span>
                   </div>
@@ -1574,8 +1578,8 @@ export default function QuickCreateMoldJobPage() {
                             padding: '0 8px',
                             fontSize: 10,
                             fontWeight: 600,
-                            background: isSelected ? '#EC4899' : undefined,
-                            borderColor: isSelected ? '#EC4899' : undefined,
+                            background: isSelected ? 'var(--accent)' : undefined,
+                            borderColor: isSelected ? 'var(--accent)' : undefined,
                           }}
                         >
                           {isSelected ? '✓ ' : '+ '} {chip.type_code}
@@ -1738,14 +1742,14 @@ export default function QuickCreateMoldJobPage() {
               </div>
 
               {/* ── Section 6: 詳細加工工程 (2-COLUMN SPLIT: Process Steps & Worklogs) ── */}
-              <div className="card-flat" style={{ padding: '10px 14px', borderLeft: '4px solid #06B6D4' }}>
+              <div className="card-flat" style={{ padding: '10px 14px', borderLeft: '4px solid var(--accent)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <Layers size={15} style={{ color: '#06B6D4' }} />
+                    <Layers size={15} style={{ color: 'var(--accent)' }} />
                     <span style={{ fontSize: 13, fontWeight: 700, fontFamily: 'var(--font-jp)', color: 'var(--text-primary)' }}>
                       {t('step6Title')}
                     </span>
-                    <span style={{ fontSize: 10, color: '#06B6D4', background: 'color-mix(in srgb, #06B6D4 12%, transparent)', padding: '1px 6px', borderRadius: 4, fontWeight: 600 }}>
+                    <span className="badge badge--info" style={{ fontSize: 10 }}>
                       {t('step6Tag')}
                     </span>
                   </div>
@@ -1869,19 +1873,17 @@ export default function QuickCreateMoldJobPage() {
                                             className="form-input"
                                             style={{ height: 24, fontSize: 10, padding: '2px 4px', width: '100%', fontWeight: isSelected ? 700 : 400 }}
                                             value={st.step_name}
-                                            onFocus={() => setSelectedStepNo(st.step_no)}
-                                            onClick={() => setSelectedStepNo(st.step_no)}
                                             onChange={e => { setSelectedStepNo(st.step_no); updateStep(idx, 'step_name', e.target.value) }}
                                           >
-                                            <optgroup label="── 構成機器 (Section 5 Kit) ──">
-                                              <option value="金型">金型 (MOLD)</option>
-                                              <option value="プラグ">プラグ (PLUG)</option>
-                                              <option value="カッター">カッター (CUTTER)</option>
-                                              <option value="水冷盤">水冷盤 (WATER_BASE)</option>
-                                              <option value="枠">枠 (FRAME)</option>
-                                              <option value="押板">押板 (PRESSURE_BASE)</option>
+                                            <optgroup label={t('componentEquipmentOptgroup')}>
+                                              <option value="金型">{tText('Khuôn (MOLD)', '金型')}</option>
+                                              <option value="プラグ">{tText('Plug (PLUG)', 'プラグ')}</option>
+                                              <option value="カッター">{tText('Dao cắt (CUTTER)', 'カッター')}</option>
+                                              <option value="水冷盤">{tText('Đế làm mát (WATER_BASE)', '水冷盤')}</option>
+                                              <option value="枠">{tText('Khung (FRAME)', '枠')}</option>
+                                              <option value="押板">{tText('Đế áp lực (PRESSURE_BASE)', '押板')}</option>
                                             </optgroup>
-                                            <optgroup label="── 標準加工工程 (Processing Codes) ──">
+                                            <optgroup label={t('standardProcessingCodesOptgroup')}>
                                               {processingCodes.map(pc => (
                                                 <option key={pc.processing_code_id} value={pc.processing_name}>
                                                   {pc.processing_name}
@@ -1966,9 +1968,9 @@ export default function QuickCreateMoldJobPage() {
                                 className="badge badge--info" 
                                 style={{ fontSize: 9, cursor: 'pointer', marginLeft: 4 }}
                                 onClick={() => setSelectedStepNo(null)}
-                                title="Bấm để xem tất cả nhật ký"
+                                title={tText('Bấm để xem tất cả nhật ký', 'クリックしてすべてのログを表示')}
                               >
-                                🎯 STT {selectedStepNo}: {activeStepObj?.step_name || ''} (✕ Xem tất cả)
+                                🎯 {tText('STT', '工程')} {selectedStepNo}: {activeStepObj?.step_name || ''} ({tText('✕ Xem tất cả', '✕ すべて表示')})
                               </span>
                             )}
                           </span>
@@ -1985,7 +1987,7 @@ export default function QuickCreateMoldJobPage() {
                               style={{ height: 22, padding: '0 8px', fontSize: 10, gap: 4, fontWeight: 600, background: 'color-mix(in srgb, var(--accent) 12%, transparent)', color: 'var(--accent)', borderColor: 'var(--accent)' }}
                             >
                               <Plus size={11} />
-                              <span>+ Thêm nhật ký</span>
+                              <span>+ {tText('Thêm nhật ký', 'ログ追加')}</span>
                             </button>
                           </div>
                         </div>
@@ -1995,7 +1997,7 @@ export default function QuickCreateMoldJobPage() {
                             <Clock size={24} style={{ color: 'var(--text-muted)', margin: '0 auto 6px' }} />
                             <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 8 }}>
                               {selectedStepNo != null 
-                                ? `Chưa có nhật ký gia công cho công đoạn "${activeStepObj?.step_name || selectedStepNo}".`
+                                ? tText(`Chưa có nhật ký gia công cho công đoạn "${activeStepObj?.step_name || selectedStepNo}".`, `工程 "${activeStepObj?.step_name || selectedStepNo}" の加工ログはまだありません。`)
                                 : t('worklogsEmpty')
                               }
                             </div>
@@ -2006,7 +2008,7 @@ export default function QuickCreateMoldJobPage() {
                               style={{ height: 24, padding: '0 10px', fontSize: 10, gap: 4 }}
                             >
                               <Plus size={12} />
-                              <span>Tạo nhật ký mới</span>
+                              <span>{tCommon('addNew')}</span>
                             </button>
                           </div>
                         ) : (
@@ -2016,10 +2018,10 @@ export default function QuickCreateMoldJobPage() {
                                 <tr style={{ background: 'var(--bg-surface-2)' }}>
                                   <th style={{ width: 75, padding: '3px 4px', whiteSpace: 'nowrap' }}>{t('workDate')}</th>
                                   <th style={{ width: 90, padding: '3px 4px', whiteSpace: 'nowrap' }}>{t('worker')}</th>
-                                  <th style={{ width: 75, padding: '3px 4px', whiteSpace: 'nowrap' }}>工程</th>
+                                  <th style={{ width: 75, padding: '3px 4px', whiteSpace: 'nowrap' }}>{t('step')}</th>
                                   <th style={{ width: 45, padding: '3px 4px', textAlign: 'center', whiteSpace: 'nowrap' }}>{t('actualHours')}</th>
                                   <th style={{ padding: '3px 6px' }}>{t('statusNotes')}</th>
-                                  <th style={{ padding: '3px 4px', textAlign: 'center', width: 40, whiteSpace: 'nowrap' }}>Thao tác</th>
+                                  <th style={{ padding: '3px 4px', textAlign: 'center', width: 40, whiteSpace: 'nowrap' }}>{tCommon('action')}</th>
                                 </tr>
                               </thead>
                               <tbody>
@@ -2045,7 +2047,7 @@ export default function QuickCreateMoldJobPage() {
                                       <td style={{ padding: '3px 6px' }}>
                                         {log.is_finished ? (
                                           <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                                            <span className="badge badge--success" style={{ fontSize: 8, flexShrink: 0 }}>完了</span>
+                                            <span className="badge badge--success" style={{ fontSize: 8, flexShrink: 0 }}>{tEquipment('statusCompleted')}</span>
                                             {(log.notes || log.description) && (
                                               <span style={{ color: 'var(--text-muted)' }}>{log.notes || log.description}</span>
                                             )}
@@ -2060,7 +2062,7 @@ export default function QuickCreateMoldJobPage() {
                                             type="button"
                                             onClick={() => handleOpenWorklogModal(log)}
                                             style={{ background: 'none', border: 'none', color: 'var(--accent)', cursor: 'pointer', padding: 2 }}
-                                            title="Sửa nhật ký"
+                                            title={tText('Sửa nhật ký', 'ログ編集')}
                                           >
                                             <Pencil size={12} />
                                           </button>
@@ -2068,7 +2070,7 @@ export default function QuickCreateMoldJobPage() {
                                             type="button"
                                             onClick={() => handleDeleteWorklog(log.log_id)}
                                             style={{ background: 'none', border: 'none', color: 'var(--status-error)', cursor: 'pointer', padding: 2 }}
-                                            title="Xóa nhật ký"
+                                            title={tText('Xóa nhật ký', 'ログ削除')}
                                           >
                                             <Trash2 size={12} />
                                           </button>

@@ -91,7 +91,6 @@ export default function MoldFilterDrawer({ itemTypes, customers, racks }: MoldFi
               <Search size={18} className="text-[var(--mcs-primary)]" />
               詳細絞込
             </span>
-            <span className="text-[10px] text-[var(--mcs-text-muted)] italic font-semibold">Tìm kiếm nâng cao</span>
           </div>
           <button 
             onClick={() => setIsOpen(false)}
@@ -108,14 +107,13 @@ export default function MoldFilterDrawer({ itemTypes, customers, racks }: MoldFi
           <div className="flex flex-col gap-2">
             <div className="flex items-baseline gap-2">
               <span className="text-xs font-black text-[var(--mcs-text)]">種類</span>
-              <span className="text-[10px] text-[var(--mcs-text-muted)] italic">Loại thiết bị</span>
             </div>
             <select 
               value={typeId} 
               onChange={(e) => setTypeId(e.target.value)}
               className="w-full h-10 border border-[#e0e0e0] rounded-lg px-3 text-sm focus:border-[var(--mcs-primary)] focus:ring-1 focus:ring-[var(--mcs-primary)] outline-none bg-white"
             >
-              <option value="">-- 全て (Tất cả) --</option>
+              <option value="">-- 全て --</option>
               {itemTypes.map(t => (
                 <option key={t.id} value={t.id}>{t.name}</option>
               ))}
@@ -128,17 +126,16 @@ export default function MoldFilterDrawer({ itemTypes, customers, racks }: MoldFi
           <div className="flex flex-col gap-2">
             <div className="flex items-baseline gap-2">
               <span className="text-xs font-black text-[var(--mcs-text)]">状態</span>
-              <span className="text-[10px] text-[var(--mcs-text-muted)] italic">Trạng thái IN/OUT</span>
             </div>
             <select 
               value={status} 
               onChange={(e) => setStatus(e.target.value)}
               className="w-full h-10 border border-[#e0e0e0] rounded-lg px-3 text-sm focus:border-[var(--mcs-primary)] focus:ring-1 focus:ring-[var(--mcs-primary)] outline-none bg-white"
             >
-              <option value="">-- 全て (Tất cả) --</option>
-              <option value="IN">IN (Trong kho)</option>
-              <option value="OUT">OUT (Ngoài kho)</option>
-              <option value="AUDIT">AUDIT (Đang kiểm kê)</option>
+              <option value="">-- 全て --</option>
+              <option value="IN">IN</option>
+              <option value="OUT">OUT</option>
+              <option value="AUDIT">AUDIT</option>
             </select>
           </div>
 
@@ -148,14 +145,13 @@ export default function MoldFilterDrawer({ itemTypes, customers, racks }: MoldFi
           <div className="flex flex-col gap-2">
             <div className="flex items-baseline gap-2">
               <span className="text-xs font-black text-[var(--mcs-text)]">顧客</span>
-              <span className="text-[10px] text-[var(--mcs-text-muted)] italic">Khách hàng</span>
             </div>
             <select 
               value={customerId} 
               onChange={(e) => setCustomerId(e.target.value)}
               className="w-full h-10 border border-[#e0e0e0] rounded-lg px-3 text-sm focus:border-[var(--mcs-primary)] focus:ring-1 focus:ring-[var(--mcs-primary)] outline-none bg-white"
             >
-              <option value="">-- 全て (Tất cả) --</option>
+              <option value="">-- 全て --</option>
               {customers.map(c => (
                 <option key={c.id} value={c.id}>{c.customer_name_jp} ({c.customer_code})</option>
               ))}
@@ -168,14 +164,13 @@ export default function MoldFilterDrawer({ itemTypes, customers, racks }: MoldFi
           <div className="flex flex-col gap-2">
             <div className="flex items-baseline gap-2">
               <span className="text-xs font-black text-[var(--mcs-text)]">保管場所 (ラック)</span>
-              <span className="text-[10px] text-[var(--mcs-text-muted)] italic">Vị trí kệ</span>
             </div>
             <select 
               className="w-full h-10 border border-[#e0e0e0] rounded-lg px-3 text-sm focus:border-[var(--mcs-primary)] focus:ring-1 focus:ring-[var(--mcs-primary)] outline-none bg-white"
               value={rack}
               onChange={(e) => setRack(e.target.value)}
             >
-              <option value="">-- 全て (Tất cả) --</option>
+              <option value="">-- 全て --</option>
               {racks.map(r => (
                 <option key={r.id} value={r.id}>{r.name} ({r.code})</option>
               ))}
@@ -188,16 +183,15 @@ export default function MoldFilterDrawer({ itemTypes, customers, racks }: MoldFi
           <div className="flex flex-col gap-2">
             <div className="flex items-baseline gap-2">
               <span className="text-xs font-black text-[var(--mcs-text)]">テフロン状態</span>
-              <span className="text-[10px] text-[var(--mcs-text-muted)] italic">Trạng thái mạ Teflon</span>
             </div>
             <select 
               className="w-full h-10 border border-[#e0e0e0] rounded-lg px-3 text-sm focus:border-[var(--mcs-primary)] focus:ring-1 focus:ring-[var(--mcs-primary)] outline-none bg-white"
               value={teflon}
               onChange={(e) => setTeflon(e.target.value)}
             >
-              <option value="">-- 全て (Tất cả) --</option>
-              <option value="has_teflon">テフロン済 (Đã mạ Teflon)</option>
-              <option value="no_teflon">未処理 (Chưa mạ)</option>
+              <option value="">-- 全て --</option>
+              <option value="has_teflon">テフロン済</option>
+              <option value="no_teflon">未処理</option>
             </select>
           </div>
 
@@ -209,13 +203,13 @@ export default function MoldFilterDrawer({ itemTypes, customers, racks }: MoldFi
             onClick={handleClear}
             className="flex-1 h-11 border border-[#e0e0e0] rounded-xl font-bold text-[var(--mcs-text-secondary)] hover:bg-[#f5f5f5] transition-colors"
           >
-            クリア (Xóa)
+            クリア
           </button>
           <button 
             onClick={handleApply}
             className="flex-[2] h-11 bg-[var(--mcs-primary)] rounded-xl font-bold text-white hover:bg-[var(--mcs-primary-hover)] transition-colors shadow-sm"
           >
-            検索 (Áp dụng)
+            検索
           </button>
         </div>
       </div>

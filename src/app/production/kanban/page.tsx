@@ -5,7 +5,7 @@ import KanbanBoard from '../KanbanBoard-v8.5.2-1'
 import { getTodayProductionPlans, getActiveProductionLogs, getTodayCompletedLogs } from '@/app/actions/production'
 
 export const metadata = {
-  title: 'Xưởng Định Hình (Kanban) | YSDMS Next-Gen',
+  title: '成形現場カンバン | YSDMS NextGen',
 }
 
 export const revalidate = 0 // Tắt cache để Kanban real-time

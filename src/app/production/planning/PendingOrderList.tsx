@@ -52,7 +52,6 @@ export default function PendingOrderList({ initialItems }: { initialItems: any[]
         return (
             <div className="flex flex-col items-center justify-center py-[40px] opacity-70">
                 <p className="text-[12px] font-bold text-[var(--mcs-text)]">全注文の計画が完了しました</p>
-                <p className="text-[10px] uppercase tracking-wider mt-[4px] text-[var(--mcs-text-muted)]">Đã lên lịch xong toàn bộ</p>
             </div>
         )
     }

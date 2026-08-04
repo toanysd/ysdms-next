@@ -379,7 +379,7 @@ export default function OrderPrintPage({ params }: { params: Promise<{ id: strin
             </div>
             <div className="print-logo-text">
               <div className="en">{YSD_COMPANY_INFO.nameEn}</div>
-              <div className="ja">{YSD_COMPANY_INFO.nameJa}</div>
+              <div className="name-jp">{YSD_COMPANY_INFO.nameJa}</div>
             </div>
           </div>
 

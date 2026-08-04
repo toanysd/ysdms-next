@@ -1,10 +1,12 @@
 'use client'
 
 import { useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { createInspection } from '@/app/actions/quality'
 import { CheckCircle, AlertCircle, ScanLine, Camera, Check, X } from 'lucide-react'
 
 export default function QCInspectionsPage() {
+    const t = useTranslations('Quality')
     const [jobId, setJobId] = useState('')
     const [productId, setProductId] = useState('')
     const [stage, setStage] = useState('SETUP')
@@ -44,7 +46,7 @@ export default function QCInspectionsPage() {
             if (res.error) {
                 setMessage({ type: 'error', text: res.error })
             } else {
-                setMessage({ type: 'success', text: `Đã ghi nhận kết quả: ${finalResult}` })
+                setMessage({ type: 'success', text: finalResult })
                 setTimeout(() => {
                     // Reset
                     setLength('')
@@ -62,47 +64,62 @@ export default function QCInspectionsPage() {
     }
 
     return (
-        <div className="flex flex-col h-[calc(100vh-100px)] max-w-5xl mx-auto bg-gray-50 p-4 rounded-xl shadow-inner">
-            <header className="flex justify-between items-center bg-white p-4 rounded-lg shadow-sm mb-4">
+        <div className="flex flex-col h-[calc(100vh-100px)] max-w-5xl mx-auto p-4 gap-4 overflow-y-auto">
+            <header className="flex justify-between items-center bg-[var(--tint-teal-bg)] p-4 rounded-lg border border-[var(--mcs-border)] mb-2">
                 <div className="flex items-center gap-3">
-                    <div className="p-3 bg-purple-100 text-purple-700 rounded-full">
+                    <div className="p-3 badge badge--info rounded-full">
                         <CheckCircle size={24} />
                     </div>
                     <div>
-                        <h1 className="text-xl font-bold text-gray-800">Kiểm tra Chất lượng (KCS)</h1>
-                        <p className="text-sm text-gray-500">Đo kích thước & Ngoại quan khay</p>
+                        <h1 className="text-[18px] font-bold" style={{ color: 'var(--text-primary)' }}>
+                            {t('inspectionsTitle')}
+                        </h1>
+                        <p className="text-[12px] font-medium" style={{ color: 'var(--text-muted)' }}>
+                            {t('inspectionsSubtitle')}
+                        </p>
                     </div>
                 </div>
             </header>
 
             {message && (
-                <div className={`p-4 mb-4 rounded-lg flex items-center gap-2 font-bold ${message.type === 'success' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                    {message.type === 'success' ? <CheckCircle /> : <AlertCircle />}
+                <div className={`p-4 rounded-lg flex items-center gap-2 font-bold ${message.type === 'success' ? 'badge badge--success' : 'badge badge--error'}`}>
+                    {message.type === 'success' ? <CheckCircle size={18} /> : <AlertCircle size={18} />}
                     {message.text}
                 </div>
             )}
 
-            <div className="flex-1 bg-white rounded-lg shadow-sm flex flex-col md:flex-row overflow-hidden">
+            <div className="card-flat flex-1 flex flex-col md:flex-row overflow-hidden">
                 {/* Left Panel: Context */}
-                <div className="w-full md:w-1/3 border-r border-gray-100 bg-gray-50 p-6 flex flex-col gap-6">
+                <div className="w-full md:w-1/3 border-r border-[var(--mcs-border)] bg-[var(--tint-teal-bg)]/30 p-6 flex flex-col gap-6">
                     <div>
-                        <button className="w-full py-4 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg flex items-center justify-center gap-2 font-bold transition-colors">
+                        <button className="btn btn-secondary w-full py-3 flex items-center justify-center gap-2 font-bold text-[13px]">
                             <ScanLine size={20} />
-                            Quét QR Lệnh SX / Khay
+                            {t('scanQrJob')}
                         </button>
                     </div>
 
                     <div>
-                        <label className="block text-sm font-bold text-gray-700 mb-2">Công đoạn kiểm tra</label>
+                        <label className="block text-[12px] font-bold mb-2" style={{ color: 'var(--text-primary)' }}>
+                            {t('inspectionStage')}
+                        </label>
                         <div className="flex flex-col gap-2">
-                            <button onClick={() => setStage('SETUP')} className={`p-3 rounded-lg font-bold border-2 text-left ${stage === 'SETUP' ? 'border-purple-500 bg-purple-50 text-purple-700' : 'border-gray-200 text-gray-500'}`}>
-                                1. Đầu ca (Setup)
+                            <button 
+                                onClick={() => setStage('SETUP')} 
+                                className={`p-3 rounded-lg font-bold border text-left text-[13px] transition-colors ${stage === 'SETUP' ? 'btn-primary' : 'card-flat'}`}
+                            >
+                                {t('stages.setup')}
                             </button>
-                            <button onClick={() => setStage('IN_PROCESS')} className={`p-3 rounded-lg font-bold border-2 text-left ${stage === 'IN_PROCESS' ? 'border-purple-500 bg-purple-50 text-purple-700' : 'border-gray-200 text-gray-500'}`}>
-                                2. Giữa ca (In-Process)
+                            <button 
+                                onClick={() => setStage('IN_PROCESS')} 
+                                className={`p-3 rounded-lg font-bold border text-left text-[13px] transition-colors ${stage === 'IN_PROCESS' ? 'btn-primary' : 'card-flat'}`}
+                            >
+                                {t('stages.in_process')}
                             </button>
-                            <button onClick={() => setStage('FINAL')} className={`p-3 rounded-lg font-bold border-2 text-left ${stage === 'FINAL' ? 'border-purple-500 bg-purple-50 text-purple-700' : 'border-gray-200 text-gray-500'}`}>
-                                3. Lấy mẫu Cuối ca (Final)
+                            <button 
+                                onClick={() => setStage('FINAL')} 
+                                className={`p-3 rounded-lg font-bold border text-left text-[13px] transition-colors ${stage === 'FINAL' ? 'btn-primary' : 'card-flat'}`}
+                            >
+                                {t('stages.final')}
                             </button>
                         </div>
                     </div>
@@ -112,66 +129,93 @@ export default function QCInspectionsPage() {
                 <div className="flex-1 p-6 flex flex-col overflow-y-auto">
                     
                     <div className="mb-6">
-                        <h3 className="text-sm font-bold text-gray-500 uppercase mb-3">1. Kích thước đo (mm)</h3>
+                        <h3 className="text-[12px] font-bold uppercase mb-3" style={{ color: 'var(--text-muted)' }}>
+                            {t('dimensionsTitle')}
+                        </h3>
                         <div className="grid grid-cols-2 gap-4">
-                            <div className="bg-gray-50 p-3 rounded-lg border border-gray-200">
-                                <label className="block text-xs font-bold text-gray-500 mb-1">Chiều Dài</label>
-                                <input type="number" value={length} onChange={e=>setLength(e.target.value)} className="w-full text-2xl font-bold p-2 border border-gray-300 rounded focus:border-purple-500 outline-none" placeholder="0.0" />
+                            <div className="card-flat p-3">
+                                <label className="block text-[11px] font-semibold mb-1" style={{ color: 'var(--text-muted)' }}>
+                                    {t('length')}
+                                </label>
+                                <input type="number" value={length} onChange={e=>setLength(e.target.value)} className="form-input w-full text-2xl font-bold font-mono p-2" placeholder="0.0" />
                             </div>
-                            <div className="bg-gray-50 p-3 rounded-lg border border-gray-200">
-                                <label className="block text-xs font-bold text-gray-500 mb-1">Chiều Rộng</label>
-                                <input type="number" value={width} onChange={e=>setWidth(e.target.value)} className="w-full text-2xl font-bold p-2 border border-gray-300 rounded focus:border-purple-500 outline-none" placeholder="0.0" />
+                            <div className="card-flat p-3">
+                                <label className="block text-[11px] font-semibold mb-1" style={{ color: 'var(--text-muted)' }}>
+                                    {t('width')}
+                                </label>
+                                <input type="number" value={width} onChange={e=>setWidth(e.target.value)} className="form-input w-full text-2xl font-bold font-mono p-2" placeholder="0.0" />
                             </div>
-                            <div className="bg-gray-50 p-3 rounded-lg border border-gray-200">
-                                <label className="block text-xs font-bold text-gray-500 mb-1">Chiều Cao</label>
-                                <input type="number" value={height} onChange={e=>setHeight(e.target.value)} className="w-full text-2xl font-bold p-2 border border-gray-300 rounded focus:border-purple-500 outline-none" placeholder="0.0" />
+                            <div className="card-flat p-3">
+                                <label className="block text-[11px] font-semibold mb-1" style={{ color: 'var(--text-muted)' }}>
+                                    {t('height')}
+                                </label>
+                                <input type="number" value={height} onChange={e=>setHeight(e.target.value)} className="form-input w-full text-2xl font-bold font-mono p-2" placeholder="0.0" />
                             </div>
-                            <div className="bg-gray-50 p-3 rounded-lg border border-gray-200">
-                                <label className="block text-xs font-bold text-gray-500 mb-1">Độ Dày T.</label>
-                                <input type="number" value={thickness} onChange={e=>setThickness(e.target.value)} className="w-full text-2xl font-bold p-2 border border-gray-300 rounded focus:border-purple-500 outline-none" placeholder="0.00" />
+                            <div className="card-flat p-3">
+                                <label className="block text-[11px] font-semibold mb-1" style={{ color: 'var(--text-muted)' }}>
+                                    {t('thickness')}
+                                </label>
+                                <input type="number" value={thickness} onChange={e=>setThickness(e.target.value)} className="form-input w-full text-2xl font-bold font-mono p-2" placeholder="0.00" />
                             </div>
                         </div>
                     </div>
 
                     <div className="mb-6">
-                        <h3 className="text-sm font-bold text-gray-500 uppercase mb-3">2. Đánh giá Ngoại quan</h3>
+                        <h3 className="text-[12px] font-bold uppercase mb-3" style={{ color: 'var(--text-muted)' }}>
+                            {t('visualTitle')}
+                        </h3>
                         <div className="flex gap-4">
-                            <button onClick={()=>setNoScratch(!noScratch)} className={`flex-1 p-3 flex flex-col items-center justify-center gap-2 rounded-lg border-2 font-bold ${noScratch ? 'border-green-500 bg-green-50 text-green-700' : 'border-red-500 bg-red-50 text-red-700'}`}>
-                                {noScratch ? <Check size={20}/> : <X size={20}/>} Không xước
+                            <button 
+                                onClick={()=>setNoScratch(!noScratch)} 
+                                className={`flex-1 p-3 flex flex-col items-center justify-center gap-2 rounded-lg border-2 font-bold text-[13px] ${noScratch ? 'badge badge--success' : 'badge badge--error'}`}
+                            >
+                                {noScratch ? <Check size={20}/> : <X size={20}/>} {t('noScratch')}
                             </button>
-                            <button onClick={()=>setNoBurr(!noBurr)} className={`flex-1 p-3 flex flex-col items-center justify-center gap-2 rounded-lg border-2 font-bold ${noBurr ? 'border-green-500 bg-green-50 text-green-700' : 'border-red-500 bg-red-50 text-red-700'}`}>
-                                {noBurr ? <Check size={20}/> : <X size={20}/>} Không bavia
+                            <button 
+                                onClick={()=>setNoBurr(!noBurr)} 
+                                className={`flex-1 p-3 flex flex-col items-center justify-center gap-2 rounded-lg border-2 font-bold text-[13px] ${noBurr ? 'badge badge--success' : 'badge badge--error'}`}
+                            >
+                                {noBurr ? <Check size={20}/> : <X size={20}/>} {t('noBurr')}
                             </button>
-                            <button onClick={()=>setTransparency(!transparency)} className={`flex-1 p-3 flex flex-col items-center justify-center gap-2 rounded-lg border-2 font-bold ${transparency ? 'border-green-500 bg-green-50 text-green-700' : 'border-red-500 bg-red-50 text-red-700'}`}>
-                                {transparency ? <Check size={20}/> : <X size={20}/>} Độ trong đạt
+                            <button 
+                                onClick={()=>setTransparency(!transparency)} 
+                                className={`flex-1 p-3 flex flex-col items-center justify-center gap-2 rounded-lg border-2 font-bold text-[13px] ${transparency ? 'badge badge--success' : 'badge badge--error'}`}
+                            >
+                                {transparency ? <Check size={20}/> : <X size={20}/>} {t('transparency')}
                             </button>
                         </div>
                     </div>
 
                     <div className="mb-6">
-                        <h3 className="text-sm font-bold text-gray-500 uppercase mb-3">3. Hình ảnh (Tùy chọn)</h3>
-                        <button className="w-full p-4 border-2 border-dashed border-gray-300 rounded-lg text-gray-500 flex flex-col items-center justify-center gap-2 hover:bg-gray-50">
+                        <h3 className="text-[12px] font-bold uppercase mb-3" style={{ color: 'var(--text-muted)' }}>
+                            {t('photoTitle')}
+                        </h3>
+                        <button className="w-full p-4 border-2 border-dashed border-[var(--mcs-border)] rounded-lg flex flex-col items-center justify-center gap-2 text-[13px] font-bold hover:bg-[var(--tint-teal-bg)]/20" style={{ color: 'var(--text-muted)' }}>
                             <Camera size={24} />
-                            <span>Chụp ảnh hàng NG / Lỗi</span>
+                            <span>{t('takePhoto')}</span>
                         </button>
                     </div>
 
-                    <div className="mt-auto border-t border-gray-100 pt-6">
-                        <h3 className="text-sm font-bold text-gray-500 uppercase mb-3 text-center">Kết luận cuối cùng</h3>
+                    <div className="mt-auto border-t border-[var(--mcs-border)] pt-6">
+                        <h3 className="text-[12px] font-bold uppercase mb-3 text-center" style={{ color: 'var(--text-muted)' }}>
+                            {t('finalResult')}
+                        </h3>
                         <div className="flex gap-4">
                             <button 
                                 onClick={() => handleSubmit('FAIL')}
                                 disabled={isSubmitting}
-                                className="flex-1 py-6 bg-red-600 hover:bg-red-700 text-white rounded-xl text-2xl font-black shadow-lg shadow-red-200 transition-transform active:scale-95 disabled:opacity-50"
+                                className="flex-1 py-4 text-white rounded-xl text-xl font-bold transition-transform active:scale-95 disabled:opacity-50"
+                                style={{ backgroundColor: 'var(--status-error)' }}
                             >
-                                FAIL (NG)
+                                {t('fail')}
                             </button>
                             <button 
                                 onClick={() => handleSubmit('PASS')}
                                 disabled={isSubmitting}
-                                className="flex-[2] py-6 bg-green-500 hover:bg-green-600 text-white rounded-xl text-2xl font-black shadow-lg shadow-green-200 transition-transform active:scale-95 disabled:opacity-50"
+                                className="flex-[2] py-4 text-white rounded-xl text-xl font-bold transition-transform active:scale-95 disabled:opacity-50"
+                                style={{ backgroundColor: 'var(--status-success)' }}
                             >
-                                PASS (OK)
+                                {t('pass')}
                             </button>
                         </div>
                     </div>
@@ -181,3 +225,4 @@ export default function QCInspectionsPage() {
         </div>
     )
 }
+

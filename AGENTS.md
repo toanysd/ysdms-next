@@ -126,8 +126,15 @@ export default function ExampleComponent() {
 
 ## 6. CSS / DESIGN SYSTEM RULES
 
+### 👁️ Quy tắc Font size & Tương phản (BẮT BUỘC để tránh mỏi mắt)
+- **Màu chữ chính (`--text-primary`):** Sắc nét `#0F172A` (Slate 900) — KHÔNG dùng màu xám nhạt mờ.
+- **Giá trị dữ liệu (Data Values):** BẮT BUỘC cỡ 13px - 14px Bold (dùng `fontFamily: monospace` cho thông số kỹ thuật, số lượng, kích thước). KHÔNG dùng cỡ chữ 10px-11px cho dữ liệu chính.
+- **Nhãn dữ liệu (Labels):** Cỡ 11px - 12px Semi-bold (màu `--text-muted` `#475569`).
+- **Visual Anchors (Nền phân vùng):** Dùng các biến màu nhạt `--tint-teal-bg`, `--tint-blue-bg`, `--tint-orange-bg`, `--tint-purple-bg` cho header các khối card để người dùng phân biệt khu vực dữ liệu ngay lập tức.
+- **Dữ liệu nổi bật (Pill Badges):** Kích thước khay, loại nhựa, mã khuôn phải được bọc trong thẻ Pill có nền màu nhạt nổi bật.
+
 ### ✅ Được phép dùng
-- CSS variables: `var(--accent)`, `var(--bg-surface)`, `var(--text-primary)`…
+- CSS variables: `var(--accent)`, `var(--bg-surface)`, `var(--text-primary)`, `--tint-teal-bg`…
 - CSS classes từ `globals.css`: `card-flat`, `badge`, `btn-primary`, `btn-secondary`, `form-input`, `form-select`, `form-section`, `data-table`, `tab-nav`, `tab-item`, `kpi-card`…
 - Tailwind utilities cho layout: `flex`, `grid`, `hidden`, `md:flex`, `shrink-0`, `overflow-hidden`…
 - Inline style cho dynamic values: `style={{ color: section.color }}`

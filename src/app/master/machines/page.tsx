@@ -36,28 +36,14 @@ type Machine = {
 
 type MachineForm = Omit<Machine, 'machine_id' | 'created_at' | 'updated_at'>
 
-// ─── Label Maps ──────────────────────────────────────────────────────────────
+// ─── Label Maps & Helpers ──────────────────────────────────────────────────
 
-const MACHINE_TYPE_LABELS: Record<MachineType, { ja: string; vi: string; color: string; bg: string; border: string }> = {
-  VACUUM_FORMING:   { ja: '真空成形',         vi: 'Hút chân không',  color: 'var(--status-info)',    bg: 'color-mix(in srgb, var(--status-info) 12%, transparent)',    border: 'color-mix(in srgb, var(--status-info) 25%, transparent)' },
-  PRESSURE_FORMING: { ja: '圧空成形',         vi: 'Ép khí',          color: 'var(--accent)',         bg: 'color-mix(in srgb, var(--accent) 12%, transparent)',         border: 'color-mix(in srgb, var(--accent) 25%, transparent)' },
-  TRIMMING_PRESS:   { ja: 'トリミングプレス',  vi: 'Dập cắt',         color: 'var(--status-warning)', bg: 'color-mix(in srgb, var(--status-warning) 12%, transparent)', border: 'color-mix(in srgb, var(--status-warning) 25%, transparent)' },
-  CNC_ROUTER:       { ja: 'CNCルーター',      vi: 'CNC Router',      color: 'var(--status-success)', bg: 'color-mix(in srgb, var(--status-success) 12%, transparent)', border: 'color-mix(in srgb, var(--status-success) 25%, transparent)' },
-  OTHER:            { ja: 'その他',           vi: 'Khác',            color: 'var(--text-muted)',     bg: 'color-mix(in srgb, var(--text-muted) 12%, transparent)',     border: 'color-mix(in srgb, var(--text-muted) 25%, transparent)' },
-}
-
-const LOCATION_LABELS: Record<Location, { ja: string; vi: string }> = {
-  '1F_FACTORY':   { ja: '1F 工場',    vi: 'Tầng 1 Nhà máy' },
-  '2F_OFFICE':    { ja: '2F 事務所',   vi: 'Tầng 2 Văn phòng' },
-  'MOLD_STORAGE': { ja: '金型倉庫',    vi: 'Kho khuôn' },
-  'WAREHOUSE':    { ja: '倉庫',       vi: 'Kho' },
-}
-
-const GROUP_LABELS: Record<MachineGroup, { ja: string; vi: string }> = {
-  MAIN:  { ja: 'メイン', vi: 'Chính' },
-  SUB:   { ja: 'サブ',   vi: 'Phụ' },
-  CNC:   { ja: 'CNC',   vi: 'CNC' },
-  PRESS: { ja: 'プレス', vi: 'Dập' },
+const MACHINE_TYPE_STYLES: Record<MachineType, { color: string; bg: string; border: string }> = {
+  VACUUM_FORMING:   { color: 'var(--status-info)',    bg: 'color-mix(in srgb, var(--status-info) 12%, transparent)',    border: 'color-mix(in srgb, var(--status-info) 25%, transparent)' },
+  PRESSURE_FORMING: { color: 'var(--accent)',         bg: 'color-mix(in srgb, var(--accent) 12%, transparent)',         border: 'color-mix(in srgb, var(--accent) 25%, transparent)' },
+  TRIMMING_PRESS:   { color: 'var(--status-warning)', bg: 'color-mix(in srgb, var(--status-warning) 12%, transparent)', border: 'color-mix(in srgb, var(--status-warning) 25%, transparent)' },
+  CNC_ROUTER:       { color: 'var(--status-success)', bg: 'color-mix(in srgb, var(--status-success) 12%, transparent)', border: 'color-mix(in srgb, var(--status-success) 25%, transparent)' },
+  OTHER:            { color: 'var(--text-muted)',     bg: 'color-mix(in srgb, var(--text-muted) 12%, transparent)',     border: 'color-mix(in srgb, var(--text-muted) 25%, transparent)' },
 }
 
 const EMPTY_FORM: MachineForm = {
@@ -98,6 +84,36 @@ export default function MachinesPage() {
   // Delete confirmation
   const [deleteId, setDeleteId] = useState<string | null>(null)
 
+  const getTypeLabel = (type: MachineType) => {
+    switch (type) {
+      case 'VACUUM_FORMING': return '真空成形 (Vacuum)'
+      case 'PRESSURE_FORMING': return '圧空成形 (Pressure)'
+      case 'TRIMMING_PRESS': return 'トリミングプレス (Press)'
+      case 'CNC_ROUTER': return 'CNCルーター'
+      default: return 'その他'
+    }
+  }
+
+  const getLocationLabel = (loc: Location) => {
+    switch (loc) {
+      case '1F_FACTORY': return '1F 工場'
+      case '2F_OFFICE': return '2F 事務所'
+      case 'MOLD_STORAGE': return '金型倉庫'
+      case 'WAREHOUSE': return '倉庫'
+      default: return loc
+    }
+  }
+
+  const getGroupLabel = (group: MachineGroup) => {
+    switch (group) {
+      case 'MAIN': return 'メイン (Main)'
+      case 'SUB': return 'サブ (Sub)'
+      case 'CNC': return 'CNC'
+      case 'PRESS': return 'プレス (Press)'
+      default: return group
+    }
+  }
+
   // ─── Data Fetching ──────────────────────────────────────────────────────
 
   const fetchMachines = useCallback(async () => {
@@ -116,7 +132,7 @@ export default function MachinesPage() {
     else setMachines((data || []) as Machine[])
     setLoading(false)
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filterType, filterGroup])
+  }, [filterType, filterGroup, supabase])
 
   useEffect(() => {
     fetchMachines()
@@ -187,13 +203,13 @@ export default function MachinesPage() {
   // ─── Render Helpers ─────────────────────────────────────────────────────
 
   const TypeBadge = ({ type }: { type: MachineType }) => {
-    const t = MACHINE_TYPE_LABELS[type]
+    const style = MACHINE_TYPE_STYLES[type] || MACHINE_TYPE_STYLES.OTHER
     return (
       <span
         className="inline-flex items-center px-[6px] py-[1px] rounded-full text-[10px] font-bold whitespace-nowrap"
-        style={{ color: t.color, background: t.bg, border: `1px solid ${t.border}` }}
+        style={{ color: style.color, background: style.bg, border: `1px solid ${style.border}` }}
       >
-        {t.ja}
+        {getTypeLabel(type)}
       </span>
     )
   }
@@ -211,7 +227,7 @@ export default function MachinesPage() {
           : 'color-mix(in srgb, var(--text-muted) 20%, transparent)'}`,
       }}
     >
-      {active ? '稼働中' : '停止'}
+      {active ? t('Master.operating') : t('Master.stoppedMaintenance')}
     </span>
   )
 
@@ -222,48 +238,42 @@ export default function MachinesPage() {
       {/* Page Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Cog size={18} style={{ color: 'var(--text-muted)' }} />
+          <Cog size={18} style={{ color: 'var(--accent)' }} />
           <div>
             <h1
               className="text-[15px] font-bold leading-tight"
               style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-jp)' }}
             >
-              機械・設備マスター
+              {t('Master.machineMaster')}
             </h1>
             <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
-              Quản lý Máy móc &amp; Thiết bị
+              {t('Master.machineMasterSub')}
             </span>
           </div>
         </div>
         <button
           onClick={openAdd}
-          className="h-[32px] px-3 text-[12px] font-bold rounded flex items-center gap-1"
-          style={{
-            background: 'var(--accent)',
-            color: '#fff',
-            border: 'none',
-            cursor: 'pointer',
-          }}
+          className="btn btn-primary h-[32px] px-3 text-[12px] font-bold rounded flex items-center gap-1 cursor-pointer"
         >
           <Plus size={14} />
-          <span style={{ fontFamily: 'var(--font-jp)' }}>新規追加</span>
+          <span>{t('Common.addNew')}</span>
         </button>
       </div>
 
       {/* Mini Dashboard */}
       <div className="grid grid-cols-3 gap-3">
         <div className="card-flat" style={{ padding: '12px 16px', borderLeft: '4px solid var(--accent)' }}>
-          <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>総機械数 / Tổng số máy</div>
-          <div style={{ fontSize: 24, fontWeight: 700, fontFamily: 'monospace' }}>{machines.length}</div>
+          <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{t('Master.totalMachines')}</div>
+          <div style={{ fontSize: 24, fontWeight: 700, fontFamily: 'monospace', color: 'var(--text-primary)' }}>{machines.length}</div>
         </div>
         <div className="card-flat" style={{ padding: '12px 16px', borderLeft: '4px solid var(--status-success)' }}>
-          <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>稼働中 / Đang hoạt động</div>
+          <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{t('Master.operating')}</div>
           <div style={{ fontSize: 24, fontWeight: 700, fontFamily: 'monospace', color: 'var(--status-success)' }}>
             {machines.filter(m => m.is_active).length}
           </div>
         </div>
         <div className="card-flat" style={{ padding: '12px 16px', borderLeft: '4px solid var(--status-error)' }}>
-          <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>停止・メンテ / Ngừng/Bảo trì</div>
+          <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{t('Master.stoppedMaintenance')}</div>
           <div style={{ fontSize: 24, fontWeight: 700, fontFamily: 'monospace', color: 'var(--status-error)' }}>
             {machines.filter(m => !m.is_active).length}
           </div>
@@ -275,7 +285,7 @@ export default function MachinesPage() {
         <div className="flex items-center gap-3 flex-wrap">
           <Filter size={14} style={{ color: 'var(--text-muted)' }} />
           <span className="text-[11px] font-bold" style={{ color: 'var(--text-secondary)' }}>
-            絞り込み
+            {t('Master.filter')}
           </span>
 
           {/* Machine Type filter */}
@@ -283,17 +293,11 @@ export default function MachinesPage() {
             <select
               value={filterType}
               onChange={e => setFilterType(e.target.value as MachineType | '')}
-              className="h-[28px] pl-2 pr-6 text-[11px] rounded appearance-none"
-              style={{
-                background: 'var(--bg-surface)',
-                border: '1px solid var(--border-default)',
-                color: 'var(--text-primary)',
-                cursor: 'pointer',
-              }}
+              className="form-input h-[28px] pl-2 pr-6 text-[11px] rounded appearance-none cursor-pointer"
             >
-              <option value="">機種 (全て)</option>
-              {(Object.keys(MACHINE_TYPE_LABELS) as MachineType[]).map(k => (
-                <option key={k} value={k}>{MACHINE_TYPE_LABELS[k].ja}</option>
+              <option value="">{t('Master.filterMachineType')}</option>
+              {(['VACUUM_FORMING', 'PRESSURE_FORMING', 'TRIMMING_PRESS', 'CNC_ROUTER', 'OTHER'] as MachineType[]).map(k => (
+                <option key={k} value={k}>{getTypeLabel(k)}</option>
               ))}
             </select>
             <ChevronDown
@@ -308,17 +312,11 @@ export default function MachinesPage() {
             <select
               value={filterGroup}
               onChange={e => setFilterGroup(e.target.value as MachineGroup | '')}
-              className="h-[28px] pl-2 pr-6 text-[11px] rounded appearance-none"
-              style={{
-                background: 'var(--bg-surface)',
-                border: '1px solid var(--border-default)',
-                color: 'var(--text-primary)',
-                cursor: 'pointer',
-              }}
+              className="form-input h-[28px] pl-2 pr-6 text-[11px] rounded appearance-none cursor-pointer"
             >
-              <option value="">グループ (全て)</option>
-              {(Object.keys(GROUP_LABELS) as MachineGroup[]).map(k => (
-                <option key={k} value={k}>{GROUP_LABELS[k].ja}</option>
+              <option value="">{t('Master.filterMachineGroup')}</option>
+              {(['MAIN', 'SUB', 'CNC', 'PRESS'] as MachineGroup[]).map(k => (
+                <option key={k} value={k}>{getGroupLabel(k)}</option>
               ))}
             </select>
             <ChevronDown
@@ -331,20 +329,14 @@ export default function MachinesPage() {
           {(filterType || filterGroup) && (
             <button
               onClick={() => { setFilterType(''); setFilterGroup('') }}
-              className="h-[24px] px-2 text-[10px] rounded flex items-center gap-1"
-              style={{
-                background: 'transparent',
-                border: '1px solid var(--border-subtle)',
-                color: 'var(--text-muted)',
-                cursor: 'pointer',
-              }}
+              className="btn btn-secondary h-[24px] px-2 text-[10px] rounded flex items-center gap-1 cursor-pointer"
             >
-              <X size={10} /> クリア
+              <X size={10} /> {t('Common.clear')}
             </button>
           )}
 
-          <span className="text-[10px] ml-auto" style={{ color: 'var(--text-muted)' }}>
-            {machines.length}件
+          <span className="text-[10px] ml-auto font-mono" style={{ color: 'var(--text-muted)' }}>
+            {machines.length}
           </span>
         </div>
       </div>
@@ -370,38 +362,18 @@ export default function MachinesPage() {
       {/* Data Table */}
       <div className="card-flat" style={{ padding: 0, overflow: 'hidden' }}>
         <div style={{ overflowX: 'auto' }}>
-          <table className="data-table" style={{ minWidth: 900 }}>
+          <table className="data-table">
             <thead>
               <tr>
-                {[
-                  { ja: 'コード', vi: 'Mã', w: 80 },
-                  { ja: '機械名', vi: 'Tên máy', w: 180 },
-                  { ja: '機種', vi: 'Loại', w: 130 },
-                  { ja: 'グループ', vi: 'Nhóm', w: 80 },
-                  { ja: '最大サイズ (L×W)', vi: 'Kích thước max', w: 140 },
-                  { ja: 'メーカー / 型式', vi: 'NSX / Model', w: 140 },
-                  { ja: '設置場所', vi: 'Vị trí', w: 100 },
-                  { ja: '状態', vi: 'Status', w: 70 },
-                  { ja: '操作', vi: '', w: 100 },
-                ].map((col, i) => (
-                  <th key={i} style={{ width: col.w }}>
-                    {col.ja}
-                    {col.vi && (
-                      <span
-                        style={{
-                          fontWeight: 400,
-                          marginLeft: 4,
-                          fontSize: 9,
-                          color: 'var(--text-muted)',
-                          opacity: 0.7,
-                          textTransform: 'none',
-                        }}
-                      >
-                        {col.vi}
-                      </span>
-                    )}
-                  </th>
-                ))}
+                <th>{t('Master.ma')}</th>
+                <th>{t('Master.ten')}</th>
+                <th>{t('Master.loai')}</th>
+                <th>{t('Master.family')}</th>
+                <th>{t('Master.maxSize')}</th>
+                <th>NSX / Model</th>
+                <th>{t('Master.locationInFactory')}</th>
+                <th style={{ textAlign: 'center' }}>{t('Master.trangThai')}</th>
+                <th style={{ textAlign: 'center' }}>{t('Master.thaoTac')}</th>
               </tr>
             </thead>
             <tbody>
@@ -409,27 +381,27 @@ export default function MachinesPage() {
                 <tr>
                   <td colSpan={9} style={{ padding: 32, textAlign: 'center', color: 'var(--text-muted)', fontSize: 12 }}>
                     <Loader2 size={16} className="animate-spin inline-block mr-2" />
-                    読み込み中...
+                    {t('Common.loading')}
                   </td>
                 </tr>
               )}
               {!loading && machines.length === 0 && (
                 <tr>
                   <td colSpan={9} style={{ padding: 32, textAlign: 'center', color: 'var(--text-muted)', fontSize: 12 }}>
-                    データがありません / Không có dữ liệu
+                    {t('Common.noData')}
                   </td>
                 </tr>
               )}
-              {!loading && machines.map((m, idx) => (
+              {!loading && machines.map((m) => (
                 <tr key={m.machine_id}>
                   {/* Code */}
-                  <td style={{ fontFamily: 'monospace', fontWeight: 700, color: 'var(--text-primary)' }}>
+                  <td className="font-mono font-bold text-[13px]" style={{ color: 'var(--accent)' }}>
                     {m.machine_code}
                   </td>
 
                   {/* Name */}
                   <td>
-                    <div style={{ fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'var(--font-jp)' }}>
+                    <div className="font-bold text-[13px]" style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-jp)' }}>
                       {m.machine_name}
                     </div>
                   </td>
@@ -441,41 +413,30 @@ export default function MachinesPage() {
 
                   {/* Group */}
                   <td style={{ color: 'var(--text-secondary)' }}>
-                    <span style={{ fontWeight: 600, fontFamily: 'var(--font-jp)' }}>
-                      {GROUP_LABELS[m.machine_group]?.ja || m.machine_group}
+                    <span className="font-bold text-[12px]">
+                      {getGroupLabel(m.machine_group)}
                     </span>
                   </td>
 
                   {/* Max Size */}
-                  <td style={{ fontFamily: 'monospace', color: 'var(--text-primary)' }}>
-                    <span style={{ fontWeight: 600 }}>{m.max_mold_length}</span>
-                    <span style={{ color: 'var(--text-muted)', margin: '0 2px' }}>×</span>
-                    <span style={{ fontWeight: 600 }}>{m.max_mold_width}</span>
-                    <span style={{ color: 'var(--text-muted)', fontSize: 10, marginLeft: 2 }}>mm</span>
-                    {m.max_sheet_width && (
-                      <span style={{ color: 'var(--text-muted)', fontSize: 10, marginLeft: 6 }}>
-                        (幅{m.max_sheet_width})
-                      </span>
-                    )}
+                  <td className="font-mono font-bold text-[13px]" style={{ color: 'var(--text-primary)' }}>
+                    {m.max_mold_length && m.max_mold_width
+                      ? `${m.max_mold_length} × ${m.max_mold_width} mm`
+                      : '—'}
                   </td>
-
                   {/* Manufacturer / Model */}
                   <td style={{ color: 'var(--text-secondary)' }}>
                     {m.manufacturer || m.model ? (
-                      <>
-                        {m.manufacturer && <span style={{ fontWeight: 600 }}>{m.manufacturer}</span>}
-                        {m.manufacturer && m.model && <span style={{ margin: '0 3px', color: 'var(--text-muted)' }}>/</span>}
-                        {m.model && <span style={{ color: 'var(--text-muted)' }}>{m.model}</span>}
-                      </>
+                      <span className="font-bold text-[12px]">
+                        {[m.manufacturer, m.model].filter(Boolean).join(' / ')}
+                      </span>
                     ) : (
                       <span style={{ color: 'var(--text-muted)' }}>—</span>
                     )}
                   </td>
-
-                  {/* Location */}
                   <td style={{ color: 'var(--text-secondary)' }}>
-                    <span style={{ fontFamily: 'var(--font-jp)' }}>
-                      {LOCATION_LABELS[m.location]?.ja || m.location}
+                    <span className="font-bold text-[12px]">
+                      {getLocationLabel(m.location)}
                     </span>
                   </td>
 
@@ -556,7 +517,7 @@ export default function MachinesPage() {
               この機械を削除しますか？
             </p>
             <p className="text-[11px]" style={{ color: 'var(--text-muted)', marginBottom: 16 }}>
-              Bạn có chắc muốn xóa máy này? Thao tác không thể hoàn tác.
+              この操作は取り消せません。
             </p>
             <div className="flex justify-end gap-2">
               <button
@@ -616,9 +577,6 @@ export default function MachinesPage() {
                 >
                   {editingId ? '機械を編集' : '新規機械追加'}
                 </h2>
-                <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
-                  {editingId ? 'Chỉnh sửa máy' : 'Thêm máy mới'}
-                </span>
               </div>
               <button
                 onClick={() => setModalOpen(false)}
@@ -633,92 +591,93 @@ export default function MachinesPage() {
             <div style={{ padding: 16 }}>
               <div className="grid grid-cols-2 gap-3">
                 {/* Machine Code */}
-                <FieldGroup label="機械コード" sub="Mã máy" required>
+                <FieldGroup label="機械コード" required>
                   <input
                     type="text"
                     value={form.machine_code}
                     onChange={e => setForm(f => ({ ...f, machine_code: e.target.value }))}
-                    placeholder="M-01"
+                    placeholder="MCH-01"
                     className="form-input"
                     style={{ fontFamily: 'monospace' }}
                   />
                 </FieldGroup>
 
                 {/* Machine Name */}
-                <FieldGroup label="機械名" sub="Tên máy" required>
+                <FieldGroup label="機械名" required>
                   <input
                     type="text"
                     value={form.machine_name}
                     onChange={e => setForm(f => ({ ...f, machine_name: e.target.value }))}
-                    placeholder="1号機 (M682)"
+                    placeholder="成形機 1号機"
                     className="form-input"
-                    style={{ fontFamily: 'var(--font-jp)' }}
                   />
                 </FieldGroup>
+              </div>
 
+              <div className="grid grid-cols-3 gap-3">
                 {/* Machine Type */}
-                <FieldGroup label="機種" sub="Loại máy" required>
+                <FieldGroup label="機種" required>
                   <select
                     value={form.machine_type}
                     onChange={e => setForm(f => ({ ...f, machine_type: e.target.value as MachineType }))}
                     className="form-input"
                   >
-                    {(Object.keys(MACHINE_TYPE_LABELS) as MachineType[]).map(k => (
-                      <option key={k} value={k}>{MACHINE_TYPE_LABELS[k].ja} / {MACHINE_TYPE_LABELS[k].vi}</option>
+                    {(['VACUUM_FORMING', 'PRESSURE_FORMING', 'TRIMMING_PRESS', 'CNC_ROUTER', 'OTHER'] as MachineType[]).map(k => (
+                      <option key={k} value={k}>{getTypeLabel(k)}</option>
                     ))}
                   </select>
                 </FieldGroup>
 
                 {/* Machine Group */}
-                <FieldGroup label="グループ" sub="Nhóm" required>
+                <FieldGroup label="グループ" required>
                   <select
                     value={form.machine_group}
                     onChange={e => setForm(f => ({ ...f, machine_group: e.target.value as MachineGroup }))}
                     className="form-input"
                   >
-                    {(Object.keys(GROUP_LABELS) as MachineGroup[]).map(k => (
-                      <option key={k} value={k}>{GROUP_LABELS[k].ja} / {GROUP_LABELS[k].vi}</option>
+                    {(['MAIN', 'SUB', 'CNC', 'PRESS'] as MachineGroup[]).map(k => (
+                      <option key={k} value={k}>{getGroupLabel(k)}</option>
                     ))}
                   </select>
                 </FieldGroup>
 
                 {/* Location */}
-                <FieldGroup label="設置場所" sub="Vị trí" required>
+                <FieldGroup label="設置場所" required>
                   <select
                     value={form.location}
                     onChange={e => setForm(f => ({ ...f, location: e.target.value as Location }))}
                     className="form-input"
                   >
-                    {(Object.keys(LOCATION_LABELS) as Location[]).map(k => (
-                      <option key={k} value={k}>{LOCATION_LABELS[k].ja} / {LOCATION_LABELS[k].vi}</option>
+                    {(['1F_FACTORY', '2F_OFFICE', 'MOLD_STORAGE', 'WAREHOUSE'] as Location[]).map(k => (
+                      <option key={k} value={k}>{getLocationLabel(k)}</option>
                     ))}
                   </select>
                 </FieldGroup>
+              </div>
 
-                {/* Manufacturer */}
-                <FieldGroup label="メーカー" sub="Nhà SX">
+              {/* Manufacturer & Model */}
+              <div className="grid grid-cols-3 gap-3">
+                <FieldGroup label="メーカー">
                   <input
                     type="text"
                     value={form.manufacturer || ''}
                     onChange={e => setForm(f => ({ ...f, manufacturer: e.target.value || null }))}
-                    placeholder="—"
+                    placeholder="浅野研究所 等"
                     className="form-input"
                   />
                 </FieldGroup>
-
-                {/* Model */}
-                <FieldGroup label="型式" sub="Model">
+                <FieldGroup label="型式">
                   <input
                     type="text"
                     value={form.model || ''}
                     onChange={e => setForm(f => ({ ...f, model: e.target.value || null }))}
-                    placeholder="—"
+                    placeholder="FK-02S"
                     className="form-input"
+                    style={{ fontFamily: 'monospace' }}
                   />
                 </FieldGroup>
-
                 {/* Active toggle */}
-                <FieldGroup label="状態" sub="Trạng thái">
+                <FieldGroup label="状態">
                   <label className="flex items-center gap-2 h-[32px] cursor-pointer">
                     <input
                       type="checkbox"
@@ -738,10 +697,10 @@ export default function MachinesPage() {
 
               {/* Size Fields */}
               <p className="text-[11px] font-bold" style={{ color: 'var(--text-secondary)', marginBottom: 8, fontFamily: 'var(--font-jp)' }}>
-                最大サイズ <span style={{ fontWeight: 400, color: 'var(--text-muted)' }}>Kích thước tối đa (mm)</span>
+                最大サイズ (mm)
               </p>
               <div className="grid grid-cols-3 gap-3">
-                <FieldGroup label="金型長さ" sub="Chiều dài khuôn" required>
+                <FieldGroup label="金型長さ" required>
                   <input
                     type="number"
                     value={form.max_mold_length}
@@ -750,7 +709,7 @@ export default function MachinesPage() {
                     style={{ fontFamily: 'monospace' }}
                   />
                 </FieldGroup>
-                <FieldGroup label="金型幅" sub="Chiều rộng khuôn" required>
+                <FieldGroup label="金型幅" required>
                   <input
                     type="number"
                     value={form.max_mold_width}
@@ -759,7 +718,7 @@ export default function MachinesPage() {
                     style={{ fontFamily: 'monospace' }}
                   />
                 </FieldGroup>
-                <FieldGroup label="シート幅" sub="Khổ nhựa">
+                <FieldGroup label="シート幅">
                   <input
                     type="number"
                     value={form.max_sheet_width ?? ''}
@@ -773,7 +732,7 @@ export default function MachinesPage() {
 
               {/* Notes */}
               <div style={{ marginTop: 12 }}>
-                <FieldGroup label="備考" sub="Ghi chú">
+                <FieldGroup label="備考">
                   <textarea
                     value={form.notes || ''}
                     onChange={e => setForm(f => ({ ...f, notes: e.target.value || null }))}
@@ -829,14 +788,14 @@ function FieldGroup({
   label, sub, required, children,
 }: {
   label: string
-  sub: string
+  sub?: string
   required?: boolean
   children: React.ReactNode
 }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
       <label className="form-label">
-        {label} <span style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 400 }}>{sub}</span>
+        {label} {sub && <span style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 400 }}>{sub}</span>}
         {required && <span style={{ color: 'var(--status-error)', marginLeft: 2 }}>*</span>}
       </label>
       {children}

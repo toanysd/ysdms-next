@@ -123,7 +123,7 @@ export default function EditModal({
     }
 
     async function handleDelete() {
-        if (!confirm('Bạn có chắc xoá kế hoạch này?')) return
+        if (!confirm('この計画を削除してもよろしいですか？')) return
         setDeleting(true)
         try {
             await deleteProductionPlanAction(planData.id)
@@ -154,26 +154,26 @@ export default function EditModal({
                         {/* CỘT TRÁI - Read-only info */}
                         <div className="w-[40%] bg-[var(--mcs-surface-2)] p-5 border-r border-[var(--mcs-border)] flex flex-col gap-4 text-sm">
                             <div>
-                                <span className="text-gray-500 block text-[11px] font-bold">設備 (Máy)</span>
+                                <span className="text-gray-500 block text-[11px] font-bold">設備</span>
                                 <span className="font-bold text-[14px]">{machine?.internal_code || planData.machine_instance?.internal_code}</span>
                             </div>
                             <div>
-                                <span className="text-gray-500 block text-[11px] font-bold">日付 (Ngày chạy)</span>
+                                <span className="text-gray-500 block text-[11px] font-bold">日付</span>
                                 <span className="font-bold text-[14px]">{format(parseISO(planData.planned_date), 'yyyy年MM月dd日')}</span>
                             </div>
                             <div className="border-t border-[var(--mcs-border-strong)]"></div>
                             <div>
-                                <span className="text-gray-500 block text-[11px] font-bold">品番 (Sản phẩm)</span>
+                                <span className="text-gray-500 block text-[11px] font-bold">品番</span>
                                 <span className="font-bold text-[14px] text-[var(--mcs-primary)]">{orderItem?.product_pn_raw}</span>
                             </div>
                             <div>
-                                <span className="text-gray-500 block text-[11px] font-bold">出荷予定日 (Ngày Xuất)</span>
+                                <span className="text-gray-500 block text-[11px] font-bold">出荷予定日</span>
                                 <span className={`font-bold text-[14px] ${deliveryColor}`}>
                                     {deliveryDateStr ? format(parseISO(deliveryDateStr), 'yyyy年MM月dd日') : '—'}
                                 </span>
                             </div>
                             <div>
-                                <span className="text-gray-500 block text-[11px] font-bold">注文数 (Tổng Đơn Hàng)</span>
+                                <span className="text-gray-500 block text-[11px] font-bold">注文数</span>
                                 <span className="font-mono text-[14px] font-bold">{orderItem?.quantity?.toLocaleString()}</span>
                             </div>
                         </div>
@@ -182,7 +182,7 @@ export default function EditModal({
                         <div className="w-[60%] p-5 grid grid-cols-2 gap-4 gap-y-5">
                             <div className="col-span-2 relative">
                                 <div className="flex justify-between items-end mb-1">
-                                    <label className="block text-[13px] font-bold">金型 <span className="text-[10px] text-gray-500 font-normal ml-1">Khuôn</span></label>
+                                    <label className="block text-[13px] font-bold">金型</label>
                                     {!isAllMoldsLoaded && (
                                         <button 
                                             type="button" 
@@ -193,7 +193,7 @@ export default function EditModal({
                                             }} 
                                             className="text-[11px] text-[var(--mcs-primary)] hover:underline"
                                         >
-                                            + 他の金型を選択 (Mở rộng tùy chọn)
+                                            + 他の金型を選択
                                         </button>
                                     )}
                                 </div>
@@ -218,7 +218,7 @@ export default function EditModal({
                                         onFocus={() => setShowMoldDropdown(true)}
                                         onBlur={() => setTimeout(() => setShowMoldDropdown(false), 200)}
                                         onKeyDown={handleMoldKeyDown}
-                                        placeholder="Tìm mã khuôn... (Enter để chọn)"
+                                        placeholder="金型コードで検索..."
                                         className="w-full bg-white border border-[var(--mcs-border-strong)] rounded px-3 py-2 text-sm focus:ring-[var(--mcs-primary)] pr-8"
                                     />
                                     <Search size={14} className="absolute right-3 top-3 text-gray-400" />
@@ -237,10 +237,10 @@ export default function EditModal({
                                             >
                                                 <span>
                                                     {m.physical_code} 
-                                                    {m.status !== 'ACTIVE' && <span className="text-amber-600 ml-1">(⚠️ Bảo trì)</span>}
+                                                    {m.status !== 'ACTIVE' && <span className="text-amber-600 ml-1">(⚠️ 保全中)</span>}
                                                 </span>
                                                 {occupiedMolds[m.id] && (
-                                                    <span className="text-red-600 text-[11px] font-bold bg-red-50 px-1.5 py-0.5 rounded border border-red-100">🔒 Đang chạy ở {occupiedMolds[m.id]}</span>
+                                                    <span className="text-red-600 text-[11px] font-bold bg-red-50 px-1.5 py-0.5 rounded border border-red-100">🔒 稼働中: {occupiedMolds[m.id]}</span>
                                                 )}
                                             </div>
                                         ))}
@@ -250,30 +250,28 @@ export default function EditModal({
                                 {selectedMold && !standardMolds.some(m => m.id === selectedMold) && !occupiedMolds[selectedMold] && (
                                     <div className="mt-2 text-[12px] font-bold text-red-600 bg-red-50 p-2 rounded border border-red-200">
                                         ⚠️ 警告: 選択した金型（{activeMoldsList.find(m=>m.id === selectedMold)?.physical_code}）は、製品（{orderItem?.product_pn_raw}）の標準金型ではありません。本当によろしいですか？
-                                        <div className="text-[10px] font-normal mt-0.5">(Cảnh báo: Khuôn đã chọn khác với mã khay chuẩn. Bạn có chắc chắn không?)</div>
                                     </div>
                                 )}
 
                                 {selectedMold && occupiedMolds[selectedMold] && (
                                     <div className="mt-2 text-[12px] font-bold text-red-600 bg-red-100 p-2 rounded border border-red-300 animate-pulse">
                                         🚫 衝突エラー: 選択した金型はすでに {occupiedMolds[selectedMold]} でスケジュールされています！
-                                        <div className="text-[10px] font-normal mt-0.5">(Lỗi xung đột: Khuôn này đang được xếp lịch cho {occupiedMolds[selectedMold]} trong cùng ca. Không thể chọn!)</div>
                                     </div>
                                 )}
                             </div>
 
                             <div>
-                                <label className="block text-[13px] font-bold mb-1">計画数 <span className="text-[10px] text-gray-500 font-normal ml-1">Số lượng KH</span></label>
+                                <label className="block text-[13px] font-bold mb-1">計画数</label>
                                 <input name="qty" type="number" min="1" defaultValue={planData.planned_quantity} className="w-full bg-white border border-[var(--mcs-border-strong)] rounded px-3 py-2 text-sm font-mono focus:ring-[var(--mcs-primary)]" required />
                             </div>
 
                             <div>
-                                <label className="block text-[13px] font-bold mb-1 text-gray-500">備考 <span className="text-[10px] font-normal ml-1">Ghi chú SL</span></label>
-                                <input name="quantity_note" type="text" defaultValue={planData.quantity_note} placeholder="VD: 残18490, 計7840..." className="w-full bg-white border border-[var(--mcs-border-strong)] rounded px-3 py-2 text-sm focus:ring-[var(--mcs-primary)]" />
+                                <label className="block text-[13px] font-bold mb-1 text-gray-500">備考</label>
+                                <input name="quantity_note" type="text" defaultValue={planData.quantity_note} placeholder="備考..." className="w-full bg-white border border-[var(--mcs-border-strong)] rounded px-3 py-2 text-sm focus:ring-[var(--mcs-primary)]" />
                             </div>
 
                             <div>
-                                <label className="block text-[13px] font-bold mb-1">担当者 <span className="text-[10px] text-gray-500 font-normal ml-1">Người phụ trách</span></label>
+                                <label className="block text-[13px] font-bold mb-1">担当者</label>
                                 <select name="operator" defaultValue={planData.operator_name || ''} className="w-full bg-white border border-[var(--mcs-border-strong)] rounded px-3 py-2 text-sm focus:ring-[var(--mcs-primary)]">
                                     <option value="">--- 未選択 ---</option>
                                     {operators.map(op => (
@@ -283,7 +281,7 @@ export default function EditModal({
                             </div>
 
                             <div>
-                                <label className="block text-[13px] font-bold mb-1">勤務シフト <span className="text-[10px] text-gray-500 font-normal ml-1">Ca</span></label>
+                                <label className="block text-[13px] font-bold mb-1">勤務シフト</label>
                                 <select 
                                     name="shift" 
                                     value={shift} 
@@ -296,9 +294,9 @@ export default function EditModal({
                             </div>
 
                             <div className="col-span-2">
-                                <label className="block text-[13px] font-bold mb-1 text-gray-500">予定時間 <span className="text-[10px] font-normal ml-1">Giờ dự kiến</span></label>
+                                <label className="block text-[13px] font-bold mb-1 text-gray-500">予定時間</label>
                                 <div className="relative w-1/2">
-                                    <input name="estimated_hours" type="number" step="0.1" defaultValue={planData.estimated_hours} placeholder="VD: 12.5" className="w-full bg-white border border-[var(--mcs-border-strong)] rounded px-3 py-2 text-sm font-mono pr-12 focus:ring-[var(--mcs-primary)]" />
+                                    <input name="estimated_hours" type="number" step="0.1" defaultValue={planData.estimated_hours} placeholder="12.5" className="w-full bg-white border border-[var(--mcs-border-strong)] rounded px-3 py-2 text-sm font-mono pr-12 focus:ring-[var(--mcs-primary)]" />
                                     <span className="absolute right-3 top-2 text-gray-400 text-sm font-bold">時間</span>
                                 </div>
                             </div>
@@ -313,7 +311,7 @@ export default function EditModal({
                             disabled={deleting || loading}
                             className="px-4 py-2 text-sm font-bold text-red-600 bg-white border border-red-200 hover:bg-red-50 rounded shadow-sm transition-colors flex items-center gap-2"
                         >
-                            {deleting ? <Loader2 size={14} className="animate-spin" /> : '削除 (Xóa)'}
+                            {deleting ? <Loader2 size={14} className="animate-spin" /> : '削除'}
                         </button>
                         
                         <div className="flex gap-3">
@@ -327,7 +325,7 @@ export default function EditModal({
                                     : 'bg-[var(--mcs-primary)] text-white hover:bg-[var(--mcs-primary-hover)]'
                                 }`}
                             >
-                                {loading ? '保存中...' : '保存 (Lưu)'}
+                                {loading ? '保存中...' : '保存'}
                             </button>
                         </div>
                     </div>

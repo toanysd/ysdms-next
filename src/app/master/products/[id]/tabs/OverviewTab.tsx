@@ -38,10 +38,10 @@ function ReadOnlyField({ label, sub, value, emptyText = '—' }: { label: string
   )
 }
 
-const STATUS_LABELS: Record<string, { ja: string; vi: string }> = {
-  ACTIVE: { ja: '有効', vi: 'Hoạt động' },
-  MAINTENANCE: { ja: 'メンテ中', vi: 'Bảo trì' },
-  DISPOSED: { ja: '廃止', vi: 'Ngừng' },
+const STATUS_LABELS: Record<string, { ja: string }> = {
+  ACTIVE: { ja: '有効' },
+  MAINTENANCE: { ja: 'メンテ中' },
+  DISPOSED: { ja: '廃止' },
 }
 
 const DESIGN_STATUS_CONFIG: Record<string, { tKey: string; badge: string }> = {
@@ -67,6 +67,27 @@ export function OverviewTab({
   companies: Company[]
 }) {
   const t = useTranslations('Master.Products.Overview')
+
+  const getProductStatusLabel = (key: string) => {
+    switch (key) {
+      case 'ACTIVE': return t('statusLabels.ACTIVE')
+      case 'MAINTENANCE': return t('statusLabels.MAINTENANCE')
+      case 'DISPOSED': return t('statusLabels.DISPOSED')
+      default: return key
+    }
+  }
+
+  const getDesignStatusLabel = (key: string) => {
+    switch (key) {
+      case 'DRAFT': return t('designStatus.DRAFT')
+      case 'SUBMITTED': return t('designStatus.SUBMITTED')
+      case 'RELEASED': return t('designStatus.RELEASED')
+      case 'APPROVED': return t('designStatus.APPROVED')
+      case 'REJECTED': return t('designStatus.REJECTED')
+      case 'SUPERSEDED': return t('designStatus.SUPERSEDED')
+      default: return key
+    }
+  }
   const customerCompanies = useMemo(() => {
     return companies.filter(c => {
       if (!c.company_type) return true
@@ -222,7 +243,7 @@ export function OverviewTab({
                   className="form-input w-full"
                 >
                   {Object.keys(STATUS_LABELS).map(k => (
-                    <option key={k} value={k}>{t(`statusLabels.${k}`)}</option>
+                    <option key={k} value={k}>{getProductStatusLabel(k)}</option>
                   ))}
                 </select>
               </FieldGroup>
@@ -307,7 +328,7 @@ export function OverviewTab({
                   <Link
                     key={rev.revision_id}
                     href={`/engineering/designs/revisions/${rev.revision_id}`}
-                    title={`Mở chi tiết thiết kế: ${rev.design_code}`}
+                    title={`金型設計詳細: ${rev.design_code}`}
                     className="flex items-center justify-between p-2 rounded hover:bg-[var(--bg-surface-2)] transition-colors border border-transparent hover:border-[var(--border-subtle)]"
                   >
                     <div>
@@ -319,7 +340,7 @@ export function OverviewTab({
                       </div>
                     </div>
                     <span className={`${cfg.badge} text-[9px]`}>
-                      {t(`designStatus.${cfg.tKey}`)}
+                      {getDesignStatusLabel(cfg.tKey)}
                     </span>
                   </Link>
                 )

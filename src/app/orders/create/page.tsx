@@ -4,9 +4,11 @@ import React from 'react'
 import { useRouter } from 'next/navigation'
 import { OrderForm } from '../_components/OrderForm'
 import { ArrowLeft } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 
 export default function CreateOrderPage() {
   const router = useRouter()
+  const t = useTranslations('Orders')
 
   return (
     <div style={{ maxWidth: 1200, margin: '0 auto', padding: '20px' }}>
@@ -19,7 +21,7 @@ export default function CreateOrderPage() {
           <ArrowLeft size={16} />
         </button>
         <h1 style={{ fontSize: 24, fontWeight: 700, margin: 0 }}>
-          新規受注登録
+          {t('newOrderRegistration')}
         </h1>
       </div>
 

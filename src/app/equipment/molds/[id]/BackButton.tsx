@@ -2,19 +2,21 @@
 import { useRouter } from 'next/navigation'
 import { ArrowLeft, ArrowUpFromLine } from 'lucide-react'
 import Link from 'next/link'
+import { useTranslations } from 'next-intl'
 
 export function MoldBackButton() {
   const router = useRouter()
+  const tCommon = useTranslations('Common')
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
       <button
         onClick={() => router.back()}
         className="btn btn-secondary"
         style={{ height: 28, padding: '0 8px', gap: 3, fontSize: 11 }}
-        title="前のページに戻る / Quay lại trang trước"
+        title={tCommon('back')}
       >
         <ArrowLeft size={13} />
-        <span style={{ fontFamily: 'var(--font-jp)' }}>戻る</span>
+        <span style={{ fontFamily: 'var(--font-jp)' }}>{tCommon('back')}</span>
       </button>
       <Link
         href="/equipment/molds"
@@ -23,10 +25,10 @@ export function MoldBackButton() {
           height: 28, padding: '0 8px', gap: 3, fontSize: 11,
           textDecoration: 'none', display: 'inline-flex', alignItems: 'center',
         }}
-        title="一覧へ / Về danh sách khuôn"
+        title={tCommon('list')}
       >
         <ArrowUpFromLine size={12} />
-        <span style={{ fontFamily: 'var(--font-jp)' }}>一覧</span>
+        <span style={{ fontFamily: 'var(--font-jp)' }}>{tCommon('list')}</span>
       </Link>
     </div>
   )

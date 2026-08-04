@@ -50,63 +50,67 @@ export function ProductDetailHeader({
   isEditing: boolean
   setIsEditing: (v: boolean) => void
 }) {
-  const t = useTranslations('Master.Products.Header')
-  const tOverview = useTranslations('Master.Products.Overview')
+  const tProd = useTranslations('Products')
+  const tMaster = useTranslations('Master')
+  const tCommon = useTranslations('Common')
+  const tCust = useTranslations('Customers')
+
   const customer = product.companies
+  const statusKey = product.product_status === 'ACTIVE' ? 'activeStatus' : product.product_status === 'MAINTENANCE' ? 'maintenanceStatus' : 'disposedStatus'
+  const statusText = tMaster(statusKey)
 
   return (
     <div
       className="card-flat"
       style={{ padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 8 }}
     >
-      <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: 6, textTransform: 'uppercase' }}>
-        <Package size={12} />
-        <span>{t('title')}</span>
+      <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 6 }}>
+        <Package size={14} style={{ color: 'var(--accent)' }} />
+        <span>{tProd('title')}</span>
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
         <div>
           <h1
             style={{
               margin: 0, fontSize: 18, fontWeight: 800, letterSpacing: '-0.02em',
-              color: 'var(--text-primary)', fontFamily: 'var(--font-jp)',
+              color: 'var(--text-primary)', fontFamily: 'monospace',
             }}
           >
             {product.product_code}
           </h1>
-          <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
+          <span style={{ fontSize: 12, color: 'var(--text-muted)', fontWeight: 600 }}>
             {product.product_name}
           </span>
         </div>
 
         <StatusBadge 
           status={product.product_status} 
-          label={tOverview(`statusLabels.${product.product_status || 'ACTIVE'}`)} 
+          label={statusText} 
         />
 
         {!isEditing && (
           <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
-            <button className="btn btn-secondary text-xs" onClick={() => setIsEditing(true)}>
+            <button className="btn btn-secondary text-xs flex items-center gap-1 cursor-pointer" onClick={() => setIsEditing(true)}>
               <Pencil size={14} />
-              {t('edit')}
+              {tCommon('edit')}
             </button>
           </div>
         )}
       </div>
 
       {/* Metadata chips */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', paddingLeft: 32 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
         {customer && (
           <Link
             href={`/master/customers/${customer.company_id}`}
             style={{
               display: 'inline-flex', alignItems: 'center', gap: 4,
-              padding: '1px 8px', borderRadius: 'var(--radius-sm)',
+              padding: '2px 8px', borderRadius: 'var(--radius-sm)',
               background: 'var(--bg-surface-2)', border: '1px solid var(--border-default)',
-              fontSize: 10, color: 'var(--text-primary)', textDecoration: 'none', fontWeight: 600,
+              fontSize: 11, color: 'var(--text-primary)', textDecoration: 'none', fontWeight: 700,
             }}
-            title={t('openCustomer')}
           >
-            <Building2 size={10} style={{ color: 'var(--text-secondary)' }} />
+            <Building2 size={12} style={{ color: 'var(--accent)' }} />
             <span>{customer.company_name}</span>
           </Link>
         )}
@@ -115,12 +119,12 @@ export function ProductDetailHeader({
           <span
             style={{
               display: 'inline-flex', alignItems: 'center', gap: 4,
-              padding: '1px 8px', borderRadius: 'var(--radius-sm)',
+              padding: '2px 8px', borderRadius: 'var(--radius-sm)',
               background: 'var(--bg-surface-2)', border: '1px solid var(--border-default)',
-              fontSize: 10, color: 'var(--text-secondary)',
+              fontSize: 11, color: 'var(--text-secondary)', fontFamily: 'monospace', fontWeight: 600,
             }}
           >
-            <Tag size={10} />
+            <Tag size={12} />
             {product.customer_product_name}
           </span>
         )}
@@ -130,17 +134,17 @@ export function ProductDetailHeader({
             href={`/engineering/designs/${product.product_id}`}
             style={{
               display: 'inline-flex', alignItems: 'center', gap: 4,
-              padding: '1px 8px', borderRadius: 'var(--radius-sm)',
+              padding: '2px 8px', borderRadius: 'var(--radius-sm)',
               background: 'var(--bg-surface-2)', border: '1px solid var(--border-default)',
-              fontSize: 10, color: 'var(--text-primary)', textDecoration: 'none', fontWeight: 600,
+              fontSize: 11, color: 'var(--accent)', textDecoration: 'none', fontWeight: 700,
             }}
-            title={t('openDesigns')}
           >
-            <Layers size={10} style={{ color: 'var(--accent)' }} />
-            <span style={{ fontFamily: 'var(--font-jp)' }}>{product.product_code}</span>
+            <Layers size={12} style={{ color: 'var(--accent)' }} />
+            <span style={{ fontFamily: 'monospace' }}>{product.product_code}</span>
           </Link>
         )}
       </div>
     </div>
   )
 }
+

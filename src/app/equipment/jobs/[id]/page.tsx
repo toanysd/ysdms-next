@@ -25,7 +25,7 @@ function PlaceholderTab({ name }: { name: string }) {
         {name}
       </div>
       <div style={{ fontSize: 11 }}>
-        開発中 / Đang phát triển...
+        開発中...
       </div>
     </div>
   )
@@ -99,7 +99,7 @@ export default function JobDetailPage() {
       <div className="card-flat" style={{ padding: 20, textAlign: 'center' }}>
         <AlertTriangle size={24} style={{ color: 'var(--status-error)', marginBottom: 8 }} />
         <div style={{ fontSize: 13, color: 'var(--status-error)', fontWeight: 600 }}>
-          {error || 'ジョブが見つかりません / Không tìm thấy Job'}
+          {error || 'ジョブが見つかりません'}
         </div>
         <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>
           ID: {jobId}
@@ -124,7 +124,7 @@ export default function JobDetailPage() {
             padding: '2px 0 4px', marginTop: 4,
           }}>
             <span style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 600, marginRight: 4, fontFamily: 'var(--font-jp)' }}>
-              関連 / Liên kết:
+              関連:
             </span>
             
             {/* ← Product */}
@@ -139,7 +139,7 @@ export default function JobDetailPage() {
                   fontSize: 11, color: 'var(--accent)', textDecoration: 'none',
                   fontWeight: 600, transition: 'all 0.15s',
                 }}
-                title="製品マスターを開く / Xem sản phẩm"
+                title="製品マスターを開く"
               >
                 <Box size={12} style={{ color: 'var(--accent)' }} />
                 <span style={{ fontFamily: 'var(--font-jp)' }}>製品</span>
@@ -158,7 +158,7 @@ export default function JobDetailPage() {
                   fontSize: 11, color: 'var(--accent)', textDecoration: 'none',
                   fontWeight: 600, transition: 'all 0.15s',
                 }}
-                title="すべての設計版を開く / Xem tất cả phiên bản thiết kế của sản phẩm này"
+                title="すべての設計版を開く"
               >
                 <Layers size={12} style={{ color: 'var(--text-secondary)' }} />
                 <span style={{ fontFamily: 'var(--font-jp)' }}>設計一覧</span>
@@ -177,7 +177,7 @@ export default function JobDetailPage() {
                   fontSize: 11, color: 'var(--accent)', textDecoration: 'none',
                   fontWeight: 600, transition: 'all 0.15s',
                 }}
-                title="設計版を開く / Xem phiên bản thiết kế"
+                title="設計版を開く"
               >
                 <FileCog size={12} style={{ color: 'var(--text-secondary)' }} />
                 <span style={{ fontFamily: 'var(--font-jp)' }}>設計版</span>
@@ -196,7 +196,7 @@ export default function JobDetailPage() {
                   fontSize: 11, color: 'var(--accent)', textDecoration: 'none',
                   fontWeight: 600, transition: 'all 0.15s',
                 }}
-                title="金型を開く / Xem khuôn vật lý"
+                title="金型を開く"
               >
                 <Wrench size={12} style={{ color: 'var(--text-secondary)' }} />
                 <span style={{ fontFamily: 'var(--font-jp)' }}>金型</span>
@@ -214,10 +214,10 @@ export default function JobDetailPage() {
                 fontSize: 11, color: 'var(--accent)', textDecoration: 'none',
                 fontWeight: 700, height: 26, background: 'color-mix(in srgb, var(--accent) 8%, var(--bg-surface))'
               }}
-              title="Mở form tổng hợp 1-trang để nạp & cập nhật trọn bộ thông tin"
+              title="全項目一括編集フォームを開く"
             >
               <Edit size={12} />
-              <span>✏️ Sửa tổng thể (1-Trang)</span>
+              <span>✏️ 全体編集 (1ページ)</span>
             </Link>
           </div>
         </div>
@@ -239,7 +239,7 @@ export default function JobDetailPage() {
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <AlertTriangle size={16} style={{ color: 'var(--status-warning)' }} />
             <span>
-              <strong>⚠️ Job này chưa được gắn với Khuôn vật lý nào:</strong> Hãy liên kết Khuôn vật lý để theo dõi chính xác thời gian gia công & chi phí tích lũy.
+              <strong>⚠️ 金型未割り当て:</strong> 加工時間および累積コストを正確に追跡するために物理金型を割り当ててください。
             </span>
           </div>
           <button
@@ -248,7 +248,7 @@ export default function JobDetailPage() {
             style={{ height: 26, padding: '0 10px', fontSize: 11, gap: 4 }}
             onClick={() => setShowLinkMoldModal(true)}
           >
-            + Gán Khuôn Ngay
+            + 金型を割り当てる
           </button>
         </div>
       )}

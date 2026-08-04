@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Loader2, AlertTriangle, Save } from 'lucide-react'
 import { useParams } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 
 import { OrderBackButton } from './BackButton'
 import { OrderDetailHeader } from './OrderDetailHeader'
@@ -59,27 +60,29 @@ function TabContent({
     case 'overview':  return <OverviewTab order={order} isEditing={isEditing} formData={formData} setFormData={setFormData} />
     case 'order_lines': return <OrderLinesTab order={order} />
     case 'production_instructions': return <ProductionInstructionsTab order={order} />
-    case 'shipments': return <PlaceholderTab name="出荷履歴" />
+    case 'shipments': return <PlaceholderTab name="shipments" />
     default:          return null
   }
 }
 
-function PlaceholderTab({ name }: { name: string }) {
+function PlaceholderTab({ name }: { name: TabId }) {
+  const t = useTranslations('Orders')
   return (
     <div className="card-flat" style={{
       padding: '40px 20px', textAlign: 'center', color: 'var(--text-muted)',
     }}>
-      <div style={{ fontSize: 13, fontFamily: 'var(--font-jp)', marginBottom: 4 }}>
-        {name}
+      <div style={{ fontSize: 13, marginBottom: 4 }}>
+        {t('Tabs.shipments')}
       </div>
       <div style={{ fontSize: 11 }}>
-        開発中
+        {t('noData')}
       </div>
     </div>
   )
 }
 
 export default function OrderDetailPage() {
+  const t = useTranslations('Orders')
   const params = useParams()
   const orderId = params.id as string
   const supabase = createClient()
@@ -130,7 +133,7 @@ export default function OrderDetailPage() {
     return (
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 300, gap: 8 }}>
         <Loader2 size={20} className="animate-spin" style={{ color: 'var(--accent)' }} />
-        <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>読み込み中...</span>
+        <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{t('loading')}</span>
       </div>
     )
   }
@@ -140,7 +143,7 @@ export default function OrderDetailPage() {
       <div className="card-flat" style={{ padding: 20, textAlign: 'center' }}>
         <AlertTriangle size={24} style={{ color: 'var(--status-error)', marginBottom: 8, marginInline: 'auto' }} />
         <div style={{ fontSize: 13, color: 'var(--status-error)', fontWeight: 600 }}>
-          {error || '受注が見つかりません'}
+          {error || t('orderNotFound')}
         </div>
         <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>
           ID: {orderId}
@@ -176,7 +179,7 @@ export default function OrderDetailPage() {
 
       {isEditing && (
         <div style={{ marginTop: 16 }}>
-          <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 16 }}>受注編集</h2>
+          <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 16 }}>{t('editOrder')}</h2>
           <OrderForm 
             isEditing={true}
             initialOrder={{

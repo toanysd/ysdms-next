@@ -1,12 +1,10 @@
 'use client'
 
-import { useTranslations, useLocale } from 'next-intl'
-
+import { useTranslations } from 'next-intl'
 import React, { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   Save, Loader2, X, Tag, Building2, Phone, Folder, FileText,
-  ChevronDown, ChevronUp,
 } from 'lucide-react'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -26,14 +24,6 @@ export type CompanyFormData = {
   notes: string
   legacy_id: string
 }
-
-const COMPANY_TYPES: { value: string; ja: string; vi: string }[] = [
-  { value: 'CUSTOMER',      ja: '得意先',    vi: 'Khách hàng' },
-  { value: 'VENDOR',        ja: '仕入先',    vi: 'Nhà cung cấp' },
-  { value: 'DELIVERY_SITE', ja: '納入先',    vi: 'Điểm giao hàng' },
-  { value: 'KEEPER',        ja: '預り先',    vi: 'Đơn vị lưu giữ' },
-  { value: 'MAKER',         ja: 'メーカー',  vi: 'Nhà sản xuất' },
-]
 
 // ── API call ──────────────────────────────────────────────────────────────────
 async function saveCompany(data: CompanyFormData): Promise<{ success: boolean; error?: string }> {
@@ -66,13 +56,12 @@ async function saveCompany(data: CompanyFormData): Promise<{ success: boolean; e
 
 // ── Reusable Field atom ───────────────────────────────────────────────────────
 function Field({
-  ja, vi, required, children,
-}: { ja: string; vi: string; required?: boolean; children: React.ReactNode }) {
-  const locale = useLocale()
+  label, required, children,
+}: { label: string; required?: boolean; children: React.ReactNode }) {
   return (
     <div className="form-field">
-      <div className="form-label">
-        {locale === 'vi' ? vi : ja}
+      <div className="form-label font-bold text-[12px]" style={{ color: 'var(--text-muted)' }}>
+        {label}
         {required && <span style={{ color: 'var(--status-error)', marginLeft: 2 }}>*</span>}
       </div>
       {children}
@@ -94,23 +83,22 @@ function TInput({
       onChange={e => onChange(e.target.value)}
       placeholder={placeholder}
       readOnly={readOnly}
-      className={`form-input${mono ? ' mono' : ''}`}
+      className={`form-input${mono ? ' mono font-mono font-bold text-[13px]' : ' text-[13px]'}`}
     />
   )
 }
 
 // ── Section wrapper ───────────────────────────────────────────────────────────
 function Section({
-  icon: Icon, ja, vi, children,
+  icon: Icon, title, children,
 }: {
-  icon: React.ElementType; ja: string; vi: string; children: React.ReactNode
+  icon: React.ElementType; title: string; children: React.ReactNode
 }) {
-  const locale = useLocale()
   return (
     <div className="form-section">
-      <div className="form-section-header">
-        <Icon className="section-icon" />
-        {locale === 'vi' ? vi : ja}
+      <div className="form-section-header font-bold text-[13px]" style={{ color: 'var(--text-primary)' }}>
+        <Icon className="section-icon" style={{ color: 'var(--accent)' }} />
+        {title}
       </div>
       <div className="form-section-body">
         {children}
@@ -130,14 +118,23 @@ interface CompanyFormProps {
 // Main CompanyForm
 // ══════════════════════════════════════════════════════════════════════════════
 export function CompanyForm({ initialData, parentCompanies = [], mode = 'edit' }: CompanyFormProps) {
-  const t = useTranslations()
+  const tCust = useTranslations('Customers')
+  const tMaster = useTranslations('Master')
+  const tCommon = useTranslations('Common')
 
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [formError, setFormError] = useState<string | null>(null)
   const [saved, setSaved] = useState(false)
   const [editMode, setEditMode] = useState<boolean>(mode !== 'view')
-  const [leftExpanded, setLeftExpanded] = useState(false) // mobile only
+
+  const companyTypes: { value: string; label: string }[] = [
+    { value: 'CUSTOMER',      label: tCust('customer') },
+    { value: 'VENDOR',        label: tCust('vendor') },
+    { value: 'DELIVERY_SITE', label: tCust('deliverySite') },
+    { value: 'KEEPER',        label: tMaster('noiLuuGiuKeeper') },
+    { value: 'MAKER',         label: tMaster('loai') },
+  ]
 
   const [data, setData] = useState<CompanyFormData>({
     company_id:          initialData?.company_id,
@@ -161,25 +158,25 @@ export function CompanyForm({ initialData, parentCompanies = [], mode = 'edit' }
     setSaved(false)
   }
 
-  const toggleType = (t: string) => {
+  const toggleType = (tVal: string) => {
     setData(d => ({
       ...d,
-      company_type: d.company_type.includes(t)
-        ? d.company_type.filter(x => x !== t)
-        : [...d.company_type, t],
+      company_type: d.company_type.includes(tVal)
+        ? d.company_type.filter(x => x !== tVal)
+        : [...d.company_type, tVal],
     }))
     setSaved(false)
   }
 
   const handleSave = () => {
-    if (!data.company_code.trim()) { setFormError('company_code は必須です / Mã công ty bắt buộc'); return }
-    if (!data.company_name.trim()) { setFormError('会社名は必須です / Tên công ty bắt buộc'); return }
-    if (data.company_type.length === 0) { setFormError('会社区分を選択してください / Chọn ít nhất 1 loại'); return }
+    if (!data.company_code.trim()) { setFormError(tCust('customerCode') + ' *'); return }
+    if (!data.company_name.trim()) { setFormError(tCust('companyName') + ' *'); return }
+    if (data.company_type.length === 0) { setFormError(tCust('type')); return }
     setFormError(null)
     startTransition(async () => {
       const result = await saveCompany(data)
       if (!result.success) {
-        setFormError(result.error || '保存失敗 / Lưu thất bại')
+        setFormError(result.error || tCommon('save') + ' Error')
       } else {
         setSaved(true)
         router.push('/master/customers')
@@ -188,7 +185,7 @@ export function CompanyForm({ initialData, parentCompanies = [], mode = 'edit' }
     })
   }
 
-  const ro = !editMode // read-only shorthand
+  const ro = !editMode
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
@@ -204,13 +201,13 @@ export function CompanyForm({ initialData, parentCompanies = [], mode = 'edit' }
           {mode === 'view' && (
             <button
               onClick={() => setEditMode(!editMode)}
-              className={`btn ${editMode ? 'btn-secondary' : 'btn-secondary'}`}
+              className="btn btn-secondary"
               style={{ fontSize: 12, height: 30, padding: '0 12px' }}
             >
               {editMode ? (
-                <><X size={12} /> キャンセル</>
+                <><X size={12} /> {tCommon('cancel')}</>
               ) : (
-                <><svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> 編集 / Sửa</>
+                <><svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> {tCommon('edit')}</>
               )}
             </button>
           )}
@@ -224,8 +221,8 @@ export function CompanyForm({ initialData, parentCompanies = [], mode = 'edit' }
             onChange={e => set('is_active')(e.target.checked)}
             disabled={ro}
           />
-          <span style={{ fontSize: 11, fontWeight: 600 }}>
-            {data.is_active ? '✓ 取引中 / Active' : '停止中 / Inactive'}
+          <span style={{ fontSize: 11, fontWeight: 700 }}>
+            {data.is_active ? tMaster('activeStatus') : tMaster('inactiveStatus')}
           </span>
         </label>
       </div>
@@ -239,7 +236,7 @@ export function CompanyForm({ initialData, parentCompanies = [], mode = 'edit' }
       )}
       {saved && (
         <div className="form-callout form-callout--success">
-          ✓ 保存しました / Đã lưu thành công
+          ✓ {tCommon('save')}
         </div>
       )}
 
@@ -247,9 +244,9 @@ export function CompanyForm({ initialData, parentCompanies = [], mode = 'edit' }
       <div style={{ flex: 1, overflowY: 'auto', paddingRight: 2 }}>
 
         {/* 1. 基本情報 */}
-        <Section icon={Tag} ja="基本情報" vi="Thông tin nhận diện">
+        <Section icon={Tag} title={tMaster('machineMasterSub')}>
           <div className="form-grid-2">
-            <Field ja="顧客コード" vi="Mã công ty" required>
+            <Field label={tCust('customerCode')} required>
               <TInput
                 value={data.company_code}
                 onChange={set('company_code')}
@@ -258,22 +255,22 @@ export function CompanyForm({ initialData, parentCompanies = [], mode = 'edit' }
                 readOnly={ro || !!data.company_id}
               />
             </Field>
-            <Field ja="会社名 (日本語)" vi="Tên công ty (JP)" required>
-              <TInput value={data.company_name} onChange={set('company_name')} placeholder="例：山田製作所株式会社" readOnly={ro} />
+            <Field label={tCust('companyName')} required>
+              <TInput value={data.company_name} onChange={set('company_name')} placeholder="山田製作所株式会社" readOnly={ro} />
             </Field>
-            <Field ja="会社名 (ローマ字)" vi="Tên Romaji / English">
-              <TInput value={data.company_name_romaji} onChange={set('company_name_romaji')} placeholder="VD: Yamada Seisakusho Co.,Ltd" readOnly={ro} />
+            <Field label={tCust('companyNameRomaji')}>
+              <TInput value={data.company_name_romaji} onChange={set('company_name_romaji')} placeholder="Yamada Seisakusho Co.,Ltd" readOnly={ro} />
             </Field>
-            <Field ja="旧システムID" vi="ID hệ thống cũ (Access)">
-              <TInput value={data.legacy_id} onChange={set('legacy_id')} placeholder="ID từ Access cũ" mono readOnly={ro} />
+            <Field label="Legacy ID">
+              <TInput value={data.legacy_id} onChange={set('legacy_id')} placeholder="ID Access" mono readOnly={ro} />
             </Field>
           </div>
         </Section>
 
         {/* 2. 会社区分 */}
-        <Section icon={Building2} ja="会社区分" vi="Loại công ty (chọn nhiều)">
-          <div className="type-chips">
-            {COMPANY_TYPES.map(t => {
+        <Section icon={Building2} title={tCust('type')}>
+          <div className="type-chips flex flex-wrap gap-1.5">
+            {companyTypes.map(t => {
               const active = data.company_type.includes(t.value)
               return (
                 <button
@@ -281,34 +278,33 @@ export function CompanyForm({ initialData, parentCompanies = [], mode = 'edit' }
                   type="button"
                   disabled={ro}
                   onClick={() => toggleType(t.value)}
-                  className={`type-chip${active ? ' type-chip--active' : ''}`}
+                  className={`type-chip${active ? ' type-chip--active' : ''} font-bold text-[11px] px-2.5 py-1 rounded cursor-pointer border`}
+                  style={{
+                    background: active ? 'var(--accent-light)' : 'var(--bg-surface-2)',
+                    borderColor: active ? 'var(--accent)' : 'var(--border-default)',
+                    color: active ? 'var(--accent)' : 'var(--text-secondary)',
+                  }}
                 >
-                  <span style={{ fontFamily: 'var(--font-jp)' }}>{t.ja}</span>
-                  <span style={{ fontSize: 9, opacity: 0.7 }}>/ {t.vi}</span>
+                  <span>{t.label}</span>
                 </button>
               )
             })}
           </div>
-          {data.company_type.length === 0 && !ro && (
-            <p style={{ fontSize: 11, color: 'var(--status-error)', marginTop: 4 }}>
-              ⚠ 1つ以上選択してください / Chọn ít nhất 1 loại
-            </p>
-          )}
         </Section>
 
         {/* 3. 連絡先 */}
-        <Section icon={Phone} ja="連絡先" vi="Thông tin liên hệ">
+        <Section icon={Phone} title={tMaster('st')}>
           <div className="form-grid-2">
-            <Field ja="電話番号" vi="Số điện thoại">
+            <Field label={tCust('tel')}>
               <TInput value={data.tel} onChange={set('tel')} placeholder="054-123-4567" mono readOnly={ro} />
             </Field>
-            <Field ja="FAX" vi="Số Fax">
+            <Field label="FAX">
               <TInput value={data.fax} onChange={set('fax')} placeholder="054-123-4568" mono readOnly={ro} />
             </Field>
-            <Field ja="住所" vi="Địa chỉ">
+            <Field label={tMaster('diaChi')}>
               <TInput value={data.address} onChange={set('address')} placeholder="Nhập địa chỉ..." readOnly={ro} />
             </Field>
-            <Field ja="親会社" vi="Công ty mẹ (nếu là chi nhánh)">
+            <Field label={tMaster('parentCompany')}>
               {ro ? (
                 <TInput
                   value={parentCompanies.find(p => p.company_id === data.parent_company_id)?.company_name ?? (data.parent_company_id ? '...' : '—')}
@@ -319,9 +315,9 @@ export function CompanyForm({ initialData, parentCompanies = [], mode = 'edit' }
                 <select
                   value={data.parent_company_id}
                   onChange={e => set('parent_company_id')(e.target.value)}
-                  className="form-select"
+                  className="form-select text-[12px]"
                 >
-                  <option value="">— 親会社なし / Không có —</option>
+                  <option value="">— {tMaster('parentCompany')} —</option>
                   {parentCompanies.map(p => (
                     <option key={p.company_id} value={p.company_id}>
                       [{p.company_code}] {p.company_name}
@@ -334,22 +330,22 @@ export function CompanyForm({ initialData, parentCompanies = [], mode = 'edit' }
         </Section>
 
         {/* 4. フォルダパス */}
-        <Section icon={Folder} ja="フォルダパス" vi="Đường dẫn thư mục">
+        <Section icon={Folder} title="Folder Server">
           <div className="form-grid-1">
-            <Field ja="注文書フォルダ" vi="Thư mục đơn hàng trên server">
+            <Field label="Order Folder">
               <TInput
                 value={data.order_folder_path}
                 onChange={set('order_folder_path')}
-                placeholder="\\SERVER\ysd-folder\新SMK注文書"
+                placeholder="\\SERVER\ysd-folder\..."
                 mono
                 readOnly={ro}
               />
             </Field>
-            <Field ja="CADフォルダ" vi="Thư mục bản vẽ CAD">
+            <Field label="CAD Folder">
               <TInput
                 value={data.cad_folder_path}
                 onChange={set('cad_folder_path')}
-                placeholder="\\SERVER\cad-data\SMK"
+                placeholder="\\SERVER\cad-data\..."
                 mono
                 readOnly={ro}
               />
@@ -358,13 +354,13 @@ export function CompanyForm({ initialData, parentCompanies = [], mode = 'edit' }
         </Section>
 
         {/* 5. 備考 */}
-        <Section icon={FileText} ja="備考" vi="Ghi chú">
+        <Section icon={FileText} title="Notes">
           <textarea
             value={data.notes}
             onChange={e => set('notes')(e.target.value)}
             readOnly={ro}
-            placeholder="Ghi chú thêm về công ty này..."
-            className="form-textarea"
+            placeholder="..."
+            className="form-textarea text-[12px]"
             rows={3}
           />
         </Section>
@@ -380,7 +376,7 @@ export function CompanyForm({ initialData, parentCompanies = [], mode = 'edit' }
             style={{ fontSize: 12 }}
             disabled={isPending}
           >
-            キャンセル / Hủy
+            {tCommon('cancel')}
           </button>
           <button
             type="button"
@@ -390,10 +386,11 @@ export function CompanyForm({ initialData, parentCompanies = [], mode = 'edit' }
             style={{ fontSize: 12, minWidth: 120 }}
           >
             {isPending ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />}
-            {isPending ? '保存中...' : '保存 / Lưu'}
+            {isPending ? tCommon('loading') : tCommon('save')}
           </button>
         </div>
       )}
     </div>
   )
 }
+

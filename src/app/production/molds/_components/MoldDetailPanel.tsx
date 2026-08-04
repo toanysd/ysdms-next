@@ -133,7 +133,7 @@ export default function MoldDetailPanel({
               <div className="p-3 text-sm space-y-2">
                 <div className="grid grid-cols-[100px_1fr]"><span className="text-slate-500 text-xs">{t('rackLayer')}:</span><span className="font-medium text-slate-800">{rl?.racks?.name || '-'} / {rl?.label || '-'}</span></div>
                 <div className="grid grid-cols-[100px_1fr]"><span className="text-slate-500 text-xs">{t('rackCode')}:</span><span className="text-slate-800 font-mono text-xs">{rl?.code || '-'}</span></div>
-                <div className="grid grid-cols-[100px_1fr]"><span className="text-slate-500 text-xs">{t('updatedAt')}:</span><span className="text-slate-800">{data?.updated_at ? new Date(data.updated_at).toLocaleDateString('ja-JP') : '-'}</span></div>
+                <div className="grid grid-cols-[100px_1fr]"><span className="text-slate-500 text-xs">{t('updatedAt')}:</span><span className="text-slate-800">{data?.updated_at ? new Date(data.updated_at).toLocaleDateString() : '-'}</span></div>
               </div>
             </div>
 
@@ -154,7 +154,7 @@ export default function MoldDetailPanel({
             {/* TRẠNG THÁI */}
             <div className="bg-white border border-slate-200 rounded overflow-hidden">
               <div className="bg-slate-50 px-3 py-1.5 border-b border-slate-200 font-bold text-xs text-slate-600">
-                {t('status')}
+                {t('statusLabel')}
               </div>
               <div className="p-3 text-sm space-y-3">
                 <div className="grid grid-cols-[100px_1fr] items-center">

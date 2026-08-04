@@ -1,5 +1,6 @@
 'use client'
 
+import { useTranslations } from 'next-intl'
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
@@ -25,6 +26,7 @@ type OrderLineWithInfo = {
 }
 
 export function OrdersTab({ productId }: { productId: string }) {
+  const t = useTranslations('ProductCenter')
   const supabase = createClient()
   const [lines, setLines] = useState<OrderLineWithInfo[]>([])
   const [loading, setLoading] = useState(true)
@@ -72,7 +74,7 @@ export function OrdersTab({ productId }: { productId: string }) {
     return (
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 160, gap: 8 }}>
         <Loader2 size={16} className="animate-spin" style={{ color: 'var(--accent)' }} />
-        <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>注文履歴を読み込み中...</span>
+        <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{t('loadingOrders')}</span>
       </div>
     )
   }
@@ -89,8 +91,7 @@ export function OrdersTab({ productId }: { productId: string }) {
     return (
       <div className="card-flat" style={{ padding: 40, textAlign: 'center', color: 'var(--text-muted)' }}>
         <ShoppingBag size={24} style={{ margin: '0 auto 8px', opacity: 0.5 }} />
-        <div style={{ fontSize: 12, fontFamily: 'var(--font-jp)' }}>注文履歴がありません</div>
-        <div style={{ fontSize: 11, marginTop: 2 }}>Chưa có đơn hàng nào cho sản phẩm này.</div>
+        <div style={{ fontSize: 12 }}>{t('noOrderHistory')}</div>
       </div>
     )
   }
@@ -101,12 +102,12 @@ export function OrdersTab({ productId }: { productId: string }) {
         <thead>
           <tr>
             <th style={{ width: 50, textAlign: 'center' }}>No</th>
-            <th>受注番号 / Mã Đơn hàng</th>
-            <th>得意先 / Khách hàng</th>
-            <th style={{ width: 100, textAlign: 'center' }}>受注日</th>
-            <th style={{ width: 100, textAlign: 'right' }}>数量 / SL</th>
-            <th style={{ width: 70 }}>単位</th>
-            <th style={{ width: 100, textAlign: 'center' }}>明細状態</th>
+            <th>{t('orderNo')}</th>
+            <th>{t('customer')}</th>
+            <th style={{ width: 100, textAlign: 'center' }}>{t('orderDate')}</th>
+            <th style={{ width: 100, textAlign: 'right' }}>{t('quantity')}</th>
+            <th style={{ width: 70 }}>{t('unit')}</th>
+            <th style={{ width: 100, textAlign: 'center' }}>{t('lineStatus')}</th>
           </tr>
         </thead>
         <tbody>
@@ -125,7 +126,7 @@ export function OrdersTab({ productId }: { productId: string }) {
                 )}
               </td>
               <td>
-                <span className="font-bold text-slate-700">{line.orders?.companies?.company_code}</span>
+                <span className="font-bold" style={{ color: 'var(--text-primary)' }}>{line.orders?.companies?.company_code}</span>
                 <span style={{ fontSize: 11, color: 'var(--text-muted)', marginLeft: 8 }}>
                   {line.orders?.companies?.company_name}
                 </span>

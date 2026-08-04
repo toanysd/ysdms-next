@@ -144,13 +144,27 @@ export default function DesignsListPage() {
 
   useEffect(() => { fetchData() }, [fetchData])
 
+  const getStatusText = (key: string) => {
+    switch (key) {
+      case 'DRAFT': return t('status.DRAFT')
+      case 'SUBMITTED': return t('status.SUBMITTED')
+      case 'RELEASED': return t('status.RELEASED')
+      case 'APPROVED': return t('status.APPROVED')
+      case 'REJECTED': return t('status.REJECTED')
+      case 'SUPERSEDED': return t('status.SUPERSEDED')
+      case 'ACTIVE': return t('status.ACTIVE')
+      case 'INACTIVE': return t('status.INACTIVE')
+      default: return key
+    }
+  }
+
   const renderBadge = (status: string | null) => {
     if (!status) return <span className="badge badge--neutral" style={{ fontSize: 10 }}>—</span>
     const cfg = STATUS_BADGE[status]
     if (!cfg) return <span className="badge badge--neutral" style={{ fontSize: 10 }}>{status}</span>
     return (
       <span className={cfg.cls} style={{ fontSize: 10 }}>
-        <span style={{ fontFamily: 'var(--font-jp)', fontWeight: 700 }}>{t('status.' + cfg.key)}</span>
+        <span style={{ fontFamily: 'var(--font-jp)', fontWeight: 700 }}>{getStatusText(cfg.key)}</span>
       </span>
     )
   }

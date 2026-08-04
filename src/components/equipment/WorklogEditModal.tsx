@@ -1,7 +1,8 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { Clock, Save, X, User, Calendar, CheckSquare, Layers } from 'lucide-react'
+import { Clock, Save, X, User, Calendar, Layers } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 
 export interface WorklogModalData {
   log_id?: string
@@ -35,6 +36,9 @@ export function WorklogEditModal({
   processingCodes = [],
   selectedStepNo
 }: WorklogEditModalProps) {
+  const t = useTranslations('Worklogs')
+  const tCommon = useTranslations('Common')
+
   const [workDate, setWorkDate] = useState('')
   const [employeeId, setEmployeeId] = useState('')
   const [jobStepId, setJobStepId] = useState('')
@@ -82,20 +86,20 @@ export function WorklogEditModal({
     setError('')
 
     if (!workDate) {
-      setError('Vui lòng chọn ngày làm việc / 作業日を選択してください。')
+      setError(t('validation.reqWorkDate'))
       return
     }
     if (!employeeId) {
-      setError('Vui lòng chọn nhân viên / 担当者を選択してください。')
+      setError(t('validation.reqEmployee'))
       return
     }
     if (!jobStepId) {
-      setError('Vui lòng chọn công đoạn / 工程を選択してください。')
+      setError(t('validation.reqStep'))
       return
     }
     const numHours = Number(hoursSpent)
     if (isNaN(numHours) || numHours <= 0) {
-      setError('Số giờ làm phải lớn hơn 0 / 作業時間は0より大きい値を入力してください。')
+      setError(t('reqHoursPositive'))
       return
     }
 
@@ -113,7 +117,7 @@ export function WorklogEditModal({
       })
       onClose()
     } catch (err: any) {
-      setError(err?.message || 'Có lỗi xảy ra khi lưu nhật ký.')
+      setError(err?.message || t('saveLogError'))
     } finally {
       setSubmitting(false)
     }
@@ -159,8 +163,8 @@ export function WorklogEditModal({
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <Clock size={18} style={{ color: 'var(--accent)' }} />
-            <h3 style={{ margin: 0, fontSize: 14, fontWeight: 700, color: 'var(--text-primary)' }}>
-              {initialData ? 'Cập nhật Nhật ký Gia công / 作業日報編集' : 'Thêm Nhật ký Gia công Mới / 作業日報新規登録'}
+            <h3 style={{ margin: 0, fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'var(--font-jp)' }}>
+              {initialData ? t('editTitle') : t('newTitle')}
             </h3>
           </div>
           <button
@@ -201,7 +205,7 @@ export function WorklogEditModal({
               <div>
                 <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 4 }}>
                   <Calendar size={13} style={{ color: 'var(--accent)' }} />
-                  <span>Ngày làm việc / 作業日 <span style={{ color: 'red' }}>*</span></span>
+                  <span>{t('formWorkDate')} <span style={{ color: 'var(--status-error)' }}>*</span></span>
                 </label>
                 <input
                   type="date"
@@ -216,7 +220,7 @@ export function WorklogEditModal({
               <div>
                 <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 4 }}>
                   <User size={13} style={{ color: 'var(--accent)' }} />
-                  <span>Người thực hiện / 担当者 <span style={{ color: 'red' }}>*</span></span>
+                  <span>{t('formEmployee')} <span style={{ color: 'var(--status-error)' }}>*</span></span>
                 </label>
                 <select
                   className="form-input"
@@ -224,7 +228,7 @@ export function WorklogEditModal({
                   onChange={e => setEmployeeId(e.target.value)}
                   required
                 >
-                  <option value="">— Chọn nhân viên —</option>
+                  <option value="">{t('selectEmployee')}</option>
                   {employees.map(emp => (
                     <option key={emp.employee_id} value={emp.employee_id}>
                       {emp.employee_name}
@@ -239,7 +243,7 @@ export function WorklogEditModal({
               <div>
                 <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 4 }}>
                   <Layers size={13} style={{ color: 'var(--accent)' }} />
-                  <span>Công đoạn / Component <span style={{ color: 'red' }}>*</span></span>
+                  <span>{t('formComponent')} <span style={{ color: 'var(--status-error)' }}>*</span></span>
                 </label>
                 <select
                   className="form-input"
@@ -247,10 +251,10 @@ export function WorklogEditModal({
                   onChange={e => setJobStepId(e.target.value)}
                   required
                 >
-                  <option value="">— Chọn công đoạn —</option>
+                  <option value="">{t('selectComponent')}</option>
                   {steps.map((st, idx) => (
                     <option key={st.step_id || idx} value={st.step_id || String(st.step_no)}>
-                      STT {st.step_no}: {st.step_name} {st.type_code ? `[${st.type_code}]` : ''}
+                      No.{st.step_no}: {st.step_name} {st.type_code ? `[${st.type_code}]` : ''}
                     </option>
                   ))}
                 </select>
@@ -260,7 +264,7 @@ export function WorklogEditModal({
               <div>
                 <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 4 }}>
                   <Clock size={13} style={{ color: 'var(--accent)' }} />
-                  <span>Số giờ làm (H) / 実績時間 <span style={{ color: 'red' }}>*</span></span>
+                  <span>{t('formHours')} <span style={{ color: 'var(--status-error)' }}>*</span></span>
                 </label>
                 <input
                   type="number"
@@ -269,7 +273,7 @@ export function WorklogEditModal({
                   className="form-input"
                   value={hoursSpent}
                   onChange={e => setHoursSpent(e.target.value)}
-                  placeholder="Ví dụ: 2.5"
+                  placeholder={t('hoursPlaceholder')}
                   required
                 />
               </div>
@@ -279,14 +283,14 @@ export function WorklogEditModal({
             {processingCodes.length > 0 && (
               <div>
                 <label className="form-label" style={{ marginBottom: 4 }}>
-                  Mã thao tác chi tiết / 詳細加工コード (Tuỳ chọn):
+                  {t('processingCodeLabel')}
                 </label>
                 <select
                   className="form-input"
                   value={processingCodeId}
                   onChange={e => setProcessingCodeId(e.target.value)}
                 >
-                  <option value="">— Không chọn (Dùng tên công đoạn) —</option>
+                  <option value="">{t('defaultProcessingCode')}</option>
                   {processingCodes.map(pc => (
                     <option key={pc.processing_code_id} value={pc.processing_code_id}>
                       {pc.processing_name} ({pc.category})
@@ -299,14 +303,14 @@ export function WorklogEditModal({
             {/* Notes / Description */}
             <div>
               <label className="form-label" style={{ marginBottom: 4 }}>
-                Ghi chú / Nội dung công việc (作業内容・メモ):
+                {t('notesLabel')}
               </label>
               <textarea
                 className="form-textarea"
                 rows={2}
                 value={notes}
                 onChange={e => setNotes(e.target.value)}
-                placeholder="Nhập ghi chú chi tiết hoặc tình trạng công việc..."
+                placeholder={t('notesPlaceholder')}
                 style={{ fontSize: 11 }}
               />
             </div>
@@ -321,7 +325,7 @@ export function WorklogEditModal({
                 style={{ width: 16, height: 16, cursor: 'pointer', accentColor: 'var(--accent)' }}
               />
               <label htmlFor="modal_is_finished" style={{ cursor: 'pointer', fontWeight: 600, fontSize: 12, color: isFinished ? 'var(--status-success)' : 'var(--text-primary)' }}>
-                Công đoạn đã hoàn thành (完了)
+                {t('stepFinished')}
               </label>
             </div>
           </div>
@@ -345,7 +349,7 @@ export function WorklogEditModal({
               disabled={submitting}
               style={{ height: 30, padding: '0 14px', fontSize: 11 }}
             >
-              Hủy / キャンセル
+              {tCommon('cancel')}
             </button>
             <button
               type="submit"
@@ -362,7 +366,7 @@ export function WorklogEditModal({
               }}
             >
               <Save size={14} />
-              <span>{submitting ? 'Đang lưu...' : 'Lưu Nhật ký / 保存'}</span>
+              <span>{submitting ? t('saving') : t('saveLog')}</span>
             </button>
           </div>
         </form>
@@ -370,3 +374,4 @@ export function WorklogEditModal({
     </div>
   )
 }
+

@@ -1,9 +1,13 @@
+'use client'
+
 import { ArrowLeft, ArrowUpFromLine } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { useTranslations } from 'next-intl'
 
 export function JobBackButton() {
   const router = useRouter()
+  const tCommon = useTranslations('Common')
 
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
@@ -15,7 +19,7 @@ export function JobBackButton() {
           background: 'var(--bg-surface-2)', border: 'none', borderRadius: 'var(--radius-sm)',
           cursor: 'pointer', color: 'var(--text-secondary)'
         }}
-        title="戻る / Back"
+        title={tCommon('back')}
       >
         <ArrowLeft size={16} />
       </button>
@@ -28,7 +32,7 @@ export function JobBackButton() {
           background: 'var(--bg-surface-2)', border: 'none', borderRadius: 'var(--radius-sm)',
           cursor: 'pointer', color: 'var(--text-secondary)'
         }}
-        title="一覧へ / Up to List"
+        title={tCommon('list')}
       >
         <ArrowUpFromLine size={16} />
       </Link>

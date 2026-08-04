@@ -116,7 +116,7 @@ export default function MoldSearchTable({
         <div className="flex items-center gap-2">
           <button onClick={handleOpenCreate} className="h-[36px] px-4 flex items-center gap-2 bg-gradient-to-r from-teal-600 to-teal-500 text-white rounded-lg hover:from-teal-700 hover:to-teal-600 transition-all text-sm font-bold shadow-sm">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-            <span className="hidden md:inline">新規登録 (Tạo mới)</span>
+            <span className="hidden md:inline">新規登録</span>
             <span className="md:hidden">+</span>
           </button>
           <button className="h-[36px] px-4 flex items-center gap-2 bg-[var(--mcs-surface)] border border-[var(--mcs-border)] text-[var(--mcs-text-secondary)] rounded-lg hover:bg-[var(--mcs-surface-hover)] transition-colors text-sm font-bold">
@@ -138,7 +138,7 @@ export default function MoldSearchTable({
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 pb-20">
             {sortedData.length === 0 ? (
               <div className="col-span-full py-12 text-center text-[var(--mcs-text-muted)]">
-                データが見つかりません (Không tìm thấy dữ liệu)
+                データが見つかりません
               </div>
             ) : (
               sortedData.map((mold) => {
@@ -162,7 +162,7 @@ export default function MoldSearchTable({
                       </div>
                       
                       {mold.teflon_count > 0 && (
-                        <div className="flex items-center justify-center w-6 h-6 rounded-full bg-purple-50 text-purple-600 font-bold text-[10px] border border-purple-200" title="Số lần mạ Teflon">
+                        <div className="flex items-center justify-center w-6 h-6 rounded-full bg-purple-50 text-purple-600 font-bold text-[10px] border border-purple-200" title="テフロン回数">
                           T{mold.teflon_count}
                         </div>
                       )}
@@ -173,7 +173,7 @@ export default function MoldSearchTable({
                     </h3>
                     
                     <div className="flex flex-col mb-4">
-                      <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">Tên thiết bị</span>
+                      <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">設備名称</span>
                       <span className="text-[13px] font-semibold text-gray-700 line-clamp-1" title={mold.mold_name}>
                         {mold.mold_name}
                       </span>
@@ -181,13 +181,13 @@ export default function MoldSearchTable({
                     
                     <div className="flex justify-between items-end mt-auto pt-2">
                       <div className="flex flex-col">
-                        <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">Vị trí</span>
+                        <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">位置</span>
                         <span className="text-[13px] font-semibold text-gray-700">
                           {mold.rack_code !== '-' ? mold.rack_code : mold.rack_name}
                         </span>
                       </div>
                       <div className="flex flex-col text-right">
-                        <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">Khách hàng</span>
+                        <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">顧客</span>
                         <span className="text-[13px] font-semibold text-gray-700 line-clamp-1 max-w-[120px]" title={mold.customer_name}>
                           {mold.customer_name}
                         </span>
@@ -226,9 +226,7 @@ export default function MoldSearchTable({
                       onClick={() => handleSort('physical_code')}
                     >
                       <div className="flex items-center gap-1">
-                        <div>
-                          コード<br/><span className="text-[10px] font-normal opacity-70">Mã</span>
-                        </div>
+                        <div>コード</div>
                         <SortIcon field="physical_code" />
                       </div>
                     </th>
@@ -238,9 +236,7 @@ export default function MoldSearchTable({
                       onClick={() => handleSort('product_info')}
                     >
                       <div className="flex items-center gap-1">
-                        <div>
-                          製品情報<br/><span className="text-[10px] font-normal opacity-70">Sản phẩm</span>
-                        </div>
+                        <div>製品情報</div>
                         <SortIcon field="product_info" />
                       </div>
                     </th>
@@ -250,9 +246,7 @@ export default function MoldSearchTable({
                       onClick={() => handleSort('dimensions')}
                     >
                       <div className="flex items-center gap-1">
-                        <div>
-                          寸法<br/><span className="text-[10px] font-normal opacity-70">Kích thước</span>
-                        </div>
+                        <div>寸法</div>
                         <SortIcon field="dimensions" />
                       </div>
                     </th>
@@ -262,9 +256,7 @@ export default function MoldSearchTable({
                       onClick={() => handleSort('rack_code')}
                     >
                       <div className="flex items-center gap-1">
-                        <div>
-                          位置<br/><span className="text-[10px] font-normal opacity-70">Vị trí</span>
-                        </div>
+                        <div>位置</div>
                         <SortIcon field="rack_code" />
                       </div>
                     </th>
@@ -274,9 +266,7 @@ export default function MoldSearchTable({
                       onClick={() => handleSort('customer_name')}
                     >
                       <div className="flex items-center gap-1">
-                        <div>
-                          顧客<br/><span className="text-[10px] font-normal opacity-70">Khách hàng</span>
-                        </div>
+                        <div>顧客</div>
                         <SortIcon field="customer_name" />
                       </div>
                     </th>
@@ -286,9 +276,7 @@ export default function MoldSearchTable({
                       onClick={() => handleSort('updated_at')}
                     >
                       <div className="flex items-center gap-1">
-                        <div>
-                          更新日<br/><span className="text-[10px] font-normal opacity-70">Ngày cập nhật</span>
-                        </div>
+                        <div>更新日</div>
                         <SortIcon field="updated_at" />
                       </div>
                     </th>
@@ -298,9 +286,7 @@ export default function MoldSearchTable({
                       onClick={() => handleSort('checkin_status')}
                     >
                       <div className="flex items-center gap-1">
-                        <div>
-                          状態<br/><span className="text-[10px] font-normal opacity-70">Trạng thái</span>
-                        </div>
+                        <div>状態</div>
                         <SortIcon field="checkin_status" />
                       </div>
                     </th>
@@ -315,7 +301,7 @@ export default function MoldSearchTable({
                   {sortedData.length === 0 ? (
                     <tr>
                       <td colSpan={9} className="py-12 text-center text-[var(--mcs-text-muted)] text-sm">
-                        データが見つかりません (Không tìm thấy dữ liệu)
+                        データが見つかりません
                       </td>
                     </tr>
                   ) : (

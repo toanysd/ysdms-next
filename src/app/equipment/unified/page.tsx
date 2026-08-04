@@ -197,6 +197,31 @@ function UnifiedEquipmentPageContent() {
     )
   }
 
+  const getUnifiedTypeLabel = (type: string) => {
+    switch (type) {
+      case 'MOLD': return t('typeLabels.MOLD')
+      case 'CUTTER_SEPARATE': return t('typeLabels.CUTTER_SEPARATE')
+      case 'CUTTER_INLINE': return t('typeLabels.CUTTER_INLINE')
+      case 'WATER_BASE': return t('typeLabels.WATER_BASE')
+      case 'PRESSURE_BASE': return t('typeLabels.PRESSURE_BASE')
+      case 'FRAME': return t('typeLabels.FRAME')
+      case 'STACKING': return t('typeLabels.STACKING')
+      default: return type
+    }
+  }
+
+  const getUnifiedStatusLabel = (status: string) => {
+    switch (status) {
+      case 'NORMAL': return t('statusLabels.NORMAL')
+      case 'STORAGE': return t('statusLabels.STORAGE')
+      case 'ACTIVE': return t('statusLabels.ACTIVE')
+      case 'LOAN': return t('statusLabels.LOAN')
+      case 'DISPOSED': return t('statusLabels.DISPOSED')
+      case 'MAINTENANCE': return t('statusLabels.MAINTENANCE')
+      default: return status
+    }
+  }
+
   const tabs: { type: EquipmentType; labelKey: string }[] = [
     { type: 'ALL', labelKey: 'filterAll' },
     { type: 'MOLD', labelKey: 'filterMold' },
@@ -320,7 +345,7 @@ function UnifiedEquipmentPageContent() {
                     <td className="p-2 text-xs">{m.display_name}</td>
                     <td className="p-2">
                       <span className={`badge ${badgeClass} text-[10px]`}>
-                        {t(`typeLabels.${m.equipment_type as any}`) || m.equipment_type}
+                        {getUnifiedTypeLabel(m.equipment_type)}
                       </span>
                     </td>
                     <td className="p-2 text-[11px] font-mono font-semibold">
@@ -340,7 +365,7 @@ function UnifiedEquipmentPageContent() {
                     <td className="p-2 text-[11px] font-mono font-semibold">{formatRackLocation(m)}</td>
                     <td className="p-2">
                       <span className="text-[10px] font-bold text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded-full whitespace-nowrap">
-                        {t(`statusLabels.${m.usage_status as any}`) || m.usage_status}
+                        {getUnifiedStatusLabel(m.usage_status)}
                       </span>
                     </td>
                     <td className="p-2">

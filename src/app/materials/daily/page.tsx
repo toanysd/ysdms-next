@@ -7,10 +7,9 @@ export default function DailyMaterialsPage() {
         <h1 className="text-[15px] font-bold" style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-jp)' }}>
           日次入出庫
         </h1>
-        <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>Nhập xuất Vật liệu hàng ngày</span>
       </div>
       <div className="card-flat px-4 py-8 text-center">
-        <p className="text-[13px]" style={{ color: 'var(--text-muted)' }}>🚧 このモジュールは開発中です / Module đang phát triển</p>
+        <p className="text-[13px]" style={{ color: 'var(--text-muted)' }}>🚧 このモジュールは開発中です</p>
       </div>
     </div>
   )

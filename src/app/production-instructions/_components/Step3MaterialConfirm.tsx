@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { checkMaterialStock } from '@/app/actions/production-instructions'
 import type { PIFormData } from '../new/page'
 
@@ -13,6 +14,7 @@ interface Props {
 }
 
 export default function Step3MaterialConfirm({ form, update, onBack, onSubmit, submitting }: Props) {
+  const t = useTranslations('ProductionInstructions')
   const [checking, setChecking] = useState(false)
 
   useEffect(() => {
@@ -27,88 +29,88 @@ export default function Step3MaterialConfirm({ form, update, onBack, onSubmit, s
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const features = [
-    form.antistatic && '帯電防止',
-    form.silicon && 'シリコン',
-    form.surface_coating && '塗布',
+    form.antistatic && t('featureAntistatic'),
+    form.silicon && t('featureSilicone'),
+    form.surface_coating && t('featureCoating'),
   ].filter(Boolean)
 
   return (
     <div className="space-y-5">
-      <h2 className="text-lg font-semibold text-gray-800">確認 — 材料・発行</h2>
+      <h2 className="text-lg font-bold text-[var(--text-primary)]">{t('confirmTitle')}</h2>
 
       {/* Material info */}
-      <div className="bg-gray-50 rounded-lg border border-gray-200 p-4 space-y-3">
-        <h3 className="text-sm font-semibold text-gray-700">材料情報</h3>
+      <div className="card-flat p-4 space-y-3">
+        <h3 className="text-sm font-bold text-[var(--text-primary)]">{t('materialInfo')}</h3>
         <div className="grid grid-cols-2 gap-2 text-sm">
-          <div><span className="text-gray-500">材料:</span> <span className="font-medium">{form.material_spec || '—'}</span></div>
-          <div><span className="text-gray-500">厚み:</span> <span>{form.material_thickness ? `${form.material_thickness}t` : '—'}</span></div>
-          <div><span className="text-gray-500">シート巾:</span> <span>{form.material_width ? `${form.material_width}mm` : '—'}</span></div>
-          <div><span className="text-gray-500">粉砕材:</span> <span>{form.recycled_pct > 0 ? `${form.recycled_pct}%` : 'なし'}</span></div>
+          <div><span className="text-[var(--text-muted)] font-semibold">{t('material')}:</span> <span className="font-bold text-[var(--accent)]">{form.material_spec || '—'}</span></div>
+          <div><span className="text-[var(--text-muted)] font-semibold">{t('materialThickness')}:</span> <span className="font-mono font-bold">{form.material_thickness ? `${form.material_thickness}t` : '—'}</span></div>
+          <div><span className="text-[var(--text-muted)] font-semibold">{t('materialWidth')}:</span> <span className="font-mono font-bold">{form.material_width ? `${form.material_width}mm` : '—'}</span></div>
+          <div><span className="text-[var(--text-muted)] font-semibold">{t('recycledPct')}:</span> <span className="font-bold">{form.recycled_pct > 0 ? `${form.recycled_pct}%` : t('none')}</span></div>
           {features.length > 0 && (
-            <div className="col-span-2"><span className="text-gray-500">特殊:</span> <span>{features.join(', ')}</span></div>
+            <div className="col-span-2"><span className="text-[var(--text-muted)] font-semibold">{t('specialFeatures')}:</span> <span className="font-semibold">{features.join(', ')}</span></div>
           )}
         </div>
       </div>
 
       {/* Stock check */}
       <div className={`rounded-lg border p-4 ${
-        checking ? 'bg-gray-50 border-gray-200' :
-        form.material_stock_warning ? 'bg-orange-50 border-orange-200' : 'bg-green-50 border-green-200'
+        checking ? 'bg-[var(--bg-surface-2)] border-[var(--border-default)]' :
+        form.material_stock_warning ? 'bg-[var(--tint-orange-bg)] border-[var(--status-warning)]/40' : 'bg-[var(--tint-teal-bg)] border-[var(--status-success)]/40'
       }`}>
         {checking ? (
-          <p className="text-sm text-gray-500">在庫確認中...</p>
+          <p className="text-sm text-[var(--text-muted)]">{t('stockChecking')}</p>
         ) : form.material_stock_qty === null ? (
-          <p className="text-sm text-gray-500">在庫データなし</p>
+          <p className="text-sm text-[var(--text-muted)]">{t('noStockData')}</p>
         ) : form.material_stock_warning ? (
           <div>
-            <p className="text-sm font-semibold text-orange-800">⚠️ 材料在庫不足</p>
-            <p className="text-sm text-orange-700 mt-1">
-              現在庫: <span className="font-mono font-bold">{form.material_stock_qty.toLocaleString()}</span> 枚 /
-              必要: <span className="font-mono font-bold">{form.quantity_ordered.toLocaleString()}</span> 枚
+            <p className="text-sm font-bold text-[var(--status-warning)]">⚠️ {t('materialShortageTitle')}</p>
+            <p className="text-sm text-[var(--text-primary)] mt-1">
+              {t('currentStockInfo', { stock: form.material_stock_qty.toLocaleString(), qty: form.quantity_ordered.toLocaleString() })}
             </p>
-            <p className="text-xs text-orange-600 mt-1">※ 在庫不足でも指示書の作成は可能です</p>
+            <p className="text-xs text-[var(--text-muted)] mt-1">{t('stockShortageNote')}</p>
           </div>
         ) : (
           <div>
-            <p className="text-sm font-semibold text-green-800">✅ 材料在庫あり</p>
-            <p className="text-sm text-green-700 mt-1">
-              現在庫: <span className="font-mono font-bold">{form.material_stock_qty.toLocaleString()}</span> 枚
+            <p className="text-sm font-bold text-[var(--status-success)]">✅ {t('materialAvailableTitle')}</p>
+            <p className="text-sm text-[var(--text-primary)] mt-1">
+              {t('currentStockDetail', { stock: form.material_stock_qty.toLocaleString() })}
             </p>
           </div>
         )}
       </div>
 
       {/* Summary */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm space-y-1">
-        <p className="font-semibold text-blue-800 mb-2">発行内容確認</p>
-        <p>受注: <span className="font-mono">{form.order_no}</span> / {form.product_code}</p>
-        <p>生産拠点: {form.production_site} / 数量: {form.quantity_ordered.toLocaleString()} 枚</p>
-        <p>納入先: {form.delivery_site_name}</p>
-        <p>納期: <span className="font-mono">{form.requested_date}</span></p>
-        <p>テンプレート: {form.template_type}</p>
-        {form.is_first_time && <p>✅ 初回</p>}
-        {form.has_label && <p>✅ ラベル要</p>}
+      <div className="card-flat bg-[var(--tint-blue-bg)] border-[var(--status-info)]/30 p-4 text-sm space-y-1.5">
+        <p className="font-bold text-[var(--accent)] text-base mb-2">{t('issueSummaryTitle')}</p>
+        <p className="text-[var(--text-primary)]">{t('orderInfo')}: <span className="font-mono font-bold text-[var(--accent)]">{form.order_no}</span> / <span className="font-mono font-bold">{form.product_code}</span></p>
+        <p className="text-[var(--text-primary)]">{t('siteAndQty')}: <span className="font-semibold">{form.production_site}</span> / <span className="font-mono font-bold">{form.quantity_ordered.toLocaleString()}</span></p>
+        <p className="text-[var(--text-primary)]">{t('deliverySite')}: <span className="font-semibold">{form.delivery_site_name}</span></p>
+        <p className="text-[var(--text-primary)]">{t('requestedDate')}: <span className="font-mono font-bold">{form.requested_date}</span></p>
+        <p className="text-[var(--text-primary)]">{t('template')}: <span className="badge badge--info font-mono font-bold">{form.template_type}</span></p>
+        {form.is_first_time && <p className="text-[var(--status-success)] font-bold">✅ {t('isFirstTime')}</p>}
+        {form.has_label && <p className="text-[var(--status-success)] font-bold">✅ {t('hasLabel')}</p>}
       </div>
 
       <div className="flex justify-between pt-2">
-        <button onClick={onBack} className="px-4 py-2 border border-gray-300 text-sm rounded-lg hover:bg-gray-50" disabled={submitting}>← 戻る</button>
+        <button onClick={onBack} className="btn btn-secondary font-bold px-4" disabled={submitting}>← {t('back')}</button>
         <div className="flex gap-2">
           <button
             onClick={() => onSubmit('DRAFT')}
             disabled={submitting}
-            className="px-4 py-2 border border-gray-300 bg-white text-sm rounded-lg hover:bg-gray-50 disabled:opacity-40"
+            className="btn btn-secondary font-bold px-4"
           >
-            下書き保存
+            {t('saveDraft')}
           </button>
           <button
             onClick={() => onSubmit('ISSUED')}
             disabled={submitting}
-            className="px-6 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-40"
+            className="btn btn-primary font-bold px-6"
           >
-            {submitting ? '処理中...' : '発行する'}
+            {submitting ? t('submitting') : t('issueAction')}
           </button>
         </div>
       </div>
     </div>
   )
 }
+

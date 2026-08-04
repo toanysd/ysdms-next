@@ -2,6 +2,7 @@
 
 import React, { useState, useMemo } from 'react'
 import { format, parseISO, differenceInDays } from 'date-fns'
+import { useTranslations } from 'next-intl'
 import { EnrichedPendingItem } from '@/types/loading-board'
 
 type UrgencyTab = 'URGENT' | 'SOON' | 'RELAXED' | 'ALL'
@@ -25,6 +26,7 @@ export default function OrderSelectionModal({
     onClose: () => void
     isSubmitting: boolean
 }) {
+    const t = useTranslations('Planning.OrderSelection')
     const [searchTerm, setSearchTerm] = useState('')
     const [activeTab, setActiveTab] = useState<UrgencyTab>('URGENT')
     const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({})
@@ -35,19 +37,17 @@ export default function OrderSelectionModal({
 
     // Calculate item urgencies and filter by search term
     const processedItems = useMemo(() => {
-        // Hàm chuẩn hóa chuỗi để search fuzzy
         const normalize = (str: string) => {
             if (!str) return ''
             return str.toLowerCase()
-                .replace(/[\s\-_]+/g, '') // Bỏ khoảng trắng, gạch nối, gạch dưới
-                .normalize('NFKC')        // Chuẩn hóa ký tự Unicode (tiếng Nhật fullwidth -> halfwidth)
+                .replace(/[\s\-_]+/g, '')
+                .normalize('NFKC')
         }
 
         return pendingItems.map(item => {
             let urgency: UrgencyTab = 'ALL'
             let diffDays = 999
             
-            // Fix delivery_date mapping as requested
             if (item.detail?.delivery_date) {
                 const dDate = parseISO(item.detail.delivery_date)
                 diffDays = differenceInDays(dDate, today)
@@ -58,7 +58,6 @@ export default function OrderSelectionModal({
 
             return { ...item, _urgency: urgency, _diffDays: diffDays }
         }).filter(item => {
-            // Search filter
             if (!searchTerm) return true
             
             const q = normalize(searchTerm)
@@ -81,21 +80,16 @@ export default function OrderSelectionModal({
         return counts
     }, [processedItems])
 
-    // If URGENT tab is empty initially, we should probably auto-switch to ALL.
-    // Handled in a simple effect if needed, but keeping user choice is fine.
-
     // Filter by Tab and Group by Prefix
     const groupedItems = useMemo(() => {
         const filtered = processedItems.filter(i => activeTab === 'ALL' || i._urgency === activeTab)
         
-        // Sort inside group: Urgent first (diffDays asc)
         filtered.sort((a, b) => a._diffDays - b._diffDays)
 
         const groups: Record<string, typeof filtered> = {}
         filtered.forEach(item => {
             const raw = item.detail?.product_pn_raw || 'UNKNOWN'
             const firstPart = raw.split('-')[0]
-            // Fix prefix logic
             const prefix = isNaN(Number(firstPart)) ? firstPart : '(数字系)'
             
             if (!groups[prefix]) groups[prefix] = []
@@ -106,10 +100,12 @@ export default function OrderSelectionModal({
 
     const activeDetailItem = processedItems.find(i => i.order_item_id === activeDetailItemId)
 
-    const headerText = selectedCell ? `[🏭 ${machineCode}] [📅 ${format(parseISO(selectedCell.dateStr), 'MM/dd')}] への計画追加` : '未計画注文'
+    const headerText = selectedCell 
+        ? t('addPlanToMachine', { machine: machineCode || '', date: format(parseISO(selectedCell.dateStr), 'MM/dd') }) 
+        : t('unplannedOrders')
 
     const handleToggleGroup = (prefix: string) => {
-        setExpandedGroups(prev => ({ ...prev, [prefix]: prev[prefix] === false ? true : false })) // Default is true (expanded) if undefined
+        setExpandedGroups(prev => ({ ...prev, [prefix]: prev[prefix] === false ? true : false }))
     }
 
     const handleSelectGroup = (items: EnrichedPendingItem[]) => {
@@ -126,71 +122,71 @@ export default function OrderSelectionModal({
     return (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex justify-center items-start pt-[7.5vh] animate-in fade-in duration-200" onClick={onClose}>
             <div 
-                className="w-[95vw] max-w-6xl max-h-[85vh] h-[85vh] bg-[var(--mcs-bg)] rounded-lg shadow-2xl flex flex-col overflow-hidden border border-[var(--mcs-border-strong)]"
+                className="w-[95vw] max-w-6xl max-h-[85vh] h-[85vh] bg-[var(--bg-surface)] rounded-lg shadow-2xl flex flex-col overflow-hidden border border-[var(--border-default)]"
                 onClick={e => e.stopPropagation()}
             >
                 {/* HEADER */}
-                <div className="flex flex-col p-4 border-b border-[var(--mcs-border-strong)] bg-white shrink-0 gap-3">
+                <div className="flex flex-col p-4 border-b border-[var(--border-default)] bg-[var(--bg-surface)] shrink-0 gap-3">
                     <div className="flex justify-between items-center">
                         <div>
-                            <h2 className="text-lg font-bold text-[var(--mcs-primary)] flex items-center gap-2">
+                            <h2 className="text-lg font-bold text-[var(--accent)] flex items-center gap-2">
                                 {headerText}
                             </h2>
-                            <div className="text-sm text-gray-500 mt-1">
-                                未計画注文 (Chưa lên kế hoạch): <span className="font-bold text-[var(--mcs-primary)]">{pendingItems.length}件</span>
+                            <div className="text-sm text-[var(--text-muted)] mt-1 font-semibold">
+                                {t('unplannedOrders')}: <span className="font-bold text-[var(--accent)] font-mono">{pendingItems.length}</span>
                             </div>
                         </div>
-                        <button onClick={onClose} className="text-gray-400 hover:text-gray-700 hover:bg-gray-100 p-2 rounded-full transition-colors focus:outline-none">
+                        <button onClick={onClose} className="text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface-2)] p-2 rounded-full transition-colors focus:outline-none">
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                         </button>
                     </div>
 
                     <div className="relative">
-                        <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400">🔍</span>
+                        <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-[var(--text-muted)]">🔍</span>
                         <input 
                             type="text" 
-                            placeholder="品番・得意先・注文番号で検索... (Tìm mã khuôn, khách hàng, mã đơn)" 
+                            placeholder={t('searchPlaceholder')}
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            className="w-full text-sm pl-9 pr-3 py-2 border border-gray-300 rounded shadow-sm focus:ring-2 focus:ring-[var(--mcs-primary)] focus:border-transparent outline-none transition-all"
+                            className="form-input w-full text-sm pl-9 pr-3 py-2 shadow-sm focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent outline-none transition-all"
                         />
                     </div>
                 </div>
 
                 {/* URGENCY TABS */}
-                <div className="flex bg-gray-100 border-b border-[var(--mcs-border)] shrink-0 overflow-x-auto hide-scrollbar">
+                <div className="flex bg-[var(--bg-surface-2)] border-b border-[var(--border-default)] shrink-0 overflow-x-auto hide-scrollbar">
                     <button 
                         onClick={() => setActiveTab('URGENT')}
-                        className={`flex-1 py-2.5 px-4 text-sm font-bold flex items-center justify-center gap-2 border-b-2 transition-colors ${activeTab === 'URGENT' ? 'border-red-500 text-red-600 bg-white' : 'border-transparent text-gray-500 hover:bg-gray-200'}`}
+                        className={`flex-1 py-2.5 px-4 text-sm font-bold flex items-center justify-center gap-2 border-b-2 transition-colors ${activeTab === 'URGENT' ? 'border-[var(--status-error)] text-[var(--status-error)] bg-[var(--bg-surface)]' : 'border-transparent text-[var(--text-muted)] hover:bg-[var(--bg-surface-hover)]'}`}
                     >
-                        🔴 至急 <span className="text-[11px] font-normal">(≤3日)</span>
-                        <span className={`px-2 py-0.5 rounded-full text-xs ${activeTab === 'URGENT' ? 'bg-red-100 text-red-700' : 'bg-gray-200 text-gray-600'}`}>{tabCounts.URGENT}件</span>
+                        🔴 {t('urgency.urgent')}
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-mono ${activeTab === 'URGENT' ? 'badge badge--error font-bold' : 'bg-[var(--bg-surface-2)] text-[var(--text-muted)]'}`}>{tabCounts.URGENT}</span>
                     </button>
                     <button 
                         onClick={() => setActiveTab('SOON')}
-                        className={`flex-1 py-2.5 px-4 text-sm font-bold flex items-center justify-center gap-2 border-b-2 transition-colors ${activeTab === 'SOON' ? 'border-amber-500 text-amber-600 bg-white' : 'border-transparent text-gray-500 hover:bg-gray-200'}`}
+                        className={`flex-1 py-2.5 px-4 text-sm font-bold flex items-center justify-center gap-2 border-b-2 transition-colors ${activeTab === 'SOON' ? 'border-[var(--status-warning)] text-[var(--status-warning)] bg-[var(--bg-surface)]' : 'border-transparent text-[var(--text-muted)] hover:bg-[var(--bg-surface-hover)]'}`}
                     >
-                        🟡 近日 <span className="text-[11px] font-normal">(4-7日)</span>
-                        <span className={`px-2 py-0.5 rounded-full text-xs ${activeTab === 'SOON' ? 'bg-amber-100 text-amber-700' : 'bg-gray-200 text-gray-600'}`}>{tabCounts.SOON}件</span>
+                        🟡 {t('urgency.soon')}
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-mono ${activeTab === 'SOON' ? 'badge badge--warning font-bold' : 'bg-[var(--bg-surface-2)] text-[var(--text-muted)]'}`}>{tabCounts.SOON}</span>
                     </button>
                     <button 
                         onClick={() => setActiveTab('RELAXED')}
-                        className={`flex-1 py-2.5 px-4 text-sm font-bold flex items-center justify-center gap-2 border-b-2 transition-colors ${activeTab === 'RELAXED' ? 'border-emerald-500 text-emerald-600 bg-white' : 'border-transparent text-gray-500 hover:bg-gray-200'}`}
+                        className={`flex-1 py-2.5 px-4 text-sm font-bold flex items-center justify-center gap-2 border-b-2 transition-colors ${activeTab === 'RELAXED' ? 'border-[var(--status-success)] text-[var(--status-success)] bg-[var(--bg-surface)]' : 'border-transparent text-[var(--text-muted)] hover:bg-[var(--bg-surface-hover)]'}`}
                     >
-                        🟢 余裕 <span className="text-[11px] font-normal">(&gt;7日)</span>
-                        <span className={`px-2 py-0.5 rounded-full text-xs ${activeTab === 'RELAXED' ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-200 text-gray-600'}`}>{tabCounts.RELAXED}件</span>
+                        🟢 {t('urgency.relaxed')}
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-mono ${activeTab === 'RELAXED' ? 'badge badge--success font-bold' : 'bg-[var(--bg-surface-2)] text-[var(--text-muted)]'}`}>{tabCounts.RELAXED}</span>
                     </button>
                     <button 
                         onClick={() => setActiveTab('ALL')}
-                        className={`flex-1 py-2.5 px-4 text-sm font-bold flex items-center justify-center gap-2 border-b-2 transition-colors ${activeTab === 'ALL' ? 'border-[var(--mcs-primary)] text-[var(--mcs-primary)] bg-white' : 'border-transparent text-gray-500 hover:bg-gray-200'}`}
+                        className={`flex-1 py-2.5 px-4 text-sm font-bold flex items-center justify-center gap-2 border-b-2 transition-colors ${activeTab === 'ALL' ? 'border-[var(--accent)] text-[var(--accent)] bg-[var(--bg-surface)]' : 'border-transparent text-[var(--text-muted)] hover:bg-[var(--bg-surface-hover)]'}`}
                     >
-                        📋 全て <span className="text-[11px] font-normal">(Tất cả)</span>
-                        <span className={`px-2 py-0.5 rounded-full text-xs ${activeTab === 'ALL' ? 'bg-blue-100 text-blue-700' : 'bg-gray-200 text-gray-600'}`}>{tabCounts.ALL}件</span>
+                        📋 {t('urgency.all')}
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-mono ${activeTab === 'ALL' ? 'badge badge--info font-bold' : 'bg-[var(--bg-surface-2)] text-[var(--text-muted)]'}`}>{tabCounts.ALL}</span>
                     </button>
                 </div>
 
                 {/* MAIN AREA (List + Detail) */}
-                <div className="flex-1 flex overflow-hidden bg-gray-50">
+                <div className="flex-1 flex overflow-hidden bg-[var(--bg-surface-2)]">
                     
                     {/* LEFT: ORDER LIST */}
                     <div className="flex-1 overflow-y-auto p-4 space-y-4">
@@ -200,10 +196,10 @@ export default function OrderSelectionModal({
                             const allSelected = items.length > 0 && groupSelectedCount === items.length
 
                             return (
-                                <div key={prefix} className="bg-white rounded border border-gray-300 shadow-sm overflow-hidden">
+                                <div key={prefix} className="bg-[var(--bg-surface)] rounded border border-[var(--border-default)] shadow-sm overflow-hidden">
                                     {/* Group Header */}
                                     <div 
-                                        className="bg-gray-100 flex items-center px-3 py-2 cursor-pointer hover:bg-gray-200 transition-colors"
+                                        className="bg-[var(--bg-surface-2)] flex items-center px-3 py-2 cursor-pointer hover:bg-[var(--bg-surface-hover)] transition-colors"
                                         onClick={() => handleToggleGroup(prefix)}
                                     >
                                         <div className="mr-3" onClick={e => e.stopPropagation()}>
@@ -211,16 +207,16 @@ export default function OrderSelectionModal({
                                                 type="checkbox" 
                                                 checked={allSelected}
                                                 onChange={() => handleSelectGroup(items)} 
-                                                className="w-4 h-4 text-[var(--mcs-primary)] rounded border-gray-400 focus:ring-[var(--mcs-primary)] cursor-pointer"
+                                                className="w-4 h-4 text-[var(--accent)] rounded border-[var(--border-default)] focus:ring-[var(--accent)] cursor-pointer"
                                             />
                                         </div>
-                                        <div className="flex-1 font-bold text-[15px] text-[var(--mcs-primary)] flex items-center gap-2">
-                                            <span className={`transform transition-transform text-xs text-gray-500 ${isExpanded ? 'rotate-90' : ''}`}>▶</span>
+                                        <div className="flex-1 font-bold text-[15px] text-[var(--accent)] flex items-center gap-2 font-mono">
+                                            <span className={`transform transition-transform text-xs text-[var(--text-muted)] ${isExpanded ? 'rotate-90' : ''}`}>▶</span>
                                             {prefix}
-                                            <span className="text-gray-500 text-sm font-normal">({items.length}件)</span>
+                                            <span className="text-[var(--text-muted)] text-sm font-normal">({items.length})</span>
                                             {groupSelectedCount > 0 && (
-                                                <span className="ml-2 px-2 py-0.5 bg-yellow-100 text-yellow-700 text-xs rounded-full">
-                                                    {groupSelectedCount}選択済
+                                                <span className="ml-2 badge badge--warning font-mono">
+                                                    {t('selectedCount', { count: groupSelectedCount })}
                                                 </span>
                                             )}
                                         </div>
@@ -228,7 +224,7 @@ export default function OrderSelectionModal({
 
                                     {/* Item List (Cards) */}
                                     {isExpanded && (
-                                        <div className="flex flex-col divide-y divide-gray-100">
+                                        <div className="flex flex-col divide-y divide-[var(--border-default)]">
                                             {items.map(item => {
                                                 const isSelected = selectedOrders.includes(item.order_item_id)
                                                 const isActiveDetail = activeDetailItemId === item.order_item_id
@@ -247,19 +243,19 @@ export default function OrderSelectionModal({
                                                 const qtyRemain = item.total_requested_qty - item.total_planned_qty
                                                 
                                                 let deliveryDisplay = '—'
-                                                let badgeClass = 'bg-gray-100 text-gray-600 border-gray-200'
+                                                let badgeClass = 'badge badge--neutral'
                                                 if (item.detail?.delivery_date) {
                                                     deliveryDisplay = format(parseISO(item.detail.delivery_date), 'MM/dd')
-                                                    if (item._urgency === 'URGENT') badgeClass = 'bg-red-50 text-red-600 border-red-200 font-bold'
-                                                    else if (item._urgency === 'SOON') badgeClass = 'bg-amber-50 text-amber-600 border-amber-200 font-bold'
-                                                    else badgeClass = 'bg-emerald-50 text-emerald-600 border-emerald-200'
+                                                    if (item._urgency === 'URGENT') badgeClass = 'badge badge--error font-bold'
+                                                    else if (item._urgency === 'SOON') badgeClass = 'badge badge--warning font-bold'
+                                                    else badgeClass = 'badge badge--success'
                                                 }
 
                                                 return (
                                                     <div 
                                                         key={item.order_item_id}
                                                         onClick={() => setActiveDetailItemId(item.order_item_id)}
-                                                        className={`flex flex-col p-3 cursor-pointer transition-colors border-l-4 ${isSelected ? 'bg-yellow-50/70 border-l-yellow-400' : isActiveDetail ? 'bg-blue-50 border-l-blue-400' : 'bg-white border-l-transparent hover:bg-gray-50'}`}
+                                                        className={`flex flex-col p-3 cursor-pointer transition-colors border-l-4 ${isSelected ? 'bg-[var(--tint-amber-bg)] border-l-[var(--status-warning)]' : isActiveDetail ? 'bg-[var(--tint-teal-bg)] border-l-[var(--accent)]' : 'bg-[var(--bg-surface)] border-l-transparent hover:bg-[var(--bg-surface-hover)]'}`}
                                                     >
                                                         {/* Line 1 */}
                                                         <div className="flex items-center gap-3">
@@ -267,31 +263,31 @@ export default function OrderSelectionModal({
                                                                 type="checkbox" 
                                                                 checked={isSelected}
                                                                 onChange={() => onToggle(item.order_item_id)} 
-                                                                className="w-4 h-4 text-[var(--mcs-primary)] rounded border-gray-300 focus:ring-[var(--mcs-primary)] cursor-pointer"
-                                                                onClick={(e) => e.stopPropagation()} // Let the row click handle detail, checkbox click handles select
+                                                                className="w-4 h-4 text-[var(--accent)] rounded border-[var(--border-default)] focus:ring-[var(--accent)] cursor-pointer"
+                                                                onClick={(e) => e.stopPropagation()}
                                                             />
-                                                            <div className="font-bold text-[15px] text-teal-700 truncate w-[160px]" title={pnRaw}>{pnRaw}</div>
-                                                            <div className="flex-1 font-mono font-bold text-gray-800">
-                                                                {qtyRemain.toLocaleString()} <span className="text-[11px] font-normal text-gray-500">個残 (Còn)</span>
+                                                            <div className="font-bold text-[15px] text-[var(--accent)] font-mono truncate w-[160px]" title={pnRaw}>{pnRaw}</div>
+                                                            <div className="flex-1 font-mono font-bold text-[var(--text-primary)] text-[14px]">
+                                                                {qtyRemain.toLocaleString()} <span className="text-[11px] font-normal text-[var(--text-muted)]">{t('pcsRemaining')}</span>
                                                             </div>
-                                                            <div className={`text-[12px] px-2 py-0.5 rounded border ${badgeClass}`}>
-                                                                納期: {deliveryDisplay}
+                                                            <div className={`text-[12px] font-mono px-2 py-0.5 rounded border ${badgeClass}`}>
+                                                                {t('deliveryDate')}: {deliveryDisplay}
                                                             </div>
                                                         </div>
                                                         
                                                         {/* Line 2 */}
-                                                        <div className="ml-7 mt-1.5 flex flex-wrap gap-4 text-[12px] text-gray-500">
+                                                        <div className="ml-7 mt-1.5 flex flex-wrap gap-4 text-[12px] text-[var(--text-muted)]">
                                                             <div className="flex items-center gap-1">
-                                                                <span className="text-gray-400">注文番号:</span> 
-                                                                <span className="font-mono font-bold text-gray-700">{slipNo}</span>
+                                                                <span className="text-[var(--text-muted)]">{t('slipNo')}</span> 
+                                                                <span className="font-mono font-bold text-[var(--text-primary)]">{slipNo}</span>
                                                             </div>
                                                             <div className="flex items-center gap-1">
-                                                                <span className="text-gray-400">得意先:</span> 
-                                                                <span className="font-bold text-gray-700 truncate max-w-[150px]">{customer}</span>
+                                                                <span className="text-[var(--text-muted)]">{t('customer')}</span> 
+                                                                <span className="font-bold text-[var(--text-primary)] truncate max-w-[150px]">{customer}</span>
                                                             </div>
                                                             <div className="flex items-center gap-1">
-                                                                <span className="text-gray-400">材質/寸法:</span> 
-                                                                <span className="text-gray-700 bg-gray-100 px-1 rounded">{materialDisplay} {sizeDisplay}</span>
+                                                                <span className="text-[var(--text-muted)]">{t('materialSize')}</span> 
+                                                                <span className="text-[var(--text-primary)] bg-[var(--bg-surface-2)] px-1 rounded font-mono">{materialDisplay} {sizeDisplay}</span>
                                                             </div>
                                                         </div>
                                                     </div>
@@ -304,95 +300,83 @@ export default function OrderSelectionModal({
                         })}
 
                         {Object.keys(groupedItems).length === 0 && (
-                            <div className="text-center p-10 text-gray-500">
-                                条件に一致する注文がありません。(Không có đơn hàng phù hợp)
+                            <div className="text-center p-10 text-[var(--text-muted)]">
+                                {t('noMatchingOrders')}
                             </div>
                         )}
                     </div>
 
                     {/* RIGHT: DETAIL PANEL */}
-                    <div className={`w-[320px] bg-white border-l border-gray-300 shadow-[-4px_0_15px_-3px_rgba(0,0,0,0.05)] transition-all duration-300 flex flex-col ${activeDetailItemId ? 'translate-x-0' : 'translate-x-full hidden'}`}>
+                    <div className={`w-[320px] bg-[var(--bg-surface)] border-l border-[var(--border-default)] shadow-[-4px_0_15px_-3px_rgba(0,0,0,0.05)] transition-all duration-300 flex flex-col ${activeDetailItemId ? 'translate-x-0' : 'translate-x-full hidden'}`}>
                         {activeDetailItem ? (
                             <div className="p-4 flex flex-col h-full overflow-y-auto">
                                 {/* Header */}
-                                <div className="border-b border-gray-200 pb-3 mb-4">
-                                    <h3 className="font-bold text-[16px] text-[var(--mcs-primary)] mb-1">{activeDetailItem.detail?.product_pn_raw}</h3>
-                                    <p className="text-sm text-gray-600">得意先: <span className="font-bold">{activeDetailItem.detail?.orders?.customers?.name || (activeDetailItem.detail?.product_master as any)?.customer_code}</span></p>
+                                <div className="border-b border-[var(--border-default)] pb-3 mb-4">
+                                    <h3 className="font-bold text-[16px] text-[var(--accent)] font-mono mb-1">{activeDetailItem.detail?.product_pn_raw}</h3>
+                                    <p className="text-sm text-[var(--text-muted)]">{t('customer')} <span className="font-bold text-[var(--text-primary)]">{activeDetailItem.detail?.orders?.customers?.name || (activeDetailItem.detail?.product_master as any)?.customer_code}</span></p>
                                 </div>
 
                                 {/* Spec */}
-                                <div className="bg-gray-50 rounded p-3 mb-4 text-sm border border-gray-100">
+                                <div className="bg-[var(--bg-surface-2)] rounded p-3 mb-4 text-sm border border-[var(--border-default)]">
                                     <div className="grid grid-cols-2 gap-2">
-                                        <div className="text-gray-500">材質 (Vật liệu)</div>
-                                        <div className="font-bold text-right">{activeDetailItem.detail?.product_master?.material || '—'}</div>
+                                        <div className="text-[var(--text-muted)]">{t('spec.material')}</div>
+                                        <div className="font-bold text-right font-mono text-[var(--text-primary)]">{activeDetailItem.detail?.product_master?.material || '—'}</div>
                                         
-                                        <div className="text-gray-500">厚み (Độ dày)</div>
-                                        <div className="font-bold text-right">{activeDetailItem.detail?.product_master?.thickness ? `${activeDetailItem.detail.product_master.thickness}t` : '—'}</div>
+                                        <div className="text-[var(--text-muted)]">{t('spec.thickness')}</div>
+                                        <div className="font-bold text-right font-mono text-[var(--text-primary)]">{activeDetailItem.detail?.product_master?.thickness ? `${activeDetailItem.detail.product_master.thickness}t` : '—'}</div>
                                         
-                                        <div className="text-gray-500">サイズ (Kích thước)</div>
-                                        <div className="font-bold text-right">{activeDetailItem.detail?.product_master?.p_length && activeDetailItem.detail?.product_master?.p_width ? `${activeDetailItem.detail.product_master.p_length} × ${activeDetailItem.detail.product_master.p_width}` : '—'}</div>
+                                        <div className="text-[var(--text-muted)]">{t('spec.size')}</div>
+                                        <div className="font-bold text-right font-mono text-[var(--text-primary)]">{activeDetailItem.detail?.product_master?.p_length && activeDetailItem.detail?.product_master?.p_width ? `${activeDetailItem.detail.product_master.p_length} × ${activeDetailItem.detail.product_master.p_width}` : '—'}</div>
                                     </div>
                                 </div>
 
                                 {/* History Skeleton */}
                                 <div className="flex-1">
-                                    <h4 className="font-bold text-[13px] text-gray-700 mb-2 flex items-center gap-2">
-                                        📋 生産履歴 (Lịch sử sản xuất)
+                                    <h4 className="font-bold text-[13px] text-[var(--text-primary)] mb-2 flex items-center gap-2">
+                                        📋 {t('history.title')}
                                     </h4>
                                     <div className="space-y-2">
-                                        <div className="animate-pulse bg-gray-100 h-16 rounded border border-gray-200 p-2 flex flex-col gap-2">
-                                            <div className="bg-gray-200 h-3 w-1/2 rounded"></div>
-                                            <div className="bg-gray-200 h-3 w-3/4 rounded"></div>
+                                        <div className="animate-pulse bg-[var(--bg-surface-2)] h-16 rounded border border-[var(--border-default)] p-2 flex flex-col gap-2">
+                                            <div className="bg-[var(--border-default)] h-3 w-1/2 rounded"></div>
+                                            <div className="bg-[var(--border-default)] h-3 w-3/4 rounded"></div>
                                         </div>
-                                        <div className="animate-pulse bg-gray-100 h-16 rounded border border-gray-200 p-2 flex flex-col gap-2">
-                                            <div className="bg-gray-200 h-3 w-1/2 rounded"></div>
-                                            <div className="bg-gray-200 h-3 w-2/3 rounded"></div>
-                                        </div>
-                                        <p className="text-xs text-center text-gray-400 mt-2 italic">※ データを取得中... (Đang tải dữ liệu)</p>
+                                        <p className="text-xs text-center text-[var(--text-muted)] mt-2 italic">{t('history.loading')}</p>
                                     </div>
                                 </div>
                                 
                                 {/* Recommendation */}
-                                <div className="mt-4 pt-3 border-t border-gray-200">
-                                    <p className="text-[13px] text-gray-600">💡 推奨機械 (Máy đề xuất): <span className="font-bold text-teal-600">N/A</span></p>
+                                <div className="mt-4 pt-3 border-t border-[var(--border-default)]">
+                                    <p className="text-[13px] text-[var(--text-muted)]">💡 {t('recommendedMachine')} <span className="font-bold text-[var(--accent)]">N/A</span></p>
                                 </div>
                             </div>
                         ) : (
-                            <div className="p-4 text-center text-gray-400 mt-10">
-                                詳細を見るには注文を選択してください。<br/>(Chọn một đơn hàng để xem chi tiết)
+                            <div className="p-4 text-center text-[var(--text-muted)] mt-10">
+                                {t('selectOrderHint')}
                             </div>
                         )}
                     </div>
                 </div>
 
                 {/* FOOTER */}
-                <div className="flex items-center justify-between p-4 border-t border-[var(--mcs-border-strong)] bg-white shrink-0">
+                <div className="flex items-center justify-between p-4 border-t border-[var(--border-default)] bg-[var(--bg-surface)] shrink-0">
                     <div className="text-[14px]">
-                        <span className={`font-bold ${selectedOrders.length > 0 ? 'text-yellow-600 text-lg' : 'text-gray-400'}`}>
-                            {selectedOrders.length}件
-                        </span> <span className="text-gray-600">選択中 (Đã chọn)</span>
+                        <span className="font-bold font-mono text-lg" style={{ color: selectedOrders.length > 0 ? 'var(--status-warning)' : 'var(--text-muted)' }}>
+                            {selectedOrders.length}
+                        </span> <span className="text-[var(--text-primary)] font-semibold">{t('selected')}</span>
                     </div>
                     <div className="flex gap-3">
                         <button 
                             onClick={onClose}
-                            className="px-6 py-2 rounded text-sm font-bold text-gray-600 border border-gray-300 hover:bg-gray-100 transition-colors"
+                            className="btn btn-secondary text-sm font-bold"
                         >
-                            キャンセル (Hủy)
+                            {t('cancel')}
                         </button>
                         <button 
                             onClick={onConfirm}
                             disabled={selectedOrders.length === 0 || isSubmitting}
-                            className={`px-6 py-2 rounded text-sm font-bold shadow-sm transition-all flex items-center gap-2 ${selectedOrders.length === 0 ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-[var(--mcs-primary)] text-white hover:bg-[var(--mcs-primary-hover)] hover:shadow-md'}`}
+                            className={`btn ${selectedOrders.length === 0 ? 'btn-secondary text-[var(--text-muted)] cursor-not-allowed' : 'btn-primary'}`}
                         >
-                            {isSubmitting ? (
-                                <>
-                                    <span className="animate-spin text-lg leading-none">⏳</span> 処理中...
-                                </>
-                            ) : (
-                                <>
-                                    ✓ 計画に追加 (Thêm vào Lịch)
-                                </>
-                            )}
+                            {isSubmitting ? t('addingToPlan') : t('addToPlan')}
                         </button>
                     </div>
                 </div>
@@ -400,3 +384,4 @@ export default function OrderSelectionModal({
         </div>
     )
 }
+

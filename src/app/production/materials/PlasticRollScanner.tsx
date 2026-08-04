@@ -43,7 +43,7 @@ export default function PlasticRollScanner() {
     <div className="bg-[var(--mcs-surface)] border border-[var(--mcs-border)] rounded-lg p-6 shadow-sm">
       <h2 className="text-lg font-bold text-[var(--mcs-text)] flex items-center gap-2 mb-4">
         <ScanBarcode className="text-[var(--mcs-primary)]" />
-        Quét Cuộn Nhựa (Vật Tư)
+        ロールバーコードスキャン
       </h2>
 
       <form onSubmit={handleScan} className="flex gap-2 mb-6">
@@ -51,12 +51,12 @@ export default function PlasticRollScanner() {
           type="text" 
           value={barcode}
           onChange={(e) => setBarcode(e.target.value)}
-          placeholder="Quét hoặc nhập mã vạch cuộn nhựa..." 
+          placeholder="ロールバーコードをスキャンまたは入力..." 
           className="flex-1 border border-[var(--mcs-border)] rounded-md px-3 py-2 text-sm focus:border-[var(--mcs-primary)] focus:outline-none"
           autoFocus
         />
         <button type="submit" className="px-4 py-2 bg-[var(--mcs-primary)] text-white rounded-md font-bold hover:bg-[var(--mcs-primary-hover)] transition-colors">
-          Quét
+          スキャン
         </button>
       </form>
 
@@ -64,18 +64,18 @@ export default function PlasticRollScanner() {
         <div className="bg-[var(--mcs-surface-2)] border border-[var(--mcs-border)] rounded-md p-4 animate-in fade-in slide-in-from-top-2">
           <div className="flex justify-between items-start mb-4">
             <div>
-              <div className="text-xs text-[var(--mcs-text-muted)] font-bold mb-1">CUỘN ĐANG CHỌN</div>
+              <div className="text-xs text-[var(--mcs-text-muted)] font-bold mb-1">選択中のロール</div>
               <div className="text-xl font-bold text-[var(--mcs-text)]">{scannedRoll.roll_barcode}</div>
               <div className="text-sm font-bold text-[var(--mcs-primary)] mt-1">{scannedRoll.plastic_code}</div>
             </div>
             <div className="text-right">
-              <div className="text-xs text-[var(--mcs-text-muted)] font-bold mb-1">TỒN HIỆN TẠI</div>
-              <div className="text-2xl font-bold text-[var(--mcs-success)]">{scannedRoll.current_length_m} <span className="text-sm">mét</span></div>
+              <div className="text-xs text-[var(--mcs-text-muted)] font-bold mb-1">現在残量</div>
+              <div className="text-2xl font-bold text-[var(--mcs-success)]">{scannedRoll.current_length_m} <span className="text-sm">m</span></div>
             </div>
           </div>
 
           <div className="border-t border-[var(--mcs-border)] pt-4 mt-2">
-            <label className="block text-xs text-[var(--mcs-text-muted)] font-bold mb-2">NHẬP SỐ MÉT SỬ DỤNG (HOẶC HAO HỤT)</label>
+            <label className="block text-xs text-[var(--mcs-text-muted)] font-bold mb-2">使用（またはロス）メートル数を入力</label>
             <div className="flex gap-4 items-center">
               <div className="flex-1 flex border border-[var(--mcs-border-strong)] rounded-md overflow-hidden bg-white">
                 <button 
@@ -105,7 +105,7 @@ export default function PlasticRollScanner() {
                 disabled={consumeAmount <= 0 || consumeAmount > scannedRoll.current_length_m}
                 className="flex items-center gap-2 px-6 py-2 bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-[var(--mcs-surface)] rounded-md font-bold transition-colors h-full"
               >
-                <CheckCircle size={18} /> Ghi Nhận
+                <CheckCircle size={18} /> 記録
               </button>
             </div>
           </div>

@@ -130,13 +130,13 @@ type FormData = {
 
 type StatusKey = 'DRAFT' | 'SUBMITTED' | 'RELEASED' | 'APPROVED' | 'REJECTED' | 'SUPERSEDED'
 
-const STATUS_CONFIG: Record<StatusKey, { label: string; labelVi: string; badge: string }> = {
-  DRAFT:      { label: '下書き',   labelVi: 'Nháp',       badge: 'badge badge--warning' },
-  SUBMITTED:  { label: '提出済',   labelVi: 'Đã gửi',     badge: 'badge badge--info' },
-  RELEASED:   { label: 'リリース', labelVi: 'Đã phát hành', badge: 'badge badge--success' },
-  APPROVED:   { label: '承認済',   labelVi: 'Đã duyệt',   badge: 'badge badge--success' },
-  REJECTED:   { label: '却下',     labelVi: 'Từ chối',     badge: 'badge badge--error' },
-  SUPERSEDED: { label: '旧版',     labelVi: 'Đã thay thế', badge: 'badge badge--neutral' },
+const STATUS_CONFIG: Record<StatusKey, { label: string; badge: string }> = {
+  DRAFT:      { label: '下書き',   badge: 'badge badge--warning' },
+  SUBMITTED:  { label: '提出済',   badge: 'badge badge--info' },
+  RELEASED:   { label: 'リリース', badge: 'badge badge--success' },
+  APPROVED:   { label: '承認済',   badge: 'badge badge--success' },
+  REJECTED:   { label: '却下',     badge: 'badge badge--error' },
+  SUPERSEDED: { label: '旧版',     badge: 'badge badge--neutral' },
 }
 
 const STATUS_OPTIONS: StatusKey[] = ['DRAFT', 'SUBMITTED', 'RELEASED', 'REJECTED', 'SUPERSEDED']
@@ -422,7 +422,7 @@ export default function MoldMasterDesignsPage() {
   }
 
   const handleDelete = async (id: string, label: string) => {
-    if (!confirm(`「${label}」を削除しますか？\nBạn muốn xoá "${label}"?`)) return
+    if (!confirm(`「${label}」を削除しますか？`)) return
     const { error: err } = await supabase
       .from('design_revisions')
       .delete()
@@ -463,7 +463,7 @@ export default function MoldMasterDesignsPage() {
           onClick={() => router.back()}
           className="btn btn-secondary"
           style={{ height: 30, padding: '0 8px', gap: 3, fontSize: 11 }}
-          title="前のページに戻る / Quay lại trang trước"
+          title="前のページに戻る"
         >
           <ArrowLeft size={13} />
           <span style={{ fontFamily: 'var(--font-jp)' }}>戻る</span>
@@ -473,7 +473,7 @@ export default function MoldMasterDesignsPage() {
           href="/engineering/designs"
           className="btn btn-secondary"
           style={{ height: 30, padding: '0 8px', gap: 3, fontSize: 11, textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }}
-          title="設計版一覧へ / Về danh sách thiết kế"
+          title="設計版一覧へ"
         >
           <ArrowUpFromLine size={12} />
           <span style={{ fontFamily: 'var(--font-jp)' }}>一覧</span>
@@ -488,7 +488,6 @@ export default function MoldMasterDesignsPage() {
             }}>
               設計版管理
             </h1>
-            <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>Quản lý phiên bản thiết kế</span>
           </div>
         </div>
       </div>
@@ -500,17 +499,17 @@ export default function MoldMasterDesignsPage() {
           <div className="card-flat" style={{ padding: '12px 16px' }}>
             <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: 6, textTransform: 'uppercase', marginBottom: 8 }}>
               <PenTool size={12} />
-              <span style={{ fontFamily: 'var(--font-jp)' }}>製品情報 / THÔNG TIN SẢN PHẨM</span>
+              <span style={{ fontFamily: 'var(--font-jp)' }}>製品情報</span>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
               <div>
-                <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>製品コード / MÃ SP</span>
+                <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>製品コード</span>
                 <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'monospace' }}>
                   {moldMaster.product_code}
                 </div>
               </div>
               <div>
-                <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>製品名 (内語) / TÊN SP (NB)</span>
+                <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>製品名 (社内)</span>
                 <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)' }}>
                   {moldMaster.product_name_internal || '—'}
                 </div>
@@ -526,7 +525,7 @@ export default function MoldMasterDesignsPage() {
               onClick={openAddModal}
             >
               <Plus size={14} />
-              新規リビジョン登録 / Thêm phiên bản thiết kế
+              新規リビジョン登録
             </button>
             {revisions.length > 0 && (
               <button
@@ -534,7 +533,7 @@ export default function MoldMasterDesignsPage() {
                 style={{ width: '100%', justifyContent: 'center' }}
                 onClick={handleCopyFromPrevious}
               >
-                前版からコピー / Sao chép từ bản trước
+                前版からコピー
               </button>
             )}
           </div>
@@ -555,7 +554,7 @@ export default function MoldMasterDesignsPage() {
             {/* Modal Header */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: '1px solid var(--border-default)', flexShrink: 0 }}>
               <h2 style={{ margin: 0, fontSize: 14, fontWeight: 700 }}>
-                {editingId ? 'リビジョン編集 / Sửa phiên bản' : '新規リビジョン追加 / Thêm phiên bản mới'}
+                {editingId ? 'リビジョン編集' : '新規リビジョン追加'}
               </h2>
               <button onClick={() => setShowModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}>
                 <X size={18} />
@@ -574,7 +573,6 @@ export default function MoldMasterDesignsPage() {
                     <div className="form-section-header">
                       <Layers className="section-icon" />
                       <span style={{ fontFamily: 'var(--font-jp)' }}>基本情報</span>
-                      <span style={{ fontWeight: 400, color: 'var(--text-muted)', marginLeft: 4, fontSize: 10 }}>Thông tin cơ bản</span>
                     </div>
                     <div className="form-section-body">
                       <div className="form-grid-2">
@@ -614,7 +612,7 @@ export default function MoldMasterDesignsPage() {
                       >
                         {STATUS_OPTIONS.map(s => (
                           <option key={s} value={s}>
-                            {locale === 'vi' ? STATUS_CONFIG[s].labelVi : STATUS_CONFIG[s].label}
+                            {STATUS_CONFIG[s].label}
                           </option>
                         ))}
                       </select>
@@ -671,19 +669,19 @@ export default function MoldMasterDesignsPage() {
               <div className="form-section">
                 <div className="form-section-header">
                   <Ruler className="section-icon" />
-                  <span style={{ fontFamily: 'var(--font-jp)' }}>{locale === 'vi' ? 'Kích thước & Thông số' : '寸法 & パラメータ'}</span>
+                  <span style={{ fontFamily: 'var(--font-jp)' }}>寸法 & パラメータ</span>
                 </div>
                 <div className="form-section-body">
                   <div className="form-grid-4" style={{ display: 'grid', gap: 10, gridTemplateColumns: 'repeat(4, 1fr)' }}>
                     {([
-                      ['design_length', '長さ L', 'Dài'],
-                      ['design_width', '幅 W', 'Rộng'],
-                      ['design_height', '高さ H', 'Cao'],
-                      ['design_depth', '深さ D', 'Sâu'],
-                    ] as [keyof FormData, string, string][]).map(([key, ja, vi]) => (
+                      ['design_length', '長さ L'],
+                      ['design_width', '幅 W'],
+                      ['design_height', '高さ H'],
+                      ['design_depth', '深さ D'],
+                    ] as [keyof FormData, string][]).map(([key, ja]) => (
                       <div className="form-field" key={key}>
                         <label className="form-label">
-                          {locale === 'vi' ? vi : ja}
+                          {ja}
                         </label>
                         <input
                           type="number" step="any"
@@ -749,7 +747,6 @@ export default function MoldMasterDesignsPage() {
                 <div className="form-section-header">
                   <Settings className="section-icon" />
                   <span style={{ fontFamily: 'var(--font-jp)' }}>技術詳細</span>
-                  <span style={{ fontWeight: 400, color: 'var(--text-muted)', marginLeft: 4, fontSize: 10 }}>Chi tiết kỹ thuật</span>
                 </div>
                 <div className="form-section-body">
                   <div className="form-grid-4" style={{ display: 'grid', gap: 10, gridTemplateColumns: 'repeat(4, 1fr)' }}>
@@ -793,7 +790,6 @@ export default function MoldMasterDesignsPage() {
                         style={{ width: 15, height: 15, accentColor: 'var(--accent)' }}
                       />
                       <span style={{ fontFamily: 'var(--font-jp)', fontSize: 12, fontWeight: 600 }}>プラグ有</span>
-                      <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>Có Plug</span>
                     </label>
                     <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 13, color: 'var(--text-primary)' }}>
                       <input
@@ -803,7 +799,6 @@ export default function MoldMasterDesignsPage() {
                         style={{ width: 15, height: 15, accentColor: 'var(--accent)' }}
                       />
                       <span style={{ fontFamily: 'var(--font-jp)', fontSize: 12, fontWeight: 600 }}>別カッター</span>
-                      <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>Dao cắt riêng</span>
                     </label>
                   </div>
                   <div className="form-grid-2" style={{ marginTop: 10 }}>
@@ -820,7 +815,6 @@ export default function MoldMasterDesignsPage() {
                 <div className="form-section-header">
                   <Building2 className="section-icon" />
                   <span style={{ fontFamily: 'var(--font-jp)' }}>顧客情報</span>
-                  <span style={{ fontWeight: 400, color: 'var(--text-muted)', marginLeft: 4, fontSize: 10 }}>Thông tin KH</span>
                 </div>
                 <div className="form-section-body">
                   <div className="form-grid-2">
@@ -849,7 +843,6 @@ export default function MoldMasterDesignsPage() {
                 <div className="form-section-header">
                   <FolderOpen className="section-icon" />
                   <span style={{ fontFamily: 'var(--font-jp)' }}>ファイル & メモ</span>
-                  <span style={{ fontWeight: 400, color: 'var(--text-muted)', marginLeft: 4, fontSize: 10 }}>File & Ghi chú</span>
                 </div>
                 <div className="form-section-body">
                   <div className="form-grid-2">
@@ -904,12 +897,12 @@ export default function MoldMasterDesignsPage() {
                         <div className="flex items-center justify-between mb-3 border-b border-[var(--border-default)] pb-2">
                           <h3 className="text-[12px] font-bold flex items-center gap-2" style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-jp)' }}>
                             <Box size={14} className="text-accent" />
-                            物理金型 <span className="text-[10px] text-[var(--text-muted)] font-normal">Khuôn vật lý</span>
+                            物理金型
                           </h3>
                         </div>
                         <div className="flex flex-col gap-2">
                           {sortedMolds.length === 0 ? (
-                            <div className="text-[11px] text-center p-4 text-[var(--text-muted)]">Không có dữ liệu</div>
+                            <div className="text-[11px] text-center p-4 text-[var(--text-muted)]">データなし</div>
                           ) : (
                             sortedMolds.map(mold => (
                               <Link
@@ -934,12 +927,12 @@ export default function MoldMasterDesignsPage() {
                         <div className="flex items-center justify-between mb-3 border-b border-[var(--border-default)] pb-2">
                           <h3 className="text-[12px] font-bold flex items-center gap-2" style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-jp)' }}>
                             <Hammer size={14} className="text-accent" />
-                            ジョブ <span className="text-[10px] text-[var(--text-muted)] font-normal">Jobs</span>
+                            ジョブ
                           </h3>
                         </div>
                         <div className="flex flex-col gap-2">
                           {sortedJobs.length === 0 ? (
-                            <div className="text-[11px] text-center p-4 text-[var(--text-muted)]">Không có dữ liệu</div>
+                            <div className="text-[11px] text-center p-4 text-[var(--text-muted)]">データなし</div>
                           ) : (
                             sortedJobs.map(job => (
                               <Link
@@ -963,7 +956,7 @@ export default function MoldMasterDesignsPage() {
                   )
                 })() : (
                   <div className="text-[11px] text-[var(--text-muted)] p-4 card-flat text-center border border-dashed border-[var(--border-default)]">
-                    保存後に表示されます <br/>(Hiển thị sau khi lưu)
+                    保存後に表示されます
                   </div>
                 )}
               </div>
@@ -980,7 +973,7 @@ export default function MoldMasterDesignsPage() {
                 {editingId && (
                   <>
                     <span style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 600, fontFamily: 'var(--font-jp)' }}>
-                      関連 / Liên kết:
+                      関連:
                     </span>
                     {moldMaster && (
                       <Link
@@ -1024,11 +1017,10 @@ export default function MoldMasterDesignsPage() {
                         fontSize: 10, color: 'var(--accent)', textDecoration: 'none',
                         fontWeight: 700,
                       }}
-                      title="この設計版の金型を開く / Xem khuôn vật lý của phiên bản này"
+                      title="この設計版の金型を開く"
                     >
                       <Wrench size={10} />
                       <span style={{ fontFamily: 'var(--font-jp)' }}>金型</span>
-                      <span style={{ fontSize: 9, opacity: 0.7 }}>Khuôn VL</span>
                       <ExternalLink size={8} style={{ opacity: 0.5 }} />
                     </Link>
                   </>

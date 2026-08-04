@@ -2,6 +2,7 @@
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import { ChevronLeft, Package, History, AlertTriangle, Warehouse } from 'lucide-react'
+import { getTranslations } from 'next-intl/server'
 import StockTable from './StockTable'
 import TxnHistoryTab from './TxnHistoryTab'
 import LowStockAlert from './LowStockAlert'
@@ -15,6 +16,8 @@ export default async function InventoryDashboardPage(props: {
 }) {
     const searchParams = await props.searchParams
     const { tab = 'overview' } = searchParams
+    const tInventory = await getTranslations('Inventory')
+    const tCommon = await getTranslations('Common')
     const supabase = await createClient()
 
     // Fetch KPI data
@@ -33,9 +36,9 @@ export default async function InventoryDashboardPage(props: {
     }
 
     const tabs = [
-        { key: 'overview', label: '在庫概要 / Tổng Quan', icon: <Package size={18} />, color: 'var(--mcs-primary)' },
-        { key: 'history', label: '取引履歴 / Lịch Sử', icon: <History size={18} />, color: 'var(--mcs-info)' },
-        { key: 'alerts', label: '在庫警告 / Cảnh Báo', icon: <AlertTriangle size={18} />, color: 'var(--mcs-error)' },
+        { key: 'overview', label: tInventory('tabs.overview'), icon: <Package size={18} />, color: 'var(--mcs-primary)' },
+        { key: 'history', label: tInventory('tabs.history'), icon: <History size={18} />, color: 'var(--mcs-info)' },
+        { key: 'alerts', label: tInventory('tabs.alerts'), icon: <AlertTriangle size={18} />, color: 'var(--mcs-error)' },
     ]
 
     return (
@@ -43,16 +46,17 @@ export default async function InventoryDashboardPage(props: {
             {/* Sticky Header */}
             <div className="sticky top-0 z-30 border-b shadow-sm" 
                  style={{ 
-                     background: 'linear-gradient(135deg, #0d7a7a 0%, #0a6262 100%)',
+                     background: 'linear-gradient(135deg, var(--accent) 0%, var(--accent-hover) 100%)',
                      borderColor: 'var(--mcs-primary-active)' 
                  }}>
                 <div className="max-w-7xl mx-auto px-4 sm:px-6">
                     <div className="flex justify-between items-center h-14">
                         <Link href="/production" className="flex items-center gap-2 text-white/80 hover:text-white text-sm font-medium transition-colors">
-                            <ChevronLeft size={18} /> Kanbanへ戻めE                        </Link>
+                            <ChevronLeft size={18} /> {tCommon('back')}
+                        </Link>
                         <h1 className="text-base sm:text-lg font-bold flex items-center gap-2 text-white tracking-wide">
                             <Warehouse size={22} className="text-teal-200" />
-                            完�E品在庫管琁E                            <span className="text-xs font-normal text-teal-200 hidden sm:inline">/ Kho Sản Phẩm Tray</span>
+                            {tInventory('title')}
                         </h1>
                         <div className="text-xs text-teal-100 hidden md:block">
                             {new Date().toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric' })}

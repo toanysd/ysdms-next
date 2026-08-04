@@ -178,7 +178,7 @@ export function WorklogFormShared({
         </div>
       )}
 
-      {/* Row 1: Ngày + Nhân viên */}
+      {/* Row 1: Date & Employee */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
           <label className="form-label">
@@ -199,7 +199,7 @@ export function WorklogFormShared({
         </div>
       </div>
 
-      {/* Row 2: Job (chỉ hiện khi không lock) */}
+      {/* Row 2: Job (when unlocked) */}
       {!isJobLocked && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
           <label className="form-label">
@@ -272,7 +272,7 @@ export function WorklogFormShared({
 
               {/* Job Classification Selection */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 16, background: 'var(--bg-surface-2)', padding: '6px 10px', borderRadius: 6 }}>
-                <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)' }}>Phân loại Job:</span>
+                <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)' }}>{t('jobClassification')}</span>
                 <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 11 }}>
                   <input
                     type="radio"
@@ -280,7 +280,7 @@ export function WorklogFormShared({
                     checked={!isFacilityJob}
                     onChange={() => setIsFacilityJob(false)}
                   />
-                  <span>⚙️ 金型加工 (Gia công khuôn)</span>
+                  <span>{t('moldProcessingJob')}</span>
                 </label>
                 <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 11 }}>
                   <input
@@ -289,7 +289,7 @@ export function WorklogFormShared({
                     checked={isFacilityJob}
                     onChange={() => setIsFacilityJob(true)}
                   />
-                  <span>🧹 社内作業 (Công việc nội bộ)</span>
+                  <span>{t('internalWorkJob')}</span>
                 </label>
               </div>
 
@@ -333,7 +333,7 @@ export function WorklogFormShared({
         </div>
       )}
 
-      {/* Row 3: Bước công việc */}
+      {/* Row 3: Step */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
         <label className="form-label">
           {t('formStep')}
@@ -354,7 +354,7 @@ export function WorklogFormShared({
         </select>
       </div>
 
-      {/* Row 4: Số giờ + is_finished */}
+      {/* Row 4: Hours & Finished */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
           <label className="form-label">
@@ -382,7 +382,7 @@ export function WorklogFormShared({
         </div>
       </div>
 
-      {/* Row 5: Mô tả */}
+      {/* Row 5: Description */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
         <label className="form-label">{t('formDescription')}</label>
         <input
@@ -393,7 +393,7 @@ export function WorklogFormShared({
         />
       </div>
 
-      {/* Row 6: Ghi chú */}
+      {/* Row 6: Notes */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
         <label className="form-label">{t('formNotes')}</label>
         <textarea

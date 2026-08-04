@@ -401,7 +401,7 @@ function Checkbox({ label, checked }: { label: string; checked: boolean }) {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function ProductionInstructionPDF({ pi, revision }: { pi: any; revision: any }) {
+export function ProductionInstructionPDF({ pi, revision, locale = 'ja' }: { pi: any; revision: any; locale?: string }) {
   const today = new Date().toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' })
 
   // Document Title based on template
@@ -456,8 +456,10 @@ export function ProductionInstructionPDF({ pi, revision }: { pi: any; revision: 
     return t.tag_code ? (t.production_tag_master?.label_ja || t.tag_code) : t.custom_label
   }).join(', ')
 
+  const tText = (text: string) => text
+  const additionalTagHeader = tText(locale === 'vi' ? '【Chỉ thị bổ sung】' : '【追加タグ】')
   const notesText = [
-    hasOverflow ? `【追加タグ / Chỉ thị bổ sung】: ${overflowText}` : null,
+    hasOverflow ? `${additionalTagHeader}: ${overflowText}` : null,
     pi.notes
   ].filter(Boolean).join('\n')
 

@@ -22,10 +22,10 @@
   --space-6: 20px;
   --space-7: 24px;
 
-  /* Backgrounds — reduced brightness */
+  /* Backgrounds — page=soft gray, surface=crisp white for clear hierarchy */
   --bg-page:          #ECEEF1;
-  --bg-surface:       #F7F8FA;
-  --bg-surface-2:     #F0F1F3;
+  --bg-surface:       #FFFFFF;
+  --bg-surface-2:     #F5F6F8;
   --bg-surface-3:     #E8EAED;
   --bg-hover:         #E4E8EC;
   --bg-active:        #DAE8E8;
@@ -37,20 +37,39 @@
   --border-strong:    #BFC6CE;
   --border-subtle:    #E8EAED;
 
-  /* Text — reduced contrast */
-  --text-primary:     #2D3748;
-  --text-secondary:   #5A6577;
-  --text-muted:       #8896A6;
+  /* Text — High Contrast & Maximum Readability */
+  --text-primary:     #0F172A;
+  --text-secondary:   #334155;
+  --text-muted:       #475569;
   --text-inverse:     #FFFFFF;
 
-  /* Accent — Teal (single accent, used sparingly) */
+  /* Accent — Teal */
   --accent:           #0D7A7A;
   --accent-hover:     #0A6262;
   --accent-active:    #084F4F;
   --accent-light:     #DAF0F0;
   --accent-subtle:    #EBF7F7;
 
-  /* Semantic status colors */
+  /* Section Color Tinting Tokens (Visual Anchor Backgrounds) */
+  --tint-teal-bg:     #F0FDFA;
+  --tint-teal-border: #99F6E4;
+  --tint-teal-text:   #0F766E;
+
+  --tint-blue-bg:     #EFF6FF;
+  --tint-blue-border: #BFDBFE;
+  --tint-blue-text:   #1D4ED8;
+
+  --tint-orange-bg:   #FFF7ED;
+  --tint-orange-border: #FED7AA;
+  --tint-orange-text: #C2410C;
+
+  --tint-purple-bg:   #F5F3FF;
+  --tint-purple-border: #DDD6FE;
+  --tint-purple-text: #6D28D9;
+
+  --tint-green-bg:    #ECFDF5;
+  --tint-green-border: #A7F3D0;
+  --tint-green-text:  #047857;
   --status-success:       #16A34A;
   --status-success-bg:    #ECFAEF;
   --status-success-text:  #166534;
@@ -76,7 +95,7 @@
   --shadow-lg:    0 4px 6px rgba(0, 0, 0, 0.07), 0 2px 4px rgba(0, 0, 0, 0.04);
 
   /* Radius */
-  --radius-sm:    4px;
+  --radius-sm:    6px;
   --radius-md:    8px;
   --radius-lg:    12px;
 

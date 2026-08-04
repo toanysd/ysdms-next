@@ -44,7 +44,7 @@ export default function ToolingDashboard() {
         bg: 'color-mix(in srgb, var(--status-success) 15%, transparent)',
         color: 'var(--status-success)',
         border: '1px solid var(--status-success)',
-        label: '🟢 完了 (Đã hoàn thành)'
+        label: '🟢 完了'
       }
     }
 
@@ -64,28 +64,28 @@ export default function ToolingDashboard() {
         bg: 'color-mix(in srgb, var(--status-error) 15%, transparent)',
         color: 'var(--status-error)',
         border: '1px solid var(--status-error)',
-        label: `🔴 Quá hạn ${Math.abs(diffDays)}d`
+        label: `🔴 超過 ${Math.abs(diffDays)}日`
       }
     } else if (diffDays <= 7) {
       return {
         bg: 'color-mix(in srgb, var(--status-warning) 18%, transparent)',
         color: 'var(--status-warning)',
         border: '1px solid var(--status-warning)',
-        label: `🟧 Còn ${diffDays}d (Gấp)`
+        label: `🟧 残り ${diffDays}日 (至急)`
       }
     } else if (diffDays <= 30) {
       return {
         bg: 'color-mix(in srgb, var(--status-info) 18%, transparent)',
         color: 'var(--status-info)',
         border: '1px solid var(--status-info)',
-        label: `🟦 Còn ${diffDays}d`
+        label: `🟦 残り ${diffDays}日`
       }
     } else {
       return {
         bg: 'color-mix(in srgb, var(--status-success) 18%, transparent)',
         color: 'var(--status-success)',
         border: '1px solid var(--status-success)',
-        label: `🟩 Còn ${diffDays}d`
+        label: `🟩 残り ${diffDays}日`
       }
     }
   }

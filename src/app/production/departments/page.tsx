@@ -1,7 +1,7 @@
 import DepartmentKanban from './DepartmentKanban'
 
 export const metadata = {
-  title: 'Bảng Điều Phối Các Phòng Ban | YSDMS Next-Gen',
+  title: '部門別コントロールボード | YSDMS NextGen',
 }
 
 export default function DepartmentsPage() {

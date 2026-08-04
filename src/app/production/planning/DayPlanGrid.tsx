@@ -5,7 +5,6 @@ export default function DayPlanGrid({ plans, machines, dateStr }: { plans: any[]
         return (
             <div className="flex flex-col items-center justify-center py-20 text-[var(--mcs-text-muted)] h-full">
                 <p className="text-[14px] tracking-widest uppercase font-bold text-[var(--mcs-text-secondary)]">No plans for {dateStr}</p>
-                <p className="text-[11px] mt-1">Dữ liệu trống</p>
             </div>
         )
     }
@@ -15,13 +14,13 @@ export default function DayPlanGrid({ plans, machines, dateStr }: { plans: any[]
             <table className="w-full text-left border-collapse">
                 <thead className="sticky top-0 bg-[var(--mcs-surface-3)] z-10 shadow-sm">
                     <tr className="text-[11px] text-[var(--mcs-text)] border-b-2 border-[var(--mcs-border-strong)]">
-                        <th className="py-[8px] px-3 font-bold min-w-[80px]">機番 <span className="block text-[10px] font-normal text-[var(--mcs-text-muted)] mt-0.5">MÁY</span></th>
-                        <th className="py-[8px] px-3 font-bold min-w-[140px]">品番 <span className="block text-[10px] font-normal text-[var(--mcs-text-muted)] mt-0.5">MÃ SP</span></th>
-                        <th className="py-[8px] px-3 font-bold text-right min-w-[80px]">数量 <span className="block text-[10px] font-normal text-[var(--mcs-text-muted)] mt-0.5">SL</span></th>
-                        <th className="py-[8px] px-3 font-bold text-center min-w-[70px]">シフト <span className="block text-[10px] font-normal text-[var(--mcs-text-muted)] mt-0.5">CA</span></th>
-                        <th className="py-[8px] px-3 font-bold min-w-[110px]">型 <span className="block text-[10px] font-normal text-[var(--mcs-text-muted)] mt-0.5">KHUÔN</span></th>
-                        <th className="py-[8px] px-3 font-bold min-w-[100px]">担当者 <span className="block text-[10px] font-normal text-[var(--mcs-text-muted)] mt-0.5">THỢ</span></th>
-                        <th className="py-[8px] px-3 font-bold text-right min-w-[70px]">時間 <span className="block text-[10px] font-normal text-[var(--mcs-text-muted)] mt-0.5">GIỜ</span></th>
+                        <th className="py-[8px] px-3 font-bold min-w-[80px]">機番</th>
+                        <th className="py-[8px] px-3 font-bold min-w-[140px]">品番</th>
+                        <th className="py-[8px] px-3 font-bold text-right min-w-[80px]">数量</th>
+                        <th className="py-[8px] px-3 font-bold text-center min-w-[70px]">シフト</th>
+                        <th className="py-[8px] px-3 font-bold min-w-[110px]">型</th>
+                        <th className="py-[8px] px-3 font-bold min-w-[100px]">担当者</th>
+                        <th className="py-[8px] px-3 font-bold text-right min-w-[70px]">時間</th>
                     </tr>
                 </thead>
                 <tbody className="text-[12px] text-[var(--mcs-text)]">

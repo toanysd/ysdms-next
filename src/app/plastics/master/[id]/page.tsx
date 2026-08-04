@@ -8,20 +8,20 @@ import { ArrowLeft, ArrowUpFromLine, Loader2, Layers, Box } from 'lucide-react'
 import { Pagination } from '@/components/ui/Pagination'
 
 // ── Enum Labels ──
-const ELEC_LABELS: Record<string, { ja: string; vi: string }> = {
-  normal:     { ja: '通常',     vi: 'Thường' },
-  conductive: { ja: '導電',     vi: 'Dẫn điện' },
-  antistatic: { ja: '帯電防止', vi: 'Chống tĩnh điện' },
+const ELEC_LABELS: Record<string, { ja: string }> = {
+  normal:     { ja: '通常' },
+  conductive: { ja: '導電' },
+  antistatic: { ja: '帯電防止' },
 }
-const SILICONE_LABELS: Record<string, { ja: string; vi: string }> = {
-  silicone_free: { ja: 'ノンシリコン', vi: 'Không silicone' },
-  with_silicone: { ja: 'シリコン有',   vi: 'Có silicone' },
-  unknown:       { ja: '未確認',       vi: 'Chưa xác nhận' },
+const SILICONE_LABELS: Record<string, { ja: string }> = {
+  silicone_free: { ja: 'ノンシリコン' },
+  with_silicone: { ja: 'シリコン有' },
+  unknown:       { ja: '未確認' },
 }
-const REVIEW_LABELS: Record<string, { ja: string; vi: string; color: string; bg: string }> = {
-  draft:     { ja: '未確認', vi: 'Chưa xác nhận', color: 'var(--text-muted)',      bg: 'var(--bg-surface-2)' },
-  checked:   { ja: '確認済', vi: 'Đã kiểm tra',   color: 'var(--status-warning)', bg: 'color-mix(in srgb, var(--status-warning) 12%, transparent)' },
-  confirmed: { ja: '承認済', vi: 'Đã xác nhận',   color: 'var(--status-success)', bg: 'color-mix(in srgb, var(--status-success) 12%, transparent)' },
+const REVIEW_LABELS: Record<string, { ja: string; color: string; bg: string }> = {
+  draft:     { ja: '未確認', color: 'var(--text-muted)',      bg: 'var(--bg-surface-2)' },
+  checked:   { ja: '確認済', color: 'var(--status-warning)', bg: 'color-mix(in srgb, var(--status-warning) 12%, transparent)' },
+  confirmed: { ja: '承認済', color: 'var(--status-success)', bg: 'color-mix(in srgb, var(--status-success) 12%, transparent)' },
 }
 const COLOR_JA: Record<string, string> = {
   natural: 'ナチュラル', clear: 'クリア', black: '黒', white: '白',
@@ -34,12 +34,11 @@ const ROLL_STATUS_LABELS: Record<string, { ja: string; color: string }> = {
   returned: { ja: '返品',   color: 'var(--status-info)' },
 }
 
-function InfoRow({ label, jaLabel, value, mono }: { label: string; jaLabel: string; value: React.ReactNode; mono?: boolean }) {
+function InfoRow({ jaLabel, value, mono }: { jaLabel: string; value: React.ReactNode; mono?: boolean }) {
   return (
     <div style={{ display: 'flex', alignItems: 'flex-start', padding: '6px 0', borderBottom: '1px solid var(--border-subtle)' }}>
       <div style={{ width: 160, flexShrink: 0 }}>
         <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)', fontFamily: 'var(--font-jp)' }}>{jaLabel}</div>
-        <div style={{ fontSize: 9, color: 'var(--text-muted)' }}>{label}</div>
       </div>
       <div style={{ flex: 1, fontSize: 13, color: 'var(--text-primary)', fontFamily: mono ? 'monospace' : 'inherit', fontWeight: mono ? 600 : 400 }}>
         {value || <span style={{ color: 'var(--text-muted)' }}>—</span>}
@@ -105,8 +104,8 @@ export default function PlasticDetailPage({ params }: { params: Promise<{ id: st
   if (loading) return <div style={{ padding: 32, textAlign: 'center', color: 'var(--text-muted)' }}><Loader2 size={20} className="animate-spin inline-block mr-2" /> 読み込み中...</div>
   if (!plastic) return <div style={{ padding: 32, color: 'var(--text-muted)' }}>データが見つかりません。</div>
 
-  const elec = ELEC_LABELS[plastic.electrical_property] || { ja: '—', vi: '—' }
-  const sili = SILICONE_LABELS[plastic.silicone_status_normalized] || { ja: '—', vi: '—' }
+  const elec = ELEC_LABELS[plastic.electrical_property] || { ja: '—' }
+  const sili = SILICONE_LABELS[plastic.silicone_status_normalized] || { ja: '—' }
   const review = REVIEW_LABELS[plastic.status_review] || REVIEW_LABELS.draft
   const colorJa = COLOR_JA[plastic.color_name_normalized] || plastic.color_name_normalized || '—'
 
@@ -134,7 +133,7 @@ export default function PlasticDetailPage({ params }: { params: Promise<{ id: st
               />
             </div>
             <div style={{ fontSize: 10, color: 'var(--text-muted)' }}>
-              プラスチックマスター詳細 / Chi tiết mã nhựa
+              プラスチックマスター詳細
             </div>
           </div>
         </div>
@@ -145,35 +144,35 @@ export default function PlasticDetailPage({ params }: { params: Promise<{ id: st
         {/* Left: Thông số cơ bản */}
         <div className="card-flat" style={{ padding: '12px 16px' }}>
           <h3 style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 8, fontFamily: 'var(--font-jp)', borderBottom: '1px solid var(--border-default)', paddingBottom: 6 }}>
-            基本情報 <span style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 400 }}>Thông tin cơ bản</span>
+            基本情報
           </h3>
-          <InfoRow jaLabel="材質 (ファミリー)" label="Họ nhựa" value={
+          <InfoRow jaLabel="材質 (ファミリー)" value={
             <span>{plastic.plastic_family}{plastic.plastic_subtype ? ` / ${plastic.plastic_subtype}` : ''}</span>
           } />
-          <InfoRow jaLabel="厚さ (mm)" label="Độ dày" value={plastic.thickness_mm} mono />
-          <InfoRow jaLabel="幅 (mm)" label="Khổ rộng" value={plastic.width_mm} mono />
-          <InfoRow jaLabel="標準長 (m)" label="Chiều dài tiêu chuẩn" value={plastic.standard_length_m ? `${plastic.standard_length_m} m` : null} mono />
-          <InfoRow jaLabel="色コード" label="Mã màu gốc" value={plastic.color_code_raw} mono />
-          <InfoRow jaLabel="色 (標準化)" label="Màu chuẩn hóa" value={colorJa} />
+          <InfoRow jaLabel="厚さ (mm)" value={plastic.thickness_mm} mono />
+          <InfoRow jaLabel="幅 (mm)" value={plastic.width_mm} mono />
+          <InfoRow jaLabel="標準長 (m)" value={plastic.standard_length_m ? `${plastic.standard_length_m} m` : null} mono />
+          <InfoRow jaLabel="色コード" value={plastic.color_code_raw} mono />
+          <InfoRow jaLabel="色 (標準化)" value={colorJa} />
         </div>
 
         {/* Right: Tính chất */}
         <div className="card-flat" style={{ padding: '12px 16px' }}>
           <h3 style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 8, fontFamily: 'var(--font-jp)', borderBottom: '1px solid var(--border-default)', paddingBottom: 6 }}>
-            特性・管理 <span style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 400 }}>Tính chất & Quản lý</span>
+            特性・管理
           </h3>
-          <InfoRow jaLabel="導電性" label="Tính chất điện" value={
+          <InfoRow jaLabel="導電性" value={
             <Badge text={elec.ja} color={plastic.electrical_property === 'conductive' ? 'var(--status-error)' : plastic.electrical_property === 'antistatic' ? 'var(--status-warning)' : 'var(--text-secondary)'} bg={plastic.electrical_property === 'conductive' ? 'color-mix(in srgb, var(--status-error) 12%, transparent)' : plastic.electrical_property === 'antistatic' ? 'color-mix(in srgb, var(--status-warning) 12%, transparent)' : 'var(--bg-surface-2)'} />
           } />
-          <InfoRow jaLabel="シリコン" label="Silicone" value={
+          <InfoRow jaLabel="シリコン" value={
             <Badge text={sili.ja} color={plastic.silicone_status_normalized === 'with_silicone' ? 'var(--status-info)' : 'var(--status-success)'} bg={plastic.silicone_status_normalized === 'with_silicone' ? 'color-mix(in srgb, var(--status-info) 12%, transparent)' : 'color-mix(in srgb, var(--status-success) 12%, transparent)'} />
           } />
-          <InfoRow jaLabel="添加剤" label="Phụ gia" value={plastic.additive_flags || plastic.additive_text_raw} />
-          <InfoRow jaLabel="外観" label="Bề mặt" value={plastic.appearance_text_raw} />
-          <InfoRow jaLabel="確認状態" label="Trạng thái xác nhận" value={
+          <InfoRow jaLabel="添加剤" value={plastic.additive_flags || plastic.additive_text_raw} />
+          <InfoRow jaLabel="外観" value={plastic.appearance_text_raw} />
+          <InfoRow jaLabel="確認状態" value={
             <Badge text={review.ja} color={review.color} bg={review.bg} />
           } />
-          <InfoRow jaLabel="備考" label="Ghi chú" value={plastic.remarks_raw} />
+          <InfoRow jaLabel="備考" value={plastic.remarks_raw} />
         </div>
       </div>
 
@@ -182,7 +181,7 @@ export default function PlasticDetailPage({ params }: { params: Promise<{ id: st
         <div style={{ padding: '10px 16px', borderBottom: '1px solid var(--border-default)', background: 'var(--bg-surface-2)' }}>
           <h3 style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'var(--font-jp)', margin: 0 }}>
             <Layers size={14} style={{ display: 'inline-block', marginRight: 6, verticalAlign: 'middle' }} />
-            在庫ロール <span style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 400, marginLeft: 6 }}>Cuộn trong kho ({rollTotal} cuộn)</span>
+            在庫ロール <span style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 400, marginLeft: 6 }}>({rollTotal} 本)</span>
           </h3>
         </div>
         <div style={{ overflowX: 'auto' }}>

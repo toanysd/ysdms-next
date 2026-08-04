@@ -37,7 +37,7 @@ export default async function NewCutterPage() {
                 {t('Master.type')}
               </label>
               <select name="type" className="w-full h-[34px] bg-white text-sm form-input">
-                <option value="">-- Trống --</option>
+                <option value="">-- 未選択 --</option>
                 <option value="Tomson">Tomson (トムソン刀)</option>
                 <option value="Pinnacle">Pinnacle (ピナクル刀)</option>
                 <option value="Engraving">Engraving (彫刻刀)</option>

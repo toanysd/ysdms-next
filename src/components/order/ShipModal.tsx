@@ -90,7 +90,7 @@ export function ShipModal({ orderId, slipNo, orderItems, onClose }: ShipModalPro
         startTransition(async () => {
             try {
                 await shipOrderItemsAction(orderId, itemsToShip, notes || t('shippingDefaultNotes'))
-                onClose() // Tắt modal sau khi xong
+                onClose()
             } catch (err: any) {
                 alert(t('errorShipping') + err.message)
             }
@@ -100,31 +100,31 @@ export function ShipModal({ orderId, slipNo, orderItems, onClose }: ShipModalPro
     const isAnyEmpty = orderItems.some(i => !inputs[i.id]?.qty || parseInt(inputs[i.id].qty, 10) <= 0)
 
     return (
-        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <div className="bg-white w-full max-w-4xl rounded-lg shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
-                <div className="bg-teal-700 text-white p-4 flex justify-between items-center shrink-0">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(15, 23, 42, 0.55)', backdropFilter: 'blur(4px)' }}>
+            <div className="card-flat w-full max-w-4xl rounded-lg shadow-2xl overflow-hidden flex flex-col max-h-[90vh]" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-default)' }}>
+                <div className="p-4 flex justify-between items-center shrink-0" style={{ background: 'var(--accent)', color: '#ffffff' }}>
                     <div className="flex items-center gap-2">
                         <Truck size={20} />
                         <div>
-                            <h2 className="text-[16px] font-bold">{t('shipmentTitle')}</h2>
-                            <p className="text-xs text-teal-100 mt-0.5">{t('orderCode')}: #{slipNo || orderId.substring(0, 8)}</p>
+                            <h2 className="text-[16px] font-bold text-white">{t('shipmentTitle')}</h2>
+                            <p className="text-xs text-white/80 mt-0.5" style={{ fontFamily: 'monospace' }}>{t('orderCode')}: #{slipNo || orderId.substring(0, 8)}</p>
                         </div>
                     </div>
-                    <button onClick={onClose} disabled={isPending} className="p-1 hover:bg-black/20 rounded transition-colors disabled:opacity-50">
+                    <button onClick={onClose} disabled={isPending} className="p-1 hover:bg-white/20 rounded transition-colors disabled:opacity-50 text-white">
                         <X size={20} />
                     </button>
                 </div>
 
-                <div className="p-4 overflow-y-auto bg-slate-50 flex-1">
+                <div className="p-4 overflow-y-auto flex-1 custom-scrollbar" style={{ background: 'var(--bg-surface-2)' }}>
                     {isLoadingStocks ? (
                         <div className="flex justify-center items-center py-10">
-                            <Loader2 className="animate-spin text-teal-600" size={24} />
-                            <span className="ml-2 text-sm text-gray-500">{t('loadingStock')}</span>
+                            <Loader2 className="animate-spin text-[var(--accent)]" size={24} />
+                            <span className="ml-2 text-sm text-[var(--text-muted)]">{t('loadingStock')}</span>
                         </div>
                     ) : (
-                        <div className="bg-white border border-gray-200 rounded-md shadow-sm overflow-hidden">
-                            <table className="w-full text-sm text-left">
-                                <thead className="bg-gray-100 border-b border-gray-200 text-xs text-gray-600">
+                        <div className="border border-[var(--border-default)] rounded-md shadow-sm overflow-hidden" style={{ background: 'var(--bg-surface)' }}>
+                            <table className="data-table w-full text-sm text-left">
+                                <thead>
                                     <tr>
                                         <th className="p-3">{t('colProductCode')}</th>
                                         <th className="p-3 text-right">{t('colOrdered')}</th>
@@ -143,11 +143,11 @@ export function ShipModal({ orderId, slipNo, orderItems, onClose }: ShipModalPro
                                         const isLowStock = stock < inputQty
 
                                         return (
-                                            <tr key={item.id} className="border-b border-gray-100 last:border-0 hover:bg-gray-50">
-                                                <td className="p-3 font-bold text-gray-800">{code}</td>
-                                                <td className="p-3 text-right font-mono text-gray-500">{orderQty.toLocaleString()}</td>
-                                                <td className="p-3 text-right font-mono font-bold">
-                                                    <span className={isLowStock ? "text-red-600 flex items-center justify-end gap-1" : "text-emerald-600"}>
+                                            <tr key={item.id}>
+                                                <td className="p-3 font-bold" style={{ color: 'var(--text-primary)', fontSize: 13, fontFamily: 'monospace' }}>{code}</td>
+                                                <td className="p-3 text-right font-mono" style={{ color: 'var(--text-secondary)', fontSize: 13 }}>{orderQty.toLocaleString()}</td>
+                                                <td className="p-3 text-right font-mono font-bold" style={{ fontSize: 13 }}>
+                                                    <span className={isLowStock ? "flex items-center justify-end gap-1" : ""} style={{ color: isLowStock ? 'var(--status-error)' : 'var(--status-success)' }}>
                                                         {isLowStock && <AlertTriangle size={12} />}
                                                         {stock.toLocaleString()}
                                                     </span>
@@ -157,7 +157,12 @@ export function ShipModal({ orderId, slipNo, orderItems, onClose }: ShipModalPro
                                                         type="number"
                                                         value={inputs[item.id]?.qty}
                                                         onChange={e => handleInputChange(item.id, 'qty', e.target.value)}
-                                                        className={`w-20 px-2 py-1 text-right border rounded font-mono ${isLowStock ? 'border-red-300 focus:border-red-500 focus:ring-red-500 bg-red-50' : 'border-gray-300 focus:border-teal-500 focus:ring-teal-500'}`}
+                                                        className="form-input w-20 text-right font-mono font-bold"
+                                                        style={{
+                                                            fontSize: 13,
+                                                            borderColor: isLowStock ? 'var(--status-error)' : 'var(--border-default)',
+                                                            backgroundColor: isLowStock ? 'color-mix(in srgb, var(--status-error) 10%, var(--bg-surface))' : 'var(--bg-surface)'
+                                                        }}
                                                     />
                                                 </td>
                                                 <td className="p-3">
@@ -165,7 +170,7 @@ export function ShipModal({ orderId, slipNo, orderItems, onClose }: ShipModalPro
                                                         type="text"
                                                         value={inputs[item.id]?.lot}
                                                         onChange={e => handleInputChange(item.id, 'lot', e.target.value)}
-                                                        className="w-full px-2 py-1 border border-gray-300 rounded focus:border-teal-500 focus:ring-teal-500 text-sm"
+                                                        className="form-input w-full text-sm font-mono"
                                                     />
                                                 </td>
                                             </tr>
@@ -177,32 +182,34 @@ export function ShipModal({ orderId, slipNo, orderItems, onClose }: ShipModalPro
                     )}
 
                     <div className="mt-4">
-                        <label className="block text-xs font-bold text-gray-700 mb-1">{t('notesLabel')}</label>
+                        <label className="form-label block text-xs font-bold mb-1">{t('notesLabel')}</label>
                         <input
                             type="text"
                             value={notes}
                             onChange={e => setNotes(e.target.value)}
                             placeholder="..."
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:border-teal-500 focus:ring-teal-500 text-sm"
+                            className="form-input w-full text-sm"
                         />
                     </div>
                 </div>
 
-                <div className="p-4 bg-white border-t border-gray-200 flex justify-end gap-2 shrink-0">
+                <div className="p-4 border-t border-[var(--border-default)] flex justify-end gap-2 shrink-0" style={{ background: 'var(--bg-surface-2)' }}>
                     <button
                         onClick={onClose}
                         disabled={isPending}
-                        className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50 transition-colors disabled:opacity-50"
+                        className="btn btn-secondary"
+                        style={{ height: 34, padding: '0 16px', fontSize: 12 }}
                     >
                         {t('cancel')}
                     </button>
                     <button
                         onClick={handleSubmit}
                         disabled={isPending || isAnyEmpty}
-                        className="px-4 py-2 text-sm font-bold text-white bg-teal-600 rounded hover:bg-teal-700 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+                        className="btn btn-primary"
+                        style={{ height: 34, padding: '0 18px', fontSize: 12, gap: 6, background: 'var(--accent)', color: '#fff', fontWeight: 700 }}
                     >
                         {isPending && <Loader2 size={16} className="animate-spin" />}
-                        ✈ {t('confirmShipment')}
+                        <span>✈ {t('confirmShipment')}</span>
                     </button>
                 </div>
             </div>

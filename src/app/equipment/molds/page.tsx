@@ -244,12 +244,24 @@ function MoldsPageContent() {
     return rack || layer || '—'
   }
 
+  const getMoldStatusLabel = (key: string) => {
+    switch (key) {
+      case 'ACTIVE': return t('status.ACTIVE')
+      case 'MAINTENANCE': return t('status.MAINTENANCE')
+      case 'DISPOSED': return t('status.DISPOSED')
+      case 'IN_STOCK': return t('status.IN_STOCK')
+      case 'IN_USE': return t('status.IN_USE')
+      case 'OUT_OF_STOCK': return t('status.OUT_OF_STOCK')
+      default: return key
+    }
+  }
+
   const StatusBadge = ({ status }: { status: string }) => {
     const s = STATUS_LABELS[status]
     const color = s ? s.color : 'var(--text-muted)'
     return (
       <span className="inline-flex items-center px-[6px] py-[1px] rounded-full text-[10px] font-bold whitespace-nowrap" style={{ color: color, background: `color-mix(in srgb, ${color} 12%, transparent)`, border: `1px solid color-mix(in srgb, ${color} 25%, transparent)` }}>
-        {s ? t(`status.${s.key}`) : status}
+        {s ? getMoldStatusLabel(s.key) : status}
       </span>
     )
   }
@@ -361,7 +373,7 @@ function MoldsPageContent() {
           <div className="relative">
             <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value as MoldStatus | '')} className="h-[28px] pl-2 pr-6 text-[11px] rounded border border-slate-300 appearance-none bg-white">
               <option value="">{t('Molds.statusAll')}</option>
-              {Object.keys(STATUS_LABELS).map((k) => <option key={k} value={k}>{t(`status.${STATUS_LABELS[k].key}`)}</option>)}
+              {Object.keys(STATUS_LABELS).map((k) => <option key={k} value={k}>{getMoldStatusLabel(STATUS_LABELS[k].key)}</option>)}
             </select>
           </div>
         </div>
@@ -449,7 +461,7 @@ function MoldsPageContent() {
                     </td>
                     <td className="p-2 text-[11px] font-mono font-semibold">{formatRackLocation(m)}</td>
                     <td className="p-2">
-                      <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full border bg-slate-100">{STORAGE_LABELS[m.usage_status] ? t(`status.${STORAGE_LABELS[m.usage_status].key}`) : m.usage_status}</span>
+                      <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full border bg-slate-100">{STORAGE_LABELS[m.usage_status] ? getMoldStatusLabel(STORAGE_LABELS[m.usage_status].key) : m.usage_status}</span>
                     </td>
                     <td className="p-2"><StatusBadge status={m.device_status} /></td>
                     <td className="p-2">

@@ -2,6 +2,7 @@
 
 import React from 'react'
 import { AlertTriangle, Save, LogOut, X } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 
 interface UnsavedChangesModalProps {
   isOpen: boolean
@@ -17,10 +18,15 @@ export function UnsavedChangesModal({
   onClose,
   onSaveAndExit,
   onDiscardAndExit,
-  title = 'Bạn có muốn thoát mà không lưu không? / 変更を保存せずに移動しますか？',
-  message = 'Dữ liệu thông tin vừa nhập hoặc chỉnh sửa chưa được lưu. Nếu thoát ngay bây giờ, các thay đổi của bạn sẽ bị mất.'
+  title,
+  message
 }: UnsavedChangesModalProps) {
+  const t = useTranslations('UnsavedChangesModal')
+
   if (!isOpen) return null
+
+  const displayTitle = title || t('defaultTitle')
+  const displayMessage = message || t('defaultMessage')
 
   return (
     <div
@@ -77,10 +83,10 @@ export function UnsavedChangesModal({
             </div>
             <div>
               <span className="badge badge--warning" style={{ fontSize: 9, marginBottom: 2 }}>
-                CẢNH BÁO THOÁT TRANG / 離脱確認
+                {t('warningBadge')}
               </span>
               <h3 style={{ margin: 0, fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>
-                {title}
+                {displayTitle}
               </h3>
             </div>
           </div>
@@ -101,7 +107,7 @@ export function UnsavedChangesModal({
 
         {/* Body */}
         <div style={{ padding: '16px 20px', fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.6 }}>
-          {message}
+          {displayMessage}
         </div>
 
         {/* Footer Actions */}
@@ -123,7 +129,7 @@ export function UnsavedChangesModal({
             className="btn btn-secondary"
             style={{ height: 32, padding: '0 14px', fontSize: 12, fontWeight: 600 }}
           >
-            Ở lại trang (Hủy)
+            {t('stayOnPage')}
           </button>
 
           <button
@@ -141,7 +147,7 @@ export function UnsavedChangesModal({
             }}
           >
             <LogOut size={13} />
-            <span>Thoát không lưu</span>
+            <span>{t('discardAndExit')}</span>
           </button>
 
           <button
@@ -159,10 +165,11 @@ export function UnsavedChangesModal({
             }}
           >
             <Save size={14} />
-            <span>Lưu & Thoát</span>
+            <span>{t('saveAndExit')}</span>
           </button>
         </div>
       </div>
     </div>
   )
 }
+

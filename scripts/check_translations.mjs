@@ -95,7 +95,7 @@ function main() {
     console.log('✅ All translation keys are properly defined in both ja.json and vi.json');
   } else {
     console.log('\n❌ Please add the missing keys to messages/ja.json and messages/vi.json');
-    // process.exit(1); // Don't exit with error code yet so it doesn't break builds, or maybe do if we want strict enforcement.
+    process.exit(1);
   }
 }
 

@@ -3,7 +3,7 @@ import { Package } from 'lucide-react';
 import PlasticRollScanner from './PlasticRollScanner';
 
 export const metadata = {
-  title: 'Quản Lý Kho Vật Tư (Nhựa) | YSDMS Next-Gen',
+  title: '原材料在庫管理 | YSDMS NextGen',
 }
 
 export default function MaterialsPage() {
@@ -13,9 +13,9 @@ export default function MaterialsPage() {
         <div>
           <h1 className="text-xl font-bold text-[var(--mcs-text)] flex items-center gap-2">
             <Package className="text-[var(--mcs-primary)]" />
-            Quản Lý Vật Tư / Kho Nhựa (Plastic WMS)
+            原材料在庫管理 (Plastic WMS)
           </h1>
-          <p className="text-[12px] text-[var(--mcs-text-muted)] mt-1">Hệ thống theo dõi tồn kho cuộn nhựa chi tiết bằng mã vạch và mét (m)</p>
+          <p className="text-[12px] text-[var(--mcs-text-muted)] mt-1">バーコードと長さ（m）によるプラスチックロール在庫管理</p>
         </div>
       </header>
 
@@ -27,17 +27,17 @@ export default function MaterialsPage() {
         <div className="lg:col-span-2">
           <div className="bg-[var(--mcs-surface)] border border-[var(--mcs-border)] rounded-lg shadow-sm overflow-hidden flex flex-col h-full min-h-[400px]">
             <div className="p-4 border-b border-[var(--mcs-border)] flex justify-between items-center bg-[var(--mcs-surface-3)]">
-              <h2 className="font-bold text-[var(--mcs-text)] text-sm">Tồn Kho Cuộn (Rolls In Stock)</h2>
+              <h2 className="font-bold text-[var(--mcs-text)] text-sm">ロール在庫一覧 (Rolls In Stock)</h2>
             </div>
             <div className="flex-1 overflow-auto">
               <table className="w-full text-left text-sm border-collapse">
                 <thead className="bg-[var(--mcs-surface-2)] text-[var(--mcs-text-muted)] text-[11px] uppercase sticky top-0 z-10 shadow-sm border-b border-[var(--mcs-border)]">
                   <tr>
-                    <th className="p-3">Mã Cuộn (Barcode)</th>
-                    <th className="p-3">Mã Vật Tư</th>
-                    <th className="p-3 text-right">Lúc Nhập (m)</th>
-                    <th className="p-3 text-right">Tồn Hiện Tại (m)</th>
-                    <th className="p-3">Trạng Thái</th>
+                    <th className="p-3">ロールコード (Barcode)</th>
+                    <th className="p-3">材料コード</th>
+                    <th className="p-3 text-right">入荷時 (m)</th>
+                    <th className="p-3 text-right">現在残量 (m)</th>
+                    <th className="p-3">ステータス</th>
                   </tr>
                 </thead>
                 <tbody>

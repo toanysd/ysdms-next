@@ -1,6 +1,7 @@
 'use client';
 
 import { useTranslations, useLocale } from 'next-intl';
+import Link from 'next/link';
 
 const PIC_MAP: Record<string, { ja: string, vi: string }> = {
   '田中': { ja: '田中', vi: 'Tanaka' },
@@ -18,6 +19,56 @@ export default function DashboardPage() {
 
   const getPicName = (p: string) => {
     return PIC_MAP[p]?.[locale === 'vi' ? 'vi' : 'ja'] || p;
+  };
+
+  const kpiCards = [
+    { label: t('kpi.activeMolds'), value: '1,248', delta: '+12%', ok: true, color: 'var(--accent)', bgTint: 'var(--tint-teal-bg)' },
+    { label: t('kpi.plasticInventory'), value: '8,450', delta: '-5%', ok: false, color: 'var(--status-warning)', bgTint: 'var(--tint-orange-bg)' },
+    { label: t('kpi.newOrders'), value: '34', delta: t('kpi.newOrders'), ok: true, color: 'var(--status-info)', bgTint: 'var(--tint-blue-bg)' },
+    { label: t('kpi.needsMaintenance'), value: '12', delta: t('kpi.needsActionDelta'), ok: false, color: 'var(--status-error)', bgTint: 'var(--tint-purple-bg)' },
+  ];
+
+  const widgets = [
+    { label: t('widgets.inboundTrend'), tag: 'FG', tagColor: 'var(--accent)' },
+    { label: t('widgets.materialTypeDist'), tag: 'Live', tagColor: 'var(--status-success)' },
+    { label: t('widgets.colorDist'), tag: 'Live', tagColor: 'var(--status-success)' },
+    { label: t('widgets.topConsumption'), tag: 'M', tagColor: 'var(--status-info)' },
+  ];
+
+  const taskTypeLabels: Record<string, string> = {
+    new: t('tasks.types.new'),
+    maintenance: t('tasks.types.maintenance'),
+    prototype: t('tasks.types.prototype'),
+    copy: t('tasks.types.copy'),
+    adjust: t('tasks.types.adjust'),
+  };
+
+  const taskStatusLabels: Record<string, string> = {
+    inProgress: t('tasks.status.inProgress'),
+    request: t('tasks.status.request'),
+    waitingMaterial: t('tasks.status.waitingMaterial'),
+    completed: t('tasks.status.completed'),
+    machining: t('tasks.status.machining'),
+  };
+
+  const taskItems = [
+    { id: 'J-101', name: 'JAE-001', type: 'new', st: 'inProgress', bc: 'badge--success', d: '06/10', p: '田中' },
+    { id: 'J-102', name: 'MTY-005', type: 'maintenance', st: 'request', bc: 'badge--warning', d: '06/15', p: '佐藤' },
+    { id: 'J-103', name: 'SMK-002', type: 'new', st: 'waitingMaterial', bc: 'badge--error', d: '06/20', p: '鈴木' },
+    { id: 'J-104', name: 'TE-010', type: 'prototype', st: 'completed', bc: 'badge--neutral', d: '06/05', p: '高橋' },
+    { id: 'J-105', name: 'IRI-008', type: 'copy', st: 'inProgress', bc: 'badge--success', d: '06/25', p: '渡辺' },
+    { id: 'J-106', name: 'JAE-015', type: 'new', st: 'machining', bc: 'badge--info', d: '06/18', p: '伊藤' },
+    { id: 'J-107', name: 'KWA-003', type: 'adjust', st: 'inProgress', bc: 'badge--success', d: '06/22', p: '山本' },
+  ];
+
+  const statItemMap: Record<string, { label: string; sub: string; v: string }> = {
+    molds: { label: t('stats.molds'), sub: t('stats.moldsSub'), v: '4,589' },
+    cutters: { label: t('stats.cutters'), sub: t('stats.cuttersSub'), v: '892' },
+    orders: { label: t('stats.orders'), sub: t('stats.ordersSub'), v: '156' },
+    machines: { label: t('stats.machines'), sub: t('stats.machinesSub'), v: '14' },
+    employees: { label: t('stats.employees'), sub: t('stats.employeesSub'), v: '45' },
+    racks: { label: t('stats.racks'), sub: t('stats.racksSub'), v: '76' },
+    products: { label: t('stats.products'), sub: t('stats.productsSub'), v: '320' },
   };
 
   return (
@@ -38,36 +89,26 @@ export default function DashboardPage() {
 
       {/* Row 2: KPI Cards — compact inline */}
       <div className="grid grid-cols-4 gap-2.5 shrink-0">
-        {[
-          { labelKey: 'activeMolds', value: '1,248', delta: '+12%', ok: true, color: 'var(--accent)' },
-          { labelKey: 'plasticInventory', value: '8,450', delta: '-5%', ok: false, color: 'var(--status-warning)' },
-          { labelKey: 'newOrders', value: '34', delta: 'T6/2026', ok: true, color: 'var(--status-info)' },
-          { labelKey: 'needsMaintenance', value: '12', delta: 'Cần xử lý', ok: false, color: 'var(--status-error)' },
-        ].map((kpi, i) => (
-          <div key={i} className="card-flat flex items-center justify-between px-4 py-2.5" style={{ borderTop: `3px solid ${kpi.color}` }}>
+        {kpiCards.map((kpi, i) => (
+          <div key={i} className="card-flat flex items-center justify-between px-4 py-2.5" style={{ borderTop: `3px solid ${kpi.color}`, background: kpi.bgTint }}>
             <div>
-              <div className="text-[11px] font-bold" style={{ color: kpi.color, fontFamily: 'var(--font-jp)' }}>{t('kpi.' + kpi.labelKey)}</div>
+              <div className="text-[11px] font-bold" style={{ color: kpi.color, fontFamily: 'var(--font-jp)' }}>{kpi.label}</div>
             </div>
             <div className="text-right">
-              <div className="text-[24px] font-bold leading-none" style={{ color: 'var(--text-primary)' }}>{kpi.value}</div>
+              <div className="text-[24px] font-mono font-bold leading-none" style={{ color: 'var(--text-primary)' }}>{kpi.value}</div>
               <div className="text-[10px] mt-0.5" style={{ color: kpi.ok ? 'var(--status-success)' : 'var(--status-error)' }}>{kpi.delta}</div>
             </div>
           </div>
         ))}
       </div>
 
-      {/* Row 3: Analysis widgets — 4 small cards like MoldCutterSearch */}
+      {/* Row 3: Analysis widgets — 4 small cards */}
       <div className="grid grid-cols-4 gap-2.5 shrink-0" style={{ height: '140px' }}>
-        {[
-          { labelKey: 'inboundTrend', tag: 'FG', tagColor: 'var(--accent)' },
-          { labelKey: 'materialTypeDist', tag: 'Live', tagColor: 'var(--status-success)' },
-          { labelKey: 'colorDist', tag: 'Live', tagColor: 'var(--status-success)' },
-          { labelKey: 'topConsumption', tag: 'M', tagColor: 'var(--status-info)' },
-        ].map((w, i) => (
+        {widgets.map((w, i) => (
           <div key={i} className="card-flat flex flex-col min-h-0">
-            <div className="flex items-center justify-between px-3 py-1.5 shrink-0" style={{ borderBottom: '1px solid var(--border-default)' }}>
+            <div className="card-header-tint flex items-center justify-between px-3 py-1.5 shrink-0">
               <div>
-                <span className="text-[12px] font-bold" style={{ fontFamily: 'var(--font-jp)', color: 'var(--text-primary)' }}>{t('widgets.' + w.labelKey)}</span>
+                <span className="text-[12px] font-bold" style={{ fontFamily: 'var(--font-jp)', color: 'var(--text-primary)' }}>{w.label}</span>
               </div>
               <span className="text-[9px] font-bold px-1.5 py-0.5 rounded" style={{ background: w.tagColor, color: '#fff' }}>{w.tag}</span>
             </div>
@@ -83,7 +124,7 @@ export default function DashboardPage() {
         
         {/* Data Table — 2/3 width */}
         <div className="card-flat col-span-2 flex flex-col min-h-0">
-          <div className="flex items-center justify-between px-3 py-2 shrink-0" style={{ borderBottom: '1px solid var(--border-default)' }}>
+          <div className="card-header-tint flex items-center justify-between px-3 py-2 shrink-0">
             <div>
               <span className="text-[13px] font-bold" style={{ fontFamily: 'var(--font-jp)', color: 'var(--text-primary)' }}>{t('tasks.title')}</span>
             </div>
@@ -102,24 +143,20 @@ export default function DashboardPage() {
                 </tr>
               </thead>
               <tbody>
-                {[
-                  { id: 'J-101', ja: 'JAE-001 新規金型', vi: 'JAE-001 Khuôn mới', type: 'new', st: 'inProgress', bc: 'badge--success', d: '06/10', p: '田中' },
-                  { id: 'J-102', ja: 'MTY-005 メンテ', vi: 'MTY-005 Bảo trì', type: 'maintenance', st: 'request', bc: 'badge--warning', d: '06/15', p: '佐藤' },
-                  { id: 'J-103', ja: 'SMK-002 新規抜型', vi: 'SMK-002 Dao mới', type: 'new', st: 'waitingMaterial', bc: 'badge--error', d: '06/20', p: '鈴木' },
-                  { id: 'J-104', ja: 'TE-010 成形試作', vi: 'TE-010 Thử nghiệm định hình', type: 'prototype', st: 'completed', bc: 'badge--neutral', d: '06/05', p: '高橋' },
-                  { id: 'J-105', ja: 'IRI-008 金型コピー', vi: 'IRI-008 Sao chép khuôn', type: 'copy', st: 'inProgress', bc: 'badge--success', d: '06/25', p: '渡辺' },
-                  { id: 'J-106', ja: 'JAE-015 プラグ', vi: 'JAE-015 Làm plug mới', type: 'new', st: 'machining', bc: 'badge--info', d: '06/18', p: '伊藤' },
-                  { id: 'J-107', ja: 'KWA-003 調整', vi: 'KWA-003 Điều chỉnh', type: 'adjust', st: 'inProgress', bc: 'badge--success', d: '06/22', p: 'Yamamoto' },
-                ].map((task, i) => (
+                {taskItems.map((task, i) => (
                   <tr key={i} className="cursor-pointer">
-                    <td className="font-mono text-[11px] font-semibold" style={{ color: 'var(--accent)' }}>{task.id}</td>
+                    <td>
+                      <Link href="/equipment/jobs" className="font-mono text-[13px] font-bold hover:underline" style={{ color: 'var(--accent)' }}>
+                        {task.id}
+                      </Link>
+                    </td>
                     <td>
                       <span className="text-[12px] font-semibold" style={{ fontFamily: 'var(--font-jp)', color: 'var(--text-primary)' }}>
-                        {locale === 'vi' ? task.vi : task.ja}
+                        {task.name} {taskTypeLabels[task.type] || task.type}
                       </span>
                     </td>
-                    <td><span className="badge badge--neutral">{t('tasks.types.' + task.type)}</span></td>
-                    <td><span className={`badge ${task.bc}`}>{t('tasks.status.' + task.st)}</span></td>
+                    <td><span className="badge badge--neutral">{taskTypeLabels[task.type] || task.type}</span></td>
+                    <td><span className={`badge ${task.bc}`}>{taskStatusLabels[task.st] || task.st}</span></td>
                     <td className="font-mono text-[11px]" style={{ color: 'var(--text-secondary)' }}>{task.d}</td>
                     <td className="text-[11px]" style={{ fontFamily: 'var(--font-jp)', color: 'var(--text-secondary)' }}>
                       {getPicName(task.p)}
@@ -133,25 +170,17 @@ export default function DashboardPage() {
 
         {/* Stats + System — 1/3 width */}
         <div className="card-flat flex flex-col min-h-0">
-          <div className="px-3 py-2 shrink-0" style={{ borderBottom: '1px solid var(--border-default)' }}>
+          <div className="card-header-tint px-3 py-2 shrink-0">
             <span className="text-[13px] font-bold" style={{ fontFamily: 'var(--font-jp)', color: 'var(--text-primary)' }}>{t('stats.title')}</span>
           </div>
           <div className="flex-1 overflow-auto custom-scrollbar px-3 py-1">
-            {[
-              { k: 'molds', v: '4,589' },
-              { k: 'cutters', v: '892' },
-              { k: 'orders', v: '156' },
-              { k: 'machines', v: '14' },
-              { k: 'employees', v: '45' },
-              { k: 'racks', v: '76' },
-              { k: 'products', v: '320' },
-            ].map((s, i) => (
-              <div key={i} className="flex items-center justify-between py-2" style={{ borderBottom: i < 6 ? '1px solid var(--border-subtle)' : 'none' }}>
+            {Object.entries(statItemMap).map(([key, item], i) => (
+              <div key={key} className="flex items-center justify-between py-2" style={{ borderBottom: i < 6 ? '1px solid var(--border-subtle)' : 'none' }}>
                 <div>
-                  <span className="text-[12px] font-semibold" style={{ fontFamily: 'var(--font-jp)', color: 'var(--text-primary)' }}>{t('stats.' + s.k)}</span>
-                  <span className="text-[10px] ml-1.5" style={{ color: 'var(--text-muted)' }}>{t('stats.' + s.k + 'Sub')}</span>
+                  <span className="text-[12px] font-semibold" style={{ fontFamily: 'var(--font-jp)', color: 'var(--text-primary)' }}>{item.label}</span>
+                  <span className="text-[10px] ml-1.5" style={{ color: 'var(--text-muted)' }}>{item.sub}</span>
                 </div>
-                <span className="text-[16px] font-bold" style={{ color: 'var(--text-primary)' }}>{s.v}</span>
+                <span className="font-mono text-[14px] font-bold" style={{ color: 'var(--text-primary)' }}>{item.v}</span>
               </div>
             ))}
           </div>

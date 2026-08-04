@@ -1,5 +1,4 @@
 import { getTranslations } from 'next-intl/server'
-import { useTranslations } from 'next-intl'
 import Link from 'next/link'
 import { ArrowLeft, ArrowUpFromLine, Plus, ExternalLink } from 'lucide-react'
 import { BackButton } from './BackButton'
@@ -11,8 +10,6 @@ import { notFound } from 'next/navigation'
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 async function formatDate(d: string | null) {
-  const t = await getTranslations()
-
   if (!d) return '—'
   return new Date(d).toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' })
 }
@@ -26,7 +23,10 @@ export default async function CustomerDetailPage(props: {
   params: Promise<{ id: string }>
   searchParams?: Promise<{ tab?: string }>
 }) {
-  const t = await getTranslations()
+  const tMaster = await getTranslations('Master')
+  const tCust = await getTranslations('Customers')
+  const tCommon = await getTranslations('Common')
+
   const { id } = await props.params
   const sp = await props.searchParams
   const activeTab = (sp?.tab || 'info') as TabKey
@@ -124,22 +124,22 @@ export default async function CustomerDetailPage(props: {
             <Link
               href="/master/customers"
               style={{ color: 'var(--text-muted)', display: 'flex', alignItems: 'center', fontSize: 11, textDecoration: 'none', padding: '2px 4px' }}
-              title={t('Master.backToListTitle')}
+              title={tMaster('backToListTitle')}
             >
               <ArrowUpFromLine size={14} />
             </Link>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
             <span style={{ fontFamily: 'var(--font-jp)', fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', whiteSpace: 'nowrap' }}>
-              {t('Master.customerDetailTitle')}
+              {tCust('customerDetails')}
             </span>
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
           <span className={`badge ${company.is_active ? 'badge--success' : 'badge--neutral'}`}>
-            {company.is_active ? '取引中' : '停止'}
+            {company.is_active ? tMaster('activeStatus') : tMaster('inactiveStatus')}
           </span>
-          <span style={{ fontFamily: 'monospace', fontSize: 11, color: 'var(--text-muted)', background: 'var(--bg-surface-2)', padding: '2px 8px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-default)' }}>
+          <span style={{ fontFamily: 'monospace', fontSize: 11, color: 'var(--accent)', fontWeight: 800, background: 'var(--bg-surface-2)', padding: '2px 8px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-default)' }}>
             {company.company_code}
           </span>
         </div>
@@ -153,12 +153,12 @@ export default async function CustomerDetailPage(props: {
 
           {/* Company name header */}
           <div style={{ padding: '12px 14px', borderBottom: '1px solid var(--border-default)' }}>
-            <p style={{ fontFamily: 'var(--font-jp)', fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1.4 }}>
+            <p style={{ fontFamily: 'var(--font-jp)', fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1.4 }}>
               {company.company_name}
             </p>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 6 }}>
-              {typesArray.map(t => (
-                <span key={t} className="badge badge--info" style={{ fontSize: 9 }}>{t}</span>
+              {typesArray.map(tVal => (
+                <span key={tVal} className="badge badge--info font-bold" style={{ fontSize: 9 }}>{tVal}</span>
               ))}
             </div>
           </div>
@@ -167,9 +167,9 @@ export default async function CustomerDetailPage(props: {
           {company.parent_company_id && parentName && (
             <div style={{ padding: '8px 14px', borderBottom: '1px solid var(--border-subtle)' }}>
               <p style={{ fontSize: 9, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>
-                {t('Master.parentCompany')}
+                {tMaster('parentCompany')}
               </p>
-              <Link href={`/master/customers/${company.parent_company_id}`} style={{ fontSize: 12, color: 'var(--accent)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4 }}>
+              <Link href={`/master/customers/${company.parent_company_id}`} style={{ fontSize: 12, color: 'var(--accent)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4, fontWeight: 700 }}>
                 <ExternalLink size={10} />
                 {parentName}
               </Link>
@@ -181,10 +181,10 @@ export default async function CustomerDetailPage(props: {
             <div style={{ padding: '8px 14px', borderBottom: '1px solid var(--border-subtle)' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
                 <p style={{ fontSize: 9, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                  {t('Master.childCompany')} ({children.length})
+                  {tMaster('childCompany')} ({children.length})
                 </p>
-                <Link href={`/master/customers/new?parent=${id}`} style={{ fontSize: 10, color: 'var(--accent)', display: 'flex', alignItems: 'center', gap: 2 }}>
-                  <Plus size={10} />{t('Master.addChildCompany')}
+                <Link href={`/master/customers/new?parent=${id}`} style={{ fontSize: 10, color: 'var(--accent)', display: 'flex', alignItems: 'center', gap: 2, fontWeight: 700 }}>
+                  <Plus size={10} />{tMaster('addChildCompany')}
                 </Link>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
@@ -202,7 +202,7 @@ export default async function CustomerDetailPage(props: {
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
                       whiteSpace: 'nowrap',
-                      transition: 'border-color var(--transition-fast)',
+                      fontWeight: 600,
                     }}
                     title={c.company_name}
                   >
@@ -217,8 +217,8 @@ export default async function CustomerDetailPage(props: {
           <div style={{ padding: '8px 14px', display: 'flex', flexDirection: 'column', gap: 8, fontSize: 12 }}>
             {company.tel && (
               <div>
-                <p style={{ fontSize: 9, color: 'var(--text-muted)', marginBottom: 2 }}>TEL</p>
-                <a href={`tel:${company.tel}`} style={{ color: 'var(--accent)', fontFamily: 'monospace' }}>{company.tel}</a>
+                <p style={{ fontSize: 9, color: 'var(--text-muted)', marginBottom: 2 }}>{tCust('tel')}</p>
+                <a href={`tel:${company.tel}`} style={{ color: 'var(--accent)', fontFamily: 'monospace', fontWeight: 700 }}>{company.tel}</a>
               </div>
             )}
             {company.fax && (
@@ -229,20 +229,11 @@ export default async function CustomerDetailPage(props: {
             )}
             {company.address && (
               <div>
-                <p style={{ fontSize: 9, color: 'var(--text-muted)', marginBottom: 2 }}>住所 / Địa chỉ</p>
+                <p style={{ fontSize: 9, color: 'var(--text-muted)', marginBottom: 2 }}>{tMaster('diaChi')}</p>
                 <span style={{ color: 'var(--text-secondary)', lineHeight: 1.4, display: 'block' }}>{company.address}</span>
               </div>
             )}
           </div>
-
-          {/* Updated at */}
-          {company.updated_at && (
-            <div style={{ marginTop: 'auto', padding: '8px 14px', borderTop: '1px solid var(--border-subtle)' }}>
-              <p style={{ fontSize: 9, color: 'var(--text-muted)' }}>
-                更新: {formatDate(company.updated_at)}
-              </p>
-            </div>
-          )}
         </div>
 
         {/* ── Right Panel: Tabs + Content ── */}
@@ -254,29 +245,25 @@ export default async function CustomerDetailPage(props: {
               href={`/master/customers/${id}?tab=info`}
               className={`tab-item${activeTab === 'info' ? ' tab-item--active' : ''}`}
             >
-              <span className="tab-ja">基本情報</span>
-              <span className="tab-vi">Thông tin</span>
+              <span>{tCust('customerDetails')}</span>
             </Link>
             <Link
               href={`/master/customers/${id}?tab=contacts`}
               className={`tab-item${activeTab === 'contacts' ? ' tab-item--active' : ''}`}
             >
-              <span className="tab-ja">担当者 {contacts?.length ? `(${contacts.length})` : ''}</span>
-              <span className="tab-vi">Người liên hệ</span>
+              <span>{tCust('contactList')} {contacts?.length ? `(${contacts.length})` : ''}</span>
             </Link>
             <Link
               href={`/master/customers/${id}?tab=delivery`}
               className={`tab-item${activeTab === 'delivery' ? ' tab-item--active' : ''}`}
             >
-              <span className="tab-ja">納品先 {deliverySites?.length ? `(${deliverySites.length})` : ''}</span>
-              <span className="tab-vi">Địa điểm</span>
+              <span>{tCust('deliverySite')} {deliverySites?.length ? `(${deliverySites.length})` : ''}</span>
             </Link>
             <Link
               href={`/master/customers/${id}?tab=orders`}
               className={`tab-item${activeTab === 'orders' ? ' tab-item--active' : ''}`}
             >
-              <span className="tab-ja">受注履歴 {orderCount ? `(${orderCount})` : ''}</span>
-              <span className="tab-vi">Đơn hàng</span>
+              <span>{tMaster('ngayAt')} {orderCount ? `(${orderCount})` : ''}</span>
             </Link>
           </div>
 
@@ -322,58 +309,55 @@ export default async function CustomerDetailPage(props: {
               {/* Header */}
               <div style={{ padding: '10px 14px', borderBottom: '1px solid var(--border-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
                 <span style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600 }}>
-                  {orderCount ?? 0} 件の受注 / {orderCount ?? 0} đơn hàng
+                  {orderCount ?? 0}
                 </span>
                 <Link
                   href={`/orders?company=${id}`}
-                  style={{ fontSize: 11, color: 'var(--accent)', display: 'flex', alignItems: 'center', gap: 4 }}
+                  style={{ fontSize: 11, color: 'var(--accent)', display: 'flex', alignItems: 'center', gap: 4, fontWeight: 700 }}
                 >
-                  <ExternalLink size={11} />全て表示 / Xem tất cả
+                  <ExternalLink size={11} />{tCommon('viewAll')}
                 </Link>
               </div>
 
               {/* Orders table */}
               {!orders || orders.length === 0 ? (
                 <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)', fontSize: 13 }}>
-                  <span style={{ fontFamily: 'var(--font-jp)' }}>受注データなし</span>
-                  <span style={{ marginLeft: 8, fontSize: 11 }}>/ Chưa có đơn hàng</span>
+                  <span>{tCommon('noData')}</span>
                 </div>
               ) : (
                 <table className="data-table">
                   <thead>
                     <tr>
-                      <th style={{ width: 130 }}>
-                        {t('Master.maOn')}
+                      <th>
+                        {tMaster('maOn')}
                       </th>
-                      <th style={{ width: 100 }}>
-                        {t('Master.ngayAt')}
+                      <th>
+                        {tMaster('ngayAt')}
                       </th>
-                      <th style={{ width: 100 }}>
-                        {t('Master.ngayGiao')}
+                      <th>
+                        {tMaster('ngayGiao')}
                       </th>
-                      <th style={{ width: 100, textAlign: 'center' }}>
-                        {t('Master.trangThai')}
+                      <th style={{ textAlign: 'center' }}>
+                        {tMaster('trangThai')}
                       </th>
-                      <th style={{ width: 60, textAlign: 'center' }}>
-                        {t('Master.tempKey')}
-                      </th>
+                      <th style={{ width: 60, textAlign: 'center' }}></th>
                     </tr>
                   </thead>
                   <tbody>
                     {orders.map(o => (
                       <tr key={o.order_id}>
                         <td>
-                          <Link href={`/orders?highlight=${o.order_id}`} style={{ color: 'var(--accent)', fontFamily: 'monospace', fontWeight: 700, fontSize: 12 }}>
+                          <Link href={`/orders?highlight=${o.order_id}`} style={{ color: 'var(--accent)', fontFamily: 'monospace', fontWeight: 800, fontSize: 13 }}>
                             {o.order_no}
                           </Link>
                         </td>
                         <td>
-                          <span style={{ fontFamily: 'monospace', fontSize: 12, color: 'var(--text-secondary)' }}>
+                          <span style={{ fontFamily: 'monospace', fontSize: 12, color: 'var(--text-secondary)', fontWeight: 600 }}>
                             {formatDate(o.order_date)}
                           </span>
                         </td>
                         <td>
-                          <span style={{ fontFamily: 'monospace', fontSize: 12, color: 'var(--text-secondary)' }}>
+                          <span style={{ fontFamily: 'monospace', fontSize: 12, color: 'var(--text-secondary)', fontWeight: 600 }}>
                             {formatDate(o.requested_delivery)}
                           </span>
                         </td>
@@ -404,3 +388,4 @@ export default async function CustomerDetailPage(props: {
     </div>
   )
 }
+

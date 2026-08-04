@@ -1,6 +1,8 @@
 'use client'
 
 import React, { useState, useTransition, useCallback } from 'react'
+import Link from 'next/link'
+import { useTranslations } from 'next-intl'
 import { getProductionReport, ProductionReportRow, ProductionReportResult } from '@/app/actions/reports'
 import { FileDown, Search, Loader2 } from 'lucide-react'
 
@@ -19,39 +21,23 @@ function fmtNum(n: number | null, unit = ''): string {
 }
 
 function getAchievementColor(pct: number | null): string {
-    if (pct === null) return 'text-[var(--mcs-text-muted)]'
-    if (pct >= 100) return 'text-green-600'
-    if (pct >= 80) return 'text-yellow-600'
-    return 'text-red-500'
+    if (pct === null) return 'text-[var(--text-muted)]'
+    if (pct >= 100) return 'text-[var(--status-success)]'
+    if (pct >= 80) return 'text-[var(--status-warning)]'
+    return 'text-[var(--status-error)]'
 }
 
 function getScrapColor(pct: number | null): string {
-    if (pct === null) return 'text-[var(--mcs-text-muted)]'
-    if (pct <= 2) return 'text-green-600'
-    if (pct <= 5) return 'text-yellow-600'
-    return 'text-red-500'
+    if (pct === null) return 'text-[var(--text-muted)]'
+    if (pct <= 2) return 'text-[var(--status-success)]'
+    if (pct <= 5) return 'text-[var(--status-warning)]'
+    return 'text-[var(--status-error)]'
 }
 
 // ================================================================
 // CSV EXPORT (Vanilla TS — no external library)
 // ================================================================
-function exportToCSV(rows: ProductionReportRow[], startDate: string, endDate: string) {
-    const headers = [
-        '開始日時 (Bắt đầu)',
-        '終了日時 (Kết thúc)',
-        '機械コード (Mã Máy)',
-        '機械名 (Tên Máy)',
-        'オペレーター (Người Vận Hành)',
-        '受注No (Số Phiếu)',
-        '品番 (Mã Sản Phẩm)',
-        '計画数 (KH)',
-        '良品数 (Thực tế)',
-        '不良数 (Phế Liệu)',
-        '達成率% (Đạt KH%)',
-        '不良率% (Tỷ lệ Phế%)',
-        '稼働時間/分 (Thời Gian Phút)',
-    ]
-
+function exportToCSV(rows: ProductionReportRow[], startDate: string, endDate: string, headers: string[]) {
     const csvRows = rows.map((r) => [
         r.start_time ? new Date(r.start_time).toLocaleString('ja-JP') : '',
         r.end_time ? new Date(r.end_time).toLocaleString('ja-JP') : '',
@@ -107,27 +93,24 @@ function getPresetRange(preset: 'today' | 'week' | 'month'): { start: string; en
 }
 
 function KpiCard({
-    labelJa,
-    labelVi,
+    label,
     value,
     unit,
     colorClass,
 }: {
-    labelJa: string
-    labelVi: string
+    label: string
     value: string
     unit?: string
     colorClass?: string
 }) {
     return (
-        <div className="bg-[var(--mcs-surface)] border border-[var(--mcs-border)] rounded-md py-3 px-4 min-w-[140px] flex-1 shadow-sm transition-shadow hover:shadow-md">
-            <div className="text-xs text-[var(--mcs-text-muted)] leading-tight mb-2">
-                <span className="font-bold">{labelJa}</span>
-                <span className="block text-[10px] font-normal mt-0.5">{labelVi}</span>
+        <div className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-md py-3 px-4 min-w-[140px] flex-1 shadow-sm transition-shadow hover:shadow-md">
+            <div className="text-xs text-[var(--text-muted)] leading-tight mb-2 font-bold">
+                {label}
             </div>
-            <div className={`text-[22px] font-bold tracking-tight ${colorClass || 'text-[var(--mcs-text)]'}`}>
+            <div className={`text-[22px] font-bold tracking-tight ${colorClass || 'text-[var(--text-primary)]'}`}>
                 {value}
-                {unit && <span className="text-xs font-normal ml-1 text-[var(--mcs-text-muted)]">{unit}</span>}
+                {unit && <span className="text-xs font-normal ml-1 text-[var(--text-muted)]">{unit}</span>}
             </div>
         </div>
     )
@@ -140,6 +123,7 @@ interface Props {
 }
 
 export default function ReportDashboard({ initialData, defaultStartDate, defaultEndDate }: Props) {
+    const t = useTranslations('Reports.Production')
     const [startDate, setStartDate] = useState(defaultStartDate)
     const [endDate, setEndDate] = useState(defaultEndDate)
     const [data, setData] = useState<ProductionReportResult>(initialData)
@@ -188,7 +172,7 @@ export default function ReportDashboard({ initialData, defaultStartDate, default
 
     const SortIcon = ({ col }: { col: keyof ProductionReportRow }) => {
         if (sortCol !== col) return <span className="opacity-30 inline-block ml-1">⇅</span>
-        return <span className="inline-block ml-1 text-[var(--mcs-primary)]">{sortAsc ? '↑' : '↓'}</span>
+        return <span className="inline-block ml-1 text-[var(--accent)]">{sortAsc ? '↑' : '↓'}</span>
     }
 
     // Filter + Sort rows
@@ -217,35 +201,51 @@ export default function ReportDashboard({ initialData, defaultStartDate, default
     const machines = [...new Set(data.rows.map((r) => r.machine_code).filter(Boolean))]
     const operators = [...new Set(data.rows.map((r) => r.operator_name).filter(Boolean))]
 
+    const csvHeadersList = [
+        t('headers.startTime'),
+        t('headers.endTime'),
+        t('headers.machineCode'),
+        t('headers.machineName'),
+        t('headers.operator'),
+        t('headers.slipNo'),
+        t('headers.productPn'),
+        t('headers.planned'),
+        t('headers.produced'),
+        t('headers.scrap'),
+        t('headers.achievementPct'),
+        t('headers.scrapPct'),
+        t('headers.durationMin'),
+    ]
+
     return (
-        <div className="flex flex-col h-full bg-slate-50 relative inset-0 absolute overflow-hidden">
+        <div className="flex flex-col h-full bg-[var(--bg-surface)] relative inset-0 absolute overflow-hidden">
 
             {/* ===== DATE FILTER BAR ===== */}
-            <div className="px-4 py-3 bg-[var(--mcs-surface)] border-b border-[var(--mcs-border)] flex flex-wrap items-center gap-4 shrink-0 shadow-sm z-20 relative">
+            <div className="px-4 py-3 bg-[var(--bg-surface)] border-b border-[var(--border-default)] flex flex-wrap items-center gap-4 shrink-0 shadow-sm z-20 relative">
                 {/* Preset buttons */}
-                <div className="flex bg-[var(--mcs-surface-2)] p-1 rounded-md border border-[var(--mcs-border)]">
-                    <button onClick={() => quickFilterClick('today')} className="px-3 py-1.5 text-xs font-bold text-[var(--mcs-text)] hover:bg-[var(--mcs-surface)] rounded transition-colors whitespace-nowrap">本日 (Hôm nay)</button>
-                    <button onClick={() => quickFilterClick('week')} className="px-3 py-1.5 text-xs font-bold text-[var(--mcs-text)] hover:bg-[var(--mcs-surface)] rounded transition-colors whitespace-nowrap">今週 (Tuần)</button>
-                    <button onClick={() => quickFilterClick('month')} className="px-3 py-1.5 text-xs font-bold text-[var(--mcs-text)] hover:bg-[var(--mcs-surface)] rounded transition-colors whitespace-nowrap">今月 (Tháng)</button>
+                <div className="flex bg-[var(--bg-base)] p-1 rounded-md border border-[var(--border-default)]">
+                    <button onClick={() => quickFilterClick('today')} className="px-3 py-1.5 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--bg-surface)] rounded transition-colors whitespace-nowrap">{t('today')}</button>
+                    <button onClick={() => quickFilterClick('week')} className="px-3 py-1.5 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--bg-surface)] rounded transition-colors whitespace-nowrap">{t('week')}</button>
+                    <button onClick={() => quickFilterClick('month')} className="px-3 py-1.5 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--bg-surface)] rounded transition-colors whitespace-nowrap">{t('month')}</button>
                 </div>
 
-                <div className="w-px h-6 bg-[var(--mcs-border)]" />
+                <div className="w-px h-6 bg-[var(--border-default)]" />
 
                 {/* Date inputs */}
                 <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold text-[var(--mcs-text-muted)]">期間 <span className="font-normal">(Từ)</span></span>
+                    <span className="text-xs font-bold text-[var(--text-muted)]">{t('from')}</span>
                     <input
                         type="date"
                         value={startDate}
                         onChange={(e) => setStartDate(e.target.value)}
-                        className="px-2 py-1.5 text-sm font-medium border border-[var(--mcs-border)] rounded outline-none focus:border-[var(--mcs-primary)] focus:ring-1 focus:ring-[var(--mcs-primary)] bg-[var(--mcs-surface)] transition-all"
+                        className="form-input text-sm font-medium"
                     />
-                    <span className="text-xs font-bold text-[var(--mcs-text-muted)] mx-1">〜 <span className="font-normal">(Đến)</span></span>
+                    <span className="text-xs font-bold text-[var(--text-muted)] mx-1">{t('to')}</span>
                     <input
                         type="date"
                         value={endDate}
                         onChange={(e) => setEndDate(e.target.value)}
-                        className="px-2 py-1.5 text-sm font-medium border border-[var(--mcs-border)] rounded outline-none focus:border-[var(--mcs-primary)] focus:ring-1 focus:ring-[var(--mcs-primary)] bg-[var(--mcs-surface)] transition-all"
+                        className="form-input text-sm font-medium"
                     />
                 </div>
 
@@ -253,10 +253,10 @@ export default function ReportDashboard({ initialData, defaultStartDate, default
                 <button
                     onClick={handleSearch}
                     disabled={isPending}
-                    className="flex items-center gap-2 px-5 py-1.5 bg-[var(--mcs-primary)] text-white font-bold rounded text-sm hover:brightness-110 transition-all disabled:opacity-60 shadow-sm"
+                    className="btn btn-primary flex items-center gap-2 px-5 py-1.5 text-sm"
                 >
                     {isPending ? <Loader2 size={16} className="animate-spin" /> : <Search size={16} />}
-                    {isPending ? '読込中…' : '検索 (Xem)'}
+                    {isPending ? t('loading') : t('searchBtn')}
                 </button>
 
                 <div className="flex-1" />
@@ -266,9 +266,9 @@ export default function ReportDashboard({ initialData, defaultStartDate, default
                     <select
                         value={filterMachine}
                         onChange={(e) => setFilterMachine(e.target.value)}
-                        className="px-3 py-1.5 text-sm border border-[var(--mcs-border)] bg-[var(--mcs-surface-2)] rounded outline-none focus:border-[var(--mcs-primary)]"
+                        className="form-select text-sm"
                     >
-                        <option value="">全機械 (Tất cả Máy)</option>
+                        <option value="">{t('allMachines')}</option>
                         {machines.map((m) => (
                             <option key={m} value={m!}>{m}</option>
                         ))}
@@ -277,9 +277,9 @@ export default function ReportDashboard({ initialData, defaultStartDate, default
                     <select
                         value={filterOperator}
                         onChange={(e) => setFilterOperator(e.target.value)}
-                        className="px-3 py-1.5 text-sm border border-[var(--mcs-border)] bg-[var(--mcs-surface-2)] rounded outline-none focus:border-[var(--mcs-primary)]"
+                        className="form-select text-sm"
                     >
-                        <option value="">全担当者 (Tất cả T.Viên)</option>
+                        <option value="">{t('allOperators')}</option>
                         {operators.map((op) => (
                             <option key={op} value={op!}>{op}</option>
                         ))}
@@ -288,118 +288,137 @@ export default function ReportDashboard({ initialData, defaultStartDate, default
 
                 {/* Export CSV */}
                 <button
-                    onClick={() => exportToCSV(displayRows, startDate, endDate)}
+                    onClick={() => exportToCSV(displayRows, startDate, endDate, csvHeadersList)}
                     disabled={displayRows.length === 0}
-                    className="flex items-center gap-2 px-4 py-1.5 border border-[var(--mcs-primary)] text-[var(--mcs-primary)] font-bold rounded text-sm hover:bg-[var(--mcs-surface-2)] transition-colors disabled:opacity-50 disabled:bg-transparent"
+                    className="btn btn-secondary flex items-center gap-2 px-4 py-1.5 text-sm"
                 >
                     <FileDown size={16} />
-                    CSV出力 (Xuất)
+                    {t('csvExport')}
                 </button>
             </div>
 
             {/* ===== KPI SUMMARY ROW ===== */}
-            <div className="flex flex-wrap gap-4 px-4 py-5 bg-slate-100 border-b border-[var(--mcs-border)] shrink-0 shadow-inner z-10 relative">
-                <KpiCard labelJa="対象レコード数" labelVi="Số ca hoàn thành" value={fmtNum(summary.total_logs)} unit="件" />
-                <KpiCard labelJa="計画総数" labelVi="Tổng KH máy" value={fmtNum(summary.total_planned)} unit="khay" />
+            <div className="flex flex-wrap gap-4 px-4 py-5 bg-[var(--tint-teal-bg)] border-b border-[var(--border-default)] shrink-0 shadow-inner z-10 relative">
+                <KpiCard label={t('kpi.completedLogs')} value={fmtNum(summary.total_logs)} unit="件" />
+                <KpiCard label={t('kpi.totalPlanned')} value={fmtNum(summary.total_planned)} unit="khay" />
                 <KpiCard
-                    labelJa="良品総数"
-                    labelVi="Lượng thành phẩm"
+                    label={t('kpi.totalProduced')}
                     value={fmtNum(summary.total_produced)}
                     unit="khay"
-                    colorClass={Math.max(summary.total_produced, 1) >= Math.max(summary.total_planned, 1) ? 'text-green-600' : 'text-blue-700'}
+                    colorClass={Math.max(summary.total_produced, 1) >= Math.max(summary.total_planned, 1) ? 'text-[var(--status-success)]' : 'text-[var(--accent)]'}
                 />
                 <KpiCard
-                    labelJa="不良品総数"
-                    labelVi="Lượng phế phẩm"
+                    label={t('kpi.totalScrap')}
                     value={fmtNum(summary.total_scrap)}
                     unit="khay"
-                    colorClass={summary.total_scrap > 0 ? 'text-red-500' : 'text-green-600'}
+                    colorClass={summary.total_scrap > 0 ? 'text-[var(--status-error)]' : 'text-[var(--status-success)]'}
                 />
                 <KpiCard
-                    labelJa="平均達成率"
-                    labelVi="Tỷ lệ đạt Kế hoạch"
+                    label={t('kpi.avgAchievement')}
                     value={summary.avg_achievement_pct > 0 ? `${summary.avg_achievement_pct}%` : '—'}
                     colorClass={getAchievementColor(summary.avg_achievement_pct)}
                 />
                 <KpiCard
-                    labelJa="総不良率"
-                    labelVi="Trung bình Hao hụt"
+                    label={t('kpi.overallScrapRate')}
                     value={summary.overall_scrap_rate_pct > 0 ? `${summary.overall_scrap_rate_pct}%` : '0%'}
                     colorClass={getScrapColor(summary.overall_scrap_rate_pct)}
                 />
             </div>
 
             {/* ===== HEADER INFO ===== */}
-            <div className="px-4 py-2 bg-[var(--mcs-surface)] border-b border-[var(--mcs-border)] flex justify-between items-center shrink-0">
-                <span className="text-xs font-bold text-[var(--mcs-text-muted)]">
-                    実績一覧 (Danh sách Ca Sản Xuất) —{' '}
-                    <span className="text-[var(--mcs-primary)]">{displayRows.length} bản ghi</span>
+            <div className="px-4 py-2 bg-[var(--bg-surface)] border-b border-[var(--border-default)] flex justify-between items-center shrink-0">
+                <span className="text-xs font-bold text-[var(--text-muted)]">
+                    {t('recordList')} —{' '}
+                    <span className="text-[var(--accent)] font-bold">{t('recordsCount', { count: displayRows.length })}</span>
                     {(filterMachine || filterOperator) && (
-                        <span className="text-yellow-600 ml-2">▲ フィルター適用中 (Đang lọc)</span>
+                        <span className="text-[var(--status-warning)] ml-2">{t('filterActive')}</span>
                     )}
                 </span>
-                <span className="text-[11px] font-mono font-medium text-[var(--mcs-text-muted)]">
+                <span className="text-[11px] font-mono font-medium text-[var(--text-muted)]">
                     {startDate} 〜 {endDate}
                 </span>
             </div>
 
             {/* ===== DATA GRID ===== */}
-            <div className={`flex-1 overflow-auto bg-[var(--mcs-surface)] relative transition-opacity duration-200 ${isPending ? 'opacity-50 pointer-events-none' : 'opacity-100'}`}>
-                <table className="w-full text-xs text-left whitespace-nowrap">
-                    <thead className="sticky top-0 bg-slate-50 border-b border-slate-300 shadow-[0_1px_2px_rgba(0,0,0,0.05)] z-20 w-full">
-                        <tr className="[&>th]:py-3 [&>th]:px-3 [&>th]:font-bold [&>th]:text-slate-600 [&>th]:border-r [&>th]:border-slate-200 last:[&>th]:border-r-0 cursor-pointer select-none">
-                            <th onClick={() => handleSort('start_time')} className="hover:bg-slate-100 transition-colors">開始/終了 (Bắt đầu/Kết thúc) <SortIcon col="start_time" /></th>
-                            <th onClick={() => handleSort('machine_code')} className="text-center hover:bg-slate-100 transition-colors">機番 (Mã Máy) <SortIcon col="machine_code" /></th>
-                            <th onClick={() => handleSort('operator_name')} className="hover:bg-slate-100 transition-colors">担当者 (Vận Hành) <SortIcon col="operator_name" /></th>
-                            <th onClick={() => handleSort('product_pn_raw')} className="hover:bg-slate-100 transition-colors">品番 (Mã SP) <SortIcon col="product_pn_raw" /></th>
-                            <th onClick={() => handleSort('slip_no')} className="hover:bg-slate-100 transition-colors">受注No (Số Phiếu) <SortIcon col="slip_no" /></th>
-                            <th onClick={() => handleSort('planned_quantity')} className="text-right hover:bg-slate-100 transition-colors">計画数 (Kế hoạch) <SortIcon col="planned_quantity" /></th>
-                            <th onClick={() => handleSort('produced_qty')} className="text-right hover:bg-slate-100 transition-colors">良品数 (Thực tế) <SortIcon col="produced_qty" /></th>
-                            <th onClick={() => handleSort('scrap_qty')} className="text-right hover:bg-slate-100 transition-colors">不良 (Phế) <SortIcon col="scrap_qty" /></th>
-                            <th onClick={() => handleSort('achievement_pct')} className="text-right hover:bg-slate-100 transition-colors">達成% (T.Lệ Đạt) <SortIcon col="achievement_pct" /></th>
-                            <th onClick={() => handleSort('scrap_rate_pct')} className="text-right hover:bg-slate-100 transition-colors">不良% (T.Lệ Phế) <SortIcon col="scrap_rate_pct" /></th>
-                            <th onClick={() => handleSort('duration_min')} className="text-right hover:bg-slate-100 transition-colors">稼働(分) (T.gian) <SortIcon col="duration_min" /></th>
+            <div className={`flex-1 overflow-auto bg-[var(--bg-surface)] relative transition-opacity duration-200 card-flat ${isPending ? 'opacity-50 pointer-events-none' : 'opacity-100'}`}>
+                <table className="data-table min-w-full text-xs">
+                    <thead>
+                        <tr className="cursor-pointer select-none">
+                            <th onClick={() => handleSort('start_time')}>{t('tableHeaders.startEnd')} <SortIcon col="start_time" /></th>
+                            <th onClick={() => handleSort('machine_code')} className="text-center">{t('tableHeaders.machineNo')} <SortIcon col="machine_code" /></th>
+                            <th onClick={() => handleSort('operator_name')}>{t('tableHeaders.operator')} <SortIcon col="operator_name" /></th>
+                            <th onClick={() => handleSort('product_pn_raw')}>{t('tableHeaders.productPn')} <SortIcon col="product_pn_raw" /></th>
+                            <th onClick={() => handleSort('slip_no')}>{t('tableHeaders.slipNo')} <SortIcon col="slip_no" /></th>
+                            <th onClick={() => handleSort('planned_quantity')} className="text-right">{t('tableHeaders.plannedQty')} <SortIcon col="planned_quantity" /></th>
+                            <th onClick={() => handleSort('produced_qty')} className="text-right">{t('tableHeaders.producedQty')} <SortIcon col="produced_qty" /></th>
+                            <th onClick={() => handleSort('scrap_qty')} className="text-right">{t('tableHeaders.scrapQty')} <SortIcon col="scrap_qty" /></th>
+                            <th onClick={() => handleSort('achievement_pct')} className="text-right">{t('tableHeaders.achievementPct')} <SortIcon col="achievement_pct" /></th>
+                            <th onClick={() => handleSort('scrap_rate_pct')} className="text-right">{t('tableHeaders.scrapRatePct')} <SortIcon col="scrap_rate_pct" /></th>
+                            <th onClick={() => handleSort('duration_min')} className="text-right">{t('tableHeaders.durationMin')} <SortIcon col="duration_min" /></th>
                         </tr>
                     </thead>
-                    <tbody className="[&>tr]:border-b [&>tr]:border-slate-100 last:[&>tr]:border-0">
+                    <tbody className="[&>tr]:border-b [&>tr]:border-[var(--border-subtle)] last:[&>tr]:border-0">
                         {displayRows.length === 0 ? (
                             <tr>
                                 <td colSpan={11} className="py-24 text-center">
-                                    <div className="text-slate-500 font-bold mb-1 text-sm bg-slate-50 inline-block px-4 py-2 rounded">
-                                        {isPending ? 'データ読込中… / Đang tải dữ liệu…' : 'データなし / Không có dữ liệu'}
+                                    <div className="text-[var(--text-muted)] font-bold mb-1 text-sm bg-[var(--bg-base)] inline-block px-4 py-2 rounded">
+                                        {isPending ? t('loading') : t('noData')}
                                     </div>
                                 </td>
                             </tr>
                         ) : (
                             displayRows.map((row) => (
-                                <tr key={row.log_id} className="hover:bg-blue-50/40 transition-colors [&>td]:py-2.5 [&>td]:px-3 [&>td]:border-r [&>td]:border-slate-50 last:[&>td]:border-r-0">
-                                    <td className="text-[11px] text-slate-500">
-                                        <div className="font-semibold text-slate-700">{fmtDate(row.start_time)}</div>
+                                <tr key={row.log_id} className="hover:bg-[var(--tint-teal-bg)]/20 transition-colors [&>td]:py-2.5 [&>td]:px-3 [&>td]:border-r [&>td]:border-[var(--border-subtle)] last:[&>td]:border-r-0">
+                                    <td className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
+                                        <div className="font-semibold" style={{ color: 'var(--text-primary)' }}>{fmtDate(row.start_time)}</div>
                                         <div className="text-[10px] mt-0.5 opacity-80">{fmtDate(row.end_time)}</div>
                                     </td>
                                     <td className="text-center">
                                         {row.machine_code ? (
-                                            <span className="bg-[var(--mcs-surface-2)] text-[var(--mcs-primary)] border border-teal-100 px-2.5 py-0.5 rounded font-bold">{row.machine_code}</span>
+                                            <Link
+                                                href={`/master/machines?search=${encodeURIComponent(row.machine_code || '')}`}
+                                                className="badge badge--info font-bold font-mono hover:underline"
+                                            >
+                                                {row.machine_code}
+                                            </Link>
                                         ) : '-'}
                                     </td>
-                                    <td className="font-medium text-slate-700 max-w-[120px] truncate">{row.operator_name || '-'}</td>
-                                    <td className="font-mono text-[11px] font-bold text-slate-800 tracking-tight">{row.product_pn_raw || '-'}</td>
-                                    <td className="text-slate-600 font-medium text-[11px]">{row.slip_no || '-'}</td>
+                                    <td className="font-medium text-[13px] max-w-[120px] truncate" style={{ color: 'var(--text-primary)' }}>{row.operator_name || '-'}</td>
+                                    <td>
+                                        {row.product_pn_raw ? (
+                                            <Link
+                                                href={`/master/products?search=${encodeURIComponent(row.product_pn_raw || '')}`}
+                                                className="font-mono text-[13px] font-bold text-[var(--accent)] hover:underline"
+                                            >
+                                                {row.product_pn_raw}
+                                            </Link>
+                                        ) : '-'}
+                                    </td>
+                                    <td>
+                                        {row.slip_no ? (
+                                            <Link
+                                                href={`/orders?search=${encodeURIComponent(row.slip_no || '')}`}
+                                                className="font-mono text-[13px] font-bold text-[var(--accent)] hover:underline"
+                                            >
+                                                {row.slip_no}
+                                            </Link>
+                                        ) : '-'}
+                                    </td>
 
-                                    <td className="text-right text-slate-400 font-medium">{fmtNum(row.planned_quantity)}</td>
-                                    <td className="text-right font-bold text-[var(--mcs-primary)] text-[13px]">{fmtNum(row.produced_qty)}</td>
-                                    <td className={`text-right font-medium ${row.scrap_qty && row.scrap_qty > 0 ? 'text-red-500' : 'text-slate-300'}`}>
+                                    <td className="text-right font-mono text-[13px] font-bold" style={{ color: 'var(--text-muted)' }}>{fmtNum(row.planned_quantity)}</td>
+                                    <td className="text-right font-mono text-[13px] font-bold text-[var(--accent)]">{fmtNum(row.produced_qty)}</td>
+                                    <td className={`text-right font-mono text-[13px] font-bold ${row.scrap_qty && row.scrap_qty > 0 ? 'text-[var(--status-error)]' : 'text-[var(--text-muted)]'}`}>
                                         {row.scrap_qty || '0'}
                                     </td>
 
-                                    <td className={`text-right font-bold ${getAchievementColor(row.achievement_pct)}`}>
+                                    <td className={`text-right font-mono text-[13px] font-bold ${getAchievementColor(row.achievement_pct)}`}>
                                         {row.achievement_pct !== null ? `${row.achievement_pct}%` : '-'}
                                     </td>
-                                    <td className={`text-right font-bold ${getScrapColor(row.scrap_rate_pct)}`}>
+                                    <td className={`text-right font-mono text-[13px] font-bold ${getScrapColor(row.scrap_rate_pct)}`}>
                                         {row.scrap_rate_pct !== null ? `${row.scrap_rate_pct}%` : '0%'}
                                     </td>
-                                    <td className="text-right text-slate-500">
-                                        {row.duration_min !== null ? <span className="bg-slate-100 px-1.5 py-0.5 rounded shadow-sm">{row.duration_min}</span> : '-'}
+                                    <td className="text-right font-mono text-[13px] font-bold" style={{ color: 'var(--text-muted)' }}>
+                                        {row.duration_min !== null ? <span className="bg-[var(--bg-base)] px-1.5 py-0.5 rounded shadow-sm">{row.duration_min}</span> : '-'}
                                     </td>
                                 </tr>
                             ))

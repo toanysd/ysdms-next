@@ -16,7 +16,7 @@ const STATUS_LABELS: Record<string, { ja: string; color: string; bg: string }> =
   returned:  { ja: '返品',   color: 'var(--status-info)',    bg: 'color-mix(in srgb, var(--status-info) 12%, transparent)' },
 }
 
-function StatCard({ ja, vi, value, unit, icon, color }: { ja: string; vi: string; value: string | number; unit?: string; icon: React.ReactNode; color: string }) {
+function StatCard({ ja, value, unit, icon, color }: { ja: string; value: string | number; unit?: string; icon: React.ReactNode; color: string }) {
   return (
     <div className="card-flat" style={{ padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 10 }}>
       <div style={{ width: 36, height: 36, borderRadius: 8, background: `color-mix(in srgb, ${color} 12%, transparent)`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -27,7 +27,7 @@ function StatCard({ ja, vi, value, unit, icon, color }: { ja: string; vi: string
           {value}{unit && <span style={{ fontSize: 11, fontWeight: 400, color: 'var(--text-muted)', marginLeft: 2 }}>{unit}</span>}
         </div>
         <div style={{ fontSize: 10, color: 'var(--text-muted)', fontFamily: 'var(--font-jp)', lineHeight: 1.2 }}>
-          {ja}<br /><span style={{ fontSize: 9 }}>{vi}</span>
+          {ja}
         </div>
       </div>
     </div>
@@ -162,10 +162,10 @@ export default function PlasticsInventoryPage() {
     <div className="flex flex-col gap-3">
       {/* Stats Row */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10 }}>
-        <StatCard ja="総ロール数" vi="Tổng cuộn" value={totalRolls} icon={<Box size={18} style={{ color: 'var(--accent)' }} />} color="var(--accent)" />
-        <StatCard ja="総在庫" vi="Tổng m tồn" value={totalMeters.toLocaleString()} unit="m" icon={<Layers size={18} style={{ color: 'var(--status-info)' }} />} color="var(--status-info)" />
-        <StatCard ja="在庫低下 (≤50m)" vi="Cuộn tồn thấp" value={lowStockCount} icon={<AlertTriangle size={18} style={{ color: 'var(--status-warning)' }} />} color="var(--status-warning)" />
-        <StatCard ja="使用中" vi="Đang sử dụng" value={inUseCount} icon={<Loader2 size={18} style={{ color: 'var(--status-success)' }} />} color="var(--status-success)" />
+        <StatCard ja="総ロール数" value={totalRolls} icon={<Box size={18} style={{ color: 'var(--accent)' }} />} color="var(--accent)" />
+        <StatCard ja="総在庫" value={totalMeters.toLocaleString()} unit="m" icon={<Layers size={18} style={{ color: 'var(--status-info)' }} />} color="var(--status-info)" />
+        <StatCard ja="在庫低下 (≤50m)" value={lowStockCount} icon={<AlertTriangle size={18} style={{ color: 'var(--status-warning)' }} />} color="var(--status-warning)" />
+        <StatCard ja="使用中" value={inUseCount} icon={<Loader2 size={18} style={{ color: 'var(--status-success)' }} />} color="var(--status-success)" />
       </div>
 
       {/* Search + Filters */}

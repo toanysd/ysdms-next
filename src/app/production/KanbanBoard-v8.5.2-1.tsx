@@ -80,13 +80,13 @@ export default function KanbanBoard({ initialPending, initialActive, initialComp
                 <div>
                     <h1 className="text-2xl font-bold text-[var(--mcs-text)] flex items-center gap-2">
                         <Factory className="text-[var(--mcs-primary)]" />
-                        生産管理 Kanban (Production Execution) V2
+                        生産管理 Kanban (Production Execution)
                     </h1>
-                    <p className="text-sm text-[var(--mcs-text-muted)]">Giám sát và Vận hành Tiến độ Xưởng (Dữ liệu Lịch chạy máy)</p>
+                    <p className="text-sm text-[var(--mcs-text-muted)]">成形現場の進行状況モニター</p>
                 </div>
                 <div className="flex gap-4">
                     <Link href="/production/inventory" className="px-4 py-2 bg-[var(--mcs-primary)] text-white rounded-md font-bold flex items-center gap-2 hover:bg-[var(--mcs-primary-hover)] transition-colors shadow-sm">
-                        <Warehouse size={18} /> 在庫 (Kho Tray)
+                        <Warehouse size={18} /> 在庫
                     </Link>
                     <Link href="/production/active" className="px-4 py-2 bg-[var(--mcs-surface-2)] border border-[var(--mcs-border)] text-[var(--mcs-text)] rounded-md font-bold flex items-center gap-2 hover:border-[var(--mcs-primary)] transition-colors">
                         <Settings size={18} /> Monitor (TV View)
@@ -100,7 +100,7 @@ export default function KanbanBoard({ initialPending, initialActive, initialComp
                 <div className="flex flex-col bg-[var(--mcs-surface-alert)] border border-[var(--mcs-border)] rounded-lg p-4 h-full min-h-0">
                     <div className="flex items-center gap-2 mb-4 pb-2 border-b border-[var(--mcs-border)] shrink-0">
                         <div className="w-3 h-3 rounded-full bg-amber-500" />
-                        <h2 className="font-bold text-[var(--mcs-text)] text-lg">Chờ Chạy (未着手)</h2>
+                        <h2 className="font-bold text-[var(--mcs-text)] text-lg">未着手</h2>
                         <span className="ml-auto bg-[var(--mcs-surface-2)] px-2 py-1 rounded-full text-xs font-bold text-[var(--mcs-text-muted)]">
                             {pendingItems?.length || 0}
                         </span>
@@ -119,12 +119,12 @@ export default function KanbanBoard({ initialPending, initialActive, initialComp
                                                 {plan.order_items.orders.slip_no} • {plan.order_items.product_pn_raw}
                                             </div>
                                             <div className="text-sm font-bold text-[var(--mcs-text)] mb-2">
-                                                Cần sx: {plan.planned_quantity?.toLocaleString()} khay
+                                                計画数: {plan.planned_quantity?.toLocaleString()}
                                             </div>
                                             <div className="text-[11px] text-[var(--mcs-text-muted)] flex items-center gap-2 flex-wrap">
-                                                <span className="bg-[var(--mcs-surface-2)] px-1.5 py-0.5 rounded">Máy: {plan.machine_instance?.internal_code || 'Chưa xếp'}</span>
-                                                <span className="bg-[var(--mcs-surface-2)] px-1.5 py-0.5 rounded">Khuôn: {plan.mold_physical?.physical_code || plan.physical_molds?.system_code || 'Chưa gán'}</span>
-                                                {plan.operator_name && <span>Thợ: {plan.operator_name}</span>}
+                                                <span className="bg-[var(--mcs-surface-2)] px-1.5 py-0.5 rounded">設備: {plan.machine_instance?.internal_code || '-'}</span>
+                                                <span className="bg-[var(--mcs-surface-2)] px-1.5 py-0.5 rounded">金型: {plan.mold_physical?.physical_code || plan.physical_molds?.system_code || '-'}</span>
+                                                {plan.operator_name && <span>担当者: {plan.operator_name}</span>}
                                             </div>
                                         </div>
 
@@ -135,7 +135,7 @@ export default function KanbanBoard({ initialPending, initialActive, initialComp
                                                     disabled={waitLoading}
                                                     className="p-2 px-3 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-white rounded-md transition-colors shadow flex items-center gap-1 font-bold text-xs"
                                                 >
-                                                    <Play size={14} /> 開始 Bắt đầu
+                                                    <Play size={14} /> 開始
                                                 </button>
                                             ) : (
                                                 <button
@@ -143,21 +143,21 @@ export default function KanbanBoard({ initialPending, initialActive, initialComp
                                                     disabled={waitLoading}
                                                     className="p-2 px-3 bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-[var(--mcs-surface)] rounded-md transition-colors shadow flex items-center gap-1 font-bold text-xs"
                                                 >
-                                                    <Check size={14} /> 確認 Xác nhận
+                                                    <Check size={14} /> 確認
                                                 </button>
                                             )}
                                         </div>
                                     </div>
                                     {!isScheduled && (
                                         <div className="mt-2 text-[10px] text-amber-600 font-medium">
-                                            Đang là lệnh nháp. Quản đốc cần Duyệt (Xác nhận) trước khi máy chạy.
+                                            下書き計画です。実行前に確認が必要です。
                                         </div>
                                     )}
                                 </div>
                             )
                         })}
                         {(!pendingItems || pendingItems.length === 0) && (
-                            <div className="text-center text-[var(--mcs-text-muted)] text-sm py-10">待機中の生産計画はありません。<br />(Không có lệnh chờ)</div>
+                            <div className="text-center text-[var(--mcs-text-muted)] text-sm py-10">待機中の生産計画はありません。</div>
                         )}
                     </div>
                 </div>
@@ -166,7 +166,7 @@ export default function KanbanBoard({ initialPending, initialActive, initialComp
                 <div className="flex flex-col bg-[var(--mcs-surface-success)] border border-[var(--mcs-border)] rounded-lg p-4 h-full min-h-0">
                     <div className="flex items-center gap-2 mb-4 pb-2 border-b border-[var(--mcs-border)] shrink-0">
                         <div className="w-3 h-3 rounded-full bg-emerald-500" />
-                        <h2 className="font-bold text-[var(--mcs-text)] text-lg">実行中 (Đang Chạy)</h2>
+                        <h2 className="font-bold text-[var(--mcs-text)] text-lg">実行中</h2>
                         <span className="ml-auto bg-[var(--mcs-surface-2)] px-2 py-1 rounded-full text-xs font-bold text-[var(--mcs-text-muted)]">
                             {activeLogs?.length || 0}
                         </span>
@@ -190,20 +190,20 @@ export default function KanbanBoard({ initialPending, initialActive, initialComp
                                                 {log.order_items.product_pn_raw}
                                             </div>
                                             <div className="text-sm font-bold text-[var(--mcs-text)] flex items-center gap-2 mb-1">
-                                                生産機 (Máy ép): <span className="bg-[var(--mcs-surface-2)] px-1.5 py-0.5 rounded border border-[var(--mcs-border)]">
+                                                設備: <span className="bg-[var(--mcs-surface-2)] px-1.5 py-0.5 rounded border border-[var(--mcs-border)]">
                                                     {log.machine_instance?.internal_code || log.machine_master?.code || 'N/A'}
                                                 </span>
                                             </div>
                                             <div className="text-xs text-[var(--mcs-text)]">
-                                                MTSD: {log.production_plans?.planned_quantity?.toLocaleString() || log.order_items.quantity?.toLocaleString()} Khay
+                                                計画数: {log.production_plans?.planned_quantity?.toLocaleString() || log.order_items.quantity?.toLocaleString()}
                                             </div>
                                         </div>
                                         <Link href={`/production/track/${log.order_items.id}?logId=${log.id}`} className="shrink-0 p-2 px-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-md transition-colors shadow flex items-center gap-1 font-bold text-xs">
-                                            <CheckCircle size={14} /> Chốt
+                                            <CheckCircle size={14} /> 完了入力
                                         </Link>
                                     </div>
                                     <div className="text-[11px] text-[var(--mcs-text-muted)] flex justify-between items-center mt-1 border-t border-[var(--mcs-border)] pt-2">
-                                        <span>作業者 (Thợ): {log.operator_name || log.production_plans?.operator_name || 'N/A'}</span>
+                                        <span>作業者: {log.operator_name || log.production_plans?.operator_name || 'N/A'}</span>
                                         <span className="flex items-center gap-1 text-emerald-600 font-bold">
                                             <Clock size={12} /> {runtimeStr}
                                         </span>
@@ -212,7 +212,7 @@ export default function KanbanBoard({ initialPending, initialActive, initialComp
                             )
                         })}
                         {(!activeLogs || activeLogs.length === 0) && (
-                            <div className="text-center text-[var(--mcs-text-muted)] text-sm py-10">Máy xưởng đang rảnh tải.</div>
+                            <div className="text-center text-[var(--mcs-text-muted)] text-sm py-10">稼働中の設備はありません。</div>
                         )}
                     </div>
                 </div>
@@ -221,7 +221,7 @@ export default function KanbanBoard({ initialPending, initialActive, initialComp
                 <div className="flex flex-col bg-[var(--mcs-surface-2)] border border-[var(--mcs-border)] rounded-lg p-4 h-full min-h-0">
                     <div className="flex items-center gap-2 mb-4 pb-2 border-b border-[var(--mcs-border)] shrink-0">
                         <div className="w-3 h-3 rounded-full bg-indigo-500" />
-                        <h2 className="font-bold text-[var(--mcs-text)] text-lg">完了 (Xong Hôm Nay)</h2>
+                        <h2 className="font-bold text-[var(--mcs-text)] text-lg">完了</h2>
                         <span className="ml-auto bg-[var(--mcs-surface)] px-2 py-1 rounded-full text-xs font-bold text-[var(--mcs-text-muted)]">
                             {completedLogs?.length || 0}
                         </span>
@@ -229,7 +229,7 @@ export default function KanbanBoard({ initialPending, initialActive, initialComp
 
                     <div className="flex-1 overflow-y-auto pr-2 space-y-3">
                         {completedLogs?.map((log: any) => {
-                            const endTimeStr = log.end_time ? new Date(log.end_time).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : ''
+                            const endTimeStr = log.end_time ? new Date(log.end_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''
 
                             return (
                                 <div key={log.id} className="bg-[var(--mcs-surface)] border-l-4 border-l-indigo-500 border border-[var(--mcs-border)] rounded-md p-3 shadow-sm opacity-80 hover:opacity-100 transition-opacity">
@@ -239,24 +239,24 @@ export default function KanbanBoard({ initialPending, initialActive, initialComp
                                                 {log.order_items.orders?.slip_no} • {log.order_items.product_pn_raw}
                                             </div>
                                             <div className="text-sm font-bold text-[var(--mcs-text)] flex items-center gap-2 mb-1">
-                                                良品 (OK): <span className="text-indigo-600">{log.produced_qty?.toLocaleString()}</span> khay
+                                                良品 (OK): <span className="text-indigo-600">{log.produced_qty?.toLocaleString()}</span>
                                             </div>
                                             {log.scrap_qty > 0 && (
                                                 <div className="text-xs text-red-500 font-bold mb-1">
-                                                    不良 (NG): {log.scrap_qty?.toLocaleString()} khay
+                                                    不良 (NG): {log.scrap_qty?.toLocaleString()}
                                                 </div>
                                             )}
                                         </div>
                                     </div>
                                     <div className="text-[11px] text-[var(--mcs-text-muted)] flex justify-between items-center mt-1 border-t border-[var(--mcs-border)] pt-2">
-                                        <span>生産機 (Máy): {log.machine_instance?.internal_code || log.machine_master?.code || 'N/A'}</span>
+                                        <span>設備: {log.machine_instance?.internal_code || log.machine_master?.code || 'N/A'}</span>
                                         <span className="font-bold">完了時間 (End): {endTimeStr}</span>
                                     </div>
                                 </div>
                             )
                         })}
                         {(!completedLogs || completedLogs.length === 0) && (
-                            <div className="text-center text-[var(--mcs-text-muted)] text-sm py-10">本日完了したロットはありません。<br />(Chưa có mẻ nào hoàn thành trong hôm nay)</div>
+                            <div className="text-center text-[var(--mcs-text-muted)] text-sm py-10">本日完了したロットはありません。</div>
                         )}
                     </div>
                 </div>

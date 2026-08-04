@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { useEffect, useState, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { createMoldJobAction } from '@/app/actions/mold-job'
+import { useTranslations } from 'next-intl'
 import type { MoldDetailData } from '../page'
 import { CreateJobModal } from '@/components/equipment/CreateJobModal'
 
@@ -32,6 +33,8 @@ type Employee = {
 }
 
 export function JobsTab({ mold }: { mold: MoldDetailData }) {
+  const tEquipment = useTranslations('Equipment')
+  const tCommon = useTranslations('Common')
   const supabase = createClient()
   const [jobs, setJobs] = useState<JobRow[]>([])
   const [loading, setLoading] = useState(true)
@@ -67,7 +70,7 @@ export function JobsTab({ mold }: { mold: MoldDetailData }) {
       }}>
         <h3 style={{ margin: 0, fontSize: 12, fontWeight: 700, fontFamily: 'var(--font-jp)', color: 'var(--text-primary)' }}>
           <Wrench size={13} style={{ marginRight: 4, verticalAlign: -2 }} />
-          加工・修正ジョブ <span style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 400 }}>Danh sách Job gia công & sửa đổi</span>
+          {tEquipment('machiningRepairJobsTitle')}
         </h3>
         <button
           className="btn btn-secondary"
@@ -75,7 +78,7 @@ export function JobsTab({ mold }: { mold: MoldDetailData }) {
           onClick={() => setShowCreateModal(true)}
         >
           <Plus size={12} />
-          <span>新規ジョブ作成 / Tạo Job mới</span>
+          <span>{tEquipment('Jobs.createJob')}</span>
         </button>
       </div>
 
@@ -83,21 +86,21 @@ export function JobsTab({ mold }: { mold: MoldDetailData }) {
         <table className="data-table">
           <thead>
             <tr>
-              <th style={{ width: 120 }}>Job Code</th>
-              <th style={{ width: 150 }}>ジョブ名 / Tên Job</th>
-              <th style={{ width: 100 }}>タイプ / Loại</th>
-              <th style={{ width: 90 }}>ステータス / Status</th>
-              <th style={{ width: 80 }}>進捗 / Progress</th>
-              <th style={{ width: 100 }}>担当者 / Responsible</th>
-              <th style={{ width: 90 }}>期限 / Hạn</th>
-              <th>備考 / Ghi chú</th>
+              <th>{tEquipment('Jobs.cols.jobCode')}</th>
+              <th>{tEquipment('Jobs.cols.jobName')}</th>
+              <th>{tEquipment('Jobs.cols.type')}</th>
+              <th>{tEquipment('Jobs.cols.status')}</th>
+              <th>{tEquipment('Jobs.cols.progress')}</th>
+              <th>{tEquipment('operator')}</th>
+              <th>{tEquipment('Jobs.cols.deadline')}</th>
+              <th>{tCommon('notes')}</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={8} style={{ padding: 20, textAlign: 'center', fontSize: 11, color: 'var(--text-muted)' }}>読み込み中...</td></tr>
+              <tr><td colSpan={8} style={{ padding: 20, textAlign: 'center', fontSize: 11, color: 'var(--text-muted)' }}>{tCommon('loading')}</td></tr>
             ) : jobs.length === 0 ? (
-              <tr><td colSpan={8} style={{ padding: 20, textAlign: 'center', fontSize: 11, color: 'var(--text-muted)' }}>ジョブ記録なし / Không có Job nào</td></tr>
+              <tr><td colSpan={8} style={{ padding: 20, textAlign: 'center', fontSize: 11, color: 'var(--text-muted)' }}>{tEquipment('Jobs.noData')}</td></tr>
             ) : (
               jobs.map(job => (
                 <tr key={job.job_id}>
