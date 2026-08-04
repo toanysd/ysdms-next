@@ -798,7 +798,7 @@ export default function MoldMasterDesignsPage() {
                         onChange={e => setField('has_separate_cutter', e.target.checked)}
                         style={{ width: 15, height: 15, accentColor: 'var(--accent)' }}
                       />
-                      <span style={{ fontFamily: 'var(--font-jp)', fontSize: 12, fontWeight: 600 }}>別カッター</span>
+                      <span style={{ fontFamily: 'var(--font-jp)', fontSize: 12, fontWeight: 600 }}>別抜き</span>
                     </label>
                   </div>
                   <div className="form-grid-2" style={{ marginTop: 10 }}>

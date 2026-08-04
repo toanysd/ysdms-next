@@ -11,6 +11,7 @@ import {
   Scale, Ruler, CircleDot
 } from 'lucide-react'
 import Link from 'next/link'
+import EquipmentQuickPreviewModal, { type QuickPreviewItem } from './EquipmentQuickPreviewModal'
 
 interface TabOverviewProps {
   productId: string
@@ -96,6 +97,7 @@ type MoldDetail = {
   actual_weight: string | null
   manufacturing_date: string | null
   rack_layers: { layer_code: string | null; racks: { rack_code: string | null } | null } | null
+  keeper_company: { company_code: string | null; company_name: string | null } | null
   mold_revisions: { design_revision_id: string | null } | null
 }
 
@@ -108,6 +110,23 @@ type EquipDetail = {
   device_status: string | null
   design_revision_id: string | null
   rack_layers: { layer_code: string | null; racks: { rack_code: string | null } | null } | null
+  keeper_company: { company_code: string | null; company_name: string | null } | null
+}
+
+type CutterDetail = {
+  cutter_id: string
+  cutter_no: string | null
+  cutter_name: string | null
+  cutter_type: string | null
+  usage_status: string | null
+  cutter_presence: boolean | null
+  design_revision_id: string | null
+  cutter_length_mm: number | null
+  cutter_width_mm: number | null
+  rack_layers: { layer_code: string | null; racks: { rack_code: string | null } | null } | null
+  keeper_company: { company_code: string | null; company_name: string | null } | null
+  is_shared?: boolean
+  linked_rev_id?: string | null
 }
 
 const REV_STATUS_BADGE: Record<string, string> = {
@@ -234,6 +253,8 @@ export function TabOverview(props: TabOverviewProps) {
   // Equipment Details
   const [moldDetails, setMoldDetails] = useState<MoldDetail[]>([])
   const [equipDetails, setEquipDetails] = useState<EquipDetail[]>([])
+  const [cutterDetails, setCutterDetails] = useState<CutterDetail[]>([])
+  const [previewItem, setPreviewItem] = useState<QuickPreviewItem | null>(null)
 
   // Active Job
   const [activeJob, setActiveJob] = useState<{ id: string; code: string; status: string; deadline: string; name: string } | null>(null)
@@ -289,6 +310,7 @@ export function TabOverview(props: TabOverviewProps) {
               mold_type, piece_count, actual_length_mm, actual_width_mm, actual_height_mm,
               actual_weight, manufacturing_date,
               rack_layers(layer_code, racks(rack_code)),
+              keeper_company:companies!physical_molds_keeper_company_id_fkey(company_code, company_name),
               mold_revisions(design_revision_id)
             `)
             .in('mold_revision_id', revIds)
@@ -301,11 +323,71 @@ export function TabOverview(props: TabOverviewProps) {
             .select(`
               equipment_id, equipment_code, display_name, equipment_type, usage_status, device_status,
               design_revision_id,
-              rack_layers(layer_code, racks(rack_code))
+              rack_layers(layer_code, racks(rack_code)),
+              keeper_company:companies!equipment_keeper_company_id_fkey(company_code, company_name)
             `)
             .in('design_revision_id', revIds)
 
           if (equips) setEquipDetails(equips as unknown as EquipDetail[])
+
+          // Cutters (抜型) - Direct & Junction Shared
+          const { data: directCutters } = await supabase
+            .from('cutters')
+            .select(`
+              cutter_id, cutter_no, cutter_name, cutter_type, usage_status, cutter_presence,
+              design_revision_id, cutter_length_mm, cutter_width_mm,
+              rack_layers(layer_code, racks(rack_code)),
+              keeper_company:companies!cutters_keeper_company_id_fkey(company_code, company_name)
+            `)
+            .in('design_revision_id', revIds)
+
+          const { data: juncs } = await supabase
+            .from('mold_design_cutters')
+            .select('mold_design_id, cutter_id')
+            .in('mold_design_id', revIds)
+
+          let sharedCutters: any[] = []
+          if (juncs && juncs.length > 0) {
+            const juncCutterIds = juncs.map(j => j.cutter_id).filter(Boolean)
+            if (juncCutterIds.length > 0) {
+              const { data: sCutters } = await supabase
+                .from('cutters')
+                .select(`
+                  cutter_id, cutter_no, cutter_name, cutter_type, usage_status, cutter_presence,
+                  design_revision_id, cutter_length_mm, cutter_width_mm,
+                  rack_layers(layer_code, racks(rack_code)),
+                  keeper_company:companies!cutters_keeper_company_id_fkey(company_code, company_name)
+                `)
+                .in('cutter_id', juncCutterIds)
+
+              if (sCutters) {
+                sharedCutters = sCutters.map(sc => {
+                  const matchJunc = juncs.find(j => j.cutter_id === sc.cutter_id)
+                  return {
+                    ...sc,
+                    is_shared: sc.design_revision_id ? !revIds.includes(sc.design_revision_id) : true,
+                    linked_rev_id: matchJunc?.mold_design_id || sc.design_revision_id
+                  }
+                })
+              }
+            }
+          }
+
+          const directMapped = (directCutters || []).map(dc => ({
+            ...dc,
+            is_shared: false,
+            linked_rev_id: dc.design_revision_id
+          }))
+
+          const cutterMap = new Map<string, any>()
+          directMapped.forEach(c => cutterMap.set(c.cutter_id, c))
+          sharedCutters.forEach(c => {
+            if (!cutterMap.has(c.cutter_id)) {
+              cutterMap.set(c.cutter_id, c)
+            }
+          })
+
+          setCutterDetails(Array.from(cutterMap.values()) as unknown as CutterDetail[])
         }
 
         // Jobs
@@ -692,13 +774,17 @@ export function TabOverview(props: TabOverviewProps) {
             const legacyMolds = moldDetails.filter(m => getMoldRevId(m) !== selectedRevId)
             const activeEquip = equipDetails.filter(e => e.design_revision_id === selectedRevId)
             const legacyEquip = equipDetails.filter(e => e.design_revision_id !== selectedRevId)
+            const activeCutters = cutterDetails.filter(c => c.linked_rev_id === selectedRevId)
+            const legacyCutters = cutterDetails.filter(c => c.linked_rev_id !== selectedRevId)
 
-            const totalActive = activeMolds.length + activeEquip.length
-            const totalLegacy = legacyMolds.length + legacyEquip.length
+            const totalActive = activeMolds.length + activeEquip.length + activeCutters.length
+            const totalLegacy = legacyMolds.length + legacyEquip.length + legacyCutters.length
+            const grandTotal = moldDetails.length + equipDetails.length + cutterDetails.length
 
-            const bindingBadge = (type: 'active' | 'legacy' | 'disposed') => {
+            const bindingBadge = (type: 'active' | 'legacy' | 'disposed' | 'shared') => {
               const cfg = {
                 active: { label: tPC('bindingActive'), cls: 'badge badge--success' },
+                shared: { label: tPC('bindingShared'), cls: 'badge badge--info' },
                 legacy: { label: tPC('bindingLegacy'), cls: 'badge badge--neutral' },
                 disposed: { label: tPC('bindingDisposed'), cls: 'badge badge--error' },
               }[type]
@@ -709,43 +795,93 @@ export function TabOverview(props: TabOverviewProps) {
               const dims = [m.actual_length_mm, m.actual_width_mm, m.actual_height_mm].filter(Boolean).join('×')
               const isDisposed = m.usage_status === 'DISPOSED'
               return (
-                <Link key={m.physical_mold_id} href={`/equipment/molds/${m.physical_mold_id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
-                  <div style={{
+                <div
+                  key={m.physical_mold_id}
+                  onClick={() => setPreviewItem({ type: 'mold', data: m })}
+                  style={{
                     border: '1px solid var(--border-default)', borderRadius: 8, overflow: 'hidden',
                     opacity: binding === 'legacy' ? 0.7 : 1, transition: 'all 0.15s ease', cursor: 'pointer'
+                  }}
+                >
+                  <div style={{
+                    height: 48, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    background: 'linear-gradient(135deg, var(--tint-orange-bg) 0%, var(--bg-surface-2) 100%)',
+                    borderBottom: '1px solid var(--border-subtle)', gap: 6
                   }}>
-                    <div style={{
-                      height: 48, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      background: 'linear-gradient(135deg, var(--tint-orange-bg) 0%, var(--bg-surface-2) 100%)',
-                      borderBottom: '1px solid var(--border-subtle)', gap: 6
-                    }}>
-                      <Wrench size={22} style={{ color: 'var(--tint-orange-text)', opacity: 0.5 }} />
-                      <span style={{ fontSize: 9, fontWeight: 700, color: 'var(--tint-orange-text)', textTransform: 'uppercase' }}>{tPC('moldThumbnail')}</span>
+                    <Wrench size={22} style={{ color: 'var(--tint-orange-text)', opacity: 0.5 }} />
+                    <span style={{ fontSize: 9, fontWeight: 700, color: 'var(--tint-orange-text)', textTransform: 'uppercase' }}>{tPC('moldThumbnail')}</span>
+                  </div>
+                  <div style={{ padding: '6px 10px', display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <span style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: 12, color: 'var(--accent)' }}>{m.system_code || '—'}</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                        <span className={STATUS_BADGE[m.usage_status || ''] || STATUS_BADGE[m.device_status || ''] || 'badge badge--neutral'} style={{ fontSize: 7 }}>
+                          {m.usage_status || m.device_status || '—'}
+                        </span>
+                        {bindingBadge(isDisposed ? 'disposed' : binding)}
+                      </div>
                     </div>
-                    <div style={{ padding: '6px 10px', display: 'flex', flexDirection: 'column', gap: 2 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                        <span style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: 12, color: 'var(--accent)' }}>{m.system_code || '—'}</span>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                          <span className={STATUS_BADGE[m.usage_status || ''] || STATUS_BADGE[m.device_status || ''] || 'badge badge--neutral'} style={{ fontSize: 7 }}>
-                            {m.usage_status || m.device_status || '—'}
-                          </span>
-                          {bindingBadge(isDisposed ? 'disposed' : binding)}
-                        </div>
-                      </div>
-                      <span style={{ fontSize: 10, color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.display_name || '—'}</span>
-                      {dims && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 9, color: 'var(--text-muted)' }}>
-                          <Ruler size={9} /> <span style={{ fontFamily: 'monospace', fontWeight: 600 }}>{dims}mm</span>
-                          {m.actual_weight && <> · <Scale size={9} /> {m.actual_weight}kg</>}
-                        </div>
-                      )}
+                    <span style={{ fontSize: 10, color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.display_name || '—'}</span>
+                    {dims && (
                       <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 9, color: 'var(--text-muted)' }}>
-                        <MapPin size={9} /> {getRack(m.rack_layers)}
-                        {m.piece_count && <> · {m.piece_count}{tPC('pieceCount')}</>}
+                        <Ruler size={9} /> <span style={{ fontFamily: 'monospace', fontWeight: 600 }}>{dims}mm</span>
+                        {m.actual_weight && <> · <Scale size={9} /> {m.actual_weight}kg</>}
                       </div>
+                    )}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 9, color: 'var(--text-muted)' }}>
+                      <MapPin size={9} /> {getRack(m.rack_layers)}
+                      {m.piece_count && <> · {m.piece_count}{tPC('pieceCount')}</>}
+                      <> · <Building2 size={9} /> {m.keeper_company?.company_code || m.keeper_company?.company_name || 'YSD'}</>
                     </div>
                   </div>
-                </Link>
+                </div>
+              )
+            }
+
+            const renderCutterCard = (c: CutterDetail, binding: 'active' | 'legacy') => {
+              const isShared = c.is_shared
+              const isDisposed = c.usage_status === 'DISPOSED'
+              const dims = [c.cutter_length_mm, c.cutter_width_mm].filter(Boolean).join('×')
+
+              return (
+                <div
+                  key={c.cutter_id}
+                  onClick={() => setPreviewItem({ type: 'cutter', data: c })}
+                  style={{
+                    border: '1px solid var(--border-default)', borderRadius: 8, overflow: 'hidden',
+                    opacity: binding === 'legacy' ? 0.7 : 1, transition: 'all 0.15s ease', cursor: 'pointer'
+                  }}
+                >
+                  <div style={{
+                    height: 48, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    background: 'linear-gradient(135deg, var(--tint-purple-bg) 0%, var(--bg-surface-2) 100%)',
+                    borderBottom: '1px solid var(--border-subtle)', gap: 6
+                  }}>
+                    <Scissors size={22} style={{ color: 'var(--tint-purple-text)', opacity: 0.5 }} />
+                    <span style={{ fontSize: 9, fontWeight: 700, color: 'var(--tint-purple-text)', textTransform: 'uppercase' }}>{tPC('cutterThumbnail')}</span>
+                  </div>
+                  <div style={{ padding: '6px 10px', display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <span style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: 12, color: 'var(--accent)' }}>{c.cutter_no || '—'}</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                        <span className={STATUS_BADGE[c.usage_status || ''] || 'badge badge--success'} style={{ fontSize: 7 }}>
+                          {c.usage_status || (c.cutter_presence ? '在空' : '保管中')}
+                        </span>
+                        {bindingBadge(isDisposed ? 'disposed' : (isShared ? 'shared' : binding))}
+                      </div>
+                    </div>
+                    <span style={{ fontSize: 10, color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.cutter_name || '—'}</span>
+                    {dims && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 9, color: 'var(--text-muted)' }}>
+                        <Ruler size={9} /> <span style={{ fontFamily: 'monospace', fontWeight: 600 }}>{dims}mm</span>
+                      </div>
+                    )}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 9, color: 'var(--text-muted)' }}>
+                      <MapPin size={9} /> {getRack(c.rack_layers)}
+                      <> · <Building2 size={9} /> {c.keeper_company?.company_code || c.keeper_company?.company_name || 'YSD'}</>
+                    </div>
+                  </div>
+                </div>
               )
             }
 
@@ -759,10 +895,14 @@ export function TabOverview(props: TabOverviewProps) {
               const isDisposed = eq.usage_status === 'DISPOSED'
 
               return (
-                <div key={eq.equipment_id} style={{
-                  border: '1px solid var(--border-default)', borderRadius: 8, overflow: 'hidden',
-                  opacity: binding === 'legacy' ? 0.7 : 1, transition: 'all 0.15s ease'
-                }}>
+                <div
+                  key={eq.equipment_id}
+                  onClick={() => setPreviewItem({ type: 'equip', data: eq })}
+                  style={{
+                    border: '1px solid var(--border-default)', borderRadius: 8, overflow: 'hidden',
+                    opacity: binding === 'legacy' ? 0.7 : 1, transition: 'all 0.15s ease', cursor: 'pointer'
+                  }}
+                >
                   <div style={{
                     height: 48, display: 'flex', alignItems: 'center', justifyContent: 'center',
                     background: `linear-gradient(135deg, ${tintBg} 0%, var(--bg-surface-2) 100%)`,
@@ -784,6 +924,7 @@ export function TabOverview(props: TabOverviewProps) {
                     <span style={{ fontSize: 10, color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{eq.display_name || '—'}</span>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 9, color: 'var(--text-muted)' }}>
                       <MapPin size={9} /> {getRack(eq.rack_layers)}
+                      <> · <Building2 size={9} /> {eq.keeper_company?.company_code || eq.keeper_company?.company_name || 'YSD'}</>
                     </div>
                   </div>
                 </div>
@@ -799,12 +940,12 @@ export function TabOverview(props: TabOverviewProps) {
                   <Wrench size={14} style={{ color: 'var(--tint-orange-text)' }} />
                   <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--tint-orange-text)' }}>{tPC('equipmentOverview')}</span>
                   <span style={{ fontSize: 10, color: 'var(--text-muted)', marginLeft: 'auto' }}>
-                    {moldDetails.length + equipDetails.length} items
+                    {grandTotal} items
                   </span>
                 </div>
 
                 <div style={{ padding: 12, display: 'flex', flexDirection: 'column', gap: 10 }}>
-                  {moldDetails.length === 0 && equipDetails.length === 0 ? (
+                  {grandTotal === 0 ? (
                     <div style={{ textAlign: 'center', padding: '16px 0', color: 'var(--text-muted)', fontSize: 12 }}>
                       {tPC('noEquipmentLinked')}
                     </div>
@@ -818,12 +959,13 @@ export function TabOverview(props: TabOverviewProps) {
                           </div>
                           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 8 }}>
                             {activeMolds.map(m => renderMoldCard(m, 'active'))}
+                            {activeCutters.map(c => renderCutterCard(c, 'active'))}
                             {activeEquip.map(eq => renderEquipCard(eq, 'active'))}
                           </div>
                         </>
                       )}
 
-                      {/* Legacy Equipment (older revisions) */}
+                      {/* Legacy / Shared Equipment */}
                       {totalLegacy > 0 && (
                         <>
                           <div style={{
@@ -836,6 +978,7 @@ export function TabOverview(props: TabOverviewProps) {
                           </div>
                           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 8 }}>
                             {legacyMolds.map(m => renderMoldCard(m, 'legacy'))}
+                            {legacyCutters.map(c => renderCutterCard(c, 'legacy'))}
                             {legacyEquip.map(eq => renderEquipCard(eq, 'legacy'))}
                           </div>
                         </>
@@ -1019,6 +1162,13 @@ export function TabOverview(props: TabOverviewProps) {
             </div>
           )}
         </div>
+
+        {/* Equipment Quick Preview Modal */}
+        <EquipmentQuickPreviewModal
+          isOpen={!!previewItem}
+          onClose={() => setPreviewItem(null)}
+          item={previewItem}
+        />
 
       </div>
 

@@ -279,7 +279,7 @@ export default function UnifiedMoldDrawer({ isOpen, onClose, editPhysicalId, cus
                       {renderTextInput('Loại nhựa', 'プラ種類', 'design_for_plastic_type')}
                     </div>
                     <div className="flex gap-6 pt-2">
-                      <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={form.separate_cutter || false} onChange={e => updateField('separate_cutter', e.target.checked)} className="w-4 h-4 accent-teal-600" /><span className="text-xs text-[var(--text-primary)]">{tText('Dao riêng', '別カッター')}</span></label>
+                      <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={form.separate_cutter || false} onChange={e => updateField('separate_cutter', e.target.checked)} className="w-4 h-4 accent-teal-600" /><span className="text-xs text-[var(--text-primary)]">{tText('Dao riêng', '別抜き')}</span></label>
                       <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={form.plug || false} onChange={e => updateField('plug', e.target.checked)} className="w-4 h-4 accent-teal-600" /><span className="text-xs text-[var(--text-primary)]">{tText('Plug', 'プラグ')}</span></label>
                     </div>
                   </div>

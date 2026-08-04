@@ -808,7 +808,7 @@ export default function QuickCreateMoldJobPage() {
       })
     } else {
       const isOutsourced = chip.type_code === 'CUTTER'
-      const defaultName = chip.type_code === 'MOLD' ? '金型' : chip.type_code === 'PLUG' ? 'プラグ' : chip.type_code === 'CUTTER' ? 'カッター' : chip.type_code === 'WATER_BASE' ? '水冷盤' : chip.type_code === 'FRAME' ? '枠' : chip.type_code === 'PRESSURE_BASE' ? '押板' : chip.type_code
+      const defaultName = chip.type_code === 'MOLD' ? '金型' : chip.type_code === 'PLUG' ? 'プラグ' : chip.type_code === 'CUTTER' ? '抜型' : chip.type_code === 'WATER_BASE' ? '水冷盤' : chip.type_code === 'FRAME' ? '枠' : chip.type_code === 'PRESSURE_BASE' ? '押板' : chip.type_code
       setSteps(prev => [
         ...prev,
         {
@@ -1878,7 +1878,7 @@ export default function QuickCreateMoldJobPage() {
                                             <optgroup label={t('componentEquipmentOptgroup')}>
                                               <option value="金型">{tText('Khuôn (MOLD)', '金型')}</option>
                                               <option value="プラグ">{tText('Plug (PLUG)', 'プラグ')}</option>
-                                              <option value="カッター">{tText('Dao cắt (CUTTER)', 'カッター')}</option>
+                                              <option value="抜型">{tText('Dao cắt (CUTTER)', '抜型')}</option>
                                               <option value="水冷盤">{tText('Đế làm mát (WATER_BASE)', '水冷盤')}</option>
                                               <option value="枠">{tText('Khung (FRAME)', '枠')}</option>
                                               <option value="押板">{tText('Đế áp lực (PRESSURE_BASE)', '押板')}</option>

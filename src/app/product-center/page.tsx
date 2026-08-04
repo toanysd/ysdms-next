@@ -7,13 +7,15 @@ import { useTranslations } from 'next-intl'
 import {
   Search, Package, ArrowRight, Database, LayoutGrid, Table,
   RotateCcw, CheckSquare, Square, ExternalLink, Filter, Clock,
-  ArrowUp, ArrowDown, ArrowUpDown, Building2
+  ArrowUp, ArrowDown, ArrowUpDown, Building2, X
 } from 'lucide-react'
 
 import { Pagination } from '@/components/ui/Pagination'
 import { useSearchHistory } from '@/hooks/useSearchHistory'
 import { SearchSuggestions } from '@/components/ui/SearchSuggestions'
 import Link from 'next/link'
+
+import ProductFilterDrawer, { ProductFilterState, INITIAL_PRODUCT_FILTERS } from './_components/ProductFilterDrawer'
 
 type ProductStatus = 'ACTIVE' | 'MAINTENANCE' | 'DISPOSED'
 
@@ -76,6 +78,21 @@ const TABLE_COLUMNS: ColumnDef[] = [
   { key: 'action', labelKey: '', fallbackLabel: '', align: 'center', minWidth: 70, defaultWidth: 80, resizable: false },
 ]
 
+function buildFuzzyPatterns(trimmed: string): string[] {
+  const clean = trimmed.replace(/[%_]/g, '')
+  const compact = clean.replace(/[\s\-_]/g, '')
+  const chunks = compact.match(/[a-zA-Z]+|\d+/g)
+
+  const patterns = new Set<string>()
+  patterns.add(`%${clean}%`)
+  if (chunks && chunks.length > 1) {
+    patterns.add(`%${chunks.join('%')}%`)
+  } else if (compact) {
+    patterns.add(`%${compact}%`)
+  }
+  return Array.from(patterns)
+}
+
 export default function ProductCenterIndexPage() {
   const tPC = useTranslations('ProductCenter')
   const tProd = useTranslations('Products')
@@ -101,7 +118,13 @@ export default function ProductCenterIndexPage() {
   const [isLoading, setIsLoading] = useState(true)
 
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
-  const [isSearchFocused, setIsSearchFocused] = useState(false)
+  const { history, addToHistory, removeFromHistory, clearHistory } = useSearchHistory('search_product_center')
+
+  // Advanced Filter Drawer State
+  const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false)
+  const [filterState, setFilterState] = useState<ProductFilterState>(INITIAL_PRODUCT_FILTERS)
+  const [companiesList, setCompaniesList] = useState<Array<{ company_id: string; company_code: string; company_name: string }>>([])
+  const [plasticTypesList, setPlasticTypesList] = useState<string[]>([])
 
   const [sortColumn, setSortColumn] = useState<SortColumn | null>('first_shipment_date')
   const [sortDir, setSortDir] = useState<SortDir>('desc')
@@ -113,7 +136,34 @@ export default function ProductCenterIndexPage() {
   })
 
   const resizingRef = useRef<{ colKey: string; startX: number; startWidth: number } | null>(null)
-  const { history, addToHistory, removeFromHistory, clearHistory } = useSearchHistory('search_product_center')
+
+  // Sync search input with URL search param
+  useEffect(() => {
+    const urlQuery = searchParams.get('search') || ''
+    setQuery(urlQuery)
+  }, [searchParams])
+
+  // Fetch filter options on mount
+  useEffect(() => {
+    async function loadOptions() {
+      const { data: comp } = await supabase
+        .from('companies')
+        .select('company_id, company_code, company_name')
+        .order('company_code', { ascending: true })
+      if (comp) setCompaniesList(comp)
+
+      const { data: revs } = await supabase
+        .from('design_revisions')
+        .select('plastic_type_designed')
+        .not('plastic_type_designed', 'is', null)
+        .limit(200)
+      if (revs) {
+        const set = new Set(revs.map(r => r.plastic_type_designed?.trim()).filter(Boolean) as string[])
+        setPlasticTypesList(Array.from(set).slice(0, 30))
+      }
+    }
+    loadOptions()
+  }, [supabase])
 
   const fetchProducts = useCallback(async () => {
     setIsLoading(true)
@@ -127,12 +177,33 @@ export default function ProductCenterIndexPage() {
         `, { count: 'exact' })
 
       if (query.trim().length > 0) {
-        const q = query.trim()
-        req = req.or(`product_code.ilike.%${q}%,product_name.ilike.%${q}%,product_name_internal.ilike.%${q}%,customer_product_name.ilike.%${q}%,product_description.ilike.%${q}%`)
+        const patterns = buildFuzzyPatterns(query.trim())
+        const orConditions: string[] = []
+        patterns.forEach(pat => {
+          orConditions.push(`product_code.ilike.${pat}`)
+          orConditions.push(`product_name.ilike.${pat}`)
+          orConditions.push(`product_name_internal.ilike.${pat}`)
+          orConditions.push(`customer_product_name.ilike.${pat}`)
+          orConditions.push(`product_description.ilike.${pat}`)
+        })
+        req = req.or(orConditions.join(','))
       }
 
-      if (selectedStatus !== 'ALL') {
-        req = req.eq('product_status', selectedStatus)
+      const activeStatusFilter = filterState.status !== 'ALL' ? filterState.status : selectedStatus
+      if (activeStatusFilter !== 'ALL') {
+        req = req.eq('product_status', activeStatusFilter)
+      }
+
+      if (filterState.companyId) {
+        req = req.eq('company_id', filterState.companyId)
+      }
+
+      if (filterState.pocketMin) {
+        req = req.gte('pocket_count', Number(filterState.pocketMin))
+      }
+
+      if (filterState.pocketMax) {
+        req = req.lte('pocket_count', Number(filterState.pocketMax))
       }
 
       const from = (currentPage - 1) * PAGE_SIZE
@@ -196,13 +267,18 @@ export default function ProductCenterIndexPage() {
     } finally {
       setIsLoading(false)
     }
-  }, [query, selectedStatus, currentPage, sortColumn, sortDir, supabase])
+  }, [query, selectedStatus, filterState, currentPage, sortColumn, sortDir, supabase])
 
   useEffect(() => {
     fetchProducts()
   }, [fetchProducts])
 
   const isDraggingRef = useRef(false)
+
+  const activeFilterCount = Object.entries(filterState).filter(([k, v]) => {
+    if (k === 'status') return v !== 'ALL'
+    return Boolean(v)
+  }).length
 
   const handleSort = (col: SortColumn) => {
     if (isDraggingRef.current) return
@@ -284,10 +360,14 @@ export default function ProductCenterIndexPage() {
   const resetFilters = () => {
     setQuery('')
     setSelectedStatus('ALL')
+    setFilterState(INITIAL_PRODUCT_FILTERS)
     setCurrentPage(1)
     setSelectedIds(new Set())
     setSortColumn(null)
     setSortDir(null)
+    const params = new URLSearchParams(searchParams.toString())
+    params.delete('search')
+    router.push(`/product-center`)
   }
 
   const statusTabLabels: Record<ProductStatus | 'ALL', string> = {
@@ -318,33 +398,46 @@ export default function ProductCenterIndexPage() {
           </span>
         </div>
 
-        {/* Center: Search Box */}
-        <div style={{ position: 'relative', flex: 1, minWidth: 200, maxWidth: 400 }}>
-          <Search size={14} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', zIndex: 1 }} />
-          <input
-            type="text"
-            className="form-input form-input-search text-[12px]"
-            style={{ width: '100%', paddingLeft: 30, height: 30 }}
-            placeholder={tMaster('searchProduct')}
-            value={query}
-            onChange={e => {
-              setQuery(e.target.value)
-              setCurrentPage(1)
+        {/* Center: Active Query Pill & Advanced Filter Drawer Button */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1, flexWrap: 'wrap' }}>
+          {query && (
+            <div style={{
+              display: 'inline-flex', alignItems: 'center', gap: 6, padding: '3px 10px',
+              background: 'var(--tint-teal-bg)', border: '1px solid var(--tint-teal-border)',
+              borderRadius: 14, fontSize: 11, fontWeight: 700, color: 'var(--tint-teal-text)'
+            }}>
+              <Search size={12} />
+              <span>&quot;{query}&quot;</span>
+              <button
+                type="button"
+                onClick={() => {
+                  setQuery('')
+                  const params = new URLSearchParams(searchParams.toString())
+                  params.delete('search')
+                  router.push(`/product-center`)
+                }}
+                style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', padding: 0 }}
+              >
+                <X size={12} />
+              </button>
+            </div>
+          )}
+
+          {/* Advanced Filter Drawer Trigger Button */}
+          <button
+            type="button"
+            onClick={() => setIsFilterDrawerOpen(true)}
+            className="btn btn-secondary cursor-pointer"
+            style={{
+              height: 28, padding: '0 10px', fontSize: 11, gap: 5, flexShrink: 0,
+              border: activeFilterCount > 0 ? '1px solid var(--accent)' : '1px solid var(--border-default)',
+              background: activeFilterCount > 0 ? 'var(--tint-teal-bg)' : 'var(--bg-surface-2)',
+              color: activeFilterCount > 0 ? 'var(--tint-teal-text)' : 'var(--text-secondary)'
             }}
-            onFocus={() => setIsSearchFocused(true)}
-            onBlur={() => setTimeout(() => setIsSearchFocused(false), 200)}
-            onKeyDown={e => {
-              if (e.key === 'Enter') handleSearchSubmit(query)
-            }}
-          />
-          <SearchSuggestions
-            history={history}
-            visible={isSearchFocused && history.length > 0 && !query}
-            onClose={() => setIsSearchFocused(false)}
-            onSelect={val => handleSearchSubmit(val)}
-            onRemove={val => removeFromHistory(val)}
-            onClear={() => clearHistory()}
-          />
+          >
+            <Filter size={13} style={{ color: activeFilterCount > 0 ? 'var(--accent)' : 'var(--text-muted)' }} />
+            <span>{tPC('activeFiltersCount', { count: activeFilterCount })}</span>
+          </button>
         </div>
 
         {/* Right: View Toggle + Status Filters + Reset + Master Link */}
@@ -734,6 +827,20 @@ export default function ProductCenterIndexPage() {
         totalRecords={totalCount}
         pageSize={PAGE_SIZE}
         onPageChange={page => setCurrentPage(page)}
+      />
+
+      {/* Advanced Filter Drawer */}
+      <ProductFilterDrawer
+        isOpen={isFilterDrawerOpen}
+        onClose={() => setIsFilterDrawerOpen(false)}
+        filters={filterState}
+        onApplyFilters={newFilters => {
+          setFilterState(newFilters)
+          setCurrentPage(1)
+        }}
+        onResetFilters={resetFilters}
+        companiesList={companiesList}
+        plasticTypesList={plasticTypesList}
       />
 
     </div>

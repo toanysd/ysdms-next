@@ -300,7 +300,7 @@ export function OverviewTab({
                     label={t('cutterSpec')} 
                     sub="Separate Cutter" 
                     highlighted={diffs.has('cutterSpec')}
-                    value={activeRevision.has_separate_cutter ? '別抜きカッターあり' : 'なし'} 
+                    value={activeRevision.has_separate_cutter ? '別抜きあり' : 'なし'} 
                   />
                   <ReadOnlyField 
                     label={t('plasticSpec')} 

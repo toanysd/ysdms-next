@@ -58,6 +58,11 @@ Hệ thống này được thiết lập theo cơ chế đặc biệt: **"Portab
 - Khi một trang có bối cảnh rõ ràng (VD: trang Khách hàng), **mặc định filter theo context** đó.
 - Hiển thị bộ lọc đang active bằng Filter Chip/Badge có thể bấm để bỏ/đổi.
 - KHÔNG ẩn hoàn toàn bộ lọc — người dùng phải thấy và tự điều chỉnh.
+
+**[RULE-DATA-4] Quy tắc Tìm kiếm Mã Rút gọn (Fuzzy Code Search):**
+- Mọi hàm tìm kiếm theo mã (mã sản phẩm `product_code`, mã khuôn `system_code`, mã dao cắt `cutter_no`) BẮT BUỘC hỗ trợ gõ mã rút gọn đã xóa khoảng trắng, dấu gạch nối `-`, dấu gạch dưới `_`.
+- Ví dụ: Người dùng gõ `jae312` hoặc `JAE312` hoặc `jae-312` $\rightarrow$ Hệ thống tự động xây dựng pattern PostgREST SQL ILIKE `%jae%312%` để luôn tìm thấy mã lưu trữ thực tế `JAE-312`.
+- Áp dụng trên toàn bộ hệ thống (Topbar Global Search, Product Center, Equipment Search).
 - Ví dụ cho trang `/master/customers`:
   - Default: `company_type.cs.{CUSTOMER}` → chỉ show Khách hàng
   - Chip hiển thị: `[Khách hàng ×]` — bấm × để xem tất cả
