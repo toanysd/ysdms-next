@@ -13,6 +13,15 @@ import {
 import Link from 'next/link'
 import EquipmentQuickPreviewModal, { type QuickPreviewItem } from './EquipmentQuickPreviewModal'
 
+type JobItem = {
+  job_id: string
+  job_code: string
+  job_name: string | null
+  job_status: string | null
+  mold_deadline: string | null
+  created_at: string
+}
+
 interface TabOverviewProps {
   productId: string
   companyId: string
@@ -258,6 +267,7 @@ export function TabOverview(props: TabOverviewProps) {
 
   // Active Job
   const [activeJob, setActiveJob] = useState<{ id: string; code: string; status: string; deadline: string; name: string } | null>(null)
+  const [allJobs, setAllJobs] = useState<JobItem[]>([])
 
   // Recent Orders
   const [recentOrders, setRecentOrders] = useState<RecentOrderLine[]>([])
@@ -400,6 +410,7 @@ export function TabOverview(props: TabOverviewProps) {
         const { data: jobs } = await jobQuery.order('created_at', { ascending: false })
 
         if (jobs && jobs.length > 0) {
+          setAllJobs(jobs as unknown as JobItem[])
           const running = jobs.find((j: any) => j.job_status === 'IN_PROGRESS') || jobs[0]
           setActiveJob({
             id: running.job_id,
@@ -605,164 +616,159 @@ export function TabOverview(props: TabOverviewProps) {
         {/* ── RIGHT: Tech Specs + Equipment ── */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
 
-          {/* Technical Spec Card (Expanded) */}
+          {/* Technical Spec Card (with Integrated Vertical Design Revision History) */}
           <div className="card-flat" style={{ padding: 0, overflow: 'hidden', border: '1px solid var(--tint-teal-border)' }}>
             <div style={{
               background: 'var(--tint-teal-bg)', borderBottom: '1px solid var(--tint-teal-border)',
-              padding: '8px 12px', display: 'flex', flexDirection: 'column', gap: 6
+              padding: '8px 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between'
             }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <PenTool size={14} style={{ color: 'var(--tint-teal-text)' }} />
-                  <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--tint-teal-text)' }}>{tPC('techSpec')}</span>
-                </div>
-                {activeRev && (
-                  <Link
-                    href={`/engineering/designs/revisions/${activeRev.revision_id}`}
-                    style={{ fontSize: 11, color: 'var(--accent)', fontWeight: 600, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 3 }}
-                  >
-                    {activeRev.design_code || 'Design'} <ExternalLink size={11} />
-                  </Link>
-                )}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <PenTool size={14} style={{ color: 'var(--tint-teal-text)' }} />
+                <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--tint-teal-text)' }}>{tPC('techSpec')}</span>
               </div>
-              {/* ═══ Revision Selector Chips ═══ */}
-              {allRevs.length > 1 && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap' }}>
-                  <span style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 600, marginRight: 2 }}>{tPC('revisionSelectorLabel')}:</span>
-                  {allRevs.map(r => (
-                    <button
-                      key={r.revision_id}
-                      onClick={() => {
-                        setSelectedRevId(r.revision_id)
-                        setActiveRev(r)
-                      }}
-                      style={{
-                        fontSize: 10, fontWeight: 600, fontFamily: 'monospace',
-                        padding: '2px 8px', borderRadius: 10, cursor: 'pointer',
-                        border: selectedRevId === r.revision_id
-                          ? '1.5px solid var(--accent)'
-                          : '1px solid var(--border-default)',
-                        background: selectedRevId === r.revision_id
-                          ? 'color-mix(in srgb, var(--accent) 12%, transparent)'
-                          : 'var(--bg-surface)',
-                        color: selectedRevId === r.revision_id
-                          ? 'var(--accent)'
-                          : r.status === 'APPROVED' || r.status === 'RELEASED'
-                            ? 'var(--text-primary)'
-                            : 'var(--text-muted)',
-                        display: 'flex', alignItems: 'center', gap: 4
-                      }}
-                    >
-                      {r.design_code || `Rev.${r.revision_number}`}
-                      <span className={REV_STATUS_BADGE[r.status] || 'badge badge--neutral'} style={{ fontSize: 7, padding: '1px 4px' }}>
-                        {r.status}
-                      </span>
-                    </button>
-                  ))}
-                </div>
+              {activeRev && (
+                <Link
+                  href={`/engineering/designs/revisions/${activeRev.revision_id}`}
+                  style={{ fontSize: 11, color: 'var(--accent)', fontWeight: 600, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 3 }}
+                >
+                  {activeRev.design_code || 'Design'} <ExternalLink size={11} />
+                </Link>
               )}
             </div>
 
-            <div style={{ padding: 12 }}>
-              {activeRev ? (() => {
-                const selectedRevIndex = allRevs.findIndex(r => r.revision_id === selectedRevId)
-                const prevRev = selectedRevIndex >= 0 && selectedRevIndex < allRevs.length - 1 ? allRevs[selectedRevIndex + 1] : null
+            <div style={{ display: 'flex', gap: 0 }}>
+              {/* Left Sub-column: Spec Table */}
+              <div style={{ flex: 1, padding: 12, minWidth: 0, borderRight: '1px solid var(--border-default)' }}>
+                {activeRev ? (() => {
+                  const selectedRevIndex = allRevs.findIndex(r => r.revision_id === selectedRevId)
+                  const prevRev = selectedRevIndex >= 0 && selectedRevIndex < allRevs.length - 1 ? allRevs[selectedRevIndex + 1] : null
 
-                const isFieldChanged = (fields: Array<keyof DesignRevItem>) => {
-                  if (!prevRev || !activeRev) return false
-                  return fields.some(f => {
-                    const v1 = activeRev[f]
-                    const v2 = prevRev[f]
-                    if ((v1 == null || v1 === '') && (v2 == null || v2 === '')) return false
-                    return String(v1) !== String(v2)
-                  })
-                }
+                  const isFieldChanged = (fields: Array<keyof DesignRevItem>) => {
+                    if (!prevRev || !activeRev) return false
+                    return fields.some(f => {
+                      const v1 = activeRev[f]
+                      const v2 = prevRev[f]
+                      if ((v1 == null || v1 === '') && (v2 == null || v2 === '')) return false
+                      return String(v1) !== String(v2)
+                    })
+                  }
 
-                const trayDimsDiff = isFieldChanged(['design_length', 'design_width', 'design_depth', 'design_height'])
-                const cutlineDimsDiff = isFieldChanged(['cutline_length', 'cutline_width'])
-                const cavityDiff = isFieldChanged(['cavity_count', 'cavity_pitch_mm'])
-                const plasticDiff = isFieldChanged(['plastic_type_designed'])
-                const feedPitchDiff = isFieldChanged(['machine_feed_pitch_mm'])
-                const customerTrayNameDiff = isFieldChanged(['customer_tray_name'])
-                const cornerRDiff = isFieldChanged(['corner_r'])
-                const chamferCDiff = isFieldChanged(['chamfer_c'])
-                const draftAngleDiff = isFieldChanged(['draft_angle'])
-                const orientationDiff = isFieldChanged(['orientation'])
-                const setupTypeDiff = isFieldChanged(['setup_type'])
-                const plugTypeDiff = isFieldChanged(['plug_type'])
-                const separateCutterDiff = isFieldChanged(['has_separate_cutter'])
-                const trayInfoDiff = isFieldChanged(['tray_info'])
+                  const trayDimsDiff = isFieldChanged(['design_length', 'design_width', 'design_depth', 'design_height'])
+                  const cutlineDimsDiff = isFieldChanged(['cutline_length', 'cutline_width'])
+                  const cavityDiff = isFieldChanged(['cavity_count', 'cavity_pitch_mm'])
+                  const plasticDiff = isFieldChanged(['plastic_type_designed'])
+                  const feedPitchDiff = isFieldChanged(['machine_feed_pitch_mm'])
+                  const customerTrayNameDiff = isFieldChanged(['customer_tray_name'])
+                  const cornerRDiff = isFieldChanged(['corner_r'])
+                  const chamferCDiff = isFieldChanged(['chamfer_c'])
+                  const draftAngleDiff = isFieldChanged(['draft_angle'])
+                  const orientationDiff = isFieldChanged(['orientation'])
+                  const setupTypeDiff = isFieldChanged(['setup_type'])
+                  const plugTypeDiff = isFieldChanged(['plug_type'])
+                  const separateCutterDiff = isFieldChanged(['has_separate_cutter'])
+                  const trayInfoDiff = isFieldChanged(['tray_info'])
 
-                const diffFieldStyle = (isDiff: boolean) => (isDiff ? {
-                  background: 'var(--tint-orange-bg)',
-                  border: '1px solid var(--tint-orange-border)',
-                  borderRadius: 4,
-                  padding: '2px 4px',
-                } : {})
-
-                return (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                    {/* Change summary banner if exists */}
-                    {(activeRev.change_summary || activeRev.version_note) && (
-                      <div style={{
-                        padding: '6px 10px', background: 'var(--tint-orange-bg)',
-                        border: '1px solid var(--tint-orange-border)', borderRadius: 6,
-                        fontSize: 11, color: 'var(--tint-orange-text)', display: 'flex', alignItems: 'center', gap: 6
-                      }}>
-                        <AlertTriangle size={12} />
-                        <span><strong>{tPC('changeSummary')}:</strong> {activeRev.change_summary || activeRev.version_note}</span>
-                      </div>
-                    )}
-
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '2px 12px', fontSize: 12 }}>
-                      {/* Row 1: Dimensions */}
-                      {trayDims && <SpecCell label={tPC('trayDimensions')} value={`${trayDims} mm`} isDiff={trayDimsDiff} diffLabel={tPC('fieldChanged')} span={2} />}
-                      {cutlineDims && <SpecCell label={tPC('cutlineDimensions')} value={`${cutlineDims} mm`} isDiff={cutlineDimsDiff} diffLabel={tPC('fieldChanged')} span={1} />}
-
-                      {/* Row 2: Material & Pocket/Pitch */}
-                      <SpecCell label={tPC('designedMaterial')} value={activeRev.plastic_type_designed || primaryPlasticCode} isDiff={plasticDiff} diffLabel={tPC('fieldChanged')} span={2} mono={false} />
-                      <SpecCell
-                        label={tPC('cavityAndPitch')}
-                        value={(activeRev.pocket_numbers || activeRev.cavity_count) ? `${activeRev.pocket_numbers || activeRev.cavity_count} Pocket${activeRev.cavity_pitch_mm ? ' / ' + activeRev.cavity_pitch_mm + 'mm' : ''}` : null}
-                        isDiff={cavityDiff}
-                        diffLabel={tPC('fieldChanged')}
-                        span={1}
-                      />
-
-                      {/* Row 3: Feed pitch & Tray Name & Draft angle */}
-                      <SpecCell label={tPC('feedPitch')} value={activeRev.machine_feed_pitch_mm ? `${activeRev.machine_feed_pitch_mm} mm` : null} isDiff={feedPitchDiff} diffLabel={tPC('fieldChanged')} />
-                      <SpecCell label={tPC('customerTrayName')} value={activeRev.customer_tray_name} isDiff={customerTrayNameDiff} diffLabel={tPC('fieldChanged')} mono={false} />
-                      <SpecCell label={tPC('draftAngleLabel')} value={activeRev.draft_angle != null ? `${activeRev.draft_angle}°` : null} isDiff={draftAngleDiff} diffLabel={tPC('fieldChanged')} />
-
-                      {/* Row 4: Corner R & Chamfer C & Undercut depth */}
-                      <SpecCell label={tPC('cornerRadiusLabel')} value={activeRev.corner_r != null ? `R${activeRev.corner_r}` : null} isDiff={cornerRDiff} diffLabel={tPC('fieldChanged')} />
-                      <SpecCell label={tPC('chamferLabel')} value={activeRev.chamfer_c != null ? `C${activeRev.chamfer_c}` : null} isDiff={chamferCDiff} diffLabel={tPC('fieldChanged')} />
-                      <SpecCell label="Undercut" value={activeRev.under_depth != null ? `${activeRev.under_depth} mm` : null} />
-
-                      {/* Row 5: Process specs */}
-                      <SpecCell label={tPC('orientationLabel')} value={activeRev.orientation} isDiff={orientationDiff} diffLabel={tPC('fieldChanged')} mono={false} />
-                      <SpecCell label={tPC('setupTypeLabel')} value={activeRev.setup_type} isDiff={setupTypeDiff} diffLabel={tPC('fieldChanged')} mono={false} />
-                      <SpecCell label={tPC('plugTypeLabel')} value={activeRev.plug_type} isDiff={plugTypeDiff} diffLabel={tPC('fieldChanged')} mono={false} />
-
-                      {/* Row 6: Cutter & Tray Info */}
-                      <SpecCell
-                        label={tPC('hasSeparateCutterLabel')}
-                        value={activeRev.has_separate_cutter == null ? null : (activeRev.has_separate_cutter ? tPC('yesLabel') : tPC('noLabel'))}
-                        isDiff={separateCutterDiff}
-                        diffLabel={tPC('fieldChanged')}
-                        mono={false}
-                      />
-                      {activeRev.tray_info && (
-                        <SpecCell label={tPC('trayInfoLabel')} value={activeRev.tray_info} isDiff={trayInfoDiff} diffLabel={tPC('fieldChanged')} span={2} mono={false} />
+                  return (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                      {/* Change summary banner if exists */}
+                      {(activeRev.change_summary || activeRev.version_note) && (
+                        <div style={{
+                          padding: '6px 10px', background: 'var(--tint-orange-bg)',
+                          border: '1px solid var(--tint-orange-border)', borderRadius: 6,
+                          fontSize: 11, color: 'var(--tint-orange-text)', display: 'flex', alignItems: 'center', gap: 6
+                        }}>
+                          <AlertTriangle size={12} />
+                          <span><strong>{tPC('changeSummary')}:</strong> {activeRev.change_summary || activeRev.version_note}</span>
+                        </div>
                       )}
+
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '2px 12px', fontSize: 12 }}>
+                        {/* Dimensions & Plastic */}
+                        {trayDims && <SpecCell label={tPC('trayDimensions')} value={`${trayDims} mm`} isDiff={trayDimsDiff} diffLabel={tPC('fieldChanged')} />}
+                        {cutlineDims && <SpecCell label={tPC('cutlineDimensions')} value={`${cutlineDims} mm`} isDiff={cutlineDimsDiff} diffLabel={tPC('fieldChanged')} />}
+                        <SpecCell label={tPC('designedMaterial')} value={activeRev.plastic_type_designed || primaryPlasticCode} isDiff={plasticDiff} diffLabel={tPC('fieldChanged')} mono={false} />
+                        <SpecCell
+                          label={tPC('cavityAndPitch')}
+                          value={(activeRev.pocket_numbers || activeRev.cavity_count) ? `${activeRev.pocket_numbers || activeRev.cavity_count} Pocket${activeRev.cavity_pitch_mm ? ' / ' + activeRev.cavity_pitch_mm + 'mm' : ''}` : null}
+                          isDiff={cavityDiff}
+                          diffLabel={tPC('fieldChanged')}
+                        />
+                        <SpecCell label={tPC('feedPitch')} value={activeRev.machine_feed_pitch_mm ? `${activeRev.machine_feed_pitch_mm} mm` : null} isDiff={feedPitchDiff} diffLabel={tPC('fieldChanged')} />
+                        <SpecCell label={tPC('customerTrayName')} value={activeRev.customer_tray_name} isDiff={customerTrayNameDiff} diffLabel={tPC('fieldChanged')} mono={false} />
+                        <SpecCell label={tPC('draftAngleLabel')} value={activeRev.draft_angle != null ? `${activeRev.draft_angle}°` : null} isDiff={draftAngleDiff} diffLabel={tPC('fieldChanged')} />
+                        <SpecCell label={tPC('cornerRadiusLabel')} value={activeRev.corner_r != null ? `R${activeRev.corner_r}` : null} isDiff={cornerRDiff} diffLabel={tPC('fieldChanged')} />
+                        <SpecCell label={tPC('chamferLabel')} value={activeRev.chamfer_c != null ? `C${activeRev.chamfer_c}` : null} isDiff={chamferCDiff} diffLabel={tPC('fieldChanged')} />
+                        <SpecCell label="Undercut" value={activeRev.under_depth != null ? `${activeRev.under_depth} mm` : null} />
+                        <SpecCell label={tPC('orientationLabel')} value={activeRev.orientation} isDiff={orientationDiff} diffLabel={tPC('fieldChanged')} mono={false} />
+                        <SpecCell label={tPC('setupTypeLabel')} value={activeRev.setup_type} isDiff={setupTypeDiff} diffLabel={tPC('fieldChanged')} mono={false} />
+                        <SpecCell label={tPC('plugTypeLabel')} value={activeRev.plug_type} isDiff={plugTypeDiff} diffLabel={tPC('fieldChanged')} mono={false} />
+                        <SpecCell
+                          label={tPC('hasSeparateCutterLabel')}
+                          value={activeRev.has_separate_cutter == null ? null : (activeRev.has_separate_cutter ? tPC('yesLabel') : tPC('noLabel'))}
+                          isDiff={separateCutterDiff}
+                          diffLabel={tPC('fieldChanged')}
+                          mono={false}
+                        />
+                        {activeRev.tray_info && (
+                          <SpecCell label={tPC('trayInfoLabel')} value={activeRev.tray_info} isDiff={trayInfoDiff} diffLabel={tPC('fieldChanged')} mono={false} />
+                        )}
+                      </div>
                     </div>
+                  )
+                })() : (
+                  <div style={{ textAlign: 'center', padding: '20px 0', color: 'var(--text-muted)', fontSize: 12 }}>
+                    {tCommon('noData')}
                   </div>
-                )
-              })() : (
-                <div style={{ textAlign: 'center', padding: '20px 0', color: 'var(--text-muted)', fontSize: 12 }}>
-                  {tCommon('noData')}
+                )}
+              </div>
+
+              {/* Right Sub-column: Vertical Design Revision History List */}
+              <div style={{ width: 220, flexShrink: 0, background: 'var(--bg-surface-2)', padding: 10, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: 4, borderBottom: '1px solid var(--border-default)' }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 5 }}>
+                    <Layers size={13} style={{ color: 'var(--accent)' }} />
+                    {tPC('revHistoryListTitle') || '改訂履歴'}
+                  </span>
+                  <span className="badge badge--info font-mono font-bold" style={{ fontSize: 9 }}>
+                    {allRevs.length}
+                  </span>
                 </div>
-              )}
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 5, maxHeight: 220, overflowY: 'auto' }}>
+                  {allRevs.map(r => {
+                    const isSelected = selectedRevId === r.revision_id
+                    return (
+                      <div
+                        key={r.revision_id}
+                        onClick={() => {
+                          setSelectedRevId(r.revision_id)
+                          setActiveRev(r)
+                        }}
+                        style={{
+                          display: 'flex', flexDirection: 'column', gap: 3, padding: '6px 8px', borderRadius: 6,
+                          cursor: 'pointer', transition: 'all 0.15s ease',
+                          border: isSelected ? '1.5px solid var(--accent)' : '1px solid var(--border-default)',
+                          background: isSelected ? 'var(--tint-teal-bg)' : 'var(--bg-surface)'
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                          <span style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: 11, color: isSelected ? 'var(--accent)' : 'var(--text-primary)' }}>
+                            {r.design_code || `Rev.${r.revision_number}`}
+                          </span>
+                          <span className={REV_STATUS_BADGE[r.status] || 'badge badge--neutral'} style={{ fontSize: 7, padding: '1px 4px' }}>
+                            {r.status}
+                          </span>
+                        </div>
+                        {r.created_at && (
+                          <span style={{ fontSize: 9, color: 'var(--text-muted)', fontFamily: 'monospace' }}>
+                            {r.created_at.slice(0, 10)}
+                          </span>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
             </div>
           </div>
 
@@ -1042,86 +1048,56 @@ export function TabOverview(props: TabOverviewProps) {
         </div>
       </div>
 
-      {/* ═══ BOTTOM 3-COLUMN ROW ═══ */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 14 }}>
+      {/* ═══ BOTTOM ROW: Machining & Modification History per Equipment + Customer/Orders Side Panel ═══ */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 14 }}>
 
-        {/* Recent Orders */}
-        <div className="card-flat" style={{ padding: 0, overflow: 'hidden', border: '1px solid var(--tint-purple-border)' }}>
+        {/* Left: Machining & Modification History per Equipment (設備ごとの加工・改造履歴) */}
+        <div className="card-flat" style={{ padding: 0, overflow: 'hidden', border: '1px solid var(--tint-orange-border)' }}>
           <div style={{
-            background: 'var(--tint-purple-bg)', borderBottom: '1px solid var(--tint-purple-border)',
+            background: 'var(--tint-orange-bg)', borderBottom: '1px solid var(--tint-orange-border)',
             padding: '8px 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between'
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <FileText size={14} style={{ color: 'var(--tint-purple-text)' }} />
-              <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--tint-purple-text)' }}>{tPC('recentOrdersCard')}</span>
+              <Hammer size={14} style={{ color: 'var(--tint-orange-text)' }} />
+              <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--tint-orange-text)' }}>
+                {tPC('machiningHistoryCard') || '設備ごとの加工・改造履歴'}
+              </span>
             </div>
-            <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>{totalOrderCount} total</span>
+            <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>{allJobs.length} total</span>
           </div>
+
           <div style={{ padding: 10 }}>
-            {recentOrders.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '12px 0', color: 'var(--text-muted)', fontSize: 11 }}>{tPC('noOrdersForProduct')}</div>
+            {allJobs.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '16px 0', color: 'var(--text-muted)', fontSize: 11 }}>
+                {tPC('noJobsForEquipment') || '設備に関連する加工・改造履歴はありません'}
+              </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                {recentOrders.slice(0, 4).map(ol => (
-                  <div key={ol.line_id} style={{
-                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                    padding: '5px 8px', borderRadius: 4, background: 'var(--bg-surface-2)', fontSize: 11
-                  }}>
-                    <Link
-                      href={ol.orders ? `/orders/${ol.orders.order_id}` : '#'}
-                      style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: 12, color: 'var(--accent)', textDecoration: 'none' }}
-                    >
-                      {ol.orders?.order_no || '—'}
-                    </Link>
-                    <span style={{ fontFamily: 'monospace', fontWeight: 600, color: 'var(--text-primary)' }}>
-                      {ol.quantity?.toLocaleString()} pcs
-                    </span>
-                    <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>
-                      {ol.orders?.order_date?.slice(0, 10) || '—'}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Design Timeline */}
-        <div className="card-flat" style={{ padding: 0, overflow: 'hidden', border: '1px solid var(--tint-blue-border)' }}>
-          <div style={{
-            background: 'var(--tint-blue-bg)', borderBottom: '1px solid var(--tint-blue-border)',
-            padding: '8px 12px', display: 'flex', alignItems: 'center', gap: 6
-          }}>
-            <Layers size={14} style={{ color: 'var(--tint-blue-text)' }} />
-            <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--tint-blue-text)' }}>{tPC('designHistory')}</span>
-          </div>
-          <div style={{ padding: 10 }}>
-            {allRevs.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '12px 0', color: 'var(--text-muted)', fontSize: 11 }}>{tCommon('noData')}</div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-                {allRevs.map(r => (
+                {allJobs.map(job => (
                   <div
-                    key={r.revision_id}
+                    key={job.job_id}
                     style={{
                       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                      padding: '5px 8px', borderRadius: 4,
-                      background: r.revision_id === activeRev?.revision_id ? 'color-mix(in srgb, var(--accent) 8%, transparent)' : 'var(--bg-surface-2)',
-                      border: r.revision_id === activeRev?.revision_id ? '1px solid var(--accent)' : '1px solid transparent',
-                      fontSize: 11
+                      padding: '8px 10px', borderRadius: 6, background: 'var(--bg-surface-2)',
+                      border: '1px solid var(--border-default)', fontSize: 11
                     }}
                   >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <Link href={`/engineering/designs/revisions/${r.revision_id}`} style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: 12, color: 'var(--accent)', textDecoration: 'none' }}>
-                        {r.design_code || `Rev.${r.revision_number}`}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <Link
+                        href={`/equipment/jobs/${job.job_id}`}
+                        style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: 12, color: 'var(--accent)', textDecoration: 'none' }}
+                      >
+                        {job.job_code}
                       </Link>
-                      <span className={REV_STATUS_BADGE[r.status] || 'badge badge--neutral'} style={{ fontSize: 8 }}>
-                        {r.status}
+                      <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{job.job_name || '—'}</span>
+                      <span className={STATUS_BADGE[job.job_status || ''] || 'badge badge--neutral'} style={{ fontSize: 8 }}>
+                        {job.job_status || 'NOT_STARTED'}
                       </span>
                     </div>
-                    <span style={{ fontSize: 10, color: 'var(--text-muted)', fontFamily: 'monospace' }}>
-                      {r.created_at?.slice(0, 10)}
-                    </span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 10, color: 'var(--text-muted)' }}>
+                      {job.mold_deadline && <span>納期: <strong style={{ color: 'var(--text-primary)' }}>{job.mold_deadline}</strong></span>}
+                      <span>{job.created_at?.slice(0, 10)}</span>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -1129,7 +1105,7 @@ export function TabOverview(props: TabOverviewProps) {
           </div>
         </div>
 
-        {/* Customer + Active Job + Alerts */}
+        {/* Right: Customer Info + Recent Orders + Alerts Side Panel */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
 
           {/* Customer Quick Card */}
@@ -1161,36 +1137,48 @@ export function TabOverview(props: TabOverviewProps) {
             </div>
           </div>
 
-          {/* Active Job Card */}
-          {activeJob && (
-            <div className="card-flat" style={{ padding: 0, overflow: 'hidden', border: '1px solid var(--tint-orange-border)' }}>
-              <div style={{
-                background: 'var(--tint-orange-bg)', borderBottom: '1px solid var(--tint-orange-border)',
-                padding: '8px 12px', display: 'flex', alignItems: 'center', gap: 6
-              }}>
-                <Hammer size={14} style={{ color: 'var(--tint-orange-text)' }} />
-                <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--tint-orange-text)' }}>{tPC('activeJobCard')}</span>
+          {/* Recent Orders Card */}
+          <div className="card-flat" style={{ padding: 0, overflow: 'hidden', border: '1px solid var(--tint-purple-border)' }}>
+            <div style={{
+              background: 'var(--tint-purple-bg)', borderBottom: '1px solid var(--tint-purple-border)',
+              padding: '8px 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <FileText size={14} style={{ color: 'var(--tint-purple-text)' }} />
+                <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--tint-purple-text)' }}>{tPC('recentOrdersCard')}</span>
               </div>
-              <div style={{ padding: '8px 12px' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <Link href={`/equipment/jobs/${activeJob.id}`} style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: 13, color: 'var(--accent)', textDecoration: 'none' }}>
-                      {activeJob.code}
-                    </Link>
-                    <span className={STATUS_BADGE[activeJob.status] || 'badge badge--neutral'} style={{ fontSize: 8 }}>
-                      {activeJob.status}
-                    </span>
-                  </div>
-                  {activeJob.name && <span style={{ fontSize: 11, color: 'var(--text-secondary)' }}>{activeJob.name}</span>}
-                  <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>
-                    {tPC('deadline')}: <span style={{ fontFamily: 'monospace', fontWeight: 600 }}>{activeJob.deadline}</span>
-                  </span>
-                </div>
-              </div>
+              <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>{totalOrderCount} total</span>
             </div>
-          )}
+            <div style={{ padding: 10 }}>
+              {recentOrders.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '12px 0', color: 'var(--text-muted)', fontSize: 11 }}>{tPC('noOrdersForProduct')}</div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  {recentOrders.slice(0, 4).map(ol => (
+                    <div key={ol.line_id} style={{
+                      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                      padding: '5px 8px', borderRadius: 4, background: 'var(--bg-surface-2)', fontSize: 11
+                    }}>
+                      <Link
+                        href={ol.orders ? `/orders/${ol.orders.order_id}` : '#'}
+                        style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: 12, color: 'var(--accent)', textDecoration: 'none' }}
+                      >
+                        {ol.orders?.order_no || '—'}
+                      </Link>
+                      <span style={{ fontFamily: 'monospace', fontWeight: 600, color: 'var(--text-primary)' }}>
+                        {ol.quantity?.toLocaleString()} pcs
+                      </span>
+                      <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>
+                        {ol.orders?.order_date?.slice(0, 10) || '—'}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
 
-          {/* Alerts */}
+          {/* System Alerts & Warnings */}
           {alerts.length > 0 && (
             <div className="card-flat" style={{ padding: 0, overflow: 'hidden', border: '1px solid var(--status-warning-bg)' }}>
               <div style={{
@@ -1210,6 +1198,7 @@ export function TabOverview(props: TabOverviewProps) {
               </div>
             </div>
           )}
+
         </div>
 
         {/* Equipment Quick Preview Modal */}

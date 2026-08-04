@@ -2834,6 +2834,8 @@
     "moldsGroupTitle": "金型 (Molds)",
     "cuttersGroupTitle": "抜型 (Cutting Dies)",
     "auxEquipGroupTitle": "プラグ・その他設備",
+    "machiningHistoryCard": "設備ごとの加工・改造履歴",
+    "revHistoryListTitle": "改訂履歴",
     "filterDrawerTitle": "高度なフィルター条件",
     "filterDrawerDesc": "製品・金型・抜型の複合検索条件を指定",
     "filterCustomer": "顧客・会社名",
