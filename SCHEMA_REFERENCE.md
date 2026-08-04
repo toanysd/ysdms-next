@@ -262,6 +262,7 @@ FK:  shared_plug_from_design_id UUID → design_revisions(revision_id)
      customer_tray_name TEXT        ← Tên khay từ khách hàng (CustomerTrayName)
      plastic_type_designed TEXT     ← Loại nhựa thiết kế (DesignForPlasticType)
      tray_info         TEXT          ← Thông tin khay cho chỉ thị (TrayInfoForMoldDesign)
+     change_summary    TEXT          ← Tóm tắt điểm thay đổi so với phiên bản trước (Added 2026-08-04)
      customer_equipment_no TEXT
      customer_drawing_no TEXT
      designer          TEXT
