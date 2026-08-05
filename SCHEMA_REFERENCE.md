@@ -557,11 +557,12 @@ FK:  work_log_id       UUID → work_logs(id)
 
 ---
 
-## 🔑 Bảng `equipment` — Thiết Bị Sản Xuất Thống Nhất (Phase 3)
+## 🔑 Bảng `equipment` — Thiết Bị Sản Xuất Thống Nhất (Single Source of Truth)
 
-> ⚠️ **Kiến trúc V3**: Bảng `equipment` quản lý TOÀN BỘ thiết bị sản xuất
-> (khuôn, dao cắt, đế làm mát, đế khí nén, khung, stacking) ngang hàng.
-> Sẽ dần thay thế `physical_molds` và `cutters` qua migration Phase 2.
+> ✅ **Kiến trúc V3 (Đã hoàn thành 2026-08-05)**: Bảng `equipment` quản lý TOÀN BỘ thiết bị sản xuất
+> (khuôn, dao cắt, đế làm mát, đế khí nén, khung, stacking, plug) ngang hàng.
+> Bảng `equipment` là nguồn dữ liệu sự thật duy nhất (Single Source of Truth).
+> Các bảng legacy `physical_molds` và `cutters` được giữ lại duy nhất cho backward compatibility.
 
 ```
 PK:  equipment_id          UUID

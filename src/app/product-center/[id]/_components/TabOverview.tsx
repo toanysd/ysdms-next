@@ -367,6 +367,39 @@ export function TabOverview(props: TabOverviewProps) {
             setMoldDetails(moldEquips as unknown as MoldDetail[])
           }
 
+          // N:N Equipment Assignments (Set members & shared equipment)
+          const primaryEquipIds = (equips || []).map((e: any) => e.equipment_id).filter(Boolean)
+          if (primaryEquipIds.length > 0) {
+            const { data: assignData } = await supabase
+              .from('equipment_assignments')
+              .select(`
+                primary_equipment_id,
+                related_equipment_id,
+                relationship_type,
+                related_equipment:equipment!equipment_assignments_related_equipment_id_fkey(
+                  equipment_id, equipment_code, display_name, equipment_type, sub_type, usage_status, device_status,
+                  design_revision_id, actual_length_mm, actual_width_mm, actual_height_mm,
+                  rack_layers(layer_code, racks(rack_code)),
+                  keeper_company:companies!equipment_keeper_company_id_fkey(company_code, company_name)
+                )
+              `)
+              .in('primary_equipment_id', primaryEquipIds)
+
+            if (assignData && assignData.length > 0) {
+              const assignedEquips = assignData.map((a: any) => a.related_equipment).filter(Boolean)
+              setEquipDetails(prev => {
+                const map = new Map<string, any>()
+                ;(prev || []).forEach(item => map.set(item.equipment_id, item))
+                assignedEquips.forEach((item: any) => {
+                  if (!map.has(item.equipment_id)) {
+                    map.set(item.equipment_id, item)
+                  }
+                })
+                return Array.from(map.values()) as unknown as EquipDetail[]
+              })
+            }
+          }
+
           // Extract Cutters directly from unified equipment table
           const directCutterEquips = (equips || []).filter((eq: any) =>
             ['CUTTER_SEPARATE', 'CUTTER_INLINE', 'CUTTER', '抜型'].includes(eq.equipment_type)
