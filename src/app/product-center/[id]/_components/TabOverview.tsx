@@ -605,10 +605,34 @@ export function TabOverview(props: TabOverviewProps) {
             </div>
             {/* Customer Quick Header */}
             <div style={{ padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: 3 }}>
-              <div style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600 }}>{tCust('customer')}</div>
-              <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--accent)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {customer?.company_name || '—'}
+              <div style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span>{tCust('customer')}</span>
+                {(customer?.company_id || companyId) && (
+                  <Link
+                    href={`/master/customers/${customer?.company_id || companyId}`}
+                    style={{ fontSize: 10, color: 'var(--accent)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 3, fontWeight: 600 }}
+                  >
+                    {tCommon('detail')} <ExternalLink size={10} />
+                  </Link>
+                )}
               </div>
+              {(customer?.company_id || companyId) ? (
+                <Link
+                  href={`/master/customers/${customer?.company_id || companyId}`}
+                  style={{
+                    fontSize: 13, fontWeight: 700, color: 'var(--accent)', textDecoration: 'none',
+                    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                    display: 'inline-flex', alignItems: 'center', gap: 4
+                  }}
+                  title={customer?.company_name || 'Customer Detail'}
+                >
+                  {customer?.company_name || '—'}
+                </Link>
+              ) : (
+                <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--accent)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {customer?.company_name || '—'}
+                </div>
+              )}
               <div style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: 'monospace' }}>
                 {customer?.company_code || '—'} {customer?.tel ? `· ${customer.tel}` : ''}
               </div>
