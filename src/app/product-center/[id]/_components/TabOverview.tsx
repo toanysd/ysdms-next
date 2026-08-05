@@ -277,7 +277,7 @@ export function TabOverview(props: TabOverviewProps) {
   const [previewItem, setPreviewItem] = useState<QuickPreviewItem | null>(null)
   const [selectedEquip, setSelectedEquip] = useState<{ type: 'mold' | 'cutter' | 'equip'; id: string; code: string } | null>(null)
   const [equipFilterMode, setEquipFilterMode] = useState<'revision' | 'all'>('revision')
-  const [equipViewMode, setEquipViewMode] = useState<'list' | 'grid'>('list')
+  const [equipViewMode, setEquipViewMode] = useState<'list' | 'grid'>('grid')
 
   // Active Job
   const [activeJob, setActiveJob] = useState<{ id: string; code: string; status: string; deadline: string; name: string } | null>(null)
@@ -572,8 +572,8 @@ export function TabOverview(props: TabOverviewProps) {
         </div>
       </div>
 
-                {/* ═══ MAIN 3-COLUMN LAYOUT: Left (270px) | Center (flex 1.25) | Right (flex 1) ═══ */}
-      <div style={{ display: 'grid', gridTemplateColumns: '270px minmax(0, 1.25fr) minmax(340px, 1fr)', gap: 14 }}>
+                {/* ═══ MAIN 3-COLUMN LAYOUT: Left (250px) | Center (flex 1.5) | Right (max 450px) ═══ */}
+      <div style={{ display: 'grid', gridTemplateColumns: '250px minmax(0, 1.5fr) minmax(320px, 450px)', gap: 12 }}>
 
         {/* 👈 COLUMN 1 (Left 270px): Product Overview -> Product Details */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -1222,9 +1222,9 @@ export function TabOverview(props: TabOverviewProps) {
                     ) : (
                       <div style={{
                         display: equipViewMode === 'grid' ? 'grid' : 'flex',
-                        gridTemplateColumns: equipViewMode === 'grid' ? 'repeat(auto-fill, minmax(150px, 1fr))' : undefined,
+                        gridTemplateColumns: equipViewMode === 'grid' ? 'repeat(3, 1fr)' : undefined,
                         flexDirection: equipViewMode === 'list' ? 'column' : undefined,
-                        gap: equipViewMode === 'grid' ? 8 : 4
+                        gap: equipViewMode === 'grid' ? 6 : 4
                       }}>
                         {/* Molds (金型) */}
                         {sortMolds.map(m => {
