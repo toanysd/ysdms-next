@@ -67,7 +67,7 @@ export async function getDashboardData(): Promise<RealDashboardData> {
       supabase.from('products').select('*', { count: 'exact', head: true }),
       supabase.from('design_revisions').select('*', { count: 'exact', head: true }),
       supabase.from('physical_molds').select('*', { count: 'exact', head: true }),
-      supabase.from('cutters').select('*', { count: 'exact', head: true }),
+      supabase.from('equipment').select('*', { count: 'exact', head: true }).in('equipment_type', ['CUTTER_SEPARATE', 'CUTTER_INLINE']),
       supabase.from('jobs').select('*', { count: 'exact', head: true }),
       supabase.from('work_logs').select('*', { count: 'exact', head: true }),
       supabase.from('companies').select('*', { count: 'exact', head: true }),
@@ -199,7 +199,7 @@ export async function getEquipmentDashboardData(filterMode: 'TODAY_WEEK' | 'IN_P
       supabase.from('jobs').select('*', { count: 'exact', head: true }).in('job_status', ['IN_PROGRESS', 'NEW']),
       supabase.from('jobs').select('*', { count: 'exact', head: true }).lt('deadline', todayStr).neq('job_status', 'COMPLETED'),
       supabase.from('jobs').select('*', { count: 'exact', head: true }).is('physical_mold_id', null),
-      supabase.from('cutters').select('*', { count: 'exact', head: true }),
+      supabase.from('equipment').select('*', { count: 'exact', head: true }).in('equipment_type', ['CUTTER_SEPARATE', 'CUTTER_INLINE']),
     ])
 
     // 2. Active Jobs List query depending on filterMode

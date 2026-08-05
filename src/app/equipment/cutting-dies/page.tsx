@@ -20,12 +20,12 @@ export default async function CuttersPage({
   const q = (params.q as string) || ''
   const PAGE_SIZE = 50
 
-  // 1. Fetch Cutters
+  // 1. Fetch Cutters from equipment table
   let query = supabase
-    .from('cutters')
+    .from('equipment')
     .select(`
       *,
-      companies!cutters_company_id_fkey (
+      companies!equipment_company_id_fkey (
         company_id,
         company_name,
         company_code
@@ -35,10 +35,11 @@ export default async function CuttersPage({
         design_code
       )
     `, { count: 'exact' })
+    .in('equipment_type', ['CUTTER_SEPARATE', 'CUTTER_INLINE'])
     .order('created_at', { ascending: false })
 
   if (q.trim()) {
-    query = query.or(`cutter_no.ilike.%${q}%,cutter_name.ilike.%${q}%`)
+    query = query.or(`equipment_code.ilike.%${q}%,display_name.ilike.%${q}%`)
   }
 
   // Pagination
@@ -50,6 +51,13 @@ export default async function CuttersPage({
 
   const cutters = (rawCutters || []).map((c: any) => ({
     ...c,
+    cutter_id: c.equipment_id,
+    cutter_no: c.equipment_code,
+    cutter_name: c.display_name,
+    cutter_type: c.sub_type,
+    cutter_length_mm: c.actual_length_mm ? Number(c.actual_length_mm) : null,
+    cutter_width_mm: c.actual_width_mm ? Number(c.actual_width_mm) : null,
+    cutter_height_mm: c.actual_height_mm ? Number(c.actual_height_mm) : null,
     companies: c.companies ? { company_short_name: c.companies.company_code } : null,
     mold_designs: c.design_revisions ? { design_code: c.design_revisions.design_code } : null
   }))

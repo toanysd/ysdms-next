@@ -51,12 +51,13 @@ export async function fetchAllSearchableItems(): Promise<SearchableItem[]> {
       )
     `)
 
-  // 2. Fetch Cutters
+  // 2. Fetch Cutters from equipment table
   const { data: cutters } = await supabase
-    .from('cutters')
+    .from('equipment')
     .select(`
-      cutter_id, cutter_no, cutter_name, cutter_type, cavity_count, pitch_mm, usage_status, notes, cutter_length_mm, cutter_width_mm
+      equipment_id, equipment_code, display_name, sub_type, piece_count, usage_status, notes, actual_length_mm, actual_width_mm
     `)
+    .in('equipment_type', ['CUTTER_SEPARATE', 'CUTTER_INLINE'])
 
   const items: SearchableItem[] = []
 
@@ -95,24 +96,23 @@ export async function fetchAllSearchableItems(): Promise<SearchableItem[]> {
 
   if (cutters) {
     cutters.forEach((c: any) => {
-      const dims = [c.cutter_length_mm, c.cutter_width_mm].filter(Boolean).join('x')
+      const dims = [c.actual_length_mm, c.actual_width_mm].filter(Boolean).join('x')
       
       const searchableFields = [
-        c.cutter_no, c.cutter_name, c.cutter_type, c.usage_status, c.notes
+        c.equipment_code, c.display_name, c.sub_type, c.usage_status, c.notes
       ].filter(Boolean).join(' ').toLowerCase()
 
       items.push({
-        id: c.cutter_id,
+        id: c.equipment_id,
         itemType: 'cutter',
-        code: c.cutter_no,
-        name: c.cutter_name || '',
-        displayCode: c.cutter_no,
-        displayName: c.cutter_name || '',
+        code: c.equipment_code,
+        name: c.display_name || '',
+        displayCode: c.equipment_code,
+        displayName: c.display_name || '',
         displayDimensions: dims ? `${dims} mm` : '',
         displayLocation: '',
-        cutterType: c.cutter_type || undefined,
-        bladeCount: c.cavity_count || undefined,
-        pitch: c.pitch_mm || undefined,
+        cutterType: c.sub_type || undefined,
+        bladeCount: c.piece_count ? String(c.piece_count) : undefined,
         usageStatus: c.usage_status || undefined,
         searchableText: searchableFields
       })

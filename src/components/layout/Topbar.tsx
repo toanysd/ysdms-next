@@ -141,12 +141,13 @@ export default function Topbar() {
         // 3. Cutters search (Scope: all or cutter)
         if ((scope === 'all' || scope === 'cutter') && items.length < 8) {
           const { data: cutterData } = await supabase
-            .from('cutters')
+            .from('equipment')
             .select(`
-              cutter_id, cutter_no, cutter_name, usage_status, design_revision_id,
+              equipment_id, equipment_code, display_name, usage_status, design_revision_id,
               design_revisions(product_id, products(product_code))
             `)
-            .or(`cutter_no.ilike.%${clean}%,cutter_no.ilike.${wildcard},cutter_name.ilike.%${clean}%,cutter_name.ilike.${wildcard}`)
+            .in('equipment_type', ['CUTTER_SEPARATE', 'CUTTER_INLINE'])
+            .or(`equipment_code.ilike.%${clean}%,equipment_code.ilike.${wildcard},display_name.ilike.%${clean}%,display_name.ilike.${wildcard}`)
             .limit(4)
 
           if (cutterData) {
@@ -158,7 +159,7 @@ export default function Topbar() {
                 const { data: juncs } = await supabase
                   .from('mold_design_cutters')
                   .select('mold_design_id, design_revisions(product_id, products(product_code))')
-                  .eq('cutter_id', c.cutter_id)
+                  .eq('cutter_id', c.equipment_id)
                   .limit(1)
 
                 if (juncs && juncs.length > 0) {
@@ -168,10 +169,10 @@ export default function Topbar() {
               }
 
               items.push({
-                id: c.cutter_id,
+                id: c.equipment_id,
                 type: 'cutter',
-                code: c.cutter_no || c.cutter_id,
-                name: targetProdCode ? `SP: ${targetProdCode} (${c.cutter_name || ''})` : (c.cutter_name || '—'),
+                code: c.equipment_code || c.equipment_id,
+                name: targetProdCode ? `SP: ${targetProdCode} (${c.display_name || ''})` : (c.display_name || '—'),
                 sub: c.usage_status || undefined,
                 url: targetProdId ? `/product-center/${targetProdId}` : `/equipment/cutting-dies`,
               })

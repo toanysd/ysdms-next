@@ -1,4 +1,4 @@
-﻿'use server'
+'use server'
 
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
@@ -23,15 +23,13 @@ export async function upsertCutter(payload: {
     const supabase = await createClient()
 
     const data = {
-      cutter_no: payload.cutter_no,
-      cutter_name: payload.cutter_name || payload.cutter_no,
-      cutter_type: payload.cutter_type,
-      cavity_count: payload.cavity_count || null,
-      pitch_mm: payload.pitch_mm || null,
-      cutter_length_mm: payload.cutter_length_mm || null,
-      cutter_width_mm: payload.cutter_width_mm || null,
-      cutter_height_mm: payload.cutter_height_mm || null,
-      base_type: payload.base_type || null,
+      equipment_code: payload.cutter_no,
+      display_name: payload.cutter_name || payload.cutter_no,
+      equipment_type: 'CUTTER_SEPARATE',
+      sub_type: payload.cutter_type,
+      actual_length_mm: payload.cutter_length_mm ? String(payload.cutter_length_mm) : null,
+      actual_width_mm: payload.cutter_width_mm ? String(payload.cutter_width_mm) : null,
+      actual_height_mm: payload.cutter_height_mm ? String(payload.cutter_height_mm) : null,
       company_id: payload.company_id || null,
       design_revision_id: payload.design_revision_id || null,
       usage_status: payload.usage_status,
@@ -40,14 +38,14 @@ export async function upsertCutter(payload: {
 
     if (payload.cutter_id) {
       const { error } = await supabase
-        .from('cutters')
+        .from('equipment')
         .update(data)
-        .eq('cutter_id', payload.cutter_id)
+        .eq('equipment_id', payload.cutter_id)
       
       if (error) throw new Error(error.message)
     } else {
       const { error } = await supabase
-        .from('cutters')
+        .from('equipment')
         .insert(data)
 
       if (error) throw new Error(error.message)
@@ -64,7 +62,7 @@ export async function upsertCutter(payload: {
 export async function deleteCutter(cutterId: string) {
   try {
     const supabase = await createClient()
-    const { error } = await supabase.from('cutters').delete().eq('cutter_id', cutterId)
+    const { error } = await supabase.from('equipment').delete().eq('equipment_id', cutterId)
     if (error) throw new Error(error.message)
 
     revalidatePath('/equipment/cutting-dies')

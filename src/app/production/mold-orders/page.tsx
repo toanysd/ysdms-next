@@ -122,7 +122,7 @@ export default function MoldWorkOrdersPage() {
       // 2. Fetch lookup data
       const { data: machData } = await (supabase as any).from('machines').select('*');
       const { data: moldData } = await (supabase as any).from('physical_molds').select('*');
-      const { data: cutData } = await (supabase as any).from('cutters').select('*');
+      const { data: cutData } = await (supabase as any).from('equipment').select('*').in('equipment_type', ['CUTTER_SEPARATE', 'CUTTER_INLINE']);
       const { data: empData } = await (supabase as any).from('employees').select('*').order('employee_code');
 
       setInstructions(poData || []);

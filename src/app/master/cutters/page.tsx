@@ -18,10 +18,19 @@ export default async function CutterMasterPage() {
   const tCommon = await getTranslations('Common')
   const supabase = await createClient()
   
-  const { data: cutters, error } = await supabase
-    .from('cutters')
-    .select('id:cutter_id, code:cutter_no, type:cutter_type, width_mm:cutter_width_mm, is_active:cutter_presence')
-    .order('cutter_no', { ascending: true })
+  const { data: rawCutters, error } = await supabase
+    .from('equipment')
+    .select('id:equipment_id, code:equipment_code, type:sub_type, width_mm:actual_width_mm, device_status')
+    .in('equipment_type', ['CUTTER_SEPARATE', 'CUTTER_INLINE'])
+    .order('equipment_code', { ascending: true })
+
+  const cutters = (rawCutters || []).map((c: any) => ({
+    id: c.id,
+    code: c.code,
+    type: c.type,
+    width_mm: c.width_mm ? Number(c.width_mm) : null,
+    is_active: c.device_status !== 'DISPOSED'
+  }))
 
   return (
     <div className="flex flex-col h-full gap-3">

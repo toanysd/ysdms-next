@@ -343,44 +343,25 @@ export function TabOverview(props: TabOverviewProps) {
 
           if (molds) setMoldDetails(molds as unknown as MoldDetail[])
 
-          // Equipment (Plugs, Cutters, etc.)
+          // Equipment (Plugs, Cutters, Molds, Water Bases, etc.) - Unified Equipment Source
           const { data: equips } = await supabase
             .from('equipment')
             .select(`
-              equipment_id, equipment_code, display_name, equipment_type, usage_status, device_status,
-              design_revision_id,
+              equipment_id, equipment_code, display_name, equipment_type, sub_type, usage_status, device_status,
+              design_revision_id, actual_length_mm, actual_width_mm, actual_height_mm,
               rack_layers(layer_code, racks(rack_code)),
               keeper_company:companies!equipment_keeper_company_id_fkey(company_code, company_name)
             `)
             .in('design_revision_id', revIds)
 
-          // Cutters (抜型) - Direct & Junction Shared
-          const { data: directCutters } = await supabase
-            .from('cutters')
-            .select(`
-              cutter_id, cutter_no, cutter_name, cutter_type, usage_status, cutter_presence,
-              design_revision_id, cutter_length_mm, cutter_width_mm,
-              rack_layers(layer_code, racks(rack_code)),
-              keeper_company:companies!cutters_keeper_company_id_fkey(company_code, company_name)
-            `)
-            .in('design_revision_id', revIds)
+          if (equips) setEquipDetails(equips as unknown as EquipDetail[])
 
-          // Deduplicate equipment table entries that duplicate items in cutters table
-          const cutterNoSet = new Set((directCutters || []).map(c => (c.cutter_no || '').trim().toUpperCase()))
-          const deduplicatedEquips = (equips || []).filter((eq: any) => {
-            const isCutterType = (eq.equipment_type || '').toUpperCase().includes('CUTTER') || eq.equipment_type?.includes('抜型')
-            if (isCutterType) {
-              const code = (eq.equipment_code || '').trim().toUpperCase()
-              const codeClean = code.replace(/^CT-/, '')
-              if (cutterNoSet.has(code) || cutterNoSet.has(codeClean)) {
-                return false // Filter out duplicate cutter migration entry
-              }
-            }
-            return true
-          })
+          // Extract Cutters directly from unified equipment table
+          const directCutterEquips = (equips || []).filter((eq: any) =>
+            ['CUTTER_SEPARATE', 'CUTTER_INLINE', 'CUTTER', '抜型'].includes(eq.equipment_type)
+          )
 
-          if (equips) setEquipDetails(deduplicatedEquips as unknown as EquipDetail[])
-
+          // Check for shared cutters via mold_design_cutters junction table
           const { data: juncs } = await supabase
             .from('mold_design_cutters')
             .select('mold_design_id, cutter_id')
@@ -391,20 +372,30 @@ export function TabOverview(props: TabOverviewProps) {
             const juncCutterIds = juncs.map(j => j.cutter_id).filter(Boolean)
             if (juncCutterIds.length > 0) {
               const { data: sCutters } = await supabase
-                .from('cutters')
+                .from('equipment')
                 .select(`
-                  cutter_id, cutter_no, cutter_name, cutter_type, usage_status, cutter_presence,
-                  design_revision_id, cutter_length_mm, cutter_width_mm,
+                  equipment_id, equipment_code, display_name, equipment_type, sub_type, usage_status, device_status,
+                  design_revision_id, actual_length_mm, actual_width_mm, actual_height_mm,
                   rack_layers(layer_code, racks(rack_code)),
-                  keeper_company:companies!cutters_keeper_company_id_fkey(company_code, company_name)
+                  keeper_company:companies!equipment_keeper_company_id_fkey(company_code, company_name)
                 `)
-                .in('cutter_id', juncCutterIds)
+                .in('equipment_id', juncCutterIds)
 
               if (sCutters) {
                 sharedCutters = sCutters.map(sc => {
-                  const matchJunc = juncs.find(j => j.cutter_id === sc.cutter_id)
+                  const matchJunc = juncs.find(j => j.cutter_id === sc.equipment_id)
                   return {
-                    ...sc,
+                    cutter_id: sc.equipment_id,
+                    cutter_no: sc.equipment_code,
+                    cutter_name: sc.display_name,
+                    cutter_type: sc.sub_type,
+                    usage_status: sc.usage_status,
+                    cutter_presence: sc.device_status !== 'DISPOSED',
+                    design_revision_id: sc.design_revision_id,
+                    cutter_length_mm: sc.actual_length_mm ? Number(sc.actual_length_mm) : null,
+                    cutter_width_mm: sc.actual_width_mm ? Number(sc.actual_width_mm) : null,
+                    rack_layers: sc.rack_layers,
+                    keeper_company: sc.keeper_company,
                     is_shared: sc.design_revision_id ? !revIds.includes(sc.design_revision_id) : true,
                     linked_rev_id: matchJunc?.mold_design_id || sc.design_revision_id
                   }
@@ -413,8 +404,18 @@ export function TabOverview(props: TabOverviewProps) {
             }
           }
 
-          const directMapped = (directCutters || []).map(dc => ({
-            ...dc,
+          const directMapped = directCutterEquips.map((dc: any) => ({
+            cutter_id: dc.equipment_id,
+            cutter_no: dc.equipment_code,
+            cutter_name: dc.display_name,
+            cutter_type: dc.sub_type,
+            usage_status: dc.usage_status,
+            cutter_presence: dc.device_status !== 'DISPOSED',
+            design_revision_id: dc.design_revision_id,
+            cutter_length_mm: dc.actual_length_mm ? Number(dc.actual_length_mm) : null,
+            cutter_width_mm: dc.actual_width_mm ? Number(dc.actual_width_mm) : null,
+            rack_layers: dc.rack_layers,
+            keeper_company: dc.keeper_company,
             is_shared: false,
             linked_rev_id: dc.design_revision_id
           }))

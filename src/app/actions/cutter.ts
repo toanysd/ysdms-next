@@ -12,15 +12,16 @@ export async function addCutterAction(formData: FormData) {
   const width_mm = parseFloat(formData.get('width_mm') as string)
 
   const { data, error } = await supabase
-    .from('cutters')
+    .from('equipment')
     .insert([
       {
-        cutter_no: code.trim(),
-        cutter_name: code.trim(),
-        cutter_type: type ? type.trim() : null,
-        cutter_width_mm: isNaN(width_mm) ? null : width_mm,
-        cutter_presence: true,
-        usage_status: 'ACTIVE'
+        equipment_code: code.trim().startsWith('CT-') ? code.trim() : `CT-${code.trim()}`,
+        display_name: code.trim(),
+        equipment_type: 'CUTTER_SEPARATE',
+        sub_type: type ? type.trim() : null,
+        actual_width_mm: isNaN(width_mm) ? null : String(width_mm),
+        device_status: 'NORMAL',
+        usage_status: 'STORAGE'
       }
     ])
 
