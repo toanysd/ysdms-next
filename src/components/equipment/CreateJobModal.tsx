@@ -90,12 +90,12 @@ export function CreateJobModal({
       } else if (initialPhysicalMoldId) {
         // If we only have physical mold id, find its master to get designs
         const { data: moldData } = await supabase
-          .from('physical_molds')
-          .select('mold_revisions(product_id)')
-          .eq('physical_mold_id', initialPhysicalMoldId)
+          .from('equipment')
+          .select('design_revision_id, design_revisions(product_id)')
+          .eq('equipment_id', initialPhysicalMoldId)
           .single()
         
-        const mId = moldData?.mold_revisions?.product_id
+        const mId = (moldData?.design_revisions as any)?.product_id
         if (mId) {
           const { data: designs } = await supabase
             .from('design_revisions')
@@ -120,7 +120,7 @@ export function CreateJobModal({
         }
       }
 
-      // 3. Load Physical Molds
+      // 3. Load Physical Molds from equipment table
       // Find the currently active design code to filter physical molds
       let activeDesignCode = design?.design_code
       if (!activeDesignCode && (selectedDesignId || initialDesignRevisionId)) {
@@ -129,40 +129,87 @@ export function CreateJobModal({
       }
 
       if (activeDesignCode) {
-        // Find physical molds that start with the design code (e.g. IRI001-R2-01)
+        // Find equipment molds that start with the design code (e.g. IRI001-R2-01)
         const { data: mData } = await supabase
-            .from('physical_molds')
-            .select('physical_mold_id, display_name, system_code, mold_revisions(design_revision_id, revision_code)')
+            .from('equipment')
+            .select('equipment_id, display_name, equipment_code, design_revision_id, design_revisions(design_code)')
+            .in('equipment_type', ['MOLD', 'WATER_BASE', 'PRESSURE_BASE'])
             .neq('device_status', 'DISPOSED')
-            .not('system_code', 'ilike', '%POCKET%')
-            .ilike('system_code', `${activeDesignCode}%`)
-        if (mData) setPhysicalMolds(mData as unknown as PhysicalMold[])
+            .not('equipment_code', 'ilike', '%POCKET%')
+            .ilike('equipment_code', `${activeDesignCode}%`)
+        if (mData) {
+          const mapped = mData.map((e: any) => ({
+            physical_mold_id: e.equipment_id,
+            display_name: e.display_name,
+            system_code: e.equipment_code,
+            mold_revisions: e.design_revisions ? {
+              design_revision_id: e.design_revision_id,
+              revision_code: e.design_revisions.design_code
+            } : null
+          }))
+          setPhysicalMolds(mapped as unknown as PhysicalMold[])
+        }
       } else if (productId) {
         // Fallback for product ID if design is not provided
         const { data: mData } = await supabase
-            .from('physical_molds')
-            .select('physical_mold_id, display_name, system_code, mold_revisions(design_revision_id, revision_code)')
+            .from('equipment')
+            .select('equipment_id, display_name, equipment_code, design_revision_id, design_revisions(design_code)')
+            .in('equipment_type', ['MOLD', 'WATER_BASE', 'PRESSURE_BASE'])
             .neq('device_status', 'DISPOSED')
-            .not('system_code', 'ilike', '%POCKET%')
-            .ilike('system_code', `${productCode || ''}%`)
-        if (mData) setPhysicalMolds(mData as unknown as PhysicalMold[])
+            .not('equipment_code', 'ilike', '%POCKET%')
+            .ilike('equipment_code', `${productCode || ''}%`)
+        if (mData) {
+          const mapped = mData.map((e: any) => ({
+            physical_mold_id: e.equipment_id,
+            display_name: e.display_name,
+            system_code: e.equipment_code,
+            mold_revisions: e.design_revisions ? {
+              design_revision_id: e.design_revision_id,
+              revision_code: e.design_revisions.design_code
+            } : null
+          }))
+          setPhysicalMolds(mapped as unknown as PhysicalMold[])
+        }
       } else if (initialPhysicalMoldId) {
          // Just fetch the one mold
          const { data: mData } = await supabase
-            .from('physical_molds')
-            .select('physical_mold_id, display_name, system_code, mold_revisions(design_revision_id, revision_code)')
-            .eq('physical_mold_id', initialPhysicalMoldId)
-         if (mData) setPhysicalMolds(mData as unknown as PhysicalMold[])
+            .from('equipment')
+            .select('equipment_id, display_name, equipment_code, design_revision_id, design_revisions(design_code)')
+            .eq('equipment_id', initialPhysicalMoldId)
+         if (mData) {
+           const mapped = mData.map((e: any) => ({
+             physical_mold_id: e.equipment_id,
+             display_name: e.display_name,
+             system_code: e.equipment_code,
+             mold_revisions: e.design_revisions ? {
+               design_revision_id: e.design_revision_id,
+               revision_code: e.design_revisions.design_code
+             } : null
+           }))
+           setPhysicalMolds(mapped as unknown as PhysicalMold[])
+         }
       } else {
          // Global case - fetch recent
          const { data: mData } = await supabase
-            .from('physical_molds')
-            .select('physical_mold_id, display_name, system_code, mold_revisions(design_revision_id, revision_code)')
+            .from('equipment')
+            .select('equipment_id, display_name, equipment_code, design_revision_id, design_revisions(design_code)')
+            .in('equipment_type', ['MOLD', 'WATER_BASE', 'PRESSURE_BASE'])
             .neq('device_status', 'DISPOSED')
-            .not('system_code', 'ilike', '%POCKET%')
+            .not('equipment_code', 'ilike', '%POCKET%')
             .order('created_at', { ascending: false })
             .limit(200)
-         if (mData) setPhysicalMolds(mData as unknown as PhysicalMold[])
+         if (mData) {
+           const mapped = mData.map((e: any) => ({
+             physical_mold_id: e.equipment_id,
+             display_name: e.display_name,
+             system_code: e.equipment_code,
+             mold_revisions: e.design_revisions ? {
+               design_revision_id: e.design_revision_id,
+               revision_code: e.design_revisions.design_code
+             } : null
+           }))
+           setPhysicalMolds(mapped as unknown as PhysicalMold[])
+         }
       }
 
     } catch (e: any) {

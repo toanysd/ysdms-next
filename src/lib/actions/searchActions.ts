@@ -30,26 +30,24 @@ export interface SearchableItem {
 export async function fetchAllSearchableItems(): Promise<SearchableItem[]> {
   const supabase = await createClient()
 
-  // 1. Fetch Molds
+  // 1. Fetch Molds from equipment table
   const { data: molds } = await supabase
-    .from('physical_molds')
+    .from('equipment')
     .select(`
-      physical_mold_id,
-      system_code,
+      equipment_id,
+      equipment_code,
       display_name,
       device_status,
       keeper_company_id,
-      companies ( company_name ),
-      mold_revisions (
-        revision_name,
-        design_revisions (
-          cavity_count, design_length, design_width, design_height, plastic_type_designed, tray_info
-        ),
+      companies!equipment_keeper_company_id_fkey ( company_name ),
+      design_revisions (
+        cavity_count, design_length, design_width, design_height, plastic_type_designed, tray_info,
         products (
           product_id, product_code, product_name_internal
         )
       )
     `)
+    .in('equipment_type', ['MOLD', 'WATER_BASE', 'PRESSURE_BASE'])
 
   // 2. Fetch Cutters from equipment table
   const { data: cutters } = await supabase
@@ -63,10 +61,9 @@ export async function fetchAllSearchableItems(): Promise<SearchableItem[]> {
 
   if (molds) {
     molds.forEach((m: any) => {
-      const rev = m.mold_revisions
-      const base = rev?.products
-      const design = rev?.design_revisions
-      const code = m.system_code || base?.product_code || 'UNKNOWN'
+      const design = m.design_revisions
+      const base = design?.products
+      const code = m.equipment_code || base?.product_code || 'UNKNOWN'
       const name = m.display_name || base?.product_name_internal || ''
       const dims = [design?.design_length, design?.design_width, design?.design_height].filter(Boolean).join('x')
       const keeperName = m.companies?.company_name || '—'
@@ -77,7 +74,7 @@ export async function fetchAllSearchableItems(): Promise<SearchableItem[]> {
       ].filter(Boolean).join(' ').toLowerCase()
 
       items.push({
-        id: m.physical_mold_id,
+        id: m.equipment_id,
         itemType: 'mold',
         code: code,
         name: name,

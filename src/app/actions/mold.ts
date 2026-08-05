@@ -274,29 +274,30 @@ export async function upsertUnifiedMold(payload: UnifiedMoldPayload): Promise<{ 
       revisionId = data.revision_id
     }
 
-    // 3. Upsert physical
+    // 3. Upsert physical equipment
     if (payload.physical_code || payload.existing_physical_id) {
-      const physicalData: any = {
-        mold_revision_id: revisionId,
-        system_code: payload.physical_code || payload.code,
+      const equipmentData: any = {
+        equipment_code: payload.physical_code || payload.code,
         display_name: payload.physical_code || payload.code,
+        equipment_type: 'MOLD',
+        design_revision_id: revisionId,
         cav_type_id: payload.item_type_id || null,
-        device_status: payload.status || 'ACTIVE',
+        device_status: payload.status || 'NORMAL',
         keeper_company_id: payload.keeper_company || null,
         notes: payload.physical_notes || null,
       }
 
       if (payload.rack_layer_id) {
-        physicalData.current_rack_layer_id = payload.rack_layer_id
+        equipmentData.current_rack_layer_id = payload.rack_layer_id
       }
 
       if (payload.existing_physical_id) {
         // @ts-ignore
-        const { error } = await supabase.from('physical_molds').update(physicalData).eq('physical_mold_id', payload.existing_physical_id)
+        const { error } = await supabase.from('equipment').update(equipmentData).eq('equipment_id', payload.existing_physical_id)
         if (error) throw new Error(error.message)
       } else {
         // @ts-ignore
-        const { error } = await supabase.from('physical_molds').insert(physicalData)
+        const { error } = await supabase.from('equipment').insert(equipmentData)
         if (error) throw new Error(error.message)
       }
     }
@@ -313,17 +314,17 @@ export async function fetchMoldForEdit(physicalId: string) {
     const supabase = await createClient()
 
     const { data, error } = await supabase
-      .from('physical_molds')
+      .from('equipment')
       .select(`
         *,
-        mold_revisions (
+        design_revisions (
           *,
           products (*)
         ),
         cav_types (cav_type_id, cav_name),
         rack_layers (id, code, label, rack_id)
       `)
-      .eq('physical_mold_id', physicalId)
+      .eq('equipment_id', physicalId)
       .single()
 
     if (error) throw new Error(error.message)

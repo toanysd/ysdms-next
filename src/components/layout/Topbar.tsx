@@ -112,27 +112,28 @@ export default function Topbar() {
         // 2. Molds search (Scope: all or mold)
         if ((scope === 'all' || scope === 'mold') && items.length < 8) {
           const { data: moldData } = await supabase
-            .from('physical_molds')
+            .from('equipment')
             .select(`
-              physical_mold_id, system_code, display_name, usage_status, mold_revision_id,
-              mold_revisions(design_revision_id, design_revisions(product_id, products(product_code)))
+              equipment_id, equipment_code, display_name, usage_status, design_revision_id,
+              design_revisions(product_id, products(product_code))
             `)
-            .or(`system_code.ilike.%${clean}%,system_code.ilike.${wildcard},display_name.ilike.%${clean}%,display_name.ilike.${wildcard}`)
+            .in('equipment_type', ['MOLD', 'WATER_BASE', 'PRESSURE_BASE'])
+            .or(`equipment_code.ilike.%${clean}%,equipment_code.ilike.${wildcard},display_name.ilike.%${clean}%,display_name.ilike.${wildcard}`)
             .limit(4)
 
           if (moldData) {
             moldData.forEach((m: any) => {
-              const targetProductId = m.mold_revisions?.design_revisions?.product_id
-              const targetProductCode = m.mold_revisions?.design_revisions?.products?.product_code
-              const moldCode = m.system_code || m.display_name || '—'
+              const targetProductId = m.design_revisions?.product_id
+              const targetProductCode = m.design_revisions?.products?.product_code
+              const moldCode = m.equipment_code || m.display_name || '—'
 
               items.push({
-                id: m.physical_mold_id,
+                id: m.equipment_id,
                 type: 'mold',
                 code: moldCode,
                 name: targetProductCode ? `SP: ${targetProductCode} (${m.display_name || moldCode})` : moldCode,
                 sub: m.usage_status || undefined,
-                url: targetProductId ? `/product-center/${targetProductId}` : `/equipment/molds/${m.physical_mold_id}`,
+                url: targetProductId ? `/product-center/${targetProductId}` : `/equipment/molds/${m.equipment_id}`,
               })
             })
           }

@@ -151,81 +151,54 @@ export default function MoldDetailPage() {
     setError(null)
 
     const { data, error: err } = await supabase
-      .from('physical_molds')
+      .from('equipment')
       .select(`
         *,
-        mold_revisions(
-          revision_code,
-          revision_name,
-          design_revision_id,
+        design_revisions(
+          revision_id,
+          design_code,
           product_id,
-          products!mold_revisions_product_id_fkey(
+          products(
             product_id,
             product_code,
             product_name,
             product_name_internal,
             companies:companies!products_company_id_fkey(company_id, company_name, company_code)
           ),
-          design_revisions(
-            revision_id, design_code, design_length, design_width, design_height, design_depth,
-            corner_r, chamfer_c, draft_angle, cutline_length, cutline_width, cavity_count,
-            plastic_master(plastic_code, thickness_mm, color_name_normalized)
-          )
+          corner_r, chamfer_c, draft_angle, cutline_length, cutline_width, cavity_count,
+          plastic_master(plastic_code, thickness_mm, color_name_normalized)
         ),
         rack_layers!current_rack_layer_id(
           layer_code,
           layer_number,
           racks(rack_code, rack_name, location_in_factory)
         ),
-        keeper_company:companies!keeper_company_id(
+        keeper_company:companies!equipment_keeper_company_id_fkey(
           company_name,
           company_code
         ),
         jobs(job_id, job_code, job_name, job_status)
       `)
-      .eq('physical_mold_id', moldId)
+      .eq('equipment_id', moldId)
       .single()
 
     if (err) {
       setError(err.message)
     } else {
-      let finalData = data as any
-      // If orphaned (no mold_revisions), try to find the design revision by system_code prefix
-      if (!finalData.mold_revisions && finalData.system_code) {
-        // e.g. 'IRI001-R2-01' -> 'IRI001-R2'
-        const parts = finalData.system_code.split('-')
-        let possibleDesignCode = ''
-        if (parts.length >= 3) {
-          possibleDesignCode = parts.slice(0, -1).join('-') // 'IRI001-R2'
-        } else if (parts.length === 2) {
-          possibleDesignCode = finalData.system_code // fallback
-        } else {
-          possibleDesignCode = finalData.system_code.replace(/(-?\d+)$/, '') // fallback remove trailing numbers
-        }
-
-        if (possibleDesignCode) {
-          const { data: dData } = await supabase
-            .from('design_revisions')
-            .select(`
-              revision_id, design_code, product_id,
-              products!design_revisions_product_id_fkey(
-                product_id, product_code, product_name, product_name_internal,
-                companies:companies!products_company_id_fkey(company_id, company_name, company_code)
-              )
-            `)
-            .eq('design_code', possibleDesignCode)
-            .single()
-
-          if (dData) {
-            finalData.mold_revisions = {
-              revision_code: dData.design_code,
-              revision_name: dData.design_code,
-              design_revision_id: dData.revision_id,
-              product_id: dData.product_id,
-              products: dData.products
-            }
-          }
-        }
+      let finalData = {
+        ...data,
+        physical_mold_id: data.equipment_id,
+        system_code: data.equipment_code,
+        display_name: data.display_name,
+        mold_revision_id: data.design_revision_id,
+        mold_revisions: data.design_revisions ? {
+          revision_code: data.design_revisions.design_code,
+          revision_name: data.design_revisions.design_code,
+          design_revision_id: data.design_revisions.revision_id,
+          product_id: data.design_revisions.product_id,
+          products: data.design_revisions.products,
+          design_revisions: data.design_revisions
+        } : null
       }
       setMold(finalData as unknown as MoldDetailData)
       setFormData(finalData as unknown as MoldDetailData)
@@ -239,7 +212,7 @@ export default function MoldDetailPage() {
     if (!mold) return
     
     const fieldsToUpdate = {
-      system_code: formData.system_code,
+      equipment_code: formData.system_code,
       display_name: formData.display_name,
       device_status: formData.device_status,
       usage_status: formData.usage_status,
@@ -251,14 +224,12 @@ export default function MoldDetailPage() {
       mold_type: formData.mold_type,
       piece_count: formData.piece_count ? Number(formData.piece_count) : null,
       notes: formData.notes,
-      photo_url: formData.photo_url,
-      last_inventory_date: formData.last_inventory_date,
     }
 
     const { error: updateErr } = await supabase
-      .from('physical_molds')
+      .from('equipment')
       .update(fieldsToUpdate)
-      .eq('physical_mold_id', mold.physical_mold_id)
+      .eq('equipment_id', mold.physical_mold_id)
 
     if (!updateErr) {
       setIsEditing(false)

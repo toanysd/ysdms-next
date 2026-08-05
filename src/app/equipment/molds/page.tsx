@@ -144,16 +144,14 @@ function MoldsPageContent() {
     const masterFilter = urlSearchParams.get('master') || ''
     const revisionFilter = urlSearchParams.get('revision') || ''
     
-    // We completely remove !inner because we want to see orphaned molds.
-    // We will filter by system_code pattern instead.
     let query = supabase
-      .from('physical_molds')
+      .from('equipment')
       .select(`
         *,
-        mold_revisions(
+        design_revisions(
           product_id,
-          revision_code,
-          products!mold_revisions_product_id_fkey(
+          design_code,
+          products(
             product_code,
             product_name,
             product_name_internal,
@@ -165,22 +163,20 @@ function MoldsPageContent() {
           racks(rack_code)
         )
       `, { count: 'exact' })
-      .order(sortCol, { ascending: sortDir === 'asc' })
+      .in('equipment_type', ['MOLD', 'WATER_BASE', 'PRESSURE_BASE'])
+      .order(sortCol === 'system_code' ? 'equipment_code' : sortCol, { ascending: sortDir === 'asc' })
 
     if (filterStatus) query = query.eq('device_status', filterStatus)
     
-    // Instead of relying on mold_revisions (which is deprecated and often empty for new designs),
-    // we filter physical molds whose system_code starts with the master/revision code.
     if (revisionFilter) {
-      query = query.ilike('system_code', `${revisionFilter}%`)
+      query = query.ilike('equipment_code', `${revisionFilter}%`)
     } else if (masterFilter) {
-      query = query.ilike('system_code', `${masterFilter}%`)
+      query = query.ilike('equipment_code', `${masterFilter}%`)
     }
     
     if (debouncedSearch.trim()) {
       const q = debouncedSearch.trim()
-      // Searching by system_code
-      query = query.or(`system_code.ilike.%${q}%`)
+      query = query.or(`equipment_code.ilike.%${q}%,display_name.ilike.%${q}%`)
     }
 
     // Pagination
@@ -191,7 +187,30 @@ function MoldsPageContent() {
     const { data, error: err, count } = await query
     if (err) setError(err.message)
     else {
-      setMolds((data as any[]) || [])
+      const mapped = (data || []).map((e: any) => ({
+        physical_mold_id: e.equipment_id,
+        system_code: e.equipment_code,
+        display_name: e.display_name,
+        mold_revision_id: e.design_revision_id,
+        device_status: e.device_status,
+        usage_status: e.usage_status,
+        actual_length_mm: e.actual_length_mm,
+        actual_width_mm: e.actual_width_mm,
+        actual_height_mm: e.actual_height_mm,
+        actual_weight: e.actual_weight,
+        piece_count: e.piece_count || 1,
+        mold_type: e.mold_type || e.equipment_type,
+        current_rack_layer_id: e.current_rack_layer_id,
+        created_at: e.created_at,
+        updated_at: e.updated_at,
+        mold_revisions: e.design_revisions ? {
+          product_id: e.design_revisions.product_id,
+          revision_code: e.design_revisions.design_code,
+          products: e.design_revisions.products
+        } : null,
+        rack_layers: e.rack_layers
+      }))
+      setMolds(mapped as unknown as PhysicalMold[])
       setTotalRecords(count || 0)
     }
     setLoading(false)
@@ -226,7 +245,7 @@ function MoldsPageContent() {
 
 
   const handleDelete = async (id: string) => {
-    const { error: err } = await supabase.from('physical_molds').delete().eq('physical_mold_id', id)
+    const { error: err } = await supabase.from('equipment').delete().eq('equipment_id', id)
     if (err) setError(err.message)
     setDeleteId(null)
     fetchMolds()

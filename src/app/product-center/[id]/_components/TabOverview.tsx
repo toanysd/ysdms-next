@@ -327,34 +327,45 @@ export function TabOverview(props: TabOverviewProps) {
 
         const revIds = revList.map(r => r.revision_id)
 
-        // Physical Molds (expanded details)
+        // Physical Molds & Equipment (Unified Equipment Source)
         if (revIds.length > 0) {
-          const { data: molds } = await supabase
-            .from('physical_molds')
-            .select(`
-              physical_mold_id, system_code, display_name, device_status, usage_status,
-              mold_type, piece_count, actual_length_mm, actual_width_mm, actual_height_mm,
-              actual_weight, manufacturing_date,
-              rack_layers(layer_code, racks(rack_code)),
-              keeper_company:companies!physical_molds_keeper_company_id_fkey(company_code, company_name),
-              mold_revisions(design_revision_id)
-            `)
-            .in('mold_revision_id', revIds)
-
-          if (molds) setMoldDetails(molds as unknown as MoldDetail[])
-
-          // Equipment (Plugs, Cutters, Molds, Water Bases, etc.) - Unified Equipment Source
           const { data: equips } = await supabase
             .from('equipment')
             .select(`
               equipment_id, equipment_code, display_name, equipment_type, sub_type, usage_status, device_status,
-              design_revision_id, actual_length_mm, actual_width_mm, actual_height_mm,
+              design_revision_id, mold_type, piece_count, actual_length_mm, actual_width_mm, actual_height_mm,
+              actual_weight, manufacturing_date,
               rack_layers(layer_code, racks(rack_code)),
               keeper_company:companies!equipment_keeper_company_id_fkey(company_code, company_name)
             `)
             .in('design_revision_id', revIds)
 
-          if (equips) setEquipDetails(equips as unknown as EquipDetail[])
+          if (equips) {
+            setEquipDetails(equips as unknown as EquipDetail[])
+
+            // Extract Molds directly from unified equipment table
+            const moldEquips = equips.filter((eq: any) =>
+              ['MOLD', 'WATER_BASE', 'PRESSURE_BASE'].includes(eq.equipment_type)
+            ).map((eq: any) => ({
+              physical_mold_id: eq.equipment_id,
+              system_code: eq.equipment_code,
+              display_name: eq.display_name,
+              device_status: eq.device_status,
+              usage_status: eq.usage_status,
+              mold_type: eq.mold_type,
+              piece_count: eq.piece_count,
+              actual_length_mm: eq.actual_length_mm,
+              actual_width_mm: eq.actual_width_mm,
+              actual_height_mm: eq.actual_height_mm,
+              actual_weight: eq.actual_weight,
+              manufacturing_date: eq.manufacturing_date,
+              rack_layers: eq.rack_layers,
+              keeper_company: eq.keeper_company,
+              mold_revisions: { design_revision_id: eq.design_revision_id }
+            }))
+
+            setMoldDetails(moldEquips as unknown as MoldDetail[])
+          }
 
           // Extract Cutters directly from unified equipment table
           const directCutterEquips = (equips || []).filter((eq: any) =>
