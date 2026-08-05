@@ -571,10 +571,10 @@ export function TabOverview(props: TabOverviewProps) {
         </div>
       </div>
 
-                {/* ═══ MAIN 2-COLUMN LAYOUT: Left Sidebar (300px) | Right Main Area (flex: 1) ═══ */}
-      <div style={{ display: 'grid', gridTemplateColumns: '300px minmax(0, 1fr)', gap: 14 }}>
+                {/* ═══ MAIN 3-COLUMN LAYOUT: Left (270px) | Center (flex 1.25) | Right (flex 1) ═══ */}
+      <div style={{ display: 'grid', gridTemplateColumns: '270px minmax(0, 1.25fr) minmax(340px, 1fr)', gap: 14 }}>
 
-        {/* 👈 LEFT SIDEBAR: Product Overview -> Product Details -> Order History -> Delivery Address */}
+        {/* 👈 COLUMN 1 (Left 270px): Product Overview -> Product Details */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
 
           {/* BOX 1: Thông tin tổng quan (Ảnh sản phẩm + Khách hàng) */}
@@ -639,78 +639,12 @@ export function TabOverview(props: TabOverviewProps) {
             </div>
           </div>
 
-          {/* BOX 3: Lịch sử đơn hàng */}
-          <div className="card-flat" style={{ padding: 0, overflow: 'hidden', border: '1px solid var(--tint-purple-border)' }}>
-            <div style={{
-              background: 'var(--tint-purple-bg)', borderBottom: '1px solid var(--tint-purple-border)',
-              padding: '6px 10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between'
-            }}>
-              <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--tint-purple-text)', display: 'flex', alignItems: 'center', gap: 5 }}>
-                <FileText size={14} /> {tPC('boxOrderHistoryTitle')}
-              </span>
-              <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>{recentOrders.length}</span>
-            </div>
-            <div style={{ padding: 6, display: 'flex', flexDirection: 'column', gap: 4 }}>
-              {recentOrders.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '10px 0', fontSize: 12, color: 'var(--text-muted)' }}>{tPC('noOrdersForProduct')}</div>
-              ) : (
-                recentOrders.map(ol => {
-                  const isSelected = selectedOrderLine?.line_id === ol.line_id
-                  return (
-                    <div
-                      key={ol.line_id}
-                      onClick={() => setSelectedOrderLine(ol)}
-                      style={{
-                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                        padding: '5px 8px', borderRadius: 5, cursor: 'pointer', fontSize: 11,
-                        background: isSelected ? 'var(--tint-purple-bg)' : 'var(--bg-surface-2)',
-                        border: isSelected ? '1.5px solid var(--accent)' : '1px solid var(--border-default)',
-                        transition: 'all 0.15s ease'
-                      }}
-                    >
-                      <span style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: 12, color: 'var(--accent)' }}>
-                        {ol.orders?.order_no || '—'}
-                      </span>
-                      <span style={{ fontFamily: 'monospace', fontWeight: 600 }}>{ol.quantity?.toLocaleString()} pcs</span>
-                      <span style={{ color: 'var(--text-muted)' }}>{ol.orders?.order_date?.slice(0, 10) || '—'}</span>
-                    </div>
-                  )
-                })
-              )}
-            </div>
-          </div>
-
-          {/* BOX 4: Thông tin địa chỉ nhận hàng (theo từng đơn hàng) */}
-          <div className="card-flat" style={{ padding: 0, overflow: 'hidden', border: '1px solid var(--tint-blue-border)' }}>
-            <div style={{
-              background: 'var(--tint-blue-bg)', borderBottom: '1px solid var(--tint-blue-border)',
-              padding: '6px 10px', fontSize: 12, fontWeight: 700, color: 'var(--tint-blue-text)', display: 'flex', alignItems: 'center', gap: 5
-            }}>
-              <MapPin size={14} /> {tPC('boxDeliverySiteTitle')}
-            </div>
-            <div style={{ padding: '8px 10px', fontSize: 11 }}>
-              {selectedOrderLine ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                  <InfoRow label={tPC('deliveryOrderLabel')} value={selectedOrderLine.orders?.order_no} mono accent />
-                  <InfoRow label={tPC('deliverySiteNameLabel')} value={selectedOrderLine.orders?.delivery_sites?.site_name || customer?.company_name} />
-                  <InfoRow label={tPC('deliveryAddressLabel')} value={selectedOrderLine.orders?.delivery_sites?.address || customer?.address} />
-                  <InfoRow label={tPC('deliveryContactLabel')} value={selectedOrderLine.orders?.delivery_sites?.contact_person} />
-                  <InfoRow label={tPC('deliveryPhoneLabel')} value={selectedOrderLine.orders?.delivery_sites?.phone || customer?.tel} mono />
-                </div>
-              ) : (
-                <div style={{ fontSize: 11, color: 'var(--text-muted)', textAlign: 'center', padding: '8px 0' }}>
-                  {tPC('boxDeliverySitePrompt')}
-                </div>
-              )}
-            </div>
-          </div>
-
         </div>
 
-        {/* 👉 RIGHT MAIN AREA: Top Block (Specs & Revisions) | Bottom Block (Categorized Equipments + Storage Info & Equipment Job History) */}
+        {/* 👆 COLUMN 2 (Center flex 1.25): Specs & Revisions (Top) -> Order History (Middle) -> Delivery Site (Bottom) */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
 
-          {/* ═══ TOP-RIGHT BLOCK: Thông số kỹ thuật, chi tiết thiết kế ═══ */}
+          {/* TOP BLOCK: Thông số kỹ thuật, chi tiết thiết kế */}
           <div className="card-flat" style={{ padding: 0, overflow: 'hidden', border: '1px solid var(--tint-teal-border)' }}>
             <div style={{
               background: 'var(--tint-teal-bg)', borderBottom: '1px solid var(--tint-teal-border)',
@@ -731,8 +665,8 @@ export function TabOverview(props: TabOverviewProps) {
             </div>
 
             <div style={{ display: 'flex', gap: 0 }}>
-              {/* Left Sub-column: Lịch sử / danh sách phiên bản thiết kế (180px) */}
-              <div style={{ width: 180, flexShrink: 0, background: 'var(--bg-surface-2)', padding: 10, display: 'flex', flexDirection: 'column', gap: 6, borderRight: '1px solid var(--border-default)' }}>
+              {/* Left Sub-sidebar: Lịch sử phiên bản thiết kế (160px) */}
+              <div style={{ width: 160, flexShrink: 0, background: 'var(--bg-surface-2)', padding: 10, display: 'flex', flexDirection: 'column', gap: 6, borderRight: '1px solid var(--border-default)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: 4, borderBottom: '1px solid var(--border-default)' }}>
                   <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 5 }}>
                     <Layers size={14} style={{ color: 'var(--accent)' }} /> {tPC('designHistory')}
@@ -777,7 +711,7 @@ export function TabOverview(props: TabOverviewProps) {
                 </div>
               </div>
 
-              {/* Right Sub-column: Thông tin chi tiết kỹ thuật của phiên bản được chọn */}
+              {/* Right Area: 3-Column Technical Specs Grid */}
               <div style={{ flex: 1, padding: 12, minWidth: 0 }}>
                 {activeRev ? (() => {
                   const selectedRevIndex = allRevs.findIndex(r => r.revision_id === selectedRevId)
@@ -820,35 +754,47 @@ export function TabOverview(props: TabOverviewProps) {
                           <span><strong>{tPC('changeSummary')}:</strong> {activeRev.change_summary || activeRev.version_note}</span>
                         </div>
                       )}
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '2px 14px', fontSize: 12 }}>
-                        {trayDims && <SpecCell label={tPC('trayDimensions')} value={`${trayDims} mm`} isDiff={trayDimsDiff} diffLabel={tPC('fieldChanged')} />}
-                        {cutlineDims && <SpecCell label={tPC('cutlineDimensions')} value={`${cutlineDims} mm`} isDiff={cutlineDimsDiff} diffLabel={tPC('fieldChanged')} />}
-                        <SpecCell label={tPC('designedMaterial')} value={activeRev.plastic_type_designed || primaryPlasticCode} isDiff={plasticDiff} diffLabel={tPC('fieldChanged')} mono={false} />
-                        <SpecCell
-                          label={tPC('cavityAndPitch')}
-                          value={(activeRev.pocket_numbers || activeRev.cavity_count) ? `${activeRev.pocket_numbers || activeRev.cavity_count} Pocket${activeRev.cavity_pitch_mm ? ' / ' + activeRev.cavity_pitch_mm + 'mm' : ''}` : null}
-                          isDiff={cavityDiff}
-                          diffLabel={tPC('fieldChanged')}
-                        />
-                        <SpecCell label={tPC('feedPitch')} value={activeRev.machine_feed_pitch_mm ? `${activeRev.machine_feed_pitch_mm} mm` : null} isDiff={feedPitchDiff} diffLabel={tPC('fieldChanged')} />
-                        <SpecCell label={tPC('customerTrayName')} value={activeRev.customer_tray_name} isDiff={customerTrayNameDiff} diffLabel={tPC('fieldChanged')} mono={false} />
-                        <SpecCell label={tPC('draftAngleLabel')} value={activeRev.draft_angle != null ? `${activeRev.draft_angle}°` : null} isDiff={draftAngleDiff} diffLabel={tPC('fieldChanged')} />
-                        <SpecCell label={tPC('cornerRadiusLabel')} value={activeRev.corner_r != null ? `R${activeRev.corner_r}` : null} isDiff={cornerRDiff} diffLabel={tPC('fieldChanged')} />
-                        <SpecCell label={tPC('chamferLabel')} value={activeRev.chamfer_c != null ? `C${activeRev.chamfer_c}` : null} isDiff={chamferCDiff} diffLabel={tPC('fieldChanged')} />
-                        <SpecCell label="Undercut" value={activeRev.under_depth != null ? `${activeRev.under_depth} mm` : null} />
-                        <SpecCell label={tPC('orientationLabel')} value={activeRev.orientation} isDiff={orientationDiff} diffLabel={tPC('fieldChanged')} mono={false} />
-                        <SpecCell label={tPC('setupTypeLabel')} value={activeRev.setup_type} isDiff={setupTypeDiff} diffLabel={tPC('fieldChanged')} mono={false} />
-                        <SpecCell label={tPC('plugTypeLabel')} value={activeRev.plug_type} isDiff={plugTypeDiff} diffLabel={tPC('fieldChanged')} mono={false} />
-                        <SpecCell
-                          label={tPC('hasSeparateCutterLabel')}
-                          value={activeRev.has_separate_cutter == null ? null : (activeRev.has_separate_cutter ? tPC('yesLabel') : tPC('noLabel'))}
-                          isDiff={separateCutterDiff}
-                          diffLabel={tPC('fieldChanged')}
-                          mono={false}
-                        />
-                        {activeRev.tray_info && (
-                          <SpecCell label={tPC('trayInfoLabel')} value={activeRev.tray_info} isDiff={trayInfoDiff} diffLabel={tPC('fieldChanged')} mono={false} />
-                        )}
+                      {/* 3-Column Structured Layout */}
+                      <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr 1fr', gap: '2px 14px', fontSize: 12 }}>
+                        {/* Column 1: Main Text & Plastic Spec */}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                          {trayDims && <SpecCell label={tPC('trayDimensions')} value={`${trayDims} mm`} isDiff={trayDimsDiff} diffLabel={tPC('fieldChanged')} />}
+                          <SpecCell label={tPC('designedMaterial')} value={activeRev.plastic_type_designed || primaryPlasticCode} isDiff={plasticDiff} diffLabel={tPC('fieldChanged')} mono={false} />
+                          <SpecCell label={tPC('customerTrayName')} value={activeRev.customer_tray_name} isDiff={customerTrayNameDiff} diffLabel={tPC('fieldChanged')} mono={false} />
+                          {activeRev.tray_info && (
+                            <SpecCell label={tPC('trayInfoLabel')} value={activeRev.tray_info} isDiff={trayInfoDiff} diffLabel={tPC('fieldChanged')} mono={false} />
+                          )}
+                        </div>
+
+                        {/* Column 2: Dimensions & Pitch */}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                          {cutlineDims && <SpecCell label={tPC('cutlineDimensions')} value={`${cutlineDims} mm`} isDiff={cutlineDimsDiff} diffLabel={tPC('fieldChanged')} />}
+                          <SpecCell
+                            label={tPC('cavityAndPitch')}
+                            value={(activeRev.pocket_numbers || activeRev.cavity_count) ? `${activeRev.pocket_numbers || activeRev.cavity_count} Pocket${activeRev.cavity_pitch_mm ? ' / ' + activeRev.cavity_pitch_mm + 'mm' : ''}` : null}
+                            isDiff={cavityDiff}
+                            diffLabel={tPC('fieldChanged')}
+                          />
+                          <SpecCell label={tPC('feedPitch')} value={activeRev.machine_feed_pitch_mm ? `${activeRev.machine_feed_pitch_mm} mm` : null} isDiff={feedPitchDiff} diffLabel={tPC('fieldChanged')} />
+                          <SpecCell label={tPC('setupTypeLabel')} value={activeRev.setup_type} isDiff={setupTypeDiff} diffLabel={tPC('fieldChanged')} mono={false} />
+                          <SpecCell label={tPC('orientationLabel')} value={activeRev.orientation} isDiff={orientationDiff} diffLabel={tPC('fieldChanged')} mono={false} />
+                        </div>
+
+                        {/* Column 3: Angles, Formings & Accessories */}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                          <SpecCell label={tPC('draftAngleLabel')} value={activeRev.draft_angle != null ? `${activeRev.draft_angle}°` : null} isDiff={draftAngleDiff} diffLabel={tPC('fieldChanged')} />
+                          <SpecCell label={tPC('cornerRadiusLabel')} value={activeRev.corner_r != null ? `R${activeRev.corner_r}` : null} isDiff={cornerRDiff} diffLabel={tPC('fieldChanged')} />
+                          <SpecCell label={tPC('chamferLabel')} value={activeRev.chamfer_c != null ? `C${activeRev.chamfer_c}` : null} isDiff={chamferCDiff} diffLabel={tPC('fieldChanged')} />
+                          <SpecCell label="Undercut" value={activeRev.under_depth != null ? `${activeRev.under_depth} mm` : null} />
+                          <SpecCell label={tPC('plugTypeLabel')} value={activeRev.plug_type} isDiff={plugTypeDiff} diffLabel={tPC('fieldChanged')} mono={false} />
+                          <SpecCell
+                            label={tPC('hasSeparateCutterLabel')}
+                            value={activeRev.has_separate_cutter == null ? null : (activeRev.has_separate_cutter ? tPC('yesLabel') : tPC('noLabel'))}
+                            isDiff={separateCutterDiff}
+                            diffLabel={tPC('fieldChanged')}
+                            mono={false}
+                          />
+                        </div>
                       </div>
                     </div>
                   )
@@ -861,7 +807,105 @@ export function TabOverview(props: TabOverviewProps) {
             </div>
           </div>
 
-          {/* ═══ BOTTOM-RIGHT BLOCK: Các thiết bị liên quan (Trái 57%) | Storage Info & Equipment Job History (Phải 43%) ═══ */}
+          {/* MIDDLE BLOCK: Lịch sử đơn hàng gần đây */}
+          <div className="card-flat" style={{ padding: 0, overflow: 'hidden', border: '1px solid var(--tint-purple-border)' }}>
+            <div style={{
+              background: 'var(--tint-purple-bg)', borderBottom: '1px solid var(--tint-purple-border)',
+              padding: '8px 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <FileText size={14} style={{ color: 'var(--tint-purple-text)' }} />
+                <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--tint-purple-text)' }}>{tPC('boxOrderHistoryTitle')}</span>
+              </div>
+              <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>{recentOrders.length} orders</span>
+            </div>
+            <div style={{ padding: 10 }}>
+              {recentOrders.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '16px 0', fontSize: 12, color: 'var(--text-muted)' }}>{tPC('noOrdersForProduct')}</div>
+              ) : (
+                <div style={{ overflowX: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11 }}>
+                    <thead>
+                      <tr style={{ borderBottom: '1px solid var(--border-default)', background: 'var(--bg-surface-2)', textAlign: 'left' }}>
+                        <th style={{ padding: '6px 8px', fontWeight: 600, color: 'var(--text-muted)' }}>{tPC('orderNo') || 'Order No'}</th>
+                        <th style={{ padding: '6px 8px', fontWeight: 600, color: 'var(--text-muted)' }}>{tPC('orderDate') || 'Order Date'}</th>
+                        <th style={{ padding: '6px 8px', fontWeight: 600, color: 'var(--text-muted)', textAlign: 'right' }}>{tPC('quantity') || 'Quantity'}</th>
+                        <th style={{ padding: '6px 8px', fontWeight: 600, color: 'var(--text-muted)' }}>{tPC('lineStatus') || 'Status'}</th>
+                        <th style={{ padding: '6px 8px', fontWeight: 600, color: 'var(--text-muted)' }}>{tPC('deliverySiteNameLabel') || 'Delivery Site'}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {recentOrders.map(ol => {
+                        const isSelected = selectedOrderLine?.line_id === ol.line_id
+                        return (
+                          <tr
+                            key={ol.line_id}
+                            onClick={() => setSelectedOrderLine(ol)}
+                            style={{
+                              borderBottom: '1px solid var(--border-subtle)',
+                              cursor: 'pointer',
+                              background: isSelected ? 'var(--tint-purple-bg)' : 'transparent',
+                              transition: 'all 0.15s ease'
+                            }}
+                          >
+                            <td style={{ padding: '6px 8px', fontFamily: 'monospace', fontWeight: 700, color: 'var(--accent)' }}>
+                              {ol.orders?.order_no || '—'}
+                            </td>
+                            <td style={{ padding: '6px 8px', fontFamily: 'monospace', color: 'var(--text-secondary)' }}>
+                              {ol.orders?.order_date?.slice(0, 10) || '—'}
+                            </td>
+                            <td style={{ padding: '6px 8px', fontFamily: 'monospace', fontWeight: 700, textAlign: 'right' }}>
+                              {ol.quantity?.toLocaleString()} {ol.unit || 'pcs'}
+                            </td>
+                            <td style={{ padding: '6px 8px' }}>
+                              <span className={STATUS_BADGE[ol.orders?.order_status || ''] || 'badge badge--neutral'} style={{ fontSize: 8 }}>
+                                {ol.orders?.order_status || 'NORMAL'}
+                              </span>
+                            </td>
+                            <td style={{ padding: '6px 8px', color: 'var(--text-primary)', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 180 }}>
+                              {ol.orders?.delivery_sites?.site_name || customer?.company_name || '—'}
+                            </td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* BOTTOM BLOCK: Thông tin địa chỉ nhận hàng (theo từng đơn hàng) */}
+          <div className="card-flat" style={{ padding: 0, overflow: 'hidden', border: '1px solid var(--tint-blue-border)' }}>
+            <div style={{
+              background: 'var(--tint-blue-bg)', borderBottom: '1px solid var(--tint-blue-border)',
+              padding: '8px 12px', fontSize: 12, fontWeight: 700, color: 'var(--tint-blue-text)', display: 'flex', alignItems: 'center', gap: 5
+            }}>
+              <MapPin size={14} /> {tPC('boxDeliverySiteTitle')}
+            </div>
+            <div style={{ padding: '10px 12px', fontSize: 11 }}>
+              {selectedOrderLine ? (
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px 16px' }}>
+                  <InfoRow label={tPC('deliveryOrderLabel')} value={selectedOrderLine.orders?.order_no} mono accent />
+                  <InfoRow label={tPC('deliverySiteNameLabel')} value={selectedOrderLine.orders?.delivery_sites?.site_name || customer?.company_name} />
+                  <InfoRow label={tPC('deliveryAddressLabel')} value={selectedOrderLine.orders?.delivery_sites?.address || customer?.address} />
+                  <InfoRow label={tPC('deliveryContactLabel')} value={selectedOrderLine.orders?.delivery_sites?.contact_person} />
+                  <InfoRow label={tPC('deliveryPhoneLabel')} value={selectedOrderLine.orders?.delivery_sites?.phone || customer?.tel} mono />
+                </div>
+              ) : (
+                <div style={{ fontSize: 11, color: 'var(--text-muted)', textAlign: 'center', padding: '10px 0' }}>
+                  {tPC('boxDeliverySitePrompt')}
+                </div>
+              )}
+            </div>
+          </div>
+
+        </div>
+
+        {/* 👉 COLUMN 3 (Right flex 1): Related Equipment -> Storage Info -> Job History */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+
+          {/* TOP BLOCK: Các thiết bị liên quan */}
           {(() => {
             const getMoldRevId = (m: MoldDetail) => {
               const linkedRevId = m.mold_revisions?.design_revision_id
@@ -993,7 +1037,7 @@ export function TabOverview(props: TabOverviewProps) {
                   }}
                 >
                   {typeIcon}
-                  <span style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: 12, color: 'var(--accent)', minWidth: 80 }}>
+                  <span style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: 12, color: 'var(--accent)', minWidth: 75 }}>
                     {code || '—'}
                   </span>
                   <span style={{ flex: 1, color: 'var(--text-primary)', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -1032,9 +1076,9 @@ export function TabOverview(props: TabOverviewProps) {
             }
 
             return (
-              <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.35fr) minmax(0, 1fr)', gap: 14 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
 
-                {/* Sub-column 1 (Left 57%): Các thiết bị liên quan (Khuôn | Dao cắt | Press Base | Water Base | Stacking) */}
+                {/* 1. Các thiết bị liên quan */}
                 <div className="card-flat" style={{ padding: 0, overflow: 'hidden', border: '1px solid var(--tint-orange-border)' }}>
                   <div style={{
                     background: 'var(--tint-orange-bg)', borderBottom: '1px solid var(--tint-orange-border)',
@@ -1158,94 +1202,89 @@ export function TabOverview(props: TabOverviewProps) {
                   </div>
                 </div>
 
-                {/* Sub-column 2 (Right 43%): Storage Info Box (Top) + Equipment Job History Box (Bottom) */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-
-                  {/* Top Box: Thông tin lưu trữ thiết bị */}
-                  <div className="card-flat" style={{ padding: 0, overflow: 'hidden', border: '1px solid var(--tint-blue-border)' }}>
-                    <div style={{
-                      background: 'var(--tint-blue-bg)', borderBottom: '1px solid var(--tint-blue-border)',
-                      padding: '8px 12px', display: 'flex', alignItems: 'center', gap: 6
-                    }}>
-                      <MapPin size={14} style={{ color: 'var(--tint-blue-text)' }} />
-                      <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--tint-blue-text)' }}>
-                        {selectedEquipData ? `[ ${selectedEquipData.code} ] ${tPC('boxEquipmentStorageTitle')}` : tPC('boxEquipmentStorageTitle')}
-                      </span>
-                    </div>
-                    <div style={{ padding: '10px 12px', fontSize: 11 }}>
-                      {selectedEquipData ? (
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px 14px' }}>
-                          <InfoRow label={tPC('equipCodeLabel')} value={selectedEquipData.code} mono accent />
-                          <InfoRow label={tPC('equipNameLabel')} value={selectedEquipData.name} />
-                          <InfoRow label={tPC('rackLocationLabel')} value={selectedEquipData.rack} mono />
-                          <InfoRow label={tPC('keeperCompanyLabel')} value={selectedEquipData.keeper} />
-                          <InfoRow label={tPC('storageStatusLabel')} value={selectedEquipData.status} />
-                          <InfoRow label={tPC('lastUpdatedLabel')} value={selectedEquipData.updatedAt?.slice(0, 10)} mono />
-                        </div>
-                      ) : (
-                        <div style={{ textAlign: 'center', padding: '12px 0', color: 'var(--text-muted)', fontSize: 11 }}>
-                          {tPC('boxEquipmentStoragePrompt')}
-                        </div>
-                      )}
-                    </div>
+                {/* 2. Thông tin lưu trữ thiết bị */}
+                <div className="card-flat" style={{ padding: 0, overflow: 'hidden', border: '1px solid var(--tint-blue-border)' }}>
+                  <div style={{
+                    background: 'var(--tint-blue-bg)', borderBottom: '1px solid var(--tint-blue-border)',
+                    padding: '8px 12px', display: 'flex', alignItems: 'center', gap: 6
+                  }}>
+                    <MapPin size={14} style={{ color: 'var(--tint-blue-text)' }} />
+                    <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--tint-blue-text)' }}>
+                      {selectedEquipData ? `[ ${selectedEquipData.code} ] ${tPC('boxEquipmentStorageTitle')}` : tPC('boxEquipmentStorageTitle')}
+                    </span>
                   </div>
-
-                  {/* Bottom Box: Lịch sử job trong thiết bị */}
-                  <div className="card-flat" style={{ padding: 0, overflow: 'hidden', border: '1px solid var(--tint-orange-border)' }}>
-                    <div style={{
-                      background: 'var(--tint-orange-bg)', borderBottom: '1px solid var(--tint-orange-border)',
-                      padding: '8px 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between'
-                    }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <Hammer size={14} style={{ color: 'var(--tint-orange-text)' }} />
-                        <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--tint-orange-text)' }}>
-                          {selectedEquipData ? `[ ${selectedEquipData.code} ] ${tPC('boxEquipmentJobsTitle')}` : tPC('boxEquipmentJobsTitle')}
-                        </span>
+                  <div style={{ padding: '10px 12px', fontSize: 11 }}>
+                    {selectedEquipData ? (
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px 14px' }}>
+                        <InfoRow label={tPC('equipCodeLabel')} value={selectedEquipData.code} mono accent />
+                        <InfoRow label={tPC('equipNameLabel')} value={selectedEquipData.name} />
+                        <InfoRow label={tPC('rackLocationLabel')} value={selectedEquipData.rack} mono />
+                        <InfoRow label={tPC('keeperCompanyLabel')} value={selectedEquipData.keeper} />
+                        <InfoRow label={tPC('storageStatusLabel')} value={selectedEquipData.status} />
+                        <InfoRow label={tPC('lastUpdatedLabel')} value={selectedEquipData.updatedAt?.slice(0, 10)} mono />
                       </div>
-                      <span className="badge badge--neutral font-mono font-bold" style={{ fontSize: 9 }}>
-                        {selectedEquipJobs.length} jobs
+                    ) : (
+                      <div style={{ textAlign: 'center', padding: '12px 0', color: 'var(--text-muted)', fontSize: 11 }}>
+                        {tPC('boxEquipmentStoragePrompt')}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* 3. Lịch sử job trong thiết bị */}
+                <div className="card-flat" style={{ padding: 0, overflow: 'hidden', border: '1px solid var(--tint-orange-border)' }}>
+                  <div style={{
+                    background: 'var(--tint-orange-bg)', borderBottom: '1px solid var(--tint-orange-border)',
+                    padding: '8px 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <Hammer size={14} style={{ color: 'var(--tint-orange-text)' }} />
+                      <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--tint-orange-text)' }}>
+                        {selectedEquipData ? `[ ${selectedEquipData.code} ] ${tPC('boxEquipmentJobsTitle')}` : tPC('boxEquipmentJobsTitle')}
                       </span>
                     </div>
-                    <div style={{ padding: 10 }}>
-                      {selectedEquipJobs.length === 0 ? (
-                        <div style={{ textAlign: 'center', padding: '12px 0', color: 'var(--text-muted)', fontSize: 11 }}>
-                          {selectedEquipData ? `[${selectedEquipData.code}] ${tPC('boxEquipmentJobsPrompt')}` : tPC('boxEquipmentJobsPrompt')}
-                        </div>
-                      ) : (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                          {selectedEquipJobs.map(j => (
-                            <div
-                              key={j.job_id}
-                              style={{
-                                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                                padding: '6px 8px', borderRadius: 4, background: 'var(--bg-surface-2)',
-                                border: '1px solid var(--border-default)', fontSize: 11
-                              }}
-                            >
-                              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                <Link
-                                  href={`/equipment/jobs/${j.job_id}`}
-                                  style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: 12, color: 'var(--accent)', textDecoration: 'none' }}
-                                >
-                                  {j.job_code}
-                                </Link>
-                                <span style={{ fontWeight: 600 }}>{j.job_name || '—'}</span>
-                                <span className={STATUS_BADGE[j.job_status || ''] || 'badge badge--neutral'} style={{ fontSize: 8 }}>
-                                  {j.job_status}
-                                </span>
-                              </div>
-                              {j.mold_deadline && (
-                                <span style={{ fontSize: 10, color: 'var(--text-muted)', fontFamily: 'monospace' }}>
-                                  {j.mold_deadline?.slice(0, 10)}
-                                </span>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
+                    <span className="badge badge--neutral font-mono font-bold" style={{ fontSize: 9 }}>
+                      {selectedEquipJobs.length} jobs
+                    </span>
                   </div>
-
+                  <div style={{ padding: 10 }}>
+                    {selectedEquipJobs.length === 0 ? (
+                      <div style={{ textAlign: 'center', padding: '12px 0', color: 'var(--text-muted)', fontSize: 11 }}>
+                        {selectedEquipData ? `[${selectedEquipData.code}] ${tPC('boxEquipmentJobsPrompt')}` : tPC('boxEquipmentJobsPrompt')}
+                      </div>
+                    ) : (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                        {selectedEquipJobs.map(j => (
+                          <div
+                            key={j.job_id}
+                            style={{
+                              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                              padding: '6px 8px', borderRadius: 4, background: 'var(--bg-surface-2)',
+                              border: '1px solid var(--border-default)', fontSize: 11
+                            }}
+                          >
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                              <Link
+                                href={`/equipment/jobs/${j.job_id}`}
+                                style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: 12, color: 'var(--accent)', textDecoration: 'none' }}
+                              >
+                                {j.job_code}
+                              </Link>
+                              <span style={{ fontWeight: 600 }}>{j.job_name || '—'}</span>
+                              <span className={STATUS_BADGE[j.job_status || ''] || 'badge badge--neutral'} style={{ fontSize: 8 }}>
+                                {j.job_status}
+                              </span>
+                            </div>
+                            {j.mold_deadline && (
+                              <span style={{ fontSize: 10, color: 'var(--text-muted)', fontFamily: 'monospace' }}>
+                                {j.mold_deadline?.slice(0, 10)}
+                              </span>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
 
               </div>
