@@ -14,53 +14,39 @@ export async function revisePhysicalMoldAction(payload: ReviseMoldPayload) {
   try {
     const supabase = await createClient()
 
-    // 1. Find the mold_revisions record for the target design_revision_id
+    // 1. Find target design_revision directly
     const { data: revData, error: revErr } = await supabase
-      .from('mold_revisions')
+      .from('design_revisions')
       .select('revision_id, product_id')
-      .eq('design_revision_id', payload.new_design_revision_id)
+      .eq('revision_id', payload.new_design_revision_id)
       .single()
 
     if (revErr || !revData) {
-      throw new Error('Target design revision does not have a linked mold_revisions record.')
+      throw new Error('Target design revision not found.')
     }
 
-    // 2. Fetch current physical mold to log the change
+    // 2. Fetch current equipment/mold
     const { data: currentMold, error: currErr } = await supabase
-      .from('physical_molds')
-      .select('display_name, mold_revision_id')
-      .eq('physical_mold_id', payload.physical_mold_id)
+      .from('equipment')
+      .select('display_name, design_revision_id')
+      .eq('equipment_id', payload.physical_mold_id)
       .single()
 
     if (currErr || !currentMold) {
-      throw new Error('Physical mold not found.')
+      throw new Error('Physical mold equipment not found.')
     }
 
-    // 3. Update physical_molds
+    // 3. Update equipment directly
     const { error: updateErr } = await supabase
-      .from('physical_molds')
+      .from('equipment')
       .update({
-        mold_revision_id: revData.revision_id,
+        design_revision_id: revData.revision_id,
         display_name: payload.new_display_name,
-        system_code: payload.new_display_name // keeping them in sync for now as requested
+        equipment_code: payload.new_display_name
       })
-      .eq('physical_mold_id', payload.physical_mold_id)
+      .eq('equipment_id', payload.physical_mold_id)
 
     if (updateErr) throw new Error(updateErr.message)
-
-    // 4. Log the change in equipment_status_logs
-    const auth = await supabase.auth.getUser()
-    const { error: logErr } = await supabase
-      .from('equipment_status_logs')
-      .insert({
-        physical_mold_id: payload.physical_mold_id,
-        status: 'REVISED',
-        notes: `Revised from [${currentMold.display_name}] to [${payload.new_display_name}]. ${payload.notes || ''}`
-      })
-
-    if (logErr) {
-      console.warn('Failed to log revision', logErr)
-    }
 
     revalidatePath('/equipment/molds')
     revalidatePath(`/equipment/molds/${payload.physical_mold_id}`)

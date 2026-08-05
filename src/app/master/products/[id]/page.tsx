@@ -73,16 +73,13 @@ export type ProductDetailData = {
       thickness_mm: number | null
       color_name_normalized: string | null
     } | null
-    mold_revisions?: {
-      mold_revision_id: string
-      physical_molds?: {
-        physical_mold_id: string
-        system_code: string
-        display_name: string
-        physical_stamp: string | null
-        usage_status: string | null
-        piece_count: number | null
-      }[] | null
+    physical_molds?: {
+      physical_mold_id: string
+      system_code: string
+      display_name: string
+      physical_stamp: string | null
+      usage_status: string | null
+      piece_count: number | null
     }[] | null
     cutters?: {
       cutter_id: string
@@ -171,7 +168,7 @@ export default function ProductDetailPage() {
           orientation, setup_type, has_plug, plug_type, has_separate_cutter, plastic_type_designed,
           change_summary, designer, customer_drawing_no,
           plastic_master(plastic_code, thickness_mm, color_name_normalized),
-          mold_revisions(mold_revision_id, physical_molds(physical_mold_id, system_code, display_name, physical_stamp, usage_status, piece_count)),
+          physical_molds(physical_mold_id, system_code, display_name, physical_stamp, usage_status, piece_count),
           cutters(cutter_id, cutter_no, cutter_name, cutter_type, usage_status)
         )
       `)

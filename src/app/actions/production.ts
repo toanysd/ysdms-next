@@ -519,34 +519,29 @@ export async function getTodayCompletedLogs() {
     }))
 }
 
-// Lấy danh sách khuôn vật lý (via design_revisions → mold_revisions → physical_molds)
+// Lấy danh sách khuôn vật lý (via design_revisions → equipment)
 export async function getProductPhysicalMolds(productId: string) {
     const supabase = await createClient()
-    // NEW: design_revisions.product_id → mold_revisions → physical_molds
-    const { data, error } = await supabase
+    const { data: revs } = await supabase
         .from('design_revisions')
-        .select(`
-            mold_revisions(
-                physical_molds(physical_mold_id, system_code, device_status)
-            )
-        `)
+        .select('revision_id')
         .eq('product_id', productId)
 
-    if (error || !data) return []
+    const revIds = (revs || []).map(r => r.revision_id)
+    if (revIds.length === 0) return []
 
-    const molds: any[] = []
-    data.forEach((dr: any) => {
-        if (dr.mold_revisions) {
-            dr.mold_revisions.forEach((rev: any) => {
-                if (rev.physical_molds) {
-                    if (Array.isArray(rev.physical_molds)) molds.push(...rev.physical_molds)
-                    else molds.push(rev.physical_molds)
-                }
-            })
-        }
-    })
+    const { data: equips } = await supabase
+        .from('equipment')
+        .select('equipment_id, equipment_code, device_status, display_name')
+        .in('design_revision_id', revIds)
+        .in('equipment_type', ['MOLD', 'WATER_BASE', 'PRESSURE_BASE'])
 
-    return molds
+    return (equips || []).map(e => ({
+        id: e.equipment_id,
+        physical_mold_id: e.equipment_id,
+        system_code: e.equipment_code,
+        device_status: e.device_status
+    }))
 }
 
 // Lấy toàn bộ khuôn vật lý

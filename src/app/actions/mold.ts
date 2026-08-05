@@ -85,7 +85,7 @@ export async function addRevisionAction(formData: FormData) {
   }
 
   const { error } = await supabase
-    .from('mold_revisions')
+    .from('design_revisions')
     // @ts-ignore
     .insert([insertData])
 
@@ -118,11 +118,8 @@ export async function getMoldBaseDetail(moldMasterId: string) {
   }
 
   const { data: revisions, error: revError } = await supabase
-    .from('mold_revisions')
-    .select(`
-      *,
-      design_revisions (*)
-    `)
+    .from('design_revisions')
+    .select('*')
     .eq('product_id', moldMasterId)
     .order('created_at', { ascending: true })
 
@@ -135,14 +132,14 @@ export async function getMoldBaseDetail(moldMasterId: string) {
 }
 
 // ========================================================
-// QUERY: G盻｣i ﾃｽ Label ti蘯ｿp theo
+// QUERY: Gợi ý Label tiếp theo
 // ========================================================
 export async function suggestNextRevisionLabel(moldMasterId: string) {
   const supabase = await createClient()
 
   const { data: revisions } = await supabase
-    .from('mold_revisions')
-    .select('revision_name')
+    .from('design_revisions')
+    .select('design_code')
     .eq('product_id', moldMasterId)
     .order('created_at', { ascending: false })
     .limit(1)
@@ -151,13 +148,13 @@ export async function suggestNextRevisionLabel(moldMasterId: string) {
     return 'R1'
   }
 
-  const lastLabel = revisions[0].revision_name
-  const rMatch = lastLabel.match(/^R(\d+)$/i)
+  const lastLabel = revisions[0].design_code || ''
+  const rMatch = lastLabel.match(/R(\d+)$/i)
   if (rMatch) {
     return `R${parseInt(rMatch[1], 10) + 1}`
   }
 
-  return ''
+  return 'R1'
 }
 
 export interface UnifiedMoldPayload {
@@ -258,20 +255,7 @@ export async function upsertUnifiedMold(payload: UnifiedMoldPayload): Promise<{ 
       // @ts-ignore
       const { data: newDesign, error: dErr } = await supabase.from('design_revisions').insert(designData).select('revision_id').single()
       if (dErr) throw new Error(dErr.message)
-
-      const { count } = await supabase.from('mold_revisions').select('*', { count: 'exact', head: true }).eq('product_id', baseId!)
-      const versionNum = (count || 0) + 1
-      
-      const revData = {
-          product_id: baseId,
-          design_revision_id: newDesign.revision_id,
-          revision_code: `${payload.code}-R${String(versionNum).padStart(2, '0')}`,
-          revision_name: `R${versionNum}`
-      };
-
-      const { data, error } = await supabase.from('mold_revisions').insert(revData).select('revision_id').single()
-      if (error) throw new Error(error.message)
-      revisionId = data.revision_id
+      revisionId = newDesign.revision_id
     }
 
     // 3. Upsert physical equipment

@@ -166,14 +166,8 @@ export function OverviewTab({
 
   // Linked Physical Molds for active revision
   const linkedPhysicalMolds = useMemo(() => {
-    if (!activeRevision || !activeRevision.mold_revisions) return []
-    const molds: Array<{ physical_mold_id: string; system_code: string; display_name: string; physical_stamp: string | null; usage_status: string | null; piece_count: number | null }> = []
-    activeRevision.mold_revisions.forEach(mr => {
-      if (mr.physical_molds && Array.isArray(mr.physical_molds)) {
-        mr.physical_molds.forEach(pm => molds.push(pm))
-      }
-    })
-    return molds
+    if (!activeRevision) return []
+    return activeRevision.physical_molds || []
   }, [activeRevision])
 
   // Linked Cutters for active revision
@@ -342,7 +336,7 @@ export function OverviewTab({
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {/* Physical Molds */}
-                  {linkedPhysicalMolds.map(mold => (
+                  {linkedPhysicalMolds.map((mold: any) => (
                     <div key={mold.physical_mold_id} className="p-3 rounded border border-[var(--border-subtle)] bg-[var(--bg-surface-2)] flex flex-col gap-1.5">
                       <div className="flex items-center justify-between">
                         <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-[var(--tint-teal-bg)] text-[var(--accent)] flex items-center gap-1">

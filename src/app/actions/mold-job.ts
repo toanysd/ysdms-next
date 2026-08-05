@@ -283,27 +283,23 @@ export async function linkJobToPhysicalMoldAction(job_id: string, physical_mold_
     const supabase = await createClient()
 
     const { data: mold, error: moldErr } = await supabase
-        .from('physical_molds')
+        .from('equipment')
         .select(`
-            physical_mold_id,
-            mold_revision_id,
-            mold_revisions(
-                design_revision_id,
-                product_id,
-                design_revisions(company_id)
-            )
+            equipment_id,
+            design_revision_id,
+            design_revisions(product_id, company_id)
         `)
-        .eq('physical_mold_id', physical_mold_id)
+        .eq('equipment_id', physical_mold_id)
         .single()
 
     if (moldErr || !mold) {
-        return { success: false, error: moldErr?.message || 'Physical mold not found' }
+        return { success: false, error: moldErr?.message || 'Equipment mold not found' }
     }
 
-    const moldRevision = mold.mold_revisions as any
-    const designRevisionId = moldRevision?.design_revision_id || null
-    const productId = moldRevision?.product_id || null
-    const companyId = moldRevision?.design_revisions?.company_id || null
+    const designRevision = mold.design_revisions as any
+    const designRevisionId = mold.design_revision_id || null
+    const productId = designRevision?.product_id || null
+    const companyId = designRevision?.company_id || null
 
     const updatePayload: any = {
         physical_mold_id,

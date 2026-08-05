@@ -277,15 +277,10 @@ FK:  shared_plug_from_design_id UUID → design_revisions(revision_id)
 
 ---
 
-## 🔑 Bảng `mold_revisions` — Phiên bản Khuôn
+## ❌ Bảng `mold_revisions` — DELETED / DROPPED (2026-08-05)
 
-```
-PK:  mold_revision_id    UUID
-FK:  mold_master_id      UUID → mold_masters(mold_master_id)
-FK:  design_revision_id  UUID → design_revisions(revision_id)
-     revision_code       TEXT
-     revision_name       TEXT
-```
+> ⚠️ **ĐÃ XÓA KHỎI SYSTEM** — Bảng trung gian dư thừa đã bị DROP CASCADE.
+> `equipment` và `physical_molds` liên kết trực tiếp tới `design_revisions` qua `design_revision_id`.
 
 ---
 

@@ -166,24 +166,6 @@ export async function createQuickMoldJobWorkflow(input: QuickMoldJobInput) {
     }
     const designRevisionId = newRev.revision_id
 
-    // Step 3: Mold Revision
-    const { data: newMoldRev, error: moldRevErr } = await supabase
-      .from('mold_revisions')
-      .insert({
-        design_revision_id: designRevisionId,
-        product_id: productId,
-        revision_code: `MR-${input.design_code.trim()}-01`,
-        revision_name: `Mold Rev for ${input.design_code.trim()}`,
-        is_active: true,
-      })
-      .select('revision_id')
-      .single()
-
-    if (moldRevErr || !newMoldRev) {
-      return { success: false, error: `Lỗi tạo phiên bản khuôn: ${moldRevErr?.message}` }
-    }
-    const moldRevisionId = newMoldRev.revision_id
-
     // Component Kit Summary (derived from unified steps[])
     const componentSteps = input.steps.filter(s => s.type_code)
     let compSummary = ''
@@ -198,7 +180,6 @@ export async function createQuickMoldJobWorkflow(input: QuickMoldJobInput) {
         system_code: input.system_code.trim(),
         display_name: input.display_name.trim() || input.system_code.trim(),
         physical_stamp: input.physical_stamp?.trim() || null,
-        mold_revision_id: moldRevisionId,
         current_rack_layer_id: input.current_rack_layer_id || null,
         device_status: '製作中',
         usage_status: '保管中',
