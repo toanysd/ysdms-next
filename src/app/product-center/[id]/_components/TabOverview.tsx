@@ -504,10 +504,17 @@ export function TabOverview(props: TabOverviewProps) {
   }, [productId, companyId, period])
 
   const trayDims = activeRev
-    ? [activeRev.design_length, activeRev.design_width, activeRev.design_depth || activeRev.design_height].filter(Boolean).join(' × ')
+    ? [activeRev.design_length, activeRev.design_width, activeRev.design_height || activeRev.design_depth].filter(Boolean).join(' × ')
     : ''
   const cutlineDims = activeRev
     ? [activeRev.cutline_length, activeRev.cutline_width].filter(Boolean).join(' × ')
+    : ''
+  const productDimsSpec = activeRev && cutlineDims
+    ? [
+        cutlineDims,
+        activeRev.corner_r != null ? `R${activeRev.corner_r}` : null,
+        activeRev.chamfer_c != null ? `C${activeRev.chamfer_c}` : null
+      ].filter(Boolean).join(' - ')
     : ''
 
   const getRack = (rl: { layer_code: string | null; racks: { rack_code: string | null } | null } | null) => {
@@ -652,6 +659,7 @@ export function TabOverview(props: TabOverviewProps) {
               <InfoRow label={tPC('internalNameLabel')} value={productNameInternal} />
               <InfoRow label={tProd('productName')} value={productName} />
               <InfoRow label={tPC('customerProductNameLabel')} value={customerProductName} />
+              {productDimsSpec && <InfoRow label={tPC('cutlineDimensions')} value={`${productDimsSpec} mm`} mono />}
               <InfoRow label={tProd('pocketCount')} value={pocketCount || activeRev?.pocket_numbers || activeRev?.cavity_count} mono />
               <InfoRow label={tPC('piecesPerBoxLabel')} value={piecesPerBox} mono />
               <InfoRow label={tPC('plasticSpecLabel')} value={primaryPlasticSpec || primaryPlasticCode || activeRev?.plastic_type_designed} mono />
@@ -793,7 +801,7 @@ export function TabOverview(props: TabOverviewProps) {
 
                         {/* Column 2: Dimensions & Pocket / Impression */}
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                          {cutlineDims && <SpecCell label={tPC('cutlineDimensions')} value={`${cutlineDims} mm`} isDiff={cutlineDimsDiff} diffLabel={tPC('fieldChanged')} />}
+                          {cutlineDims && <SpecCell label={tPC('cutlineDimensions')} value={productDimsSpec ? `${productDimsSpec} mm` : `${cutlineDims} mm`} isDiff={cutlineDimsDiff} diffLabel={tPC('fieldChanged')} />}
                           <SpecCell
                             label={tPC('cavityAndPitch')}
                             value={(activeRev.pocket_numbers || activeRev.cavity_count) ? `${activeRev.pocket_numbers || activeRev.cavity_count} Pocket${activeRev.cavity_pitch_mm ? ' / ' + activeRev.cavity_pitch_mm + 'mm' : ''}` : null}
