@@ -278,6 +278,7 @@ export function TabOverview(props: TabOverviewProps) {
   const [selectedEquip, setSelectedEquip] = useState<{ type: 'mold' | 'cutter' | 'equip'; id: string; code: string } | null>(null)
   const [equipFilterMode, setEquipFilterMode] = useState<'revision' | 'all'>('revision')
   const [equipViewMode, setEquipViewMode] = useState<'list' | 'grid'>('grid')
+  const [equipCategoryTab, setEquipCategoryTab] = useState<string>('ALL')
 
   // Active Job
   const [activeJob, setActiveJob] = useState<{ id: string; code: string; status: string; deadline: string; name: string } | null>(null)
@@ -1225,6 +1226,34 @@ export function TabOverview(props: TabOverviewProps) {
               )
             }
 
+            const getTabCount = (tabId: string) => {
+              if (tabId === 'ALL') return grandTotal
+              if (tabId === 'MOLD') return filteredMolds.length
+              if (tabId === 'CUTTER') return filteredCutters.length
+              if (tabId === 'STACKING') return filteredEquips.filter(eq => eq.equipment_type?.toUpperCase().includes('STACK') || eq.equipment_type?.includes('スタッキング')).length
+              if (tabId === 'WATER_BASE') return filteredEquips.filter(eq => eq.equipment_type?.toUpperCase().includes('WATER') || eq.equipment_type?.includes('水冷')).length
+              if (tabId === 'PRESS_BASE') return filteredEquips.filter(eq => eq.equipment_type?.toUpperCase().includes('PRESS') || eq.equipment_type?.includes('圧空')).length
+              if (tabId === 'FRAME') return filteredEquips.filter(eq => eq.equipment_type?.toUpperCase().includes('FRAME') || eq.equipment_type?.includes('フレーム')).length
+              if (tabId === 'PLATE') return filteredEquips.filter(eq => eq.equipment_type?.toUpperCase().includes('PLATE') || eq.equipment_type?.includes('面版')).length
+              if (tabId === 'PLUG') return filteredEquips.filter(eq => eq.equipment_type?.toUpperCase().includes('PLUG') || eq.equipment_type?.includes('プラグ')).length
+              return 0
+            }
+
+            const showMolds = (equipCategoryTab === 'ALL' || equipCategoryTab === 'MOLD') ? sortMolds : []
+            const showCutters = (equipCategoryTab === 'ALL' || equipCategoryTab === 'CUTTER') ? sortCutters : []
+            const showEquip = (() => {
+              if (equipCategoryTab === 'ALL') return sortEquip
+              if (equipCategoryTab === 'STACKING') return sortEquip.filter(eq => eq.equipment_type?.toUpperCase().includes('STACK') || eq.equipment_type?.includes('スタッキング'))
+              if (equipCategoryTab === 'WATER_BASE') return sortEquip.filter(eq => eq.equipment_type?.toUpperCase().includes('WATER') || eq.equipment_type?.includes('水冷'))
+              if (equipCategoryTab === 'PRESS_BASE') return sortEquip.filter(eq => eq.equipment_type?.toUpperCase().includes('PRESS') || eq.equipment_type?.includes('圧空'))
+              if (equipCategoryTab === 'FRAME') return sortEquip.filter(eq => eq.equipment_type?.toUpperCase().includes('FRAME') || eq.equipment_type?.includes('フレーム'))
+              if (equipCategoryTab === 'PLATE') return sortEquip.filter(eq => eq.equipment_type?.toUpperCase().includes('PLATE') || eq.equipment_type?.includes('面版'))
+              if (equipCategoryTab === 'PLUG') return sortEquip.filter(eq => eq.equipment_type?.toUpperCase().includes('PLUG') || eq.equipment_type?.includes('プラグ'))
+              return []
+            })()
+
+            const displayedCount = showMolds.length + showCutters.length + showEquip.length
+
             return (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
 
@@ -1300,12 +1329,57 @@ export function TabOverview(props: TabOverviewProps) {
                           選択解除 ×
                         </button>
                       )}
-                      <span style={{ fontSize: 10, color: 'var(--text-muted)', fontFamily: 'monospace' }}>{grandTotal}/{totalAll}</span>
+                      <span style={{ fontSize: 10, color: 'var(--text-muted)', fontFamily: 'monospace' }}>{displayedCount}/{grandTotal}</span>
                     </div>
                   </div>
 
+                  {/* Sub-tab navigation bar for equipment categories */}
+                  <div style={{
+                    display: 'flex', alignItems: 'center', gap: 3, padding: '4px 8px',
+                    background: 'var(--bg-surface-2)', borderBottom: '1px solid var(--border-default)',
+                    overflowX: 'auto', width: '100%', flexShrink: 0
+                  }}>
+                    {[
+                      { id: 'ALL', labelKey: 'equipTabAll' },
+                      { id: 'MOLD', labelKey: 'equipTabMold' },
+                      { id: 'CUTTER', labelKey: 'equipTabCutter' },
+                      { id: 'STACKING', labelKey: 'equipTabStacking' },
+                      { id: 'WATER_BASE', labelKey: 'equipTabWaterBase' },
+                      { id: 'PRESS_BASE', labelKey: 'equipTabPressBase' },
+                      { id: 'FRAME', labelKey: 'equipTabFrame' },
+                      { id: 'PLATE', labelKey: 'equipTabPlate' },
+                      { id: 'PLUG', labelKey: 'equipTabPlug' },
+                    ].map(tab => {
+                      const isSelected = equipCategoryTab === tab.id
+                      const cnt = getTabCount(tab.id)
+                      return (
+                        <button
+                          key={tab.id}
+                          onClick={() => setEquipCategoryTab(tab.id)}
+                          style={{
+                            fontSize: 10, fontWeight: isSelected ? 700 : 500,
+                            color: isSelected ? 'var(--accent)' : 'var(--text-secondary)',
+                            background: isSelected ? 'var(--bg-surface)' : 'none',
+                            border: isSelected ? '1px solid var(--accent)' : '1px solid transparent',
+                            borderRadius: 4, padding: '2px 7px', cursor: 'pointer', whiteSpace: 'nowrap',
+                            display: 'flex', alignItems: 'center', gap: 3
+                          }}
+                        >
+                          <span>{tPC(tab.labelKey)}</span>
+                          <span style={{
+                            fontSize: 9, opacity: isSelected ? 1 : 0.7, padding: '0 3px', borderRadius: 8,
+                            background: isSelected ? 'var(--tint-teal-bg)' : 'var(--border-default)',
+                            color: isSelected ? 'var(--accent)' : 'var(--text-primary)'
+                          }}>
+                            {cnt}
+                          </span>
+                        </button>
+                      )
+                    })}
+                  </div>
+
                   <div style={{ padding: 10 }}>
-                    {grandTotal === 0 ? (
+                    {displayedCount === 0 ? (
                       <div style={{ textAlign: 'center', padding: '12px 0', color: 'var(--text-muted)', fontSize: 12, lineHeight: 1.6 }}>
                         {tPC('noEquipmentLinked')}
                       </div>
@@ -1317,7 +1391,7 @@ export function TabOverview(props: TabOverviewProps) {
                         gap: equipViewMode === 'grid' ? 6 : 4
                       }}>
                         {/* Molds (金型) */}
-                        {sortMolds.map(m => {
+                        {showMolds.map(m => {
                           const isActive = getMoldRevId(m) === selectedRevId
                           const isDisposed = m.usage_status === 'DISPOSED'
                           const renderFunc = equipViewMode === 'grid' ? renderEquipCard : renderEquipRow
@@ -1337,7 +1411,7 @@ export function TabOverview(props: TabOverviewProps) {
                           )
                         })}
                         {/* Cutters (抜型) */}
-                        {sortCutters.map(c => {
+                        {showCutters.map(c => {
                           const isActive = c.linked_rev_id === selectedRevId
                           const isDisposed = c.usage_status === 'DISPOSED'
                           const renderFunc = equipViewMode === 'grid' ? renderEquipCard : renderEquipRow
@@ -1356,8 +1430,8 @@ export function TabOverview(props: TabOverviewProps) {
                             { type: 'cutter', data: c }
                           )
                         })}
-                        {/* Other Equipment (Press base, Water base, Stacking, Plug) */}
-                        {sortEquip.map(eq => {
+                        {/* Other Equipment (Press base, Water base, Stacking, Plug, Frame, Plate) */}
+                        {showEquip.map(eq => {
                           const isActive = eq.design_revision_id === selectedRevId
                           const isDisposed = eq.usage_status === 'DISPOSED'
                           const isPlug = eq.equipment_type?.includes('PLUG')
