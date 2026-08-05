@@ -1115,11 +1115,45 @@ export function TabOverview(props: TabOverviewProps) {
                     <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 10, color: 'var(--text-muted)', fontWeight: 600 }}>
                       {typeIcon} {typeLabel}
                     </span>
-                    <span className={binding.cls} style={{ fontSize: 8, padding: '1px 4px' }}>{binding.label}</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <span className={binding.cls} style={{ fontSize: 8, padding: '1px 4px' }}>{binding.label}</span>
+                      <button
+                        type="button"
+                        title={tPC('quickPreviewTitle') || 'Quick Preview'}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setPreviewItem(previewItemData)
+                        }}
+                        style={{
+                          background: 'none', border: 'none', padding: 2, cursor: 'pointer',
+                          color: 'var(--accent)', display: 'flex', alignItems: 'center'
+                        }}
+                      >
+                        <ExternalLink size={12} />
+                      </button>
+                    </div>
                   </div>
                   <div>
-                    <div style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: 12, color: 'var(--accent)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {code || '—'}
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <span
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setPreviewItem(previewItemData)
+                        }}
+                        style={{
+                          fontFamily: 'monospace', fontWeight: 700, fontSize: 12, color: 'var(--accent)',
+                          overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textDecoration: 'underline',
+                          cursor: 'pointer'
+                        }}
+                        title={tPC('quickPreviewTitle') || 'Quick Preview'}
+                      >
+                        {code || '—'}
+                      </span>
+                      {isEquipSelected && (
+                        <span className="badge badge--info font-bold" style={{ fontSize: 8, padding: '0 4px' }}>
+                          選択中
+                        </span>
+                      )}
                     </div>
                     <div style={{ color: 'var(--text-primary)', fontWeight: 600, fontSize: 11, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {name || '—'}
