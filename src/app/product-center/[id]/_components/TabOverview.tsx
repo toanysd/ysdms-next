@@ -1226,6 +1226,30 @@ export function TabOverview(props: TabOverviewProps) {
               )
             }
 
+            const getCategoryTheme = (tabId: string) => {
+              switch (tabId) {
+                case 'MOLD':
+                  return { bg: 'var(--tint-blue-bg)', border: 'var(--tint-blue-border)', text: 'var(--tint-blue-text)', badgeBg: 'rgba(2, 132, 199, 0.15)' }
+                case 'CUTTER':
+                  return { bg: 'var(--tint-orange-bg)', border: 'var(--tint-orange-border)', text: 'var(--tint-orange-text)', badgeBg: 'rgba(234, 88, 12, 0.15)' }
+                case 'STACKING':
+                  return { bg: 'var(--tint-teal-bg)', border: 'var(--tint-teal-border)', text: 'var(--tint-teal-text)', badgeBg: 'rgba(13, 148, 136, 0.15)' }
+                case 'WATER_BASE':
+                  return { bg: '#E0F2FE', border: '#BAE6FD', text: '#0284C7', badgeBg: 'rgba(2, 132, 199, 0.2)' }
+                case 'PRESS_BASE':
+                  return { bg: 'var(--tint-purple-bg)', border: 'var(--tint-purple-border)', text: 'var(--tint-purple-text)', badgeBg: 'rgba(147, 51, 234, 0.15)' }
+                case 'FRAME':
+                  return { bg: '#FEF3C7', border: '#FDE68A', text: '#D97706', badgeBg: 'rgba(217, 119, 6, 0.18)' }
+                case 'PLATE':
+                  return { bg: '#FFE4E6', border: '#FECDD3', text: '#E11D48', badgeBg: 'rgba(225, 29, 72, 0.15)' }
+                case 'PLUG':
+                  return { bg: '#E0E7FF', border: '#C7D2FE', text: '#4F46E5', badgeBg: 'rgba(79, 70, 229, 0.15)' }
+                case 'ALL':
+                default:
+                  return { bg: 'var(--bg-surface-2)', border: 'var(--border-default)', text: 'var(--text-primary)', badgeBg: 'var(--border-default)' }
+              }
+            }
+
             const getTabCount = (tabId: string) => {
               if (tabId === 'ALL') return grandTotal
               if (tabId === 'MOLD') return filteredMolds.length
@@ -1258,14 +1282,14 @@ export function TabOverview(props: TabOverviewProps) {
               <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
 
                 {/* 1. Các thiết bị liên quan */}
-                <div className="card-flat" style={{ padding: 0, overflow: 'hidden', border: '1px solid var(--tint-orange-border)' }}>
+                <div className="card-flat" style={{ padding: 0, overflow: 'hidden', border: '1px solid var(--border-default)' }}>
                   <div style={{
-                    background: 'var(--tint-orange-bg)', borderBottom: '1px solid var(--tint-orange-border)',
+                    background: 'var(--bg-surface-2)', borderBottom: '1px solid var(--border-default)',
                     padding: '8px 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between'
                   }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <Wrench size={14} style={{ color: 'var(--tint-orange-text)' }} />
-                      <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--tint-orange-text)' }}>{tPC('boxRelatedEquipmentTitle')}</span>
+                      <Wrench size={14} style={{ color: 'var(--accent)' }} />
+                      <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>{tPC('boxRelatedEquipmentTitle')}</span>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                       {/* View Mode Toggle: List vs Card/Grid */}
@@ -1333,11 +1357,11 @@ export function TabOverview(props: TabOverviewProps) {
                     </div>
                   </div>
 
-                  {/* Sub-tab navigation bar for equipment categories */}
+                  {/* Sub-tab navigation bar arranged in 2 rows with distinct theme colors */}
                   <div style={{
-                    display: 'flex', alignItems: 'center', gap: 3, padding: '4px 8px',
+                    display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 4, padding: '6px 8px',
                     background: 'var(--bg-surface-2)', borderBottom: '1px solid var(--border-default)',
-                    overflowX: 'auto', width: '100%', flexShrink: 0
+                    width: '100%', flexShrink: 0
                   }}>
                     {[
                       { id: 'ALL', labelKey: 'equipTabAll' },
@@ -1352,24 +1376,27 @@ export function TabOverview(props: TabOverviewProps) {
                     ].map(tab => {
                       const isSelected = equipCategoryTab === tab.id
                       const cnt = getTabCount(tab.id)
+                      const theme = getCategoryTheme(tab.id)
                       return (
                         <button
                           key={tab.id}
                           onClick={() => setEquipCategoryTab(tab.id)}
                           style={{
-                            fontSize: 10, fontWeight: isSelected ? 700 : 500,
-                            color: isSelected ? 'var(--accent)' : 'var(--text-secondary)',
-                            background: isSelected ? 'var(--bg-surface)' : 'none',
-                            border: isSelected ? '1px solid var(--accent)' : '1px solid transparent',
-                            borderRadius: 4, padding: '2px 7px', cursor: 'pointer', whiteSpace: 'nowrap',
-                            display: 'flex', alignItems: 'center', gap: 3
+                            fontSize: 10, fontWeight: isSelected ? 700 : 600,
+                            color: isSelected ? theme.text : 'var(--text-secondary)',
+                            background: isSelected ? theme.bg : 'var(--bg-surface)',
+                            border: isSelected ? `1.5px solid ${theme.text}` : `1px solid ${theme.border}`,
+                            borderRadius: 5, padding: '3px 8px', cursor: 'pointer', whiteSpace: 'nowrap',
+                            display: 'flex', alignItems: 'center', gap: 4,
+                            boxShadow: isSelected ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
+                            transition: 'all 0.15s ease'
                           }}
                         >
                           <span>{tPC(tab.labelKey)}</span>
                           <span style={{
-                            fontSize: 9, opacity: isSelected ? 1 : 0.7, padding: '0 3px', borderRadius: 8,
-                            background: isSelected ? 'var(--tint-teal-bg)' : 'var(--border-default)',
-                            color: isSelected ? 'var(--accent)' : 'var(--text-primary)'
+                            fontSize: 9, fontWeight: 700, padding: '0 4px', borderRadius: 8,
+                            background: isSelected ? theme.badgeBg : 'var(--bg-surface-2)',
+                            color: isSelected ? theme.text : 'var(--text-muted)'
                           }}>
                             {cnt}
                           </span>
@@ -1390,7 +1417,7 @@ export function TabOverview(props: TabOverviewProps) {
                         flexDirection: equipViewMode === 'list' ? 'column' : undefined,
                         gap: equipViewMode === 'grid' ? 6 : 4
                       }}>
-                        {/* Molds (金型) */}
+                        {/* Molds (金型 - Blue Theme) */}
                         {showMolds.map(m => {
                           const isActive = getMoldRevId(m) === selectedRevId
                           const isDisposed = m.usage_status === 'DISPOSED'
@@ -1400,7 +1427,7 @@ export function TabOverview(props: TabOverviewProps) {
                             'mold',
                             m.system_code,
                             m.display_name,
-                            <Wrench size={13} style={{ color: 'var(--tint-orange-text)', flexShrink: 0 }} />,
+                            <Wrench size={13} style={{ color: 'var(--tint-blue-text)', flexShrink: 0 }} />,
                             tPC('moldsGroupTitle') || '金型',
                             m.usage_status || m.device_status || '—',
                             STATUS_BADGE[m.usage_status || ''] || STATUS_BADGE[m.device_status || ''] || 'badge badge--neutral',
@@ -1410,7 +1437,7 @@ export function TabOverview(props: TabOverviewProps) {
                             { type: 'mold', data: m }
                           )
                         })}
-                        {/* Cutters (抜型) */}
+                        {/* Cutters (抜型 - Orange Theme) */}
                         {showCutters.map(c => {
                           const isActive = c.linked_rev_id === selectedRevId
                           const isDisposed = c.usage_status === 'DISPOSED'
@@ -1420,7 +1447,7 @@ export function TabOverview(props: TabOverviewProps) {
                             'cutter',
                             c.cutter_no,
                             c.cutter_name,
-                            <Scissors size={13} style={{ color: 'var(--tint-purple-text)', flexShrink: 0 }} />,
+                            <Scissors size={13} style={{ color: 'var(--tint-orange-text)', flexShrink: 0 }} />,
                             tPC('cuttersGroupTitle') || '抜型',
                             c.usage_status || (c.cutter_presence ? '在空' : '保管中'),
                             STATUS_BADGE[c.usage_status || ''] || 'badge badge--success',
@@ -1430,14 +1457,21 @@ export function TabOverview(props: TabOverviewProps) {
                             { type: 'cutter', data: c }
                           )
                         })}
-                        {/* Other Equipment (Press base, Water base, Stacking, Plug, Frame, Plate) */}
+                        {/* Other Equipment (Stacking, Water base, Press base, Frame, Plate, Plug) */}
                         {showEquip.map(eq => {
                           const isActive = eq.design_revision_id === selectedRevId
                           const isDisposed = eq.usage_status === 'DISPOSED'
-                          const isPlug = eq.equipment_type?.includes('PLUG')
-                          const isCutter = eq.equipment_type?.includes('CUTTER')
+                          const typeUpper = (eq.equipment_type || '').toUpperCase()
+                          const isPlug = typeUpper.includes('PLUG') || typeUpper.includes('プラグ')
+                          const isWater = typeUpper.includes('WATER') || typeUpper.includes('水冷')
+                          const isPress = typeUpper.includes('PRESS') || typeUpper.includes('圧空')
+                          const isFrame = typeUpper.includes('FRAME') || typeUpper.includes('フレーム')
+                          const isPlate = typeUpper.includes('PLATE') || typeUpper.includes('面版')
+                          const isStack = typeUpper.includes('STACK') || typeUpper.includes('スタッキング')
+                          const isCutter = typeUpper.includes('CUTTER') || typeUpper.includes('抜型')
+
                           const Icon = isCutter ? Scissors : isPlug ? Pin : Wrench
-                          const tintColor = isCutter ? 'var(--tint-purple-text)' : isPlug ? 'var(--tint-blue-text)' : 'var(--tint-orange-text)'
+                          const tintColor = isWater ? '#0284C7' : isPress ? 'var(--tint-purple-text)' : isStack ? 'var(--tint-teal-text)' : isFrame ? '#D97706' : isPlate ? '#E11D48' : isPlug ? '#4F46E5' : 'var(--accent)'
                           const typeLabel = isCutter ? (tPC('cutterThumbnail') || '抜型') : isPlug ? (tPC('plugThumbnail') || 'プラグ') : eq.equipment_type || 'Equipment'
                           const renderFunc = equipViewMode === 'grid' ? renderEquipCard : renderEquipRow
                           return renderFunc(
