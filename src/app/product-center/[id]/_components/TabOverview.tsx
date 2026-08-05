@@ -450,7 +450,9 @@ export function TabOverview(props: TabOverviewProps) {
         }
 
         // Order Lines
-        const { data: lines, count: lCount } = await supabase
+        let linesData: any[] | null = null
+        let lCountVal = 0
+        const { data: lines, count: lCount, error: linesErr } = await supabase
           .from('order_lines')
           .select(`
             line_id, quantity, unit, created_at,
@@ -462,19 +464,37 @@ export function TabOverview(props: TabOverviewProps) {
           .eq('product_id', productId)
           .order('created_at', { ascending: false })
 
-        if (lines && lines.length > 0) {
-          setTotalOrderCount(lCount || lines.length)
-          const sumQty = lines.reduce((acc: number, l: any) => acc + (l.quantity || 0), 0)
+        if (linesErr) {
+          const { data: fallbackLines, count: fbCount } = await supabase
+            .from('order_lines')
+            .select(`
+              line_id, quantity, unit, created_at,
+              orders(
+                order_id, order_no, order_date, order_status, notes
+              )
+            `, { count: 'exact' })
+            .eq('product_id', productId)
+            .order('created_at', { ascending: false })
+          linesData = fallbackLines
+          lCountVal = fbCount || 0
+        } else {
+          linesData = lines
+          lCountVal = lCount || 0
+        }
+
+        if (linesData && linesData.length > 0) {
+          setTotalOrderCount(lCountVal || linesData.length)
+          const sumQty = linesData.reduce((acc: number, l: any) => acc + (l.quantity || 0), 0)
           setTotalOrderQty(sumQty)
-          const mappedLines = (lines.slice(0, 5) as unknown) as RecentOrderLine[]
+          const mappedLines = (linesData.slice(0, 5) as unknown) as RecentOrderLine[]
           setRecentOrders(mappedLines)
           setSelectedOrderLine(mappedLines[0])
 
-          const shippedLines = lines.filter((l: any) => l.orders?.order_status === 'COMPLETED' || l.orders?.order_status === 'SHIPPED')
+          const shippedLines = linesData.filter((l: any) => l.orders?.order_status === 'COMPLETED' || l.orders?.order_status === 'SHIPPED')
           const shippedQty = shippedLines.reduce((acc: number, l: any) => acc + (l.quantity || 0), 0)
           setTotalDelivered(shippedQty)
 
-          const totalValidOrders = lines.filter((l: any) => l.orders?.order_status === 'COMPLETED').length
+          const totalValidOrders = linesData.filter((l: any) => l.orders?.order_status === 'COMPLETED').length
           if (totalValidOrders > 0) {
             setOnTimeRate(95)
           }
@@ -619,7 +639,7 @@ export function TabOverview(props: TabOverviewProps) {
                     href={`/master/customers/${customer?.company_id || companyId}`}
                     style={{ fontSize: 10, color: 'var(--accent)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 3, fontWeight: 600 }}
                   >
-                    {tCommon('detail')} <ExternalLink size={10} />
+                    {tCommon('details')} <ExternalLink size={10} />
                   </Link>
                 )}
               </div>
