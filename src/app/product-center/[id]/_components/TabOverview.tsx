@@ -20,6 +20,10 @@ type JobItem = {
   job_status: string | null
   mold_deadline: string | null
   created_at: string
+  physical_mold_id?: string | null
+  cutter_id?: string | null
+  equipment_id?: string | null
+  design_revision_id?: string | null
 }
 
 interface TabOverviewProps {
@@ -264,6 +268,7 @@ export function TabOverview(props: TabOverviewProps) {
   const [equipDetails, setEquipDetails] = useState<EquipDetail[]>([])
   const [cutterDetails, setCutterDetails] = useState<CutterDetail[]>([])
   const [previewItem, setPreviewItem] = useState<QuickPreviewItem | null>(null)
+  const [selectedEquip, setSelectedEquip] = useState<{ type: 'mold' | 'cutter' | 'equip'; id: string; code: string } | null>(null)
 
   // Active Job
   const [activeJob, setActiveJob] = useState<{ id: string; code: string; status: string; deadline: string; name: string } | null>(null)
@@ -400,8 +405,8 @@ export function TabOverview(props: TabOverviewProps) {
           setCutterDetails(Array.from(cutterMap.values()) as unknown as CutterDetail[])
         }
 
-        // Jobs
-        let jobQuery = supabase.from('jobs').select('job_id, job_code, job_name, job_status, mold_deadline, created_at')
+        // Jobs (select extra equipment link columns)
+        let jobQuery = supabase.from('jobs').select('job_id, job_code, job_name, job_status, mold_deadline, created_at, physical_mold_id, equipment_id, design_revision_id')
         if (revIds.length > 0) {
           jobQuery = jobQuery.or(`product_id.eq.${productId},design_revision_id.in.(${revIds.join(',')})`)
         } else {
@@ -552,182 +557,7 @@ export function TabOverview(props: TabOverviewProps) {
         </div>
       </div>
 
-      {/* ═══ ROW 2: Product Identity + Customer + Orders (3 column — business info priority) ═══ */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(260px, 1fr) minmax(220px, 1fr) minmax(260px, 1fr)', gap: 14 }}>
-
-        {/* COL 1: Product Identity Card */}
-        <div className="card-flat" style={{ padding: 0, overflow: 'hidden', border: '1px solid var(--tint-teal-border)' }}>
-          <div style={{
-            background: 'var(--tint-teal-bg)', borderBottom: '1px solid var(--tint-teal-border)',
-            padding: '8px 12px', display: 'flex', alignItems: 'center', gap: 6
-          }}>
-            <Package size={14} style={{ color: 'var(--tint-teal-text)' }} />
-            <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--tint-teal-text)' }}>{tPC('productIdentity')}</span>
-          </div>
-          <div style={{
-            padding: '10px 12px',
-            background: 'linear-gradient(135deg, var(--tint-teal-bg) 0%, var(--bg-surface-2) 100%)',
-            display: 'flex', alignItems: 'center', gap: 10,
-            borderBottom: '1px solid var(--border-subtle)'
-          }}>
-            <div style={{
-              width: 38, height: 38, borderRadius: 6,
-              background: 'var(--bg-surface)', border: '1px solid var(--tint-teal-border)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0
-            }}>
-              <Package size={20} style={{ color: 'var(--accent)' }} />
-            </div>
-            <div style={{ minWidth: 0, flex: 1 }}>
-              <div style={{ fontSize: 15, fontWeight: 800, fontFamily: 'monospace', color: 'var(--accent)' }}>
-                {productCode}
-              </div>
-              <div style={{ fontSize: 11, color: '#475569', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {productName || productNameInternal || tPC('noImageAvailable')}
-              </div>
-            </div>
-          </div>
-          <div style={{ padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <InfoRow label={tProd('productCode')} value={productCode} mono accent />
-            <InfoRow label={tPC('internalNameLabel')} value={productNameInternal} />
-            <InfoRow label={tProd('productName')} value={productName} />
-            <InfoRow label={tPC('customerProductNameLabel')} value={customerProductName} />
-            <InfoRow label={tProd('pocketCount')} value={pocketCount || activeRev?.pocket_numbers || activeRev?.cavity_count} mono />
-            <InfoRow label={tPC('piecesPerBoxLabel')} value={piecesPerBox} mono />
-            <InfoRow label={tPC('boxSpecLabel')} value={null} />
-            <InfoRow label={tPC('plasticSpecLabel')} value={primaryPlasticSpec || primaryPlasticCode || activeRev?.plastic_type_designed} mono />
-            <InfoRow label={tPC('firstShipmentLabel')} value={firstShipmentDate} mono />
-            {notes && (
-              <div style={{ marginTop: 4, padding: '6px 8px', background: 'var(--bg-surface-2)', borderRadius: 4, fontSize: 11, color: 'var(--text-secondary)', lineHeight: 1.4 }}>
-                <span style={{ fontWeight: 600, color: 'var(--text-muted)', fontSize: 10 }}>{tPC('notesLabel')}:</span> {notes}
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* COL 2: Customer + Alerts */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          <div className="card-flat" style={{ padding: 0, overflow: 'hidden', border: '1px solid var(--tint-blue-border)' }}>
-            <div style={{
-              background: 'var(--tint-blue-bg)', borderBottom: '1px solid var(--tint-blue-border)',
-              padding: '8px 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between'
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <Building2 size={14} style={{ color: 'var(--tint-blue-text)' }} />
-                <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--tint-blue-text)' }}>{tCust('customer')}</span>
-              </div>
-              {customer && (
-                <Link href={`/master/customers/${customer.company_id}`} style={{ fontSize: 10, color: 'var(--accent)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 3 }}>
-                  <ExternalLink size={10} /> {tPC('openPage')}
-                </Link>
-              )}
-            </div>
-            <div style={{ padding: '8px 12px' }}>
-              {customer ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                  <InfoRow label={tCust('customerCode')} value={customer.company_code} mono accent />
-                  <InfoRow label={tCust('companyName')} value={customer.company_name} />
-                  {customer.tel && <InfoRow label={tPC('phoneLabel')} value={customer.tel} mono />}
-                </div>
-              ) : (
-                <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>—</div>
-              )}
-            </div>
-          </div>
-
-          {/* Active Job mini card */}
-          {activeJob && (
-            <div className="card-flat" style={{ padding: 0, overflow: 'hidden', border: '1px solid var(--tint-orange-border)' }}>
-              <div style={{
-                background: 'var(--tint-orange-bg)', borderBottom: '1px solid var(--tint-orange-border)',
-                padding: '8px 12px', display: 'flex', alignItems: 'center', gap: 6
-              }}>
-                <Hammer size={14} style={{ color: 'var(--tint-orange-text)' }} />
-                <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--tint-orange-text)' }}>{tPC('activeJobCard')}</span>
-              </div>
-              <div style={{ padding: '8px 12px' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <Link href={`/equipment/jobs/${activeJob.id}`} style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: 13, color: 'var(--accent)', textDecoration: 'none' }}>
-                      {activeJob.code}
-                    </Link>
-                    <span className={STATUS_BADGE[activeJob.status] || 'badge badge--neutral'} style={{ fontSize: 8 }}>
-                      {activeJob.status}
-                    </span>
-                  </div>
-                  {activeJob.name && <span style={{ fontSize: 11, color: 'var(--text-secondary)' }}>{activeJob.name}</span>}
-                  <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>
-                    {tPC('deadline')}: <span style={{ fontFamily: 'monospace', fontWeight: 600 }}>{activeJob.deadline}</span>
-                  </span>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* System Alerts */}
-          {alerts.length > 0 && (
-            <div className="card-flat" style={{ padding: 0, overflow: 'hidden', border: '1px solid var(--status-warning-bg)' }}>
-              <div style={{
-                background: 'var(--status-warning-bg)', borderBottom: '1px solid color-mix(in srgb, var(--status-warning) 30%, transparent)',
-                padding: '8px 12px', display: 'flex', alignItems: 'center', gap: 6
-              }}>
-                <ShieldAlert size={14} style={{ color: 'var(--status-warning-text)' }} />
-                <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--status-warning-text)' }}>{tPC('systemAlerts')}</span>
-              </div>
-              <div style={{ padding: '8px 12px', display: 'flex', flexDirection: 'column', gap: 4 }}>
-                {alerts.map(a => (
-                  <div key={a.id} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: a.type === 'warning' ? 'var(--status-warning-text)' : 'var(--text-secondary)' }}>
-                    <AlertTriangle size={12} />
-                    <span>{a.text}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* COL 3: Recent Orders */}
-        <div className="card-flat" style={{ padding: 0, overflow: 'hidden', border: '1px solid var(--tint-purple-border)' }}>
-          <div style={{
-            background: 'var(--tint-purple-bg)', borderBottom: '1px solid var(--tint-purple-border)',
-            padding: '8px 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <FileText size={14} style={{ color: 'var(--tint-purple-text)' }} />
-              <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--tint-purple-text)' }}>{tPC('recentOrdersCard')}</span>
-            </div>
-            <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>{totalOrderCount} total</span>
-          </div>
-          <div style={{ padding: 10 }}>
-            {recentOrders.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '12px 0', color: 'var(--text-muted)', fontSize: 11 }}>{tPC('noOrdersForProduct')}</div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                {recentOrders.slice(0, 5).map(ol => (
-                  <div key={ol.line_id} style={{
-                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                    padding: '5px 8px', borderRadius: 4, background: 'var(--bg-surface-2)', fontSize: 11
-                  }}>
-                    <Link
-                      href={ol.orders ? `/orders/${ol.orders.order_id}` : '#'}
-                      style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: 12, color: 'var(--accent)', textDecoration: 'none' }}
-                    >
-                      {ol.orders?.order_no || '—'}
-                    </Link>
-                    <span style={{ fontFamily: 'monospace', fontWeight: 600, color: 'var(--text-primary)' }}>
-                      {ol.quantity?.toLocaleString()} pcs
-                    </span>
-                    <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>
-                      {ol.orders?.order_date?.slice(0, 10) || '—'}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* ═══ ROW 3: Tech Specs (FULL WIDTH) — Revision List LEFT + Spec Grid RIGHT ═══ */}
+      {/* ═══ ROW 2 (TOP SECTION): Tech Specs Card (FULL WIDTH) — Revision List LEFT + Spec Grid RIGHT ═══ */}
       <div className="card-flat" style={{ padding: 0, overflow: 'hidden', border: '1px solid var(--tint-teal-border)' }}>
         <div style={{
           background: 'var(--tint-teal-bg)', borderBottom: '1px solid var(--tint-teal-border)',
@@ -879,7 +709,182 @@ export function TabOverview(props: TabOverviewProps) {
         </div>
       </div>
 
-      {/* ═══ ROW 4: Equipment (compact inline list) + Jobs (compact list) ═══ */}
+      {/* ═══ ROW 3 (MIDDLE SECTION): Product Identity + Customer Info + Orders (3 Column Grid) ═══ */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(260px, 1fr) minmax(220px, 1fr) minmax(260px, 1fr)', gap: 14 }}>
+
+        {/* COL 1: Product Identity Card */}
+        <div className="card-flat" style={{ padding: 0, overflow: 'hidden', border: '1px solid var(--tint-teal-border)' }}>
+          <div style={{
+            background: 'var(--tint-teal-bg)', borderBottom: '1px solid var(--tint-teal-border)',
+            padding: '8px 12px', display: 'flex', alignItems: 'center', gap: 6
+          }}>
+            <Package size={14} style={{ color: 'var(--tint-teal-text)' }} />
+            <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--tint-teal-text)' }}>{tPC('productIdentity')}</span>
+          </div>
+          <div style={{
+            padding: '10px 12px',
+            background: 'linear-gradient(135deg, var(--tint-teal-bg) 0%, var(--bg-surface-2) 100%)',
+            display: 'flex', alignItems: 'center', gap: 10,
+            borderBottom: '1px solid var(--border-subtle)'
+          }}>
+            <div style={{
+              width: 38, height: 38, borderRadius: 6,
+              background: 'var(--bg-surface)', border: '1px solid var(--tint-teal-border)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0
+            }}>
+              <Package size={20} style={{ color: 'var(--accent)' }} />
+            </div>
+            <div style={{ minWidth: 0, flex: 1 }}>
+              <div style={{ fontSize: 15, fontWeight: 800, fontFamily: 'monospace', color: 'var(--accent)' }}>
+                {productCode}
+              </div>
+              <div style={{ fontSize: 11, color: '#475569', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {productName || productNameInternal || tPC('noImageAvailable')}
+              </div>
+            </div>
+          </div>
+          <div style={{ padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <InfoRow label={tProd('productCode')} value={productCode} mono accent />
+            <InfoRow label={tPC('internalNameLabel')} value={productNameInternal} />
+            <InfoRow label={tProd('productName')} value={productName} />
+            <InfoRow label={tPC('customerProductNameLabel')} value={customerProductName} />
+            <InfoRow label={tProd('pocketCount')} value={pocketCount || activeRev?.pocket_numbers || activeRev?.cavity_count} mono />
+            <InfoRow label={tPC('piecesPerBoxLabel')} value={piecesPerBox} mono />
+            <InfoRow label={tPC('boxSpecLabel')} value={null} />
+            <InfoRow label={tPC('plasticSpecLabel')} value={primaryPlasticSpec || primaryPlasticCode || activeRev?.plastic_type_designed} mono />
+            <InfoRow label={tPC('firstShipmentLabel')} value={firstShipmentDate} mono />
+            {notes && (
+              <div style={{ marginTop: 4, padding: '6px 8px', background: 'var(--bg-surface-2)', borderRadius: 4, fontSize: 11, color: 'var(--text-secondary)', lineHeight: 1.4 }}>
+                <span style={{ fontWeight: 600, color: 'var(--text-muted)', fontSize: 10 }}>{tPC('notesLabel')}:</span> {notes}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* COL 2: Customer + Active Job + System Alerts */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <div className="card-flat" style={{ padding: 0, overflow: 'hidden', border: '1px solid var(--tint-blue-border)' }}>
+            <div style={{
+              background: 'var(--tint-blue-bg)', borderBottom: '1px solid var(--tint-blue-border)',
+              padding: '8px 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <Building2 size={14} style={{ color: 'var(--tint-blue-text)' }} />
+                <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--tint-blue-text)' }}>{tCust('customer')}</span>
+              </div>
+              {customer && (
+                <Link href={`/master/customers/${customer.company_id}`} style={{ fontSize: 10, color: 'var(--accent)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 3 }}>
+                  <ExternalLink size={10} /> {tPC('openPage')}
+                </Link>
+              )}
+            </div>
+            <div style={{ padding: '8px 12px' }}>
+              {customer ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                  <InfoRow label={tCust('customerCode')} value={customer.company_code} mono accent />
+                  <InfoRow label={tCust('companyName')} value={customer.company_name} />
+                  {customer.tel && <InfoRow label={tPC('phoneLabel')} value={customer.tel} mono />}
+                </div>
+              ) : (
+                <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>—</div>
+              )}
+            </div>
+          </div>
+
+          {/* Active Job mini card */}
+          {activeJob && (
+            <div className="card-flat" style={{ padding: 0, overflow: 'hidden', border: '1px solid var(--tint-orange-border)' }}>
+              <div style={{
+                background: 'var(--tint-orange-bg)', borderBottom: '1px solid var(--tint-orange-border)',
+                padding: '8px 12px', display: 'flex', alignItems: 'center', gap: 6
+              }}>
+                <Hammer size={14} style={{ color: 'var(--tint-orange-text)' }} />
+                <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--tint-orange-text)' }}>{tPC('activeJobCard')}</span>
+              </div>
+              <div style={{ padding: '8px 12px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <Link href={`/equipment/jobs/${activeJob.id}`} style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: 13, color: 'var(--accent)', textDecoration: 'none' }}>
+                      {activeJob.code}
+                    </Link>
+                    <span className={STATUS_BADGE[activeJob.status] || 'badge badge--neutral'} style={{ fontSize: 8 }}>
+                      {activeJob.status}
+                    </span>
+                  </div>
+                  {activeJob.name && <span style={{ fontSize: 11, color: 'var(--text-secondary)' }}>{activeJob.name}</span>}
+                  <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>
+                    {tPC('deadline')}: <span style={{ fontFamily: 'monospace', fontWeight: 600 }}>{activeJob.deadline}</span>
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* System Alerts */}
+          {alerts.length > 0 && (
+            <div className="card-flat" style={{ padding: 0, overflow: 'hidden', border: '1px solid var(--status-warning-bg)' }}>
+              <div style={{
+                background: 'var(--status-warning-bg)', borderBottom: '1px solid color-mix(in srgb, var(--status-warning) 30%, transparent)',
+                padding: '8px 12px', display: 'flex', alignItems: 'center', gap: 6
+              }}>
+                <ShieldAlert size={14} style={{ color: 'var(--status-warning-text)' }} />
+                <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--status-warning-text)' }}>{tPC('systemAlerts')}</span>
+              </div>
+              <div style={{ padding: '8px 12px', display: 'flex', flexDirection: 'column', gap: 4 }}>
+                {alerts.map(a => (
+                  <div key={a.id} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: a.type === 'warning' ? 'var(--status-warning-text)' : 'var(--text-secondary)' }}>
+                    <AlertTriangle size={12} />
+                    <span>{a.text}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* COL 3: Recent Orders */}
+        <div className="card-flat" style={{ padding: 0, overflow: 'hidden', border: '1px solid var(--tint-purple-border)' }}>
+          <div style={{
+            background: 'var(--tint-purple-bg)', borderBottom: '1px solid var(--tint-purple-border)',
+            padding: '8px 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <FileText size={14} style={{ color: 'var(--tint-purple-text)' }} />
+              <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--tint-purple-text)' }}>{tPC('recentOrdersCard')}</span>
+            </div>
+            <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>{totalOrderCount} total</span>
+          </div>
+          <div style={{ padding: 10 }}>
+            {recentOrders.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '12px 0', color: 'var(--text-muted)', fontSize: 11 }}>{tPC('noOrdersForProduct')}</div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                {recentOrders.slice(0, 5).map(ol => (
+                  <div key={ol.line_id} style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    padding: '5px 8px', borderRadius: 4, background: 'var(--bg-surface-2)', fontSize: 11
+                  }}>
+                    <Link
+                      href={ol.orders ? `/orders/${ol.orders.order_id}` : '#'}
+                      style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: 12, color: 'var(--accent)', textDecoration: 'none' }}
+                    >
+                      {ol.orders?.order_no || '—'}
+                    </Link>
+                    <span style={{ fontFamily: 'monospace', fontWeight: 600, color: 'var(--text-primary)' }}>
+                      {ol.quantity?.toLocaleString()} pcs
+                    </span>
+                    <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>
+                      {ol.orders?.order_date?.slice(0, 10) || '—'}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* ═══ ROW 4 (BOTTOM SECTION): Equipment Overview & Equipment-Linked Jobs (2 Column Grid 55% / 45%) ═══ */}
       {(() => {
         const getMoldRevId = (m: MoldDetail) => {
           const linkedRevId = m.mold_revisions?.design_revision_id
@@ -916,9 +921,19 @@ export function TabOverview(props: TabOverviewProps) {
           return { label: tPC('bindingLegacy'), cls: 'badge badge--neutral' }
         }
 
-        // Compact inline equipment row renderer
+        // Filter jobs linked to selected equipment
+        const displayedJobs = allJobs.filter(j => {
+          if (!selectedEquip) return true
+          if (selectedEquip.type === 'mold') return j.physical_mold_id === selectedEquip.id || j.design_revision_id === selectedRevId
+          if (selectedEquip.type === 'cutter') return j.cutter_id === selectedEquip.id || j.design_revision_id === selectedRevId
+          if (selectedEquip.type === 'equip') return j.equipment_id === selectedEquip.id || j.design_revision_id === selectedRevId
+          return true
+        })
+
+        // Compact equipment row renderer with Selection toggle & Preview modal button
         const renderEquipRow = (
-          key: string,
+          id: string,
+          type: 'mold' | 'cutter' | 'equip',
           code: string | null,
           name: string | null,
           typeIcon: React.ReactNode,
@@ -928,49 +943,86 @@ export function TabOverview(props: TabOverviewProps) {
           binding: { label: string; cls: string },
           rack: string,
           keeper: string,
-          onClick: () => void
-        ) => (
-          <div
-            key={key}
-            onClick={onClick}
-            style={{
-              display: 'flex', alignItems: 'center', gap: 8,
-              padding: '6px 10px', borderRadius: 6,
-              background: binding.cls.includes('success') ? 'var(--tint-teal-bg)' : 'var(--bg-surface-2)',
-              border: binding.cls.includes('success') ? '1.5px solid var(--accent)' : '1px solid var(--border-default)',
-              cursor: 'pointer', transition: 'all 0.15s ease', fontSize: 11
-            }}
-          >
-            {typeIcon}
-            <span style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: 12, color: 'var(--accent)', minWidth: 80 }}>
-              {code || '—'}
-            </span>
-            <span style={{ flex: 1, color: 'var(--text-primary)', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {name || '—'}
-            </span>
-            <span style={{ fontSize: 9, color: 'var(--text-muted)', fontWeight: 600, minWidth: 40 }}>{typeLabel}</span>
-            <span style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: 9, color: 'var(--text-muted)', minWidth: 60 }}>
-              <MapPin size={9} /> {rack}
-            </span>
-            <span style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: 9, color: 'var(--text-muted)', minWidth: 40 }}>
-              <Building2 size={9} /> {keeper}
-            </span>
-            <span className={statusCls} style={{ fontSize: 7 }}>{statusText}</span>
-            <span className={binding.cls} style={{ fontSize: 7, padding: '1px 5px' }}>{binding.label}</span>
-          </div>
-        )
+          previewItemData: QuickPreviewItem
+        ) => {
+          const isEquipSelected = selectedEquip?.id === id
+          return (
+            <div
+              key={id}
+              onClick={() => {
+                setSelectedEquip(prev => prev?.id === id ? null : { type, id, code: code || id })
+              }}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 8,
+                padding: '6px 10px', borderRadius: 6,
+                background: isEquipSelected ? 'var(--tint-teal-bg)' : (binding.cls.includes('success') ? 'var(--tint-teal-bg)' : 'var(--bg-surface-2)'),
+                border: isEquipSelected ? '2px solid var(--accent)' : (binding.cls.includes('success') ? '1.5px solid var(--accent)' : '1px solid var(--border-default)'),
+                cursor: 'pointer', transition: 'all 0.15s ease', fontSize: 11
+              }}
+            >
+              {typeIcon}
+              <span style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: 12, color: 'var(--accent)', minWidth: 75 }}>
+                {code || '—'}
+              </span>
+              <span style={{ flex: 1, color: 'var(--text-primary)', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {name || '—'}
+              </span>
+              <span style={{ fontSize: 9, color: 'var(--text-muted)', fontWeight: 600, minWidth: 35 }}>{typeLabel}</span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: 9, color: 'var(--text-muted)', minWidth: 55 }}>
+                <MapPin size={9} /> {rack}
+              </span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: 9, color: 'var(--text-muted)', minWidth: 35 }}>
+                <Building2 size={9} /> {keeper}
+              </span>
+              <span className={statusCls} style={{ fontSize: 7 }}>{statusText}</span>
+              <span className={binding.cls} style={{ fontSize: 7, padding: '1px 5px' }}>{binding.label}</span>
+              {isEquipSelected && (
+                <span className="badge badge--info font-bold" style={{ fontSize: 7, padding: '1px 5px' }}>
+                  選択中
+                </span>
+              )}
+              <button
+                type="button"
+                title={tPC('quickPreviewTitle') || 'Quick Preview'}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setPreviewItem(previewItemData)
+                }}
+                style={{
+                  background: 'none', border: 'none', padding: 2, cursor: 'pointer',
+                  color: 'var(--text-muted)', display: 'flex', alignItems: 'center'
+                }}
+              >
+                <ExternalLink size={12} />
+              </button>
+            </div>
+          )
+        }
 
         return (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            {/* Equipment compact list */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.2fr) minmax(0, 1fr)', gap: 14 }}>
+            
+            {/* Left: Equipment Overview (55% width) */}
             <div className="card-flat" style={{ padding: 0, overflow: 'hidden', border: '1px solid var(--tint-orange-border)' }}>
               <div style={{
                 background: 'var(--tint-orange-bg)', borderBottom: '1px solid var(--tint-orange-border)',
-                padding: '8px 12px', display: 'flex', alignItems: 'center', gap: 6
+                padding: '8px 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between'
               }}>
-                <Wrench size={14} style={{ color: 'var(--tint-orange-text)' }} />
-                <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--tint-orange-text)' }}>{tPC('equipmentOverview')}</span>
-                <span style={{ fontSize: 10, color: 'var(--text-muted)', marginLeft: 'auto' }}>{grandTotal} items</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <Wrench size={14} style={{ color: 'var(--tint-orange-text)' }} />
+                  <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--tint-orange-text)' }}>{tPC('equipmentOverview')}</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  {selectedEquip && (
+                    <button
+                      onClick={() => setSelectedEquip(null)}
+                      style={{ fontSize: 9, padding: '1px 6px', background: 'var(--bg-surface)', border: '1px solid var(--border-default)', borderRadius: 3, cursor: 'pointer', color: 'var(--text-secondary)' }}
+                    >
+                      選択解除 (×)
+                    </button>
+                  )}
+                  <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>{grandTotal} items</span>
+                </div>
               </div>
               <div style={{ padding: 10 }}>
                 {grandTotal === 0 ? (
@@ -985,6 +1037,7 @@ export function TabOverview(props: TabOverviewProps) {
                       const isDisposed = m.usage_status === 'DISPOSED'
                       return renderEquipRow(
                         m.physical_mold_id,
+                        'mold',
                         m.system_code,
                         m.display_name,
                         <Wrench size={13} style={{ color: 'var(--tint-orange-text)', flexShrink: 0 }} />,
@@ -994,7 +1047,7 @@ export function TabOverview(props: TabOverviewProps) {
                         bindingLabel(isActive, isDisposed),
                         getRack(m.rack_layers),
                         m.keeper_company?.company_code || m.keeper_company?.company_name || 'YSD',
-                        () => setPreviewItem({ type: 'mold', data: m })
+                        { type: 'mold', data: m }
                       )
                     })}
                     {/* Cutters */}
@@ -1003,6 +1056,7 @@ export function TabOverview(props: TabOverviewProps) {
                       const isDisposed = c.usage_status === 'DISPOSED'
                       return renderEquipRow(
                         c.cutter_id,
+                        'cutter',
                         c.cutter_no,
                         c.cutter_name,
                         <Scissors size={13} style={{ color: 'var(--tint-purple-text)', flexShrink: 0 }} />,
@@ -1012,7 +1066,7 @@ export function TabOverview(props: TabOverviewProps) {
                         bindingLabel(isActive, isDisposed, c.is_shared),
                         getRack(c.rack_layers),
                         c.keeper_company?.company_code || c.keeper_company?.company_name || 'YSD',
-                        () => setPreviewItem({ type: 'cutter', data: c })
+                        { type: 'cutter', data: c }
                       )
                     })}
                     {/* Other Equipment */}
@@ -1026,6 +1080,7 @@ export function TabOverview(props: TabOverviewProps) {
                       const typeLabel = isCutter ? (tPC('cutterThumbnail') || '抜型') : isPlug ? (tPC('plugThumbnail') || 'プラグ') : eq.equipment_type || 'Equipment'
                       return renderEquipRow(
                         eq.equipment_id,
+                        'equip',
                         eq.equipment_code,
                         eq.display_name,
                         <Icon size={13} style={{ color: tintColor, flexShrink: 0 }} />,
@@ -1035,7 +1090,7 @@ export function TabOverview(props: TabOverviewProps) {
                         bindingLabel(isActive, isDisposed),
                         getRack(eq.rack_layers),
                         eq.keeper_company?.company_code || eq.keeper_company?.company_name || 'YSD',
-                        () => setPreviewItem({ type: 'equip', data: eq })
+                        { type: 'equip', data: eq }
                       )
                     })}
                   </div>
@@ -1043,7 +1098,7 @@ export function TabOverview(props: TabOverviewProps) {
               </div>
             </div>
 
-            {/* Jobs compact list */}
+            {/* Right: Jobs Linked to Selected Equipment (45% width) */}
             <div className="card-flat" style={{ padding: 0, overflow: 'hidden', border: '1px solid var(--tint-orange-border)' }}>
               <div style={{
                 background: 'var(--tint-orange-bg)', borderBottom: '1px solid var(--tint-orange-border)',
@@ -1052,19 +1107,23 @@ export function TabOverview(props: TabOverviewProps) {
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                   <Hammer size={14} style={{ color: 'var(--tint-orange-text)' }} />
                   <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--tint-orange-text)' }}>
-                    {tPC('machiningHistoryCard') || '加工・改造履歴'}
+                    {selectedEquip ? `[ ${selectedEquip.code} ] 加工・改造履歴` : (tPC('machiningHistoryCard') || '加工・改造履歴')}
                   </span>
                 </div>
-                <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>{allJobs.length} total</span>
+                <span className="badge badge--neutral font-mono font-bold" style={{ fontSize: 9 }}>
+                  {displayedJobs.length} jobs
+                </span>
               </div>
               <div style={{ padding: 10 }}>
-                {allJobs.length === 0 ? (
-                  <div style={{ textAlign: 'center', padding: '12px 0', color: 'var(--text-muted)', fontSize: 11 }}>
-                    {tPC('noJobsForEquipment') || '加工・改造履歴はありません'}
+                {displayedJobs.length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: '16px 0', color: 'var(--text-muted)', fontSize: 11 }}>
+                    {selectedEquip
+                      ? `設備 [${selectedEquip.code}] に関連する加工・改造履歴はありません`
+                      : (tPC('noJobsForEquipment') || '加工・改造履歴はありません')}
                   </div>
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                    {allJobs.map(job => (
+                    {displayedJobs.map(job => (
                       <div
                         key={job.job_id}
                         style={{
@@ -1095,6 +1154,7 @@ export function TabOverview(props: TabOverviewProps) {
                 )}
               </div>
             </div>
+
           </div>
         )
       })()}
