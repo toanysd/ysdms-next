@@ -289,9 +289,10 @@ Bước 1: Tạo Job
   → start_date = ngày bắt đầu
   → year_period, month_period = năm/tháng kế hoạch
 
-  Phân loại tự động (từ VBA):
-  → Nếu tên khuôn có "D" (test mold): processing_item_id = 2 (試作ポケット)
-  → Nếu khuôn thường: processing_item_id = 1 (金型)
+  Phân loại tự động & Định nghĩa CAV (đã cập nhật 2026-08-05):
+  → Nếu tên khuôn có "D" (như TDW001DR2, TDW001DR3): Phân loại là `試作ポケット` (Khuôn/Bản vẽ thử nghiệm Pocket 1 túi).
+  → Nếu khuôn sản xuất chính: Phân loại là `正規金型` (Khuôn chính sản xuất hàng loạt).
+  → 📌 **ĐỊNH NGHĨA CAV:** `CAV` là Mã khổ Kích thước ngoài của Khuôn (`actual_length_mm` × `actual_width_mm`) theo tiêu chuẩn YSD (Khổ A: 470x300, Khổ ZD: 470x347...). **KHÔNG PHẢI Pocket Count / Cavity nhỏ!**
   → MachiningCustomerID mặc định = 2 (社内/In-house)
 
 Bước 2: Tạo Job Steps (Bước công việc / ProcessingDeadline)

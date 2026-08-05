@@ -558,13 +558,19 @@ FK:  work_log_id       UUID → work_logs(id)
 > (khuôn, dao cắt, đế làm mát, đế khí nén, khung, stacking, plug) ngang hàng.
 > Bảng `equipment` là nguồn dữ liệu sự thật duy nhất (Single Source of Truth).
 > Các bảng legacy `physical_molds` và `cutters` được giữ lại duy nhất cho backward compatibility.
+>
+> 📌 **QUY TẮC CAV & DÙNG CHUNG THIẾT BỊ (BẮT BUỘC):**
+> 1. **`CAV` = Mã khổ Kích thước ngoài của Khuôn** (`actual_length_mm` × `actual_width_mm`) theo tiêu chuẩn YSD (Khổ A: 470x300, Khổ ZD: 470x347...). **KHÔNG PHẢI Pocket Count / Cavity nhỏ!**
+> 2. **Dùng chung theo Kích thước ngoài Sản phẩm:** Dao cắt (`CUTTER_SEPARATE`/`CUTTER_INLINE`) và Stacking (`STACKING`).
+> 3. **Dùng chung theo Mã CAV Khuôn:** Đế làm mát (`WATER_BASE`), Đế khí nén (`PRESSURE_BASE`), Khung (`FRAME`).
+> 4. **Mã CutterNo:** Dãy số tự nhiên (VD: `1042`), không ghép `CT-` vào tên hiển thị để tránh nhầm với mã khuôn `CT-1042`.
 
 ```
 PK:  equipment_id          UUID
-     equipment_code        TEXT UNIQUE NOT NULL    ← Mã hệ thống (K-0123, WB-470X400, CT-001)
-     display_name          TEXT NOT NULL           ← Tên hiển thị
-     equipment_type        TEXT NOT NULL           ← 'MOLD','CUTTER_INLINE','CUTTER_SEPARATE','WATER_BASE','PRESSURE_BASE','FRAME','STACKING'
-     sub_type              TEXT                    ← Phân loại phụ
+     equipment_code        TEXT UNIQUE NOT NULL    ← Mã hệ thống duy nhất (VD: MOLD-0123, WB-ZD-01, 1042)
+     display_name          TEXT NOT NULL           ← Tên hiển thị (VD: TDW-001 R3, 1042)
+     equipment_type        TEXT NOT NULL           ← 'MOLD','CUTTER_INLINE','CUTTER_SEPARATE','WATER_BASE','PRESSURE_BASE','FRAME','STACKING','PLUG'
+     sub_type              TEXT                    ← Phân loại phụ ('PROTOTYPE_POCKET', 'MASS_PRODUCTION'...)
      physical_stamp        TEXT                    ← Ký hiệu đóng dấu trên thiết bị
      dimensions            TEXT                    ← Kích thước tổng quát
      actual_length_mm      TEXT
@@ -579,7 +585,6 @@ FK:  keeper_company_id     UUID → companies(company_id)
 FK:  design_revision_id    UUID → design_revisions(revision_id)
 FK:  cav_type_id           UUID → cav_types(cav_type_id)
      mold_master_id        UUID                   ← Backward compat (no FK, mold_masters DROPped)
-FK:  mold_revision_id      UUID → mold_revisions(revision_id)
 FK:  current_rack_layer_id UUID → rack_layers(id)
      device_status         TEXT DEFAULT 'NORMAL'
      usage_status          TEXT DEFAULT 'STORAGE'
