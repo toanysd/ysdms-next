@@ -600,8 +600,9 @@ export function TabOverview(props: TabOverviewProps) {
         </div>
       </div>
 
-                {/* ═══ MAIN 3-COLUMN LAYOUT: Left (250px) | Center (flex 1.5) | Right (max 450px) ═══ */}
-      <div style={{ display: 'grid', gridTemplateColumns: '250px minmax(0, 1.5fr) minmax(320px, 450px)', gap: 12 }}>
+        {/* ═══ MAIN 3-COLUMN LAYOUT: Left (250px) | Center (flex 1.5) | Right (max 450px) ═══ */}
+      <div style={{ overflowX: 'auto', width: '100%', paddingBottom: 6 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '250px minmax(360px, 1.5fr) minmax(280px, 450px)', minWidth: '1020px', gap: 12 }}>
 
         {/* 👈 COLUMN 1 (Left 270px): Product Overview -> Product Details */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -808,51 +809,53 @@ export function TabOverview(props: TabOverviewProps) {
                           <span><strong>{tPC('changeSummary')}:</strong> {activeRev.change_summary || activeRev.version_note}</span>
                         </div>
                       )}
-                      {/* 3-Column Structured Layout */}
-                      <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr 1fr', gap: '2px 14px', fontSize: 12 }}>
-                        {/* Column 1: Main Text & Plastic Spec */}
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                          <SpecCell label={tPC('trayDimensions')} value={trayDims ? `${trayDims} mm` : null} isDiff={trayDimsDiff} diffLabel={tPC('fieldChanged')} />
-                          <SpecCell label={tPC('designedMaterial')} value={activeRev.plastic_type_designed || primaryPlasticCode} isDiff={plasticDiff} diffLabel={tPC('fieldChanged')} mono={false} />
-                          <SpecCell label={tPC('customerTrayName')} value={activeRev.customer_tray_name} isDiff={customerTrayNameDiff} diffLabel={tPC('fieldChanged')} mono={false} />
-                          {activeRev.tray_info && (
-                            <SpecCell label={tPC('trayInfoLabel')} value={activeRev.tray_info} isDiff={trayInfoDiff} diffLabel={tPC('fieldChanged')} mono={false} />
-                          )}
-                        </div>
+                      {/* 3-Column Structured Layout with Horizontal Scroll Protection */}
+                      <div style={{ overflowX: 'auto', width: '100%', paddingBottom: 2 }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1.25fr 1fr 1fr', minWidth: '480px', gap: '2px 14px', fontSize: 12 }}>
+                          {/* Column 1: Main Text & Plastic Spec */}
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                            <SpecCell label={tPC('trayDimensions')} value={trayDims ? `${trayDims} mm` : null} isDiff={trayDimsDiff} diffLabel={tPC('fieldChanged')} />
+                            <SpecCell label={tPC('designedMaterial')} value={activeRev.plastic_type_designed || primaryPlasticCode} isDiff={plasticDiff} diffLabel={tPC('fieldChanged')} mono={false} />
+                            <SpecCell label={tPC('customerTrayName')} value={activeRev.customer_tray_name} isDiff={customerTrayNameDiff} diffLabel={tPC('fieldChanged')} mono={false} />
+                            {activeRev.tray_info && (
+                              <SpecCell label={tPC('trayInfoLabel')} value={activeRev.tray_info} isDiff={trayInfoDiff} diffLabel={tPC('fieldChanged')} mono={false} />
+                            )}
+                          </div>
 
-                        {/* Column 2: Dimensions & Pocket / Impression */}
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                          <SpecCell label={tPC('cutlineDimensions')} value={productDimsSpec || null} isDiff={cutlineDimsDiff} diffLabel={tPC('fieldChanged')} />
-                          <SpecCell
-                            label={tPC('cavityAndPitch')}
-                            value={(activeRev.pocket_numbers || activeRev.cavity_count) ? `${activeRev.pocket_numbers || activeRev.cavity_count} Pocket${activeRev.cavity_pitch_mm ? ' / ' + activeRev.cavity_pitch_mm + 'mm' : ''}` : null}
-                            isDiff={cavityDiff}
-                            diffLabel={tPC('fieldChanged')}
-                          />
-                          <SpecCell
-                            label={tPC('impressionCount')}
-                            value={(activeRev.pocket_numbers || activeRev.cavity_count) ? `${activeRev.pocket_numbers || activeRev.cavity_count} 取` : null}
-                            isDiff={cavityDiff}
-                            diffLabel={tPC('fieldChanged')}
-                          />
-                          <SpecCell label={tPC('setupTypeLabel')} value={activeRev.setup_type} isDiff={setupTypeDiff} diffLabel={tPC('fieldChanged')} mono={false} />
-                          <SpecCell label={tPC('orientationLabel')} value={activeRev.orientation} isDiff={orientationDiff} diffLabel={tPC('fieldChanged')} mono={false} />
-                        </div>
+                          {/* Column 2: Dimensions & Pocket / Impression */}
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                            <SpecCell label={tPC('cutlineDimensions')} value={productDimsSpec || null} isDiff={cutlineDimsDiff} diffLabel={tPC('fieldChanged')} />
+                            <SpecCell
+                              label={tPC('cavityAndPitch')}
+                              value={(activeRev.pocket_numbers || activeRev.cavity_count) ? `${activeRev.pocket_numbers || activeRev.cavity_count} Pocket${activeRev.cavity_pitch_mm ? ' / ' + activeRev.cavity_pitch_mm + 'mm' : ''}` : null}
+                              isDiff={cavityDiff}
+                              diffLabel={tPC('fieldChanged')}
+                            />
+                            <SpecCell
+                              label={tPC('impressionCount')}
+                              value={(activeRev.pocket_numbers || activeRev.cavity_count) ? `${activeRev.pocket_numbers || activeRev.cavity_count} 取` : null}
+                              isDiff={cavityDiff}
+                              diffLabel={tPC('fieldChanged')}
+                            />
+                            <SpecCell label={tPC('setupTypeLabel')} value={activeRev.setup_type} isDiff={setupTypeDiff} diffLabel={tPC('fieldChanged')} mono={false} />
+                            <SpecCell label={tPC('orientationLabel')} value={activeRev.orientation} isDiff={orientationDiff} diffLabel={tPC('fieldChanged')} mono={false} />
+                          </div>
 
-                        {/* Column 3: Angles, Formings & Accessories */}
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                          <SpecCell label={tPC('draftAngleLabel')} value={activeRev.draft_angle != null ? `${activeRev.draft_angle}°` : null} isDiff={draftAngleDiff} diffLabel={tPC('fieldChanged')} />
-                          <SpecCell label={tPC('cornerRadiusLabel')} value={activeRev.corner_r != null ? `R${activeRev.corner_r}` : null} isDiff={cornerRDiff} diffLabel={tPC('fieldChanged')} />
-                          <SpecCell label={tPC('chamferLabel')} value={activeRev.chamfer_c != null ? `C${activeRev.chamfer_c}` : null} isDiff={chamferCDiff} diffLabel={tPC('fieldChanged')} />
-                          <SpecCell label={tPC('undercutDepthLabel')} value={activeRev.under_depth != null ? `${activeRev.under_depth} mm` : null} />
-                          <SpecCell label={tPC('plugTypeLabel')} value={activeRev.plug_type} isDiff={plugTypeDiff} diffLabel={tPC('fieldChanged')} mono={false} />
-                          <SpecCell
-                            label={tPC('hasSeparateCutterLabel')}
-                            value={activeRev.has_separate_cutter == null ? null : (activeRev.has_separate_cutter ? tPC('yesLabel') : tPC('noLabel'))}
-                            isDiff={separateCutterDiff}
-                            diffLabel={tPC('fieldChanged')}
-                            mono={false}
-                          />
+                          {/* Column 3: Angles, Formings & Accessories */}
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                            <SpecCell label={tPC('draftAngleLabel')} value={activeRev.draft_angle != null ? `${activeRev.draft_angle}°` : null} isDiff={draftAngleDiff} diffLabel={tPC('fieldChanged')} />
+                            <SpecCell label={tPC('cornerRadiusLabel')} value={activeRev.corner_r != null ? `R${activeRev.corner_r}` : null} isDiff={cornerRDiff} diffLabel={tPC('fieldChanged')} />
+                            <SpecCell label={tPC('chamferLabel')} value={activeRev.chamfer_c != null ? `C${activeRev.chamfer_c}` : null} isDiff={chamferCDiff} diffLabel={tPC('fieldChanged')} />
+                            <SpecCell label={tPC('undercutDepthLabel')} value={activeRev.under_depth != null ? `${activeRev.under_depth} mm` : null} />
+                            <SpecCell label={tPC('plugTypeLabel')} value={activeRev.plug_type} isDiff={plugTypeDiff} diffLabel={tPC('fieldChanged')} mono={false} />
+                            <SpecCell
+                              label={tPC('hasSeparateCutterLabel')}
+                              value={activeRev.has_separate_cutter == null ? null : (activeRev.has_separate_cutter ? tPC('yesLabel') : tPC('noLabel'))}
+                              isDiff={separateCutterDiff}
+                              diffLabel={tPC('fieldChanged')}
+                              mono={false}
+                            />
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -1473,8 +1476,8 @@ export function TabOverview(props: TabOverviewProps) {
           })()}
 
         </div>
-
       </div>
+    </div>
 
       {/* Equipment Quick Preview Modal */}
       <EquipmentQuickPreviewModal
