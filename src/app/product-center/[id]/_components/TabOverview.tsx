@@ -354,8 +354,6 @@ export function TabOverview(props: TabOverviewProps) {
             `)
             .in('design_revision_id', revIds)
 
-          if (equips) setEquipDetails(equips as unknown as EquipDetail[])
-
           // Cutters (抜型) - Direct & Junction Shared
           const { data: directCutters } = await supabase
             .from('cutters')
@@ -366,6 +364,22 @@ export function TabOverview(props: TabOverviewProps) {
               keeper_company:companies!cutters_keeper_company_id_fkey(company_code, company_name)
             `)
             .in('design_revision_id', revIds)
+
+          // Deduplicate equipment table entries that duplicate items in cutters table
+          const cutterNoSet = new Set((directCutters || []).map(c => (c.cutter_no || '').trim().toUpperCase()))
+          const deduplicatedEquips = (equips || []).filter((eq: any) => {
+            const isCutterType = (eq.equipment_type || '').toUpperCase().includes('CUTTER') || eq.equipment_type?.includes('抜型')
+            if (isCutterType) {
+              const code = (eq.equipment_code || '').trim().toUpperCase()
+              const codeClean = code.replace(/^CT-/, '')
+              if (cutterNoSet.has(code) || cutterNoSet.has(codeClean)) {
+                return false // Filter out duplicate cutter migration entry
+              }
+            }
+            return true
+          })
+
+          if (equips) setEquipDetails(deduplicatedEquips as unknown as EquipDetail[])
 
           const { data: juncs } = await supabase
             .from('mold_design_cutters')
