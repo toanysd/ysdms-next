@@ -8,7 +8,7 @@ import {
   Calendar, Wrench, Hammer, PenTool, AlertTriangle,
   Building2, ExternalLink, Layers, ShieldAlert,
   Package, Scissors, Pin, FileText, MapPin,
-  Scale, Ruler, CircleDot
+  Scale, Ruler, CircleDot, LayoutGrid, List
 } from 'lucide-react'
 import Link from 'next/link'
 import EquipmentQuickPreviewModal, { type QuickPreviewItem } from './EquipmentQuickPreviewModal'
@@ -277,6 +277,7 @@ export function TabOverview(props: TabOverviewProps) {
   const [previewItem, setPreviewItem] = useState<QuickPreviewItem | null>(null)
   const [selectedEquip, setSelectedEquip] = useState<{ type: 'mold' | 'cutter' | 'equip'; id: string; code: string } | null>(null)
   const [equipFilterMode, setEquipFilterMode] = useState<'revision' | 'all'>('revision')
+  const [equipViewMode, setEquipViewMode] = useState<'list' | 'grid'>('list')
 
   // Active Job
   const [activeJob, setActiveJob] = useState<{ id: string; code: string; status: string; deadline: string; name: string } | null>(null)
@@ -766,7 +767,7 @@ export function TabOverview(props: TabOverviewProps) {
                           )}
                         </div>
 
-                        {/* Column 2: Dimensions & Pitch */}
+                        {/* Column 2: Dimensions & Pocket / Impression */}
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
                           {cutlineDims && <SpecCell label={tPC('cutlineDimensions')} value={`${cutlineDims} mm`} isDiff={cutlineDimsDiff} diffLabel={tPC('fieldChanged')} />}
                           <SpecCell
@@ -775,7 +776,12 @@ export function TabOverview(props: TabOverviewProps) {
                             isDiff={cavityDiff}
                             diffLabel={tPC('fieldChanged')}
                           />
-                          <SpecCell label={tPC('feedPitch')} value={activeRev.machine_feed_pitch_mm ? `${activeRev.machine_feed_pitch_mm} mm` : null} isDiff={feedPitchDiff} diffLabel={tPC('fieldChanged')} />
+                          <SpecCell
+                            label={tPC('impressionCount')}
+                            value={(activeRev.pocket_numbers || activeRev.cavity_count) ? `${activeRev.pocket_numbers || activeRev.cavity_count} 取` : null}
+                            isDiff={cavityDiff}
+                            diffLabel={tPC('fieldChanged')}
+                          />
                           <SpecCell label={tPC('setupTypeLabel')} value={activeRev.setup_type} isDiff={setupTypeDiff} diffLabel={tPC('fieldChanged')} mono={false} />
                           <SpecCell label={tPC('orientationLabel')} value={activeRev.orientation} isDiff={orientationDiff} diffLabel={tPC('fieldChanged')} mono={false} />
                         </div>
@@ -785,7 +791,7 @@ export function TabOverview(props: TabOverviewProps) {
                           <SpecCell label={tPC('draftAngleLabel')} value={activeRev.draft_angle != null ? `${activeRev.draft_angle}°` : null} isDiff={draftAngleDiff} diffLabel={tPC('fieldChanged')} />
                           <SpecCell label={tPC('cornerRadiusLabel')} value={activeRev.corner_r != null ? `R${activeRev.corner_r}` : null} isDiff={cornerRDiff} diffLabel={tPC('fieldChanged')} />
                           <SpecCell label={tPC('chamferLabel')} value={activeRev.chamfer_c != null ? `C${activeRev.chamfer_c}` : null} isDiff={chamferCDiff} diffLabel={tPC('fieldChanged')} />
-                          <SpecCell label="Undercut" value={activeRev.under_depth != null ? `${activeRev.under_depth} mm` : null} />
+                          <SpecCell label={tPC('undercutDepthLabel')} value={activeRev.under_depth != null ? `${activeRev.under_depth} mm` : null} />
                           <SpecCell label={tPC('plugTypeLabel')} value={activeRev.plug_type} isDiff={plugTypeDiff} diffLabel={tPC('fieldChanged')} mono={false} />
                           <SpecCell
                             label={tPC('hasSeparateCutterLabel')}
@@ -1006,7 +1012,7 @@ export function TabOverview(props: TabOverviewProps) {
               return { label: tPC('bindingLegacy'), cls: 'badge badge--neutral' }
             }
 
-            // Compact equipment row renderer
+            // Compact equipment row renderer (for List View)
             const renderEquipRow = (
               id: string,
               type: 'mold' | 'cutter' | 'equip',
@@ -1075,6 +1081,60 @@ export function TabOverview(props: TabOverviewProps) {
               )
             }
 
+            // Compact equipment card renderer (for Grid/Card View)
+            const renderEquipCard = (
+              id: string,
+              type: 'mold' | 'cutter' | 'equip',
+              code: string | null,
+              name: string | null,
+              typeIcon: React.ReactNode,
+              typeLabel: string,
+              statusText: string,
+              statusCls: string,
+              binding: { label: string; cls: string },
+              rack: string,
+              keeper: string,
+              previewItemData: QuickPreviewItem
+            ) => {
+              const isEquipSelected = selectedEquip?.id === id
+              return (
+                <div
+                  key={id}
+                  onClick={() => {
+                    setSelectedEquip(prev => prev?.id === id ? null : { type, id, code: code || id })
+                  }}
+                  style={{
+                    display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: 4,
+                    padding: '8px 10px', borderRadius: 6,
+                    background: isEquipSelected ? 'var(--tint-teal-bg)' : (binding.cls.includes('success') ? 'var(--tint-teal-bg)' : 'var(--bg-surface-2)'),
+                    border: isEquipSelected ? '2px solid var(--accent)' : (binding.cls.includes('success') ? '1.5px solid var(--accent)' : '1px solid var(--border-default)'),
+                    cursor: 'pointer', transition: 'all 0.15s ease', fontSize: 11
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 10, color: 'var(--text-muted)', fontWeight: 600 }}>
+                      {typeIcon} {typeLabel}
+                    </span>
+                    <span className={binding.cls} style={{ fontSize: 8, padding: '1px 4px' }}>{binding.label}</span>
+                  </div>
+                  <div>
+                    <div style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: 12, color: 'var(--accent)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {code || '—'}
+                    </div>
+                    <div style={{ color: 'var(--text-primary)', fontWeight: 600, fontSize: 11, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {name || '—'}
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: 4, borderTop: '1px dashed var(--border-subtle)', fontSize: 9 }}>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: 2, color: 'var(--text-muted)', fontFamily: 'monospace' }}>
+                      <MapPin size={9} /> {rack}
+                    </span>
+                    <span className={statusCls} style={{ fontSize: 8 }}>{statusText}</span>
+                  </div>
+                </div>
+              )
+            }
+
             return (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
 
@@ -1089,6 +1149,32 @@ export function TabOverview(props: TabOverviewProps) {
                       <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--tint-orange-text)' }}>{tPC('boxRelatedEquipmentTitle')}</span>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      {/* View Mode Toggle: List vs Card/Grid */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 1, background: 'var(--bg-surface)', padding: '2px', borderRadius: 5, border: '1px solid var(--border-default)' }}>
+                        <button
+                          onClick={() => setEquipViewMode('list')}
+                          title={tPC('equipViewList')}
+                          style={{
+                            display: 'flex', alignItems: 'center', padding: '2px 5px', borderRadius: 4, border: 'none', cursor: 'pointer',
+                            background: equipViewMode === 'list' ? 'var(--tint-teal-bg)' : 'none',
+                            color: equipViewMode === 'list' ? 'var(--accent)' : 'var(--text-muted)'
+                          }}
+                        >
+                          <List size={12} />
+                        </button>
+                        <button
+                          onClick={() => setEquipViewMode('grid')}
+                          title={tPC('equipViewGrid')}
+                          style={{
+                            display: 'flex', alignItems: 'center', padding: '2px 5px', borderRadius: 4, border: 'none', cursor: 'pointer',
+                            background: equipViewMode === 'grid' ? 'var(--tint-teal-bg)' : 'none',
+                            color: equipViewMode === 'grid' ? 'var(--accent)' : 'var(--text-muted)'
+                          }}
+                        >
+                          <LayoutGrid size={12} />
+                        </button>
+                      </div>
+
                       {/* Filter Chips: Revision / All */}
                       <div style={{ display: 'flex', alignItems: 'center', gap: 2, background: 'var(--bg-surface)', padding: '2px 3px', borderRadius: 5, border: '1px solid var(--border-default)' }}>
                         <button
@@ -1134,12 +1220,18 @@ export function TabOverview(props: TabOverviewProps) {
                         {tPC('noEquipmentLinked')}
                       </div>
                     ) : (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                      <div style={{
+                        display: equipViewMode === 'grid' ? 'grid' : 'flex',
+                        gridTemplateColumns: equipViewMode === 'grid' ? 'repeat(auto-fill, minmax(150px, 1fr))' : undefined,
+                        flexDirection: equipViewMode === 'list' ? 'column' : undefined,
+                        gap: equipViewMode === 'grid' ? 8 : 4
+                      }}>
                         {/* Molds (金型) */}
                         {sortMolds.map(m => {
                           const isActive = getMoldRevId(m) === selectedRevId
                           const isDisposed = m.usage_status === 'DISPOSED'
-                          return renderEquipRow(
+                          const renderFunc = equipViewMode === 'grid' ? renderEquipCard : renderEquipRow
+                          return renderFunc(
                             m.physical_mold_id,
                             'mold',
                             m.system_code,
@@ -1158,7 +1250,8 @@ export function TabOverview(props: TabOverviewProps) {
                         {sortCutters.map(c => {
                           const isActive = c.linked_rev_id === selectedRevId
                           const isDisposed = c.usage_status === 'DISPOSED'
-                          return renderEquipRow(
+                          const renderFunc = equipViewMode === 'grid' ? renderEquipCard : renderEquipRow
+                          return renderFunc(
                             c.cutter_id,
                             'cutter',
                             c.cutter_no,
@@ -1182,7 +1275,8 @@ export function TabOverview(props: TabOverviewProps) {
                           const Icon = isCutter ? Scissors : isPlug ? Pin : Wrench
                           const tintColor = isCutter ? 'var(--tint-purple-text)' : isPlug ? 'var(--tint-blue-text)' : 'var(--tint-orange-text)'
                           const typeLabel = isCutter ? (tPC('cutterThumbnail') || '抜型') : isPlug ? (tPC('plugThumbnail') || 'プラグ') : eq.equipment_type || 'Equipment'
-                          return renderEquipRow(
+                          const renderFunc = equipViewMode === 'grid' ? renderEquipCard : renderEquipRow
+                          return renderFunc(
                             eq.equipment_id,
                             'equip',
                             eq.equipment_code,
