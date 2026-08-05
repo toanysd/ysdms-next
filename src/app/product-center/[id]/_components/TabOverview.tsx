@@ -73,6 +73,8 @@ type DesignRevItem = {
   change_summary?: string | null
   created_at: string
   designer: string | null
+  design_category?: string | null
+  parent_design_id?: string | null
 }
 
 type CustomerInfo = {
@@ -311,7 +313,8 @@ export function TabOverview(props: TabOverviewProps) {
             design_length, design_width, design_height, design_depth,
             cutline_length, cutline_width, cavity_count, pocket_numbers, cavity_pitch_mm, machine_feed_pitch_mm,
             plastic_type_designed, corner_r, chamfer_c, draft_angle, under_depth, orientation, setup_type, plug_type,
-            has_separate_cutter, customer_tray_name, tray_info, version_note, created_at, designer
+            has_separate_cutter, customer_tray_name, tray_info, version_note, created_at, designer,
+            design_category, parent_design_id
           `)
           .eq('product_id', productId)
           .order('created_at', { ascending: false })
@@ -832,11 +835,16 @@ export function TabOverview(props: TabOverviewProps) {
                             {r.status}
                           </span>
                         </div>
-                        {r.created_at && (
-                          <span style={{ fontSize: 10, color: 'var(--text-muted)', fontFamily: 'monospace' }}>
-                            {r.created_at.slice(0, 10)}
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 4 }}>
+                          <span style={{ fontSize: 8, fontWeight: 700, padding: '1px 4px', borderRadius: 3, background: (r.design_category === 'PROTOTYPE_POCKET' || r.design_code?.includes('D')) ? 'var(--tint-orange-bg)' : 'var(--tint-teal-bg)', color: (r.design_category === 'PROTOTYPE_POCKET' || r.design_code?.includes('D')) ? 'var(--tint-orange-text)' : 'var(--tint-teal-text)' }}>
+                            {(r.design_category === 'PROTOTYPE_POCKET' || r.design_code?.includes('D')) ? '🧪 試作' : '🟢 正規'}
                           </span>
-                        )}
+                          {r.created_at && (
+                            <span style={{ fontSize: 9, color: 'var(--text-muted)', fontFamily: 'monospace' }}>
+                              {r.created_at.slice(0, 10)}
+                            </span>
+                          )}
+                        </div>
                       </div>
                     )
                   })}
@@ -1502,6 +1510,17 @@ export function TabOverview(props: TabOverviewProps) {
                   </div>
 
                   <div style={{ padding: 10 }}>
+                    {displayedCount > 0 && (showCutters.length > 0 || equipCategoryTab === 'CUTTER') && (
+                      <div style={{
+                        padding: '6px 10px', marginBottom: 8, borderRadius: 5,
+                        background: 'var(--tint-orange-bg)', border: '1px solid var(--tint-orange-border)',
+                        fontSize: 10, color: 'var(--tint-orange-text)', fontWeight: 600,
+                        display: 'flex', alignItems: 'center', gap: 6
+                      }}>
+                        <Scissors size={12} style={{ flexShrink: 0 }} />
+                        <span>⚠️ 抜型・スタッキング提案: 外形寸法による自動提案です。実際の切断線形状・R/C角・内側穴あきについて必ず担当者が確認して下さい。</span>
+                      </div>
+                    )}
                     {displayedCount === 0 ? (
                       <div style={{ textAlign: 'center', padding: '12px 0', color: 'var(--text-muted)', fontSize: 12, lineHeight: 1.6 }}>
                         {tPC('noEquipmentLinked')}
