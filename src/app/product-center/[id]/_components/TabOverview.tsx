@@ -171,10 +171,10 @@ const STATUS_BADGE: Record<string, string> = {
 /* ────────── helper: info row ────────── */
 function InfoRow({ label, value, mono, accent }: { label: string; value: string | number | null | undefined; mono?: boolean; accent?: boolean }) {
   return (
-    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', padding: '1px 0', lineHeight: 1.5 }}>
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', padding: '2px 0', lineHeight: 1.5 }}>
       <span style={{
-        fontSize: 10, color: '#64748B', fontWeight: 600, fontFamily: 'var(--font-jp)',
-        whiteSpace: 'nowrap',
+        fontSize: 10, color: '#475569', fontWeight: 600, fontFamily: 'var(--font-jp)',
+        whiteSpace: 'nowrap', flexShrink: 0,
       }}>
         {label}
       </span>
@@ -182,7 +182,7 @@ function InfoRow({ label, value, mono, accent }: { label: string; value: string 
         fontSize: 13, fontWeight: 700,
         fontFamily: mono ? 'monospace' : 'var(--font-jp)',
         color: accent ? 'var(--accent)' : (value == null ? '#94A3B8' : '#0F172A'),
-        maxWidth: '68%', textAlign: 'right', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'
+        maxWidth: '74%', textAlign: 'right', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'
       }}>
         {value ?? '—'}
       </span>
@@ -570,8 +570,8 @@ export function TabOverview(props: TabOverviewProps) {
         </div>
       </div>
 
-                {/* ═══ MAIN 2-COLUMN LAYOUT: Left Sidebar (280px) | Right Main Area (flex: 1) ═══ */}
-      <div style={{ display: 'grid', gridTemplateColumns: '280px minmax(0, 1fr)', gap: 14 }}>
+                {/* ═══ MAIN 2-COLUMN LAYOUT: Left Sidebar (300px) | Right Main Area (flex: 1) ═══ */}
+      <div style={{ display: 'grid', gridTemplateColumns: '300px minmax(0, 1fr)', gap: 14 }}>
 
         {/* 👈 LEFT SIDEBAR: Product Overview -> Product Details -> Order History -> Delivery Address */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -813,7 +813,7 @@ export function TabOverview(props: TabOverviewProps) {
                           <span><strong>{tPC('changeSummary')}:</strong> {activeRev.change_summary || activeRev.version_note}</span>
                         </div>
                       )}
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '2px 16px', fontSize: 12 }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '2px 14px', fontSize: 12 }}>
                         {trayDims && <SpecCell label={tPC('trayDimensions')} value={`${trayDims} mm`} isDiff={trayDimsDiff} diffLabel={tPC('fieldChanged')} />}
                         {cutlineDims && <SpecCell label={tPC('cutlineDimensions')} value={`${cutlineDims} mm`} isDiff={cutlineDimsDiff} diffLabel={tPC('fieldChanged')} />}
                         <SpecCell label={tPC('designedMaterial')} value={activeRev.plastic_type_designed || primaryPlasticCode} isDiff={plasticDiff} diffLabel={tPC('fieldChanged')} mono={false} />
@@ -973,13 +973,19 @@ export function TabOverview(props: TabOverviewProps) {
                   }}
                 >
                   {typeIcon}
-                  <span style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: 12, color: 'var(--accent)', minWidth: 75 }}>
+                  <span style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: 12, color: 'var(--accent)', minWidth: 80 }}>
                     {code || '—'}
                   </span>
                   <span style={{ flex: 1, color: 'var(--text-primary)', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {name || '—'}
                   </span>
-                  <span style={{ fontSize: 9, color: 'var(--text-muted)', fontWeight: 600, minWidth: 35 }}>{typeLabel}</span>
+                  <span style={{ fontSize: 9, color: 'var(--text-muted)', fontWeight: 600 }}>{typeLabel}</span>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: 9, color: 'var(--text-muted)', fontFamily: 'monospace' }}>
+                    <MapPin size={9} /> {rack}
+                  </span>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: 9, color: 'var(--text-muted)' }}>
+                    <Building2 size={9} /> {keeper}
+                  </span>
                   <span className={statusCls} style={{ fontSize: 7 }}>{statusText}</span>
                   <span className={binding.cls} style={{ fontSize: 7, padding: '1px 5px' }}>{binding.label}</span>
                   {isEquipSelected && (
@@ -1006,9 +1012,9 @@ export function TabOverview(props: TabOverviewProps) {
             }
 
             return (
-              <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.2fr) minmax(0, 1fr)', gap: 14 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.35fr) minmax(0, 1fr)', gap: 14 }}>
 
-                {/* Sub-column 1 (Left 55%): Các thiết bị liên quan (Khuôn | Dao cắt | Press Base | Water Base | Stacking) */}
+                {/* Sub-column 1 (Left 57%): Các thiết bị liên quan (Khuôn | Dao cắt | Press Base | Water Base | Stacking) */}
                 <div className="card-flat" style={{ padding: 0, overflow: 'hidden', border: '1px solid var(--tint-orange-border)' }}>
                   <div style={{
                     background: 'var(--tint-orange-bg)', borderBottom: '1px solid var(--tint-orange-border)',
@@ -1105,7 +1111,7 @@ export function TabOverview(props: TabOverviewProps) {
                   </div>
                 </div>
 
-                {/* Sub-column 2 (Right 45%): Storage Info Box (Top) + Equipment Job History Box (Bottom) */}
+                {/* Sub-column 2 (Right 43%): Storage Info Box (Top) + Equipment Job History Box (Bottom) */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
 
                   {/* Top Box: Thông tin lưu trữ thiết bị */}
@@ -1121,7 +1127,7 @@ export function TabOverview(props: TabOverviewProps) {
                     </div>
                     <div style={{ padding: '10px 12px', fontSize: 11 }}>
                       {selectedEquipData ? (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px 14px' }}>
                           <InfoRow label={tPC('equipCodeLabel')} value={selectedEquipData.code} mono accent />
                           <InfoRow label={tPC('equipNameLabel')} value={selectedEquipData.name} />
                           <InfoRow label={tPC('rackLocationLabel')} value={selectedEquipData.rack} mono />
