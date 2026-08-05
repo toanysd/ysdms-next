@@ -171,9 +171,9 @@ const STATUS_BADGE: Record<string, string> = {
 /* ────────── helper: info row ────────── */
 function InfoRow({ label, value, mono, accent }: { label: string; value: string | number | null | undefined; mono?: boolean; accent?: boolean }) {
   return (
-    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', padding: '2px 0', lineHeight: 1.5 }}>
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', padding: '2px 0', lineHeight: 1.6 }}>
       <span style={{
-        fontSize: 10, color: '#475569', fontWeight: 600, fontFamily: 'var(--font-jp)',
+        fontSize: 11, color: '#475569', fontWeight: 600, fontFamily: 'var(--font-jp)',
         whiteSpace: 'nowrap', flexShrink: 0,
       }}>
         {label}
@@ -182,7 +182,7 @@ function InfoRow({ label, value, mono, accent }: { label: string; value: string 
         fontSize: 13, fontWeight: 700,
         fontFamily: mono ? 'monospace' : 'var(--font-jp)',
         color: accent ? 'var(--accent)' : (value == null ? '#94A3B8' : '#0F172A'),
-        maxWidth: '74%', textAlign: 'right', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'
+        maxWidth: '72%', textAlign: 'right', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'
       }}>
         {value ?? '—'}
       </span>
@@ -211,19 +211,19 @@ function SpecCell({
     <div style={{
       display: 'flex', alignItems: 'baseline', gap: 5,
       gridColumn: span ? `span ${span}` : undefined,
-      lineHeight: 1.5,
+      lineHeight: 1.6,
       ...(isDiff ? {
         background: 'var(--tint-orange-bg)',
-        borderRadius: 3, padding: '0 3px',
+        borderRadius: 3, padding: '0 4px',
       } : {})
     }}>
       <span style={{
-        fontSize: 10, fontWeight: 600, color: '#64748B', fontFamily: 'var(--font-jp)',
+        fontSize: 11, fontWeight: 600, color: '#475569', fontFamily: 'var(--font-jp)',
         whiteSpace: 'nowrap', minWidth: 78, flexShrink: 0,
       }}>
         {label}
       </span>
-      {isDiff && <span className="badge badge--warning" style={{ fontSize: 7, padding: '0 3px', verticalAlign: 'super' }}>{diffLabel || 'MOD'}</span>}
+      {isDiff && <span className="badge badge--warning" style={{ fontSize: 8, padding: '0 4px', verticalAlign: 'super' }}>{diffLabel || 'MOD'}</span>}
       <span style={{
         fontSize: 13, fontWeight: 700,
         fontFamily: mono ? 'monospace' : 'var(--font-jp)',
@@ -276,6 +276,7 @@ export function TabOverview(props: TabOverviewProps) {
   const [cutterDetails, setCutterDetails] = useState<CutterDetail[]>([])
   const [previewItem, setPreviewItem] = useState<QuickPreviewItem | null>(null)
   const [selectedEquip, setSelectedEquip] = useState<{ type: 'mold' | 'cutter' | 'equip'; id: string; code: string } | null>(null)
+  const [equipFilterMode, setEquipFilterMode] = useState<'revision' | 'all'>('revision')
 
   // Active Job
   const [activeJob, setActiveJob] = useState<{ id: string; code: string; status: string; deadline: string; name: string } | null>(null)
@@ -582,27 +583,33 @@ export function TabOverview(props: TabOverviewProps) {
               background: 'var(--tint-teal-bg)', borderBottom: '1px solid var(--tint-teal-border)',
               padding: '6px 10px', display: 'flex', alignItems: 'center', gap: 6
             }}>
-              <Package size={13} style={{ color: 'var(--tint-teal-text)' }} />
-              <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--tint-teal-text)' }}>{tPC('boxOverviewTitle')}</span>
+              <Package size={14} style={{ color: 'var(--tint-teal-text)' }} />
+              <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--tint-teal-text)' }}>{tPC('boxOverviewTitle')}</span>
             </div>
-            <div style={{ padding: 10, display: 'flex', gap: 10, alignItems: 'center', background: 'var(--bg-surface-2)', borderBottom: '1px solid var(--border-subtle)' }}>
-              {/* Product Photo Thumbnail */}
-              <div style={{
-                width: 44, height: 44, borderRadius: 6,
-                background: 'var(--bg-surface)', border: '1px solid var(--tint-teal-border)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0
+            {/* Product Photo Thumbnail - 120x120 placeholder */}
+            <div style={{
+              width: '100%', height: 120,
+              background: 'linear-gradient(135deg, var(--bg-surface-2) 0%, var(--bg-surface) 100%)',
+              borderBottom: '1px solid var(--border-subtle)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              position: 'relative'
+            }}>
+              <Package size={40} style={{ color: 'var(--border-default)', opacity: 0.5 }} />
+              <span style={{
+                position: 'absolute', bottom: 6, right: 8,
+                fontSize: 9, color: 'var(--text-muted)', fontStyle: 'italic', opacity: 0.7
               }}>
-                <Package size={24} style={{ color: 'var(--accent)' }} />
+                {tPC('noPhotoPlaceholder')}
+              </span>
+            </div>
+            {/* Customer Quick Header */}
+            <div style={{ padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: 3 }}>
+              <div style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600 }}>{tCust('customer')}</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--accent)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {customer?.company_name || '—'}
               </div>
-              {/* Customer Quick Header */}
-              <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
-                <div style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 600 }}>{tCust('customer')}</div>
-                <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--accent)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {customer?.company_name || '—'}
-                </div>
-                <div style={{ fontSize: 10, color: 'var(--text-muted)', fontFamily: 'monospace' }}>
-                  {customer?.company_code || '—'} {customer?.tel ? `· ${customer.tel}` : ''}
-                </div>
+              <div style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: 'monospace' }}>
+                {customer?.company_code || '—'} {customer?.tel ? `· ${customer.tel}` : ''}
               </div>
             </div>
           </div>
@@ -611,7 +618,7 @@ export function TabOverview(props: TabOverviewProps) {
           <div className="card-flat" style={{ padding: 0, overflow: 'hidden', border: '1px solid var(--tint-teal-border)' }}>
             <div style={{
               background: 'var(--tint-teal-bg)', borderBottom: '1px solid var(--tint-teal-border)',
-              padding: '6px 10px', fontSize: 11, fontWeight: 700, color: 'var(--tint-teal-text)'
+              padding: '6px 10px', fontSize: 12, fontWeight: 700, color: 'var(--tint-teal-text)'
             }}>
               {tPC('boxProductDetailsTitle')}
             </div>
@@ -625,7 +632,7 @@ export function TabOverview(props: TabOverviewProps) {
               <InfoRow label={tPC('plasticSpecLabel')} value={primaryPlasticSpec || primaryPlasticCode || activeRev?.plastic_type_designed} mono />
               <InfoRow label={tPC('firstShipmentLabel')} value={firstShipmentDate} mono />
               {notes && (
-                <div style={{ marginTop: 4, padding: '4px 6px', background: 'var(--bg-surface-2)', borderRadius: 4, fontSize: 10, color: 'var(--text-secondary)' }}>
+                <div style={{ marginTop: 4, padding: '4px 6px', background: 'var(--bg-surface-2)', borderRadius: 4, fontSize: 11, color: 'var(--text-secondary)' }}>
                   <strong>{tPC('notesLabel')}:</strong> {notes}
                 </div>
               )}
@@ -638,14 +645,14 @@ export function TabOverview(props: TabOverviewProps) {
               background: 'var(--tint-purple-bg)', borderBottom: '1px solid var(--tint-purple-border)',
               padding: '6px 10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between'
             }}>
-              <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--tint-purple-text)', display: 'flex', alignItems: 'center', gap: 5 }}>
-                <FileText size={13} /> {tPC('boxOrderHistoryTitle')}
+              <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--tint-purple-text)', display: 'flex', alignItems: 'center', gap: 5 }}>
+                <FileText size={14} /> {tPC('boxOrderHistoryTitle')}
               </span>
-              <span style={{ fontSize: 9, color: 'var(--text-muted)' }}>{recentOrders.length}</span>
+              <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>{recentOrders.length}</span>
             </div>
             <div style={{ padding: 6, display: 'flex', flexDirection: 'column', gap: 4 }}>
               {recentOrders.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '10px 0', fontSize: 11, color: 'var(--text-muted)' }}>{tPC('noOrdersForProduct')}</div>
+                <div style={{ textAlign: 'center', padding: '10px 0', fontSize: 12, color: 'var(--text-muted)' }}>{tPC('noOrdersForProduct')}</div>
               ) : (
                 recentOrders.map(ol => {
                   const isSelected = selectedOrderLine?.line_id === ol.line_id
@@ -655,13 +662,13 @@ export function TabOverview(props: TabOverviewProps) {
                       onClick={() => setSelectedOrderLine(ol)}
                       style={{
                         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                        padding: '5px 8px', borderRadius: 5, cursor: 'pointer', fontSize: 10,
+                        padding: '5px 8px', borderRadius: 5, cursor: 'pointer', fontSize: 11,
                         background: isSelected ? 'var(--tint-purple-bg)' : 'var(--bg-surface-2)',
                         border: isSelected ? '1.5px solid var(--accent)' : '1px solid var(--border-default)',
                         transition: 'all 0.15s ease'
                       }}
                     >
-                      <span style={{ fontFamily: 'monospace', fontWeight: 700, color: 'var(--accent)' }}>
+                      <span style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: 12, color: 'var(--accent)' }}>
                         {ol.orders?.order_no || '—'}
                       </span>
                       <span style={{ fontFamily: 'monospace', fontWeight: 600 }}>{ol.quantity?.toLocaleString()} pcs</span>
@@ -677,9 +684,9 @@ export function TabOverview(props: TabOverviewProps) {
           <div className="card-flat" style={{ padding: 0, overflow: 'hidden', border: '1px solid var(--tint-blue-border)' }}>
             <div style={{
               background: 'var(--tint-blue-bg)', borderBottom: '1px solid var(--tint-blue-border)',
-              padding: '6px 10px', fontSize: 11, fontWeight: 700, color: 'var(--tint-blue-text)', display: 'flex', alignItems: 'center', gap: 5
+              padding: '6px 10px', fontSize: 12, fontWeight: 700, color: 'var(--tint-blue-text)', display: 'flex', alignItems: 'center', gap: 5
             }}>
-              <MapPin size={13} /> {tPC('boxDeliverySiteTitle')}
+              <MapPin size={14} /> {tPC('boxDeliverySiteTitle')}
             </div>
             <div style={{ padding: '8px 10px', fontSize: 11 }}>
               {selectedOrderLine ? (
@@ -691,7 +698,7 @@ export function TabOverview(props: TabOverviewProps) {
                   <InfoRow label={tPC('deliveryPhoneLabel')} value={selectedOrderLine.orders?.delivery_sites?.phone || customer?.tel} mono />
                 </div>
               ) : (
-                <div style={{ fontSize: 10, color: 'var(--text-muted)', textAlign: 'center', padding: '8px 0' }}>
+                <div style={{ fontSize: 11, color: 'var(--text-muted)', textAlign: 'center', padding: '8px 0' }}>
                   {tPC('boxDeliverySitePrompt')}
                 </div>
               )}
@@ -711,7 +718,7 @@ export function TabOverview(props: TabOverviewProps) {
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                 <PenTool size={14} style={{ color: 'var(--tint-teal-text)' }} />
-                <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--tint-teal-text)' }}>{tPC('boxSpecsDesignTitle')}</span>
+                <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--tint-teal-text)' }}>{tPC('boxSpecsDesignTitle')}</span>
               </div>
               {activeRev && (
                 <Link
@@ -727,8 +734,8 @@ export function TabOverview(props: TabOverviewProps) {
               {/* Left Sub-column: Lịch sử / danh sách phiên bản thiết kế (180px) */}
               <div style={{ width: 180, flexShrink: 0, background: 'var(--bg-surface-2)', padding: 10, display: 'flex', flexDirection: 'column', gap: 6, borderRight: '1px solid var(--border-default)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: 4, borderBottom: '1px solid var(--border-default)' }}>
-                  <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 5 }}>
-                    <Layers size={13} style={{ color: 'var(--accent)' }} /> {tPC('designHistory')}
+                  <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 5 }}>
+                    <Layers size={14} style={{ color: 'var(--accent)' }} /> {tPC('designHistory')}
                   </span>
                   <span className="badge badge--info font-mono font-bold" style={{ fontSize: 9 }}>
                     {allRevs.length}
@@ -755,12 +762,12 @@ export function TabOverview(props: TabOverviewProps) {
                           <span style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: 11, color: isSelected ? 'var(--accent)' : 'var(--text-primary)' }}>
                             {r.design_code || `Rev.${r.revision_number}`}
                           </span>
-                          <span className={REV_STATUS_BADGE[r.status] || 'badge badge--neutral'} style={{ fontSize: 7, padding: '1px 4px' }}>
+                          <span className={REV_STATUS_BADGE[r.status] || 'badge badge--neutral'} style={{ fontSize: 8, padding: '1px 5px' }}>
                             {r.status}
                           </span>
                         </div>
                         {r.created_at && (
-                          <span style={{ fontSize: 9, color: 'var(--text-muted)', fontFamily: 'monospace' }}>
+                          <span style={{ fontSize: 10, color: 'var(--text-muted)', fontFamily: 'monospace' }}>
                             {r.created_at.slice(0, 10)}
                           </span>
                         )}
@@ -854,14 +861,27 @@ export function TabOverview(props: TabOverviewProps) {
             </div>
           </div>
 
-          {/* ═══ BOTTOM-RIGHT BLOCK: Các thiết bị liên quan (Trái 55%) | Storage Info & Equipment Job History (Phải 45%) ═══ */}
+          {/* ═══ BOTTOM-RIGHT BLOCK: Các thiết bị liên quan (Trái 57%) | Storage Info & Equipment Job History (Phải 43%) ═══ */}
           {(() => {
             const getMoldRevId = (m: MoldDetail) => {
               const linkedRevId = m.mold_revisions?.design_revision_id
               if (linkedRevId) return linkedRevId
               return (m as any).mold_revision_id || null
             }
-            const grandTotal = moldDetails.length + equipDetails.length + cutterDetails.length
+
+            // Filter equipment by revision if filter mode is 'revision'
+            const filteredMolds = equipFilterMode === 'revision' && selectedRevId
+              ? moldDetails.filter(m => getMoldRevId(m) === selectedRevId)
+              : moldDetails
+            const filteredCutters = equipFilterMode === 'revision' && selectedRevId
+              ? cutterDetails.filter(c => c.linked_rev_id === selectedRevId || c.design_revision_id === selectedRevId)
+              : cutterDetails
+            const filteredEquips = equipFilterMode === 'revision' && selectedRevId
+              ? equipDetails.filter(eq => eq.design_revision_id === selectedRevId)
+              : equipDetails
+
+            const grandTotal = filteredMolds.length + filteredEquips.length + filteredCutters.length
+            const totalAll = moldDetails.length + equipDetails.length + cutterDetails.length
 
             // Selected Equipment info for storage box
             const selectedEquipData = (() => {
@@ -914,21 +934,21 @@ export function TabOverview(props: TabOverviewProps) {
               return true
             })
 
-            const sortMolds = [...moldDetails].sort((a, b) => {
+            const sortMolds = [...filteredMolds].sort((a, b) => {
               const aActive = getMoldRevId(a) === selectedRevId ? 0 : 1
               const bActive = getMoldRevId(b) === selectedRevId ? 0 : 1
               if (aActive !== bActive) return aActive - bActive
               return (a.system_code || '').localeCompare(b.system_code || '')
             })
 
-            const sortCutters = [...cutterDetails].sort((a, b) => {
+            const sortCutters = [...filteredCutters].sort((a, b) => {
               const aActive = a.linked_rev_id === selectedRevId ? 0 : 1
               const bActive = b.linked_rev_id === selectedRevId ? 0 : 1
               if (aActive !== bActive) return aActive - bActive
               return (a.cutter_no || '').localeCompare(b.cutter_no || '')
             })
 
-            const sortEquip = [...equipDetails].sort((a, b) => {
+            const sortEquip = [...filteredEquips].sort((a, b) => {
               const aActive = a.design_revision_id === selectedRevId ? 0 : 1
               const bActive = b.design_revision_id === selectedRevId ? 0 : 1
               if (aActive !== bActive) return aActive - bActive
@@ -986,10 +1006,10 @@ export function TabOverview(props: TabOverviewProps) {
                   <span style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: 9, color: 'var(--text-muted)' }}>
                     <Building2 size={9} /> {keeper}
                   </span>
-                  <span className={statusCls} style={{ fontSize: 7 }}>{statusText}</span>
-                  <span className={binding.cls} style={{ fontSize: 7, padding: '1px 5px' }}>{binding.label}</span>
+                  <span className={statusCls} style={{ fontSize: 8 }}>{statusText}</span>
+                  <span className={binding.cls} style={{ fontSize: 8, padding: '1px 5px' }}>{binding.label}</span>
                   {isEquipSelected && (
-                    <span className="badge badge--info font-bold" style={{ fontSize: 7, padding: '1px 5px' }}>
+                    <span className="badge badge--info font-bold" style={{ fontSize: 8, padding: '1px 5px' }}>
                       選択中
                     </span>
                   )}
@@ -1022,24 +1042,51 @@ export function TabOverview(props: TabOverviewProps) {
                   }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                       <Wrench size={14} style={{ color: 'var(--tint-orange-text)' }} />
-                      <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--tint-orange-text)' }}>{tPC('boxRelatedEquipmentTitle')}</span>
+                      <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--tint-orange-text)' }}>{tPC('boxRelatedEquipmentTitle')}</span>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      {/* Filter Chips: Revision / All */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 2, background: 'var(--bg-surface)', padding: '2px 3px', borderRadius: 5, border: '1px solid var(--border-default)' }}>
+                        <button
+                          onClick={() => setEquipFilterMode('revision')}
+                          style={{
+                            fontSize: 10, fontWeight: equipFilterMode === 'revision' ? 700 : 500,
+                            color: equipFilterMode === 'revision' ? 'var(--accent)' : 'var(--text-secondary)',
+                            background: equipFilterMode === 'revision' ? 'var(--tint-teal-bg)' : 'none',
+                            border: equipFilterMode === 'revision' ? '1px solid var(--accent)' : 'none',
+                            borderRadius: 4, padding: '2px 8px', cursor: 'pointer', whiteSpace: 'nowrap'
+                          }}
+                        >
+                          {tPC('equipFilterRevision')}
+                        </button>
+                        <button
+                          onClick={() => setEquipFilterMode('all')}
+                          style={{
+                            fontSize: 10, fontWeight: equipFilterMode === 'all' ? 700 : 500,
+                            color: equipFilterMode === 'all' ? 'var(--accent)' : 'var(--text-secondary)',
+                            background: equipFilterMode === 'all' ? 'var(--tint-teal-bg)' : 'none',
+                            border: equipFilterMode === 'all' ? '1px solid var(--accent)' : 'none',
+                            borderRadius: 4, padding: '2px 8px', cursor: 'pointer', whiteSpace: 'nowrap'
+                          }}
+                        >
+                          {tPC('equipFilterAll')}
+                        </button>
+                      </div>
                       {selectedEquip && (
                         <button
                           onClick={() => setSelectedEquip(null)}
-                          style={{ fontSize: 9, padding: '1px 6px', background: 'var(--bg-surface)', border: '1px solid var(--border-default)', borderRadius: 3, cursor: 'pointer', color: 'var(--text-secondary)' }}
+                          style={{ fontSize: 10, padding: '2px 8px', background: 'var(--bg-surface)', border: '1px solid var(--border-default)', borderRadius: 4, cursor: 'pointer', color: 'var(--text-secondary)' }}
                         >
-                          選択解除 (×)
+                          選択解除 ×
                         </button>
                       )}
-                      <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>{grandTotal} items</span>
+                      <span style={{ fontSize: 10, color: 'var(--text-muted)', fontFamily: 'monospace' }}>{grandTotal}/{totalAll}</span>
                     </div>
                   </div>
 
                   <div style={{ padding: 10 }}>
                     {grandTotal === 0 ? (
-                      <div style={{ textAlign: 'center', padding: '12px 0', color: 'var(--text-muted)', fontSize: 12 }}>
+                      <div style={{ textAlign: 'center', padding: '12px 0', color: 'var(--text-muted)', fontSize: 12, lineHeight: 1.6 }}>
                         {tPC('noEquipmentLinked')}
                       </div>
                     ) : (
@@ -1121,7 +1168,7 @@ export function TabOverview(props: TabOverviewProps) {
                       padding: '8px 12px', display: 'flex', alignItems: 'center', gap: 6
                     }}>
                       <MapPin size={14} style={{ color: 'var(--tint-blue-text)' }} />
-                      <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--tint-blue-text)' }}>
+                      <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--tint-blue-text)' }}>
                         {selectedEquipData ? `[ ${selectedEquipData.code} ] ${tPC('boxEquipmentStorageTitle')}` : tPC('boxEquipmentStorageTitle')}
                       </span>
                     </div>
@@ -1151,7 +1198,7 @@ export function TabOverview(props: TabOverviewProps) {
                     }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                         <Hammer size={14} style={{ color: 'var(--tint-orange-text)' }} />
-                        <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--tint-orange-text)' }}>
+                        <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--tint-orange-text)' }}>
                           {selectedEquipData ? `[ ${selectedEquipData.code} ] ${tPC('boxEquipmentJobsTitle')}` : tPC('boxEquipmentJobsTitle')}
                         </span>
                       </div>
