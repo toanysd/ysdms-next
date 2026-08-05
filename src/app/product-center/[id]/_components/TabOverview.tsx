@@ -1250,10 +1250,28 @@ export function TabOverview(props: TabOverviewProps) {
               }
             }
 
+            const isEquipCutter = (type?: string | null) => {
+              if (!type) return false
+              const u = type.toUpperCase()
+              return u.includes('CUTTER') || type.includes('抜型') || type.includes('刃物')
+            }
+
+            const isEquipMold = (type?: string | null) => {
+              if (!type) return false
+              const u = type.toUpperCase()
+              return u.includes('MOLD') || type.includes('金型')
+            }
+
             const getTabCount = (tabId: string) => {
               if (tabId === 'ALL') return grandTotal
-              if (tabId === 'MOLD') return filteredMolds.length
-              if (tabId === 'CUTTER') return filteredCutters.length
+              if (tabId === 'MOLD') {
+                const equipMolds = filteredEquips.filter(eq => isEquipMold(eq.equipment_type)).length
+                return filteredMolds.length + equipMolds
+              }
+              if (tabId === 'CUTTER') {
+                const equipCutters = filteredEquips.filter(eq => isEquipCutter(eq.equipment_type)).length
+                return filteredCutters.length + equipCutters
+              }
               if (tabId === 'STACKING') return filteredEquips.filter(eq => eq.equipment_type?.toUpperCase().includes('STACK') || eq.equipment_type?.includes('スタッキング')).length
               if (tabId === 'WATER_BASE') return filteredEquips.filter(eq => eq.equipment_type?.toUpperCase().includes('WATER') || eq.equipment_type?.includes('水冷')).length
               if (tabId === 'PRESS_BASE') return filteredEquips.filter(eq => eq.equipment_type?.toUpperCase().includes('PRESS') || eq.equipment_type?.includes('圧空')).length
@@ -1267,6 +1285,8 @@ export function TabOverview(props: TabOverviewProps) {
             const showCutters = (equipCategoryTab === 'ALL' || equipCategoryTab === 'CUTTER') ? sortCutters : []
             const showEquip = (() => {
               if (equipCategoryTab === 'ALL') return sortEquip
+              if (equipCategoryTab === 'MOLD') return sortEquip.filter(eq => isEquipMold(eq.equipment_type))
+              if (equipCategoryTab === 'CUTTER') return sortEquip.filter(eq => isEquipCutter(eq.equipment_type))
               if (equipCategoryTab === 'STACKING') return sortEquip.filter(eq => eq.equipment_type?.toUpperCase().includes('STACK') || eq.equipment_type?.includes('スタッキング'))
               if (equipCategoryTab === 'WATER_BASE') return sortEquip.filter(eq => eq.equipment_type?.toUpperCase().includes('WATER') || eq.equipment_type?.includes('水冷'))
               if (equipCategoryTab === 'PRESS_BASE') return sortEquip.filter(eq => eq.equipment_type?.toUpperCase().includes('PRESS') || eq.equipment_type?.includes('圧空'))
