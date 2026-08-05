@@ -526,12 +526,13 @@ export function TabOverview(props: TabOverviewProps) {
   const trayDims = activeRev
     ? [activeRev.design_length, activeRev.design_width, activeRev.design_height || activeRev.design_depth].filter(Boolean).join(' × ')
     : ''
-  const cutlineDims = activeRev
-    ? [activeRev.cutline_length, activeRev.cutline_width].filter(Boolean).join(' × ')
+  const cutlineBase = activeRev
+    ? ([activeRev.cutline_length, activeRev.cutline_width].filter(Boolean).join(' × ') ||
+       [activeRev.design_length, activeRev.design_width].filter(Boolean).join(' × '))
     : ''
-  const productDimsSpec = activeRev && cutlineDims
+  const productDimsSpec = activeRev
     ? [
-        cutlineDims,
+        cutlineBase ? `${cutlineBase} mm` : null,
         activeRev.corner_r != null ? `R${activeRev.corner_r}` : null,
         activeRev.chamfer_c != null ? `C${activeRev.chamfer_c}` : null
       ].filter(Boolean).join(' - ')
@@ -679,7 +680,7 @@ export function TabOverview(props: TabOverviewProps) {
               <InfoRow label={tPC('internalNameLabel')} value={productNameInternal} />
               <InfoRow label={tProd('productName')} value={productName} />
               <InfoRow label={tPC('customerProductNameLabel')} value={customerProductName} />
-              {productDimsSpec && <InfoRow label={tPC('cutlineDimensions')} value={`${productDimsSpec} mm`} mono />}
+              <InfoRow label={tPC('cutlineDimensions')} value={productDimsSpec || '—'} mono />
               <InfoRow label={tProd('pocketCount')} value={pocketCount || activeRev?.pocket_numbers || activeRev?.cavity_count} mono />
               <InfoRow label={tPC('piecesPerBoxLabel')} value={piecesPerBox} mono />
               <InfoRow label={tPC('plasticSpecLabel')} value={primaryPlasticSpec || primaryPlasticCode || activeRev?.plastic_type_designed} mono />
@@ -811,7 +812,7 @@ export function TabOverview(props: TabOverviewProps) {
                       <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr 1fr', gap: '2px 14px', fontSize: 12 }}>
                         {/* Column 1: Main Text & Plastic Spec */}
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                          {trayDims && <SpecCell label={tPC('trayDimensions')} value={`${trayDims} mm`} isDiff={trayDimsDiff} diffLabel={tPC('fieldChanged')} />}
+                          <SpecCell label={tPC('trayDimensions')} value={trayDims ? `${trayDims} mm` : null} isDiff={trayDimsDiff} diffLabel={tPC('fieldChanged')} />
                           <SpecCell label={tPC('designedMaterial')} value={activeRev.plastic_type_designed || primaryPlasticCode} isDiff={plasticDiff} diffLabel={tPC('fieldChanged')} mono={false} />
                           <SpecCell label={tPC('customerTrayName')} value={activeRev.customer_tray_name} isDiff={customerTrayNameDiff} diffLabel={tPC('fieldChanged')} mono={false} />
                           {activeRev.tray_info && (
@@ -821,7 +822,7 @@ export function TabOverview(props: TabOverviewProps) {
 
                         {/* Column 2: Dimensions & Pocket / Impression */}
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                          {cutlineDims && <SpecCell label={tPC('cutlineDimensions')} value={productDimsSpec ? `${productDimsSpec} mm` : `${cutlineDims} mm`} isDiff={cutlineDimsDiff} diffLabel={tPC('fieldChanged')} />}
+                          <SpecCell label={tPC('cutlineDimensions')} value={productDimsSpec || null} isDiff={cutlineDimsDiff} diffLabel={tPC('fieldChanged')} />
                           <SpecCell
                             label={tPC('cavityAndPitch')}
                             value={(activeRev.pocket_numbers || activeRev.cavity_count) ? `${activeRev.pocket_numbers || activeRev.cavity_count} Pocket${activeRev.cavity_pitch_mm ? ' / ' + activeRev.cavity_pitch_mm + 'mm' : ''}` : null}
