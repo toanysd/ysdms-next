@@ -329,30 +329,98 @@ export function TabOverview(props: TabOverviewProps) {
 
         // Physical Molds & Equipment (Unified Equipment Source)
         if (revIds.length > 0) {
+          // 1. Fetch mold_revisions for these design_revisions to get mold_revision_ids
+          const { data: mRevsData } = await supabase
+            .from('mold_revisions')
+            .select('*')
+            .in('design_revision_id', revIds)
+
+          const moldRevs: any[] = mRevsData || []
+          const moldRevIds = moldRevs.map(mr => mr.mold_revision_id).filter(Boolean)
+
+          // 2. Fetch equipment for design_revision_id IN revIds OR mold_revision_id IN moldRevIds
+          const orConds: string[] = [`design_revision_id.in.(${revIds.join(',')})`]
+          if (moldRevIds.length > 0) {
+            orConds.push(`mold_revision_id.in.(${moldRevIds.join(',')})`)
+          }
+
           const { data: equips } = await supabase
             .from('equipment')
             .select(`
               equipment_id, equipment_code, display_name, equipment_type, sub_type, usage_status, device_status,
-              design_revision_id, mold_type, piece_count, actual_length_mm, actual_width_mm, actual_height_mm,
+              design_revision_id, mold_revision_id, mold_type, piece_count, actual_length_mm, actual_width_mm, actual_height_mm,
               actual_weight, manufacturing_date,
               rack_layers(layer_code, racks(rack_code)),
               keeper_company:companies!equipment_keeper_company_id_fkey(company_code, company_name)
             `)
-            .in('design_revision_id', revIds)
+            .or(orConds.join(','))
 
-          if (equips) {
-            setEquipDetails(equips as unknown as EquipDetail[])
+          let allEquipList: any[] = equips || []
 
-            // Extract Molds directly from unified equipment table
-            const moldEquips = equips.filter((eq: any) =>
-              ['MOLD', 'WATER_BASE', 'PRESSURE_BASE'].includes(eq.equipment_type)
-            ).map((eq: any) => ({
+          // Fallback: If physical_molds has records that were not migrated or returned in equips
+          const existingMoldCodes = new Set(allEquipList.filter(e => ['MOLD', 'WATER_BASE', 'PRESSURE_BASE'].includes(e.equipment_type)).map(e => e.equipment_code))
+          if (moldRevIds.length > 0) {
+            const { data: pMolds } = await supabase
+              .from('physical_molds')
+              .select(`
+                physical_mold_id, system_code, display_name, device_status, usage_status,
+                mold_type, piece_count, actual_length_mm, actual_width_mm, actual_height_mm,
+                actual_weight, manufacturing_date, mold_revision_id,
+                rack_layers(layer_code, racks(rack_code)),
+                keeper_company:companies!physical_molds_keeper_company_id_fkey(company_code, company_name)
+              `)
+              .in('mold_revision_id', moldRevIds)
+
+            if (pMolds) {
+              pMolds.forEach((pm: any) => {
+                if (!existingMoldCodes.has(pm.system_code)) {
+                  allEquipList.push({
+                    equipment_id: pm.physical_mold_id,
+                    equipment_code: pm.system_code,
+                    display_name: pm.display_name,
+                    equipment_type: 'MOLD',
+                    sub_type: pm.mold_type,
+                    usage_status: pm.usage_status,
+                    device_status: pm.device_status,
+                    mold_type: pm.mold_type,
+                    piece_count: pm.piece_count,
+                    actual_length_mm: pm.actual_length_mm,
+                    actual_width_mm: pm.actual_width_mm,
+                    actual_height_mm: pm.actual_height_mm,
+                    actual_weight: pm.actual_weight,
+                    manufacturing_date: pm.manufacturing_date,
+                    rack_layers: pm.rack_layers,
+                    keeper_company: pm.keeper_company,
+                    design_revision_id: moldRevs.find(mr => mr.mold_revision_id === pm.mold_revision_id)?.design_revision_id
+                  })
+                }
+              })
+            }
+          }
+
+          // Partition allEquipList into Molds, Cutters, and Other Auxiliary Equipments
+          const moldEquips = allEquipList.filter((eq: any) =>
+            ['MOLD', 'WATER_BASE', 'PRESSURE_BASE'].includes(eq.equipment_type) || eq.equipment_type?.includes('金型')
+          )
+          const cutterEquips = allEquipList.filter((eq: any) =>
+            ['CUTTER_SEPARATE', 'CUTTER_INLINE', 'CUTTER', '抜型'].includes(eq.equipment_type)
+          )
+          const auxiliaryEquips = allEquipList.filter((eq: any) =>
+            !['MOLD', 'WATER_BASE', 'PRESSURE_BASE'].includes(eq.equipment_type) &&
+            !['CUTTER_SEPARATE', 'CUTTER_INLINE', 'CUTTER', '抜型'].includes(eq.equipment_type) &&
+            !eq.equipment_type?.includes('金型')
+          )
+
+          // Map Molds
+          const moldDetailsMapped = moldEquips.map((eq: any) => {
+            const matchedRevId = eq.design_revision_id || moldRevs.find((mr: any) => mr.mold_revision_id === eq.mold_revision_id)?.design_revision_id || revIds[0]
+            return {
               physical_mold_id: eq.equipment_id,
               system_code: eq.equipment_code,
               display_name: eq.display_name,
               device_status: eq.device_status,
               usage_status: eq.usage_status,
-              mold_type: eq.mold_type,
+              mold_type: eq.mold_type || eq.sub_type,
               piece_count: eq.piece_count,
               actual_length_mm: eq.actual_length_mm,
               actual_width_mm: eq.actual_width_mm,
@@ -361,49 +429,13 @@ export function TabOverview(props: TabOverviewProps) {
               manufacturing_date: eq.manufacturing_date,
               rack_layers: eq.rack_layers,
               keeper_company: eq.keeper_company,
-              mold_revisions: { design_revision_id: eq.design_revision_id }
-            }))
-
-            setMoldDetails(moldEquips as unknown as MoldDetail[])
-          }
-
-          // N:N Equipment Assignments (Set members & shared equipment)
-          const primaryEquipIds = (equips || []).map((e: any) => e.equipment_id).filter(Boolean)
-          if (primaryEquipIds.length > 0) {
-            const { data: assignData } = await supabase
-              .from('equipment_assignments')
-              .select(`
-                primary_equipment_id,
-                related_equipment_id,
-                relationship_type,
-                related_equipment:equipment!equipment_assignments_related_equipment_id_fkey(
-                  equipment_id, equipment_code, display_name, equipment_type, sub_type, usage_status, device_status,
-                  design_revision_id, actual_length_mm, actual_width_mm, actual_height_mm,
-                  rack_layers(layer_code, racks(rack_code)),
-                  keeper_company:companies!equipment_keeper_company_id_fkey(company_code, company_name)
-                )
-              `)
-              .in('primary_equipment_id', primaryEquipIds)
-
-            if (assignData && assignData.length > 0) {
-              const assignedEquips = assignData.map((a: any) => a.related_equipment).filter(Boolean)
-              setEquipDetails(prev => {
-                const map = new Map<string, any>()
-                ;(prev || []).forEach(item => map.set(item.equipment_id, item))
-                assignedEquips.forEach((item: any) => {
-                  if (!map.has(item.equipment_id)) {
-                    map.set(item.equipment_id, item)
-                  }
-                })
-                return Array.from(map.values()) as unknown as EquipDetail[]
-              })
+              mold_revisions: { design_revision_id: matchedRevId }
             }
-          }
+          })
+          setMoldDetails(moldDetailsMapped as unknown as MoldDetail[])
 
-          // Extract Cutters directly from unified equipment table
-          const directCutterEquips = (equips || []).filter((eq: any) =>
-            ['CUTTER_SEPARATE', 'CUTTER_INLINE', 'CUTTER', '抜型'].includes(eq.equipment_type)
-          )
+          // Set Auxiliary Equipment (only non-molds, non-cutters)
+          setEquipDetails(auxiliaryEquips as unknown as EquipDetail[])
 
           // Check for shared cutters via mold_design_cutters junction table
           const { data: juncs } = await supabase
@@ -448,7 +480,7 @@ export function TabOverview(props: TabOverviewProps) {
             }
           }
 
-          const directMapped = directCutterEquips.map((dc: any) => ({
+          const directMapped = cutterEquips.map((dc: any) => ({
             cutter_id: dc.equipment_id,
             cutter_no: dc.equipment_code,
             cutter_name: dc.display_name,
@@ -464,11 +496,16 @@ export function TabOverview(props: TabOverviewProps) {
             linked_rev_id: dc.design_revision_id
           }))
 
+          // Deduplicate cutters by cutter_no (equipment_code) or cutter_id
           const cutterMap = new Map<string, any>()
-          directMapped.forEach(c => cutterMap.set(c.cutter_id, c))
+          directMapped.forEach(c => {
+            const key = c.cutter_no || c.cutter_id
+            cutterMap.set(key, c)
+          })
           sharedCutters.forEach(c => {
-            if (!cutterMap.has(c.cutter_id)) {
-              cutterMap.set(c.cutter_id, c)
+            const key = c.cutter_no || c.cutter_id
+            if (!cutterMap.has(key)) {
+              cutterMap.set(key, c)
             }
           })
 
