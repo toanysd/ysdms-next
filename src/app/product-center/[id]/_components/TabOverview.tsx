@@ -8,10 +8,12 @@ import {
   Calendar, Wrench, Hammer, PenTool, AlertTriangle,
   Building2, ExternalLink, Layers, ShieldAlert,
   Package, Scissors, Pin, FileText, MapPin,
-  Scale, Ruler, CircleDot, LayoutGrid, List
+  Scale, Ruler, CircleDot, LayoutGrid, List,
+  GitFork, CornerDownRight, Link2, ArrowRight
 } from 'lucide-react'
 import Link from 'next/link'
 import EquipmentQuickPreviewModal, { type QuickPreviewItem } from './EquipmentQuickPreviewModal'
+import { isPrototypeDesignOrMold } from '@/lib/utils/moldNaming'
 
 type JobItem = {
   job_id: string
@@ -330,18 +332,25 @@ export function TabOverview(props: TabOverviewProps) {
 
         const revIds = revList.map(r => r.revision_id)
 
-        // Physical Molds & Equipment (Unified Equipment Source linked directly to design_revisions)
+        // Physical Molds & Equipment (Unified Equipment Source linked directly to design_revisions or product code)
         if (revIds.length > 0) {
-          const { data: equips } = await supabase
+          const { data: pData } = await supabase.from('products').select('product_code').eq('product_id', productId).single()
+          const prodCode = pData?.product_code || ''
+          let equipQuery = supabase
             .from('equipment')
             .select(`
               equipment_id, equipment_code, display_name, equipment_type, sub_type, usage_status, device_status,
-              design_revision_id, mold_revision_id, mold_type, piece_count, actual_length_mm, actual_width_mm, actual_height_mm,
+              design_revision_id, mold_type, piece_count, actual_length_mm, actual_width_mm, actual_height_mm,
               actual_weight, manufacturing_date,
               rack_layers(layer_code, racks(rack_code)),
               keeper_company:companies!equipment_keeper_company_id_fkey(company_code, company_name)
             `)
-            .in('design_revision_id', revIds)
+          if (prodCode) {
+            equipQuery = equipQuery.or(`design_revision_id.in.(${revIds.join(',')}),equipment_code.ilike.%${prodCode}%,display_name.ilike.%${prodCode}%`)
+          } else {
+            equipQuery = equipQuery.in('design_revision_id', revIds)
+          }
+          const { data: equips } = await equipQuery
 
           let allEquipList: any[] = equips || []
 
@@ -811,43 +820,87 @@ export function TabOverview(props: TabOverviewProps) {
                   </span>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 5, overflowY: 'auto', flex: 1 }}>
-                  {allRevs.map(r => {
-                    const isSelected = selectedRevId === r.revision_id
-                    return (
-                      <div
-                        key={r.revision_id}
-                        onClick={() => {
-                          setSelectedRevId(r.revision_id)
-                          setActiveRev(r)
-                        }}
-                        style={{
-                          display: 'flex', flexDirection: 'column', gap: 2, padding: '5px 7px', borderRadius: 6,
-                          cursor: 'pointer', transition: 'all 0.15s ease',
-                          border: isSelected ? '1.5px solid var(--accent)' : '1px solid var(--border-default)',
-                          background: isSelected ? 'var(--tint-teal-bg)' : 'var(--bg-surface)'
-                        }}
-                      >
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                          <span style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: 11, color: isSelected ? 'var(--accent)' : 'var(--text-primary)' }}>
-                            {r.design_code || `Rev.${r.revision_number}`}
-                          </span>
-                          <span className={REV_STATUS_BADGE[r.status] || 'badge badge--neutral'} style={{ fontSize: 8, padding: '1px 5px' }}>
-                            {r.status}
-                          </span>
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 4 }}>
-                          <span style={{ fontSize: 8, fontWeight: 700, padding: '1px 4px', borderRadius: 3, background: (r.design_category === 'PROTOTYPE_POCKET' || r.design_code?.includes('D')) ? 'var(--tint-orange-bg)' : 'var(--tint-teal-bg)', color: (r.design_category === 'PROTOTYPE_POCKET' || r.design_code?.includes('D')) ? 'var(--tint-orange-text)' : 'var(--tint-teal-text)' }}>
-                            {(r.design_category === 'PROTOTYPE_POCKET' || r.design_code?.includes('D')) ? '🧪 試作' : '🟢 正規'}
-                          </span>
-                          {r.created_at && (
-                            <span style={{ fontSize: 9, color: 'var(--text-muted)', fontFamily: 'monospace' }}>
-                              {r.created_at.slice(0, 10)}
+                  {(() => {
+                    const processedIds = new Set<string>()
+                    type TreeGroup = {
+                      parent: DesignRevItem
+                      children: Array<{ item: DesignRevItem; relLabel: string }>
+                    }
+                    const treeGroups: TreeGroup[] = []
+
+                    // 1. Process Mass Production Revisions as Root nodes
+                    const massRevs = allRevs.filter(r => !isPrototypeDesignOrMold(r))
+                    massRevs.forEach(m => {
+                      processedIds.add(m.revision_id)
+                      const children: Array<{ item: DesignRevItem; relLabel: string }> = []
+                      
+                      // ONLY nest true parent prototype revision (where m.parent_design_id === proto.revision_id)
+                      if (m.parent_design_id) {
+                        const protoParent = allRevs.find(r => r.revision_id === m.parent_design_id && isPrototypeDesignOrMold(r))
+                        if (protoParent) {
+                          processedIds.add(protoParent.revision_id)
+                          children.push({ item: protoParent, relLabel: '↳ 試作元' })
+                        }
+                      }
+                      
+                      treeGroups.push({ parent: m, children })
+                    })
+
+                    // 2. Any remaining Standalone / Unconverted Prototype revisions
+                    const remainingRevs = allRevs.filter(r => !processedIds.has(r.revision_id))
+                    remainingRevs.forEach(r => {
+                      treeGroups.push({ parent: r, children: [] })
+                    })
+
+                    const renderRevCard = (r: DesignRevItem, isChild = false, relLabel = '') => {
+                      const isSelected = selectedRevId === r.revision_id
+                      const isProto = isPrototypeDesignOrMold(r)
+                      return (
+                        <div
+                          key={r.revision_id}
+                          onClick={() => {
+                            setSelectedRevId(r.revision_id)
+                            setActiveRev(r)
+                          }}
+                          style={{
+                            display: 'flex', flexDirection: 'column', gap: 2, padding: isChild ? '4px 6px' : '5px 7px',
+                            borderRadius: 6, cursor: 'pointer', transition: 'all 0.15s ease',
+                            marginLeft: isChild ? 10 : 0,
+                            borderLeft: isChild ? '2px solid var(--accent)' : undefined,
+                            border: isSelected ? '1.5px solid var(--accent)' : '1px solid var(--border-default)',
+                            background: isSelected ? 'var(--tint-teal-bg)' : 'var(--bg-surface)'
+                          }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                            <span style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: isChild ? 10 : 11, color: isSelected ? 'var(--accent)' : 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 3 }}>
+                              {isChild && <CornerDownRight size={10} style={{ color: 'var(--accent)' }} />}
+                              {r.design_code || `Rev.${r.revision_number}`}
                             </span>
-                          )}
+                            <span className={REV_STATUS_BADGE[r.status] || 'badge badge--neutral'} style={{ fontSize: 8, padding: '1px 5px' }}>
+                              {r.status}
+                            </span>
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 4 }}>
+                            <span style={{ fontSize: 8, fontWeight: 700, padding: '1px 4px', borderRadius: 3, background: isProto ? 'var(--tint-orange-bg)' : 'var(--tint-teal-bg)', color: isProto ? 'var(--tint-orange-text)' : 'var(--tint-teal-text)' }}>
+                              {relLabel || (isProto ? '🧪 試作のみ' : '🟢 正規')}
+                            </span>
+                            {r.created_at && (
+                              <span style={{ fontSize: 9, color: 'var(--text-muted)', fontFamily: 'monospace' }}>
+                                {r.created_at.slice(0, 10)}
+                              </span>
+                            )}
+                          </div>
                         </div>
+                      )
+                    }
+
+                    return treeGroups.map(grp => (
+                      <div key={grp.parent.revision_id} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                        {renderRevCard(grp.parent, false)}
+                        {grp.children.map(ch => renderRevCard(ch.item, true, ch.relLabel))}
                       </div>
-                    )
-                  })}
+                    ))
+                  })()}
                 </div>
               </div>
 
@@ -884,6 +937,81 @@ export function TabOverview(props: TabOverviewProps) {
 
                   return (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                      {/* Lineage & Link Bar */}
+                      {(() => {
+                        const isProto = isPrototypeDesignOrMold(activeRev)
+                        const linkedItems: Array<{ item: DesignRevItem; label: string; badgeClass: string }> = []
+                        
+                        if (isProto) {
+                          // Check if any Mass Production revision derives from this prototype
+                          const massChild = allRevs.find(r => !isPrototypeDesignOrMold(r) && r.parent_design_id === activeRev.revision_id)
+                          if (massChild) {
+                            linkedItems.push({
+                              item: massChild,
+                              label: '🟢 本型化済 (Khuôn hàng loạt)',
+                              badgeClass: 'badge badge--success'
+                            })
+                          } else {
+                            linkedItems.push({
+                              item: null as any,
+                              label: '⚠️ 試作のみ (Chưa tạo bản hàng loạt)',
+                              badgeClass: 'badge badge--neutral'
+                            })
+                          }
+                        } else {
+                          // Mass Production revision: check if it has a prototype parent
+                          if (activeRev.parent_design_id) {
+                            const protoParent = allRevs.find(r => r.revision_id === activeRev.parent_design_id && isPrototypeDesignOrMold(r))
+                            if (protoParent) {
+                              linkedItems.push({
+                                item: protoParent,
+                                label: '🧪 試作元 (Prototype Source)',
+                                badgeClass: 'badge badge--warning'
+                              })
+                            }
+                          }
+                        }
+
+                        if (linkedItems.length === 0) return null
+
+                        return (
+                          <div style={{
+                            padding: '5px 10px', background: 'var(--bg-surface-2)',
+                            border: '1px solid var(--border-default)', borderRadius: 6,
+                            fontSize: 11, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap'
+                          }}>
+                            <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 4 }}>
+                              <Link2 size={12} style={{ color: 'var(--accent)' }} /> 継承・関連:
+                            </span>
+                            {linkedItems.map((lk, idx) => (
+                              <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                                {lk.item ? (
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setSelectedRevId(lk.item.revision_id)
+                                      setActiveRev(lk.item)
+                                    }}
+                                    className={lk.badgeClass}
+                                    style={{
+                                      cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4,
+                                      padding: '2px 8px', fontSize: 10, fontWeight: 700, border: 'none'
+                                    }}
+                                  >
+                                    <span>{lk.label}: <strong>{lk.item.design_code}</strong></span>
+                                    <ArrowRight size={10} />
+                                  </button>
+                                ) : (
+                                  <span className={lk.badgeClass} style={{ padding: '2px 8px', fontSize: 10 }}>
+                                    {lk.label}
+                                  </span>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        )
+                      })()}
+
                       {(activeRev.change_summary || activeRev.version_note) && (
                         <div style={{
                           padding: '6px 10px', background: 'var(--tint-orange-bg)',
@@ -1060,15 +1188,25 @@ export function TabOverview(props: TabOverviewProps) {
               return (m as any).mold_revision_id || null
             }
 
+            const activeDesignCode = activeRev?.design_code ? activeRev.design_code.replace(/[\s\-_]/g, '').toUpperCase() : ''
+
+            const matchesRevision = (itemRevId: string | null | undefined, itemCode: string | null | undefined, itemName: string | null | undefined) => {
+              if (itemRevId && selectedRevId) return itemRevId === selectedRevId
+              if (!activeDesignCode) return false
+              const c1 = (itemCode || '').replace(/[\s\-_]/g, '').toUpperCase()
+              const c2 = (itemName || '').replace(/[\s\-_]/g, '').toUpperCase()
+              return c1 === activeDesignCode || c2 === activeDesignCode
+            }
+
             // Filter equipment by revision if filter mode is 'revision'
             const filteredMolds = equipFilterMode === 'revision' && selectedRevId
-              ? moldDetails.filter(m => getMoldRevId(m) === selectedRevId)
+              ? moldDetails.filter(m => matchesRevision(getMoldRevId(m), m.system_code, m.display_name))
               : moldDetails
             const filteredCutters = equipFilterMode === 'revision' && selectedRevId
-              ? cutterDetails.filter(c => c.linked_rev_id === selectedRevId || c.design_revision_id === selectedRevId)
+              ? cutterDetails.filter(c => matchesRevision(c.linked_rev_id || c.design_revision_id, c.cutter_no, c.cutter_name))
               : cutterDetails
             const filteredEquips = equipFilterMode === 'revision' && selectedRevId
-              ? equipDetails.filter(eq => eq.design_revision_id === selectedRevId)
+              ? equipDetails.filter(eq => matchesRevision(eq.design_revision_id, eq.equipment_code, eq.display_name))
               : equipDetails
 
             const grandTotal = filteredMolds.length + filteredEquips.length + filteredCutters.length
@@ -1238,6 +1376,7 @@ export function TabOverview(props: TabOverviewProps) {
               previewItemData: QuickPreviewItem
             ) => {
               const isEquipSelected = selectedEquip?.id === id
+              const isEquipProto = isPrototypeDesignOrMold({ equipment_code: code, display_name: name })
               return (
                 <div
                   key={id}
@@ -1257,6 +1396,9 @@ export function TabOverview(props: TabOverviewProps) {
                       {typeIcon} {typeLabel}
                     </span>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <span style={{ fontSize: 8, fontWeight: 700, padding: '1px 4px', borderRadius: 3, background: isEquipProto ? 'var(--tint-orange-bg)' : 'var(--tint-teal-bg)', color: isEquipProto ? 'var(--tint-orange-text)' : 'var(--tint-teal-text)' }}>
+                        {isEquipProto ? '🧪 試作' : '🟢 本型'}
+                      </span>
                       <span className={binding.cls} style={{ fontSize: 8, padding: '1px 4px' }}>{binding.label}</span>
                       <button
                         type="button"
