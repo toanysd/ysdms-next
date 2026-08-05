@@ -327,19 +327,9 @@ export function TabOverview(props: TabOverviewProps) {
 
         const revIds = revList.map(r => r.revision_id)
 
-        // Physical Molds & Equipment (Unified Equipment Source)
+        // Physical Molds & Equipment (Unified Equipment Source linked directly to design_revisions)
         if (revIds.length > 0) {
-          // 1. Fetch mold_revisions for these design_revisions to get mold_revision_ids
-          const { data: mRevsData } = await supabase
-            .from('mold_revisions')
-            .select('*')
-            .in('design_revision_id', revIds)
-
-          const moldRevs: any[] = mRevsData || []
-          const moldRevIds = moldRevs.map(mr => mr.revision_id).filter(Boolean)
-
-          // 2a. Fetch equipment by design_revision_id (Direct equipment/cutters)
-          const { data: eqByDesign } = await supabase
+          const { data: equips } = await supabase
             .from('equipment')
             .select(`
               equipment_id, equipment_code, display_name, equipment_type, sub_type, usage_status, device_status,
@@ -350,71 +340,46 @@ export function TabOverview(props: TabOverviewProps) {
             `)
             .in('design_revision_id', revIds)
 
-          // 2b. Fetch equipment by mold_revision_id (Physical molds in equipment table)
-          let eqByMoldRev: any[] = []
-          if (moldRevIds.length > 0) {
-            const { data: eqMoldData } = await supabase
-              .from('equipment')
-              .select(`
-                equipment_id, equipment_code, display_name, equipment_type, sub_type, usage_status, device_status,
-                design_revision_id, mold_revision_id, mold_type, piece_count, actual_length_mm, actual_width_mm, actual_height_mm,
-                actual_weight, manufacturing_date,
-                rack_layers(layer_code, racks(rack_code)),
-                keeper_company:companies!equipment_keeper_company_id_fkey(company_code, company_name)
-              `)
-              .in('mold_revision_id', moldRevIds)
+          let allEquipList: any[] = equips || []
 
-            if (eqMoldData) eqByMoldRev = eqMoldData
+          // Fallback: Check physical_molds if any physical mold is missing from equipment table
+          const existingMoldCodes = new Set(allEquipList.filter(e => ['MOLD', 'WATER_BASE', 'PRESSURE_BASE'].includes(e.equipment_type)).map(e => e.equipment_code))
+          const { data: pMolds } = await supabase
+            .from('physical_molds')
+            .select(`
+              physical_mold_id, system_code, display_name, device_status, usage_status,
+              mold_type, piece_count, actual_length_mm, actual_width_mm, actual_height_mm,
+              actual_weight, manufacturing_date, mold_revision_id,
+              rack_layers(layer_code, racks(rack_code)),
+              keeper_company:companies!physical_molds_keeper_company_id_fkey(company_code, company_name)
+            `)
+            .in('mold_revision_id', revIds)
+
+          if (pMolds) {
+            pMolds.forEach((pm: any) => {
+              if (!existingMoldCodes.has(pm.system_code)) {
+                allEquipList.push({
+                  equipment_id: pm.physical_mold_id,
+                  equipment_code: pm.system_code,
+                  display_name: pm.display_name,
+                  equipment_type: 'MOLD',
+                  sub_type: pm.mold_type,
+                  usage_status: pm.usage_status,
+                  device_status: pm.device_status,
+                  mold_type: pm.mold_type,
+                  piece_count: pm.piece_count,
+                  actual_length_mm: pm.actual_length_mm,
+                  actual_width_mm: pm.actual_width_mm,
+                  actual_height_mm: pm.actual_height_mm,
+                  actual_weight: pm.actual_weight,
+                  manufacturing_date: pm.manufacturing_date,
+                  rack_layers: pm.rack_layers,
+                  keeper_company: pm.keeper_company,
+                  design_revision_id: pm.mold_revision_id
+                })
+              }
+            })
           }
-
-          // Combine equipment into a Map
-          const equipMap = new Map<string, any>()
-          ;(eqByDesign || []).forEach((e: any) => equipMap.set(e.equipment_id, e))
-          eqByMoldRev.forEach((e: any) => equipMap.set(e.equipment_id, e))
-
-          // 3. Fallback: Check physical_molds if any physical mold is missing from equipment table
-          if (moldRevIds.length > 0) {
-            const { data: pMolds } = await supabase
-              .from('physical_molds')
-              .select(`
-                physical_mold_id, system_code, display_name, device_status, usage_status,
-                mold_type, piece_count, actual_length_mm, actual_width_mm, actual_height_mm,
-                actual_weight, manufacturing_date, mold_revision_id,
-                rack_layers(layer_code, racks(rack_code)),
-                keeper_company:companies!physical_molds_keeper_company_id_fkey(company_code, company_name)
-              `)
-              .in('mold_revision_id', moldRevIds)
-
-            if (pMolds) {
-              pMolds.forEach((pm: any) => {
-                const existingCodes = Array.from(equipMap.values()).map(e => e.equipment_code)
-                if (!existingCodes.includes(pm.system_code)) {
-                  equipMap.set(pm.physical_mold_id, {
-                    equipment_id: pm.physical_mold_id,
-                    equipment_code: pm.system_code,
-                    display_name: pm.display_name,
-                    equipment_type: 'MOLD',
-                    sub_type: pm.mold_type,
-                    usage_status: pm.usage_status,
-                    device_status: pm.device_status,
-                    mold_type: pm.mold_type,
-                    piece_count: pm.piece_count,
-                    actual_length_mm: pm.actual_length_mm,
-                    actual_width_mm: pm.actual_width_mm,
-                    actual_height_mm: pm.actual_height_mm,
-                    actual_weight: pm.actual_weight,
-                    manufacturing_date: pm.manufacturing_date,
-                    rack_layers: pm.rack_layers,
-                    keeper_company: pm.keeper_company,
-                    mold_revision_id: pm.mold_revision_id,
-                    design_revision_id: moldRevs.find(mr => mr.revision_id === pm.mold_revision_id)?.design_revision_id
-                  })
-                }
-              })
-            }
-          }
-
-          const allEquipList = Array.from(equipMap.values())
 
           // Partition allEquipList into Molds, Cutters, and Other Auxiliary Equipments
           const moldEquips = allEquipList.filter((eq: any) =>
@@ -430,27 +395,23 @@ export function TabOverview(props: TabOverviewProps) {
           )
 
           // Map Molds
-          const moldDetailsMapped = moldEquips.map((eq: any) => {
-            const matchedRevId = eq.design_revision_id || moldRevs.find((mr: any) => mr.revision_id === eq.mold_revision_id)?.design_revision_id || revIds[0]
-            return {
-              physical_mold_id: eq.equipment_id,
-              system_code: eq.equipment_code,
-              display_name: eq.display_name,
-              device_status: eq.device_status,
-              usage_status: eq.usage_status,
-              mold_type: eq.mold_type || eq.sub_type,
-              piece_count: eq.piece_count,
-              actual_length_mm: eq.actual_length_mm,
-              actual_width_mm: eq.actual_width_mm,
-              actual_height_mm: eq.actual_height_mm,
-              actual_weight: eq.actual_weight,
-              manufacturing_date: eq.manufacturing_date,
-              rack_layers: eq.rack_layers,
-              keeper_company: eq.keeper_company,
-              mold_revision_id: eq.mold_revision_id,
-              mold_revisions: { design_revision_id: matchedRevId }
-            }
-          })
+          const moldDetailsMapped = moldEquips.map((eq: any) => ({
+            physical_mold_id: eq.equipment_id,
+            system_code: eq.equipment_code,
+            display_name: eq.display_name,
+            device_status: eq.device_status,
+            usage_status: eq.usage_status,
+            mold_type: eq.mold_type || eq.sub_type,
+            piece_count: eq.piece_count,
+            actual_length_mm: eq.actual_length_mm,
+            actual_width_mm: eq.actual_width_mm,
+            actual_height_mm: eq.actual_height_mm,
+            actual_weight: eq.actual_weight,
+            manufacturing_date: eq.manufacturing_date,
+            rack_layers: eq.rack_layers,
+            keeper_company: eq.keeper_company,
+            mold_revisions: { design_revision_id: eq.design_revision_id || revIds[0] }
+          }))
           setMoldDetails(moldDetailsMapped as unknown as MoldDetail[])
 
           // Set Auxiliary Equipment (only non-molds, non-cutters)
