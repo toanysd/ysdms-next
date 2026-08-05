@@ -13,12 +13,12 @@ Trong nhà máy sản xuất khay nhựa định hình nhiệt YSD, các thiết
 
 | Loại thiết bị | Tên tiếng Nhật | Mã Enum `equipment_type` | Cơ chế Gợi ý Dùng chung |
 |---|---|---|---|
-| **Dao cắt** | 抜型 / カッター | `CUTTER_SEPARATE`, `CUTTER_INLINE` | Dựa trên **Hình dạng & Kích thước bao ngoài sản phẩm** (`external_length_mm` × `external_width_mm` hoặc `cutline_length` × `cutline_width`), xét thêm chiều cao (`design_height`) nếu cần. |
-| **Stacking** | スタッキング | `STACKING` | Khung gỗ xếp chồng sản phẩm sau khi cắt. Dựa trên **Hình dạng & Kích thước bao ngoài sản phẩm** giống hệt cơ chế của Dao cắt. |
+| **Dao cắt** | 抜型 / カッター | `CUTTER_SEPARATE`, `CUTTER_INLINE` | **GỢI Ý & BẮT BUỘC XÁC NHẬN:** Dựa trên Kích thước bao ngoài sản phẩm (`cutline_length` × `cutline_width`), nhưng **KHÔNG TỰ ĐỘNG GÁN HOÀN TOÀN**. Hệ thống đưa ra gợi ý kèm CẢNH BÁO KỸ THUẬT để người dùng kiểm tra kỹ biên dạng uốn cong, góc R/C và lỗ khoét bên trong. |
+| **Stacking** | スタッキング | `STACKING` | Dựa trên **Kích thước bao ngoài sản phẩm** tương tự cơ chế của Dao cắt. |
 
 **Quy tắc nghiệp vụ:**
 - Dao cắt và Stacking hoạt động ở vị trí sau khi sản phẩm đã được cắt rời khỏi tấm nhựa.
-- Mọi sản phẩm có cùng kích thước bao ngoài và hình dạng viền cắt đều có thể dùng chung Dao cắt và Stacking.
+- **Lưu ý kỹ thuật với Dao cắt:** Kích thước lưu trong DB (VD: `275x275-2R10-2C8`) chỉ thể hiện chiều dài x chiều rộng tổng thể. Thực tế biên dạng cắt có thể có đoạn uốn cong không thẳng hoặc khoét lỗ phụ bên trong. Do đó, tính năng dùng chung Dao cắt **CHỈ ĐƯA RA GỢI Ý KÈM NHẮC NHỞ KÍCH THƯỚC/BIÊN DẠNG**, quyết định gá lắp dùng chung phải do Người dùng/KTV xác nhận trực tiếp.
 
 ---
 

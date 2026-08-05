@@ -561,7 +561,7 @@ FK:  work_log_id       UUID → work_logs(id)
 >
 > 📌 **QUY TẮC CAV & DÙNG CHUNG THIẾT BỊ (BẮT BUỘC):**
 > 1. **`CAV` = Mã khổ Kích thước ngoài của Khuôn** (`actual_length_mm` × `actual_width_mm`) theo tiêu chuẩn YSD (Khổ A: 470x300, Khổ ZD: 470x347...). **KHÔNG PHẢI Pocket Count / Cavity nhỏ!**
-> 2. **Dùng chung theo Kích thước ngoài Sản phẩm:** Dao cắt (`CUTTER_SEPARATE`/`CUTTER_INLINE`) và Stacking (`STACKING`).
+> 2. **Dùng chung theo Kích thước ngoài Sản phẩm (Dao cắt & Stacking):** Dao cắt (`CUTTER_SEPARATE`/`CUTTER_INLINE`) gợi ý theo kích thước bao ngoài sản phẩm, nhưng **KHÔNG TỰ ĐỘNG GÁN HOÀN TOÀN** do biên dạng thực tế có thể có góc uốn cong hoặc lỗ khoét phụ. Hệ thống đưa ra GỢI Ý KÈM CẢNH BÁO để KTV xác nhận.
 > 3. **Dùng chung theo Mã CAV Khuôn:** Đế làm mát (`WATER_BASE`), Đế khí nén (`PRESSURE_BASE`), Khung (`FRAME`).
 > 4. **Mã CutterNo:** Dãy số tự nhiên (VD: `1042`), không ghép `CT-` vào tên hiển thị để tránh nhầm với mã khuôn `CT-1042`.
 
