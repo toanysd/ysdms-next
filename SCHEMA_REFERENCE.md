@@ -646,3 +646,30 @@ CHECK:  primary_equipment_id <> related_equipment_id
 FK:  equipment_id          UUID → equipment(equipment_id)
 FK:  case_id               UUID → business_cases(id)
 ```
+
+---
+
+## 🏷️ QUY TẮC MÃ HÓA VỊ TRÍ GIÁ-TẦNG (棚・段位置) & KHU VỰC XƯỞNG (2026-08-06)
+
+### 1. Nguyên Tắc Thiết Kế Mã Vị Trí Địa Lý & Chức Năng (Zone & Area Naming)
+- **KHÔNG cố định ký tự theo loại thiết bị** (không dùng M=Mold, C=Cutter): Một giá/kệ có thể chứa linh hoạt nhiều loại thiết bị (Khuôn, Dao cắt, Đế khí, Đế nước, Stacking).
+- **Mã tiền tố đại diện cho Vị Trí Địa Lý Thực Tế trong Xưởng hoặc Khu Vực Chức Năng**:
+  - **Mã vị trí địa lý xưởng**:
+    - **`OFF`** / **`A`**: Trước Văn phòng (Office / 前事務所)
+    - **`ENT`** / **`E`**: Cửa ra vào (Entrance / 出入口)
+    - **`WH`** / **`W`**: Kho tổng / Nhà kho (Warehouse / 倉庫)
+    - **`2F`**: Tầng 2 xưởng (2nd Floor / 2階)
+    - **`PAC`**: Kệ khuôn đóng gói cất đi - ít dùng (Packed Storage / 梱包保管)
+    - **`M06`**, **`M08`**: Gần Máy định hình số 6 / số 8 (Forming Machine #6/#8)
+    - **`TW`**: Gần Máy định hình Đài Loan (Taiwan Machine)
+    - **`PRS`**: Phía trên các Máy dập (Press area / プレス機上部)
+  - **Mã khu vực chức năng**:
+    - **`TEF`**: Khu vực Chờ / Mạ Teflon (Teflon Staging)
+    - **`REP`**: Khu vực Bảo trì / Sửa chữa khuôn (Repair & Maintenance)
+    - **`NEW`**: Khu vực Tiếp nhận khuôn mới (New Tooling Receiving)
+
+### 2. Định Dạng Mã Hiển Thị (`RackLocation`)
+- **Tương thích ngược 100% mã cũ**: `71-1`, `70-0` (Kệ 71 - Tầng 1).
+- **Cấu trúc linh hoạt mới**: `[MãKhuVực]-[SốGiá]-[SốTầng]` (VD: `OFF-01-2`, `M08-01-1`, `TW-02-1`, `2F-03-1`, `TEF-01`).
+
+

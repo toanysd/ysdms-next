@@ -7,13 +7,14 @@ import {
   TrendingUp, Clock, Truck, CheckCircle2,
   Calendar, Wrench, Hammer, PenTool, AlertTriangle,
   Building2, ExternalLink, Layers, ShieldAlert,
-  Package, Scissors, Pin, FileText, MapPin,
+  Package, Crop, Pin, FileText, MapPin, Box,
   Scale, Ruler, CircleDot, LayoutGrid, List,
   GitFork, CornerDownRight, Link2, ArrowRight
 } from 'lucide-react'
 import Link from 'next/link'
 import EquipmentQuickPreviewModal, { type QuickPreviewItem } from './EquipmentQuickPreviewModal'
-import { isPrototypeDesignOrMold } from '@/lib/utils/moldNaming'
+import { isPrototypeDesignOrMold, getEffectiveDesignStatus, getDesignStatusBadgeInfo, formatCutterDisplayCode, formatMoldDisplayCode, formatCutterSpecString, formatCutlineSpecString, extractBaseMassCode, formatRackLocationDisplay } from '@/lib/utils/moldNaming'
+import { updateRevisionStatus } from '@/app/actions/engineering'
 
 type JobItem = {
   job_id: string
@@ -133,6 +134,10 @@ type EquipDetail = {
   usage_status: string | null
   device_status: string | null
   design_revision_id: string | null
+  actual_length_mm?: string | null
+  actual_width_mm?: string | null
+  actual_height_mm?: string | null
+  actual_weight?: string | null
   rack_layers: { layer_code: string | null; racks: { rack_code: string | null } | null } | null
   keeper_company: { company_code: string | null; company_name: string | null } | null
 }
@@ -270,6 +275,22 @@ export function TabOverview(props: TabOverviewProps) {
   const [activeRev, setActiveRev] = useState<DesignRevItem | null>(null)
   const [allRevs, setAllRevs] = useState<DesignRevItem[]>([])
   const [selectedRevId, setSelectedRevId] = useState<string | null>(null)
+  const [updatingStatus, setUpdatingStatus] = useState(false)
+
+  const handleStatusChange = async (newStatus: string) => {
+    if (!activeRev) return
+    setUpdatingStatus(true)
+    try {
+      await updateRevisionStatus(activeRev.revision_id, newStatus)
+      const updated = { ...activeRev, status: newStatus }
+      setActiveRev(updated)
+      setAllRevs(prev => prev.map(r => r.revision_id === activeRev.revision_id ? updated : r))
+    } catch (err) {
+      console.error('Failed to update revision status:', err)
+    } finally {
+      setUpdatingStatus(false)
+    }
+  }
 
   // Customer Info
   const [customer, setCustomer] = useState<CustomerInfo | null>(null)
@@ -627,10 +648,7 @@ export function TabOverview(props: TabOverviewProps) {
       ].filter(Boolean).join(' - ')
     : ''
 
-  const getRack = (rl: { layer_code: string | null; racks: { rack_code: string | null } | null } | null) => {
-    if (!rl) return '—'
-    return [rl.racks?.rack_code, rl.layer_code].filter(Boolean).join('-') || '—'
-  }
+  const getRack = (rl: any) => formatRackLocationDisplay(rl)
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -798,14 +816,36 @@ export function TabOverview(props: TabOverviewProps) {
                 <PenTool size={14} style={{ color: 'var(--tint-teal-text)' }} />
                 <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--tint-teal-text)' }}>{tPC('boxSpecsDesignTitle')}</span>
               </div>
-              {activeRev && (
-                <Link
-                  href={`/engineering/designs/revisions/${activeRev.revision_id}`}
-                  style={{ fontSize: 11, color: 'var(--accent)', fontWeight: 600, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 3 }}
-                >
-                  {activeRev.design_code || 'Design'} <ExternalLink size={11} />
-                </Link>
-              )}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                {activeRev && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--tint-teal-text)' }}>承認状態:</span>
+                    <select
+                      value={getEffectiveDesignStatus(activeRev, allRevs)}
+                      disabled={updatingStatus}
+                      onChange={(e) => handleStatusChange(e.target.value)}
+                      style={{
+                        padding: '2px 6px', borderRadius: 4, fontSize: 11, fontWeight: 700,
+                        border: '1px solid var(--tint-teal-border)', cursor: 'pointer',
+                        background: 'var(--bg-surface)', color: 'var(--text-primary)'
+                      }}
+                    >
+                      <option value="APPROVED">🟢 承認済 (Đã duyệt)</option>
+                      <option value="PENDING_APPROVAL">🟡 承認待ち (Chờ duyệt)</option>
+                      <option value="SUPERSEDED">⚪ 舊版 (Đã thay thế)</option>
+                      <option value="REJECTED">🔴 不採用 (Không đạt)</option>
+                    </select>
+                  </div>
+                )}
+                {activeRev && (
+                  <Link
+                    href={`/engineering/designs/revisions/${activeRev.revision_id}`}
+                    style={{ fontSize: 11, color: 'var(--accent)', fontWeight: 600, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 3 }}
+                  >
+                    {activeRev.design_code || 'Design'} <ExternalLink size={11} />
+                  </Link>
+                )}
+              </div>
             </div>
 
             <div style={{ display: 'flex', gap: 0 }}>
@@ -830,18 +870,19 @@ export function TabOverview(props: TabOverviewProps) {
 
                     // 1. Process Mass Production Revisions as Root nodes
                     const massRevs = allRevs.filter(r => !isPrototypeDesignOrMold(r))
+                    const protoRevs = allRevs.filter(r => isPrototypeDesignOrMold(r))
+
                     massRevs.forEach(m => {
+                      if (processedIds.has(m.revision_id)) return
                       processedIds.add(m.revision_id)
                       const children: Array<{ item: DesignRevItem; relLabel: string }> = []
                       
-                      // ONLY nest true parent prototype revision (where m.parent_design_id === proto.revision_id)
-                      if (m.parent_design_id) {
-                        const protoParent = allRevs.find(r => r.revision_id === m.parent_design_id && isPrototypeDesignOrMold(r))
-                        if (protoParent) {
-                          processedIds.add(protoParent.revision_id)
-                          children.push({ item: protoParent, relLabel: '↳ 試作元' })
-                        }
-                      }
+                      // Find all matching prototype revisions for this mass production revision
+                      const protoMatches = protoRevs.filter(p => p.parent_design_id === m.revision_id || m.parent_design_id === p.revision_id || extractBaseMassCode(p.design_code) === extractBaseMassCode(m.design_code))
+                      protoMatches.forEach(proto => {
+                        processedIds.add(proto.revision_id)
+                        children.push({ item: proto, relLabel: '↳ 試作元' })
+                      })
                       
                       treeGroups.push({ parent: m, children })
                     })
@@ -855,6 +896,8 @@ export function TabOverview(props: TabOverviewProps) {
                     const renderRevCard = (r: DesignRevItem, isChild = false, relLabel = '') => {
                       const isSelected = selectedRevId === r.revision_id
                       const isProto = isPrototypeDesignOrMold(r)
+                      const effStatus = getEffectiveDesignStatus(r, allRevs)
+                      const badgeInfo = getDesignStatusBadgeInfo(effStatus)
                       return (
                         <div
                           key={r.revision_id}
@@ -865,24 +908,24 @@ export function TabOverview(props: TabOverviewProps) {
                           style={{
                             display: 'flex', flexDirection: 'column', gap: 2, padding: isChild ? '4px 6px' : '5px 7px',
                             borderRadius: 6, cursor: 'pointer', transition: 'all 0.15s ease',
-                            marginLeft: isChild ? 10 : 0,
-                            borderLeft: isChild ? '2px solid var(--accent)' : undefined,
+                            marginLeft: isChild ? 12 : 0,
+                            borderLeft: isChild ? '3px solid var(--accent)' : undefined,
                             border: isSelected ? '1.5px solid var(--accent)' : '1px solid var(--border-default)',
                             background: isSelected ? 'var(--tint-teal-bg)' : 'var(--bg-surface)'
                           }}
                         >
                           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                             <span style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: isChild ? 10 : 11, color: isSelected ? 'var(--accent)' : 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 3 }}>
-                              {isChild && <CornerDownRight size={10} style={{ color: 'var(--accent)' }} />}
+                              {isChild && <CornerDownRight size={11} style={{ color: 'var(--accent)' }} />}
                               {r.design_code || `Rev.${r.revision_number}`}
                             </span>
-                            <span className={REV_STATUS_BADGE[r.status] || 'badge badge--neutral'} style={{ fontSize: 8, padding: '1px 5px' }}>
-                              {r.status}
+                            <span className={badgeInfo.badgeClass} style={{ fontSize: 8, padding: '1px 5px' }}>
+                              {badgeInfo.label}
                             </span>
                           </div>
                           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 4 }}>
                             <span style={{ fontSize: 8, fontWeight: 700, padding: '1px 4px', borderRadius: 3, background: isProto ? 'var(--tint-orange-bg)' : 'var(--tint-teal-bg)', color: isProto ? 'var(--tint-orange-text)' : 'var(--tint-teal-text)' }}>
-                              {relLabel || (isProto ? '🧪 試作のみ' : '🟢 正規')}
+                              {relLabel || (isProto ? '🧪 試作' : '🟢 正規')}
                             </span>
                             {r.created_at && (
                               <span style={{ fontSize: 9, color: 'var(--text-muted)', fontFamily: 'monospace' }}>
@@ -944,7 +987,7 @@ export function TabOverview(props: TabOverviewProps) {
                         
                         if (isProto) {
                           // Check if any Mass Production revision derives from this prototype
-                          const massChild = allRevs.find(r => !isPrototypeDesignOrMold(r) && r.parent_design_id === activeRev.revision_id)
+                          const massChild = allRevs.find(r => !isPrototypeDesignOrMold(r) && (r.parent_design_id === activeRev.revision_id || extractBaseMassCode(r.design_code) === extractBaseMassCode(activeRev.design_code)))
                           if (massChild) {
                             linkedItems.push({
                               item: massChild,
@@ -960,15 +1003,13 @@ export function TabOverview(props: TabOverviewProps) {
                           }
                         } else {
                           // Mass Production revision: check if it has a prototype parent
-                          if (activeRev.parent_design_id) {
-                            const protoParent = allRevs.find(r => r.revision_id === activeRev.parent_design_id && isPrototypeDesignOrMold(r))
-                            if (protoParent) {
-                              linkedItems.push({
-                                item: protoParent,
-                                label: '🧪 試作元 (Prototype Source)',
-                                badgeClass: 'badge badge--warning'
-                              })
-                            }
+                          const protoParent = allRevs.find(r => isPrototypeDesignOrMold(r) && (r.revision_id === activeRev.parent_design_id || r.parent_design_id === activeRev.revision_id || extractBaseMassCode(r.design_code) === extractBaseMassCode(activeRev.design_code)))
+                          if (protoParent) {
+                            linkedItems.push({
+                              item: protoParent,
+                              label: '🧪 試作元 (Prototype Source)',
+                              badgeClass: 'badge badge--warning'
+                            })
                           }
                         }
 
@@ -1037,7 +1078,7 @@ export function TabOverview(props: TabOverviewProps) {
 
                           {/* Column 2: Dimensions & Pocket / Impression */}
                           <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                            <SpecCell label={tPC('cutlineDimensions')} value={productDimsSpec || null} isDiff={cutlineDimsDiff} diffLabel={tPC('fieldChanged')} />
+                            <SpecCell label="カットライン情報" value={formatCutlineSpecString(activeRev)} isDiff={cutlineDimsDiff} diffLabel={tPC('fieldChanged')} />
                             <SpecCell
                               label={tPC('cavityAndPitch')}
                               value={(activeRev.pocket_numbers || activeRev.cavity_count) ? `${activeRev.pocket_numbers || activeRev.cavity_count} Pocket${activeRev.cavity_pitch_mm ? ' / ' + activeRev.cavity_pitch_mm + 'mm' : ''}` : null}
@@ -1212,43 +1253,103 @@ export function TabOverview(props: TabOverviewProps) {
             const grandTotal = filteredMolds.length + filteredEquips.length + filteredCutters.length
             const totalAll = moldDetails.length + equipDetails.length + cutterDetails.length
 
+            const parseStorageStatus = (statusRaw?: string | null, keeper?: string | null) => {
+              const st = (statusRaw || 'IN_STOCK').toUpperCase().trim()
+              const isOut = st.includes('OUT') || st.includes('CHECKOUT') || st.includes('LOAN') || st.includes('IN_PROGRESS')
+              const isExternal = Boolean(keeper && keeper !== 'YSD' && keeper !== '本社工場' && keeper !== '—')
+
+              if (isOut) {
+                if (isExternal) {
+                  return {
+                    badgeLabel: '⬆️ OUT',
+                    badgeClass: 'badge badge--error',
+                    type: 'OUT_EXTERNAL',
+                    locationLabel: `🏢 ${keeper}`,
+                    bg: '#FFF7ED',
+                    border: '#FFEDD5',
+                    color: '#C2410C',
+                  }
+                }
+                return {
+                  badgeLabel: '⬆️ OUT',
+                  badgeClass: 'badge badge--error',
+                  type: 'OUT_INTERNAL',
+                  locationLabel: `🏭 ${keeper || '社内成形機'}`,
+                  bg: '#FEFCE8',
+                  border: '#FEF08A',
+                  color: '#854D0E',
+                }
+              }
+
+              return {
+                badgeLabel: '⬇️ IN',
+                badgeClass: 'badge badge--success',
+                type: 'IN',
+                locationLabel: '📍 保管中',
+                bg: '#E0F2FE',
+                border: '#BAE6FD',
+                color: '#0369A1',
+              }
+            }
+
             // Selected Equipment info for storage box
             const selectedEquipData = (() => {
               if (!selectedEquip) return null
               if (selectedEquip.type === 'mold') {
                 const m = moldDetails.find(item => item.physical_mold_id === selectedEquip.id)
                 if (!m) return null
+                const moldDims = [m.actual_length_mm || activeRev?.design_length, m.actual_width_mm || activeRev?.design_width, m.actual_height_mm || activeRev?.design_height || activeRev?.design_depth].filter(Boolean).join(' × ')
+                const keeperName = m.keeper_company?.company_code || m.keeper_company?.company_name || 'YSD'
+                const stInfo = parseStorageStatus(m.usage_status || m.device_status, keeperName)
                 return {
-                  code: m.system_code || m.physical_mold_id,
+                  code: formatMoldDisplayCode(m.system_code, activeRev?.design_code),
                   name: m.display_name || 'Physical Mold',
                   rack: getRack(m.rack_layers),
-                  keeper: m.keeper_company?.company_code || m.keeper_company?.company_name || 'YSD',
+                  keeper: keeperName,
                   status: m.usage_status || m.device_status || 'IN_STOCK',
-                  updatedAt: m.manufacturing_date || '—'
+                  statusInfo: stInfo,
+                  updatedAt: m.manufacturing_date || '—',
+                  dims: moldDims ? `${moldDims} mm` : null,
+                  weight: m.actual_weight ? `${m.actual_weight} kg` : null,
+                  specStr: null
                 }
               }
               if (selectedEquip.type === 'cutter') {
                 const c = cutterDetails.find(item => item.cutter_id === selectedEquip.id)
                 if (!c) return null
+                const keeperName = c.keeper_company?.company_code || c.keeper_company?.company_name || 'YSD'
+                const stInfo = parseStorageStatus(c.usage_status || (c.cutter_presence ? 'IN' : 'OUT'), keeperName)
                 return {
-                  code: c.cutter_no || c.cutter_id,
+                  code: formatCutterDisplayCode(c.cutter_no || c.cutter_id),
                   name: c.cutter_name || 'Cutting Die',
                   rack: getRack(c.rack_layers),
-                  keeper: c.keeper_company?.company_code || c.keeper_company?.company_name || 'YSD',
+                  keeper: keeperName,
                   status: c.usage_status || (c.cutter_presence ? '在空 (IN)' : '保管中 (IN)'),
-                  updatedAt: '—'
+                  statusInfo: stInfo,
+                  updatedAt: '—',
+                  dims: null,
+                  weight: null,
+                  specStr: formatCutterSpecString(c, activeRev)
                 }
               }
               if (selectedEquip.type === 'equip') {
                 const eq = equipDetails.find(item => item.equipment_id === selectedEquip.id)
                 if (!eq) return null
+                const isCutter = eq.equipment_type?.includes('CUTTER')
+                const eqDims = [eq.actual_length_mm, eq.actual_width_mm, eq.actual_height_mm].filter(Boolean).join(' × ')
+                const keeperName = eq.keeper_company?.company_code || eq.keeper_company?.company_name || 'YSD'
+                const stInfo = parseStorageStatus(eq.usage_status || eq.device_status, keeperName)
                 return {
-                  code: eq.equipment_code || eq.equipment_id,
+                  code: isCutter ? formatCutterDisplayCode(eq.equipment_code) : formatMoldDisplayCode(eq.equipment_code, activeRev?.design_code),
                   name: eq.display_name || eq.equipment_type || 'Equipment',
                   rack: getRack(eq.rack_layers),
-                  keeper: eq.keeper_company?.company_code || eq.keeper_company?.company_name || 'YSD',
+                  keeper: keeperName,
                   status: eq.usage_status || eq.device_status || 'NORMAL',
-                  updatedAt: '—'
+                  statusInfo: stInfo,
+                  updatedAt: '—',
+                  dims: eqDims ? `${eqDims} mm` : null,
+                  weight: eq.actual_weight ? `${eq.actual_weight} kg` : null,
+                  specStr: isCutter ? formatCutterSpecString(eq, activeRev) : null
                 }
               }
               return null
@@ -1307,11 +1408,15 @@ export function TabOverview(props: TabOverviewProps) {
               previewItemData: QuickPreviewItem
             ) => {
               const isEquipSelected = selectedEquip?.id === id
+              const isCutter = type === 'cutter' || (type === 'equip' && previewItemData.type === 'equip' && previewItemData.data?.equipment_type?.includes('CUTTER'))
+              const displayCode = isCutter ? formatCutterDisplayCode(code) : (code || '—')
+              const stInfo = parseStorageStatus(statusText, keeper)
+
               return (
                 <div
                   key={id}
                   onClick={() => {
-                    setSelectedEquip(prev => prev?.id === id ? null : { type, id, code: code || id })
+                    setSelectedEquip(prev => prev?.id === id ? null : { type, id, code: displayCode })
                   }}
                   style={{
                     display: 'flex', alignItems: 'center', gap: 8,
@@ -1323,19 +1428,20 @@ export function TabOverview(props: TabOverviewProps) {
                 >
                   {typeIcon}
                   <span style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: 12, color: 'var(--accent)', minWidth: 75 }}>
-                    {code || '—'}
+                    {displayCode}
                   </span>
                   <span style={{ flex: 1, color: 'var(--text-primary)', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {name || '—'}
                   </span>
                   <span style={{ fontSize: 9, color: 'var(--text-muted)', fontWeight: 600 }}>{typeLabel}</span>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: 9, color: 'var(--text-muted)', fontFamily: 'monospace' }}>
-                    <MapPin size={9} /> {rack}
+                  <span style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 3, padding: '1px 5px', borderRadius: 4,
+                    background: stInfo.bg, border: `1px solid ${stInfo.border}`, color: stInfo.color,
+                    fontFamily: 'monospace', fontWeight: 700, fontSize: 9
+                  }}>
+                    <MapPin size={9} /> {stInfo.type === 'IN' ? rack : stInfo.locationLabel}
                   </span>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: 9, color: 'var(--text-muted)' }}>
-                    <Building2 size={9} /> {keeper}
-                  </span>
-                  <span className={statusCls} style={{ fontSize: 8 }}>{statusText}</span>
+                  <span className={stInfo.badgeClass} style={{ fontSize: 8, padding: '1px 5px' }}>{stInfo.badgeLabel}</span>
                   <span className={binding.cls} style={{ fontSize: 8, padding: '1px 5px' }}>{binding.label}</span>
                   {isEquipSelected && (
                     <span className="badge badge--info font-bold" style={{ fontSize: 8, padding: '1px 5px' }}>
@@ -1377,11 +1483,15 @@ export function TabOverview(props: TabOverviewProps) {
             ) => {
               const isEquipSelected = selectedEquip?.id === id
               const isEquipProto = isPrototypeDesignOrMold({ equipment_code: code, display_name: name })
+              const isCutter = type === 'cutter' || (type === 'equip' && previewItemData.type === 'equip' && previewItemData.data?.equipment_type?.includes('CUTTER'))
+              const displayCode = isCutter ? formatCutterDisplayCode(code) : (code || '—')
+              const stInfo = parseStorageStatus(statusText, keeper)
+
               return (
                 <div
                   key={id}
                   onClick={() => {
-                    setSelectedEquip(prev => prev?.id === id ? null : { type, id, code: code || id })
+                    setSelectedEquip(prev => prev?.id === id ? null : { type, id, code: displayCode })
                   }}
                   style={{
                     display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: 4,
@@ -1424,13 +1534,13 @@ export function TabOverview(props: TabOverviewProps) {
                           setPreviewItem(previewItemData)
                         }}
                         style={{
-                          fontFamily: 'monospace', fontWeight: 700, fontSize: 12, color: 'var(--accent)',
+                          fontFamily: 'monospace', fontWeight: 700, fontSize: 13, color: 'var(--accent)',
                           overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textDecoration: 'underline',
                           cursor: 'pointer'
                         }}
                         title={tPC('quickPreviewTitle') || 'Quick Preview'}
                       >
-                        {code || '—'}
+                        {displayCode}
                       </span>
                       {isEquipSelected && (
                         <span className="badge badge--info font-bold" style={{ fontSize: 8, padding: '0 4px' }}>
@@ -1443,10 +1553,14 @@ export function TabOverview(props: TabOverviewProps) {
                     </div>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: 4, borderTop: '1px dashed var(--border-subtle)', fontSize: 9 }}>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: 2, color: 'var(--text-muted)', fontFamily: 'monospace' }}>
-                      <MapPin size={9} /> {rack}
+                    <span style={{
+                      display: 'inline-flex', alignItems: 'center', gap: 3, padding: '1px 5px', borderRadius: 4,
+                      background: stInfo.bg, border: `1px solid ${stInfo.border}`, color: stInfo.color,
+                      fontFamily: 'monospace', fontWeight: 700, fontSize: 9
+                    }}>
+                      <MapPin size={9} /> {stInfo.type === 'IN' ? rack : stInfo.locationLabel}
                     </span>
-                    <span className={statusCls} style={{ fontSize: 8 }}>{statusText}</span>
+                    <span className={stInfo.badgeClass} style={{ fontSize: 8, padding: '1px 5px' }}>{stInfo.badgeLabel}</span>
                   </div>
                 </div>
               )
@@ -1659,7 +1773,7 @@ export function TabOverview(props: TabOverviewProps) {
                         fontSize: 10, color: 'var(--tint-orange-text)', fontWeight: 600,
                         display: 'flex', alignItems: 'center', gap: 6
                       }}>
-                        <Scissors size={12} style={{ flexShrink: 0 }} />
+                        <Crop size={12} style={{ flexShrink: 0 }} />
                         <span>⚠️ 抜型・スタッキング提案: 外形寸法による自動提案です。実際の切断線形状・R/C角・内側穴あきについて必ず担当者が確認して下さい。</span>
                       </div>
                     )}
@@ -1682,9 +1796,9 @@ export function TabOverview(props: TabOverviewProps) {
                           return renderFunc(
                             m.physical_mold_id,
                             'mold',
-                            m.system_code,
+                            formatMoldDisplayCode(m.system_code, activeRev?.design_code),
                             m.display_name,
-                            <Wrench size={13} style={{ color: 'var(--tint-blue-text)', flexShrink: 0 }} />,
+                            <Box size={13} style={{ color: 'var(--tint-blue-text)', flexShrink: 0 }} />,
                             tPC('moldsGroupTitle') || '金型',
                             m.usage_status || m.device_status || '—',
                             STATUS_BADGE[m.usage_status || ''] || STATUS_BADGE[m.device_status || ''] || 'badge badge--neutral',
@@ -1702,9 +1816,9 @@ export function TabOverview(props: TabOverviewProps) {
                           return renderFunc(
                             c.cutter_id,
                             'cutter',
-                            c.cutter_no,
+                            formatCutterDisplayCode(c.cutter_no),
                             c.cutter_name,
-                            <Scissors size={13} style={{ color: 'var(--tint-orange-text)', flexShrink: 0 }} />,
+                            <Crop size={13} style={{ color: 'var(--tint-orange-text)', flexShrink: 0 }} />,
                             tPC('cuttersGroupTitle') || '抜型',
                             c.usage_status || (c.cutter_presence ? '在空' : '保管中'),
                             STATUS_BADGE[c.usage_status || ''] || 'badge badge--success',
@@ -1727,7 +1841,7 @@ export function TabOverview(props: TabOverviewProps) {
                           const isStack = typeUpper.includes('STACK') || typeUpper.includes('スタッキング')
                           const isCutter = typeUpper.includes('CUTTER') || typeUpper.includes('抜型')
 
-                          const Icon = isCutter ? Scissors : isPlug ? Pin : Wrench
+                          const Icon = isCutter ? Crop : isPlug ? Pin : Box
                           const tintColor = isWater ? '#0284C7' : isPress ? 'var(--tint-purple-text)' : isStack ? 'var(--tint-teal-text)' : isFrame ? '#D97706' : isPlate ? '#E11D48' : isPlug ? '#4F46E5' : 'var(--accent)'
                           const typeLabel = isCutter ? (tPC('cutterThumbnail') || '抜型') : isPlug ? (tPC('plugThumbnail') || 'プラグ') : eq.equipment_type || 'Equipment'
                           const renderFunc = equipViewMode === 'grid' ? renderEquipCard : renderEquipRow
@@ -1767,9 +1881,21 @@ export function TabOverview(props: TabOverviewProps) {
                       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px 14px' }}>
                         <InfoRow label={tPC('equipCodeLabel')} value={selectedEquipData.code} mono accent />
                         <InfoRow label={tPC('equipNameLabel')} value={selectedEquipData.name} />
+                        <InfoRow label="入出庫ステータス" value={selectedEquipData.statusInfo.badgeLabel} mono accent />
                         <InfoRow label={tPC('rackLocationLabel')} value={selectedEquipData.rack} mono />
-                        <InfoRow label={tPC('keeperCompanyLabel')} value={selectedEquipData.keeper} />
-                        <InfoRow label={tPC('storageStatusLabel')} value={selectedEquipData.status} />
+                        <InfoRow label="保管会社・設置場所" value={selectedEquipData.statusInfo.locationLabel || selectedEquipData.keeper} />
+                        {selectedEquipData.statusInfo.type !== 'IN' && (
+                          <InfoRow label="返却予定ラック" value={`↩ ${selectedEquipData.rack}`} mono />
+                        )}
+                        {selectedEquipData.specStr && (
+                          <InfoRow label="抜型物理寸法" value={selectedEquipData.specStr} mono accent />
+                        )}
+                        {selectedEquipData.dims && (
+                          <InfoRow label="外形寸法" value={selectedEquipData.dims} mono />
+                        )}
+                        {selectedEquipData.weight && (
+                          <InfoRow label="重量 (Weight)" value={selectedEquipData.weight} mono />
+                        )}
                         <InfoRow label={tPC('lastUpdatedLabel')} value={selectedEquipData.updatedAt?.slice(0, 10)} mono />
                       </div>
                     ) : (

@@ -4,9 +4,10 @@ import React from 'react'
 import Link from 'next/link'
 import { useTranslations } from 'next-intl'
 import {
-  X, ExternalLink, Wrench, Scissors, Pin, Layers, MapPin, Ruler, Scale,
-  Calendar, CheckCircle, AlertTriangle, ShieldAlert, Building2
+  X, ExternalLink, Wrench, Crop, Pin, Layers, MapPin, Ruler, Scale,
+  Calendar, CheckCircle, AlertTriangle, ShieldAlert, Building2, Box
 } from 'lucide-react'
+import { formatCutterDisplayCode, formatMoldDisplayCode, formatRackLocationDisplay } from '@/lib/utils/moldNaming'
 
 export type QuickPreviewItem =
   | { type: 'mold'; data: any }
@@ -35,13 +36,7 @@ export default function EquipmentQuickPreviewModal({ isOpen, onClose, item }: Pr
 
   if (!isOpen || !item) return null
 
-  const getRackText = (rackLayers: any) => {
-    if (!rackLayers) return '—'
-    const layer = rackLayers.layer_code
-    const rack = rackLayers.racks?.rack_code
-    if (rack && layer) return `${rack}-${layer}`
-    return layer || rack || '—'
-  }
+  const getRackText = (rackLayers: any) => formatRackLocationDisplay(rackLayers)
 
   const getKeeperText = (kc: any) => {
     if (!kc) return tPC('internalYSD') || 'YSD (社内)'
@@ -51,7 +46,7 @@ export default function EquipmentQuickPreviewModal({ isOpen, onClose, item }: Pr
   let titleCode = '—'
   let titleName = '—'
   let categoryLabel = '設備 / Equipment'
-  let IconComponent = Wrench
+  let IconComponent = Box
   let headerGradient = 'linear-gradient(135deg, var(--tint-orange-bg) 0%, var(--bg-surface-2) 100%)'
   let headerTextColor = 'var(--tint-orange-text)'
   let detailUrl = '/equipment/molds'
@@ -60,10 +55,10 @@ export default function EquipmentQuickPreviewModal({ isOpen, onClose, item }: Pr
 
   if (item.type === 'mold') {
     const m = item.data
-    titleCode = m.system_code || '—'
+    titleCode = formatMoldDisplayCode(m.system_code)
     titleName = m.display_name || '—'
     categoryLabel = tPC('moldThumbnail') || '金型'
-    IconComponent = Wrench
+    IconComponent = Box
     headerGradient = 'linear-gradient(135deg, var(--tint-orange-bg) 0%, var(--bg-surface-2) 100%)'
     headerTextColor = 'var(--tint-orange-text)'
     detailUrl = `/equipment/molds/${m.physical_mold_id}`
@@ -71,10 +66,10 @@ export default function EquipmentQuickPreviewModal({ isOpen, onClose, item }: Pr
     bindingBadge = m.usage_status === 'DISPOSED' ? 'disposed' : 'active'
   } else if (item.type === 'cutter') {
     const c = item.data
-    titleCode = c.cutter_no || '—'
-    titleName = c.cutter_name || '—'
-    categoryLabel = tPC('cutterThumbnail') || '抜型'
-    IconComponent = Scissors
+    titleCode = formatCutterDisplayCode(c.cutter_no || c.equipment_code)
+    titleName = c.cutter_name || c.display_name || '—'
+    categoryLabel = tPC('cutterThumbnail') || '抜き型'
+    IconComponent = Crop
     headerGradient = 'linear-gradient(135deg, var(--tint-purple-bg) 0%, var(--bg-surface-2) 100%)'
     headerTextColor = 'var(--tint-purple-text)'
     detailUrl = `/equipment/cutting-dies`
@@ -82,12 +77,12 @@ export default function EquipmentQuickPreviewModal({ isOpen, onClose, item }: Pr
     bindingBadge = c.is_shared ? 'shared' : 'active'
   } else if (item.type === 'equip') {
     const eq = item.data
-    titleCode = eq.equipment_code || '—'
-    titleName = eq.display_name || '—'
     const isPlug = eq.equipment_type?.includes('PLUG')
     const isCutter = eq.equipment_type?.includes('CUTTER')
-    IconComponent = isCutter ? Scissors : isPlug ? Pin : Wrench
-    categoryLabel = isCutter ? '抜型' : isPlug ? 'プラグ' : eq.equipment_type || '設備'
+    titleCode = isCutter ? formatCutterDisplayCode(eq.equipment_code) : formatMoldDisplayCode(eq.equipment_code)
+    titleName = eq.display_name || '—'
+    IconComponent = isCutter ? Crop : isPlug ? Pin : Box
+    categoryLabel = isCutter ? '抜き型' : isPlug ? 'プラグ' : eq.equipment_type || '設備'
     headerGradient = isCutter
       ? 'linear-gradient(135deg, var(--tint-purple-bg) 0%, var(--bg-surface-2) 100%)'
       : isPlug
@@ -230,11 +225,18 @@ export default function EquipmentQuickPreviewModal({ isOpen, onClose, item }: Pr
 
           {item.type === 'cutter' && (() => {
             const c = item.data
-            const dims = [c.cutter_length_mm, c.cutter_width_mm].filter(Boolean).join(' × ')
+            const dims = [c.cutter_length_mm || c.actual_length_mm, c.cutter_width_mm || c.actual_width_mm, c.cutter_height_mm || c.actual_height_mm].filter(Boolean).join(' × ')
+            const cutterTypeLabel = c.cutter_type === 'CUTTER_INLINE' ? 'インライン (Dao liền)' : '別抜き (Dao rời)'
             return (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8, fontSize: 12 }}>
                 <div style={{ display: 'grid', gridTemplateColumns: '110px 1fr', alignItems: 'baseline' }}>
-                  <span style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600 }}>{tPC('dimensions') || '抜型寸法 (L×W)'}</span>
+                  <span style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600 }}>種別 (Type)</span>
+                  <span style={{ fontWeight: 700, color: 'var(--tint-purple-text)' }}>
+                    {cutterTypeLabel}
+                  </span>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '110px 1fr', alignItems: 'baseline' }}>
+                  <span style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600 }}>{tPC('dimensions') || '抜き型寸法'}</span>
                   <span style={{ fontFamily: 'monospace', fontWeight: 700, color: 'var(--text-primary)' }}>
                     {dims ? `${dims} mm` : '—'}
                   </span>
@@ -267,12 +269,21 @@ export default function EquipmentQuickPreviewModal({ isOpen, onClose, item }: Pr
 
           {item.type === 'equip' && (() => {
             const eq = item.data
+            const isCutter = eq.equipment_type?.includes('CUTTER')
+            const dims = [eq.actual_length_mm, eq.actual_width_mm, eq.actual_height_mm].filter(Boolean).join(' × ')
+            const cutterTypeLabel = eq.equipment_type === 'CUTTER_INLINE' ? 'インライン (Dao liền)' : '別抜き (Dao rời)'
             return (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8, fontSize: 12 }}>
                 <div style={{ display: 'grid', gridTemplateColumns: '110px 1fr', alignItems: 'baseline' }}>
                   <span style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600 }}>{tPC('equipmentType') || '設備種別'}</span>
-                  <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>
-                    {eq.equipment_type || '—'}
+                  <span style={{ fontWeight: 700, color: isCutter ? 'var(--tint-purple-text)' : 'var(--text-primary)' }}>
+                    {isCutter ? `抜き型 (${cutterTypeLabel})` : eq.equipment_type || '—'}
+                  </span>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '110px 1fr', alignItems: 'baseline' }}>
+                  <span style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600 }}>{tPC('dimensions') || '寸法 (L×W×H)'}</span>
+                  <span style={{ fontFamily: 'monospace', fontWeight: 700, color: 'var(--text-primary)' }}>
+                    {dims ? `${dims} mm` : '—'}
                   </span>
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: '110px 1fr', alignItems: 'baseline' }}>

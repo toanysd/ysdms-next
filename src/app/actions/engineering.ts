@@ -78,6 +78,22 @@ export async function updateDesignStatus(productId: string, newStatus: string) {
     return { success: true }
 }
 
+export async function updateRevisionStatus(revisionId: string, newStatus: string) {
+    const supabase = await createClient()
+    
+    const { error: updateErr } = await supabase
+        .from('design_revisions')
+        .update({ status: newStatus.toUpperCase() })
+        .eq('revision_id', revisionId)
+        
+    if (updateErr) throw new Error(updateErr.message)
+    
+    revalidatePath('/engineering')
+    revalidatePath('/product-center')
+    
+    return { success: true }
+}
+
 export type CreateDesignRevisionInput = {
   product_id: string
   company_id?: string | null

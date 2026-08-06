@@ -643,5 +643,30 @@ design_masters, design_projects, mold_designs
 
 ---
 
-*Cập nhật lần cuối: 2026-07-02*
-*Phiên bản: 1.0*
+## 12. Quy Tắc Mã Hóa Vị Trí Kệ - Tầng (棚・段位置) Theo Khu Vực Xưởng (2026-08-06)
+
+### 12.1 Định Dạng Mã Vị Trí Địa Lý & Chức Năng (Zone & Area Naming)
+- **Không gắn mã vị trí theo loại thiết bị**: Nhằm đảm bảo tính linh hoạt lưu trữ hỗn hợp nhiều loại thiết bị (Khuôn, Dao cắt, Đế nước, Đế khí, Stacking) trên cùng 1 giá.
+- **Tiền tố Mã đại diện cho Vị trí Địa lý Thực tế trong Xưởng hoặc Khu vực Chức năng**:
+  - **Khu vực Địa lý Xưởng**:
+    - **`OFF`** / **`A`**: Trước Văn phòng (Office / 前事務所)
+    - **`ENT`** / **`E`**: Cửa ra vào (Entrance / 出入口)
+    - **`WH`** / **`W`**: Kho tổng / Nhà kho (Warehouse / 倉庫)
+    - **`2F`**: Tầng 2 của xưởng (2nd Floor / 2階)
+    - **`PAC`**: Kệ khuôn đóng gói cất đi - ít dùng (Packed Storage / 梱包保管)
+    - **`M06`**, **`M08`**: Gần Máy định hình số 6 / số 8 (Forming Machine #6/#8)
+    - **`TW`**: Gần Máy định hình Đài Loan (Taiwan Machine)
+    - **`PRS`**: Phía trên các Máy dập (Press area / プレス機上部)
+  - **Khu vực Chức năng**:
+    - **`TEF`**: Khu vực Chờ / Mạ Teflon (Teflon Staging)
+    - **`REP`**: Khu vực Bảo trì / Sửa chữa khuôn (Repair & Maintenance)
+    - **`NEW`**: Khu vực Tiếp nhận khuôn mới (New Tooling Receiving)
+- **Cấu trúc linh hoạt**: `[MãKhuVực]-[SốGiá]-[SốTầng]` (VD: `OFF-01-2`, `M08-01-1`, `TW-02-1`, `2F-03-1`, `TEF-01`).
+- **Tương thích ngược 100%**: Giữ nguyên khả năng nhận diện dữ liệu cũ `71-1`, `70-0`.
+
+
+---
+
+*Cập nhật lần cuối: 2026-08-06*
+*Phiên bản: 1.2*
+
