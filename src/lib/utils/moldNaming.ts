@@ -232,3 +232,24 @@ export function formatCutterSpecString(item: any, activeRev?: any): string {
 
   return spec
 }
+
+/**
+ * Builds wildcard ILIKE patterns for search queries, automatically stripping hyphens, spaces, and underscores.
+ * E.g.: "SSM032" -> ["%SSM032%", "%SSM%032%"] (matches "SSM-032" and "SSM032")
+ *       "JAE-345" -> ["%JAE-345%", "%JAE%345%"] (matches "JAE-345" and "JAE345")
+ */
+export function buildFuzzyPatterns(trimmed: string): string[] {
+  if (!trimmed) return []
+  const clean = trimmed.replace(/[%_]/g, '')
+  const compact = clean.replace(/[\s\-_]/g, '')
+  const chunks = compact.match(/[a-zA-Z]+|\d+/g)
+
+  const patterns = new Set<string>()
+  patterns.add(`%${clean}%`)
+  if (chunks && chunks.length > 1) {
+    patterns.add(`%${chunks.join('%')}%`)
+  } else if (compact) {
+    patterns.add(`%${compact}%`)
+  }
+  return Array.from(patterns)
+}

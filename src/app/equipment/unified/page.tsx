@@ -13,6 +13,7 @@ import { SearchSuggestions } from '@/components/ui/SearchSuggestions'
 import { useSearchHistory } from '@/hooks/useSearchHistory'
 import Link from 'next/link'
 import { useTranslations } from 'next-intl'
+import EquipmentDetailModal from '@/app/equipment/_components/detail-modal/EquipmentDetailModal'
 
 type EquipmentType = 'ALL' | 'MOLD' | 'CUTTER' | 'WATER_BASE' | 'PRESSURE_BASE' | 'FRAME' | 'STACKING'
 
@@ -63,6 +64,9 @@ function UnifiedEquipmentPageContent() {
   const PAGE_SIZE = 50
   const [showSuggestions, setShowSuggestions] = useState(false)
   const { history, addToHistory, removeFromHistory, clearHistory } = useSearchHistory('search_equipment_unified')
+
+  // Selected Equipment Modal
+  const [selectedEquipId, setSelectedEquipId] = useState<string | null>(null)
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -334,13 +338,13 @@ function UnifiedEquipmentPageContent() {
                 return (
                   <tr key={m.equipment_id} className={idx % 2 === 0 ? 'bg-transparent' : 'bg-slate-50'} style={{ borderBottom: '1px solid var(--border-subtle)' }}>
                     <td className="p-2 text-xs font-mono font-bold">
-                      <Link
-                        href={`/equipment/unified/${m.equipment_id}`}
-                        style={{ color: 'var(--accent)', textDecoration: 'none' }}
+                      <button
+                        onClick={() => setSelectedEquipId(m.equipment_id)}
+                        style={{ color: 'var(--accent)', textDecoration: 'none', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'monospace', fontWeight: 700 }}
                         title={t('details')}
                       >
                         {m.equipment_code}
-                      </Link>
+                      </button>
                     </td>
                     <td className="p-2 text-xs">{m.display_name}</td>
                     <td className="p-2">
@@ -370,9 +374,13 @@ function UnifiedEquipmentPageContent() {
                     </td>
                     <td className="p-2">
                       <div className="flex gap-1">
-                        <Link href={`/equipment/unified/${m.equipment_id}`} className="btn btn-secondary h-6 w-6 p-0 flex items-center justify-center" title={t('details')}>
+                        <button
+                          onClick={() => setSelectedEquipId(m.equipment_id)}
+                          className="btn btn-secondary h-6 w-6 p-0 flex items-center justify-center"
+                          title={t('details')}
+                        >
                           <ArrowUpFromLine size={12} className="rotate-90" />
-                        </Link>
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -390,6 +398,14 @@ function UnifiedEquipmentPageContent() {
           />
         </div>
       </div>
+
+      {/* Equipment Detail Modal */}
+      <EquipmentDetailModal
+        isOpen={Boolean(selectedEquipId)}
+        onClose={() => setSelectedEquipId(null)}
+        equipmentId={selectedEquipId}
+        onUpdateSuccess={fetchEquipment}
+      />
     </div>
   )
 }

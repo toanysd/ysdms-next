@@ -443,7 +443,7 @@ export function TabOverview(props: TabOverviewProps) {
             manufacturing_date: eq.manufacturing_date,
             rack_layers: eq.rack_layers,
             keeper_company: eq.keeper_company,
-            mold_revisions: { design_revision_id: eq.design_revision_id || revIds[0] }
+            mold_revisions: { design_revision_id: eq.design_revision_id || null }
           }))
           setMoldDetails(moldDetailsMapped as unknown as MoldDetail[])
 
@@ -1224,19 +1224,21 @@ export function TabOverview(props: TabOverviewProps) {
           {/* TOP BLOCK: Các thiết bị liên quan */}
           {(() => {
             const getMoldRevId = (m: MoldDetail) => {
-              const linkedRevId = m.mold_revisions?.design_revision_id
-              if (linkedRevId) return linkedRevId
-              return (m as any).mold_revision_id || null
+              return (m as any).design_revision_id || m.mold_revisions?.design_revision_id || (m as any).mold_revision_id || null
             }
 
             const activeDesignCode = activeRev?.design_code ? activeRev.design_code.replace(/[\s\-_]/g, '').toUpperCase() : ''
 
             const matchesRevision = (itemRevId: string | null | undefined, itemCode: string | null | undefined, itemName: string | null | undefined) => {
+              // 1. Direct linkage to the selected revision ID
               if (itemRevId && selectedRevId) return itemRevId === selectedRevId
-              if (!activeDesignCode) return false
+
+              // 2. Exact code match with active revision
               const c1 = (itemCode || '').replace(/[\s\-_]/g, '').toUpperCase()
               const c2 = (itemName || '').replace(/[\s\-_]/g, '').toUpperCase()
-              return c1 === activeDesignCode || c2 === activeDesignCode
+              if (activeDesignCode && (c1 === activeDesignCode || c2 === activeDesignCode)) return true
+
+              return false
             }
 
             // Filter equipment by revision if filter mode is 'revision'
@@ -1302,7 +1304,7 @@ export function TabOverview(props: TabOverviewProps) {
                 const keeperName = m.keeper_company?.company_code || m.keeper_company?.company_name || 'YSD'
                 const stInfo = parseStorageStatus(m.usage_status || m.device_status, keeperName)
                 return {
-                  code: formatMoldDisplayCode(m.system_code, activeRev?.design_code),
+                  code: formatMoldDisplayCode(m.system_code),
                   name: m.display_name || 'Physical Mold',
                   rack: getRack(m.rack_layers),
                   keeper: keeperName,
@@ -1340,7 +1342,7 @@ export function TabOverview(props: TabOverviewProps) {
                 const keeperName = eq.keeper_company?.company_code || eq.keeper_company?.company_name || 'YSD'
                 const stInfo = parseStorageStatus(eq.usage_status || eq.device_status, keeperName)
                 return {
-                  code: isCutter ? formatCutterDisplayCode(eq.equipment_code) : formatMoldDisplayCode(eq.equipment_code, activeRev?.design_code),
+                  code: isCutter ? formatCutterDisplayCode(eq.equipment_code) : formatMoldDisplayCode(eq.equipment_code),
                   name: eq.display_name || eq.equipment_type || 'Equipment',
                   rack: getRack(eq.rack_layers),
                   keeper: keeperName,
@@ -1796,7 +1798,7 @@ export function TabOverview(props: TabOverviewProps) {
                           return renderFunc(
                             m.physical_mold_id,
                             'mold',
-                            formatMoldDisplayCode(m.system_code, activeRev?.design_code),
+                            formatMoldDisplayCode(m.system_code),
                             m.display_name,
                             <Box size={13} style={{ color: 'var(--tint-blue-text)', flexShrink: 0 }} />,
                             tPC('moldsGroupTitle') || '金型',
@@ -1879,6 +1881,37 @@ export function TabOverview(props: TabOverviewProps) {
                   <div style={{ padding: '10px 12px', fontSize: 11 }}>
                     {selectedEquipData ? (
                       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px 14px' }}>
+                        {(() => {
+                          const sortedJobs = [...selectedEquipJobs].sort((a, b) => {
+                            const codeA = (a.job_code || a.job_name || '').toUpperCase()
+                            const codeB = (b.job_code || b.job_name || '').toUpperCase()
+
+                            const matchA = codeA.match(/R(?:EV)?\s*(\d+)/i)
+                            const matchB = codeB.match(/R(?:EV)?\s*(\d+)/i)
+                            const numA = matchA ? parseInt(matchA[1], 10) : 0
+                            const numB = matchB ? parseInt(matchB[1], 10) : 0
+
+                            if (numA > 0 && numB > 0 && numA !== numB) return numA - numB
+
+                            const dateA = a.created_at || a.mold_deadline || ''
+                            const dateB = b.created_at || b.mold_deadline || ''
+                            return dateA.localeCompare(dateB)
+                          })
+
+                          const evolutionChain = sortedJobs
+                            .map(j => (j.job_code || j.job_name || '').trim())
+                            .filter((val, idx, self) => val && self.indexOf(val) === idx)
+
+                          const evolutionStr = evolutionChain.length > 1 ? evolutionChain.join(' ➔ ') : null
+                          if (!evolutionStr) return null
+
+                          return (
+                            <div style={{ gridColumn: '1 / -1', padding: '4px 8px', borderRadius: 4, background: 'var(--tint-teal-bg)', border: '1px solid var(--accent)', display: 'flex', alignItems: 'center', gap: 6, fontSize: 11 }}>
+                              <span style={{ fontWeight: 700, color: 'var(--accent)' }}>🔄 金型改訂進化 (Evolution):</span>
+                              <span style={{ fontFamily: 'monospace', fontWeight: 700, color: 'var(--text-primary)' }}>{evolutionStr} (現行)</span>
+                            </div>
+                          )
+                        })()}
                         <InfoRow label={tPC('equipCodeLabel')} value={selectedEquipData.code} mono accent />
                         <InfoRow label={tPC('equipNameLabel')} value={selectedEquipData.name} />
                         <InfoRow label="入出庫ステータス" value={selectedEquipData.statusInfo.badgeLabel} mono accent />

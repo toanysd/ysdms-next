@@ -15,6 +15,7 @@ import { SearchSuggestions } from '@/components/ui/SearchSuggestions'
 import { CompanyFormModal } from '@/components/master/CompanyFormModal'
 import Link from 'next/link'
 import { useSearchParams, useRouter, usePathname } from 'next/navigation'
+import { buildFuzzyPatterns } from '@/lib/utils/moldNaming'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -188,8 +189,14 @@ function ProductsPageContent() {
     }
 
     if (debouncedSearchQuery.trim()) {
-      const q = debouncedSearchQuery.trim()
-      query = query.or(`product_code.ilike.%${q}%,product_name.ilike.%${q}%`)
+      const patterns = buildFuzzyPatterns(debouncedSearchQuery.trim())
+      const conds: string[] = []
+      patterns.forEach(pat => {
+        conds.push(`product_code.ilike.${pat}`)
+        conds.push(`product_name.ilike.${pat}`)
+        conds.push(`product_name_internal.ilike.${pat}`)
+      })
+      query = query.or(conds.join(','))
     }
 
     const from = (page - 1) * PAGE_SIZE

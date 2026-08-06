@@ -7,6 +7,7 @@ import { Search, X, Loader2, Package, Building2, ArrowRight } from 'lucide-react
 import { useTranslations } from 'next-intl'
 import { useSearchHistory } from '@/hooks/useSearchHistory'
 import { SearchSuggestions } from '@/components/ui/SearchSuggestions'
+import { buildFuzzyPatterns } from '@/lib/utils/moldNaming'
 
 type SearchResultItem = {
   product_id: string
@@ -51,14 +52,22 @@ export function ProductQuickSearch({ currentProductId }: ProductQuickSearchProps
 
     setLoading(true)
     const timer = setTimeout(async () => {
-      const clean = trimmed.replace(/[%_]/g, '\\$&')
+      const patterns = buildFuzzyPatterns(trimmed)
+      const orConditions: string[] = []
+      patterns.forEach(pat => {
+        orConditions.push(`product_code.ilike.${pat}`)
+        orConditions.push(`product_name.ilike.${pat}`)
+        orConditions.push(`product_name_internal.ilike.${pat}`)
+        orConditions.push(`customer_product_name.ilike.${pat}`)
+      })
+
       const { data, error } = await supabase
         .from('products')
         .select(`
           product_id, product_code, product_name, product_name_internal, customer_product_name, product_status,
           companies:companies!products_company_id_fkey(company_code, company_name)
         `)
-        .or(`product_code.ilike.%${clean}%,product_name.ilike.%${clean}%,customer_product_name.ilike.%${clean}%,product_name_internal.ilike.%${clean}%`)
+        .or(orConditions.join(','))
         .limit(10)
 
       if (!error && data) {
