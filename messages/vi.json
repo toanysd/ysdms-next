@@ -3357,5 +3357,110 @@
     "reqTrayCode": "Mã Khay là bắt buộc",
     "reqTrayName": "Tên Khay là bắt buộc",
     "unknownError": "Lỗi không xác định"
+  },
+  "EquipmentDetailModal": {
+    "storageStatusTitle": "Lưu trữ & Trạng thái",
+    "keeperCompany": "Công ty lưu trữ",
+    "returnRack": "Kệ trả về",
+    "operationStatus": "Trạng thái",
+    "lastConfirmation": "Xác nhận",
+    "externalStorageWarning": "Thiết bị đang được lưu trữ bên ngoài (tại {company}). Khi nhận lại hãy đưa về kệ {rack} của YSD.",
+    "statusOut": "OUT (Đã xuất)",
+    "statusIn": "IN (Tại YSD)",
+    "actionGridTitle": "Thao tác & Chức năng Realtime",
+    "quickAccessTitle": "Truy cập nhanh Module",
+    "tabs": {
+      "specs": "📌 Thông số cơ bản",
+      "lifecycle": "🌿 Phả hệ改訂",
+      "jobs": "⚙️ Lịch sử gia công",
+      "movements": "🚚 Lịch sử vận chuyển"
+    },
+    "actions": {
+      "checkInOut": "Nhập xuất",
+      "inventoryAudit": "Kiểm kê",
+      "teflon": "Mạ Teflon",
+      "print": "In nhãn",
+      "photo": "Ảnh thiết bị",
+      "qr": "Mã QR",
+      "relocate": "Di chuyển/Trả",
+      "weight": "Khối lượng",
+      "scrap": "Hủy khuôn"
+    },
+    "quickLinks": {
+      "design": "Thiết kế",
+      "customer": "Khách hàng",
+      "product": "Sản phẩm",
+      "storage": "Vị trí",
+      "transfer": "Vận chuyển",
+      "history": "Lịch sử",
+      "teflon": "Teflon"
+    },
+    "moldSpecs": {
+      "overviewTitle": "Tổng quan Thông số Khuôn",
+      "moldCode": "Mã khuôn",
+      "trayInfo": "Thông tin khay",
+      "resin": "Loại nhựa",
+      "mfgDate": "Ngày xuất hàng",
+      "pieceCount": "Số mảnh khuôn",
+      "pocketCount": "Số pocket",
+      "moldDims": "Kích thước khuôn",
+      "moldWeight": "Khối lượng (kg)",
+      "productDims": "Kích thước sản phẩm",
+      "productWeight": "Khối lượng SP (g)",
+      "teflonStatus": "Trạng thái mạ Teflon",
+      "teflonCoated": "✨ Đã mạ",
+      "teflonStandard": "Tiêu chuẩn"
+    },
+    "cutterSpecs": {
+      "title": "Thông số Kỹ thuật Dao Cắt",
+      "cutterNo": "Mã Dao (CutterNo)",
+      "cutterName": "Tên Dao cắt",
+      "cutterType": "Loại Dao",
+      "typeInline": "Dao liền máy (Inline)",
+      "typeSeparate": "Dao rời (Separate)",
+      "presenceStatus": "Trạng thái",
+      "available": "Sẵn sàng (Trống)",
+      "inUse": "Đang gá máy",
+      "dimensions": "Kích thước dao",
+      "material": "Vật liệu lưỡi",
+      "mfgDate": "Ngày tạo dao",
+      "weight": "Trọng lượng (kg)",
+      "reusePolicyTitle": "💡 Quy tắc Dùng chung Dao Cắt",
+      "reusePolicyBody": "Dao cắt được gợi ý dùng chung theo Kích thước bao ngoài sản phẩm. KTV cần đối chiếu biên dạng uốn cong và vị trí lỗ khoét."
+    },
+    "auxiliarySpecs": {
+      "title": "Thông số {type}",
+      "code": "Mã thiết bị",
+      "name": "Tên hiển thị",
+      "category": "Phân loại",
+      "material": "Vật liệu chế tạo",
+      "dimensions": "Kích thước ngoài",
+      "weight": "Trọng lượng (kg)",
+      "mfgDate": "Ngày nhập kho",
+      "stamp": "Mã khắc chìm (Stamp)",
+      "cavPolicyTitle": "💡 Quy tắc Dùng chung theo Mã CAV",
+      "cavPolicyBody": "Đế làm mát, Đế khí, Khung dùng chung cho tất cả các khuôn có cùng Mã CAV / Khổ Kích thước ngoài."
+    },
+    "dialogTitles": {
+      "checkInOut": "Nhập xuất kho & Gửi trả",
+      "inventoryAudit": "Xác nhận Kiểm kê Thực tế",
+      "teflon": "Nhật ký Mạ phủ Teflon",
+      "print": "In nhãn Thông số & Mã QR",
+      "photo": "Quản lý Album Ảnh",
+      "qr": "Hiển thị Mã QR Code",
+      "relocate": "Di chuyển Tầng kệ Lưu trữ",
+      "weight": "Cập nhật Khối lượng Thực tế",
+      "scrap": "Quy trình Hủy / Thanh lý Thiết bị"
+    },
+    "common": {
+      "close": "Đóng",
+      "openDetail": "Mở trang chi tiết",
+      "cancel": "Hủy",
+      "save": "Lưu",
+      "confirm": "Xác nhận",
+      "noImage": "Chưa có ảnh",
+      "uploadPhoto": "Đăng ký / Đổi ảnh",
+      "historySummary": "Tóm tắt Lịch sử"
+    }
   }
 }

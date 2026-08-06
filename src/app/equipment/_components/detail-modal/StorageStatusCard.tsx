@@ -1,7 +1,8 @@
 'use client'
 
 import React from 'react'
-import { AlertTriangle, Building2, MapPin, CheckCircle2, Clock } from 'lucide-react'
+import { useTranslations } from 'next-intl'
+import { AlertTriangle, Building2, MapPin } from 'lucide-react'
 import { EquipmentDetailData } from './types'
 import { formatRackLocationDisplay } from '@/lib/utils/moldNaming'
 
@@ -10,7 +11,9 @@ interface Props {
 }
 
 export default function StorageStatusCard({ data }: Props) {
-  const keeperName = data.keeper_company?.company_name || data.keeper_company?.company_code || 'YSD (社内)'
+  const t = useTranslations('EquipmentDetailModal')
+
+  const keeperName = data.keeper_company?.company_name || data.keeper_company?.company_code || 'YSD'
   const isExternalKeeper = Boolean(
     data.keeper_company_id &&
     keeperName.toUpperCase() !== 'YSD' &&
@@ -51,14 +54,14 @@ export default function StorageStatusCard({ data }: Props) {
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 700, color: 'var(--accent)' }}>
           <MapPin size={15} />
-          <span>保管・ステータス (Lưu trữ & Trạng thái)</span>
+          <span>{t('storageStatusTitle')}</span>
         </div>
 
         <span
           className={isOut ? 'badge badge--warning' : 'badge badge--success'}
           style={{ fontSize: 10, padding: '2px 8px', fontWeight: 700 }}
         >
-          {isOut ? ' OUT (出庫中)' : ' IN (社内保管)'}
+          {isOut ? t('statusOut') : t('statusIn')}
         </span>
       </div>
 
@@ -66,7 +69,7 @@ export default function StorageStatusCard({ data }: Props) {
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, fontSize: 12 }}>
         {/* Keeper Company */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-          <span style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 600 }}>保管会社 (Công ty lưu trữ)</span>
+          <span style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 600 }}>{t('keeperCompany')}</span>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <span
               className={isExternalKeeper ? 'badge badge--error' : 'badge badge--info'}
@@ -79,7 +82,7 @@ export default function StorageStatusCard({ data }: Props) {
 
         {/* Storage Rack */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-          <span style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 600 }}>返却先棚 (Giá / Kệ lưu trữ)</span>
+          <span style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 600 }}>{t('returnRack')}</span>
           <span style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: 13, color: 'var(--accent)' }}>
             📍 {rackText}
           </span>
@@ -87,7 +90,7 @@ export default function StorageStatusCard({ data }: Props) {
 
         {/* Status */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-          <span style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 600 }}>状態 (Trạng thái vận hành)</span>
+          <span style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 600 }}>{t('operationStatus')}</span>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <span className={isOut ? 'badge badge--warning' : 'badge badge--success'} style={{ fontSize: 10 }}>
               {statusStr}
@@ -97,14 +100,14 @@ export default function StorageStatusCard({ data }: Props) {
 
         {/* Confirmation Date */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-          <span style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 600 }}>確認 (Ngày xác nhận gần nhất)</span>
+          <span style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 600 }}>{t('lastConfirmation')}</span>
           <span style={{ fontFamily: 'monospace', fontWeight: 600, fontSize: 12, color: 'var(--text-secondary)' }}>
             📅 {confirmDate}
           </span>
         </div>
       </div>
 
-      {/* Prominent Red / Orange Warning Alert Box for External Keeper */}
+      {/* Warning Alert Box for External Keeper */}
       {isExternalKeeper && (
         <div
           style={{
@@ -123,10 +126,7 @@ export default function StorageStatusCard({ data }: Props) {
         >
           <AlertTriangle size={16} style={{ flexShrink: 0, marginTop: 1 }} />
           <div>
-            <div style={{ fontWeight: 700 }}>⚠️ 社外保管中（{keeperName} にて）</div>
-            <div>
-              Khuôn/Thiết bị đang được lưu trữ bên ngoài (tại {keeperName}). Khi trả về hãy đưa lại giá <strong>{rackText}</strong> của YSD.
-            </div>
+            {t('externalStorageWarning', { company: keeperName, rack: rackText })}
           </div>
         </div>
       )}

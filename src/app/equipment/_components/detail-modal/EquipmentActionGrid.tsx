@@ -1,6 +1,7 @@
 'use client'
 
 import React from 'react'
+import { useTranslations } from 'next-intl'
 import {
   MapPin, ClipboardCheck, Sparkles, Printer, Camera, QrCode,
   Truck, Scale, Trash2
@@ -12,83 +13,76 @@ interface Props {
 }
 
 export default function EquipmentActionGrid({ onOpenAction }: Props) {
-  const actions = [
+  const t = useTranslations('EquipmentDetailModal')
+
+  const actions: { id: ActionDialogType; label: string; icon: any; bg: string; border: string; color: string }[] = [
     {
-      id: 'CHECKIN_OUT' as ActionDialogType,
-      labelJA: '入出庫',
-      labelVI: 'Nhập xuất',
+      id: 'CHECKIN_OUT',
+      label: t('actions.checkInOut'),
       icon: MapPin,
       bg: 'var(--tint-blue-bg)',
       border: 'var(--tint-blue-border)',
       color: 'var(--tint-blue-text)'
     },
     {
-      id: 'INVENTORY_AUDIT' as ActionDialogType,
-      labelJA: '棚卸',
-      labelVI: 'Kiểm kê',
+      id: 'INVENTORY_AUDIT',
+      label: t('actions.inventoryAudit'),
       icon: ClipboardCheck,
       bg: 'var(--tint-teal-bg)',
       border: 'var(--tint-teal-border)',
       color: 'var(--tint-teal-text)'
     },
     {
-      id: 'TEFLON_COATING' as ActionDialogType,
-      labelJA: 'テフロン',
-      labelVI: 'Mạ Teflon',
+      id: 'TEFLON_COATING',
+      label: t('actions.teflon'),
       icon: Sparkles,
       bg: 'var(--tint-orange-bg)',
       border: 'var(--tint-orange-border)',
       color: 'var(--tint-orange-text)'
     },
     {
-      id: 'PRINT_LABEL' as ActionDialogType,
-      labelJA: '印刷',
-      labelVI: 'In nhãn',
+      id: 'PRINT_LABEL',
+      label: t('actions.print'),
       icon: Printer,
       bg: 'var(--bg-surface-2)',
       border: 'var(--border-default)',
       color: 'var(--text-primary)'
     },
     {
-      id: 'PHOTO_MANAGER' as ActionDialogType,
-      labelJA: '写真',
-      labelVI: 'Ảnh thiết bị',
+      id: 'PHOTO_MANAGER',
+      label: t('actions.photo'),
       icon: Camera,
       bg: 'var(--tint-purple-bg)',
       border: 'var(--tint-purple-border)',
       color: 'var(--tint-purple-text)'
     },
     {
-      id: 'QR_VIEW' as ActionDialogType,
-      labelJA: 'QR',
-      labelVI: 'Mã QR',
+      id: 'QR_VIEW',
+      label: t('actions.qr'),
       icon: QrCode,
       bg: 'var(--tint-purple-bg)',
       border: 'var(--tint-purple-border)',
       color: 'var(--tint-purple-text)'
     },
     {
-      id: 'RELOCATE' as ActionDialogType,
-      labelJA: '移動・返却',
-      labelVI: 'Di chuyển / Trả',
+      id: 'RELOCATE',
+      label: t('actions.relocate'),
       icon: Truck,
       bg: 'var(--tint-orange-bg)',
       border: 'var(--tint-orange-border)',
       color: 'var(--tint-orange-text)'
     },
     {
-      id: 'WEIGHT_AUDIT' as ActionDialogType,
-      labelJA: '重量',
-      labelVI: 'Khối lượng',
+      id: 'WEIGHT_AUDIT',
+      label: t('actions.weight'),
       icon: Scale,
       bg: 'var(--tint-teal-bg)',
       border: 'var(--tint-teal-border)',
       color: 'var(--tint-teal-text)'
     },
     {
-      id: 'SCRAP_DISPOSAL' as ActionDialogType,
-      labelJA: '廃棄',
-      labelVI: 'Hủy khuôn',
+      id: 'SCRAP_DISPOSAL',
+      label: t('actions.scrap'),
       icon: Trash2,
       bg: 'var(--tint-orange-bg)',
       border: 'var(--tint-orange-border)',
@@ -117,7 +111,7 @@ export default function EquipmentActionGrid({ onOpenAction }: Props) {
           paddingBottom: 4
         }}
       >
-        ⚡ 操作・リンク (Thao tác & Chức năng Realtime)
+        ⚡ {t('actionGridTitle')}
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
@@ -144,8 +138,9 @@ export default function EquipmentActionGrid({ onOpenAction }: Props) {
               }}
             >
               <Icon size={18} />
-              <div style={{ fontSize: 11, fontWeight: 700, lineHeight: 1.1 }}>{act.labelJA}</div>
-              <div style={{ fontSize: 9, opacity: 0.8, fontWeight: 500 }}>{act.labelVI}</div>
+              <div style={{ fontSize: 11, fontWeight: 700, lineHeight: 1.1 }}>
+                {act.label}
+              </div>
             </button>
           )
         })}

@@ -2,6 +2,7 @@
 
 import React from 'react'
 import Link from 'next/link'
+import { useTranslations } from 'next-intl'
 import {
   PenTool, Building2, Package, Layers, Truck, History, Sparkles
 } from 'lucide-react'
@@ -13,13 +14,15 @@ interface Props {
 }
 
 export default function QuickAccessNav({ data, onClose }: Props) {
+  const t = useTranslations('EquipmentDetailModal')
+
   const productId = data.design_revisions?.products?.product_code
   const companyId = data.company_id || data.keeper_company_id
 
   const navItems = [
     {
       label: 'Design',
-      labelJA: '設計',
+      sub: t('quickLinks.design'),
       icon: PenTool,
       href: data.design_revision_id ? `/engineering/revisions?id=${data.design_revision_id}` : '/engineering/revisions',
       bg: 'var(--tint-blue-bg)',
@@ -27,7 +30,7 @@ export default function QuickAccessNav({ data, onClose }: Props) {
     },
     {
       label: 'Customer',
-      labelJA: '得意先',
+      sub: t('quickLinks.customer'),
       icon: Building2,
       href: companyId ? `/master/customers/${companyId}` : '/master/customers',
       bg: 'var(--tint-purple-bg)',
@@ -35,7 +38,7 @@ export default function QuickAccessNav({ data, onClose }: Props) {
     },
     {
       label: 'Product',
-      labelJA: '製品',
+      sub: t('quickLinks.product'),
       icon: Package,
       href: productId ? `/master/products?search=${productId}` : '/master/products',
       bg: 'var(--tint-orange-bg)',
@@ -43,7 +46,7 @@ export default function QuickAccessNav({ data, onClose }: Props) {
     },
     {
       label: 'Storage',
-      labelJA: '位置',
+      sub: t('quickLinks.storage'),
       icon: Layers,
       href: '/equipment/unified',
       bg: 'var(--tint-teal-bg)',
@@ -51,7 +54,7 @@ export default function QuickAccessNav({ data, onClose }: Props) {
     },
     {
       label: 'Transfer',
-      labelJA: '輸送',
+      sub: t('quickLinks.transfer'),
       icon: Truck,
       href: '/equipment/jobs',
       bg: 'var(--tint-blue-bg)',
@@ -59,7 +62,7 @@ export default function QuickAccessNav({ data, onClose }: Props) {
     },
     {
       label: 'History',
-      labelJA: '履歴',
+      sub: t('quickLinks.history'),
       icon: History,
       href: `/equipment/unified/${data.equipment_id}`,
       bg: 'var(--bg-surface-2)',
@@ -67,7 +70,7 @@ export default function QuickAccessNav({ data, onClose }: Props) {
     },
     {
       label: 'Teflon',
-      labelJA: 'テフロン',
+      sub: t('quickLinks.teflon'),
       icon: Sparkles,
       href: '/equipment/jobs?category=teflon',
       bg: 'var(--tint-purple-bg)',
@@ -96,7 +99,7 @@ export default function QuickAccessNav({ data, onClose }: Props) {
           paddingBottom: 4
         }}
       >
-        🚀 クイックアクセス (TRUY CẬP NHANH MODULE)
+        🚀 {t('quickAccessTitle')}
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6 }}>
@@ -124,7 +127,7 @@ export default function QuickAccessNav({ data, onClose }: Props) {
             >
               <Icon size={14} />
               <span style={{ fontSize: 10, fontWeight: 700 }}>{item.label}</span>
-              <span style={{ fontSize: 9, opacity: 0.75 }}>{item.labelJA}</span>
+              <span style={{ fontSize: 9, opacity: 0.75 }}>{item.sub}</span>
             </Link>
           )
         })}

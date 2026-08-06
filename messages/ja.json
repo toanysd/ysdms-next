@@ -3357,5 +3357,110 @@
     "reqTrayCode": "品番は必須です",
     "reqTrayName": "製品名は必須です",
     "unknownError": "不明なエラーが発生しました"
+  },
+  "EquipmentDetailModal": {
+    "storageStatusTitle": "保管・ステータス",
+    "keeperCompany": "保管会社",
+    "returnRack": "返却先棚",
+    "operationStatus": "状態",
+    "lastConfirmation": "確認",
+    "externalStorageWarning": "社外保管中（{company} にて）。返却時はYSDの棚 {rack} に戻してください。",
+    "statusOut": "OUT (出庫中)",
+    "statusIn": "IN (社内保管)",
+    "actionGridTitle": "操作・リンク",
+    "quickAccessTitle": "クイックアクセス",
+    "tabs": {
+      "specs": "📌 基本仕様・保管場所",
+      "lifecycle": "🌿 改訂系統図",
+      "jobs": "⚙️ 加工・修繕履歴",
+      "movements": "🚚 出庫・移動履歴"
+    },
+    "actions": {
+      "checkInOut": "入出庫",
+      "inventoryAudit": "棚卸",
+      "teflon": "テフロン",
+      "print": "印刷",
+      "photo": "写真",
+      "qr": "QR",
+      "relocate": "移動・返却",
+      "weight": "重量",
+      "scrap": "廃棄"
+    },
+    "quickLinks": {
+      "design": "設計",
+      "customer": "得意先",
+      "product": "製品",
+      "storage": "位置",
+      "transfer": "輸送",
+      "history": "履歴",
+      "teflon": "テフロン"
+    },
+    "moldSpecs": {
+      "overviewTitle": "概要",
+      "moldCode": "兆称",
+      "trayInfo": "トレイ情報",
+      "resin": "樹脂",
+      "mfgDate": "初回出荷日",
+      "pieceCount": "枚数",
+      "pocketCount": "ポケット数",
+      "moldDims": "金型寸法",
+      "moldWeight": "重量 (kg)",
+      "productDims": "製品寸法",
+      "productWeight": "製品重量 (g)",
+      "teflonStatus": "テフロンコーティング",
+      "teflonCoated": "✨ 済",
+      "teflonStandard": "標準"
+    },
+    "cutterSpecs": {
+      "title": "抜き型仕様",
+      "cutterNo": "Mã Dao (CutterNo)",
+      "cutterName": "Tên Dao cắt",
+      "cutterType": "Loại Dao",
+      "typeInline": "インライン (Dao liền máy)",
+      "typeSeparate": "別抜き (Dao rời)",
+      "presenceStatus": "Trạng thái",
+      "available": "在空 (Sẵn sàng)",
+      "inUse": "使用中 (Đang gá máy)",
+      "dimensions": "Kích thước dao",
+      "material": "Vật料 lưỡi",
+      "mfgDate": "Ngày tạo dao",
+      "weight": "Trọng lượng (kg)",
+      "reusePolicyTitle": "💡 Quy tắc Dùng chung Dao Cắt",
+      "reusePolicyBody": "Dao cắt được gợi ý dùng chung theo Kích thước bao ngoài sản phẩm. KTV cần đối chiếu biên dạng uốn cong và vị trí lỗ khoét."
+    },
+    "auxiliarySpecs": {
+      "title": "{type} 仕様",
+      "code": "Mã thiết bị",
+      "name": "Tên hiển thị",
+      "category": "Phân loại",
+      "material": "Vật liệu chế tạo",
+      "dimensions": "Kích thước ngoài",
+      "weight": "Trọng lượng (kg)",
+      "mfgDate": "Ngày nhập kho",
+      "stamp": "Mã khắc chìm (Stamp)",
+      "cavPolicyTitle": "💡 Quy tắc Dùng chung theo Mã CAV",
+      "cavPolicyBody": "Đế làm mát, Đế khí, Khung dùng chung cho tất cả các khuôn có cùng Mã CAV / Khổ Kích thước ngoài."
+    },
+    "dialogTitles": {
+      "checkInOut": "入出庫・返却登録",
+      "inventoryAudit": "棚卸実査確認",
+      "teflon": "テフロン再加工履歴",
+      "print": "設備ラベル・QR印刷",
+      "photo": "写真管理",
+      "qr": "QRコード表示",
+      "relocate": "棚位置変更・返却",
+      "weight": "実測重量更新",
+      "scrap": "設備廃棄処理"
+    },
+    "common": {
+      "close": "閉じる",
+      "openDetail": "詳細ページを開く",
+      "cancel": "キャンセル",
+      "save": "保存",
+      "confirm": "確定",
+      "noImage": "No Image",
+      "uploadPhoto": "写真登録・変更",
+      "historySummary": "履歴・レポート"
+    }
   }
 }
