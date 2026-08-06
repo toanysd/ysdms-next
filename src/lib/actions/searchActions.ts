@@ -39,7 +39,7 @@ export async function fetchAllSearchableItems(): Promise<SearchableItem[]> {
       display_name,
       device_status,
       keeper_company_id,
-      companies!equipment_keeper_company_id_fkey ( company_name ),
+      companies!keeper_company_id ( company_name ),
       design_revisions (
         cavity_count, design_length, design_width, design_height, plastic_type_designed, tray_info,
         products (

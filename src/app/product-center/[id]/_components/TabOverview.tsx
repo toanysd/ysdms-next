@@ -340,15 +340,20 @@ export function TabOverview(props: TabOverviewProps) {
             design_category, parent_design_id
           `)
           .eq('product_id', productId)
-          .order('created_at', { ascending: false })
-
-        const revList = (revs || []) as unknown as DesignRevItem[]
+        // Sort revs so newest revision is ALWAYS FIRST (by R-number DESC, created_at DESC)
+        const revList = ((revs || []) as unknown as DesignRevItem[]).sort((a, b) => {
+          const revA = Number(a.revision_number || a.design_code?.match(/R(\d+)/i)?.[1] || 0)
+          const revB = Number(b.revision_number || b.design_code?.match(/R(\d+)/i)?.[1] || 0)
+          if (revB !== revA) return revB - revA
+          return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime()
+        })
         setAllRevs(revList)
 
         if (revList.length > 0) {
-          const approved = revList.find(r => r.status === 'APPROVED' || r.status === 'RELEASED') || revList[0]
-          setActiveRev(approved)
-          setSelectedRevId(approved.revision_id)
+          // Always pick the newest revision (revList[0]) by default
+          const newest = revList[0]
+          setActiveRev(newest)
+          setSelectedRevId(newest.revision_id)
         }
 
         const revIds = revList.map(r => r.revision_id)
@@ -364,7 +369,7 @@ export function TabOverview(props: TabOverviewProps) {
               design_revision_id, mold_type, piece_count, actual_length_mm, actual_width_mm, actual_height_mm,
               actual_weight, manufacturing_date,
               rack_layers(layer_code, racks(rack_code)),
-              keeper_company:companies!equipment_keeper_company_id_fkey(company_code, company_name)
+              keeper_company:companies!keeper_company_id(company_code, company_name)
             `)
           if (prodCode) {
             equipQuery = equipQuery.or(`design_revision_id.in.(${revIds.join(',')}),equipment_code.ilike.%${prodCode}%,display_name.ilike.%${prodCode}%`)
@@ -383,8 +388,7 @@ export function TabOverview(props: TabOverviewProps) {
               physical_mold_id, system_code, display_name, device_status, usage_status,
               mold_type, piece_count, actual_length_mm, actual_width_mm, actual_height_mm,
               actual_weight, manufacturing_date, mold_revision_id,
-              rack_layers(layer_code, racks(rack_code)),
-              keeper_company:companies!physical_molds_keeper_company_id_fkey(company_code, company_name)
+              rack_layers(layer_code, racks(rack_code))
             `)
             .in('mold_revision_id', revIds)
 
@@ -466,7 +470,7 @@ export function TabOverview(props: TabOverviewProps) {
                   equipment_id, equipment_code, display_name, equipment_type, sub_type, usage_status, device_status,
                   design_revision_id, actual_length_mm, actual_width_mm, actual_height_mm,
                   rack_layers(layer_code, racks(rack_code)),
-                  keeper_company:companies!equipment_keeper_company_id_fkey(company_code, company_name)
+                  keeper_company:companies!keeper_company_id(company_code, company_name)
                 `)
                 .in('equipment_id', juncCutterIds)
 
@@ -568,7 +572,7 @@ export function TabOverview(props: TabOverviewProps) {
             line_id, quantity, unit, created_at,
             orders(
               order_id, order_no, order_date, order_status, notes,
-              delivery_sites(site_name, address, contact_person, phone)
+              delivery_sites(site_name, site_address, contact_person, site_tel)
             )
           `, { count: 'exact' })
           .eq('product_id', productId)

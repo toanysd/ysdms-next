@@ -778,3 +778,73 @@ ACTIVE → MAINTENANCE → BROKEN → DISPOSED
 | 2026-07-02 | 1.0 | Tạo mới — Tổng hợp từ VBA analysis, architecture V3, business flow handover, schema audit | DRAFT |
 | 2026-07-02 | 1.1 | Sửa: tên công ty → ヨシダパッケージ, thêm module Material & Inventory, sửa luồng Engineering (layout trước → khuôn sau), thêm quy tắc đặt tên khuôn (Section 5), sửa Plug = gỗ hỗ trợ, sửa cutter_no = thủ công, bỏ "Tooling" cho dao cắt/thiết bị | Review |
 | 2026-07-02 | 1.2 | Cập nhật 7 bộ phận chuẩn ISO, bổ sung 9 giai đoạn vòng đời, di dời Glossary sang 08_data_dictionary.md, chốt phương án cho chứng từ ở Phase sau | APPROVED |
+| 2026-08-06 | 1.3 | Cập nhật Quy trình Sở hữu Khuôn, Luồng Check-in/Check-out chi tiết, Trả khuôn, Vận chuyển, Hủy khuôn, Kiểm kê và Quy trình mạ Teflon 4 bước tự động | APPROVED |
+
+---
+
+## 11. Quy Trình Quản Lý Vòng Đời & Luồng Tương Tác Thiết Bị (Check-in/out, Return, Transfer, Scrap, Audit & Teflon)
+
+### 11.1 Sở Hữu & Quy Tắc Mã Khuôn
+- **Khuôn thuộc sở hữu Khách hàng (Customer-Owned Molds):**
+  - Khách hàng cho YSD mượn khuôn để sản xuất khay nhựa. Khi có đơn hàng khuôn/khay mới, YSD thiết kế & chế tạo khuôn $\rightarrow$ Khách hàng thanh toán tiền khuôn $\rightarrow$ YSD lưu trữ, quản lý và cấp Giấy chứng nhận mượn/gửi khuôn (借用書 / 保管証明書).
+  - **Quy tắc mã khuôn:** Mã khuôn bắt đầu bằng tên viết tắt của Công ty Khách hàng (VD: `KSP-216` cho Kokusai Printing, `ADY-071` cho Adokawa, `JAE-352` cho JAE, `SSM-032` cho Sasama...).
+  - **Công ty lưu giữ ban đầu (`keeper_company_id`):** Mặc định YSD (`社内` - YSD HQ / Chi nhánh).
+
+- **Khuôn thuộc sở hữu YSD (YSD-Owned Molds):**
+  - Khuôn do chính YSD thiết kế và làm chủ sở hữu. Thường có hình dáng tiêu chuẩn, đơn giản, phục vụ các loại khay phổ thông tái sử dụng cho nhiều khách hàng.
+  - **Công ty lưu giữ (`keeper_company_id`):** YSD (`社内`).
+
+---
+
+### 11.2 Các Kịch Bản Xuất Kho (OUT) & Luồng Tương Tác
+Khuôn được lưu trữ tại tầng kệ (`RackLayerID`). Khi khuôn rời khỏi vị trí kệ, trạng thái chuyển thành `OUT`. Trạng thái công ty lưu giữ và nhật ký ghi nhận phụ thuộc vào lý do xuất kho:
+
+| Hành động | Mục đích / Lý do | Công ty lưu giữ (`keeper_company_id`) | Trạng thái (`usage_status`) | Ghi nhật ký hệ thống |
+|-----------|------------------|----------------------------------------|-----------------------------|-----------------------|
+| **1. Check-out Nội Bộ (Tạm thời)** | Ép khay định hình (Máy 6...), phòng chụp ảnh, sửa khuôn | YSD (`社内`) | `OUT` | `equipment_movements` (MovementType: `CHECK_OUT`, `destination_id`, `employee_id`) |
+| **2. Gửi Mạ Teflon** | Xuất khuôn sang nhà mạ Teflon | Nhà cung cấp Teflon (VD: TEFLON Supplier) | `OUT` | `equipment_movements` (MovementType: `TEFLON_OUT`), `equipment_history`, `jobs` |
+| **3. Trả Khuôn (Return)** | Trả khuôn về cho Công ty khách hàng sở hữu khuôn | Công ty Khách hàng (`company_id`) | `OUT` | `equipment_movements` (MovementType: `RETURN`), `equipment_history`, `shiplog` |
+| **4. Vận Chuyển Chi Nhánh (Transfer)** | Luân chuyển khuôn giữa các nhà máy / chi nhánh / HQ YSD | Chi nhánh / Công ty YSD tiếp nhận | `OUT` | `equipment_movements` (MovementType: `TRANSFER`), `shiplog` |
+| **5. Hủy Khuôn (Scrap/Disposal)** | Thanh lý, hủy khuôn do hỏng/mòn/đổi thiết kế | Công ty Hủy (`DISPOSED`) | `DISPOSED` | `equipment_movements` (MovementType: `SCRAP`), `equipment_history` |
+
+---
+
+### 11.3 Luồng Nhập Kho (IN), Thay Đổi Vị Trí (Relocate) & Kiểm Kê (Audit)
+
+1. **Check-in (Nhập kho):**
+   - Đưa khuôn trở lại giá kệ $\rightarrow$ Bấm nút **IN (Nhập kho)** $\rightarrow$ Chọn nhân viên thực hiện $\rightarrow$ Trạng thái chuyển thành `IN`, cập nhật `current_rack_layer_id`, công ty giữ = YSD.
+
+2. **Thay Đổi Vị Trí (Relocate):**
+   - Áp dụng khi trả khuôn về kệ nhưng vị trí cũ đã đầy, hoặc muốn đổi sang vị trí kệ mới.
+   - Cho phép chọn vị trí `RackLayerID` mới $\rightarrow$ Có checkbox **Tự động Check-in** (khi tick chọn, tự động đổi trạng thái `IN` và gán vị trí mới).
+
+3. **Kiểm Kê Tại Vị Trí (Audit - 棚印):**
+   - Xác nhận khuôn vẫn nằm trên giá kệ mà không cần lấy ra hay di chuyển.
+   - Bấm nút **Kiểm kê (棚印)** $\rightarrow$ Chọn nhân viên thực hiện $\rightarrow$ Cập nhật cờ `on_checklist = true`, lưu ngày xác nhận `last_audit_date`, trạng thái giữ nguyên hoặc đặt là `AUDIT`.
+
+---
+
+### 11.4 Quy Trình Mạ Teflon (Teflon Coating 4-Step Flow)
+Mô-đun quản lý quy trình mạ Teflon được tự động nhận diện và cập nhật trạng thái theo 4 bước liên hoàn (hỗ trợ cả thao tác trong cùng 1 ngày hoặc rời rạc qua nhiều ngày):
+
+```
+┌───────────────────────────┐      ┌───────────────────────────┐
+│  Bước 1: REQUEST          │ ────►│  Bước 2: APPROVED         │
+│  処理依頼 (Yêu cầu mạ)    │      │  承認済 (Đã duyệt chờ mạ) │
+└───────────────────────────┘      └───────────────────────────┘
+ (NVKD / KTV lập yêu cầu)           (Khách hàng / Quản lý duyệt)
+              │                                  │
+              ▼                                  ▼
+┌───────────────────────────┐      ┌───────────────────────────┐
+│  Bước 3: SENT             │ ────►│  Bước 4: COMPLETED        │
+│  加工中 (Đã gửi / Đang mạ)│      │  完了 (Đã nhận về/Hoàn tất│
+└───────────────────────────┘      └───────────────────────────┘
+ (Xuất khuôn cho nhà mạ)            (Nghiệm thu & trả về YSD)
+```
+
+- **Cơ chế tự nhận diện bước tiếp theo (Auto-State Progression):**
+  - Khi mở popup mạ Teflon cho một khuôn, hệ thống tự động kiểm tra bản ghi mạ gần nhất (`teflon_log` / `jobs`).
+  - Nếu trạng thái trước đó là `REQUESTED`, hệ thống đề xuất ngay Bước 2 (`APPROVED`).
+  - Nếu đã `APPROVED`, đề xuất Bước 3 (`SENT` - tự động kích hoạt Check-out & đổi `keeper_company_id` sang nhà mạ).
+  - Nếu đang `SENT`, đề xuất Bước 4 (`COMPLETED` - cập nhật `is_teflon = true`, nhận khuôn về kho YSD).
+

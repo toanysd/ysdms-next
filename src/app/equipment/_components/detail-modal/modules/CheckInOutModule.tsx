@@ -2,197 +2,833 @@
 
 import React, { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { MapPin, Truck, Building2, Calendar, FileText, Loader2, CheckCircle, AlertTriangle } from 'lucide-react'
+import {
+  MapPin, CheckCircle, ArrowRight, ArrowLeft, RotateCcw, Lock, Unlock,
+  Search, Loader2, Sparkles, AlertCircle, Layers, User, UserCheck
+} from 'lucide-react'
 import { EquipmentDetailData } from '../types'
+import { useTranslations } from 'next-intl'
+import SearchableCombobox, { ComboboxOption } from '@/components/ui/SearchableCombobox'
 
 interface Props {
   data: EquipmentDetailData
   onClose: () => void
   onSuccess: () => void
+  onOpenRelocate?: () => void
 }
 
-export default function CheckInOutModule({ data, onClose, onSuccess }: Props) {
+interface MovementLog {
+  movement_id: string
+  movement_type: string
+  moved_at: string
+  notes: string | null
+  destination_name?: string | null
+  employee_name?: string | null
+}
+
+interface Employee {
+  employee_id: string
+  employee_code: string
+  employee_name: string
+}
+
+interface Destination {
+  destination_id: string
+  destination_name: string
+}
+
+interface RackLayer {
+  id: string
+  layer_code: string
+  racks?: { rack_code: string; rack_name: string } | null
+}
+
+// Fallback Default Chips (Rendered immediately on frame 0 to eliminate initial flicker)
+const DEFAULT_DESTINATIONS: Destination[] = [
+  { destination_id: 'DEST_FORMING_M6', destination_name: '06号成形機' },
+  { destination_id: 'DEST_FORMING_M7', destination_name: '07号成形機' },
+  { destination_id: 'DEST_FORMING_M8', destination_name: '08号成形機' },
+  { destination_id: 'DEST_FORMING_M9', destination_name: '09号成形機 坂田精文堂' },
+  { destination_id: 'DEST_FORMING_2F', destination_name: '2F 成形機' },
+  { destination_id: 'DEST_OTHER', destination_name: 'その他' },
+  { destination_id: 'DEST_TEFLON_VENDOR', destination_name: 'テフロン加工' },
+  { destination_id: 'DEST_PRESS', destination_name: 'プレス機' },
+  { destination_id: 'DEST_OFFICE_PREP', destination_name: '事務所前-金型準備' },
+  { destination_id: 'DEST_SHIPMENT', destination_name: '出荷' },
+  { destination_id: 'DEST_TAIWAN_M', destination_name: '台湾成形機' },
+  { destination_id: 'DEST_PHOTO_ROOM', destination_name: '金型室-その他' }
+]
+
+export default function CheckInOutModule({ data, onClose, onSuccess, onOpenRelocate }: Props) {
+  const t = useTranslations('CheckInOutModule')
   const supabase = createClient()
+
+  const targetEquipmentId = data?.equipment_id || (data as any)?.physical_mold_id || (data as any)?.cutter_id || (data as any)?.id
+
+  // Data State initialized with fallback defaults for zero-flicker frame 0 render
   const [loading, setLoading] = useState(false)
-  const [msg, setMsg] = useState<string | null>(null)
-  const [companies, setCompanies] = useState<any[]>([])
+  const [fetching, setFetching] = useState(true)
+  const [msg, setMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
 
-  const [movementType, setMovementType] = useState<'SHIPMENT' | 'RETURN' | 'LOAN' | 'REPAIR'>('SHIPMENT')
-  const [targetKeeperId, setTargetKeeperId] = useState<string>(data.keeper_company_id || '')
-  const [actionDate, setActionDate] = useState<string>(new Date().toISOString().slice(0, 10))
-  const [notes, setNotes] = useState('')
+  const [historyLogs, setHistoryLogs] = useState<MovementLog[]>([])
+  const [employees, setEmployees] = useState<Employee[]>([])
+  const [destinations, setDestinations] = useState<Destination[]>(DEFAULT_DESTINATIONS)
+  const [rackLayers, setRackLayers] = useState<RackLayer[]>([])
 
+  // Form State
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>('')
+  const [defaultEmpChecked, setDefaultEmpChecked] = useState<boolean>(false)
+
+  const [selectedDestinationId, setSelectedDestinationId] = useState<string>('')
+  const [defaultDestChecked, setDefaultDestChecked] = useState<boolean>(false)
+
+  const [notes, setNotes] = useState<string>('')
+  const [searchHistoryQuery, setSearchHistoryQuery] = useState<string>('')
+  const [unlockDelete, setUnlockDelete] = useState<boolean>(false)
+
+  // Sub-dialog state for Relocate
+  const [showRelocatePanel, setShowRelocatePanel] = useState<boolean>(false)
+  const [selectedRackLayerId, setSelectedRackLayerId] = useState<string>(data?.current_rack_layer_id || '')
+  const [autoCheckInOnRelocate, setAutoCheckInOnRelocate] = useState<boolean>(true)
+
+  // Load Initial Lookups & Preferences
   useEffect(() => {
-    async function fetchCompanies() {
-      const { data: comp } = await supabase
-        .from('companies')
-        .select('company_id, company_name, company_code')
-        .order('company_code')
-      if (comp) setCompanies(comp)
+    // Read saved defaults from localStorage
+    const savedEmp = localStorage.getItem('ysd_default_employee_id')
+    if (savedEmp) {
+      setSelectedEmployeeId(savedEmp)
+      setDefaultEmpChecked(true)
     }
-    fetchCompanies()
-  }, [supabase])
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+    const savedDest = localStorage.getItem('ysd_default_destination_id')
+    if (savedDest) {
+      setSelectedDestinationId(savedDest)
+      setDefaultDestChecked(true)
+    }
+
+    async function loadInitialData() {
+      setFetching(true)
+      try {
+        const [empRes, destRes, layersRes] = await Promise.all([
+          supabase.from('employees').select('employee_id, employee_code, employee_name').order('employee_name'),
+          supabase.from('destinations').select('destination_id, destination_name').order('destination_name'),
+          supabase.from('rack_layers').select('id, layer_code, racks(rack_code, rack_name)')
+        ])
+
+        if (empRes.data) setEmployees(empRes.data)
+        if (destRes.data && destRes.data.length > 0) setDestinations(destRes.data)
+        if (layersRes.data) setRackLayers(layersRes.data as any)
+
+        // Fetch History from equipment_history
+        if (targetEquipmentId && targetEquipmentId !== 'undefined') {
+          const { data: historyData } = await supabase
+            .from('equipment_history')
+            .select(`
+              history_id,
+              action_type,
+              action_date,
+              description,
+              performed_by,
+              employees(employee_name)
+            `)
+            .eq('equipment_id', targetEquipmentId)
+            .order('action_date', { ascending: false })
+            .limit(50)
+
+          if (historyData) {
+            const formatted = historyData.map((h: any) => ({
+              movement_id: h.history_id,
+              movement_type: h.action_type || 'OUT',
+              moved_at: h.action_date || new Date().toISOString(),
+              notes: h.description || '',
+              destination_name: null,
+              employee_name: h.employees?.employee_name || null
+            }))
+            setHistoryLogs(formatted)
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching checkin/out data:', err)
+      } finally {
+        setFetching(false)
+      }
+    }
+
+    loadInitialData()
+  }, [targetEquipmentId, supabase])
+
+  // Handle Employee Default Checkbox
+  const handleEmpDefaultChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const checked = e.target.checked
+    setDefaultEmpChecked(checked)
+    if (checked && selectedEmployeeId) {
+      localStorage.setItem('ysd_default_employee_id', selectedEmployeeId)
+    } else {
+      localStorage.removeItem('ysd_default_employee_id')
+    }
+  }
+
+  // Handle Destination Default Checkbox
+  const handleDestDefaultChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const checked = e.target.checked
+    setDefaultDestChecked(checked)
+    if (checked && selectedDestinationId) {
+      localStorage.setItem('ysd_default_destination_id', selectedDestinationId)
+    } else {
+      localStorage.removeItem('ysd_default_destination_id')
+    }
+  }
+
+  // Handle Delete History Log
+  const handleDeleteLog = async (logId: string) => {
+    if (!confirm('Lịch sử này sẽ bị xóa khỏi hệ thống. Bạn có chắc chắn?')) return
+    try {
+      await supabase.from('equipment_history').delete().eq('history_id', logId)
+      setHistoryLogs(prev => prev.filter(l => l.movement_id !== logId))
+    } catch (err: any) {
+      alert('Lỗi xóa lịch sử: ' + err.message)
+    }
+  }
+
+  // Core Action Handlers
+  const handleAction = async (actionType: 'IN' | 'OUT' | 'AUDIT' | 'RELOCATE') => {
+    if (!targetEquipmentId || targetEquipmentId === 'undefined') {
+      setMsg({ type: 'error', text: '⚠️ Invalid equipment_id' })
+      return
+    }
+
+    if (!selectedEmployeeId && actionType !== 'RELOCATE') {
+      setMsg({ type: 'error', text: '⚠️ ' + t('selectEmployee') })
+      return
+    }
+
     setLoading(true)
     setMsg(null)
 
     try {
-      const isReturn = movementType === 'RETURN' || !targetKeeperId
-      const newStatus = isReturn ? 'IN_STOCK' : movementType === 'LOAN' ? 'LOAN' : movementType === 'REPAIR' ? 'MAINTENANCE' : 'OUT'
-      const finalKeeperId = isReturn ? null : targetKeeperId
+      const nowISO = new Date().toISOString()
+      const todayStr = nowISO.slice(0, 10)
+      const empObj = employees.find(e => e.employee_id === selectedEmployeeId)
+      const destObj = destinations.find(d => d.destination_id === selectedDestinationId)
 
-      // 1. Update equipment
-      const { error: err1 } = await supabase
-        .from('equipment')
-        .update({
-          keeper_company_id: finalKeeperId,
-          usage_status: newStatus,
-          returned_date: isReturn ? actionDate : null
-        })
-        .eq('equipment_id', data.equipment_id)
+      let updatedUsageStatus = data?.usage_status || 'STORAGE'
+      let updatedRackLayerId = data?.current_rack_layer_id
+      let updatedKeeperCompanyId = data?.keeper_company_id
 
-      if (err1) throw err1
+      if (actionType === 'IN') {
+        updatedUsageStatus = 'IN'
+        updatedKeeperCompanyId = data?.company_id || data?.keeper_company_id
+      } else if (actionType === 'OUT') {
+        updatedUsageStatus = 'OUT'
+      } else if (actionType === 'AUDIT') {
+        updatedUsageStatus = 'IN'
+      } else if (actionType === 'RELOCATE') {
+        updatedRackLayerId = selectedRackLayerId
+        if (autoCheckInOnRelocate) {
+          updatedUsageStatus = 'IN'
+        }
+      }
 
-      // 2. Insert equipment_movements log
-      await (supabase as any).from('equipment_movements').insert({
-        equipment_id: data.equipment_id,
-        movement_type: movementType,
-        from_company_id: data.keeper_company_id || null,
-        to_company_id: finalKeeperId,
-        moved_at: actionDate,
-        notes: notes || `入出庫: ${movementType}`
-      })
+      // 1. Update Equipment table
+      if (data?.equipment_id) {
+        const { error: eqErr } = await supabase
+          .from('equipment')
+          .update({
+            usage_status: updatedUsageStatus,
+            current_rack_layer_id: updatedRackLayerId,
+            keeper_company_id: updatedKeeperCompanyId,
+            on_checklist: actionType === 'AUDIT' ? true : data.on_checklist,
+            last_audit_date: actionType === 'AUDIT' ? nowISO : (data as any).last_audit_date
+          } as any)
+          .eq('equipment_id', targetEquipmentId)
 
-      // 3. Insert equipment_history log
-      await supabase.from('equipment_history').insert({
-        equipment_id: data.equipment_id,
-        action_type: movementType === 'RETURN' ? 'RETURN' : movementType === 'LOAN' ? 'LOAN' : 'TRANSFER',
-        action_date: actionDate,
-        from_company_id: data.keeper_company_id || null,
-        to_company_id: finalKeeperId,
-        description: `[${movementType}] ${notes || 'Chuyển vị trí lưu trữ'}`
-      })
+        if (eqErr) throw eqErr
+      } else if ((data as any)?.physical_mold_id) {
+        await supabase
+          .from('physical_molds')
+          .update({
+            usage_status: updatedUsageStatus === 'IN' ? 'IN_STOCK' : 'OUT_OF_STOCK'
+          } as any)
+          .eq('physical_mold_id', targetEquipmentId)
+      }
 
-      setMsg('✅ 入出庫・移動ステータスを更新しました！')
+      // 2. Insert into equipment_history
+      const descStr = notes || (destObj ? destObj.destination_name : `${actionType}`)
+      const { data: newHist, error: histErr } = await supabase
+        .from('equipment_history')
+        .insert({
+          equipment_id: targetEquipmentId,
+          action_type: actionType,
+          action_date: todayStr,
+          performed_by: selectedEmployeeId || null,
+          description: descStr
+        } as any)
+        .select()
+        .single()
+
+      if (histErr) console.warn('Equipment history log insert note:', histErr)
+
+      // Update UI History Log list
+      const newLogItem: MovementLog = {
+        movement_id: newHist?.history_id || String(Date.now()),
+        movement_type: actionType,
+        moved_at: nowISO,
+        notes: descStr,
+        destination_name: destObj?.destination_name || null,
+        employee_name: empObj?.employee_name || null
+      }
+      setHistoryLogs(prev => [newLogItem, ...prev])
+
+      setMsg({ type: 'success', text: `✅ ${actionType} OK!` })
+
       setTimeout(() => {
         onSuccess()
-        onClose()
-      }, 900)
+        if (actionType !== 'RELOCATE') onClose()
+      }, 800)
+
     } catch (err: any) {
-      setMsg(`❌ エラー: ${err.message}`)
+      setMsg({ type: 'error', text: `❌ ${err.message}` })
     } finally {
       setLoading(false)
     }
   }
 
-  return (
-    <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-      {msg && (
-        <div
-          style={{
-            padding: '8px 12px', borderRadius: 6, fontSize: 11, fontWeight: 600,
-            background: msg.includes('❌') ? 'var(--tint-orange-bg)' : 'var(--tint-teal-bg)',
-            color: msg.includes('❌') ? 'var(--tint-orange-text)' : 'var(--tint-teal-text)'
-          }}
-        >
-          {msg}
-        </div>
-      )}
+  // Filtered History
+  const filteredHistory = historyLogs.filter(h => {
+    if (!searchHistoryQuery) return true
+    const q = searchHistoryQuery.toLowerCase()
+    return (
+      (h.notes && h.notes.toLowerCase().includes(q)) ||
+      (h.employee_name && h.employee_name.toLowerCase().includes(q)) ||
+      (h.destination_name && h.destination_name.toLowerCase().includes(q)) ||
+      (h.movement_type && h.movement_type.toLowerCase().includes(q))
+    )
+  })
 
-      {/* Movement Category Selector */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-        <label className="form-label" style={{ fontSize: 11, fontWeight: 700 }}>
-          移動種別 (Loại xuất nhập / Vận chuyển):
-        </label>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6 }}>
-          {[
-            { id: 'SHIPMENT', label: '出荷 (Xuất)' },
-            { id: 'RETURN', label: '返却 (Trả YSD)' },
-            { id: 'LOAN', label: '借用 (Cho mượn)' },
-            { id: 'REPAIR', label: '修繕 (Sửa mạ)' },
-          ].map(m => (
+  const currentStatus = data?.usage_status || 'STORAGE'
+  const isOut = currentStatus === 'OUT' || currentStatus === 'MAINTENANCE' || currentStatus === 'BROKEN'
+
+  // Options for SearchableCombobox
+  const employeeComboboxOptions: ComboboxOption[] = employees.map(emp => ({
+    value: emp.employee_id,
+    label: emp.employee_name,
+    code: emp.employee_code
+  }))
+
+  const destinationComboboxOptions: ComboboxOption[] = destinations.map(dest => ({
+    value: dest.destination_id,
+    label: dest.destination_name
+  }))
+
+  // Quick selection chips items
+  const topEmployeeChips = employees.slice(0, 12)
+  const topDestinationChips = destinations.slice(0, 12)
+
+  return (
+    <div style={{ display: 'flex', gap: 16, height: '100%', minHeight: 520 }}>
+      {/* LEFT COLUMN: HISTORY LOGS (55% Width) */}
+      <div
+        className="card-flat"
+        style={{
+          flex: 1.1,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 10,
+          padding: 12,
+          background: 'var(--bg-surface)',
+          borderRight: '1px solid var(--border-subtle)',
+          height: '100%'
+        }}
+      >
+        {/* Header Toolbar */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span>{t('historyTitle')}</span>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <button
               type="button"
-              key={m.id}
-              onClick={() => {
-                setMovementType(m.id as any)
-                if (m.id === 'RETURN') setTargetKeeperId('')
-              }}
+              onClick={() => setUnlockDelete(!unlockDelete)}
+              className="btn btn-secondary"
+              style={{ padding: '4px 8px', fontSize: 11, display: 'flex', alignItems: 'center', gap: 4 }}
+            >
+              {unlockDelete ? <Unlock size={12} color="#ef4444" /> : <Lock size={12} />}
+              <span>{t('unlock')}</span>
+            </button>
+
+            <div style={{ position: 'relative', width: 150 }}>
+              <input
+                type="text"
+                className="form-input"
+                placeholder={t('searchPlaceholder')}
+                value={searchHistoryQuery}
+                onChange={e => setSearchHistoryQuery(e.target.value)}
+                style={{ paddingLeft: 24, paddingRight: 8, height: 28, fontSize: 11 }}
+              />
+              <Search size={12} style={{ position: 'absolute', left: 7, top: 8, color: 'var(--text-muted)' }} />
+            </div>
+          </div>
+        </div>
+
+        {/* History Table */}
+        <div style={{ flex: 1, overflowY: 'auto', border: '1px solid var(--border-subtle)', borderRadius: 6 }}>
+          <table className="data-table" style={{ width: '100%', fontSize: 11 }}>
+            <thead>
+              <tr style={{ background: 'var(--bg-surface-2)' }}>
+                <th style={{ padding: '6px 8px', whiteSpace: 'nowrap' }}>{t('colTime')}</th>
+                <th style={{ padding: '6px 4px', textAlign: 'center', whiteSpace: 'nowrap' }}>{t('colType')}</th>
+                <th style={{ padding: '6px 8px', whiteSpace: 'nowrap' }}>{t('colDestination')}</th>
+                <th style={{ padding: '6px 8px', whiteSpace: 'nowrap' }}>{t('colEmployee')}</th>
+                <th style={{ padding: '6px 8px' }}>{t('colNotes')}</th>
+                {unlockDelete && <th style={{ padding: '6px 4px', width: 32, whiteSpace: 'nowrap' }}>{t('colAction')}</th>}
+              </tr>
+            </thead>
+            <tbody>
+              {fetching ? (
+                <tr>
+                  <td colSpan={unlockDelete ? 6 : 5} style={{ textAlign: 'center', padding: 24, color: 'var(--text-muted)' }}>
+                    <Loader2 className="animate-spin" size={18} style={{ margin: '0 auto 6px auto' }} />
+                    <span>Loading...</span>
+                  </td>
+                </tr>
+              ) : filteredHistory.length === 0 ? (
+                <tr>
+                  <td colSpan={unlockDelete ? 6 : 5} style={{ textAlign: 'center', padding: 24, color: 'var(--text-muted)' }}>
+                    No history records
+                  </td>
+                </tr>
+              ) : (
+                filteredHistory.map((h, i) => {
+                  const typeUpper = h.movement_type?.toUpperCase() || 'OUT'
+                  const isTypeIn = typeUpper === 'IN' || typeUpper === 'CHECK_IN'
+                  const isTypeAudit = typeUpper === 'AUDIT'
+                  const isTypeRelocate = typeUpper === 'RELOCATE'
+
+                  const badgeClass = isTypeIn
+                    ? 'badge badge--success'
+                    : isTypeAudit
+                    ? 'badge badge--info'
+                    : isTypeRelocate
+                    ? 'badge badge--neutral'
+                    : 'badge badge--warning'
+
+                  return (
+                    <tr key={h.movement_id || i}>
+                      <td style={{ padding: '6px 8px', whiteSpace: 'nowrap', fontFamily: 'monospace' }}>
+                        {h.moved_at ? h.moved_at.slice(0, 10) : '-'}
+                      </td>
+                      <td style={{ padding: '6px 4px', textAlign: 'center', whiteSpace: 'nowrap' }}>
+                        <span className={badgeClass} style={{ fontSize: 10, padding: '2px 6px' }}>
+                          {isTypeIn ? 'IN' : isTypeAudit ? 'AUDIT' : isTypeRelocate ? 'MOVE' : 'OUT'}
+                        </span>
+                      </td>
+                      <td style={{ padding: '6px 8px', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                        {h.destination_name || '-'}
+                      </td>
+                      <td style={{ padding: '6px 8px', whiteSpace: 'nowrap' }}>
+                        {h.employee_name || '-'}
+                      </td>
+                      <td style={{ padding: '6px 8px', color: 'var(--text-muted)', maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {h.notes || '-'}
+                      </td>
+                      {unlockDelete && (
+                        <td style={{ padding: '6px 4px', textAlign: 'center', whiteSpace: 'nowrap' }}>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteLog(h.movement_id)}
+                            style={{ color: '#ef4444', background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 700 }}
+                            title="Xóa"
+                          >
+                            ✕
+                          </button>
+                        </td>
+                      )}
+                    </tr>
+                  )
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* RIGHT COLUMN: ACTION FORM & CONTROL BUTTONS (45% Width) */}
+      <div
+        style={{
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 10,
+          padding: 12,
+          background: 'var(--bg-surface)',
+          height: '100%'
+        }}
+      >
+        {/* Device Info Banner Header */}
+        <div
+          className="card-flat"
+          style={{
+            padding: '8px 12px',
+            background: 'var(--tint-teal-bg)',
+            border: '1px solid var(--tint-teal-border)',
+            borderRadius: 8,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexShrink: 0
+          }}
+        >
+          <div>
+            <div style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600 }}>{t('deviceInfo')}</div>
+            <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'monospace' }}>
+              {data?.equipment_code || (data as any)?.system_code || '—'} · {data?.display_name || '—'}
+            </div>
+          </div>
+          <div>
+            <span className={isOut ? 'badge badge--warning' : 'badge badge--success'} style={{ fontSize: 12, fontWeight: 700, padding: '4px 10px' }}>
+              {isOut ? t('outStock') : t('inStock')}
+            </span>
+          </div>
+        </div>
+
+        {/* Feedback Alert Message */}
+        {msg && (
+          <div
+            style={{
+              padding: '8px 12px',
+              borderRadius: 6,
+              fontSize: 11,
+              fontWeight: 600,
+              background: msg.type === 'error' ? 'var(--tint-orange-bg)' : 'var(--tint-teal-bg)',
+              color: msg.type === 'error' ? 'var(--tint-orange-text)' : 'var(--tint-teal-text)',
+              border: `1px solid ${msg.type === 'error' ? 'var(--tint-orange-border)' : 'var(--tint-teal-border)'}`
+            }}
+          >
+            {msg.text}
+          </div>
+        )}
+
+        {/* Main Controls Form */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, flex: 1, overflowY: 'auto' }}>
+          
+          {/* Employee Section: Quick Chips Grid + Searchable Combobox */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <label className="form-label" style={{ fontSize: 12, fontWeight: 700 }}>
+                {t('employeeLabel')} <span style={{ color: '#ef4444' }}>*</span>
+              </label>
+              <label style={{ fontSize: 11, display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer', color: 'var(--text-muted)' }}>
+                <input
+                  type="checkbox"
+                  checked={defaultEmpChecked}
+                  onChange={handleEmpDefaultChange}
+                />
+                <span>{t('setAsDefault')}</span>
+              </label>
+            </div>
+
+            {/* Quick Selection Chips Grid for Employees */}
+            {topEmployeeChips.length > 0 && (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 4 }}>
+                {topEmployeeChips.map((emp, idx) => {
+                  const isSelected = selectedEmployeeId === emp.employee_id
+                  return (
+                    <button
+                      key={emp.employee_id}
+                      type="button"
+                      onClick={() => {
+                        setSelectedEmployeeId(emp.employee_id)
+                        if (defaultEmpChecked) localStorage.setItem('ysd_default_employee_id', emp.employee_id)
+                      }}
+                      style={{
+                        padding: '4px 6px',
+                        fontSize: 11,
+                        borderRadius: 6,
+                        border: isSelected ? '1.5px solid var(--accent)' : '1px solid var(--border-default)',
+                        background: isSelected ? 'var(--tint-teal-bg)' : 'var(--bg-surface-2)',
+                        color: isSelected ? 'var(--accent)' : 'var(--text-primary)',
+                        fontWeight: isSelected ? 700 : 500,
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 4,
+                        overflow: 'hidden',
+                        whiteSpace: 'nowrap',
+                        textOverflow: 'ellipsis'
+                      }}
+                    >
+                      <span style={{ fontSize: 9, padding: '0 4px', borderRadius: 3, background: isSelected ? 'var(--accent)' : 'var(--border-default)', color: isSelected ? '#fff' : 'var(--text-muted)', fontWeight: 700 }}>
+                        {idx + 1}
+                      </span>
+                      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{emp.employee_name}</span>
+                    </button>
+                  )
+                })}
+              </div>
+            )}
+
+            {/* Employee Searchable Combobox (Type code M09 or Name to filter in realtime!) */}
+            <div style={{ marginTop: 2 }}>
+              <SearchableCombobox
+                options={employeeComboboxOptions}
+                value={selectedEmployeeId}
+                onChange={val => {
+                  setSelectedEmployeeId(val)
+                  if (defaultEmpChecked && val) localStorage.setItem('ysd_default_employee_id', val)
+                }}
+                placeholder={t('selectEmployee')}
+              />
+            </div>
+          </div>
+
+          {/* Destination Section: Quick Chips Grid + Searchable Combobox */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <label className="form-label" style={{ fontSize: 12, fontWeight: 700 }}>
+                {t('destinationLabel')}
+              </label>
+              <label style={{ fontSize: 11, display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer', color: 'var(--text-muted)' }}>
+                <input
+                  type="checkbox"
+                  checked={defaultDestChecked}
+                  onChange={handleDestDefaultChange}
+                />
+                <span>{t('setAsDefault')}</span>
+              </label>
+            </div>
+
+            {/* Quick Selection Chips Grid for Destinations */}
+            {topDestinationChips.length > 0 && (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 4 }}>
+                {topDestinationChips.map((dest, idx) => {
+                  const isSelected = selectedDestinationId === dest.destination_id
+                  return (
+                    <button
+                      key={dest.destination_id}
+                      type="button"
+                      onClick={() => {
+                        setSelectedDestinationId(dest.destination_id)
+                        if (defaultDestChecked) localStorage.setItem('ysd_default_destination_id', dest.destination_id)
+                      }}
+                      style={{
+                        padding: '4px 6px',
+                        fontSize: 11,
+                        borderRadius: 6,
+                        border: isSelected ? '1.5px solid var(--accent)' : '1px solid var(--border-default)',
+                        background: isSelected ? 'var(--tint-teal-bg)' : 'var(--bg-surface-2)',
+                        color: isSelected ? 'var(--accent)' : 'var(--text-primary)',
+                        fontWeight: isSelected ? 700 : 500,
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 4,
+                        overflow: 'hidden',
+                        whiteSpace: 'nowrap',
+                        textOverflow: 'ellipsis'
+                      }}
+                    >
+                      <span style={{ fontSize: 9, padding: '0 4px', borderRadius: 3, background: isSelected ? 'var(--accent)' : 'var(--border-default)', color: isSelected ? '#fff' : 'var(--text-muted)', fontWeight: 700 }}>
+                        {idx + 1}
+                      </span>
+                      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{dest.destination_name}</span>
+                    </button>
+                  )
+                })}
+              </div>
+            )}
+
+            {/* Destination Searchable Combobox */}
+            <div style={{ marginTop: 2 }}>
+              <SearchableCombobox
+                options={destinationComboboxOptions}
+                value={selectedDestinationId}
+                onChange={val => {
+                  setSelectedDestinationId(val)
+                  if (defaultDestChecked && val) localStorage.setItem('ysd_default_destination_id', val)
+                }}
+                placeholder={t('selectDestination')}
+              />
+            </div>
+          </div>
+
+          {/* Notes Textarea */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <label className="form-label" style={{ fontSize: 12, fontWeight: 700 }}>
+              {t('notesLabel')}
+            </label>
+            <textarea
+              className="form-textarea"
+              rows={2}
+              value={notes}
+              onChange={e => setNotes(e.target.value)}
+              placeholder="..."
+              style={{ fontSize: 12, resize: 'none' }}
+            />
+          </div>
+
+          {/* Relocate Sub-Panel when active */}
+          {showRelocatePanel && (
+            <div
+              className="card-flat"
               style={{
-                fontSize: 11, fontWeight: movementType === m.id ? 700 : 500,
-                color: movementType === m.id ? 'var(--accent)' : 'var(--text-secondary)',
-                background: movementType === m.id ? 'var(--tint-teal-bg)' : 'var(--bg-surface-2)',
-                border: movementType === m.id ? '1px solid var(--accent)' : '1px solid var(--border-default)',
-                borderRadius: 6, padding: '6px 4px', cursor: 'pointer'
+                padding: 10,
+                background: 'var(--tint-blue-bg)',
+                border: '1px solid var(--tint-blue-border)',
+                borderRadius: 8,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 8
               }}
             >
-              {m.label}
-            </button>
-          ))}
+              <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--accent)', display: 'flex', alignItems: 'center', gap: 4 }}>
+                <Layers size={14} />
+                <span>{t('subRelocateTitle')}</span>
+              </div>
+              <select
+                className="form-input"
+                value={selectedRackLayerId}
+                onChange={e => setSelectedRackLayerId(e.target.value)}
+                style={{ fontSize: 12, height: 32 }}
+              >
+                <option value="">{t('selectNewRack')}</option>
+                {rackLayers.map((rl: any) => (
+                  <option key={rl.id} value={rl.id}>
+                    📍 {rl.layer_code} ({rl.racks?.rack_name || 'Kệ'})
+                  </option>
+                ))}
+              </select>
+              <label style={{ fontSize: 11, display: 'flex', alignItems: 'center', gap: 6, fontWeight: 600, color: 'var(--text-primary)' }}>
+                <input
+                  type="checkbox"
+                  checked={autoCheckInOnRelocate}
+                  onChange={e => setAutoCheckInOnRelocate(e.target.checked)}
+                />
+                <span>{t('autoCheckInOnRelocate')}</span>
+              </label>
+              <button
+                type="button"
+                onClick={() => handleAction('RELOCATE')}
+                disabled={loading || !selectedRackLayerId}
+                className="btn btn-primary"
+                style={{ fontSize: 12, padding: '6px 12px', alignSelf: 'flex-end' }}
+              >
+                {loading ? <Loader2 className="animate-spin" size={14} /> : t('confirmRelocate')}
+              </button>
+            </div>
+          )}
         </div>
-      </div>
 
-      {/* Target Keeper Company */}
-      {movementType !== 'RETURN' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-          <label className="form-label" style={{ fontSize: 11, fontWeight: 700 }}>
-            移動先保管会社 (Công ty tiếp nhận):
-          </label>
-          <select
-            className="form-input"
-            value={targetKeeperId}
-            onChange={e => setTargetKeeperId(e.target.value)}
-            required
+        {/* 4 Action Buttons Grid */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8, marginTop: 'auto', flexShrink: 0 }}>
+          {/* GREEN BUTTON: IN */}
+          <button
+            type="button"
+            disabled={loading}
+            onClick={() => handleAction('IN')}
+            className="btn"
+            style={{
+              background: '#22c55e',
+              color: '#ffffff',
+              border: 'none',
+              borderRadius: 8,
+              padding: '10px 8px',
+              fontSize: 13,
+              fontWeight: 700,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 2,
+              boxShadow: '0 2px 4px rgba(34, 197, 94, 0.3)',
+              cursor: loading ? 'not-allowed' : 'pointer'
+            }}
           >
-            <option value="">-- 選択してください (Chọn công ty) --</option>
-            {companies.map(c => (
-              <option key={c.company_id} value={c.company_id}>
-                🏢 {c.company_name} ({c.company_code})
-              </option>
-            ))}
-          </select>
+            <div>{t('btnIn')}</div>
+          </button>
+
+          {/* ORANGE BUTTON: OUT */}
+          <button
+            type="button"
+            disabled={loading}
+            onClick={() => handleAction('OUT')}
+            className="btn"
+            style={{
+              background: '#f97316',
+              color: '#ffffff',
+              border: 'none',
+              borderRadius: 8,
+              padding: '10px 8px',
+              fontSize: 13,
+              fontWeight: 700,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 2,
+              boxShadow: '0 2px 4px rgba(249, 115, 22, 0.3)',
+              cursor: loading ? 'not-allowed' : 'pointer'
+            }}
+          >
+            <div>{t('btnOut')}</div>
+          </button>
+
+          {/* BLUE BUTTON: AUDIT */}
+          <button
+            type="button"
+            disabled={loading}
+            onClick={() => handleAction('AUDIT')}
+            className="btn"
+            style={{
+              background: '#0284c7',
+              color: '#ffffff',
+              border: 'none',
+              borderRadius: 8,
+              padding: '10px 8px',
+              fontSize: 13,
+              fontWeight: 700,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 2,
+              boxShadow: '0 2px 4px rgba(2, 132, 199, 0.3)',
+              cursor: loading ? 'not-allowed' : 'pointer'
+            }}
+          >
+            <div>{t('btnAudit')}</div>
+          </button>
+
+          {/* LIGHT BLUE BUTTON: RELOCATE */}
+          <button
+            type="button"
+            disabled={loading}
+            onClick={() => {
+              if (onOpenRelocate) onOpenRelocate()
+              else setShowRelocatePanel(!showRelocatePanel)
+            }}
+            className="btn"
+            style={{
+              background: '#38bdf8',
+              color: '#ffffff',
+              border: 'none',
+              borderRadius: 8,
+              padding: '10px 8px',
+              fontSize: 13,
+              fontWeight: 700,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 2,
+              boxShadow: '0 2px 4px rgba(56, 189, 248, 0.3)',
+              cursor: loading ? 'not-allowed' : 'pointer'
+            }}
+          >
+            <div>{t('btnRelocate')}</div>
+          </button>
         </div>
-      )}
-
-      {/* Date */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-        <label className="form-label" style={{ fontSize: 11, fontWeight: 700 }}>
-          移動実施日 (Ngày thực hiện):
-        </label>
-        <input
-          type="date"
-          className="form-input"
-          value={actionDate}
-          onChange={e => setActionDate(e.target.value)}
-          required
-        />
       </div>
-
-      {/* Notes */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-        <label className="form-label" style={{ fontSize: 11, fontWeight: 700 }}>
-          備考・特記事項 (Ghi chú):
-        </label>
-        <textarea
-          className="form-textarea"
-          rows={2}
-          value={notes}
-          onChange={e => setNotes(e.target.value)}
-          placeholder="VD: Gửi mạ Teflon tại Marudai, dự kiến hoàn thành sau 3 ngày..."
-        />
-      </div>
-
-      {/* Actions */}
-      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 6 }}>
-        <button type="button" onClick={onClose} className="btn btn-secondary" style={{ fontSize: 12 }}>
-          キャンセル (Hủy)
-        </button>
-        <button type="submit" disabled={loading} className="btn btn-primary" style={{ fontSize: 12 }}>
-          {loading ? <Loader2 className="animate-spin" size={14} /> : '更新を実行 (Xác nhận)'}
-        </button>
-      </div>
-    </form>
+    </div>
   )
 }

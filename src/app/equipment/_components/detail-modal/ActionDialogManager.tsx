@@ -18,9 +18,10 @@ interface Props {
   onCloseAction: () => void
   data: EquipmentDetailData
   onSuccess: () => void
+  onSelectAction?: (action: ActionDialogType) => void
 }
 
-export default function ActionDialogManager({ activeAction, onCloseAction, data, onSuccess }: Props) {
+export default function ActionDialogManager({ activeAction, onCloseAction, data, onSuccess, onSelectAction }: Props) {
   if (!activeAction) return null
 
   // Dialog Titles & Icons
@@ -39,6 +40,8 @@ export default function ActionDialogManager({ activeAction, onCloseAction, data,
   const cfg = dialogConfig[activeAction] || { title: 'Thao tác', icon: MapPin }
   const DialogIcon = cfg.icon
 
+  const isWideDialog = activeAction === 'CHECKIN_OUT' || activeAction === 'TEFLON_COATING' || activeAction === 'PHOTO_MANAGER' || activeAction === 'RELOCATE'
+
   return (
     <div
       style={{
@@ -51,7 +54,9 @@ export default function ActionDialogManager({ activeAction, onCloseAction, data,
       <div
         className="card-flat"
         style={{
-          width: '100%', maxWidth: 540, borderRadius: 10, overflow: 'hidden',
+          width: '100%', maxWidth: isWideDialog ? 1080 : 540,
+          height: isWideDialog ? 630 : undefined, maxHeight: '90vh',
+          borderRadius: 10, overflow: 'hidden',
           background: 'var(--bg-surface)', border: '1px solid var(--border-default)',
           boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.3)',
           display: 'flex', flexDirection: 'column'
@@ -66,7 +71,8 @@ export default function ActionDialogManager({ activeAction, onCloseAction, data,
             borderBottom: '1px solid var(--border-subtle)',
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'space-between'
+            justifyContent: 'space-between',
+            flexShrink: 0
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontWeight: 700, fontSize: 13, color: 'var(--accent)' }}>
@@ -82,9 +88,14 @@ export default function ActionDialogManager({ activeAction, onCloseAction, data,
         </div>
 
         {/* Dialog Body - Independent Modules */}
-        <div style={{ padding: 16 }}>
+        <div style={{ padding: 16, flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
           {activeAction === 'CHECKIN_OUT' && (
-            <CheckInOutModule data={data} onClose={onCloseAction} onSuccess={onSuccess} />
+            <CheckInOutModule
+              data={data}
+              onClose={onCloseAction}
+              onSuccess={onSuccess}
+              onOpenRelocate={() => onSelectAction && onSelectAction('RELOCATE')}
+            />
           )}
 
           {activeAction === 'INVENTORY_AUDIT' && (

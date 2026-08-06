@@ -368,9 +368,14 @@ function UnifiedEquipmentPageContent() {
                     </td>
                     <td className="p-2 text-[11px] font-mono font-semibold">{formatRackLocation(m)}</td>
                     <td className="p-2">
-                      <span className="text-[10px] font-bold text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded-full whitespace-nowrap">
-                        {getUnifiedStatusLabel(m.usage_status)}
-                      </span>
+                      <div className="flex flex-col gap-0.5">
+                        <span className={`badge ${m.usage_status === 'IN' ? 'badge--success' : m.usage_status === 'OUT' ? 'badge--warning' : 'badge--neutral'} text-[10px]`}>
+                          {getUnifiedStatusLabel(m.usage_status)}
+                        </span>
+                        <span className="text-[9px] text-slate-400 font-mono">
+                          {m.manufacturing_date ? m.manufacturing_date.slice(0, 10) : '—'}
+                        </span>
+                      </div>
                     </td>
                     <td className="p-2">
                       <div className="flex gap-1">

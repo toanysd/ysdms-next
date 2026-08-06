@@ -32,14 +32,19 @@ export default function EquipmentDetailModal({
   const [activeAction, setActiveAction] = useState<ActionDialogType>(null)
 
   // Fetch full details if only equipmentId provided or on refresh
-  const fetchEquipmentDetails = async (id: string) => {
+  const fetchEquipmentDetails = async (id?: string) => {
+    if (!id || id === 'undefined') {
+      setLoading(false)
+      return
+    }
+
     setLoading(true)
     const { data: eq, error } = await supabase
       .from('equipment')
       .select(`
         *,
-        keeper_company:companies!equipment_keeper_company_id_fkey(company_name, company_code),
-        company:companies!equipment_company_id_fkey(company_name, company_code),
+        keeper_company:companies!keeper_company_id(company_name, company_code),
+        company:companies!company_id(company_name, company_code),
         rack_layers(layer_code, racks(rack_code)),
         design_revisions(
           revision_id, design_code, design_length, design_width, design_height, design_weight,
@@ -68,20 +73,19 @@ export default function EquipmentDetailModal({
 
     if (jobs) setJobsHistory(jobs)
 
-    // Fetch Movements
-    const { data: movements } = await (supabase as any)
-      .from('equipment_movements')
+    // Fetch Equipment History
+    const { data: history } = await supabase
+      .from('equipment_history')
       .select(`
-        movement_id, movement_type, moved_at, notes,
-        from_company:companies!equipment_movements_from_company_id_fkey(company_code, company_name),
-        to_company:companies!equipment_movements_to_company_id_fkey(company_code, company_name),
-        rack_layers(layer_code, racks(rack_code))
+        history_id, action_type, action_date, description,
+        companies!equipment_history_from_company_id_fkey(company_code, company_name),
+        employees(employee_name)
       `)
       .eq('equipment_id', id)
-      .order('moved_at', { ascending: false })
+      .order('action_date', { ascending: false })
       .limit(10)
 
-    if (movements) setMovementsHistory(movements)
+    if (history) setMovementsHistory(history)
   }
 
   useEffect(() => {
@@ -399,6 +403,7 @@ export default function EquipmentDetailModal({
       <ActionDialogManager
         activeAction={activeAction}
         onCloseAction={() => setActiveAction(null)}
+        onSelectAction={(action) => setActiveAction(action)}
         data={data}
         onSuccess={handleRefresh}
       />

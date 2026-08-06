@@ -92,8 +92,8 @@ export default function StorageStatusCard({ data }: Props) {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
           <span style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 600 }}>{t('operationStatus')}</span>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <span className={isOut ? 'badge badge--warning' : 'badge badge--success'} style={{ fontSize: 10 }}>
-              {statusStr}
+            <span className={isOut ? 'badge badge--warning' : 'badge badge--success'} style={{ fontSize: 10, fontWeight: 700 }}>
+              {statusStr} ({confirmDate})
             </span>
           </div>
         </div>
