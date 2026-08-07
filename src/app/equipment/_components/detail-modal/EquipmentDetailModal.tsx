@@ -172,22 +172,26 @@ export default function EquipmentDetailModal({
   const ownerCompanyId = data?.company_id
   const keeperCompanyId = data?.keeper_company_id
 
-  let keeperName = 'YSD'
+  let keeperName = ''
   let isExternalKeeper = false
 
-  if (keeperCompanyId && keeperCompanyId !== ownerCompanyId && data?.keeper_company) {
+  if (data?.keeper_company) {
     const code = (data.keeper_company.company_code || '').toUpperCase()
     const name = data.keeper_company.company_name || ''
+    keeperName = name || code
     if (code !== 'YSD' && !name.includes('YSD') && !name.includes('社内')) {
-      keeperName = name || code
       isExternalKeeper = true
     }
   } else if (movementsHistory[0]?.action_type === 'TRANSFER' && movementsHistory[0]?.to_company) {
     const toName = movementsHistory[0].to_company.company_name || movementsHistory[0].to_company.company_code
-    if (toName && !toName.includes('YSD')) {
+    if (toName) {
       keeperName = toName
-      isExternalKeeper = true
+      if (!toName.includes('YSD')) isExternalKeeper = true
     }
+  } else if (keeperCompanyId) {
+    keeperName = 'Keeper Company'
+  } else {
+    keeperName = '未指定 (Chưa xác định)'
   }
 
   // Determine real-time status from specialized status_logs table first, then equipment_history, then DB fields
@@ -218,10 +222,15 @@ export default function EquipmentDetailModal({
     rawStatus === 'DISPOSED' ||
     isExternalKeeper
 
+  const isHeaderUnverified = data?.device_status === 'UNVERIFIED' || data?.usage_status === 'UNVERIFIED'
+
   let headerStatusText = 'IN (社内保管)'
   let headerBadgeClass = 'badge badge--success'
 
-  if (rawStatus === 'DISPOSED' || rawStatus === 'SCRAP') {
+  if (isHeaderUnverified) {
+    headerStatusText = '未検証 (Chưa kiểm kê)'
+    headerBadgeClass = 'badge badge--neutral'
+  } else if (rawStatus === 'DISPOSED' || rawStatus === 'SCRAP' || data?.device_status === 'DISPOSED') {
     headerStatusText = '廃棄 (Đã hủy)'
     headerBadgeClass = 'badge badge--error'
   } else if (rawStatus === 'MAINTENANCE' || rawStatus === 'REPAIR') {
@@ -230,6 +239,12 @@ export default function EquipmentDetailModal({
   } else if (isHeaderOut) {
     headerStatusText = 'OUT (社外/出庫)'
     headerBadgeClass = 'badge badge--warning'
+  } else if (data?.usage_status === 'IN_STOCK' || data?.usage_status === 'IN' || data?.current_rack_layer_id) {
+    headerStatusText = 'IN (社内保管)'
+    headerBadgeClass = 'badge badge--success'
+  } else {
+    headerStatusText = '未設定 (Chưa xác định)'
+    headerBadgeClass = 'badge badge--neutral'
   }
 
   return (
