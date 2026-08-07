@@ -133,7 +133,7 @@ export default function CheckInOutModule({ data, onClose, onSuccess }: Props) {
               movement_type: h.action_type || 'OUT',
               moved_at: h.action_date || new Date().toISOString(),
               notes: h.description || '',
-              destination_name: null,
+              destination_name: h.to_location || null,
               employee_name: h.employees?.employee_name || null
             }))
             setHistoryLogs(formatted)

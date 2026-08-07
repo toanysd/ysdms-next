@@ -61,8 +61,7 @@ export default function StorageStatusCard({ data, latestLog, latestStatusLog, de
     latestLog?.action_date?.slice(0, 10) ||
     data.returned_date ||
     data.entry_date ||
-    (data as any).updated_at?.slice(0, 10) ||
-    new Date().toISOString().slice(0, 10)
+    '—'
 
   // Destination = where the mold was taken to
   const destinationLoc =
