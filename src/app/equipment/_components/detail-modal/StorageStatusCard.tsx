@@ -18,35 +18,38 @@ export default function StorageStatusCard({ data, latestLog, latestStatusLog, de
 
   // ══════════════════════════════════════════════════════════════════
   // 1. KEEPER COMPANY — Công ty đang giữ khuôn vật lý thực tế
-  //    keeper_company_id → companies (khác với company_id = owner/customer)
-  //    Ưu tiên: keeper_company_id (DB) > latest TRANSFER in history > YSD default
+  //    STRICT REAL DATA: Tuyệt đối KHÔNG fallback/mặc định là YSD khi NULL!
   // ══════════════════════════════════════════════════════════════════
-  const ownerCompanyId = data.company_id
   const keeperCompanyId = data.keeper_company_id
 
-  let keeperName = 'YSD'
+  let keeperName = ''
   let isExternalKeeper = false
 
-  if (keeperCompanyId && keeperCompanyId !== ownerCompanyId && data.keeper_company) {
+  if (data.keeper_company) {
     const code = (data.keeper_company.company_code || '').toUpperCase()
     const name = data.keeper_company.company_name || ''
+    keeperName = name || code
     if (code !== 'YSD' && !name.includes('YSD') && !name.includes('社内')) {
-      keeperName = name || code
       isExternalKeeper = true
     }
   } else if (latestLog?.action_type === 'TRANSFER' && latestLog?.to_company) {
     const toName = latestLog.to_company.company_name || latestLog.to_company.company_code
-    if (toName && !toName.includes('YSD')) {
+    if (toName) {
       keeperName = toName
-      isExternalKeeper = true
+      if (!toName.includes('YSD')) isExternalKeeper = true
     }
+  } else if (keeperCompanyId) {
+    keeperName = 'Keeper Company'
+  } else {
+    keeperName = '未指定 (Chưa xác định)'
   }
 
-  const rackText = formatRackLocationDisplay(data.rack_layers)
+  const rackText = data.rack_layers
+    ? formatRackLocationDisplay(data.rack_layers)
+    : '未配置 (Chưa gá kệ)'
 
   // ══════════════════════════════════════════════════════════════════
-  // 2. REAL-TIME STATUS — Ưu tiên: equipment_status_logs > equipment_history > DB fields
-  //    equipment_status_logs chứa lịch sử CHECK_IN/CHECK_OUT hàng ngày (statuslogs gốc)
+  // 2. REAL-TIME STATUS — STRICT REAL DATA: Không fallback IN khi NULL!
   // ══════════════════════════════════════════════════════════════════
   const latestActionType = (
     latestStatusLog?.status ||
@@ -61,9 +64,8 @@ export default function StorageStatusCard({ data, latestLog, latestStatusLog, de
     latestLog?.action_date?.slice(0, 10) ||
     data.returned_date ||
     data.entry_date ||
-    '—'
+    '未確認 (Chưa có xác nhận)'
 
-  // Destination = where the mold was taken to
   const destinationLoc =
     destinationDisplay ||
     latestStatusLog?.to_location ||
@@ -71,6 +73,8 @@ export default function StorageStatusCard({ data, latestLog, latestStatusLog, de
     latestLog?.to_location ||
     latestLog?.to_company?.company_name ||
     ''
+
+  const isUnverified = data.device_status === 'UNVERIFIED' || data.usage_status === 'UNVERIFIED'
 
   const isOut =
     latestActionType === 'OUT' ||
@@ -80,16 +84,18 @@ export default function StorageStatusCard({ data, latestLog, latestStatusLog, de
     latestActionType === 'LOAN' ||
     latestActionType === 'MAINTENANCE' ||
     latestActionType === 'BROKEN' ||
-    latestActionType === 'DISPOSED' ||
     isExternalKeeper
 
   // ══════════════════════════════════════════════════════════════════
-  // 3. BADGE DISPLAY
+  // 3. BADGE DISPLAY — Rõ ràng 100% từ dữ liệu thực
   // ══════════════════════════════════════════════════════════════════
   let statusDisplayLabel = 'IN (社内保管)'
   let statusBadgeClass = 'badge badge--success'
 
-  if (latestActionType === 'DISPOSED' || latestActionType === 'SCRAP') {
+  if (isUnverified) {
+    statusDisplayLabel = '未検証 (Chưa kiểm kê thực tế)'
+    statusBadgeClass = 'badge badge--neutral'
+  } else if (latestActionType === 'DISPOSED' || latestActionType === 'SCRAP' || data.device_status === 'DISPOSED') {
     statusDisplayLabel = '廃棄 (Đã hủy)'
     statusBadgeClass = 'badge badge--error'
   } else if (latestActionType === 'RETURNED') {
@@ -101,9 +107,12 @@ export default function StorageStatusCard({ data, latestLog, latestStatusLog, de
   } else if (isOut) {
     statusDisplayLabel = destinationLoc ? `OUT (${destinationLoc})` : 'OUT (社外/出庫)'
     statusBadgeClass = 'badge badge--warning'
-  } else {
+  } else if (data.usage_status === 'IN_STOCK' || data.usage_status === 'IN' || data.current_rack_layer_id) {
     statusDisplayLabel = 'IN (社内保管)'
     statusBadgeClass = 'badge badge--success'
+  } else {
+    statusDisplayLabel = '未設定 (Chưa xác định)'
+    statusBadgeClass = 'badge badge--neutral'
   }
 
   return (
@@ -111,12 +120,16 @@ export default function StorageStatusCard({ data, latestLog, latestStatusLog, de
       className="card-flat"
       style={{
         padding: 14,
-        background: isExternalKeeper
+        background: isUnverified
+          ? 'var(--bg-surface-2)'
+          : isExternalKeeper
           ? 'linear-gradient(135deg, rgba(254, 243, 199, 0.6) 0%, var(--bg-surface-2) 100%)'
           : isOut
           ? 'linear-gradient(135deg, var(--tint-orange-bg) 0%, var(--bg-surface-2) 100%)'
           : 'linear-gradient(135deg, var(--tint-teal-bg) 0%, var(--bg-surface-2) 100%)',
-        border: isExternalKeeper
+        border: isUnverified
+          ? '1px dashed var(--border-default)'
+          : isExternalKeeper
           ? '1.5px solid var(--tint-orange-border)'
           : isOut
           ? '1px solid var(--tint-orange-border)'
@@ -127,7 +140,7 @@ export default function StorageStatusCard({ data, latestLog, latestStatusLog, de
         gap: 10
       }}
     >
-      {/* Header — 2 Separate Badges: 1. IN/OUT Status, 2. Keeper Company */}
+      {/* Header — 2 Separate Badges: 1. Status Badge, 2. Keeper Badge */}
       <div
         style={{
           display: 'flex',
@@ -143,7 +156,7 @@ export default function StorageStatusCard({ data, latestLog, latestStatusLog, de
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          {/* Badge 1: Movement Status (IN / OUT) */}
+          {/* Badge 1: Status Badge */}
           <span
             className={statusBadgeClass}
             style={{ fontSize: 10, padding: '3px 10px', fontWeight: 700 }}
@@ -151,9 +164,9 @@ export default function StorageStatusCard({ data, latestLog, latestStatusLog, de
             {statusDisplayLabel}
           </span>
 
-          {/* Badge 2: Keeper Company */}
+          {/* Badge 2: Keeper Badge */}
           <span
-            className={isExternalKeeper ? 'badge badge--error' : 'badge badge--info'}
+            className={isExternalKeeper ? 'badge badge--error' : keeperCompanyId ? 'badge badge--info' : 'badge badge--neutral'}
             style={{ fontSize: 10, padding: '3px 10px', fontWeight: 700 }}
           >
             🏢 {keeperName}
@@ -163,28 +176,28 @@ export default function StorageStatusCard({ data, latestLog, latestStatusLog, de
 
       {/* Main Grid Info */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, fontSize: 12 }}>
-        {/* Keeper Company (Công ty lưu trữ hiện tại) */}
+        {/* Keeper Company */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
           <span style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 600 }}>{t('keeperCompany')}</span>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <span
-              className={isExternalKeeper ? 'badge badge--error' : 'badge badge--info'}
+              className={isExternalKeeper ? 'badge badge--error' : keeperCompanyId ? 'badge badge--info' : 'badge badge--neutral'}
               style={{ fontSize: 11, padding: '2px 8px', fontWeight: 700 }}
             >
-              {keeperName} {isExternalKeeper ? '(社外保管)' : '(社内)'}
+              {keeperName}
             </span>
           </div>
         </div>
 
-        {/* Storage Rack (Vị trí kệ gốc) */}
+        {/* Storage Rack */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
           <span style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 600 }}>{t('returnRack')}</span>
-          <span style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: 13, color: 'var(--accent)' }}>
+          <span style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: 13, color: data.rack_layers ? 'var(--accent)' : 'var(--text-muted)' }}>
             📍 {rackText}
           </span>
         </div>
 
-        {/* Status (Trạng thái Xuất / Nhập) */}
+        {/* Status */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
           <span style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 600 }}>{t('operationStatus')}</span>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -194,7 +207,7 @@ export default function StorageStatusCard({ data, latestLog, latestStatusLog, de
           </div>
         </div>
 
-        {/* Confirmation Date (Ngày cập nhật / xác nhận gần nhất) */}
+        {/* Confirmation Date */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
           <span style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 600 }}>{t('lastConfirmation')}</span>
           <span style={{ fontFamily: 'monospace', fontWeight: 600, fontSize: 12, color: 'var(--text-secondary)' }}>
@@ -203,7 +216,30 @@ export default function StorageStatusCard({ data, latestLog, latestStatusLog, de
         </div>
       </div>
 
-      {/* OUT Destination Warning Banner (Matching SACT v9: 🔴 一時持出中 現在地: 台湾成形) */}
+      {/* Warning Banner for Unverified Molds */}
+      {isUnverified && (
+        <div
+          style={{
+            padding: '8px 12px',
+            borderRadius: 6,
+            background: 'var(--bg-surface-3)',
+            border: '1px solid var(--border-default)',
+            color: 'var(--text-secondary)',
+            fontSize: 11,
+            fontWeight: 500,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8
+          }}
+        >
+          <AlertTriangle size={15} style={{ flexShrink: 0, color: '#f59e0b' }} />
+          <div>
+            ⚠️ Khuôn khởi tạo từ quét thư mục CAD Server — <strong>Chưa xác thực kiểm kê tồn tại vật lý tại xưởng YSD</strong>.
+          </div>
+        </div>
+      )}
+
+      {/* OUT Destination Warning Banner */}
       {isOut && (
         <div
           style={{
@@ -230,7 +266,6 @@ export default function StorageStatusCard({ data, latestLog, latestStatusLog, de
             </div>
             <div>
               返却時は元の棚 <strong>{rackText}</strong> に戻してください。
-              <span style={{ fontSize: 10, opacity: 0.85, marginLeft: 4 }}>(Vị trí khi trả về là {rackText})</span>
             </div>
           </div>
         </div>
