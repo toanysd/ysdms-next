@@ -82,7 +82,8 @@ export type ActionDialogType =
   | 'PRINT_LABEL'
   | 'PHOTO_MANAGER'
   | 'QR_VIEW'
-  | 'RELOCATE'
+  | 'TRANSPORT'
+  | 'RACK_MOVE'
   | 'WEIGHT_AUDIT'
   | 'SCRAP_DISPOSAL'
   | null

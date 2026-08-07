@@ -2,6 +2,8 @@
 
 # dependencies
 /node_modules
+/.venv/
+scripts/seed_v5/.venv/
 /.pnp
 .pnp.js
 
@@ -51,11 +53,15 @@ add_col.js
 /source_data/
 !/source_data/csv-access-data/
 /source_data/csv-access-data/archived/
+!/source_data/standardization_plans/
+!/source_data/scripts/
+!/source_data/YSD_EQUIPMENT_AND_DESIGN_AUDIT_REPORT.md
 *.rar
 *.zip
 *.tar
 *.gz
 *.7z  
+*.txt
 
 # User requested exclusions
 /supabase/

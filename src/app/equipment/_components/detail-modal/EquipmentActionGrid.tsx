@@ -4,7 +4,7 @@ import React from 'react'
 import { useTranslations } from 'next-intl'
 import {
   MapPin, ClipboardCheck, Sparkles, Printer, Camera, QrCode,
-  Truck, Scale, Trash2
+  Truck, Scale, Trash2, ArrowRightLeft
 } from 'lucide-react'
 import { ActionDialogType } from './types'
 
@@ -65,9 +65,17 @@ export default function EquipmentActionGrid({ onOpenAction }: Props) {
       color: 'var(--tint-purple-text)'
     },
     {
-      id: 'RELOCATE',
-      label: t('actions.relocate'),
+      id: 'TRANSPORT',
+      label: t('actions.transport'),
       icon: Truck,
+      bg: 'var(--tint-blue-bg)',
+      border: 'var(--tint-blue-border)',
+      color: 'var(--tint-blue-text)'
+    },
+    {
+      id: 'RACK_MOVE',
+      label: t('actions.rackMove'),
+      icon: ArrowRightLeft,
       bg: 'var(--tint-orange-bg)',
       border: 'var(--tint-orange-border)',
       color: 'var(--tint-orange-text)'
@@ -114,7 +122,7 @@ export default function EquipmentActionGrid({ onOpenAction }: Props) {
         ⚡ {t('actionGridTitle')}
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 6 }}>
         {actions.map(act => {
           const Icon = act.icon
           return (

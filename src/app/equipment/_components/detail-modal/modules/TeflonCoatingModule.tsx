@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { Sparkles, CheckCircle2, Clock, Loader2, FileText, ChevronRight, Send, ShieldCheck, History } from 'lucide-react'
+import { Sparkles, CheckCircle2, Clock, Loader2, FileText, ChevronRight, Send, ShieldCheck, History, ArrowRightLeft } from 'lucide-react'
 import { EquipmentDetailData } from '../types'
 import { useTranslations } from 'next-intl'
 
@@ -10,6 +10,7 @@ interface Props {
   data: EquipmentDetailData
   onClose: () => void
   onSuccess: () => void
+  onRequestRackMove?: () => void  // Callback to open Rack Move after teflon complete
 }
 
 type TeflonStep = 1 | 2 | 3 | 4
@@ -36,7 +37,7 @@ interface TeflonJobLog {
   notes?: string | null
 }
 
-export default function TeflonCoatingModule({ data, onClose, onSuccess }: Props) {
+export default function TeflonCoatingModule({ data, onClose, onSuccess, onRequestRackMove }: Props) {
   const t = useTranslations('EquipmentDetailModal')
   const supabase = createClient()
 
@@ -160,6 +161,17 @@ export default function TeflonCoatingModule({ data, onClose, onSuccess }: Props)
 
       if (jobErr) console.warn('Job insert note:', jobErr)
 
+      // Save cost to jobs table if Step 4 (COMPLETED)
+      if (isCompleted && cost && jobData?.job_id) {
+        await supabase
+          .from('jobs')
+          .update({
+            estimated_cost: parseFloat(cost) || null,
+            notes: `${notes || ''} | Quality: ${qualityRating} | Cost: ¥${cost}`
+          } as any)
+          .eq('job_id', jobData.job_id)
+      }
+
       // 2. Equipment State Updates based on Step
       let updatePayload: any = {}
 
@@ -171,12 +183,12 @@ export default function TeflonCoatingModule({ data, onClose, onSuccess }: Props)
           notes: `[✨ テフロン加工中] Đã gửi mạ tại ${vendorObj?.company_name || ''} (${requestDate})`
         }
       } else if (currentStep === 4) {
-        // Step 4 (COMPLETED): Mark is_teflon = true, Return Keeper to YSD, usage_status = IN
+        // Step 4 (COMPLETED): Return to YSD (company_id), usage_status = IN
+        // NOTE: is_teflon column does not exist yet in DB, track via notes
         updatePayload = {
-          is_teflon: true,
           usage_status: 'IN',
           keeper_company_id: data?.company_id || data?.keeper_company_id,
-          notes: `[✨ テフロン済] Mạ hoàn tất ngày ${actualDate}. Đơn vị: ${vendorObj?.company_name || ''}`
+          notes: `[✨ テフロン済] Mạ hoàn tất ngày ${actualDate}. Đơn vị: ${vendorObj?.company_name || ''}. Chi phí: ¥${cost || 'N/A'}`
         }
       }
 
@@ -200,14 +212,52 @@ export default function TeflonCoatingModule({ data, onClose, onSuccess }: Props)
         } as any)
       }
 
+      // Step 3 extras: TRANSFER history (YSD → Vendor) + OUT log
       if (currentStep === 3) {
+        // TRANSFER log: Track keeper_company change
+        await supabase.from('equipment_history').insert({
+          equipment_id: targetEquipmentId,
+          action_type: 'TRANSFER',
+          action_date: requestDate,
+          from_company_id: data?.keeper_company_id || data?.company_id || null,
+          to_company_id: selectedVendorId || null,
+          performed_by: selectedEmployeeId || null,
+          job_id: jobData?.job_id || null,
+          description: `[テフロン出荷] Gửi mạ Teflon → ${vendorObj?.company_name || ''}`
+        } as any)
+
+        // OUT log
         await supabase.from('equipment_history').insert({
           equipment_id: targetEquipmentId,
           action_type: 'OUT',
-          action_date: nowISO.slice(0, 10),
+          action_date: requestDate,
           performed_by: selectedEmployeeId || null,
           to_company_id: selectedVendorId || null,
           description: `Gửi đi mạ Teflon: ${notes || ''}`
+        } as any)
+      }
+
+      // Step 4 extras: TRANSFER history (Vendor → YSD) + IN log
+      if (currentStep === 4) {
+        // TRANSFER log: Vendor returns to YSD
+        await supabase.from('equipment_history').insert({
+          equipment_id: targetEquipmentId,
+          action_type: 'TRANSFER',
+          action_date: actualDate,
+          from_company_id: selectedVendorId || null,
+          to_company_id: data?.company_id || data?.keeper_company_id || null,
+          performed_by: selectedEmployeeId || null,
+          job_id: jobData?.job_id || null,
+          description: `[テフロン返却] Nhận về từ ${vendorObj?.company_name || ''}`
+        } as any)
+
+        // IN log
+        await supabase.from('equipment_history').insert({
+          equipment_id: targetEquipmentId,
+          action_type: 'IN',
+          action_date: actualDate,
+          performed_by: selectedEmployeeId || null,
+          description: `Nhận về sau mạ Teflon từ ${vendorObj?.company_name || ''}`
         } as any)
       }
 
@@ -215,6 +265,16 @@ export default function TeflonCoatingModule({ data, onClose, onSuccess }: Props)
 
       if (advanceNext && currentStep < 4) {
         setCurrentStep((currentStep + 1) as TeflonStep)
+      } else if (currentStep === 4) {
+        // Step 4 complete — prompt user to assign rack position
+        setTimeout(() => {
+          onSuccess()
+          if (onRequestRackMove) {
+            onRequestRackMove()  // Open Rack Move dialog
+          } else {
+            onClose()
+          }
+        }, 800)
       } else {
         setTimeout(() => {
           onSuccess()

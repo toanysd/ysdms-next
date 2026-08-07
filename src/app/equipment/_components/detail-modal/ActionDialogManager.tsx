@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react'
-import { X, MapPin, ClipboardCheck, Sparkles, Printer, Camera, QrCode, Truck, Scale, Trash2 } from 'lucide-react'
+import { X, MapPin, ClipboardCheck, Sparkles, Printer, Camera, QrCode, Truck, Scale, Trash2, ArrowRightLeft } from 'lucide-react'
 import { ActionDialogType, EquipmentDetailData } from './types'
 import CheckInOutModule from './modules/CheckInOutModule'
 import InventoryAuditModule from './modules/InventoryAuditModule'
@@ -12,6 +12,7 @@ import QRCodeViewerModule from './modules/QRCodeViewerModule'
 import LocationMoveModule from './modules/LocationMoveModule'
 import WeightAuditModule from './modules/WeightAuditModule'
 import ScrapDisposalModule from './modules/ScrapDisposalModule'
+import TransportModule from './modules/TransportModule'
 
 interface Props {
   activeAction: ActionDialogType
@@ -32,7 +33,8 @@ export default function ActionDialogManager({ activeAction, onCloseAction, data,
     PRINT_LABEL: { title: '設備ラベル・QR印刷 (Print Label)', icon: Printer },
     PHOTO_MANAGER: { title: '写真管理 (Photo Manager)', icon: Camera },
     QR_VIEW: { title: 'QRコード表示 (QR Code View)', icon: QrCode },
-    RELOCATE: { title: '棚位置変更・返却 (Relocate Rack)', icon: Truck },
+    TRANSPORT: { title: '出荷・会社間移動 (Transport / Company Move)', icon: Truck },
+    RACK_MOVE: { title: '棚位置変更 (Rack Position Change)', icon: ArrowRightLeft },
     WEIGHT_AUDIT: { title: '実測重量更新 (Weight Audit)', icon: Scale },
     SCRAP_DISPOSAL: { title: '設備廃棄処理 (Scrap / Disposal)', icon: Trash2 }
   }
@@ -40,7 +42,7 @@ export default function ActionDialogManager({ activeAction, onCloseAction, data,
   const cfg = dialogConfig[activeAction] || { title: 'Thao tác', icon: MapPin }
   const DialogIcon = cfg.icon
 
-  const isWideDialog = activeAction === 'CHECKIN_OUT' || activeAction === 'TEFLON_COATING' || activeAction === 'PHOTO_MANAGER' || activeAction === 'RELOCATE'
+  const isWideDialog = activeAction === 'CHECKIN_OUT' || activeAction === 'TEFLON_COATING' || activeAction === 'PHOTO_MANAGER' || activeAction === 'RACK_MOVE' || activeAction === 'TRANSPORT'
 
   return (
     <div
@@ -94,7 +96,6 @@ export default function ActionDialogManager({ activeAction, onCloseAction, data,
               data={data}
               onClose={onCloseAction}
               onSuccess={onSuccess}
-              onOpenRelocate={() => onSelectAction && onSelectAction('RELOCATE')}
             />
           )}
 
@@ -103,7 +104,12 @@ export default function ActionDialogManager({ activeAction, onCloseAction, data,
           )}
 
           {activeAction === 'TEFLON_COATING' && (
-            <TeflonCoatingModule data={data} onClose={onCloseAction} onSuccess={onSuccess} />
+            <TeflonCoatingModule
+              data={data}
+              onClose={onCloseAction}
+              onSuccess={onSuccess}
+              onRequestRackMove={() => onSelectAction && onSelectAction('RACK_MOVE')}
+            />
           )}
 
           {activeAction === 'PRINT_LABEL' && (
@@ -118,7 +124,11 @@ export default function ActionDialogManager({ activeAction, onCloseAction, data,
             <QRCodeViewerModule data={data} onClose={onCloseAction} />
           )}
 
-          {activeAction === 'RELOCATE' && (
+          {activeAction === 'TRANSPORT' && (
+            <TransportModule data={data} onClose={onCloseAction} onSuccess={onSuccess} />
+          )}
+
+          {activeAction === 'RACK_MOVE' && (
             <LocationMoveModule data={data} onClose={onCloseAction} onSuccess={onSuccess} />
           )}
 

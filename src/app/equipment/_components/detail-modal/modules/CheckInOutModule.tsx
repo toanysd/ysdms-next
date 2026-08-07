@@ -3,8 +3,8 @@
 import React, { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import {
-  MapPin, CheckCircle, ArrowRight, ArrowLeft, RotateCcw, Lock, Unlock,
-  Search, Loader2, Sparkles, AlertCircle, Layers, User, UserCheck
+  MapPin, Lock, Unlock,
+  Search, Loader2
 } from 'lucide-react'
 import { EquipmentDetailData } from '../types'
 import { useTranslations } from 'next-intl'
@@ -14,7 +14,6 @@ interface Props {
   data: EquipmentDetailData
   onClose: () => void
   onSuccess: () => void
-  onOpenRelocate?: () => void
 }
 
 interface MovementLog {
@@ -37,11 +36,7 @@ interface Destination {
   destination_name: string
 }
 
-interface RackLayer {
-  id: string
-  layer_code: string
-  racks?: { rack_code: string; rack_name: string } | null
-}
+
 
 // Fallback Default Chips (Rendered immediately on frame 0 to eliminate initial flicker)
 const DEFAULT_DESTINATIONS: Destination[] = [
@@ -59,7 +54,7 @@ const DEFAULT_DESTINATIONS: Destination[] = [
   { destination_id: 'DEST_PHOTO_ROOM', destination_name: '金型室-その他' }
 ]
 
-export default function CheckInOutModule({ data, onClose, onSuccess, onOpenRelocate }: Props) {
+export default function CheckInOutModule({ data, onClose, onSuccess }: Props) {
   const t = useTranslations('CheckInOutModule')
   const supabase = createClient()
 
@@ -73,7 +68,7 @@ export default function CheckInOutModule({ data, onClose, onSuccess, onOpenReloc
   const [historyLogs, setHistoryLogs] = useState<MovementLog[]>([])
   const [employees, setEmployees] = useState<Employee[]>([])
   const [destinations, setDestinations] = useState<Destination[]>(DEFAULT_DESTINATIONS)
-  const [rackLayers, setRackLayers] = useState<RackLayer[]>([])
+
 
   // Form State
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>('')
@@ -86,10 +81,7 @@ export default function CheckInOutModule({ data, onClose, onSuccess, onOpenReloc
   const [searchHistoryQuery, setSearchHistoryQuery] = useState<string>('')
   const [unlockDelete, setUnlockDelete] = useState<boolean>(false)
 
-  // Sub-dialog state for Relocate
-  const [showRelocatePanel, setShowRelocatePanel] = useState<boolean>(false)
-  const [selectedRackLayerId, setSelectedRackLayerId] = useState<string>(data?.current_rack_layer_id || '')
-  const [autoCheckInOnRelocate, setAutoCheckInOnRelocate] = useState<boolean>(true)
+
 
   // Load Initial Lookups & Preferences
   useEffect(() => {
@@ -109,17 +101,15 @@ export default function CheckInOutModule({ data, onClose, onSuccess, onOpenReloc
     async function loadInitialData() {
       setFetching(true)
       try {
-        const [empRes, destRes, layersRes] = await Promise.all([
+        const [empRes, destRes] = await Promise.all([
           supabase.from('employees').select('employee_id, employee_code, employee_name').order('employee_name'),
-          supabase.from('destinations').select('destination_id, destination_name').order('destination_name'),
-          supabase.from('rack_layers').select('id, layer_code, racks(rack_code, rack_name)')
+          supabase.from('destinations').select('destination_id, destination_name').order('destination_name')
         ])
 
         if (empRes.data) setEmployees(empRes.data)
         if (destRes.data && destRes.data.length > 0) setDestinations(destRes.data)
-        if (layersRes.data) setRackLayers(layersRes.data as any)
 
-        // Fetch History from equipment_history
+        // Fetch History from equipment_history — only IN/OUT logs for this module
         if (targetEquipmentId && targetEquipmentId !== 'undefined') {
           const { data: historyData } = await supabase
             .from('equipment_history')
@@ -128,10 +118,12 @@ export default function CheckInOutModule({ data, onClose, onSuccess, onOpenReloc
               action_type,
               action_date,
               description,
+              to_location,
               performed_by,
               employees(employee_name)
             `)
             .eq('equipment_id', targetEquipmentId)
+            .in('action_type', ['IN', 'OUT', 'CHECK_IN', 'CHECK_OUT'])
             .order('action_date', { ascending: false })
             .limit(50)
 
@@ -190,14 +182,16 @@ export default function CheckInOutModule({ data, onClose, onSuccess, onOpenReloc
     }
   }
 
-  // Core Action Handlers
-  const handleAction = async (actionType: 'IN' | 'OUT' | 'AUDIT' | 'RELOCATE') => {
+  // Core Action Handlers — Only IN and OUT
+  // CheckIn/Out does NOT change keeper_company_id (that's Transport's job)
+  // CheckIn/Out does NOT change rack position (that's Rack Move's job)
+  const handleAction = async (actionType: 'IN' | 'OUT') => {
     if (!targetEquipmentId || targetEquipmentId === 'undefined') {
       setMsg({ type: 'error', text: '⚠️ Invalid equipment_id' })
       return
     }
 
-    if (!selectedEmployeeId && actionType !== 'RELOCATE') {
+    if (!selectedEmployeeId) {
       setMsg({ type: 'error', text: '⚠️ ' + t('selectEmployee') })
       return
     }
@@ -211,48 +205,50 @@ export default function CheckInOutModule({ data, onClose, onSuccess, onOpenReloc
       const empObj = employees.find(e => e.employee_id === selectedEmployeeId)
       const destObj = destinations.find(d => d.destination_id === selectedDestinationId)
 
-      let updatedUsageStatus = data?.usage_status || 'STORAGE'
-      let updatedRackLayerId = data?.current_rack_layer_id
-      let updatedKeeperCompanyId = data?.keeper_company_id
+      const updatedUsageStatus = actionType === 'IN' ? 'IN' : 'OUT'
+      const updatedDeviceStatus = actionType === 'IN' ? 'IN_STOCK' : 'OUT_OF_STOCK'
 
-      if (actionType === 'IN') {
-        updatedUsageStatus = 'IN'
-        updatedKeeperCompanyId = data?.company_id || data?.keeper_company_id
-      } else if (actionType === 'OUT') {
-        updatedUsageStatus = 'OUT'
-      } else if (actionType === 'AUDIT') {
-        updatedUsageStatus = 'IN'
-      } else if (actionType === 'RELOCATE') {
-        updatedRackLayerId = selectedRackLayerId
-        if (autoCheckInOnRelocate) {
-          updatedUsageStatus = 'IN'
-        }
-      }
-
-      // 1. Update Equipment table
+      // 1. Update Equipment table — usage_status, device_status, and returned_date
       if (data?.equipment_id) {
         const { error: eqErr } = await supabase
           .from('equipment')
           .update({
             usage_status: updatedUsageStatus,
-            current_rack_layer_id: updatedRackLayerId,
-            keeper_company_id: updatedKeeperCompanyId,
-            on_checklist: actionType === 'AUDIT' ? true : data.on_checklist,
-            last_audit_date: actionType === 'AUDIT' ? nowISO : (data as any).last_audit_date
+            device_status: updatedDeviceStatus,
+            returned_date: todayStr
           } as any)
           .eq('equipment_id', targetEquipmentId)
 
-        if (eqErr) throw eqErr
-      } else if ((data as any)?.physical_mold_id) {
-        await supabase
-          .from('physical_molds')
-          .update({
-            usage_status: updatedUsageStatus === 'IN' ? 'IN_STOCK' : 'OUT_OF_STOCK'
-          } as any)
-          .eq('physical_mold_id', targetEquipmentId)
+        if (eqErr) console.warn('Equipment update note:', eqErr)
       }
 
-      // 2. Insert into equipment_history
+      // Also sync legacy physical_molds table if applicable
+      const pmId = (data as any)?.physical_mold_id || (data as any)?.legacy_physical_mold_id
+      if (pmId) {
+        await supabase
+          .from('physical_molds')
+          .update({ usage_status: updatedDeviceStatus } as any)
+          .eq('physical_mold_id', pmId)
+      }
+
+      // Also sync legacy cutters table if applicable
+      const cutterId = (data as any)?.cutter_id || (data as any)?.legacy_cutter_id
+      if (cutterId) {
+        await supabase
+          .from('cutters')
+          .update({ usage_status: updatedDeviceStatus } as any)
+          .eq('cutter_id', cutterId)
+      }
+
+      // Update local data prop in memory
+      if (data) {
+        data.usage_status = updatedUsageStatus
+        data.device_status = updatedDeviceStatus
+        data.returned_date = todayStr
+      }
+      setCurrentStatus(updatedUsageStatus)
+
+      // 2. Insert into equipment_history with structured columns
       const descStr = notes || (destObj ? destObj.destination_name : `${actionType}`)
       const { data: newHist, error: histErr } = await supabase
         .from('equipment_history')
@@ -261,6 +257,7 @@ export default function CheckInOutModule({ data, onClose, onSuccess, onOpenReloc
           action_type: actionType,
           action_date: todayStr,
           performed_by: selectedEmployeeId || null,
+          to_location: destObj?.destination_name || null,
           description: descStr
         } as any)
         .select()
@@ -283,7 +280,7 @@ export default function CheckInOutModule({ data, onClose, onSuccess, onOpenReloc
 
       setTimeout(() => {
         onSuccess()
-        if (actionType !== 'RELOCATE') onClose()
+        onClose()
       }, 800)
 
     } catch (err: any) {
@@ -292,6 +289,14 @@ export default function CheckInOutModule({ data, onClose, onSuccess, onOpenReloc
       setLoading(false)
     }
   }
+
+  // Current status state with auto sync
+  const [currentStatus, setCurrentStatus] = useState<string>(data?.usage_status || data?.device_status || 'STORAGE')
+  useEffect(() => {
+    if (data?.usage_status || data?.device_status) {
+      setCurrentStatus(data.usage_status || data.device_status || 'STORAGE')
+    }
+  }, [data?.usage_status, data?.device_status])
 
   // Filtered History
   const filteredHistory = historyLogs.filter(h => {
@@ -305,8 +310,7 @@ export default function CheckInOutModule({ data, onClose, onSuccess, onOpenReloc
     )
   })
 
-  const currentStatus = data?.usage_status || 'STORAGE'
-  const isOut = currentStatus === 'OUT' || currentStatus === 'MAINTENANCE' || currentStatus === 'BROKEN'
+  const isOut = currentStatus === 'OUT' || currentStatus === 'OUT_OF_STOCK' || currentStatus === 'MAINTENANCE' || currentStatus === 'BROKEN'
 
   // Options for SearchableCombobox
   const employeeComboboxOptions: ComboboxOption[] = employees.map(emp => ({
@@ -667,59 +671,9 @@ export default function CheckInOutModule({ data, onClose, onSuccess, onOpenReloc
             />
           </div>
 
-          {/* Relocate Sub-Panel when active */}
-          {showRelocatePanel && (
-            <div
-              className="card-flat"
-              style={{
-                padding: 10,
-                background: 'var(--tint-blue-bg)',
-                border: '1px solid var(--tint-blue-border)',
-                borderRadius: 8,
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 8
-              }}
-            >
-              <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--accent)', display: 'flex', alignItems: 'center', gap: 4 }}>
-                <Layers size={14} />
-                <span>{t('subRelocateTitle')}</span>
-              </div>
-              <select
-                className="form-input"
-                value={selectedRackLayerId}
-                onChange={e => setSelectedRackLayerId(e.target.value)}
-                style={{ fontSize: 12, height: 32 }}
-              >
-                <option value="">{t('selectNewRack')}</option>
-                {rackLayers.map((rl: any) => (
-                  <option key={rl.id} value={rl.id}>
-                    📍 {rl.layer_code} ({rl.racks?.rack_name || 'Kệ'})
-                  </option>
-                ))}
-              </select>
-              <label style={{ fontSize: 11, display: 'flex', alignItems: 'center', gap: 6, fontWeight: 600, color: 'var(--text-primary)' }}>
-                <input
-                  type="checkbox"
-                  checked={autoCheckInOnRelocate}
-                  onChange={e => setAutoCheckInOnRelocate(e.target.checked)}
-                />
-                <span>{t('autoCheckInOnRelocate')}</span>
-              </label>
-              <button
-                type="button"
-                onClick={() => handleAction('RELOCATE')}
-                disabled={loading || !selectedRackLayerId}
-                className="btn btn-primary"
-                style={{ fontSize: 12, padding: '6px 12px', alignSelf: 'flex-end' }}
-              >
-                {loading ? <Loader2 className="animate-spin" size={14} /> : t('confirmRelocate')}
-              </button>
-            </div>
-          )}
         </div>
 
-        {/* 4 Action Buttons Grid */}
+        {/* 2 Action Buttons: IN and OUT only */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8, marginTop: 'auto', flexShrink: 0 }}>
           {/* GREEN BUTTON: IN */}
           <button
@@ -732,8 +686,8 @@ export default function CheckInOutModule({ data, onClose, onSuccess, onOpenReloc
               color: '#ffffff',
               border: 'none',
               borderRadius: 8,
-              padding: '10px 8px',
-              fontSize: 13,
+              padding: '14px 8px',
+              fontSize: 14,
               fontWeight: 700,
               display: 'flex',
               flexDirection: 'column',
@@ -744,7 +698,7 @@ export default function CheckInOutModule({ data, onClose, onSuccess, onOpenReloc
               cursor: loading ? 'not-allowed' : 'pointer'
             }}
           >
-            <div>{t('btnIn')}</div>
+            {loading ? <Loader2 className="animate-spin" size={16} /> : <div>{t('btnIn')}</div>}
           </button>
 
           {/* ORANGE BUTTON: OUT */}
@@ -758,8 +712,8 @@ export default function CheckInOutModule({ data, onClose, onSuccess, onOpenReloc
               color: '#ffffff',
               border: 'none',
               borderRadius: 8,
-              padding: '10px 8px',
-              fontSize: 13,
+              padding: '14px 8px',
+              fontSize: 14,
               fontWeight: 700,
               display: 'flex',
               flexDirection: 'column',
@@ -770,62 +724,7 @@ export default function CheckInOutModule({ data, onClose, onSuccess, onOpenReloc
               cursor: loading ? 'not-allowed' : 'pointer'
             }}
           >
-            <div>{t('btnOut')}</div>
-          </button>
-
-          {/* BLUE BUTTON: AUDIT */}
-          <button
-            type="button"
-            disabled={loading}
-            onClick={() => handleAction('AUDIT')}
-            className="btn"
-            style={{
-              background: '#0284c7',
-              color: '#ffffff',
-              border: 'none',
-              borderRadius: 8,
-              padding: '10px 8px',
-              fontSize: 13,
-              fontWeight: 700,
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 2,
-              boxShadow: '0 2px 4px rgba(2, 132, 199, 0.3)',
-              cursor: loading ? 'not-allowed' : 'pointer'
-            }}
-          >
-            <div>{t('btnAudit')}</div>
-          </button>
-
-          {/* LIGHT BLUE BUTTON: RELOCATE */}
-          <button
-            type="button"
-            disabled={loading}
-            onClick={() => {
-              if (onOpenRelocate) onOpenRelocate()
-              else setShowRelocatePanel(!showRelocatePanel)
-            }}
-            className="btn"
-            style={{
-              background: '#38bdf8',
-              color: '#ffffff',
-              border: 'none',
-              borderRadius: 8,
-              padding: '10px 8px',
-              fontSize: 13,
-              fontWeight: 700,
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 2,
-              boxShadow: '0 2px 4px rgba(56, 189, 248, 0.3)',
-              cursor: loading ? 'not-allowed' : 'pointer'
-            }}
-          >
-            <div>{t('btnRelocate')}</div>
+            {loading ? <Loader2 className="animate-spin" size={16} /> : <div>{t('btnOut')}</div>}
           </button>
         </div>
       </div>

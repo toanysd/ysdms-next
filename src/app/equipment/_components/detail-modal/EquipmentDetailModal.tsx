@@ -29,6 +29,7 @@ export default function EquipmentDetailModal({
   const [activeTab, setActiveTab] = useState<'specs' | 'lifecycle' | 'jobs' | 'movements'>('specs')
   const [jobsHistory, setJobsHistory] = useState<any[]>([])
   const [movementsHistory, setMovementsHistory] = useState<any[]>([])
+  const [statusLogs, setStatusLogs] = useState<any[]>([])
   const [activeAction, setActiveAction] = useState<ActionDialogType>(null)
 
   // Fetch full details if only equipmentId provided or on refresh
@@ -53,13 +54,17 @@ export default function EquipmentDetailModal({
           products(product_code, product_name_internal, product_name)
         )
       `)
-      .eq('equipment_id', id)
-      .single()
+      .or(`equipment_id.eq.${id},legacy_physical_mold_id.eq.${id},legacy_cutter_id.eq.${id}`)
+      .limit(1)
+      .maybeSingle()
 
     if (!error && eq) {
       setData(eq as unknown as EquipmentDetailData)
     }
     setLoading(false)
+
+    // Use the actual equipment_id (UUID) for subsequent queries
+    const targetEqId = eq?.equipment_id || id
 
     // Fetch Jobs
     const { data: jobs } = await supabase
@@ -73,25 +78,41 @@ export default function EquipmentDetailModal({
 
     if (jobs) setJobsHistory(jobs)
 
-    // Fetch Equipment History
+    // Fetch Equipment History (movements, transfers, rack moves)
     const { data: history } = await supabase
       .from('equipment_history')
       .select(`
-        history_id, action_type, action_date, description,
-        companies!equipment_history_from_company_id_fkey(company_code, company_name),
+        history_id, action_type, action_date, description, to_location,
+        from_company:from_company_id(company_code, company_name),
+        to_company:to_company_id(company_code, company_name),
         employees(employee_name)
       `)
-      .eq('equipment_id', id)
+      .eq('equipment_id', targetEqId)
       .order('action_date', { ascending: false })
       .limit(10)
 
     if (history) setMovementsHistory(history)
+
+    // Fetch Equipment Status Logs (check-in/check-out - specialized table)
+    // Note: table created after last types generation, cast as any
+    const { data: sLogs } = await (supabase as any)
+      .from('equipment_status_logs')
+      .select(`
+        status_log_id, status, action_date, to_location, notes,
+        destinations(destination_name),
+        employees(employee_name)
+      `)
+      .eq('equipment_id', targetEqId)
+      .order('action_date', { ascending: false })
+      .limit(10)
+
+    if (sLogs) setStatusLogs(sLogs as any[])
   }
 
   useEffect(() => {
     if (!isOpen) return
     setActiveTab('specs')
-    const targetId = equipmentId || initialData?.equipment_id
+    const targetId = equipmentId || initialData?.equipment_id || (initialData as any)?.physical_mold_id || (initialData as any)?.cutter_id
     if (targetId) {
       fetchEquipmentDetails(targetId)
     } else if (initialData) {
@@ -139,8 +160,76 @@ export default function EquipmentDetailModal({
     : `/equipment/unified`
 
   const handleRefresh = () => {
-    if (data.equipment_id) fetchEquipmentDetails(data.equipment_id)
+    const targetId = data?.equipment_id || (data as any)?.physical_mold_id || (data as any)?.cutter_id || equipmentId
+    if (targetId) fetchEquipmentDetails(targetId)
     if (onUpdateSuccess) onUpdateSuccess()
+  }
+
+  // Determine Real Physical Keeper Company
+  // - company_id: Khách hàng / Chủ sở hữu (Owner, e.g. KSP)
+  // - keeper_company_id: Công ty đang giữ khuôn thực tế (Keeper)
+  // Nếu keeper_company_id trống hoặc bằng company_id (chưa chuyển đi), vị trí thực tế là tại YSD (社内).
+  const ownerCompanyId = data?.company_id
+  const keeperCompanyId = data?.keeper_company_id
+
+  let keeperName = 'YSD'
+  let isExternalKeeper = false
+
+  if (keeperCompanyId && keeperCompanyId !== ownerCompanyId && data?.keeper_company) {
+    const code = (data.keeper_company.company_code || '').toUpperCase()
+    const name = data.keeper_company.company_name || ''
+    if (code !== 'YSD' && !name.includes('YSD') && !name.includes('社内')) {
+      keeperName = name || code
+      isExternalKeeper = true
+    }
+  } else if (movementsHistory[0]?.action_type === 'TRANSFER' && movementsHistory[0]?.to_company) {
+    const toName = movementsHistory[0].to_company.company_name || movementsHistory[0].to_company.company_code
+    if (toName && !toName.includes('YSD')) {
+      keeperName = toName
+      isExternalKeeper = true
+    }
+  }
+
+  // Determine real-time status from specialized status_logs table first, then equipment_history, then DB fields
+  const latestStatusLog = statusLogs[0]
+  const latestMovement = movementsHistory[0]
+  const rawStatus = (
+    latestStatusLog?.status ||
+    latestMovement?.action_type ||
+    data?.usage_status ||
+    data?.device_status ||
+    ''
+  ).toUpperCase()
+  const destinationDisplay =
+    latestStatusLog?.to_location ||
+    latestStatusLog?.destinations?.destination_name ||
+    latestMovement?.to_location ||
+    latestMovement?.to_company?.company_name ||
+    ''
+
+  const isHeaderOut =
+    rawStatus === 'OUT' ||
+    rawStatus === 'CHECK_OUT' ||
+    rawStatus === 'TRANSFER' ||
+    rawStatus === 'OUT_OF_STOCK' ||
+    rawStatus === 'LOAN' ||
+    rawStatus === 'MAINTENANCE' ||
+    rawStatus === 'BROKEN' ||
+    rawStatus === 'DISPOSED' ||
+    isExternalKeeper
+
+  let headerStatusText = 'IN (社内保管)'
+  let headerBadgeClass = 'badge badge--success'
+
+  if (rawStatus === 'DISPOSED' || rawStatus === 'SCRAP') {
+    headerStatusText = '廃棄 (Đã hủy)'
+    headerBadgeClass = 'badge badge--error'
+  } else if (rawStatus === 'MAINTENANCE' || rawStatus === 'REPAIR') {
+    headerStatusText = 'メンテナンス中'
+    headerBadgeClass = 'badge badge--warning'
+  } else if (isHeaderOut) {
+    headerStatusText = 'OUT (社外/出庫)'
+    headerBadgeClass = 'badge badge--warning'
   }
 
   return (
@@ -176,12 +265,15 @@ export default function EquipmentDetailModal({
               <IconComponent size={20} style={{ color: headerTextColor }} />
             </div>
             <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                 <span style={{ fontSize: 10, fontWeight: 700, color: headerTextColor, textTransform: 'uppercase' }}>
                   {categoryLabel}
                 </span>
-                <span className="badge badge--success" style={{ fontSize: 9 }}>
-                  {data.usage_status || data.device_status || 'ACTIVE'}
+                <span className={headerBadgeClass} style={{ fontSize: 9, fontWeight: 700, padding: '2px 8px' }}>
+                  {headerStatusText}
+                </span>
+                <span className={isExternalKeeper ? 'badge badge--error' : 'badge badge--info'} style={{ fontSize: 9, fontWeight: 700, padding: '2px 8px' }}>
+                  🏢 {keeperName}
                 </span>
               </div>
               <div style={{ fontFamily: 'monospace', fontSize: 17, fontWeight: 700, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -256,7 +348,7 @@ export default function EquipmentDetailModal({
           {/* MIDDLE COLUMN: Storage Card + Specs + Tabs */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {/* Storage Card */}
-            <StorageStatusCard data={data} />
+            <StorageStatusCard data={data} latestLog={movementsHistory[0]} latestStatusLog={latestStatusLog} destinationDisplay={destinationDisplay} />
 
             {/* Modal Tabs Bar */}
             <div style={{
