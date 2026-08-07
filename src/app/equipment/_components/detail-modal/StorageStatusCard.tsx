@@ -50,14 +50,8 @@ export default function StorageStatusCard({ data, latestLog, latestStatusLog, de
 
   // ══════════════════════════════════════════════════════════════════
   // 2. REAL-TIME STATUS — STRICT REAL DATA: Không fallback IN khi NULL!
-  // ══════════════════════════════════════════════════════════════════
-  const latestActionType = (
-    latestStatusLog?.status ||
-    latestLog?.action_type ||
-    data.usage_status ||
-    data.device_status ||
-    ''
-  ).toUpperCase()
+  const hasRealLog = Boolean(latestStatusLog || latestLog)
+  const explicitAction = (latestStatusLog?.status || latestLog?.action_type || '').toUpperCase()
 
   const confirmDate =
     latestStatusLog?.action_date?.slice(0, 10) ||
@@ -77,41 +71,44 @@ export default function StorageStatusCard({ data, latestLog, latestStatusLog, de
   const isUnverified = data.device_status === 'UNVERIFIED' || data.usage_status === 'UNVERIFIED'
 
   const isOut =
-    latestActionType === 'OUT' ||
-    latestActionType === 'CHECK_OUT' ||
-    latestActionType === 'TRANSFER' ||
-    latestActionType === 'OUT_OF_STOCK' ||
-    latestActionType === 'LOAN' ||
-    latestActionType === 'MAINTENANCE' ||
-    latestActionType === 'BROKEN' ||
+    explicitAction === 'OUT' ||
+    explicitAction === 'CHECK_OUT' ||
+    explicitAction === 'TRANSFER' ||
+    explicitAction === 'OUT_OF_STOCK' ||
+    explicitAction === 'LOAN' ||
+    explicitAction === 'MAINTENANCE' ||
+    explicitAction === 'BROKEN' ||
     isExternalKeeper
 
   // ══════════════════════════════════════════════════════════════════
-  // 3. BADGE DISPLAY — Rõ ràng 100% từ dữ liệu thực
+  // 3. BADGE DISPLAY — Rõ ràng 100% từ dữ liệu thực (Không ngầm định IN)
   // ══════════════════════════════════════════════════════════════════
-  let statusDisplayLabel = 'IN (社内保管)'
-  let statusBadgeClass = 'badge badge--success'
+  let statusDisplayLabel = '未設定 (Chưa xác định)'
+  let statusBadgeClass = 'badge badge--neutral'
 
   if (isUnverified) {
     statusDisplayLabel = '未検証 (Chưa kiểm kê thực tế)'
     statusBadgeClass = 'badge badge--neutral'
-  } else if (latestActionType === 'DISPOSED' || latestActionType === 'SCRAP' || data.device_status === 'DISPOSED') {
+  } else if (!hasRealLog) {
+    statusDisplayLabel = '登録済 (Chưa có nhật ký)'
+    statusBadgeClass = 'badge badge--neutral'
+  } else if (explicitAction === 'DISPOSED' || explicitAction === 'SCRAP' || data.device_status === 'DISPOSED') {
     statusDisplayLabel = '廃棄 (Đã hủy)'
     statusBadgeClass = 'badge badge--error'
-  } else if (latestActionType === 'RETURNED') {
+  } else if (explicitAction === 'RETURNED') {
     statusDisplayLabel = '返却済 (Đã trả)'
     statusBadgeClass = 'badge badge--info'
-  } else if (latestActionType === 'MAINTENANCE' || latestActionType === 'REPAIR') {
+  } else if (explicitAction === 'MAINTENANCE' || explicitAction === 'REPAIR') {
     statusDisplayLabel = 'メンテナンス中 (Đang bảo trì)'
     statusBadgeClass = 'badge badge--warning'
   } else if (isOut) {
     statusDisplayLabel = destinationLoc ? `OUT (${destinationLoc})` : 'OUT (社外/出庫)'
     statusBadgeClass = 'badge badge--warning'
-  } else if (data.usage_status === 'IN_STOCK' || data.usage_status === 'IN' || data.current_rack_layer_id) {
+  } else if (explicitAction === 'IN' || explicitAction === 'CHECK_IN' || explicitAction === 'IN_STOCK') {
     statusDisplayLabel = 'IN (社内保管)'
     statusBadgeClass = 'badge badge--success'
   } else {
-    statusDisplayLabel = '未設定 (Chưa xác định)'
+    statusDisplayLabel = '登録済 (Chưa có nhật ký)'
     statusBadgeClass = 'badge badge--neutral'
   }
 
@@ -140,7 +137,7 @@ export default function StorageStatusCard({ data, latestLog, latestStatusLog, de
         gap: 10
       }}
     >
-      {/* Header — 2 Separate Badges: 1. Status Badge, 2. Keeper Badge */}
+      {/* Header — Title only, no duplicate badges */}
       <div
         style={{
           display: 'flex',
@@ -155,23 +152,12 @@ export default function StorageStatusCard({ data, latestLog, latestStatusLog, de
           <span>{t('storageStatusTitle')}</span>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          {/* Badge 1: Status Badge */}
-          <span
-            className={statusBadgeClass}
-            style={{ fontSize: 10, padding: '3px 10px', fontWeight: 700 }}
-          >
-            {statusDisplayLabel}
-          </span>
-
-          {/* Badge 2: Keeper Badge */}
-          <span
-            className={isExternalKeeper ? 'badge badge--error' : keeperCompanyId ? 'badge badge--info' : 'badge badge--neutral'}
-            style={{ fontSize: 10, padding: '3px 10px', fontWeight: 700 }}
-          >
-            🏢 {keeperName}
-          </span>
-        </div>
+        <span
+          className={statusBadgeClass}
+          style={{ fontSize: 10, padding: '3px 10px', fontWeight: 700 }}
+        >
+          {statusDisplayLabel}
+        </span>
       </div>
 
       {/* Main Grid Info */}
@@ -179,14 +165,12 @@ export default function StorageStatusCard({ data, latestLog, latestStatusLog, de
         {/* Keeper Company */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
           <span style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 600 }}>{t('keeperCompany')}</span>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <span
-              className={isExternalKeeper ? 'badge badge--error' : keeperCompanyId ? 'badge badge--info' : 'badge badge--neutral'}
-              style={{ fontSize: 11, padding: '2px 8px', fontWeight: 700 }}
-            >
-              {keeperName}
-            </span>
-          </div>
+          <span style={{
+            fontWeight: 700, fontSize: 13,
+            color: isExternalKeeper ? 'var(--tint-orange-text)' : keeperCompanyId ? 'var(--text-primary)' : 'var(--text-muted)'
+          }}>
+            {keeperName}
+          </span>
         </div>
 
         {/* Storage Rack */}
@@ -200,11 +184,12 @@ export default function StorageStatusCard({ data, latestLog, latestStatusLog, de
         {/* Status */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
           <span style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 600 }}>{t('operationStatus')}</span>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <span className={statusBadgeClass} style={{ fontSize: 11, fontWeight: 700 }}>
-              {statusDisplayLabel}
-            </span>
-          </div>
+          <span style={{
+            fontWeight: 700, fontSize: 13,
+            color: isOut ? 'var(--tint-orange-text)' : isUnverified ? 'var(--text-muted)' : 'var(--accent)'
+          }}>
+            {statusDisplayLabel}
+          </span>
         </div>
 
         {/* Confirmation Date */}

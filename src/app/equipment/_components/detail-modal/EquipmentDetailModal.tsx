@@ -165,51 +165,15 @@ export default function EquipmentDetailModal({
     if (onUpdateSuccess) onUpdateSuccess()
   }
 
-  // Determine Real Physical Keeper Company
-  // - company_id: Khách hàng / Chủ sở hữu (Owner, e.g. KSP)
-  // - keeper_company_id: Công ty đang giữ khuôn thực tế (Keeper)
-  // Nếu keeper_company_id trống hoặc bằng company_id (chưa chuyển đi), vị trí thực tế là tại YSD (社内).
-  const ownerCompanyId = data?.company_id
-  const keeperCompanyId = data?.keeper_company_id
-
-  let keeperName = ''
-  let isExternalKeeper = false
-
-  if (data?.keeper_company) {
-    const code = (data.keeper_company.company_code || '').toUpperCase()
-    const name = data.keeper_company.company_name || ''
-    keeperName = name || code
-    if (code !== 'YSD' && !name.includes('YSD') && !name.includes('社内')) {
-      isExternalKeeper = true
-    }
-  } else if (movementsHistory[0]?.action_type === 'TRANSFER' && movementsHistory[0]?.to_company) {
-    const toName = movementsHistory[0].to_company.company_name || movementsHistory[0].to_company.company_code
-    if (toName) {
-      keeperName = toName
-      if (!toName.includes('YSD')) isExternalKeeper = true
-    }
-  } else if (keeperCompanyId) {
-    keeperName = 'Keeper Company'
-  } else {
-    keeperName = '未指定 (Chưa xác định)'
-  }
-
-  // Determine real-time status from specialized status_logs table first, then equipment_history, then DB fields
+  // Determine Real-Time Status for Header Badge
   const latestStatusLog = statusLogs[0]
   const latestMovement = movementsHistory[0]
+  const hasRealHeaderLog = Boolean(latestStatusLog || latestMovement)
   const rawStatus = (
     latestStatusLog?.status ||
     latestMovement?.action_type ||
-    data?.usage_status ||
-    data?.device_status ||
     ''
   ).toUpperCase()
-  const destinationDisplay =
-    latestStatusLog?.to_location ||
-    latestStatusLog?.destinations?.destination_name ||
-    latestMovement?.to_location ||
-    latestMovement?.to_company?.company_name ||
-    ''
 
   const isHeaderOut =
     rawStatus === 'OUT' ||
@@ -219,16 +183,18 @@ export default function EquipmentDetailModal({
     rawStatus === 'LOAN' ||
     rawStatus === 'MAINTENANCE' ||
     rawStatus === 'BROKEN' ||
-    rawStatus === 'DISPOSED' ||
-    isExternalKeeper
+    rawStatus === 'DISPOSED'
 
   const isHeaderUnverified = data?.device_status === 'UNVERIFIED' || data?.usage_status === 'UNVERIFIED'
 
-  let headerStatusText = 'IN (社内保管)'
-  let headerBadgeClass = 'badge badge--success'
+  let headerStatusText = '未設定 (Chưa xác định)'
+  let headerBadgeClass = 'badge badge--neutral'
 
   if (isHeaderUnverified) {
     headerStatusText = '未検証 (Chưa kiểm kê)'
+    headerBadgeClass = 'badge badge--neutral'
+  } else if (!hasRealHeaderLog) {
+    headerStatusText = '登録済 (Chưa có nhật ký)'
     headerBadgeClass = 'badge badge--neutral'
   } else if (rawStatus === 'DISPOSED' || rawStatus === 'SCRAP' || data?.device_status === 'DISPOSED') {
     headerStatusText = '廃棄 (Đã hủy)'
@@ -239,11 +205,11 @@ export default function EquipmentDetailModal({
   } else if (isHeaderOut) {
     headerStatusText = 'OUT (社外/出庫)'
     headerBadgeClass = 'badge badge--warning'
-  } else if (data?.usage_status === 'IN_STOCK' || data?.usage_status === 'IN' || data?.current_rack_layer_id) {
+  } else if (rawStatus === 'IN' || rawStatus === 'CHECK_IN' || rawStatus === 'IN_STOCK') {
     headerStatusText = 'IN (社内保管)'
     headerBadgeClass = 'badge badge--success'
   } else {
-    headerStatusText = '未設定 (Chưa xác định)'
+    headerStatusText = '登録済 (Chưa có nhật ký)'
     headerBadgeClass = 'badge badge--neutral'
   }
 
@@ -286,9 +252,6 @@ export default function EquipmentDetailModal({
                 </span>
                 <span className={headerBadgeClass} style={{ fontSize: 9, fontWeight: 700, padding: '2px 8px' }}>
                   {headerStatusText}
-                </span>
-                <span className={isExternalKeeper ? 'badge badge--error' : 'badge badge--info'} style={{ fontSize: 9, fontWeight: 700, padding: '2px 8px' }}>
-                  🏢 {keeperName}
                 </span>
               </div>
               <div style={{ fontFamily: 'monospace', fontSize: 17, fontWeight: 700, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -363,7 +326,7 @@ export default function EquipmentDetailModal({
           {/* MIDDLE COLUMN: Storage Card + Specs + Tabs */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {/* Storage Card */}
-            <StorageStatusCard data={data} latestLog={movementsHistory[0]} latestStatusLog={latestStatusLog} destinationDisplay={destinationDisplay} />
+            <StorageStatusCard data={data} latestLog={movementsHistory[0]} latestStatusLog={latestStatusLog} />
 
             {/* Modal Tabs Bar */}
             <div style={{
@@ -465,10 +428,10 @@ export default function EquipmentDetailModal({
                     </thead>
                     <tbody>
                       {movementsHistory.map(m => (
-                        <tr key={m.movement_id}>
-                          <td style={{ fontFamily: 'monospace' }}>{(m.moved_at || '').slice(0, 10)}</td>
-                          <td><span className="badge badge--info" style={{ fontSize: 8 }}>{m.movement_type}</span></td>
-                          <td style={{ fontWeight: 700 }}>{m.to_company?.company_code || 'YSD'}</td>
+                        <tr key={m.history_id}>
+                          <td style={{ fontFamily: 'monospace' }}>{(m.action_date || '').slice(0, 10)}</td>
+                          <td><span className="badge badge--info" style={{ fontSize: 8 }}>{m.action_type}</span></td>
+                          <td style={{ fontWeight: 700 }}>{m.to_company?.company_name || m.to_location || '—'}</td>
                         </tr>
                       ))}
                     </tbody>

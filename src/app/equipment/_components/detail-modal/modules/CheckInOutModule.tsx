@@ -490,9 +490,39 @@ export default function CheckInOutModule({ data, onClose, onSuccess }: Props) {
             </div>
           </div>
           <div>
-            <span className={isOut ? 'badge badge--warning' : 'badge badge--success'} style={{ fontSize: 12, fontWeight: 700, padding: '4px 10px' }}>
-              {isOut ? t('outStock') : t('inStock')}
-            </span>
+            {(() => {
+              const hasHistory = historyLogs.length > 0
+              const latestAction = hasHistory ? (historyLogs[0].movement_type || '').toUpperCase() : ''
+              const isUnverified = data?.device_status === 'UNVERIFIED' || data?.usage_status === 'UNVERIFIED'
+
+              let badgeText = ''
+              let badgeClass = 'badge badge--neutral'
+
+              if (!hasHistory) {
+                if (isUnverified) {
+                  badgeText = '未検証 (Chưa kiểm kê)'
+                  badgeClass = 'badge badge--neutral'
+                } else {
+                  badgeText = '登録済 (Chưa có nhật ký)'
+                  badgeClass = 'badge badge--neutral'
+                }
+              } else if (latestAction === 'OUT' || latestAction === 'CHECK_OUT' || latestAction === 'TRANSFER' || latestAction === 'LOAN') {
+                badgeText = t('outStock') || 'OUT (社外)'
+                badgeClass = 'badge badge--warning'
+              } else if (latestAction === 'IN' || latestAction === 'CHECK_IN' || latestAction === 'RETURN') {
+                badgeText = t('inStock') || 'IN (社内)'
+                badgeClass = 'badge badge--success'
+              } else {
+                badgeText = latestAction || '未設定'
+                badgeClass = 'badge badge--neutral'
+              }
+
+              return (
+                <span className={badgeClass} style={{ fontSize: 12, fontWeight: 700, padding: '4px 10px' }}>
+                  {badgeText}
+                </span>
+              )
+            })()}
           </div>
         </div>
 
