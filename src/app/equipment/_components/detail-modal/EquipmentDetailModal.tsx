@@ -182,12 +182,31 @@ export default function EquipmentDetailModal({
     }
 
     // Compute Related Equipment (Molds ↔ Cutters)
+    // Rule:
+    // - Mold popup -> search & show ONLY Cutters (equipment_type != 'MOLD')
+    // - Cutter popup -> search & show ONLY Molds (equipment_type == 'MOLD')
     const relatedSet = new Map<string, any>()
+    const isItemCutter = ['CUTTER', 'CUTTER_SEPARATE', 'CUTTER_INLINE', '抜型'].includes(item.equipment_type)
     const revId = item.design_revision_id || item.design_revisions?.revision_id
     const rawCode = String(item.equipment_code || item.display_name || item.system_code || item.cutter_no || '').trim()
-    const baseProductCode = rawCode.replace(/[\s\-_]?R\d+$/i, '').replace(/[\s\-_]/g, '')
 
-    if (revId) {
+    function getWildcardPattern(code: string) {
+      if (!code) return ''
+      let str = String(code).trim()
+      str = str.replace(/^CT[\s\-_]?/i, '')
+      str = str.replace(/[\s\-_]?(D?R\d+)$/i, '')
+      const clean = str.replace(/[\s\-_]/g, '')
+      const match = clean.match(/^([A-Z]+)(\d+)$/i)
+      if (match) {
+        return '%' + match[1] + '%' + match[2] + '%'
+      }
+      return '%' + clean + '%'
+    }
+
+    const searchPattern = getWildcardPattern(rawCode)
+
+    // 1. Junction table mold_design_cutters lookup (For Molds looking up Cutters)
+    if (revId && !isItemCutter) {
       const { data: juncCutters } = await supabase
         .from('mold_design_cutters')
         .select('cutter_id')
@@ -216,17 +235,38 @@ export default function EquipmentDetailModal({
       }
     }
 
-    if (baseProductCode) {
-      const isCutter = ['CUTTER', 'CUTTER_SEPARATE', 'CUTTER_INLINE'].includes(item.equipment_type)
-      if (isCutter) {
+    // 2. Base Code Matching for Related Equipment
+    if (searchPattern) {
+      if (isItemCutter) {
+        // Current item is CUTTER -> search ONLY MOLDS
+        const { data: eqMolds } = await supabase
+          .from('equipment')
+          .select('equipment_id, equipment_code, display_name, usage_status, equipment_type')
+          .eq('equipment_type', 'MOLD')
+          .or(`equipment_code.ilike.${searchPattern},display_name.ilike.${searchPattern}`)
+          .limit(5)
+        if (eqMolds) {
+          eqMolds.forEach((em: any) => {
+            if (em.equipment_id !== item.equipment_id) {
+              relatedSet.set(em.equipment_id, {
+                equipment_id: em.equipment_id,
+                equipment_code: em.equipment_code,
+                display_name: em.display_name,
+                equipment_type: 'MOLD',
+                usage_status: em.usage_status
+              })
+            }
+          })
+        }
+
         const { data: pMolds } = await supabase
           .from('physical_molds')
-          .select('physical_mold_id, system_code, display_name, usage_status, device_status')
-          .or(`system_code.ilike.%${baseProductCode}%,display_name.ilike.%${baseProductCode}%`)
+          .select('physical_mold_id, system_code, display_name, usage_status')
+          .or(`system_code.ilike.${searchPattern},display_name.ilike.${searchPattern}`)
           .limit(5)
         if (pMolds) {
           pMolds.forEach((pm: any) => {
-            if (pm.physical_mold_id !== item.equipment_id) {
+            if (pm.physical_mold_id !== item.equipment_id && !relatedSet.has(pm.physical_mold_id)) {
               relatedSet.set(pm.physical_mold_id, {
                 equipment_id: pm.physical_mold_id,
                 equipment_code: pm.system_code,
@@ -238,14 +278,35 @@ export default function EquipmentDetailModal({
           })
         }
       } else {
+        // Current item is MOLD -> search ONLY CUTTERS
+        const { data: eqCutters } = await supabase
+          .from('equipment')
+          .select('equipment_id, equipment_code, display_name, usage_status, equipment_type')
+          .neq('equipment_type', 'MOLD')
+          .or(`equipment_code.ilike.${searchPattern},display_name.ilike.${searchPattern}`)
+          .limit(5)
+        if (eqCutters) {
+          eqCutters.forEach((ec: any) => {
+            if (ec.equipment_id !== item.equipment_id) {
+              relatedSet.set(ec.equipment_id, {
+                equipment_id: ec.equipment_id,
+                equipment_code: ec.equipment_code,
+                display_name: ec.display_name,
+                equipment_type: 'CUTTER',
+                usage_status: ec.usage_status
+              })
+            }
+          })
+        }
+
         const { data: cutters } = await supabase
           .from('cutters')
           .select('cutter_id, cutter_no, cutter_name, usage_status, cutter_presence')
-          .or(`cutter_no.ilike.%${baseProductCode}%,cutter_name.ilike.%${baseProductCode}%`)
+          .or(`cutter_no.ilike.${searchPattern},cutter_name.ilike.${searchPattern}`)
           .limit(5)
         if (cutters) {
           cutters.forEach((c: any) => {
-            if (c.cutter_id !== item.equipment_id) {
+            if (c.cutter_id !== item.equipment_id && !relatedSet.has(c.cutter_id)) {
               relatedSet.set(c.cutter_id, {
                 equipment_id: c.cutter_id,
                 equipment_code: c.cutter_no || c.cutter_name,
@@ -427,7 +488,7 @@ export default function EquipmentDetailModal({
                 {/* Related Devices / Molds Card (関連デバイス) */}
                 <div className="card-flat" style={{ padding: 10, background: 'var(--bg-surface-2)', borderRadius: 8, display: 'flex', flexDirection: 'column', gap: 6, fontSize: 11 }}>
                   <div style={{ fontWeight: 700, color: 'var(--accent)', borderBottom: '1px solid var(--border-subtle)', paddingBottom: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
-                    <Link2 size={13} /> {t('relatedDevices')}
+                    <Link2 size={13} /> {isCutter ? '関連金型' : '関連抜型'}
                   </div>
 
                   {data.related_equipment && data.related_equipment.length > 0 ? (

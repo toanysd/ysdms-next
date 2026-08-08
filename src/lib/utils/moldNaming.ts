@@ -164,6 +164,111 @@ export interface CutlineSpecsResult {
   formatted: string
 }
 
+export interface CavTypeResult {
+  code: string
+  canonicalName: string
+  length: number
+  width: number
+  notes?: string
+}
+
+export const YSD_CAV_MASTER = [
+  { code: 'A-74B', length: 470, width: 300, notes: '' },
+  { code: 'B', length: 335, width: 265, notes: '' },
+  { code: 'C-74F', length: 499, width: 347, notes: '' },
+  { code: 'D', length: 354, width: 300, notes: '' },
+  { code: 'E', length: 430, width: 260, notes: '' },
+  { code: 'F', length: 340, width: 285, notes: '' },
+  { code: 'G', length: 320, width: 195, notes: '' },
+  { code: 'H', length: 300, width: 246, notes: '' },
+  { code: 'I', length: 405, width: 300, notes: '' },
+  { code: 'J', length: 338, width: 175, notes: '' },
+  { code: 'K', length: 503, width: 273, notes: '' },
+  { code: 'L', length: 416, width: 336, notes: '' },
+  { code: 'M', length: 500, width: 330, notes: '' },
+  { code: 'O', length: 420, width: 220, notes: '' },
+  { code: 'P', length: 443, width: 246, notes: '' },
+  { code: 'Q', length: 310, width: 210, notes: '' },
+  { code: 'R', length: 310, width: 240, notes: '' },
+  { code: 'S', length: 385, width: 265, notes: '' },
+  { code: 'T', length: 390, width: 330, notes: '' },
+  { code: 'U', length: 498, width: 245, notes: '' },
+  { code: 'V', length: 355, width: 240, notes: '' },
+  { code: 'W', length: 492, width: 270, notes: '' },
+  { code: 'Y', length: 435, width: 312, notes: '' },
+  { code: 'Z', length: 355, width: 260, notes: '' },
+  { code: 'ZA-74A', length: 460, width: 330, notes: '' },
+  { code: 'ZB', length: 355, width: 347, notes: '' },
+  { code: 'ZC', length: 515, width: 347, notes: '' },
+  { code: 'ZD-74C', length: 470, width: 347, notes: '' },
+  { code: 'ZE', length: 370, width: 320, notes: '' },
+  { code: 'ZF', length: 300, width: 285, notes: '' },
+  { code: 'ZG', length: 499, width: 253, notes: '' },
+  { code: 'ZH', length: 385, width: 290, notes: '' },
+  { code: '74A-ZA', length: 460, width: 330, notes: '' },
+  { code: '74B-A', length: 470, width: 300, notes: '' },
+  { code: '74C-ZD', length: 470, width: 347, notes: '' },
+  { code: '74D', length: 470, width: 400, notes: '' },
+  { code: '74E', length: 470, width: 450, notes: '' },
+  { code: '74F-C', length: 499, width: 347, notes: '' },
+  { code: '74G', length: 530, width: 380, notes: '' },
+  { code: '74H', length: 585, width: 285, notes: '' },
+  { code: '74I', length: 590, width: 350, notes: '' },
+  { code: '74J', length: 590, width: 400, notes: '' },
+  { code: '74K', length: 590, width: 450, notes: '' },
+  { code: '74L', length: 640, width: 405, notes: '' },
+  { code: '74M', length: 560, width: 360, notes: '' },
+  { code: '74N', length: 620, width: 310, notes: '' },
+  { code: '74O', length: 590, width: 300, notes: '' },
+  { code: 'NICHI53b', length: 470, width: 300, notes: '日三化成' },
+  { code: 'NICHI74C-1', length: 470, width: 300, notes: '日三化成' },
+  { code: 'NICHI74C-2', length: 520, width: 370, notes: '日三化成' },
+  { code: 'NICHI74C-3', length: 585, width: 310, notes: '日三化成' },
+  { code: 'NCHI74C-4', length: 620, width: 310, notes: '日三化成' },
+  { code: 'YMS', length: 620, width: 250, notes: '茨城工場' },
+  { code: 'MTM-178', length: 440, width: 210, notes: '' },
+  { code: 'A-74B', length: 469, width: 299, notes: '470ｘ300から改造' }
+]
+
+export function lookupCavType(lengthInput: any, widthInput: any): CavTypeResult | null {
+  if (!lengthInput || !widthInput) return null
+  const l = typeof lengthInput === 'number' ? lengthInput : parseFloat(String(lengthInput).replace(/[^0-9.]/g, ''))
+  const w = typeof widthInput === 'number' ? widthInput : parseFloat(String(widthInput).replace(/[^0-9.]/g, ''))
+  if (isNaN(l) || isNaN(w) || l <= 0 || w <= 0) return null
+
+  let best: typeof YSD_CAV_MASTER[0] | null = null
+  let minDiff = Infinity
+
+  for (const c of YSD_CAV_MASTER) {
+    const diffDirect = Math.abs(l - c.length) + Math.abs(w - c.width)
+    const diffSwap = Math.abs(l - c.width) + Math.abs(w - c.length)
+    const diff = Math.min(diffDirect, diffSwap)
+
+    if (diff <= 5 && diff < minDiff) {
+      minDiff = diff
+      best = c
+    }
+  }
+
+  if (best) {
+    let canonical = best.code
+    if (best.code.includes('A')) canonical = `Type A (${best.code})`
+    else if (best.code.includes('ZD')) canonical = `Type ZD (${best.code})`
+    else if (best.code.includes('ZA')) canonical = `Type ZA (${best.code})`
+    else canonical = `${best.code}`
+
+    return {
+      code: best.code,
+      canonicalName: canonical,
+      length: best.length,
+      width: best.width,
+      notes: best.notes
+    }
+  }
+
+  return null
+}
+
 /**
  * Formats Corner R value accurately without corrupting counts (e.g. '3R15', '4R10', '2R8', '15' -> 'R15')
  */

@@ -4,7 +4,7 @@ import React from 'react'
 import { Box, Sparkles } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { EquipmentDetailData } from './types'
-import { getCutlineSpecs } from '@/lib/utils/moldNaming'
+import { getCutlineSpecs, lookupCavType } from '@/lib/utils/moldNaming'
 
 interface Props {
   data: EquipmentDetailData
@@ -16,13 +16,18 @@ export default function MoldDetailView({ data }: Props) {
   const prod = rev?.products
 
   // Mold Dimensions
+  const moldLen = data.actual_length_mm || rev?.design_length
+  const moldWid = data.actual_width_mm || rev?.design_width
   const dimsMold = [
-    data.actual_length_mm || rev?.design_length,
-    data.actual_width_mm || rev?.design_width,
+    moldLen,
+    moldWid,
     data.actual_height_mm || rev?.design_height
   ].filter(Boolean).join(' × ')
 
-  // Cutline & Corner R / Chamfer C — RULE-DATA-01: read ONLY from design_revisions columns
+  // YSD Standard CAV lookup based on mold outer dimensions
+  const cavType = lookupCavType(moldLen, moldWid)
+
+  // Cutline & Corner R — RULE-DATA-01: read ONLY from design_revisions columns
   const cutlineSpecs = getCutlineSpecs(rev)
   const dimsCutline = cutlineSpecs.formatted
 
@@ -44,56 +49,55 @@ export default function MoldDetailView({ data }: Props) {
           padding: 14,
           background: 'var(--bg-surface-2)',
           borderRadius: 8,
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 10
+          border: '1px solid var(--border-default)'
         }}
       >
         <div
           style={{
-            fontSize: 11,
             fontWeight: 700,
+            fontSize: 13,
             color: 'var(--accent)',
+            borderBottom: '1px solid var(--border-subtle)',
+            paddingBottom: 6,
+            marginBottom: 10,
             display: 'flex',
             alignItems: 'center',
-            gap: 6,
-            borderBottom: '1px solid var(--border-subtle)',
-            paddingBottom: 6
+            gap: 6
           }}
         >
           <Box size={15} />
-          <span>{t('overviewTitle')}</span>
+          {t('title')}
         </div>
 
         {/* Paper Style Specs Grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 16px', fontSize: 12 }}>
-          {/* Equipment Display Name & Code */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px 16px', fontSize: 12 }}>
+          {/* Customer Tray Name */}
           <div style={{ display: 'flex', alignItems: 'baseline' }}>
             <span style={{ fontSize: 10, color: 'var(--text-muted)', minWidth: 95, flexShrink: 0, fontWeight: 600 }}>
-              {t('moldCode')}:
+              {t('trayName')}:
             </span>
             <span style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: 13, color: 'var(--accent)' }}>
-              #{data.equipment_code} {data.display_name}
+              {rev?.customer_tray_name || prod?.product_name_internal || prod?.product_code || '—'}
             </span>
           </div>
 
-          {/* Linked Tray Info */}
+          {/* Tray Info */}
           <div style={{ display: 'flex', alignItems: 'baseline' }}>
             <span style={{ fontSize: 10, color: 'var(--text-muted)', minWidth: 95, flexShrink: 0, fontWeight: 600 }}>
               {t('trayInfo')}:
             </span>
             <span style={{ fontWeight: 700, fontSize: 12, color: 'var(--text-primary)' }}>
-              {rev?.tray_info || rev?.customer_tray_name || prod?.product_name || prod?.product_name_internal || '—'}
+              {rev?.tray_info || '—'}
             </span>
           </div>
 
-          {/* Resin Material */}
+          {/* Plastic Material & Thickness */}
           <div style={{ display: 'flex', alignItems: 'baseline' }}>
             <span style={{ fontSize: 10, color: 'var(--text-muted)', minWidth: 95, flexShrink: 0, fontWeight: 600 }}>
-              {t('resin')}:
+              {t('plasticType')}:
             </span>
-            <span style={{ fontWeight: 700, fontSize: 12, color: 'var(--tint-purple-text)' }}>
-              {rev?.plastic_type_designed || '—'}
+            <span style={{ fontWeight: 700, fontSize: 12, color: 'var(--text-primary)' }}>
+              {rev?.plastic_type_designed || (data as any).plastic_type || '—'}
             </span>
           </div>
 
@@ -137,6 +141,28 @@ export default function MoldDetailView({ data }: Props) {
             >
               {dimsMold ? `${dimsMold} mm` : '—'}
             </span>
+          </div>
+
+          {/* YSD Standard CAV Classification */}
+          <div style={{ display: 'flex', alignItems: 'baseline' }}>
+            <span style={{ fontSize: 10, color: 'var(--text-muted)', minWidth: 95, flexShrink: 0, fontWeight: 600 }}>
+              実取り寸法 (CAV):
+            </span>
+            {cavType ? (
+              <span
+                className="badge badge--neutral"
+                style={{
+                  fontFamily: 'monospace', fontWeight: 700, fontSize: 11,
+                  color: '#0F766E', background: '#F0FDFA', border: '1px solid #99F6E4'
+                }}
+              >
+                {cavType.canonicalName}
+              </span>
+            ) : (
+              <span style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: 13, color: 'var(--text-muted)' }}>
+                —
+              </span>
+            )}
           </div>
 
           {/* Mold Weight */}
