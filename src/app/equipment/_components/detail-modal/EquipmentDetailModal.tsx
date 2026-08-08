@@ -364,6 +364,7 @@ export default function EquipmentDetailModal({
 
     // 3. SINGLE ATOMIC STATE UPDATE — Update ALL data and turn off loading in ONE single frame
     setData(item)
+    setActiveTab('specs')
     if (jobsRes?.data) setJobsHistory(jobsRes.data)
     if (historyRes?.data) setMovementsHistory(historyRes.data)
     if (statusLogsRes?.data) setStatusLogs(statusLogsRes.data as any[])
@@ -532,24 +533,29 @@ export default function EquipmentDetailModal({
                   </div>
 
                   {data.related_equipment && data.related_equipment.length > 0 ? (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
                       {data.related_equipment.map((item) => (
                         <div
                           key={item.equipment_id}
                           onClick={() => fetchEquipmentDetails(item.equipment_id)}
+                          className="btn-clickable"
+                          title="クリックしてこの設備の詳細を表示 / Click to open equipment details"
                           style={{
-                            display: 'flex', alignItems: 'center', gap: 6, padding: '4px 6px',
-                            borderRadius: 4, background: 'var(--bg-surface)', border: '1px solid var(--border-default)',
-                            cursor: 'pointer', transition: 'all 0.1s ease',
+                            display: 'flex', alignItems: 'center', gap: 6, padding: '6px 8px',
+                            borderRadius: 6, background: 'var(--bg-surface)', border: '1px solid var(--border-default)',
+                            cursor: 'pointer', transition: 'all 0.15s ease'
                           }}
                         >
-                          <span style={{ fontSize: 11 }}>
+                          <span style={{ fontSize: 12 }}>
                             {item.equipment_type?.includes('MOLD') ? '🔧' : item.equipment_type?.includes('CUTTER') ? '✂️' : '📌'}
                           </span>
                           <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0 }}>
-                            <span style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: 11, color: 'var(--accent)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                              {item.equipment_type?.includes('MOLD') ? (item.equipment_code || item.display_name) : formatCutterDisplayCode(item.equipment_code || item.display_name)}
-                            </span>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                              <span style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: 11, color: 'var(--accent)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                {item.equipment_type?.includes('MOLD') ? (item.equipment_code || item.display_name) : formatCutterDisplayCode(item.equipment_code || item.display_name)}
+                              </span>
+                              <ExternalLink size={10} style={{ color: 'var(--accent)', flexShrink: 0, opacity: 0.7 }} />
+                            </div>
                             <span style={{ fontSize: 9, color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                               {item.display_name}
                             </span>
