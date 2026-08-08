@@ -31,6 +31,7 @@ export default function EquipmentDetailModal({
   const [jobsHistory, setJobsHistory] = useState<any[]>([])
   const [movementsHistory, setMovementsHistory] = useState<any[]>([])
   const [statusLogs, setStatusLogs] = useState<any[]>([])
+  const [activeEquipmentId, setActiveEquipmentId] = useState<string | null>(null)
 
   const fetchEquipmentDetails = async (id: string) => {
     if (!id) return
@@ -373,6 +374,7 @@ export default function EquipmentDetailModal({
 
   useEffect(() => {
     if (!isOpen) {
+      setActiveEquipmentId(null)
       setData(null)
       setJobsHistory([])
       setMovementsHistory([])
@@ -380,22 +382,18 @@ export default function EquipmentDetailModal({
       setLoading(false)
       return
     }
-    setActiveTab('specs')
-    const targetId = equipmentId || initialData?.equipment_id || (initialData as any)?.physical_mold_id || (initialData as any)?.cutter_id
-    if (targetId) {
-      fetchEquipmentDetails(targetId)
-    } else if (initialData) {
-      const isLegacyCutter = Boolean((initialData as any).cutter_id || (initialData as any).cutter_no || (initialData as any).cutter_name)
-      const normalized: any = {
-        ...initialData,
-        equipment_id: initialData.equipment_id || (initialData as any).physical_mold_id || (initialData as any).cutter_id,
-        equipment_code: initialData.equipment_code || (initialData as any).system_code || (initialData as any).cutter_no || '—',
-        display_name: initialData.display_name || (initialData as any).cutter_name || (initialData as any).system_code || '—',
-        equipment_type: initialData.equipment_type || (isLegacyCutter ? 'CUTTER' : 'MOLD')
-      }
-      setData(normalized)
+    const initialId = equipmentId || initialData?.equipment_id || (initialData as any)?.physical_mold_id || (initialData as any)?.cutter_id
+    if (initialId && initialId !== activeEquipmentId) {
+      setActiveEquipmentId(initialId)
     }
   }, [isOpen, equipmentId, initialData])
+
+  useEffect(() => {
+    if (isOpen && activeEquipmentId) {
+      setActiveTab('specs')
+      fetchEquipmentDetails(activeEquipmentId)
+    }
+  }, [isOpen, activeEquipmentId])
 
   if (!isOpen) return null
 
@@ -537,7 +535,11 @@ export default function EquipmentDetailModal({
                       {data.related_equipment.map((item) => (
                         <div
                           key={item.equipment_id}
-                          onClick={() => fetchEquipmentDetails(item.equipment_id)}
+                          onClick={() => {
+                            if (item.equipment_id) {
+                              setActiveEquipmentId(item.equipment_id)
+                            }
+                          }}
                           className="btn-clickable"
                           title="クリックしてこの設備の詳細を表示 / Click to open equipment details"
                           style={{
