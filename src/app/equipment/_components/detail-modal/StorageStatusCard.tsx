@@ -18,14 +18,13 @@ export default function StorageStatusCard({ data, latestLog, latestStatusLog, de
 
   // ══════════════════════════════════════════════════════════════════
   // 1. Vị trí gá kệ cố định tại YSD (Registered Rack-Layer at YSD)
-  //    Khi khuôn mang từ nơi khác về YSD sẽ cất vào kệ này
   // ══════════════════════════════════════════════════════════════════
   const rackText = data.rack_layers
     ? formatRackLocationDisplay(data.rack_layers)
     : '未配置 (Chưa gá kệ)'
 
   // ══════════════════════════════════════════════════════════════════
-  // 2. Công ty đang giữ khuôn tại thời điểm hiện tại (Keeper Company)
+  // 2. Công ty đang giữ khuôn hiện tại (Keeper Company)
   // ══════════════════════════════════════════════════════════════════
   const keeperCompanyId = data.keeper_company_id
   let keeperName = ''
@@ -51,7 +50,7 @@ export default function StorageStatusCard({ data, latestLog, latestStatusLog, de
   }
 
   // ══════════════════════════════════════════════════════════════════
-  // 3. Trạng thái lưu trữ tại YSD (IN hay OUT)
+  // 3. Trạng thái lưu trữ thực sự (Strictly from real transaction logs!)
   // ══════════════════════════════════════════════════════════════════
   const hasRealLog = Boolean(latestStatusLog || latestLog)
   const explicitAction = (latestStatusLog?.status || latestLog?.action_type || '').toUpperCase()
@@ -75,23 +74,26 @@ export default function StorageStatusCard({ data, latestLog, latestStatusLog, de
     explicitAction === 'BROKEN' ||
     isExternalKeeper
 
-  // Badge Status Determination
-  let statusBadgeLabel = 'IN (社内保管)'
-  let statusBadgeClass = 'badge badge--success'
+  // Badge Status Determination — NO FALSE IN FALLBACKS!
+  let statusBadgeLabel = '未設定'
+  let statusBadgeClass = 'badge badge--neutral'
 
   if (isUnverified) {
     statusBadgeLabel = '未検証 (Chưa kiểm kê)'
     statusBadgeClass = 'badge badge--neutral'
+  } else if (!hasRealLog) {
+    // KHÔNG CÓ NHẬT KÝ THAO TÁC CHECK-IN/OUT REAL ➔ Hiển thị neutral "登録済 (Chưa có nhật ký)"
+    statusBadgeLabel = '登録済 (Chưa có nhật ký)'
+    statusBadgeClass = 'badge badge--neutral'
   } else if (isOut) {
     statusBadgeLabel = 'OUT (社外/出庫)'
     statusBadgeClass = 'badge badge--warning'
-  } else if (hasRealLog && (explicitAction === 'IN' || explicitAction === 'CHECK_IN' || explicitAction === 'RETURN')) {
+  } else if (explicitAction === 'IN' || explicitAction === 'CHECK_IN' || explicitAction === 'RETURN') {
     statusBadgeLabel = 'IN (社内保管)'
     statusBadgeClass = 'badge badge--success'
   } else {
-    // Verified record stored at YSD
-    statusBadgeLabel = 'IN (社内保管)'
-    statusBadgeClass = 'badge badge--success'
+    statusBadgeLabel = '登録済 (Chưa có nhật ký)'
+    statusBadgeClass = 'badge badge--neutral'
   }
 
   return (
@@ -115,43 +117,44 @@ export default function StorageStatusCard({ data, latestLog, latestStatusLog, de
         gap: 12
       }}
     >
-      {/* Card Header: Title + IN/OUT Badge */}
+      {/* Card Header Title */}
       <div
         style={{
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
           borderBottom: '1px solid var(--border-subtle)',
-          paddingBottom: 8
+          paddingBottom: 6
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 700, color: 'var(--accent)' }}>
           <MapPin size={16} />
           <span>保管・所在情報 (Thông tin Bảo quản & Vị trí)</span>
         </div>
-
-        {/* Badge Trạng Thái IN / OUT / 未検証 */}
-        <span className={statusBadgeClass} style={{ fontSize: 11, padding: '3px 12px', fontWeight: 700 }}>
-          {statusBadgeLabel}
-        </span>
       </div>
 
       {/* Main 2-Column Storage Details */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, fontSize: 13 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 14, fontSize: 13 }}>
 
-        {/* 1. Vị trí gá kệ tại YSD */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+        {/* 1. Vị trí gá kệ tại YSD + BADGE TRẠNG THÁI IN/OUT ĐẶT NGAY BÊN CẠNH */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
           <span style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
             <Layers size={13} style={{ color: 'var(--accent)' }} />
             YSD定位置 (Vị trí gá kệ YSD):
           </span>
-          <span style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: 14, color: data.rack_layers ? 'var(--accent)' : 'var(--text-muted)' }}>
-            📍 {rackText}
-          </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: 15, color: data.rack_layers ? 'var(--accent)' : 'var(--text-muted)' }}>
+              📍 {rackText}
+            </span>
+            {/* BADGE TRẠNG THÁI (IN / OUT / 登録済) ĐẶT NGAY CẠNH MÃ KỆ */}
+            <span className={statusBadgeClass} style={{ fontSize: 10, padding: '2px 8px', fontWeight: 700 }}>
+              {statusBadgeLabel}
+            </span>
+          </div>
         </div>
 
-        {/* 2. Công ty đang giữ khuôn (Keeper Company Badge) */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+        {/* 2. Công ty đang giữ khuôn (Keeper Company) */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
           <span style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
             <Building2 size={13} style={{ color: 'var(--accent)' }} />
             保管会社 (Đơn vị lưu giữ):
@@ -168,7 +171,7 @@ export default function StorageStatusCard({ data, latestLog, latestStatusLog, de
 
       </div>
 
-      {/* Nhắc nhở/Thông tin nơi đến khi OUT */}
+      {/* Thông tin nơi đến khi OUT */}
       {isOut && (
         <div
           style={{
