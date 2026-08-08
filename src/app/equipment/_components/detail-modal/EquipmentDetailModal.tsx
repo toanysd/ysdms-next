@@ -8,6 +8,7 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { useTranslations } from 'next-intl'
+import { formatCutterDisplayCode } from '@/lib/utils/moldNaming'
 import { EquipmentDetailData, ActionDialogType, EquipmentDetailModalProps } from './types'
 import MoldDetailView from './MoldDetailView'
 import CutterDetailView from './CutterDetailView'
@@ -458,7 +459,7 @@ export default function EquipmentDetailModal({
                     </span>
                   </div>
                   <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 8, marginTop: 2 }}>
-                    <span>{data.equipment_code}</span>
+                    <span>{isCutter ? formatCutterDisplayCode(data.equipment_code) : data.equipment_code}</span>
                     {data.display_name && data.display_name !== data.equipment_code && (
                       <span style={{ fontSize: 13, color: 'var(--text-secondary)', fontWeight: 500 }}>
                         ({data.display_name})
@@ -547,7 +548,7 @@ export default function EquipmentDetailModal({
                           </span>
                           <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0 }}>
                             <span style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: 11, color: 'var(--accent)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                              {item.equipment_code || item.display_name}
+                              {item.equipment_type?.includes('MOLD') ? (item.equipment_code || item.display_name) : formatCutterDisplayCode(item.equipment_code || item.display_name)}
                             </span>
                             <span style={{ fontSize: 9, color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                               {item.display_name}
