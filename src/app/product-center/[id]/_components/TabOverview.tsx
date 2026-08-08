@@ -1391,13 +1391,10 @@ export function TabOverview(props: TabOverviewProps) {
               return null
             })()
 
-            // Selected Equipment Jobs
+            // Selected Equipment Jobs - strictly match selected physical equipment
             const selectedEquipJobs = allJobs.filter((j: JobItem) => {
               if (!selectedEquip) return true
-              if (selectedEquip.type === 'mold') return j.physical_mold_id === selectedEquip.id || j.design_revision_id === selectedRevId
-              if (selectedEquip.type === 'cutter') return j.equipment_id === selectedEquip.id || j.design_revision_id === selectedRevId
-              if (selectedEquip.type === 'equip') return j.equipment_id === selectedEquip.id || j.design_revision_id === selectedRevId
-              return true
+              return j.physical_mold_id === selectedEquip.id || j.equipment_id === selectedEquip.id
             })
 
             const sortMolds = [...filteredMolds].sort((a, b) => {
