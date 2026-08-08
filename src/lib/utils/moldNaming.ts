@@ -167,6 +167,7 @@ export interface CutlineSpecsResult {
 export interface CavTypeResult {
   code: string
   canonicalName: string
+  badgeLabel: string
   length: number
   width: number
   notes?: string
@@ -252,14 +253,25 @@ export function lookupCavType(lengthInput: any, widthInput: any): CavTypeResult 
 
   if (best) {
     let canonical = best.code
-    if (best.code.includes('A')) canonical = `Type A (${best.code})`
-    else if (best.code.includes('ZD')) canonical = `Type ZD (${best.code})`
-    else if (best.code.includes('ZA')) canonical = `Type ZA (${best.code})`
-    else canonical = `${best.code}`
+    let badgeLabel = best.code
+    if (best.code.includes('A')) {
+      canonical = `Type A (${best.code})`
+      badgeLabel = 'CAV A'
+    } else if (best.code.includes('ZD')) {
+      canonical = `Type ZD (${best.code})`
+      badgeLabel = 'CAV ZD'
+    } else if (best.code.includes('ZA')) {
+      canonical = `Type ZA (${best.code})`
+      badgeLabel = 'CAV ZA'
+    } else {
+      canonical = `Type ${best.code}`
+      badgeLabel = `CAV ${best.code}`
+    }
 
     return {
       code: best.code,
       canonicalName: canonical,
+      badgeLabel: badgeLabel,
       length: best.length,
       width: best.width,
       notes: best.notes

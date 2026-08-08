@@ -13,7 +13,7 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import EquipmentQuickPreviewModal, { type QuickPreviewItem } from './EquipmentQuickPreviewModal'
-import { isPrototypeDesignOrMold, getEffectiveDesignStatus, getDesignStatusBadgeInfo, formatCutterDisplayCode, formatMoldDisplayCode, formatCutterSpecString, formatCutlineSpecString, getCutlineSpecs, formatCornerRDisplay, formatChamferCDisplay, extractBaseMassCode, formatRackLocationDisplay } from '@/lib/utils/moldNaming'
+import { isPrototypeDesignOrMold, getEffectiveDesignStatus, getDesignStatusBadgeInfo, formatCutterDisplayCode, formatMoldDisplayCode, formatCutterSpecString, formatCutlineSpecString, getCutlineSpecs, formatCornerRDisplay, formatChamferCDisplay, extractBaseMassCode, formatRackLocationDisplay, lookupCavType } from '@/lib/utils/moldNaming'
 import { updateRevisionStatus } from '@/app/actions/engineering'
 
 type JobItem = {
@@ -201,7 +201,7 @@ function InfoRow({ label, value, mono, accent }: { label: string; value: string 
 
 /* ────────── helper: spec cell (inline compact row) ────────── */
 function SpecCell({
-  label, value, mono = true, isDiff, diffLabel, span
+  label, value, mono = true, isDiff, diffLabel, span, badge
 }: {
   label: string
   value: string | number | null | undefined
@@ -212,13 +212,14 @@ function SpecCell({
   color?: string
   border?: string
   span?: number
+  badge?: React.ReactNode
 }) {
   const displayVal = value == null || value === '' ? '—' : String(value)
   const isEmpty = displayVal === '—'
 
   return (
     <div style={{
-      display: 'flex', alignItems: 'baseline', gap: 5,
+      display: 'flex', alignItems: 'center', gap: 5,
       gridColumn: span ? `span ${span}` : undefined,
       lineHeight: 1.6,
       ...(isDiff ? {
@@ -241,6 +242,7 @@ function SpecCell({
       }}>
         {displayVal}
       </span>
+      {badge}
     </div>
   )
 }
@@ -1068,7 +1070,29 @@ export function TabOverview(props: TabOverviewProps) {
                         <div style={{ display: 'grid', gridTemplateColumns: '1.25fr 1fr 1fr', minWidth: '480px', gap: '2px 14px', fontSize: 12 }}>
                           {/* Column 1: Main Text & Plastic Spec */}
                           <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                            <SpecCell label={tPC('trayDimensions')} value={trayDims ? `${trayDims} mm` : null} isDiff={trayDimsDiff} diffLabel={tPC('fieldChanged')} />
+                            {(() => {
+                              const cav = activeRev ? lookupCavType(activeRev.design_length, activeRev.design_width) : null
+                              return (
+                                <SpecCell
+                                  label={tPC('trayDimensions')}
+                                  value={trayDims ? `${trayDims} mm` : null}
+                                  isDiff={trayDimsDiff}
+                                  diffLabel={tPC('fieldChanged')}
+                                  badge={cav ? (
+                                    <span
+                                      className="badge badge--neutral"
+                                      style={{
+                                        fontFamily: 'monospace', fontWeight: 700, fontSize: 10,
+                                        color: '#0F766E', background: '#F0FDFA', border: '1px solid #99F6E4',
+                                        padding: '1px 5px', marginLeft: 2, flexShrink: 0
+                                      }}
+                                    >
+                                      {cav.badgeLabel}
+                                    </span>
+                                  ) : null}
+                                />
+                              )
+                            })()}
                             <SpecCell label={tPC('designedMaterial')} value={activeRev.plastic_type_designed || primaryPlasticCode} isDiff={plasticDiff} diffLabel={tPC('fieldChanged')} mono={false} />
                             <SpecCell label={tPC('customerTrayName')} value={activeRev.customer_tray_name} isDiff={customerTrayNameDiff} diffLabel={tPC('fieldChanged')} mono={false} />
                             {activeRev.tray_info && (
