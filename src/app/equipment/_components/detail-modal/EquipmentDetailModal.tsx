@@ -630,72 +630,206 @@ export default function EquipmentDetailModal({
               {/* RIGHT COLUMN: Quick Action Buttons & Navigation Links */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                 {/* Quick Action Group */}
-                <div className="card-flat" style={{ padding: 10, background: 'var(--bg-surface-2)', borderRadius: 8, display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--accent)', borderBottom: '1px solid var(--border-subtle)', paddingBottom: 4 }}>
+                <div className="card-flat" style={{ padding: 12, background: 'var(--bg-surface-2)', borderRadius: 8, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--accent)', borderBottom: '1px solid var(--border-subtle)', paddingBottom: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
                     ⚡ {t('actionGridTitle')}
                   </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4 }}>
-                    <button onClick={() => setActiveAction('CHECKIN_OUT')} className="btn btn-secondary" style={{ fontSize: 10, padding: '4px 6px', display: 'flex', alignItems: 'center', gap: 3 }}>
-                      <RefreshCw size={11} /> {t('actions.checkInOut')}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+                    <button
+                      onClick={() => setActiveAction('CHECKIN_OUT')}
+                      style={{
+                        fontSize: 11, fontWeight: 700, padding: '7px 8px', borderRadius: 6,
+                        display: 'flex', alignItems: 'center', gap: 5, cursor: 'pointer',
+                        background: '#EFF6FF', border: '1px solid #BFDBFE', color: '#1D4ED8',
+                        transition: 'all 0.12s ease'
+                      }}
+                    >
+                      <RefreshCw size={13} /> {t('actions.checkInOut')}
                     </button>
-                    <button onClick={() => setActiveAction('RACK_MOVE')} className="btn btn-secondary" style={{ fontSize: 10, padding: '4px 6px', display: 'flex', alignItems: 'center', gap: 3 }}>
-                      <MapPin size={11} /> {t('actions.rackMove')}
+                    <button
+                      onClick={() => setActiveAction('RACK_MOVE')}
+                      style={{
+                        fontSize: 11, fontWeight: 700, padding: '7px 8px', borderRadius: 6,
+                        display: 'flex', alignItems: 'center', gap: 5, cursor: 'pointer',
+                        background: '#F0FDFA', border: '1px solid #99F6E4', color: '#0F766E',
+                        transition: 'all 0.12s ease'
+                      }}
+                    >
+                      <MapPin size={13} /> {t('actions.rackMove')}
                     </button>
-                    <button onClick={() => setActiveAction('TEFLON_COATING')} className="btn btn-secondary" style={{ fontSize: 10, padding: '4px 6px', display: 'flex', alignItems: 'center', gap: 3 }}>
-                      <Shield size={11} /> {t('actions.teflon')}
+                    <button
+                      onClick={() => setActiveAction('TEFLON_COATING')}
+                      style={{
+                        fontSize: 11, fontWeight: 700, padding: '7px 8px', borderRadius: 6,
+                        display: 'flex', alignItems: 'center', gap: 5, cursor: 'pointer',
+                        background: '#F3E8FF', border: '1px solid #E9D5FF', color: '#6B21A8',
+                        transition: 'all 0.12s ease'
+                      }}
+                    >
+                      <Shield size={13} /> {t('actions.teflon')}
                     </button>
-                    <button onClick={() => setActiveAction('PRINT_LABEL')} className="btn btn-secondary" style={{ fontSize: 10, padding: '4px 6px', display: 'flex', alignItems: 'center', gap: 3 }}>
-                      <Printer size={11} /> {t('actions.print')}
+                    <button
+                      onClick={() => setActiveAction('PRINT_LABEL')}
+                      style={{
+                        fontSize: 11, fontWeight: 700, padding: '7px 8px', borderRadius: 6,
+                        display: 'flex', alignItems: 'center', gap: 5, cursor: 'pointer',
+                        background: '#ECFDF5', border: '1px solid #A7F3D0', color: '#047857',
+                        transition: 'all 0.12s ease'
+                      }}
+                    >
+                      <Printer size={13} /> {t('actions.print')}
                     </button>
-                    <button onClick={() => setActiveAction('PHOTO_MANAGER')} className="btn btn-secondary" style={{ fontSize: 10, padding: '4px 6px', display: 'flex', alignItems: 'center', gap: 3 }}>
-                      <Camera size={11} /> {t('actions.photo')}
+                    <button
+                      onClick={() => setActiveAction('PHOTO_MANAGER')}
+                      style={{
+                        fontSize: 11, fontWeight: 700, padding: '7px 8px', borderRadius: 6,
+                        display: 'flex', alignItems: 'center', gap: 5, cursor: 'pointer',
+                        background: '#ECFEFF', border: '1px solid #A5F3FC', color: '#0E7490',
+                        transition: 'all 0.12s ease'
+                      }}
+                    >
+                      <Camera size={13} /> {t('actions.photo')}
                     </button>
-                    <button onClick={() => setActiveAction('QR_VIEW')} className="btn btn-secondary" style={{ fontSize: 10, padding: '4px 6px', display: 'flex', alignItems: 'center', gap: 3 }}>
-                      <QrCode size={11} /> {t('actions.qr')}
+                    <button
+                      onClick={() => setActiveAction('QR_VIEW')}
+                      style={{
+                        fontSize: 11, fontWeight: 700, padding: '7px 8px', borderRadius: 6,
+                        display: 'flex', alignItems: 'center', gap: 5, cursor: 'pointer',
+                        background: '#F8FAFC', border: '1px solid #CBD5E1', color: '#334155',
+                        transition: 'all 0.12s ease'
+                      }}
+                    >
+                      <QrCode size={13} /> {t('actions.qr')}
                     </button>
-                    <button onClick={() => setActiveAction('TRANSPORT')} className="btn btn-secondary" style={{ fontSize: 10, padding: '4px 6px', display: 'flex', alignItems: 'center', gap: 3 }}>
-                      <ArrowUpRight size={11} /> {t('actions.transport')}
+                    <button
+                      onClick={() => setActiveAction('TRANSPORT')}
+                      style={{
+                        fontSize: 11, fontWeight: 700, padding: '7px 8px', borderRadius: 6,
+                        display: 'flex', alignItems: 'center', gap: 5, cursor: 'pointer',
+                        background: '#FFF1F2', border: '1px solid #FECDD3', color: '#BE123C',
+                        transition: 'all 0.12s ease'
+                      }}
+                    >
+                      <ArrowUpRight size={13} /> {t('actions.transport')}
                     </button>
-                    <button onClick={() => setActiveAction('WEIGHT_AUDIT')} className="btn btn-secondary" style={{ fontSize: 10, padding: '4px 6px', display: 'flex', alignItems: 'center', gap: 3 }}>
-                      <FileText size={11} /> {t('actions.weight')}
+                    <button
+                      onClick={() => setActiveAction('WEIGHT_AUDIT')}
+                      style={{
+                        fontSize: 11, fontWeight: 700, padding: '7px 8px', borderRadius: 6,
+                        display: 'flex', alignItems: 'center', gap: 5, cursor: 'pointer',
+                        background: '#EEF2FF', border: '1px solid #C7D2FE', color: '#3730A3',
+                        transition: 'all 0.12s ease'
+                      }}
+                    >
+                      <FileText size={13} /> {t('actions.weight')}
                     </button>
-                    <button onClick={() => setActiveAction('INVENTORY_AUDIT')} className="btn btn-secondary" style={{ fontSize: 10, padding: '4px 6px', display: 'flex', alignItems: 'center', gap: 3 }}>
-                      <Clock size={11} /> {t('actions.inventoryAudit')}
+                    <button
+                      onClick={() => setActiveAction('INVENTORY_AUDIT')}
+                      style={{
+                        fontSize: 11, fontWeight: 700, padding: '7px 8px', borderRadius: 6,
+                        display: 'flex', alignItems: 'center', gap: 5, cursor: 'pointer',
+                        background: '#FEF3C7', border: '1px solid #FDE68A', color: '#B45309',
+                        transition: 'all 0.12s ease'
+                      }}
+                    >
+                      <Clock size={13} /> {t('actions.inventoryAudit')}
                     </button>
-                    <button onClick={() => setActiveAction('SCRAP_DISPOSAL')} className="btn btn-secondary" style={{ fontSize: 10, padding: '4px 6px', display: 'flex', alignItems: 'center', gap: 3, color: 'var(--tint-red-text)' }}>
-                      <X size={11} /> {t('actions.scrap')}
+                    <button
+                      onClick={() => setActiveAction('SCRAP_DISPOSAL')}
+                      style={{
+                        fontSize: 11, fontWeight: 700, padding: '7px 8px', borderRadius: 6,
+                        display: 'flex', alignItems: 'center', gap: 5, cursor: 'pointer',
+                        background: '#FEF2F2', border: '1px solid #FCA5A5', color: '#B91C1C',
+                        transition: 'all 0.12s ease'
+                      }}
+                    >
+                      <X size={13} /> {t('actions.scrap')}
                     </button>
                   </div>
                 </div>
 
                 {/* Quick Access Page Links */}
-                <div className="card-flat" style={{ padding: 10, background: 'var(--bg-surface-2)', borderRadius: 8, display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--accent)', borderBottom: '1px solid var(--border-subtle)', paddingBottom: 4 }}>
+                <div className="card-flat" style={{ padding: 12, background: 'var(--bg-surface-2)', borderRadius: 8, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--accent)', borderBottom: '1px solid var(--border-subtle)', paddingBottom: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
                     🚀 {t('quickAccessTitle')}
                   </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 4 }}>
-                    <Link href="/engineering/designs" className="btn btn-secondary" style={{ fontSize: 9, padding: 4, flexDirection: 'column', gap: 2, textDecoration: 'none', textAlign: 'center' }}>
-                      <FileText size={12} style={{ color: 'var(--accent)' }} />
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6 }}>
+                    <Link
+                      href="/engineering/designs"
+                      style={{
+                        fontSize: 10, fontWeight: 700, padding: '8px 4px', borderRadius: 6,
+                        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
+                        textDecoration: 'none', textAlign: 'center',
+                        background: '#F0FDFA', border: '1px solid #99F6E4', color: '#0F766E',
+                        transition: 'all 0.12s ease'
+                      }}
+                    >
+                      <FileText size={15} style={{ color: '#0F766E' }} />
                       <span>{t('quickLinks.design')}</span>
                     </Link>
-                    <Link href="/master/customers" className="btn btn-secondary" style={{ fontSize: 9, padding: 4, flexDirection: 'column', gap: 2, textDecoration: 'none', textAlign: 'center' }}>
-                      <User size={12} style={{ color: 'var(--tint-purple-text)' }} />
+                    <Link
+                      href="/master/customers"
+                      style={{
+                        fontSize: 10, fontWeight: 700, padding: '8px 4px', borderRadius: 6,
+                        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
+                        textDecoration: 'none', textAlign: 'center',
+                        background: '#F3E8FF', border: '1px solid #E9D5FF', color: '#6B21A8',
+                        transition: 'all 0.12s ease'
+                      }}
+                    >
+                      <User size={15} style={{ color: '#6B21A8' }} />
                       <span>{t('quickLinks.customer')}</span>
                     </Link>
-                    <Link href="/master/products" className="btn btn-secondary" style={{ fontSize: 9, padding: 4, flexDirection: 'column', gap: 2, textDecoration: 'none', textAlign: 'center' }}>
-                      <Box size={12} style={{ color: 'var(--tint-orange-text)' }} />
+                    <Link
+                      href="/master/products"
+                      style={{
+                        fontSize: 10, fontWeight: 700, padding: '8px 4px', borderRadius: 6,
+                        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
+                        textDecoration: 'none', textAlign: 'center',
+                        background: '#FFF7ED', border: '1px solid #FFEDD5', color: '#C2410C',
+                        transition: 'all 0.12s ease'
+                      }}
+                    >
+                      <Box size={15} style={{ color: '#C2410C' }} />
                       <span>{t('quickLinks.product')}</span>
                     </Link>
-                    <Link href="/master/racks" className="btn btn-secondary" style={{ fontSize: 9, padding: 4, flexDirection: 'column', gap: 2, textDecoration: 'none', textAlign: 'center' }}>
-                      <MapPin size={12} style={{ color: 'var(--tint-teal-text)' }} />
+                    <Link
+                      href="/master/racks"
+                      style={{
+                        fontSize: 10, fontWeight: 700, padding: '8px 4px', borderRadius: 6,
+                        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
+                        textDecoration: 'none', textAlign: 'center',
+                        background: '#EFF6FF', border: '1px solid #BFDBFE', color: '#1D4ED8',
+                        transition: 'all 0.12s ease'
+                      }}
+                    >
+                      <MapPin size={15} style={{ color: '#1D4ED8' }} />
                       <span>{t('quickLinks.storage')}</span>
                     </Link>
-                    <Link href="/equipment/jobs" className="btn btn-secondary" style={{ fontSize: 9, padding: 4, flexDirection: 'column', gap: 2, textDecoration: 'none', textAlign: 'center' }}>
-                      <Wrench size={12} style={{ color: 'var(--accent)' }} />
+                    <Link
+                      href="/equipment/jobs"
+                      style={{
+                        fontSize: 10, fontWeight: 700, padding: '8px 4px', borderRadius: 6,
+                        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
+                        textDecoration: 'none', textAlign: 'center',
+                        background: '#FFFBEB', border: '1px solid #FDE68A', color: '#B45309',
+                        transition: 'all 0.12s ease'
+                      }}
+                    >
+                      <Wrench size={15} style={{ color: '#B45309' }} />
                       <span>{t('quickLinks.transfer')}</span>
                     </Link>
-                    <Link href="/equipment/lifecycle" className="btn btn-secondary" style={{ fontSize: 9, padding: 4, flexDirection: 'column', gap: 2, textDecoration: 'none', textAlign: 'center' }}>
-                      <Clock size={12} style={{ color: 'var(--tint-purple-text)' }} />
+                    <Link
+                      href="/equipment/lifecycle"
+                      style={{
+                        fontSize: 10, fontWeight: 700, padding: '8px 4px', borderRadius: 6,
+                        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
+                        textDecoration: 'none', textAlign: 'center',
+                        background: '#FFF1F2', border: '1px solid #FECDD3', color: '#BE123C',
+                        transition: 'all 0.12s ease'
+                      }}
+                    >
+                      <Clock size={15} style={{ color: '#BE123C' }} />
                       <span>{t('quickLinks.history')}</span>
                     </Link>
                   </div>
