@@ -235,13 +235,14 @@ export default function EquipmentDetailModal({
       }
     }
 
-    // 2. Base Code Matching for Related Equipment
+    // 2. Base Code Matching for Related Equipment with Legacy Deduplication
     if (searchPattern) {
       if (isItemCutter) {
         // Current item is CUTTER -> search ONLY MOLDS
+        const legacyMoldIdSet = new Set<string>()
         const { data: eqMolds } = await supabase
           .from('equipment')
-          .select('equipment_id, equipment_code, display_name, usage_status, equipment_type')
+          .select('equipment_id, equipment_code, display_name, usage_status, equipment_type, legacy_physical_mold_id')
           .eq('equipment_type', 'MOLD')
           .or(`equipment_code.ilike.${searchPattern},display_name.ilike.${searchPattern}`)
           .limit(5)
@@ -255,6 +256,7 @@ export default function EquipmentDetailModal({
                 equipment_type: 'MOLD',
                 usage_status: em.usage_status
               })
+              if (em.legacy_physical_mold_id) legacyMoldIdSet.add(em.legacy_physical_mold_id)
             }
           })
         }
@@ -266,7 +268,11 @@ export default function EquipmentDetailModal({
           .limit(5)
         if (pMolds) {
           pMolds.forEach((pm: any) => {
-            if (pm.physical_mold_id !== item.equipment_id && !relatedSet.has(pm.physical_mold_id)) {
+            if (
+              pm.physical_mold_id !== item.equipment_id &&
+              !relatedSet.has(pm.physical_mold_id) &&
+              !legacyMoldIdSet.has(pm.physical_mold_id)
+            ) {
               relatedSet.set(pm.physical_mold_id, {
                 equipment_id: pm.physical_mold_id,
                 equipment_code: pm.system_code,
@@ -279,9 +285,10 @@ export default function EquipmentDetailModal({
         }
       } else {
         // Current item is MOLD -> search ONLY CUTTERS
+        const legacyCutterIdSet = new Set<string>()
         const { data: eqCutters } = await supabase
           .from('equipment')
-          .select('equipment_id, equipment_code, display_name, usage_status, equipment_type')
+          .select('equipment_id, equipment_code, display_name, usage_status, equipment_type, legacy_cutter_id')
           .neq('equipment_type', 'MOLD')
           .or(`equipment_code.ilike.${searchPattern},display_name.ilike.${searchPattern}`)
           .limit(5)
@@ -295,6 +302,7 @@ export default function EquipmentDetailModal({
                 equipment_type: 'CUTTER',
                 usage_status: ec.usage_status
               })
+              if (ec.legacy_cutter_id) legacyCutterIdSet.add(ec.legacy_cutter_id)
             }
           })
         }
@@ -306,7 +314,11 @@ export default function EquipmentDetailModal({
           .limit(5)
         if (cutters) {
           cutters.forEach((c: any) => {
-            if (c.cutter_id !== item.equipment_id && !relatedSet.has(c.cutter_id)) {
+            if (
+              c.cutter_id !== item.equipment_id &&
+              !relatedSet.has(c.cutter_id) &&
+              !legacyCutterIdSet.has(c.cutter_id)
+            ) {
               relatedSet.set(c.cutter_id, {
                 equipment_id: c.cutter_id,
                 equipment_code: c.cutter_no || c.cutter_name,
