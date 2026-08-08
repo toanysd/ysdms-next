@@ -206,6 +206,9 @@ export default function EquipmentDetailModal({
     const searchPattern = getWildcardPattern(rawCode)
 
     // 1. Junction table mold_design_cutters lookup (For Molds looking up Cutters)
+    const legacyCutterIdSet = new Set<string>()
+    const legacyMoldIdSet = new Set<string>()
+
     if (revId && !isItemCutter) {
       const { data: juncCutters } = await supabase
         .from('mold_design_cutters')
@@ -214,22 +217,46 @@ export default function EquipmentDetailModal({
       if (juncCutters && juncCutters.length > 0) {
         const cutterIds = juncCutters.map(j => j.cutter_id).filter(Boolean)
         if (cutterIds.length > 0) {
-          const { data: linkedCutters } = await supabase
-            .from('cutters')
-            .select('cutter_id, cutter_no, cutter_name, usage_status, cutter_presence')
-            .in('cutter_id', cutterIds)
-          if (linkedCutters) {
-            linkedCutters.forEach((lc: any) => {
-              if (lc.cutter_id !== item.equipment_id) {
-                relatedSet.set(lc.cutter_id, {
-                  equipment_id: lc.cutter_id,
-                  equipment_code: lc.cutter_no || lc.cutter_name,
-                  display_name: lc.cutter_name || lc.cutter_no,
+          // Query equipment table FIRST to map legacy_cutter_id to unified equipment
+          const { data: eqCutters } = await supabase
+            .from('equipment')
+            .select('equipment_id, equipment_code, display_name, usage_status, equipment_type, legacy_cutter_id')
+            .in('legacy_cutter_id', cutterIds)
+          if (eqCutters && eqCutters.length > 0) {
+            eqCutters.forEach((ec: any) => {
+              if (ec.equipment_id !== item.equipment_id) {
+                relatedSet.set(ec.equipment_id, {
+                  equipment_id: ec.equipment_id,
+                  equipment_code: ec.equipment_code,
+                  display_name: ec.display_name,
                   equipment_type: 'CUTTER',
-                  usage_status: lc.usage_status || (lc.cutter_presence ? 'STORAGE' : 'OUT')
+                  usage_status: ec.usage_status
                 })
+                if (ec.legacy_cutter_id) legacyCutterIdSet.add(ec.legacy_cutter_id)
               }
             })
+          }
+
+          // Fallback to legacy cutters table only for IDs not mapped in equipment table
+          const missingCutterIds = cutterIds.filter(id => !legacyCutterIdSet.has(id))
+          if (missingCutterIds.length > 0) {
+            const { data: linkedCutters } = await supabase
+              .from('cutters')
+              .select('cutter_id, cutter_no, cutter_name, usage_status, cutter_presence')
+              .in('cutter_id', missingCutterIds)
+            if (linkedCutters) {
+              linkedCutters.forEach((lc: any) => {
+                if (lc.cutter_id !== item.equipment_id && !relatedSet.has(lc.cutter_id)) {
+                  relatedSet.set(lc.cutter_id, {
+                    equipment_id: lc.cutter_id,
+                    equipment_code: lc.cutter_no || lc.cutter_name,
+                    display_name: lc.cutter_name || lc.cutter_no,
+                    equipment_type: 'CUTTER',
+                    usage_status: lc.usage_status || (lc.cutter_presence ? 'STORAGE' : 'OUT')
+                  })
+                }
+              })
+            }
           }
         }
       }
