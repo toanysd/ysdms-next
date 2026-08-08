@@ -124,6 +124,43 @@ export default function ExampleComponent() {
 
 ---
 
+## 5.5. RULE-DATA-01: Không Fallback Dữ Liệu Kỹ Thuật (BẮT BUỘC)
+
+### 🚫 Nguyên tắc cốt lõi
+1. **Cutline ≠ Kích thước vật lý**: `cutline_length/width` (đường cắt — từ `design_revisions`) KHÔNG ĐƯỢC fallback từ `actual_length_mm/width` (khuôn vật lý) hoặc `cutter_length_mm/width` (thân dao cắt). Đây là 2 loại dữ liệu KHÁC NHAU.
+
+2. **Không parse text runtime**: KHÔNG quét `product_description`, `cutter_name`, `display_name`, `tray_info` để trích xuất thông số kỹ thuật (cutline, corner R, chamfer C). Nếu DB trống → hiển thị `"—"`.
+
+3. **Nếu thiếu dữ liệu → sửa tại nguồn**: Viết migration/backfill script để cập nhật DB. KHÔNG viết fallback/regex ở UI code.
+
+4. **Không tạo dữ liệu giả từ bảng khác**: KHÔNG tạo synthetic `revData` từ bảng `products` để thay thế `design_revisions`. Nếu `design_revisions` không có → UI hiển thị `"—"`.
+
+### 📊 Dữ liệu kỹ thuật chỉ từ 2 nguồn chính thống
+
+| Thông số | Nguồn chính (Single Source of Truth) | Nguồn phụ |
+|----------|--------------------------------------|-----------|
+| Cutline (đường cắt) | `design_revisions.cutline_length/width` | — |
+| Corner R (bo góc) | `design_revisions.corner_r` | — |
+| Chamfer C (vát cạnh) | `design_revisions.chamfer_c` | — |
+| Kích thước khuôn vật lý | `physical_molds.actual_length/width/height_mm` | `equipment.actual_length_mm` |
+| Kích thước dao cắt vật lý | `cutters.cutter_length/width/height_mm` | `equipment.actual_length_mm` |
+
+### 🔧 Code Pattern chuẩn
+```typescript
+// ✅ ĐÚNG — dùng getCutlineSpecs() đọc trực tiếp từ DB columns
+import { getCutlineSpecs } from '@/lib/utils/moldNaming'
+const specs = getCutlineSpecs(designRevision)  // chỉ đọc cutline_length, cutline_width, corner_r, chamfer_c
+
+// ❌ SAI — parse text từ description
+const regex = /(\d+)\s*[x×]\s*(\d+)/
+const match = productDescription.match(regex)  // KHÔNG LÀM ĐIỀU NÀY
+
+// ❌ SAI — fallback kích thước vật lý thành cutline
+const cutline = item.cutline_length || item.actual_length_mm  // KHÔNG LÀM ĐIỀU NÀY
+```
+
+---
+
 ## 6. CSS / DESIGN SYSTEM RULES
 
 ### 👁️ Quy tắc Font size & Tương phản (BẮT BUỘC để tránh mỏi mắt)

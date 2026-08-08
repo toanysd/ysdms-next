@@ -13,7 +13,7 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import EquipmentQuickPreviewModal, { type QuickPreviewItem } from './EquipmentQuickPreviewModal'
-import { isPrototypeDesignOrMold, getEffectiveDesignStatus, getDesignStatusBadgeInfo, formatCutterDisplayCode, formatMoldDisplayCode, formatCutterSpecString, formatCutlineSpecString, extractBaseMassCode, formatRackLocationDisplay } from '@/lib/utils/moldNaming'
+import { isPrototypeDesignOrMold, getEffectiveDesignStatus, getDesignStatusBadgeInfo, formatCutterDisplayCode, formatMoldDisplayCode, formatCutterSpecString, formatCutlineSpecString, getCutlineSpecs, formatCornerRDisplay, formatChamferCDisplay, extractBaseMassCode, formatRackLocationDisplay } from '@/lib/utils/moldNaming'
 import { updateRevisionStatus } from '@/app/actions/engineering'
 
 type JobItem = {
@@ -387,10 +387,10 @@ export function TabOverview(props: TabOverviewProps) {
             .select(`
               physical_mold_id, system_code, display_name, device_status, usage_status,
               mold_type, piece_count, actual_length_mm, actual_width_mm, actual_height_mm,
-              actual_weight, manufacturing_date, mold_revision_id,
+              actual_weight, manufacturing_date,
               rack_layers(layer_code, racks(rack_code))
             `)
-            .in('mold_revision_id', revIds)
+            .limit(50)
 
           if (pMolds) {
             pMolds.forEach((pm: any) => {
@@ -572,7 +572,7 @@ export function TabOverview(props: TabOverviewProps) {
             line_id, quantity, unit, created_at,
             orders(
               order_id, order_no, order_date, order_status, notes,
-              delivery_sites(site_name, site_address, contact_person, site_tel)
+              companies:company_id(company_name, company_code)
             )
           `, { count: 'exact' })
           .eq('product_id', productId)
@@ -640,17 +640,9 @@ export function TabOverview(props: TabOverviewProps) {
   const trayDims = activeRev
     ? [activeRev.design_length, activeRev.design_width, activeRev.design_height || activeRev.design_depth].filter(Boolean).join(' × ')
     : ''
-  const cutlineBase = activeRev
-    ? ([activeRev.cutline_length, activeRev.cutline_width].filter(Boolean).join(' × ') ||
-       [activeRev.design_length, activeRev.design_width].filter(Boolean).join(' × '))
-    : ''
-  const productDimsSpec = activeRev
-    ? [
-        cutlineBase ? `${cutlineBase} mm` : null,
-        activeRev.corner_r != null ? `R${activeRev.corner_r}` : null,
-        activeRev.chamfer_c != null ? `C${activeRev.chamfer_c}` : null
-      ].filter(Boolean).join(' - ')
-    : ''
+  const activeCutlineSpecs = getCutlineSpecs(activeRev)
+  const cutlineBase = activeCutlineSpecs.formatted
+  const productDimsSpec = cutlineBase !== '—' ? cutlineBase : ''
 
   const getRack = (rl: any) => formatRackLocationDisplay(rl)
 
@@ -793,7 +785,11 @@ export function TabOverview(props: TabOverviewProps) {
               <InfoRow label={tProd('productName')} value={productName} />
               <InfoRow label={tPC('customerProductNameLabel')} value={customerProductName} />
               <InfoRow label={tPC('cutlineDimensions')} value={productDimsSpec || '—'} mono />
-              <InfoRow label={tProd('pocketCount')} value={pocketCount || activeRev?.pocket_numbers || activeRev?.cavity_count} mono />
+              <InfoRow label={tProd('pocketCount')} value={pocketCount || activeRev?.pocket_numbers || activeRev?.cavity_count || (() => {
+                const text = String(activeRev?.tray_info || activeRev?.customer_tray_name || productDescription || '')
+                const m = text.match(/(\d+)\s*(?:個入|取|pocket)/i)
+                return m ? m[1] : null
+              })()} mono />
               <InfoRow label={tPC('piecesPerBoxLabel')} value={piecesPerBox} mono />
               <InfoRow label={tPC('plasticSpecLabel')} value={primaryPlasticSpec || primaryPlasticCode || activeRev?.plastic_type_designed} mono />
               <InfoRow label={tPC('firstShipmentLabel')} value={firstShipmentDate} mono />
@@ -1082,7 +1078,7 @@ export function TabOverview(props: TabOverviewProps) {
 
                           {/* Column 2: Dimensions & Pocket / Impression */}
                           <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                            <SpecCell label="カットライン情報" value={formatCutlineSpecString(activeRev)} isDiff={cutlineDimsDiff} diffLabel={tPC('fieldChanged')} />
+                            <SpecCell label="カットライン" value={formatCutlineSpecString(activeRev)} isDiff={cutlineDimsDiff} diffLabel={tPC('fieldChanged')} />
                             <SpecCell
                               label={tPC('cavityAndPitch')}
                               value={(activeRev.pocket_numbers || activeRev.cavity_count) ? `${activeRev.pocket_numbers || activeRev.cavity_count} Pocket${activeRev.cavity_pitch_mm ? ' / ' + activeRev.cavity_pitch_mm + 'mm' : ''}` : null}
@@ -1102,8 +1098,18 @@ export function TabOverview(props: TabOverviewProps) {
                           {/* Column 3: Angles, Formings & Accessories */}
                           <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
                             <SpecCell label={tPC('draftAngleLabel')} value={activeRev.draft_angle != null ? `${activeRev.draft_angle}°` : null} isDiff={draftAngleDiff} diffLabel={tPC('fieldChanged')} />
-                            <SpecCell label={tPC('cornerRadiusLabel')} value={activeRev.corner_r != null ? `R${activeRev.corner_r}` : null} isDiff={cornerRDiff} diffLabel={tPC('fieldChanged')} />
-                            <SpecCell label={tPC('chamferLabel')} value={activeRev.chamfer_c != null ? `C${activeRev.chamfer_c}` : null} isDiff={chamferCDiff} diffLabel={tPC('fieldChanged')} />
+                            <SpecCell
+                              label={tPC('cornerRadiusLabel')}
+                              value={formatCornerRDisplay(activeRev.corner_r)}
+                              isDiff={cornerRDiff}
+                              diffLabel={tPC('fieldChanged')}
+                            />
+                            <SpecCell
+                              label={tPC('chamferLabel')}
+                              value={formatChamferCDisplay(activeRev.chamfer_c)}
+                              isDiff={chamferCDiff}
+                              diffLabel={tPC('fieldChanged')}
+                            />
                             <SpecCell label={tPC('undercutDepthLabel')} value={activeRev.under_depth != null ? `${activeRev.under_depth} mm` : null} />
                             <SpecCell label={tPC('plugTypeLabel')} value={activeRev.plug_type} isDiff={plugTypeDiff} diffLabel={tPC('fieldChanged')} mono={false} />
                             <SpecCell

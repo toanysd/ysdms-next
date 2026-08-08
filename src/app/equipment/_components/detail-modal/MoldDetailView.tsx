@@ -1,28 +1,33 @@
 'use client'
 
 import React from 'react'
-import { Box, Layers, Sparkles, Shield, Ruler, Weight, Package } from 'lucide-react'
+import { Box, Sparkles } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { EquipmentDetailData } from './types'
+import { getCutlineSpecs } from '@/lib/utils/moldNaming'
 
 interface Props {
   data: EquipmentDetailData
 }
 
 export default function MoldDetailView({ data }: Props) {
+  const t = useTranslations('EquipmentDetailModal.moldSpecs')
   const rev = data.design_revisions
   const prod = rev?.products
 
+  // Mold Dimensions
   const dimsMold = [
     data.actual_length_mm || rev?.design_length,
     data.actual_width_mm || rev?.design_width,
     data.actual_height_mm || rev?.design_height
   ].filter(Boolean).join(' × ')
 
-  const dimsProd = [
-    rev?.product_length,
-    rev?.product_width,
-    rev?.product_height
-  ].filter(Boolean).join(' × ')
+  // Cutline & Corner R / Chamfer C — RULE-DATA-01: read ONLY from design_revisions columns
+  const cutlineSpecs = getCutlineSpecs(rev)
+  const dimsCutline = cutlineSpecs.formatted
+
+  // Pocket count from design_revisions columns only
+  const pocketCountVal = rev?.pocket_numbers || rev?.cavity_count || null
 
   const isTeflonCoated = Boolean(
     data.is_teflon ||
@@ -57,15 +62,15 @@ export default function MoldDetailView({ data }: Props) {
           }}
         >
           <Box size={15} />
-          <span>概要 (Tổng quan Thông số Khuôn)</span>
+          <span>{t('overviewTitle')}</span>
         </div>
 
         {/* Paper Style Specs Grid */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 16px', fontSize: 12 }}>
           {/* Equipment Display Name & Code */}
           <div style={{ display: 'flex', alignItems: 'baseline' }}>
-            <span style={{ fontSize: 10, color: 'var(--text-muted)', minWidth: 85, flexShrink: 0, fontWeight: 600 }}>
-              兆称 (Mã khuôn):
+            <span style={{ fontSize: 10, color: 'var(--text-muted)', minWidth: 95, flexShrink: 0, fontWeight: 600 }}>
+              {t('moldCode')}:
             </span>
             <span style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: 13, color: 'var(--accent)' }}>
               #{data.equipment_code} {data.display_name}
@@ -74,28 +79,28 @@ export default function MoldDetailView({ data }: Props) {
 
           {/* Linked Tray Info */}
           <div style={{ display: 'flex', alignItems: 'baseline' }}>
-            <span style={{ fontSize: 10, color: 'var(--text-muted)', minWidth: 85, flexShrink: 0, fontWeight: 600 }}>
-              トレイ情報:
+            <span style={{ fontSize: 10, color: 'var(--text-muted)', minWidth: 95, flexShrink: 0, fontWeight: 600 }}>
+              {t('trayInfo')}:
             </span>
             <span style={{ fontWeight: 700, fontSize: 12, color: 'var(--text-primary)' }}>
-              {rev?.tray_title || prod?.product_name || prod?.product_name_internal || '—'}
+              {rev?.tray_info || rev?.customer_tray_name || prod?.product_name || prod?.product_name_internal || '—'}
             </span>
           </div>
 
-          {/* Resin Material & Thickness */}
+          {/* Resin Material */}
           <div style={{ display: 'flex', alignItems: 'baseline' }}>
-            <span style={{ fontSize: 10, color: 'var(--text-muted)', minWidth: 85, flexShrink: 0, fontWeight: 600 }}>
-              樹脂 (Loại nhựa):
+            <span style={{ fontSize: 10, color: 'var(--text-muted)', minWidth: 95, flexShrink: 0, fontWeight: 600 }}>
+              {t('resin')}:
             </span>
             <span style={{ fontWeight: 700, fontSize: 12, color: 'var(--tint-purple-text)' }}>
-              {rev?.resin_type || 'PET'} {rev?.resin_thickness ? `${rev.resin_thickness}mm` : ''}
+              {rev?.plastic_type_designed || '—'}
             </span>
           </div>
 
           {/* Initial Export / Mfg Date */}
           <div style={{ display: 'flex', alignItems: 'baseline' }}>
-            <span style={{ fontSize: 10, color: 'var(--text-muted)', minWidth: 85, flexShrink: 0, fontWeight: 600 }}>
-              初回出荷日:
+            <span style={{ fontSize: 10, color: 'var(--text-muted)', minWidth: 95, flexShrink: 0, fontWeight: 600 }}>
+              {t('mfgDate')}:
             </span>
             <span style={{ fontFamily: 'monospace', fontWeight: 600, fontSize: 12, color: 'var(--text-secondary)' }}>
               {data.manufacturing_date || data.entry_date || '—'}
@@ -104,27 +109,27 @@ export default function MoldDetailView({ data }: Props) {
 
           {/* Mold Cavity & Pocket Count */}
           <div style={{ display: 'flex', alignItems: 'baseline' }}>
-            <span style={{ fontSize: 10, color: 'var(--text-muted)', minWidth: 85, flexShrink: 0, fontWeight: 600 }}>
-              枚数 (Số mảnh):
+            <span style={{ fontSize: 10, color: 'var(--text-muted)', minWidth: 95, flexShrink: 0, fontWeight: 600 }}>
+              {t('pieceCount')}:
             </span>
             <span style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: 13, color: 'var(--text-primary)' }}>
-              {data.piece_count || rev?.piece_count || 1} 枚
+              {data.piece_count || rev?.cavity_count || pocketCountVal || '—'}
             </span>
           </div>
 
           <div style={{ display: 'flex', alignItems: 'baseline' }}>
-            <span style={{ fontSize: 10, color: 'var(--text-muted)', minWidth: 85, flexShrink: 0, fontWeight: 600 }}>
-              ポケット数:
+            <span style={{ fontSize: 10, color: 'var(--text-muted)', minWidth: 95, flexShrink: 0, fontWeight: 600 }}>
+              {t('pocketCount')}:
             </span>
             <span style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: 13, color: 'var(--text-primary)' }}>
-              {data.pocket_count || rev?.pocket_count || '—'} pockets
+              {pocketCountVal ? `${pocketCountVal} pockets` : '—'}
             </span>
           </div>
 
           {/* Mold Dimensions Badge */}
           <div style={{ display: 'flex', alignItems: 'baseline' }}>
-            <span style={{ fontSize: 10, color: 'var(--text-muted)', minWidth: 85, flexShrink: 0, fontWeight: 600 }}>
-              金型寸法:
+            <span style={{ fontSize: 10, color: 'var(--text-muted)', minWidth: 95, flexShrink: 0, fontWeight: 600 }}>
+              {t('moldDims')}:
             </span>
             <span
               className="badge badge--info"
@@ -136,34 +141,37 @@ export default function MoldDetailView({ data }: Props) {
 
           {/* Mold Weight */}
           <div style={{ display: 'flex', alignItems: 'baseline' }}>
-            <span style={{ fontSize: 10, color: 'var(--text-muted)', minWidth: 85, flexShrink: 0, fontWeight: 600 }}>
-              重量 (kg):
+            <span style={{ fontSize: 10, color: 'var(--text-muted)', minWidth: 95, flexShrink: 0, fontWeight: 600 }}>
+              {t('moldWeight')}:
             </span>
             <span style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: 13, color: 'var(--text-primary)' }}>
               {data.actual_weight ? `${data.actual_weight} kg` : rev?.design_weight || '—'}
             </span>
           </div>
 
-          {/* Product Dimensions Badge */}
+          {/* Cutline Dimensions */}
           <div style={{ display: 'flex', alignItems: 'baseline' }}>
-            <span style={{ fontSize: 10, color: 'var(--text-muted)', minWidth: 85, flexShrink: 0, fontWeight: 600 }}>
-              製品寸法:
+            <span style={{ fontSize: 10, color: 'var(--text-muted)', minWidth: 95, flexShrink: 0, fontWeight: 600 }}>
+              {t('cutline')}:
             </span>
             <span
               className="badge badge--success"
               style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: 12 }}
             >
-              {dimsProd ? `${dimsProd} mm` : '—'}
+              {dimsCutline}
             </span>
           </div>
 
-          {/* Product Weight */}
+          {/* Corner R & Chamfer C */}
           <div style={{ display: 'flex', alignItems: 'baseline' }}>
-            <span style={{ fontSize: 10, color: 'var(--text-muted)', minWidth: 85, flexShrink: 0, fontWeight: 600 }}>
-              製品重量(g):
+            <span style={{ fontSize: 10, color: 'var(--text-muted)', minWidth: 95, flexShrink: 0, fontWeight: 600 }}>
+              {t('chamferDims')}:
             </span>
             <span style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: 13, color: 'var(--text-primary)' }}>
-              {rev?.product_weight ? `${rev.product_weight} g` : '—'}
+              {cutlineSpecs.cornerR ? (cutlineSpecs.cornerR.startsWith('R') ? cutlineSpecs.cornerR : `R${cutlineSpecs.cornerR}`) : ''}
+              {cutlineSpecs.cornerR && cutlineSpecs.chamferC ? ' / ' : ''}
+              {cutlineSpecs.chamferC ? (cutlineSpecs.chamferC.startsWith('C') ? cutlineSpecs.chamferC : `C${cutlineSpecs.chamferC}`) : ''}
+              {!cutlineSpecs.cornerR && !cutlineSpecs.chamferC ? '—' : ''}
             </span>
           </div>
         </div>
@@ -186,16 +194,16 @@ export default function MoldDetailView({ data }: Props) {
           <Sparkles size={18} style={{ color: isTeflonCoated ? 'var(--tint-purple-text)' : 'var(--text-muted)' }} />
           <div>
             <div style={{ fontSize: 11, fontWeight: 700, color: isTeflonCoated ? 'var(--tint-purple-text)' : 'var(--text-primary)' }}>
-              テフロンコーティング (Trạng thái mạ Teflon)
+              {t('teflonStatus')}
             </div>
             <div style={{ fontSize: 10, color: 'var(--text-muted)' }}>
-              {isTeflonCoated ? 'Khuôn đã được phủ mạ Teflon chống dính bề mặt' : 'Khuôn tiêu chuẩn chưa mạ Teflon'}
+              {isTeflonCoated ? t('teflonDescCoated') : t('teflonDescStandard')}
             </div>
           </div>
         </div>
 
         <span className={isTeflonCoated ? 'badge badge--purple font-bold' : 'badge badge--neutral'}>
-          {isTeflonCoated ? '✨ 済 (Đã mạ)' : '標準 (Chưa mạ)'}
+          {isTeflonCoated ? t('teflonCoated') : t('teflonStandard')}
         </span>
       </div>
     </div>

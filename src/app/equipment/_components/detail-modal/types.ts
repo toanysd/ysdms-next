@@ -44,6 +44,25 @@ export interface EquipmentDetailData {
   keeper_company_id?: string | null
   current_rack_layer_id?: string | null
   design_revision_id?: string | null
+  created_at?: string | null
+  legacy_id?: string | null
+  legacy_specs?: any
+  base_type?: string | null
+  blade_height_mm?: number | string | null
+  cutline_length?: number | string | null
+  cutline_width?: number | string | null
+  post_cut_length?: number | string | null
+  post_cut_width?: number | string | null
+  pp_cushion?: string | null
+  corner_r?: string | null
+  chamfer_c?: string | null
+  related_equipment?: Array<{
+    equipment_id: string
+    equipment_code: string
+    display_name: string
+    equipment_type: string
+    usage_status?: string | null
+  }>
   // FK Expanded
   keeper_company?: { company_name?: string | null; company_code?: string | null } | null
   company?: { company_name?: string | null; company_code?: string | null } | null
@@ -57,16 +76,19 @@ export interface EquipmentDetailData {
     design_length?: number | null
     design_width?: number | null
     design_height?: number | null
+    design_depth?: number | null
     design_weight?: string | null
-    product_length?: number | null
-    product_width?: number | null
-    product_height?: number | null
-    product_weight?: string | null
-    pocket_count?: number | null
-    piece_count?: number | null
-    resin_type?: string | null
-    resin_thickness?: number | null
-    tray_title?: string | null
+    cutline_length?: number | null
+    cutline_width?: number | null
+    pocket_numbers?: number | null
+    cavity_count?: number | null
+    cavity_pitch_mm?: number | null
+    machine_feed_pitch_mm?: number | null
+    plastic_type_designed?: string | null
+    corner_r?: string | null
+    chamfer_c?: string | null
+    tray_info?: string | null
+    customer_tray_name?: string | null
     products?: {
       product_code?: string | null
       product_name_internal?: string | null

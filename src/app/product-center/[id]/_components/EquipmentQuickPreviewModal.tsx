@@ -23,12 +23,22 @@ export default function EquipmentQuickPreviewModal({ isOpen, onClose, item }: Pr
     ? (item.data.equipment_id || item.data.cutter_id)
     : item.data.equipment_id
 
+  // Explicitly inject correct equipment_type so EquipmentDetailModal recognizes cutter vs mold
+  const normalizedInitialData = {
+    ...item.data,
+    equipment_type: item.type === 'cutter'
+      ? 'CUTTER'
+      : item.type === 'mold'
+      ? 'MOLD'
+      : (item.data.equipment_type || 'EQUIPMENT')
+  }
+
   return (
     <EquipmentDetailModal
       isOpen={isOpen}
       onClose={onClose}
       equipmentId={equipId}
-      initialData={item.data}
+      initialData={normalizedInitialData}
     />
   )
 }

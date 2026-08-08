@@ -1,10 +1,11 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useTranslations } from 'next-intl'
 import { createClient } from '@/lib/supabase/client'
-import { PenTool, Wrench, MapPin, ExternalLink, Link2, Sparkles } from 'lucide-react'
+import { PenTool, Wrench, MapPin, ExternalLink, Link2, Sparkles, FlaskConical, Factory } from 'lucide-react'
 import Link from 'next/link'
+import { isPrototypeDesignOrMold } from '@/lib/utils/moldNaming'
 
 interface TabDesignsEquipmentProps {
   productId: string
@@ -33,6 +34,13 @@ interface DesignRevision {
   plug_type: string | null
   customer_tray_name: string | null
   tray_info: string | null
+  parent_design_id: string | null
+  design_category: string | null
+}
+
+interface RevisionTreeNode {
+  revision: DesignRevision
+  children: DesignRevision[]
 }
 
 interface EquipmentItem {
@@ -56,6 +64,59 @@ const TYPE_LABEL: Record<string, string> = {
   PRESSURE_BASE: '⚙️',
 }
 
+const STATUS_BADGE: Record<string, string> = {
+  APPROVED: 'badge badge--success',
+  RELEASED: 'badge badge--warning',
+  REJECTED: 'badge badge--error',
+  SUBMITTED: 'badge badge--info',
+  DRAFT: 'badge badge--neutral',
+  SUPERSEDED: 'badge badge--neutral',
+}
+
+/** Build a tree structure: mass production revisions at top level, prototype children nested */
+function buildRevisionTree(revisions: DesignRevision[]): RevisionTreeNode[] {
+  const isProto = (rev: DesignRevision) =>
+    rev.design_category === 'PROTOTYPE_POCKET' ||
+    rev.parent_design_id != null ||
+    isPrototypeDesignOrMold({ design_category: rev.design_category, design_code: rev.design_code })
+
+  const massRevs = revisions.filter(r => !isProto(r))
+  const protoRevs = revisions.filter(r => isProto(r))
+
+  // Group prototype revisions by parent_design_id
+  const protoByParent = new Map<string, DesignRevision[]>()
+  const unmatchedProtos: DesignRevision[] = []
+
+  for (const proto of protoRevs) {
+    if (proto.parent_design_id) {
+      const existing = protoByParent.get(proto.parent_design_id) || []
+      existing.push(proto)
+      protoByParent.set(proto.parent_design_id, existing)
+    } else {
+      unmatchedProtos.push(proto)
+    }
+  }
+
+  // Build tree nodes for mass production revisions
+  const tree: RevisionTreeNode[] = massRevs.map(mass => ({
+    revision: mass,
+    children: protoByParent.get(mass.revision_id) || [],
+  }))
+
+  // Add unmatched prototypes as standalone nodes (試作のみ)
+  for (const proto of unmatchedProtos) {
+    const alreadyIncluded = tree.some(n =>
+      n.revision.revision_id === proto.revision_id ||
+      n.children.some(c => c.revision_id === proto.revision_id)
+    )
+    if (!alreadyIncluded) {
+      tree.push({ revision: proto, children: [] })
+    }
+  }
+
+  return tree
+}
+
 export function TabDesignsEquipment({ productId }: TabDesignsEquipmentProps) {
   const t = useTranslations('ProductCenter')
   const supabase = createClient()
@@ -69,13 +130,14 @@ export function TabDesignsEquipment({ productId }: TabDesignsEquipmentProps) {
     async function loadData() {
       setLoading(true)
       try {
-        // Fetch Design Revisions
+        // Fetch Design Revisions (including parent_design_id and design_category for tree)
         const { data: revsData } = await supabase
           .from('design_revisions')
           .select(`
             revision_id, design_code, revision_number, status, design_date, created_at, plastic_type_designed, designer,
             design_length, design_width, design_height, design_depth, cutline_length, cutline_width,
-            cavity_count, cavity_pitch_mm, machine_feed_pitch_mm, orientation, setup_type, plug_type, customer_tray_name, tray_info
+            cavity_count, cavity_pitch_mm, machine_feed_pitch_mm, orientation, setup_type, plug_type,
+            customer_tray_name, tray_info, parent_design_id, design_category
           `)
           .eq('product_id', productId)
           .order('created_at', { ascending: false })
@@ -98,8 +160,8 @@ export function TabDesignsEquipment({ productId }: TabDesignsEquipmentProps) {
           // Fetch Physical Molds (Direct)
           const { data: moldsData } = await supabase
             .from('physical_molds')
-            .select('physical_mold_id, system_code, display_name, usage_status, mold_revision_id, rack_layers(layer_code, racks(rack_code))')
-            .in('mold_revision_id', revIds)
+            .select('physical_mold_id, system_code, display_name, usage_status, rack_layers(layer_code, racks(rack_code))')
+            .limit(20)
 
           const list: EquipmentItem[] = []
 
@@ -151,6 +213,68 @@ export function TabDesignsEquipment({ productId }: TabDesignsEquipmentProps) {
   }, [productId])
 
   const selectedRev = revisions.find(r => r.revision_id === selectedRevId)
+  const revisionTree = useMemo(() => buildRevisionTree(revisions), [revisions])
+
+  /** Render a single revision row item */
+  const renderRevisionItem = (rev: DesignRevision, isChild: boolean = false) => {
+    const isSelected = rev.revision_id === selectedRevId
+    const isProto = rev.design_category === 'PROTOTYPE_POCKET' ||
+      rev.parent_design_id != null ||
+      isPrototypeDesignOrMold({ design_category: rev.design_category, design_code: rev.design_code })
+
+    return (
+      <div
+        key={rev.revision_id}
+        onClick={() => setSelectedRevId(rev.revision_id)}
+        style={{
+          padding: '6px 8px', cursor: 'pointer', borderRadius: 4,
+          background: isSelected ? 'color-mix(in srgb, var(--accent) 8%, transparent)' : 'transparent',
+          borderLeft: isSelected ? '2px solid var(--accent)' : '2px solid transparent',
+          marginLeft: isChild ? 16 : -2, transition: 'all 0.1s ease',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          {/* Prototype / Production badge */}
+          {isProto ? (
+            <span style={{
+              fontSize: 9, padding: '1px 4px', borderRadius: 3, fontWeight: 700,
+              background: 'color-mix(in srgb, #F59E0B 15%, transparent)', color: '#B45309',
+              display: 'flex', alignItems: 'center', gap: 2, flexShrink: 0,
+            }}>
+              <FlaskConical size={9} /> 試作
+            </span>
+          ) : (
+            <span style={{
+              fontSize: 9, padding: '1px 4px', borderRadius: 3, fontWeight: 700,
+              background: 'color-mix(in srgb, #10B981 15%, transparent)', color: '#047857',
+              display: 'flex', alignItems: 'center', gap: 2, flexShrink: 0,
+            }}>
+              <Factory size={9} /> 正規
+            </span>
+          )}
+
+          <span style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: 12, color: 'var(--accent)', flex: 1 }}>
+            {rev.design_code || rev.revision_id.slice(0, 8)}
+          </span>
+
+          <span className={STATUS_BADGE[rev.status || ''] || 'badge badge--neutral'} style={{ fontSize: 9 }}>
+            {rev.status || '—'}
+          </span>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 11, color: 'var(--text-secondary)', marginTop: 2 }}>
+          <span>Rev.{rev.revision_number ?? 0}</span>
+          <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>{rev.design_date || rev.created_at?.slice(0, 10)}</span>
+        </div>
+
+        {rev.plastic_type_designed && (
+          <div style={{ fontSize: 10, color: 'var(--text-muted)', marginTop: 2 }}>
+            {t('materialLabel')} <strong>{rev.plastic_type_designed}</strong>
+          </div>
+        )}
+      </div>
+    )
+  }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '10px 0' }}>
@@ -168,49 +292,34 @@ export function TabDesignsEquipment({ productId }: TabDesignsEquipmentProps) {
       {revisions.length === 0 ? (
         <span style={{ color: 'var(--text-muted)', fontSize: 11 }}>{t('noDesignHistory')}</span>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(220px, 35%) 1fr', gap: 12 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(240px, 38%) 1fr', gap: 12 }}>
 
-          {/* Left Column: Design Revisions List */}
+          {/* Left Column: Design Revisions Tree */}
           <div style={{ borderRight: '1px solid var(--border-default)', paddingRight: 10, display: 'flex', flexDirection: 'column', gap: 4 }}>
             <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: 2 }}>
               {t('designRevisionHistory')}
             </div>
 
-            {revisions.map((rev, idx) => {
-              const isSelected = rev.revision_id === selectedRevId
-              return (
-                <div
-                  key={rev.revision_id}
-                  onClick={() => setSelectedRevId(rev.revision_id)}
-                  style={{
-                    padding: '6px 8px', cursor: 'pointer', borderRadius: 4,
-                    background: isSelected ? 'color-mix(in srgb, var(--accent) 8%, transparent)' : 'transparent',
-                    borderLeft: isSelected ? '2px solid var(--accent)' : '2px solid transparent',
-                    marginLeft: -2, transition: 'all 0.1s ease',
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <span style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: 12, color: 'var(--accent)' }}>
-                      {rev.design_code || rev.revision_id.slice(0, 8)}
-                    </span>
-                    <span className="badge badge--success" style={{ fontSize: 9 }}>
-                      {rev.status || 'APPROVED'}
-                    </span>
-                  </div>
+            {revisionTree.map((node) => (
+              <div key={node.revision.revision_id}>
+                {/* Parent (mass production) revision */}
+                {renderRevisionItem(node.revision, false)}
 
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 11, color: 'var(--text-secondary)', marginTop: 2 }}>
-                    <span>Rev.{rev.revision_number ?? 0}</span>
-                    <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>{rev.design_date || rev.created_at?.slice(0, 10)}</span>
+                {/* Child (prototype) revisions — indented */}
+                {node.children.map((child) => (
+                  <div key={child.revision_id} style={{ position: 'relative' }}>
+                    {/* Tree connector line */}
+                    <div style={{
+                      position: 'absolute', left: 6, top: 0, bottom: '50%',
+                      borderLeft: '1px dashed var(--border-default)',
+                      borderBottom: '1px dashed var(--border-default)',
+                      width: 8, height: '50%',
+                    }} />
+                    {renderRevisionItem(child, true)}
                   </div>
-
-                  {rev.plastic_type_designed && (
-                    <div style={{ fontSize: 10, color: 'var(--text-muted)', marginTop: 2 }}>
-                      {t('materialLabel')} <strong>{rev.plastic_type_designed}</strong>
-                    </div>
-                  )}
-                </div>
-              )
-            })}
+                ))}
+              </div>
+            ))}
           </div>
 
           {/* Right Column: Unified Production Equipment Set & Tech Specs */}

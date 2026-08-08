@@ -192,6 +192,8 @@ export default function ProductCenterIndexPage() {
       const activeStatusFilter = filterState.status !== 'ALL' ? filterState.status : selectedStatus
       if (activeStatusFilter !== 'ALL') {
         req = req.eq('product_status', activeStatusFilter)
+      } else {
+        req = req.neq('product_status', 'MERGED')
       }
 
       if (filterState.companyId) {

@@ -61,7 +61,7 @@ export function SectionEquipment({ productId }: SectionEquipmentProps) {
           supabase
             .from('physical_molds')
             .select('physical_mold_id, system_code, display_name, usage_status, rack_layers(layer_code, racks(rack_code))')
-            .in('mold_revision_id', revIds),
+            .limit(20),
         ])
 
         const list: EquipmentItem[] = []

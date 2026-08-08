@@ -21,6 +21,7 @@ export async function searchProducts(query: string) {
       notes,
       legacy_specs
     `)
+    .neq('product_status', 'MERGED')
     .or(`product_code.ilike.%${query}%,product_name.ilike.%${query}%`)
     .order('product_code', { ascending: true })
     .limit(20)

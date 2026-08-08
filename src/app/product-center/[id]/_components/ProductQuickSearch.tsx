@@ -67,6 +67,7 @@ export function ProductQuickSearch({ currentProductId }: ProductQuickSearchProps
           product_id, product_code, product_name, product_name_internal, customer_product_name, product_status,
           companies:companies!products_company_id_fkey(company_code, company_name)
         `)
+        .neq('product_status', 'MERGED')
         .or(orConditions.join(','))
         .limit(10)
 

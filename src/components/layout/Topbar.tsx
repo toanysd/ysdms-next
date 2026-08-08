@@ -92,6 +92,7 @@ export default function Topbar() {
           const { data: prodData } = await supabase
             .from('products')
             .select('product_id, product_code, product_name, product_name_internal, customer_product_name, companies:companies!products_company_id_fkey(company_code)')
+            .neq('product_status', 'MERGED')
             .or(`product_code.ilike.%${clean}%,product_code.ilike.${wildcard},product_name.ilike.%${clean}%,customer_product_name.ilike.%${clean}%,product_name_internal.ilike.%${clean}%,product_name_internal.ilike.${wildcard}`)
             .limit(6)
 

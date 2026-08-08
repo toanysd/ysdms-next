@@ -156,81 +156,92 @@ export function formatRackLocationDisplay(rl: any): string {
   return cleanRack || layerStr || '—'
 }
 
-/**
- * Formats standard design cutline specification string from design revision
- */
-export function formatCutlineSpecString(rev: any): string {
-  if (!rev) return '—'
-  let length = rev.cutline_length || rev.design_length || null
-  let width = rev.cutline_width || rev.design_width || null
-  let cornerR = rev.corner_r || null
-  let chamferC = rev.chamfer_c || null
-
-  if (!length && !width) {
-    const str = String(rev.tray_info || rev.customer_tray_name || rev.version_note || '')
-    const match = str.match(/(\d+)\s*[x×]\s*(\d+)(?:[^\d]*(\d+)\s*R)?(?:[^\d]*(\d+)\s*C)?/i)
-    if (match) {
-      length = match[1]
-      width = match[2]
-      if (match[3] && !cornerR) cornerR = match[3]
-      if (match[4] && !chamferC) chamferC = match[4]
-    }
-  }
-
-  if (!length && !width) return '—'
-
-  let spec = `${length || '—'} × ${width || '—'}`
-
-  if (cornerR) {
-    const cleanR = String(cornerR).replace(/[^0-9.]/g, '')
-    if (cleanR) spec += ` - 2R${cleanR}`
-  }
-
-  if (chamferC) {
-    const cleanC = String(chamferC).replace(/[^0-9.]/g, '')
-    if (cleanC) spec += ` - 2C${cleanC}`
-  }
-
-  return spec
+export interface CutlineSpecsResult {
+  length: string | null
+  width: string | null
+  cornerR: string | null
+  chamferC: string | null
+  formatted: string
 }
 
 /**
- * Formats cutter physical specification string in standard YSD format
+ * Formats Corner R value accurately without corrupting counts (e.g. '3R15', '4R10', '2R8', '15' -> 'R15')
  */
-export function formatCutterSpecString(item: any, activeRev?: any): string {
-  if (!item && !activeRev) return '—'
-  const target = item || activeRev || {}
-  let length = target.actual_length_mm || target.cutter_length_mm || target.cutline_length || activeRev?.cutline_length || activeRev?.design_length || null
-  let width = target.actual_width_mm || target.cutter_width_mm || target.cutline_width || activeRev?.cutline_width || activeRev?.design_width || null
-  let cornerR = target.corner_r || activeRev?.corner_r || null
-  let chamferC = target.chamfer_c || activeRev?.chamfer_c || null
+export function formatCornerRDisplay(val: any): string | null {
+  if (val == null) return null
+  const str = String(val).trim()
+  if (!str || str === '0' || str === '0.0') return null
+  if (/^[0-9]*[RC]/i.test(str)) return str
+  if (/^[0-9.]+$/.test(str)) return `R${str}`
+  return str
+}
+
+/**
+ * Formats Chamfer C value accurately (e.g. 'C20', '2C8', '20' -> 'C20')
+ */
+export function formatChamferCDisplay(val: any): string | null {
+  if (val == null) return null
+  const str = String(val).trim()
+  if (!str || str === '0' || str === '0.0') return null
+  if (/^[0-9]*C/i.test(str)) return str
+  if (/^[0-9.]+$/.test(str)) return `C${str}`
+  return str
+}
+
+/**
+ * Reads cutline specs DIRECTLY from structured DB columns only.
+ * RULE-DATA-01: No text parsing, no fallback from physical dimensions.
+ * Compact format: 530×350-3R15-C20
+ * 
+ * Accepted columns: cutline_length, cutline_width, corner_r, chamfer_c
+ * (from design_revisions or cutters table)
+ */
+export function getCutlineSpecs(input: any): CutlineSpecsResult {
+  const empty: CutlineSpecsResult = { length: null, width: null, cornerR: null, chamferC: null, formatted: '—' }
+  if (!input) return empty
+
+  const length = input.cutline_length != null && input.cutline_length !== '' ? String(input.cutline_length) : null
+  const width = input.cutline_width != null && input.cutline_width !== '' ? String(input.cutline_width) : null
+  const cornerR = formatCornerRDisplay(input.corner_r)
+  const chamferC = formatChamferCDisplay(input.chamfer_c)
 
   if (!length && !width) {
-    const str = String(target.dimensions || target.display_name || target.cutter_name || target.cutter_no || '')
-    const match = str.match(/(\d+)\s*[x×]\s*(\d+)(?:[^\d]*(\d+)\s*R)?(?:[^\d]*(\d+)\s*C)?/i)
-    if (match) {
-      length = match[1]
-      width = match[2]
-      if (match[3] && !cornerR) cornerR = match[3]
-      if (match[4] && !chamferC) chamferC = match[4]
-    }
+    return { length: null, width: null, cornerR, chamferC, formatted: '—' }
   }
 
-  if (!length && !width) return '—'
-  
-  let spec = `${length || '—'} × ${width || '—'}`
-  
+  let formatted = `${length || '?'}×${width || '?'}`
+
   if (cornerR) {
-    const cleanR = String(cornerR).replace(/[^0-9.]/g, '')
-    if (cleanR) spec += ` - 2R${cleanR}`
+    formatted += `-${cornerR}`
   }
 
   if (chamferC) {
-    const cleanC = String(chamferC).replace(/[^0-9.]/g, '')
-    if (cleanC) spec += ` - 2C${cleanC}`
+    formatted += `-${chamferC}`
   }
 
-  return spec
+  return { length, width, cornerR, chamferC, formatted }
+}
+
+/** @deprecated Use getCutlineSpecs() instead. Kept for backward compatibility during migration. */
+export function parseCutlineSpecs(input: any): CutlineSpecsResult {
+  return getCutlineSpecs(input)
+}
+
+/**
+ * Formats cutline spec string from design revision data.
+ * RULE-DATA-01: Reads ONLY cutline_length, cutline_width, corner_r, chamfer_c columns.
+ */
+export function formatCutlineSpecString(rev: any): string {
+  return getCutlineSpecs(rev).formatted
+}
+
+/**
+ * Formats cutter spec string — reads from design_revisions via FK.
+ * RULE-DATA-01: cutline specs come from design_revisions, not cutter physical dimensions.
+ */
+export function formatCutterSpecString(item: any, activeRev?: any): string {
+  // Priority: design revision (canonical source), then cutter's own cutline columns
+  return getCutlineSpecs(activeRev || item).formatted
 }
 
 /**

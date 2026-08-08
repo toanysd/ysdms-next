@@ -39,6 +39,8 @@ export default function StorageStatusCard({ data, latestLog, latestStatusLog, de
       keeperName = toName
       if (!toName.includes('YSD')) isExternalKeeper = true
     }
+  } else if (data.current_rack_layer_id || data.rack_layers) {
+    keeperName = 'YSD ((株)ヨシダ成形)'
   } else if (keeperCompanyId) {
     keeperName = 'Keeper Company'
   } else {
