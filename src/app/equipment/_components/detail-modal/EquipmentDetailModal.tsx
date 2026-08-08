@@ -115,48 +115,51 @@ export default function EquipmentDetailModal({
     }
 
     if (item) {
-      // Ensure design_revisions is populated if missing
-      if (!item.design_revisions) {
-        let revData: any = null
-        if (item.design_revision_id) {
-          const { data: r } = await supabase
-            .from('design_revisions')
-            .select(`
-              revision_id, design_code, design_length, design_width, design_height, design_depth, design_weight,
-              cutline_length, cutline_width, pocket_numbers, cavity_count, cavity_pitch_mm, machine_feed_pitch_mm,
-              plastic_type_designed, corner_r, chamfer_c, tray_info, customer_tray_name,
-              products(product_code, product_name_internal, product_name)
-            `)
-            .eq('revision_id', item.design_revision_id)
-            .maybeSingle()
-          revData = r
-        }
+        if (!item.design_revisions) {
+          if (initialData?.design_revisions) {
+            item.design_revisions = initialData.design_revisions
+            item.design_revision_id = (initialData.design_revisions as any).revision_id || item.design_revision_id
+          } else {
+            let revData: any = null
+            if (item.design_revision_id) {
+              const { data: r } = await supabase
+                .from('design_revisions')
+                .select(`
+                  revision_id, design_code, design_length, design_width, design_height, design_depth, design_weight,
+                  cutline_length, cutline_width, pocket_numbers, cavity_count, cavity_pitch_mm, machine_feed_pitch_mm,
+                  plastic_type_designed, corner_r, chamfer_c, tray_info, customer_tray_name,
+                  products(product_code, product_name_internal, product_name)
+                `)
+                .eq('revision_id', item.design_revision_id)
+                .maybeSingle()
+              revData = r
+            }
 
-        if (!revData) {
-          const rawCode = String(item.equipment_code || item.display_name || item.system_code || item.cutter_no || '').trim()
-          const cleanCode = rawCode.replace(/[\s\-_]?R\d+$/i, '').replace(/[\s\-_]/g, '')
-          if (cleanCode) {
-            const { data: rByCode } = await supabase
-              .from('design_revisions')
-              .select(`
-                revision_id, design_code, design_length, design_width, design_height, design_depth, design_weight,
-                cutline_length, cutline_width, pocket_numbers, cavity_count, cavity_pitch_mm, machine_feed_pitch_mm,
-                plastic_type_designed, corner_r, chamfer_c, tray_info, customer_tray_name,
-                products(product_code, product_name_internal, product_name)
-              `)
-              .or(`design_code.ilike.%${cleanCode}%,design_code.ilike.%${rawCode}%`)
-              .limit(1)
-              .maybeSingle()
-            revData = rByCode
-            // RULE-DATA-01: NO product table fallback. If design_revisions not found, UI shows '—'.
+            if (!revData) {
+              const rawCode = String(item.equipment_code || item.display_name || item.system_code || item.cutter_no || '').trim()
+              const cleanCode = rawCode.replace(/[\s\-_]?R\d+$/i, '').replace(/[\s\-_]/g, '')
+              if (cleanCode) {
+                const { data: rByCode } = await supabase
+                  .from('design_revisions')
+                  .select(`
+                    revision_id, design_code, design_length, design_width, design_height, design_depth, design_weight,
+                    cutline_length, cutline_width, pocket_numbers, cavity_count, cavity_pitch_mm, machine_feed_pitch_mm,
+                    plastic_type_designed, corner_r, chamfer_c, tray_info, customer_tray_name,
+                    products(product_code, product_name_internal, product_name)
+                  `)
+                  .or(`design_code.ilike.%${cleanCode}%,design_code.ilike.%${rawCode}%`)
+                  .limit(1)
+                  .maybeSingle()
+                revData = rByCode
+              }
+            }
+
+            if (revData) {
+              item.design_revisions = revData
+              item.design_revision_id = revData.revision_id
+            }
           }
         }
-
-        if (revData) {
-          item.design_revisions = revData
-          item.design_revision_id = revData.revision_id
-        }
-      }
 
       // Compute Related Equipment (Molds ↔ Cutters)
       const relatedSet = new Map<string, any>()
@@ -333,7 +336,7 @@ export default function EquipmentDetailModal({
         }}
       >
         {/* Loading overlay inside fixed container frame */}
-        {loading && !data ? (
+        {loading && (!data || (!data.design_revisions && !data.cutline_length)) ? (
           <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12 }}>
             <RefreshCw size={24} className="animate-spin" style={{ color: 'var(--accent)' }} />
             <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)' }}>

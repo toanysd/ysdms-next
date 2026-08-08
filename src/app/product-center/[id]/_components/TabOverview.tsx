@@ -1817,7 +1817,7 @@ export function TabOverview(props: TabOverviewProps) {
                             bindingLabel(isActive, isDisposed),
                             getRack(m.rack_layers),
                             m.keeper_company?.company_code || m.keeper_company?.company_name || 'YSD',
-                            { type: 'mold', data: m }
+                            { type: 'mold', data: { ...m, design_revisions: activeRev } }
                           )
                         })}
                         {/* Cutters (抜型 - Orange Theme) */}
@@ -1837,7 +1837,7 @@ export function TabOverview(props: TabOverviewProps) {
                             bindingLabel(isActive, isDisposed, c.is_shared),
                             getRack(c.rack_layers),
                             c.keeper_company?.company_code || c.keeper_company?.company_name || 'YSD',
-                            { type: 'cutter', data: c }
+                            { type: 'cutter', data: { ...c, design_revisions: activeRev } }
                           )
                         })}
                         {/* Other Equipment (Stacking, Water base, Press base, Frame, Plate, Plug) */}
@@ -1869,7 +1869,7 @@ export function TabOverview(props: TabOverviewProps) {
                             bindingLabel(isActive, isDisposed),
                             getRack(eq.rack_layers),
                             eq.keeper_company?.company_code || eq.keeper_company?.company_name || 'YSD',
-                            { type: 'equip', data: eq }
+                            { type: 'equip', data: { ...eq, design_revisions: activeRev } }
                           )
                         })}
                       </div>
