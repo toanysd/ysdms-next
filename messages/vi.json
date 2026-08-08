@@ -3501,10 +3501,13 @@
       "teflon": "Teflon"
     },
     "moldSpecs": {
+      "title": "概要 (金型仕様)",
       "overviewTitle": "Tổng quan Thông số Khuôn",
       "moldCode": "Mã khuôn",
+      "trayName": "Tên khay",
       "trayInfo": "Thông tin khay",
       "resin": "Loại nhựa",
+      "plasticType": "Loại nhựa",
       "mfgDate": "Ngày xuất hàng",
       "pieceCount": "Số mảnh khuôn",
       "pocketCount": "Số pocket",

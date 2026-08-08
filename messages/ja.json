@@ -3501,10 +3501,13 @@
       "teflon": "テフロン"
     },
     "moldSpecs": {
+      "title": "概要 (金型仕様)",
       "overviewTitle": "概要 (金型仕様)",
-      "moldCode": "兆称",
+      "moldCode": "金型名称",
+      "trayName": "金型名称",
       "trayInfo": "トレイ情報",
       "resin": "樹脂",
+      "plasticType": "樹脂",
       "mfgDate": "初回出荷日",
       "pieceCount": "枚数",
       "pocketCount": "ポケット数",
