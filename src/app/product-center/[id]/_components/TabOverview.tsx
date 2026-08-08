@@ -371,7 +371,7 @@ export function TabOverview(props: TabOverviewProps) {
               design_revision_id, mold_type, piece_count, actual_length_mm, actual_width_mm, actual_height_mm,
               actual_weight, manufacturing_date,
               rack_layers(layer_code, racks(rack_code)),
-              keeper_company:companies!keeper_company_id(company_code, company_name)
+              keeper_company:companies!equipment_keeper_company_id_fkey(company_code, company_name)
             `)
           if (prodCode) {
             equipQuery = equipQuery.or(`design_revision_id.in.(${revIds.join(',')}),equipment_code.ilike.%${prodCode}%,display_name.ilike.%${prodCode}%`)
@@ -472,7 +472,7 @@ export function TabOverview(props: TabOverviewProps) {
                   equipment_id, equipment_code, display_name, equipment_type, sub_type, usage_status, device_status,
                   design_revision_id, actual_length_mm, actual_width_mm, actual_height_mm,
                   rack_layers(layer_code, racks(rack_code)),
-                  keeper_company:companies!keeper_company_id(company_code, company_name)
+                  keeper_company:companies!equipment_keeper_company_id_fkey(company_code, company_name)
                 `)
                 .in('equipment_id', juncCutterIds)
 

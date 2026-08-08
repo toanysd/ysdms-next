@@ -116,4 +116,5 @@ export interface EquipmentDetailModalProps {
   equipmentId?: string | null
   initialData?: EquipmentDetailData | null
   onUpdateSuccess?: () => void
+  onNavigate?: (id: string) => void
 }

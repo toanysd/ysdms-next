@@ -410,6 +410,7 @@ function UnifiedEquipmentPageContent() {
         onClose={() => setSelectedEquipId(null)}
         equipmentId={selectedEquipId}
         onUpdateSuccess={fetchEquipment}
+        onNavigate={(id) => setSelectedEquipId(id)}
       />
     </div>
   )
