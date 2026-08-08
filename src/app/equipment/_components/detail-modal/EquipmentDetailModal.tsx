@@ -225,7 +225,7 @@ export default function EquipmentDetailModal({
       <div
         className="card-flat"
         style={{
-          width: '100%', maxWidth: 1080, maxHeight: '92vh', borderRadius: 12, overflow: 'hidden',
+          width: '100%', maxWidth: 1080, height: 680, maxHeight: '92vh', borderRadius: 12, overflow: 'hidden',
           display: 'flex', flexDirection: 'column',
           boxShadow: '0 25px 30px -5px rgba(0, 0, 0, 0.25)',
           background: 'var(--bg-surface)', border: '1px solid var(--border-default)'
@@ -355,8 +355,8 @@ export default function EquipmentDetailModal({
               ))}
             </div>
 
-            {/* TAB CONTENTS WRAPPER (Fixed min-height to prevent layout jumping/flicker when switching tabs) */}
-            <div style={{ flex: 1, minHeight: 280, display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
+            {/* TAB CONTENTS WRAPPER (Strict fixed height + stable scrollbar gutter to eliminate all micro-vibrations) */}
+            <div style={{ height: 260, minHeight: 260, maxHeight: 260, overflowY: 'auto', scrollbarGutter: 'stable', display: 'flex', flexDirection: 'column' }}>
               {activeTab === 'specs' && (
                 <>
                   {isMold && <MoldDetailView data={data} />}
