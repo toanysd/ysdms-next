@@ -36,7 +36,7 @@ export default function EquipmentDetailModal({
     setLoading(true)
     let item: any = null
 
-    // 1. Try equipment table first
+    // 1. Fetch primary equipment record
     const { data: eq } = await supabase
       .from('equipment')
       .select(`
@@ -58,7 +58,6 @@ export default function EquipmentDetailModal({
     if (eq) {
       item = { ...eq }
     } else {
-      // 2. Try cutters table
       const { data: legacyCutter } = await supabase
         .from('cutters')
         .select(`
@@ -80,7 +79,6 @@ export default function EquipmentDetailModal({
           usage_status: legacyCutter.usage_status || (legacyCutter.cutter_presence ? 'STORAGE' : 'OUT')
         }
       } else {
-        // 3. Try physical_molds table
         const { data: pMold } = await supabase
           .from('physical_molds')
           .select(`
@@ -114,186 +112,172 @@ export default function EquipmentDetailModal({
       }
     }
 
-    if (item) {
-        if (!item.design_revisions) {
-          if (initialData?.design_revisions) {
-            item.design_revisions = initialData.design_revisions
-            item.design_revision_id = (initialData.design_revisions as any).revision_id || item.design_revision_id
-          } else {
-            let revData: any = null
-            if (item.design_revision_id) {
-              const { data: r } = await supabase
-                .from('design_revisions')
-                .select(`
-                  revision_id, design_code, design_length, design_width, design_height, design_depth, design_weight,
-                  cutline_length, cutline_width, pocket_numbers, cavity_count, cavity_pitch_mm, machine_feed_pitch_mm,
-                  plastic_type_designed, corner_r, chamfer_c, tray_info, customer_tray_name,
-                  products(product_code, product_name_internal, product_name)
-                `)
-                .eq('revision_id', item.design_revision_id)
-                .maybeSingle()
-              revData = r
-            }
-
-            if (!revData) {
-              const rawCode = String(item.equipment_code || item.display_name || item.system_code || item.cutter_no || '').trim()
-              const cleanCode = rawCode.replace(/[\s\-_]?R\d+$/i, '').replace(/[\s\-_]/g, '')
-              if (cleanCode) {
-                const { data: rByCode } = await supabase
-                  .from('design_revisions')
-                  .select(`
-                    revision_id, design_code, design_length, design_width, design_height, design_depth, design_weight,
-                    cutline_length, cutline_width, pocket_numbers, cavity_count, cavity_pitch_mm, machine_feed_pitch_mm,
-                    plastic_type_designed, corner_r, chamfer_c, tray_info, customer_tray_name,
-                    products(product_code, product_name_internal, product_name)
-                  `)
-                  .or(`design_code.ilike.%${cleanCode}%,design_code.ilike.%${rawCode}%`)
-                  .limit(1)
-                  .maybeSingle()
-                revData = rByCode
-              }
-            }
-
-            if (revData) {
-              item.design_revisions = revData
-              item.design_revision_id = revData.revision_id
-            }
-          }
-        }
-
-      // Compute Related Equipment (Molds ↔ Cutters)
-      const relatedSet = new Map<string, any>()
-      const revId = item.design_revision_id || item.design_revisions?.revision_id
-      const rawCode = String(item.equipment_code || item.display_name || item.system_code || item.cutter_no || '').trim()
-      const baseProductCode = rawCode.replace(/[\s\-_]?R\d+$/i, '').replace(/[\s\-_]/g, '')
-
-      // 1. Junction table mold_design_cutters lookup
-      if (revId) {
-        const { data: juncCutters } = await supabase
-          .from('mold_design_cutters')
-          .select('cutter_id')
-          .eq('mold_design_id', revId)
-        if (juncCutters && juncCutters.length > 0) {
-          const cutterIds = juncCutters.map(j => j.cutter_id).filter(Boolean)
-          if (cutterIds.length > 0) {
-            const { data: linkedCutters } = await supabase
-              .from('cutters')
-              .select('cutter_id, cutter_no, cutter_name, usage_status, cutter_presence')
-              .in('cutter_id', cutterIds)
-            if (linkedCutters) {
-              linkedCutters.forEach((lc: any) => {
-                if (lc.cutter_id !== item.equipment_id) {
-                  relatedSet.set(lc.cutter_id, {
-                    equipment_id: lc.cutter_id,
-                    equipment_code: lc.cutter_no || lc.cutter_name,
-                    display_name: lc.cutter_name || lc.cutter_no,
-                    equipment_type: 'CUTTER',
-                    usage_status: lc.usage_status || (lc.cutter_presence ? 'STORAGE' : 'OUT')
-                  })
-                }
-              })
-            }
-          }
-        }
-      }
-
-      // 2. Base Code Matching for Related Equipment
-      if (baseProductCode) {
-        const isCutter = ['CUTTER', 'CUTTER_SEPARATE', 'CUTTER_INLINE'].includes(item.equipment_type)
-        if (isCutter) {
-          const { data: pMolds } = await supabase
-            .from('physical_molds')
-            .select('physical_mold_id, system_code, display_name, usage_status, device_status')
-            .or(`system_code.ilike.%${baseProductCode}%,display_name.ilike.%${baseProductCode}%`)
-            .limit(5)
-          if (pMolds) {
-            pMolds.forEach((pm: any) => {
-              if (pm.physical_mold_id !== item.equipment_id) {
-                relatedSet.set(pm.physical_mold_id, {
-                  equipment_id: pm.physical_mold_id,
-                  equipment_code: pm.system_code,
-                  display_name: pm.display_name,
-                  equipment_type: 'MOLD',
-                  usage_status: pm.usage_status
-                })
-              }
-            })
-          }
-        } else {
-          const { data: cutters } = await supabase
-            .from('cutters')
-            .select('cutter_id, cutter_no, cutter_name, usage_status, cutter_presence')
-            .or(`cutter_no.ilike.%${baseProductCode}%,cutter_name.ilike.%${baseProductCode}%`)
-            .limit(5)
-          if (cutters) {
-            cutters.forEach((c: any) => {
-              if (c.cutter_id !== item.equipment_id) {
-                relatedSet.set(c.cutter_id, {
-                  equipment_id: c.cutter_id,
-                  equipment_code: c.cutter_no || c.cutter_name,
-                  display_name: c.cutter_name || c.cutter_no,
-                  equipment_type: 'CUTTER',
-                  usage_status: c.usage_status || (c.cutter_presence ? 'STORAGE' : 'OUT')
-                })
-              }
-            })
-          }
-        }
-      }
-
-      item.related_equipment = Array.from(relatedSet.values())
-      setData(item)
+    if (!item) {
+      setLoading(false)
+      return
     }
 
+    // Preserve design_revisions from initialData if present
+    if (!item.design_revisions && initialData?.design_revisions) {
+      item.design_revisions = initialData.design_revisions
+      item.design_revision_id = (initialData.design_revisions as any).revision_id || item.design_revision_id
+    }
+
+    const targetEqId = item.equipment_id || id
+
+    // 2. FETCH ALL AUXILIARY DATA IN PARALLEL (Promise.all for high performance)
+    const [revRes, jobsRes, historyRes, statusLogsRes] = await Promise.all([
+      // Design Revisions (if missing)
+      (!item.design_revisions && item.design_revision_id)
+        ? supabase
+            .from('design_revisions')
+            .select(`
+              revision_id, design_code, design_length, design_width, design_height, design_depth, design_weight,
+              cutline_length, cutline_width, pocket_numbers, cavity_count, cavity_pitch_mm, machine_feed_pitch_mm,
+              plastic_type_designed, corner_r, chamfer_c, tray_info, customer_tray_name,
+              products(product_code, product_name_internal, product_name)
+            `)
+            .eq('revision_id', item.design_revision_id)
+            .maybeSingle()
+        : Promise.resolve({ data: item.design_revisions }),
+
+      // Jobs History
+      supabase
+        .from('jobs')
+        .select(`
+          job_id, job_code, job_name, job_status, created_at, deadline, ship_date, job_category, notes,
+          design_revisions(revision_id, design_code)
+        `)
+        .or(`physical_mold_id.eq.${id},equipment_id.eq.${id}`)
+        .order('created_at', { ascending: true }),
+
+      // Equipment History
+      supabase
+        .from('equipment_history')
+        .select(`
+          history_id, action_type, action_date, description, to_location,
+          from_company:from_company_id(company_code, company_name),
+          to_company:to_company_id(company_code, company_name),
+          employees(employee_name)
+        `)
+        .eq('equipment_id', targetEqId)
+        .order('action_date', { ascending: false })
+        .limit(10),
+
+      // Status Logs
+      (supabase as any)
+        .from('equipment_status_logs')
+        .select(`
+          status_log_id, status, action_date, to_location, notes,
+          destinations(destination_name),
+          employees(employee_name)
+        `)
+        .eq('equipment_id', targetEqId)
+        .order('action_date', { ascending: false })
+        .limit(10)
+    ])
+
+    if (revRes?.data) {
+      item.design_revisions = revRes.data
+    }
+
+    // Compute Related Equipment (Molds ↔ Cutters)
+    const relatedSet = new Map<string, any>()
+    const revId = item.design_revision_id || item.design_revisions?.revision_id
+    const rawCode = String(item.equipment_code || item.display_name || item.system_code || item.cutter_no || '').trim()
+    const baseProductCode = rawCode.replace(/[\s\-_]?R\d+$/i, '').replace(/[\s\-_]/g, '')
+
+    if (revId) {
+      const { data: juncCutters } = await supabase
+        .from('mold_design_cutters')
+        .select('cutter_id')
+        .eq('mold_design_id', revId)
+      if (juncCutters && juncCutters.length > 0) {
+        const cutterIds = juncCutters.map(j => j.cutter_id).filter(Boolean)
+        if (cutterIds.length > 0) {
+          const { data: linkedCutters } = await supabase
+            .from('cutters')
+            .select('cutter_id, cutter_no, cutter_name, usage_status, cutter_presence')
+            .in('cutter_id', cutterIds)
+          if (linkedCutters) {
+            linkedCutters.forEach((lc: any) => {
+              if (lc.cutter_id !== item.equipment_id) {
+                relatedSet.set(lc.cutter_id, {
+                  equipment_id: lc.cutter_id,
+                  equipment_code: lc.cutter_no || lc.cutter_name,
+                  display_name: lc.cutter_name || lc.cutter_no,
+                  equipment_type: 'CUTTER',
+                  usage_status: lc.usage_status || (lc.cutter_presence ? 'STORAGE' : 'OUT')
+                })
+              }
+            })
+          }
+        }
+      }
+    }
+
+    if (baseProductCode) {
+      const isCutter = ['CUTTER', 'CUTTER_SEPARATE', 'CUTTER_INLINE'].includes(item.equipment_type)
+      if (isCutter) {
+        const { data: pMolds } = await supabase
+          .from('physical_molds')
+          .select('physical_mold_id, system_code, display_name, usage_status, device_status')
+          .or(`system_code.ilike.%${baseProductCode}%,display_name.ilike.%${baseProductCode}%`)
+          .limit(5)
+        if (pMolds) {
+          pMolds.forEach((pm: any) => {
+            if (pm.physical_mold_id !== item.equipment_id) {
+              relatedSet.set(pm.physical_mold_id, {
+                equipment_id: pm.physical_mold_id,
+                equipment_code: pm.system_code,
+                display_name: pm.display_name,
+                equipment_type: 'MOLD',
+                usage_status: pm.usage_status
+              })
+            }
+          })
+        }
+      } else {
+        const { data: cutters } = await supabase
+          .from('cutters')
+          .select('cutter_id, cutter_no, cutter_name, usage_status, cutter_presence')
+          .or(`cutter_no.ilike.%${baseProductCode}%,cutter_name.ilike.%${baseProductCode}%`)
+          .limit(5)
+        if (cutters) {
+          cutters.forEach((c: any) => {
+            if (c.cutter_id !== item.equipment_id) {
+              relatedSet.set(c.cutter_id, {
+                equipment_id: c.cutter_id,
+                equipment_code: c.cutter_no || c.cutter_name,
+                display_name: c.cutter_name || c.cutter_no,
+                equipment_type: 'CUTTER',
+                usage_status: c.usage_status || (c.cutter_presence ? 'STORAGE' : 'OUT')
+              })
+            }
+          })
+        }
+      }
+    }
+
+    item.related_equipment = Array.from(relatedSet.values())
+
+    // 3. SINGLE ATOMIC STATE UPDATE — Update ALL data and turn off loading in ONE single frame
+    setData(item)
+    if (jobsRes?.data) setJobsHistory(jobsRes.data)
+    if (historyRes?.data) setMovementsHistory(historyRes.data)
+    if (statusLogsRes?.data) setStatusLogs(statusLogsRes.data as any[])
     setLoading(false)
-
-    // Use actual ID for history
-    const targetEqId = item?.equipment_id || id
-
-    // Fetch Jobs
-    const { data: jobs } = await supabase
-      .from('jobs')
-      .select(`
-        job_id, job_code, job_name, job_status, created_at, deadline, ship_date, job_category, notes,
-        design_revisions(revision_id, design_code)
-      `)
-      .or(`physical_mold_id.eq.${id},equipment_id.eq.${id}`)
-      .order('created_at', { ascending: true })
-
-    if (jobs) setJobsHistory(jobs)
-
-    // Fetch History
-    const { data: history } = await supabase
-      .from('equipment_history')
-      .select(`
-        history_id, action_type, action_date, description, to_location,
-        from_company:from_company_id(company_code, company_name),
-        to_company:to_company_id(company_code, company_name),
-        employees(employee_name)
-      `)
-      .eq('equipment_id', targetEqId)
-      .order('action_date', { ascending: false })
-      .limit(10)
-
-    if (history) setMovementsHistory(history)
-
-    // Fetch Status Logs
-    const { data: sLogs } = await (supabase as any)
-      .from('equipment_status_logs')
-      .select(`
-        status_log_id, status, action_date, to_location, notes,
-        destinations(destination_name),
-        employees(employee_name)
-      `)
-      .eq('equipment_id', targetEqId)
-      .order('action_date', { ascending: false })
-      .limit(10)
-
-    if (sLogs) setStatusLogs(sLogs as any[])
   }
 
   useEffect(() => {
-    if (!isOpen) return
+    if (!isOpen) {
+      setData(null)
+      setJobsHistory([])
+      setMovementsHistory([])
+      setStatusLogs([])
+      setLoading(false)
+      return
+    }
     setActiveTab('specs')
     const targetId = equipmentId || initialData?.equipment_id || (initialData as any)?.physical_mold_id || (initialData as any)?.cutter_id
     if (targetId) {
@@ -336,7 +320,7 @@ export default function EquipmentDetailModal({
         }}
       >
         {/* Loading overlay inside fixed container frame */}
-        {loading && (!data || (!data.design_revisions && !data.cutline_length)) ? (
+        {loading ? (
           <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12 }}>
             <RefreshCw size={24} className="animate-spin" style={{ color: 'var(--accent)' }} />
             <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)' }}>
