@@ -187,14 +187,11 @@ export default function EquipmentDetailModal({
 
   const isHeaderUnverified = data?.device_status === 'UNVERIFIED' || data?.usage_status === 'UNVERIFIED'
 
-  let headerStatusText = '未設定 (Chưa xác định)'
-  let headerBadgeClass = 'badge badge--neutral'
+  let headerStatusText = 'IN (社内保管)'
+  let headerBadgeClass = 'badge badge--success'
 
   if (isHeaderUnverified) {
     headerStatusText = '未検証 (Chưa kiểm kê)'
-    headerBadgeClass = 'badge badge--neutral'
-  } else if (!hasRealHeaderLog) {
-    headerStatusText = '登録済 (Chưa có nhật ký)'
     headerBadgeClass = 'badge badge--neutral'
   } else if (rawStatus === 'DISPOSED' || rawStatus === 'SCRAP' || data?.device_status === 'DISPOSED') {
     headerStatusText = '廃棄 (Đã hủy)'
@@ -205,12 +202,9 @@ export default function EquipmentDetailModal({
   } else if (isHeaderOut) {
     headerStatusText = 'OUT (社外/出庫)'
     headerBadgeClass = 'badge badge--warning'
-  } else if (rawStatus === 'IN' || rawStatus === 'CHECK_IN' || rawStatus === 'IN_STOCK') {
+  } else {
     headerStatusText = 'IN (社内保管)'
     headerBadgeClass = 'badge badge--success'
-  } else {
-    headerStatusText = '登録済 (Chưa có nhật ký)'
-    headerBadgeClass = 'badge badge--neutral'
   }
 
   return (
