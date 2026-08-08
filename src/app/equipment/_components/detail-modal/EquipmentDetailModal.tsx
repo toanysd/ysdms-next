@@ -355,90 +355,92 @@ export default function EquipmentDetailModal({
               ))}
             </div>
 
-            {/* TAB CONTENTS */}
-            {activeTab === 'specs' && (
-              <>
-                {isMold && <MoldDetailView data={data} />}
-                {isCutter && <CutterDetailView data={data} />}
-                {!isMold && !isCutter && <AuxiliaryDetailView data={data} />}
-              </>
-            )}
+            {/* TAB CONTENTS WRAPPER (Fixed min-height to prevent layout jumping/flicker when switching tabs) */}
+            <div style={{ flex: 1, minHeight: 280, display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
+              {activeTab === 'specs' && (
+                <>
+                  {isMold && <MoldDetailView data={data} />}
+                  {isCutter && <CutterDetailView data={data} />}
+                  {!isMold && !isCutter && <AuxiliaryDetailView data={data} />}
+                </>
+              )}
 
-            {activeTab === 'lifecycle' && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, fontSize: 12 }}>
-                {jobsHistory.length === 0 ? (
-                  <div style={{ textAlign: 'center', padding: '20px 0', color: 'var(--text-muted)' }}>
-                    改訂・加工 Job 履歴はありません。
-                  </div>
-                ) : (
-                  jobsHistory.map((j, idx) => (
-                    <div key={j.job_id} className="card-flat" style={{ padding: 10, background: 'var(--bg-surface-2)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <span className="badge badge--info" style={{ fontSize: 9 }}>Job #{idx + 1}</span>
-                        <span style={{ fontFamily: 'monospace', fontWeight: 700 }}>{j.job_code || j.job_name}</span>
-                      </div>
-                      <span style={{ fontFamily: 'monospace', fontSize: 11, color: 'var(--text-muted)' }}>
-                        {(j.ship_date || j.created_at || '').slice(0, 10)}
-                      </span>
+              {activeTab === 'lifecycle' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, fontSize: 12 }}>
+                  {jobsHistory.length === 0 ? (
+                    <div style={{ textAlign: 'center', padding: '30px 0', color: 'var(--text-muted)' }}>
+                      改訂・加工 Job 履歴はありません。
                     </div>
-                  ))
-                )}
-              </div>
-            )}
+                  ) : (
+                    jobsHistory.map((j, idx) => (
+                      <div key={j.job_id} className="card-flat" style={{ padding: 10, background: 'var(--bg-surface-2)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <span className="badge badge--info" style={{ fontSize: 9 }}>Job #{idx + 1}</span>
+                          <span style={{ fontFamily: 'monospace', fontWeight: 700 }}>{j.job_code || j.job_name}</span>
+                        </div>
+                        <span style={{ fontFamily: 'monospace', fontSize: 11, color: 'var(--text-muted)' }}>
+                          {(j.ship_date || j.created_at || '').slice(0, 10)}
+                        </span>
+                      </div>
+                    ))
+                  )}
+                </div>
+              )}
 
-            {activeTab === 'jobs' && (
-              <div style={{ fontSize: 11 }}>
-                {jobsHistory.length === 0 ? (
-                  <div style={{ textAlign: 'center', padding: '20px 0', color: 'var(--text-muted)' }}>加工履歴なし</div>
-                ) : (
-                  <table className="data-table">
-                    <thead>
-                      <tr>
-                        <th>Job コード</th>
-                        <th>ステータス</th>
-                        <th>日付</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {jobsHistory.map(j => (
-                        <tr key={j.job_id}>
-                          <td style={{ fontFamily: 'monospace', fontWeight: 700 }}>{j.job_code || j.job_name}</td>
-                          <td><span className="badge badge--success" style={{ fontSize: 8 }}>{j.job_status || 'COMPLETED'}</span></td>
-                          <td style={{ fontFamily: 'monospace' }}>{(j.ship_date || j.created_at || '').slice(0, 10)}</td>
+              {activeTab === 'jobs' && (
+                <div style={{ fontSize: 11 }}>
+                  {jobsHistory.length === 0 ? (
+                    <div style={{ textAlign: 'center', padding: '30px 0', color: 'var(--text-muted)' }}>加工履歴なし</div>
+                  ) : (
+                    <table className="data-table">
+                      <thead>
+                        <tr>
+                          <th>Job コード</th>
+                          <th>ステータス</th>
+                          <th>日付</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                )}
-              </div>
-            )}
+                      </thead>
+                      <tbody>
+                        {jobsHistory.map(j => (
+                          <tr key={j.job_id}>
+                            <td style={{ fontFamily: 'monospace', fontWeight: 700 }}>{j.job_code || j.job_name}</td>
+                            <td><span className="badge badge--success" style={{ fontSize: 8 }}>{j.job_status || 'COMPLETED'}</span></td>
+                            <td style={{ fontFamily: 'monospace' }}>{(j.ship_date || j.created_at || '').slice(0, 10)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                </div>
+              )}
 
-            {activeTab === 'movements' && (
-              <div style={{ fontSize: 11 }}>
-                {movementsHistory.length === 0 ? (
-                  <div style={{ textAlign: 'center', padding: '20px 0', color: 'var(--text-muted)' }}>移動履歴なし (Chưa có lịch sử di chuyển)</div>
-                ) : (
-                  <table className="data-table">
-                    <thead>
-                      <tr>
-                        <th>日付</th>
-                        <th>Loại</th>
-                        <th>Đến (To)</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {movementsHistory.map(m => (
-                        <tr key={m.history_id}>
-                          <td style={{ fontFamily: 'monospace' }}>{(m.action_date || '').slice(0, 10)}</td>
-                          <td><span className="badge badge--info" style={{ fontSize: 8 }}>{m.action_type}</span></td>
-                          <td style={{ fontWeight: 700 }}>{m.to_company?.company_name || m.to_location || '—'}</td>
+              {activeTab === 'movements' && (
+                <div style={{ fontSize: 11 }}>
+                  {movementsHistory.length === 0 ? (
+                    <div style={{ textAlign: 'center', padding: '30px 0', color: 'var(--text-muted)' }}>移動履歴なし (Chưa có lịch sử di chuyển)</div>
+                  ) : (
+                    <table className="data-table">
+                      <thead>
+                        <tr>
+                          <th>日付</th>
+                          <th>Loại</th>
+                          <th>Đến (To)</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                )}
-              </div>
-            )}
+                      </thead>
+                      <tbody>
+                        {movementsHistory.map(m => (
+                          <tr key={m.history_id}>
+                            <td style={{ fontFamily: 'monospace' }}>{(m.action_date || '').slice(0, 10)}</td>
+                            <td><span className="badge badge--info" style={{ fontSize: 8 }}>{m.action_type}</span></td>
+                            <td style={{ fontWeight: 700 }}>{m.to_company?.company_name || m.to_location || '—'}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* RIGHT COLUMN: 9 Action Buttons & Quick Access Links */}
