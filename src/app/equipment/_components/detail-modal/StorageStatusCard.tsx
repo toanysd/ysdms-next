@@ -48,16 +48,18 @@ export default function StorageStatusCard({ data, latestLog, latestStatusLog, de
   }
 
   // 3. Trạng thái Checkin / Checkout (IN / OUT / 未記録)
-  const hasRealLog = Boolean(latestStatusLog || latestLog)
-  const explicitAction = (latestStatusLog?.status || latestLog?.action_type || '').toUpperCase()
+  const rawStatus = (data.usage_status || data.device_status || (data.cutter_presence === false ? 'OUT' : data.cutter_presence === true ? 'STORAGE' : '') || '').toUpperCase()
+  const hasRealLog = Boolean(latestStatusLog || latestLog || rawStatus)
+  const explicitAction = (latestStatusLog?.status || latestLog?.action_type || rawStatus).toUpperCase()
   const isUnverified = data.device_status === 'UNVERIFIED' || data.usage_status === 'UNVERIFIED'
 
   const confirmDate =
     latestStatusLog?.action_date?.slice(0, 10) ||
     latestLog?.action_date?.slice(0, 10) ||
+    (data as any).last_action_date ||
     data.returned_date ||
     data.entry_date ||
-    '未確認'
+    (data.created_at ? data.created_at.slice(0, 10) : '未確認')
 
   const destinationLoc =
     destinationDisplay ||
@@ -65,6 +67,7 @@ export default function StorageStatusCard({ data, latestLog, latestStatusLog, de
     latestStatusLog?.destinations?.destination_name ||
     latestLog?.to_location ||
     latestLog?.to_company?.company_name ||
+    (data as any).destination_name ||
     ''
 
   const isOut =
