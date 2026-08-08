@@ -2,7 +2,7 @@
 
 import React from 'react'
 import { useTranslations } from 'next-intl'
-import { AlertTriangle, MapPin, Building2, Layers } from 'lucide-react'
+import { AlertTriangle, MapPin, Building2, Layers, CalendarCheck, Clock } from 'lucide-react'
 import { EquipmentDetailData } from './types'
 import { formatRackLocationDisplay } from '@/lib/utils/moldNaming'
 
@@ -16,16 +16,12 @@ interface Props {
 export default function StorageStatusCard({ data, latestLog, latestStatusLog, destinationDisplay }: Props) {
   const t = useTranslations('EquipmentDetailModal')
 
-  // ══════════════════════════════════════════════════════════════════
-  // 1. Vị trí gá kệ cố định tại YSD (Registered Rack-Layer at YSD)
-  // ══════════════════════════════════════════════════════════════════
+  // 1. Kệ cất giữ / trả về YSD
   const rackText = data.rack_layers
     ? formatRackLocationDisplay(data.rack_layers)
-    : '未配置 (Chưa gá kệ)'
+    : '未配置 (Chưa phân kệ)'
 
-  // ══════════════════════════════════════════════════════════════════
-  // 2. Công ty đang giữ khuôn hiện tại (Keeper Company)
-  // ══════════════════════════════════════════════════════════════════
+  // 2. Công ty lưu giữ (Keeper Company)
   const keeperCompanyId = data.keeper_company_id
   let keeperName = ''
   let isExternalKeeper = false
@@ -49,12 +45,17 @@ export default function StorageStatusCard({ data, latestLog, latestStatusLog, de
     keeperName = '未指定 (Chưa xác định)'
   }
 
-  // ══════════════════════════════════════════════════════════════════
-  // 3. Trạng thái lưu trữ thực sự (Strictly from real transaction logs!)
-  // ══════════════════════════════════════════════════════════════════
+  // 3. Trạng thái Checkin / Checkout (IN / OUT / 未記録)
   const hasRealLog = Boolean(latestStatusLog || latestLog)
   const explicitAction = (latestStatusLog?.status || latestLog?.action_type || '').toUpperCase()
   const isUnverified = data.device_status === 'UNVERIFIED' || data.usage_status === 'UNVERIFIED'
+
+  const confirmDate =
+    latestStatusLog?.action_date?.slice(0, 10) ||
+    latestLog?.action_date?.slice(0, 10) ||
+    data.returned_date ||
+    data.entry_date ||
+    '未確認'
 
   const destinationLoc =
     destinationDisplay ||
@@ -74,25 +75,25 @@ export default function StorageStatusCard({ data, latestLog, latestStatusLog, de
     explicitAction === 'BROKEN' ||
     isExternalKeeper
 
-  // Badge Status Determination — NO FALSE IN FALLBACKS!
-  let statusBadgeLabel = '未設定'
+  // 3 Cấp trạng thái Checkin rõ ràng 100%
+  let statusBadgeLabel = ''
   let statusBadgeClass = 'badge badge--neutral'
 
   if (isUnverified) {
-    statusBadgeLabel = '未検証 (Chưa kiểm kê)'
+    statusBadgeLabel = '⚠️ 未検証 (Chưa kiểm kê)'
     statusBadgeClass = 'badge badge--neutral'
   } else if (!hasRealLog) {
-    // KHÔNG CÓ NHẬT KÝ THAO TÁC CHECK-IN/OUT REAL ➔ Hiển thị neutral "登録済 (Chưa có nhật ký)"
-    statusBadgeLabel = '登録済 (Chưa có nhật ký)'
+    // CHƯA CÓ DỮ LIỆU CHECKIN THỰC TẾ
+    statusBadgeLabel = '⚪ 未記録 (Chưa có dữ liệu checkin)'
     statusBadgeClass = 'badge badge--neutral'
   } else if (isOut) {
-    statusBadgeLabel = 'OUT (社外/出庫)'
+    statusBadgeLabel = '🔴 OUT (社外/出庫)'
     statusBadgeClass = 'badge badge--warning'
   } else if (explicitAction === 'IN' || explicitAction === 'CHECK_IN' || explicitAction === 'RETURN') {
-    statusBadgeLabel = 'IN (社内保管)'
+    statusBadgeLabel = '🟢 IN (社内保管)'
     statusBadgeClass = 'badge badge--success'
   } else {
-    statusBadgeLabel = '登録済 (Chưa có nhật ký)'
+    statusBadgeLabel = '⚪ 未記録 (Chưa có dữ liệu checkin)'
     statusBadgeClass = 'badge badge--neutral'
   }
 
@@ -117,7 +118,7 @@ export default function StorageStatusCard({ data, latestLog, latestStatusLog, de
         gap: 12
       }}
     >
-      {/* Card Header Title */}
+      {/* Title Header */}
       <div
         style={{
           display: 'flex',
@@ -129,35 +130,18 @@ export default function StorageStatusCard({ data, latestLog, latestStatusLog, de
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 700, color: 'var(--accent)' }}>
           <MapPin size={16} />
-          <span>保管・所在情報 (Thông tin Bảo quản & Vị trí)</span>
+          <span>保管・ステータス (Lưu trữ & Trạng thái Checkin)</span>
         </div>
       </div>
 
-      {/* Main 2-Column Storage Details */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 14, fontSize: 13 }}>
+      {/* Main Grid — 2 Columns (4 Fields) */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, fontSize: 13 }}>
 
-        {/* 1. Vị trí gá kệ tại YSD + BADGE TRẠNG THÁI IN/OUT ĐẶT NGAY BÊN CẠNH */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-          <span style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
-            <Layers size={13} style={{ color: 'var(--accent)' }} />
-            YSD定位置 (Vị trí gá kệ YSD):
-          </span>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: 15, color: data.rack_layers ? 'var(--accent)' : 'var(--text-muted)' }}>
-              📍 {rackText}
-            </span>
-            {/* BADGE TRẠNG THÁI (IN / OUT / 登録済) ĐẶT NGAY CẠNH MÃ KỆ */}
-            <span className={statusBadgeClass} style={{ fontSize: 10, padding: '2px 8px', fontWeight: 700 }}>
-              {statusBadgeLabel}
-            </span>
-          </div>
-        </div>
-
-        {/* 2. Công ty đang giữ khuôn (Keeper Company) */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+        {/* Field 1: 保管会社 (Công ty) */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
           <span style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
             <Building2 size={13} style={{ color: 'var(--accent)' }} />
-            保管会社 (Đơn vị lưu giữ):
+            保管会社 (Công ty):
           </span>
           <div>
             <span
@@ -169,9 +153,44 @@ export default function StorageStatusCard({ data, latestLog, latestStatusLog, de
           </div>
         </div>
 
+        {/* Field 2: 返却先棚 (Giá trả về YSD) */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+          <span style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
+            <Layers size={13} style={{ color: 'var(--accent)' }} />
+            返却先棚 (Giá trả về YSD):
+          </span>
+          <span style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: 14, color: data.rack_layers ? 'var(--accent)' : 'var(--text-muted)' }}>
+            📍 {rackText}
+          </span>
+        </div>
+
+        {/* Field 3: 状態 (Trạng thái Checkin IN/OUT/未記録) */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+          <span style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
+            <Clock size={13} style={{ color: 'var(--accent)' }} />
+            状態 (Trạng thái Checkin):
+          </span>
+          <div>
+            <span className={statusBadgeClass} style={{ fontSize: 11, padding: '3px 10px', fontWeight: 700 }}>
+              {statusBadgeLabel}
+            </span>
+          </div>
+        </div>
+
+        {/* Field 4: 確認 (Xác nhận gần nhất) */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+          <span style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
+            <CalendarCheck size={13} style={{ color: 'var(--accent)' }} />
+            確認 (Xác nhận):
+          </span>
+          <span style={{ fontFamily: 'monospace', fontWeight: 600, fontSize: 12, color: 'var(--text-secondary)' }}>
+            📅 {confirmDate}
+          </span>
+        </div>
+
       </div>
 
-      {/* Thông tin nơi đến khi OUT */}
+      {/* Dòng cảnh báo / Nơi đến khi OUT */}
       {isOut && (
         <div
           style={{
@@ -191,19 +210,19 @@ export default function StorageStatusCard({ data, latestLog, latestStatusLog, de
           <AlertTriangle size={15} style={{ flexShrink: 0, marginTop: 1, color: '#f97316' }} />
           <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             <div style={{ fontWeight: 700, fontSize: 12, color: '#c2410c' }}>
-              🔴 社外持出中 (Khuôn đang được mượn/chuyển đi)
+              🔴 社外持出中 (Khuôn đang ở ngoài kho YSD)
             </div>
             <div>
-              現在地 (Nơi đến hiện tại): <strong>{destinationLoc || keeperName || '社外'}</strong>
+              現在地 (Nơi đến): <strong>{destinationLoc || keeperName || '社外'}</strong>
             </div>
             <div>
-              ※ 返却時はYSD定位置 <strong>{rackText}</strong> に戻してください。(Khi trả về YSD hãy cất vào kệ <strong>{rackText}</strong>).
+              ※ 返却時は返却先棚 <strong>{rackText}</strong> に戻してください。
             </div>
           </div>
         </div>
       )}
 
-      {/* Nhắc nhở khi khuôn do Công ty bên ngoài lưu giữ */}
+      {/* Dòng cảnh báo khi Công ty giữ là đơn vị bên ngoài */}
       {!isOut && isExternalKeeper && (
         <div
           style={{
@@ -222,7 +241,7 @@ export default function StorageStatusCard({ data, latestLog, latestStatusLog, de
         >
           <AlertTriangle size={15} style={{ flexShrink: 0, marginTop: 1, color: '#f97316' }} />
           <div>
-            ⚠️ <strong>社外保管注意:</strong> Khuôn hiện đang được bảo quản tại công ty bên ngoài: <strong>{keeperName}</strong>.
+            ⚠️ <strong>社外保管 (tại {keeperName}):</strong> Khuôn đang được lưu giữ bên ngoài. Khi trả về hãy mang tới phòng khuôn của YSD.
           </div>
         </div>
       )}
@@ -245,7 +264,7 @@ export default function StorageStatusCard({ data, latestLog, latestStatusLog, de
         >
           <AlertTriangle size={15} style={{ flexShrink: 0, color: '#f59e0b' }} />
           <div>
-            ⚠️ Khuôn khởi tạo từ CAD Server — Chưa xác thực kiểm kê thực tế tại xưởng YSD.
+            ⚠️ Khuôn khởi tạo từ CAD Server — Chưa xác thực kiểm kê tồn tại thực tế tại xưởng YSD.
           </div>
         </div>
       )}
