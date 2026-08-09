@@ -1327,21 +1327,16 @@ export function TabOverview(props: TabOverviewProps) {
 
             const parseStorageStatus = (usageStatus?: string | null, deviceStatus?: string | null, keeper?: string | null, presence?: boolean | null) => {
               const raw = (usageStatus || deviceStatus || '').toUpperCase().trim()
-              const isExternal = Boolean(keeper && keeper !== 'YSD' && keeper !== '本社工場' && keeper !== '—')
+              const keeperUpper = (keeper || '').toUpperCase().trim()
+              const isExternal = Boolean(keeper && keeperUpper !== 'YSD' && keeperUpper !== '(株)ヨシダ成形' && keeperUpper !== '本社工場' && keeper !== '—')
 
-              if (!raw && presence === false) {
-                return {
-                  badgeLabel: '⬆️ OUT',
-                  badgeClass: 'badge badge--error',
-                  type: 'OUT_INTERNAL',
-                  locationLabel: `🏭 社外/貸出中`,
-                  bg: '#FEFCE8',
-                  border: '#FEF08A',
-                  color: '#854D0E',
-                }
-              }
+              const isOut =
+                isExternal ||
+                ['OUT_OF_STOCK', 'IN_USE', 'BORROWED', 'OUT', 'CHECKOUT', 'LOAN', 'LENT', 'TRANSFER', 'CHECK_OUT'].includes(raw) ||
+                raw.includes('OUT') || raw.includes('貸出') || raw.includes('使用中') || raw.includes('社外') || raw.includes('在空') ||
+                presence === false
 
-              if (['OUT_OF_STOCK', 'IN_USE', 'BORROWED', 'OUT', 'CHECKOUT', 'LOAN', 'LENT'].includes(raw) || raw.includes('OUT') || raw.includes('貸出') || raw.includes('使用中') || raw.includes('社外') || raw.includes('在空')) {
+              if (isOut) {
                 if (isExternal) {
                   return {
                     badgeLabel: '⬆️ OUT',
@@ -1364,7 +1359,7 @@ export function TabOverview(props: TabOverviewProps) {
                 }
               }
 
-              if (['IN_STOCK', 'IN', 'CHECKIN', 'STORED', 'ACTIVE', 'NORMAL'].includes(raw) || raw.includes('保管')) {
+              if (['IN_STOCK', 'IN', 'CHECKIN', 'STORED', 'ACTIVE', 'NORMAL', 'STORAGE'].includes(raw) || raw.includes('保管')) {
                 return {
                   badgeLabel: '⬇️ IN',
                   badgeClass: 'badge badge--success',
