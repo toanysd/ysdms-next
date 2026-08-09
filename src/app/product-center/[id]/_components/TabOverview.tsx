@@ -12,7 +12,10 @@ import {
   GitFork, CornerDownRight, Link2, ArrowRight
 } from 'lucide-react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import EquipmentQuickPreviewModal, { type QuickPreviewItem } from './EquipmentQuickPreviewModal'
+import { EquipmentContextMenu, EquipmentItemContext } from './EquipmentContextMenu'
+import { CenteredQuickJobWizardModal, QuickWizardMode } from './CenteredQuickJobWizardModal'
 import { isPrototypeDesignOrMold, getEffectiveDesignStatus, getDesignStatusBadgeInfo, formatCutterDisplayCode, formatMoldDisplayCode, formatCutterSpecString, formatCutlineSpecString, getCutlineSpecs, formatCornerRDisplay, formatChamferCDisplay, extractBaseMassCode, formatRackLocationDisplay, lookupCavType } from '@/lib/utils/moldNaming'
 import { updateRevisionStatus } from '@/app/actions/engineering'
 
@@ -306,6 +309,39 @@ export function TabOverview(props: TabOverviewProps) {
   const [equipFilterMode, setEquipFilterMode] = useState<'revision' | 'all'>('revision')
   const [equipViewMode, setEquipViewMode] = useState<'list' | 'grid'>('grid')
   const [equipCategoryTab, setEquipCategoryTab] = useState<string>('ALL')
+  const router = useRouter()
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; item: EquipmentItemContext } | null>(null)
+  const [centeredWizardModal, setCenteredWizardModal] = useState<{
+    isOpen: boolean
+    mode: QuickWizardMode
+    subMode?: string
+    targetEquipment?: any
+  }>({ isOpen: false, mode: 'CREATE_JOB' })
+
+  const handleOverviewContextMenuAction = async (actionKey: string, item: EquipmentItemContext) => {
+    if (actionKey === 'CREATE_JOB') {
+      setCenteredWizardModal({
+        isOpen: true,
+        mode: 'CREATE_JOB',
+        subMode: 'OVERHAUL_JOB',
+        targetEquipment: { id: item.id, code: item.code, name: item.name, type: item.type, status: item.status, rack: item.rack },
+      })
+    } else if (actionKey === 'CHECK_IN') {
+      await supabase.from('equipment').update({ usage_status: 'IN_STOCK' }).eq('equipment_id', item.id)
+      router.refresh()
+    } else if (actionKey === 'TRANSFER' || actionKey === 'UPDATE_SPECS') {
+      setCenteredWizardModal({
+        isOpen: true,
+        mode: 'UPDATE_EQUIPMENT',
+        targetEquipment: { id: item.id, code: item.code, name: item.name, type: item.type, status: item.status, rack: item.rack },
+      })
+    } else if (actionKey === 'SCRAP') {
+      if (confirm(`Scrap equipment ${item.code}?`)) {
+        await supabase.from('equipment').update({ usage_status: 'SCRAPPED' }).eq('equipment_id', item.id)
+        router.refresh()
+      }
+    }
+  }
 
   // Active Job
   const [activeJob, setActiveJob] = useState<{ id: string; code: string; status: string; deadline: string; name: string } | null>(null)
@@ -1289,12 +1325,23 @@ export function TabOverview(props: TabOverviewProps) {
             const grandTotal = filteredMolds.length + filteredEquips.length + filteredCutters.length
             const totalAll = moldDetails.length + equipDetails.length + cutterDetails.length
 
-            const parseStorageStatus = (statusRaw?: string | null, keeper?: string | null) => {
-              const st = (statusRaw || 'IN_STOCK').toUpperCase().trim()
-              const isOut = st.includes('OUT') || st.includes('CHECKOUT') || st.includes('LOAN') || st.includes('IN_PROGRESS')
+            const parseStorageStatus = (usageStatus?: string | null, deviceStatus?: string | null, keeper?: string | null, presence?: boolean | null) => {
+              const raw = (usageStatus || deviceStatus || '').toUpperCase().trim()
               const isExternal = Boolean(keeper && keeper !== 'YSD' && keeper !== '本社工場' && keeper !== '—')
 
-              if (isOut) {
+              if (!raw && presence === false) {
+                return {
+                  badgeLabel: '⬆️ OUT',
+                  badgeClass: 'badge badge--error',
+                  type: 'OUT_INTERNAL',
+                  locationLabel: `🏭 社外/貸出中`,
+                  bg: '#FEFCE8',
+                  border: '#FEF08A',
+                  color: '#854D0E',
+                }
+              }
+
+              if (['OUT_OF_STOCK', 'IN_USE', 'BORROWED', 'OUT', 'CHECKOUT', 'LOAN', 'LENT'].includes(raw) || raw.includes('OUT') || raw.includes('貸出') || raw.includes('使用中') || raw.includes('社外') || raw.includes('在空')) {
                 if (isExternal) {
                   return {
                     badgeLabel: '⬆️ OUT',
@@ -1308,7 +1355,7 @@ export function TabOverview(props: TabOverviewProps) {
                 }
                 return {
                   badgeLabel: '⬆️ OUT',
-                  badgeClass: 'badge badge--error',
+                  badgeClass: 'badge badge--warning',
                   type: 'OUT_INTERNAL',
                   locationLabel: `🏭 ${keeper || '社内成形機'}`,
                   bg: '#FEFCE8',
@@ -1317,14 +1364,50 @@ export function TabOverview(props: TabOverviewProps) {
                 }
               }
 
+              if (['IN_STOCK', 'IN', 'CHECKIN', 'STORED', 'ACTIVE', 'NORMAL'].includes(raw) || raw.includes('保管')) {
+                return {
+                  badgeLabel: '⬇️ IN',
+                  badgeClass: 'badge badge--success',
+                  type: 'IN',
+                  locationLabel: '📍 保管中',
+                  bg: '#E0F2FE',
+                  border: '#BAE6FD',
+                  color: '#0369A1',
+                }
+              }
+
+              if (['DISPOSED', 'SCRAPPED', 'SCRAP'].includes(raw) || raw.includes('廃棄')) {
+                return {
+                  badgeLabel: '🗑️ 廃棄',
+                  badgeClass: 'badge badge--neutral',
+                  type: 'DISPOSED',
+                  locationLabel: '❌ 廃棄済',
+                  bg: 'var(--bg-surface-2)',
+                  border: 'var(--border-default)',
+                  color: 'var(--text-muted)',
+                }
+              }
+
+              if (['MAINTENANCE', 'REPAIR', 'UNDER_REPAIR'].includes(raw) || raw.includes('修理') || raw.includes('改造')) {
+                return {
+                  badgeLabel: '🛠️ 整備中',
+                  badgeClass: 'badge badge--info',
+                  type: 'MAINTENANCE',
+                  locationLabel: '🔧 整備・修繕中',
+                  bg: 'color-mix(in srgb, #0284C7 12%, transparent)',
+                  border: '#7DD3FC',
+                  color: '#0369A1',
+                }
+              }
+
               return {
-                badgeLabel: '⬇️ IN',
-                badgeClass: 'badge badge--success',
-                type: 'IN',
-                locationLabel: '📍 保管中',
-                bg: '#E0F2FE',
-                border: '#BAE6FD',
-                color: '#0369A1',
+                badgeLabel: '❓ 未記録',
+                badgeClass: 'badge badge--neutral',
+                type: 'UNRECORDED',
+                locationLabel: '⚠️ 未記録',
+                bg: 'var(--bg-surface-2)',
+                border: 'var(--border-default)',
+                color: 'var(--text-muted)',
               }
             }
 
@@ -1336,7 +1419,7 @@ export function TabOverview(props: TabOverviewProps) {
                 if (!m) return null
                 const moldDims = [m.actual_length_mm || activeRev?.design_length, m.actual_width_mm || activeRev?.design_width, m.actual_height_mm || activeRev?.design_height || activeRev?.design_depth].filter(Boolean).join(' × ')
                 const keeperName = m.keeper_company?.company_code || m.keeper_company?.company_name || 'YSD'
-                const stInfo = parseStorageStatus(m.usage_status || m.device_status, keeperName)
+                const stInfo = parseStorageStatus(m.usage_status, m.device_status, keeperName)
                 return {
                   code: formatMoldDisplayCode(m.system_code),
                   name: m.display_name || 'Physical Mold',
@@ -1354,7 +1437,7 @@ export function TabOverview(props: TabOverviewProps) {
                 const c = cutterDetails.find(item => item.cutter_id === selectedEquip.id)
                 if (!c) return null
                 const keeperName = c.keeper_company?.company_code || c.keeper_company?.company_name || 'YSD'
-                const stInfo = parseStorageStatus(c.usage_status || (c.cutter_presence ? 'IN' : 'OUT'), keeperName)
+                const stInfo = parseStorageStatus(c.usage_status, null, keeperName, c.cutter_presence)
                 return {
                   code: formatCutterDisplayCode(c.cutter_no || c.cutter_id),
                   name: c.cutter_name || 'Cutting Die',
@@ -1374,7 +1457,7 @@ export function TabOverview(props: TabOverviewProps) {
                 const isCutter = eq.equipment_type?.includes('CUTTER')
                 const eqDims = [eq.actual_length_mm, eq.actual_width_mm, eq.actual_height_mm].filter(Boolean).join(' × ')
                 const keeperName = eq.keeper_company?.company_code || eq.keeper_company?.company_name || 'YSD'
-                const stInfo = parseStorageStatus(eq.usage_status || eq.device_status, keeperName)
+                const stInfo = parseStorageStatus(eq.usage_status, eq.device_status, keeperName)
                 return {
                   code: isCutter ? formatCutterDisplayCode(eq.equipment_code) : formatMoldDisplayCode(eq.equipment_code),
                   name: eq.display_name || eq.equipment_type || 'Equipment',
@@ -1443,13 +1526,31 @@ export function TabOverview(props: TabOverviewProps) {
               const isEquipSelected = selectedEquip?.id === id
               const isCutter = type === 'cutter' || (type === 'equip' && previewItemData.type === 'equip' && previewItemData.data?.equipment_type?.includes('CUTTER'))
               const displayCode = isCutter ? formatCutterDisplayCode(code) : (code || '—')
-              const stInfo = parseStorageStatus(statusText, keeper)
+              const stInfo = parseStorageStatus(previewItemData.data?.usage_status || statusText, previewItemData.data?.device_status, keeper, previewItemData.data?.cutter_presence)
 
               return (
                 <div
                   key={id}
                   onClick={() => {
                     setSelectedEquip(prev => prev?.id === id ? null : { type, id, code: displayCode })
+                  }}
+                  onContextMenu={(e) => {
+                    e.preventDefault()
+                    setContextMenu({
+                      x: e.clientX,
+                      y: e.clientY,
+                      item: {
+                        id,
+                        type,
+                        code: displayCode,
+                        name: name || '',
+                        status: statusText,
+                        rack,
+                        url: `/equipment/unified?id=${id}`,
+                        isDirect: binding.label.includes('現役') || binding.label.includes('本型'),
+                        isBound: true,
+                      }
+                    })
                   }}
                   style={{
                     display: 'flex', alignItems: 'center', gap: 8,
@@ -1518,13 +1619,31 @@ export function TabOverview(props: TabOverviewProps) {
               const isEquipProto = isPrototypeDesignOrMold({ equipment_code: code, display_name: name })
               const isCutter = type === 'cutter' || (type === 'equip' && previewItemData.type === 'equip' && previewItemData.data?.equipment_type?.includes('CUTTER'))
               const displayCode = isCutter ? formatCutterDisplayCode(code) : (code || '—')
-              const stInfo = parseStorageStatus(statusText, keeper)
+              const stInfo = parseStorageStatus(previewItemData.data?.usage_status || statusText, previewItemData.data?.device_status, keeper, previewItemData.data?.cutter_presence)
 
               return (
                 <div
                   key={id}
                   onClick={() => {
                     setSelectedEquip(prev => prev?.id === id ? null : { type, id, code: displayCode })
+                  }}
+                  onContextMenu={(e) => {
+                    e.preventDefault()
+                    setContextMenu({
+                      x: e.clientX,
+                      y: e.clientY,
+                      item: {
+                        id,
+                        type,
+                        code: displayCode,
+                        name: name || '',
+                        status: statusText,
+                        rack,
+                        url: `/equipment/unified?id=${id}`,
+                        isDirect: binding.label.includes('現役') || binding.label.includes('本型'),
+                        isBound: true,
+                      }
+                    })
                   }}
                   style={{
                     display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: 4,
@@ -2039,6 +2158,31 @@ export function TabOverview(props: TabOverviewProps) {
         isOpen={!!previewItem}
         onClose={() => setPreviewItem(null)}
         item={previewItem}
+      />
+
+      {/* Floating Context Menu */}
+      {contextMenu && (
+        <EquipmentContextMenu
+          x={contextMenu.x}
+          y={contextMenu.y}
+          item={contextMenu.item}
+          onClose={() => setContextMenu(null)}
+          onAction={handleOverviewContextMenuAction}
+        />
+      )}
+
+      {/* Centered Quick Job Wizard Modal */}
+      <CenteredQuickJobWizardModal
+        isOpen={centeredWizardModal.isOpen}
+        mode={centeredWizardModal.mode}
+        subMode={centeredWizardModal.subMode}
+        productId={productId}
+        selectedRev={(activeRev as any) || null}
+        targetEquipment={centeredWizardModal.targetEquipment || null}
+        onClose={() => setCenteredWizardModal({ isOpen: false, mode: 'CREATE_JOB' })}
+        onSuccess={() => {
+          router.refresh()
+        }}
       />
 
     </div>
