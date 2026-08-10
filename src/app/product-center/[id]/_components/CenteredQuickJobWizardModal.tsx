@@ -131,8 +131,9 @@ export function CenteredQuickJobWizardModal({
   const [steps, setSteps] = useState<ExtendedStepInput[]>([])
   const [selectedStepId, setSelectedStepId] = useState<string | null>(null) // null = all steps
 
-  // Work Logs State for selected job
+  // Work Logs State & DEDICATED SUB-MODAL POPUP State
   const [worklogs, setWorklogs] = useState<WorkLogItem[]>([])
+  const [isWorklogModalOpen, setIsWorklogModalOpen] = useState(false)
   const [editingLogId, setEditingLogId] = useState<string | null>(null)
   const [newLogDate, setNewLogDate] = useState<string>(new Date().toISOString().split('T')[0])
   const [newLogWorkerId, setNewLogWorkerId] = useState<string>('')
@@ -171,6 +172,7 @@ export function CenteredQuickJobWizardModal({
   const loadJobDetails = useCallback(async (job: any) => {
     setSelectedJobId(job.job_id)
     setEditingLogId(null)
+    setIsWorklogModalOpen(false)
     setSelectedStepId(null)
     setNewLogStepId(null)
     setNewLogProcCodeId(null)
@@ -230,6 +232,7 @@ export function CenteredQuickJobWizardModal({
   const handlePrepareNewJob = () => {
     setSelectedJobId(null)
     setEditingLogId(null)
+    setIsWorklogModalOpen(false)
     setSelectedStepId(null)
     setNewLogStepId(null)
     setNewLogProcCodeId(null)
@@ -323,7 +326,22 @@ export function CenteredQuickJobWizardModal({
     setNewLogStepId(stepVal)
   }
 
-  // Work Log Actions
+  // Work Log Actions & Sub-Modal Popup Handlers
+  const handleOpenCreateWorklogModal = () => {
+    if (!selectedJobId) {
+      alert('先にJobを保存してから作業日報を追加してください。')
+      return
+    }
+    setEditingLogId(null)
+    setNewLogDate(new Date().toISOString().split('T')[0])
+    setNewLogWorkerId(employees[0]?.employee_id || '')
+    setNewLogStepId(selectedStepId || (steps.length > 0 ? (steps[0].step_id || `step-no-1`) : null))
+    setNewLogProcCodeId(null)
+    setNewLogHours('')
+    setNewLogDesc('')
+    setIsWorklogModalOpen(true)
+  }
+
   const handleStartEditWorklog = (log: WorkLogItem) => {
     setEditingLogId(log.log_id)
     setNewLogDate(log.work_date)
@@ -332,15 +350,15 @@ export function CenteredQuickJobWizardModal({
     setNewLogProcCodeId(log.processing_code_id || null)
     setNewLogHours(String(log.hours_spent))
     setNewLogDesc(log.description || '')
-    showToast('日報の編集モードに入りました', 'info')
+    setIsWorklogModalOpen(true)
   }
 
-  const handleCancelEditWorklog = () => {
+  const handleCancelWorklogModal = () => {
+    setIsWorklogModalOpen(false)
     setEditingLogId(null)
     setNewLogProcCodeId(null)
     setNewLogHours('')
     setNewLogDesc('')
-    showToast('編集をキャンセルしました', 'info')
   }
 
   const handleSaveWorklog = async () => {
@@ -376,7 +394,6 @@ export function CenteredQuickJobWizardModal({
         if (updateErr) throw updateErr
 
         showToast('作業日報を更新しました', 'success')
-        setEditingLogId(null)
       } else {
         // Insert new worklog
         const { error: insertErr } = await supabase.from('work_logs').insert({
@@ -394,7 +411,8 @@ export function CenteredQuickJobWizardModal({
         showToast('作業日報を登録しました', 'success')
       }
 
-      // Reset inputs & reload worklogs
+      setIsWorklogModalOpen(false)
+      setEditingLogId(null)
       setNewLogHours('')
       setNewLogDesc('')
       
@@ -537,7 +555,6 @@ export function CenteredQuickJobWizardModal({
     : worklogs
 
   const totalActualHours = filteredWorklogs.reduce((sum, w) => sum + w.hours_spent, 0)
-  const currentStepFilterVal = newLogStepId || selectedStepId || ''
 
   return (
     <div style={{
@@ -560,6 +577,85 @@ export function CenteredQuickJobWizardModal({
           }}>
             {toast.type === 'error' ? <AlertTriangle size={15} /> : toast.type === 'info' ? <Info size={15} /> : <CheckCircle2 size={15} />}
             {toast.message}
+          </div>
+        )}
+
+        {/* DEDICATED WORKLOG SUB-MODAL POPUP */}
+        {isWorklogModalOpen && (
+          <div style={{
+            position: 'absolute', inset: 0, background: 'rgba(15, 23, 42, 0.55)', backdropFilter: 'blur(4px)',
+            zIndex: 100001, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16
+          }}>
+            <div className="card-flat" style={{
+              width: 520, maxWidth: '92vw', background: 'var(--bg-surface)', borderRadius: 8,
+              boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.3)', border: '1px solid var(--border-default)',
+              overflow: 'hidden', display: 'flex', flexDirection: 'column'
+            }}>
+              <div style={{ padding: '10px 14px', background: editingLogId ? 'var(--tint-orange-bg)' : 'var(--tint-blue-bg)', borderBottom: '1px solid var(--border-default)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <h3 style={{ fontSize: 13, fontWeight: 700, margin: 0, color: '#0F172A', display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <Clock size={16} color="var(--accent)" /> {editingLogId ? '✏️ 作業日報の編集' : '+ 新規作業日報の追加'}
+                </h3>
+                <button onClick={handleCancelWorklogModal} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}><X size={16} /></button>
+              </div>
+
+              <div style={{ padding: 14, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                  <div>
+                    <label className="form-label" style={{ fontSize: 10 }}>作業日 <span style={{ color: 'var(--danger)' }}>*</span></label>
+                    <input type="date" className="form-input" style={{ padding: '4px 8px', fontSize: 11 }} value={newLogDate} onChange={e => setNewLogDate(e.target.value)} />
+                  </div>
+                  <div>
+                    <label className="form-label" style={{ fontSize: 10 }}>作業者 <span style={{ color: 'var(--danger)' }}>*</span></label>
+                    <select className="form-input" style={{ padding: '4px 8px', fontSize: 11 }} value={newLogWorkerId} onChange={e => setNewLogWorkerId(e.target.value)}>
+                      {employees.map(emp => <option key={emp.employee_id} value={emp.employee_id}>{emp.employee_name}</option>)}
+                    </select>
+                  </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                  <div>
+                    <label className="form-label" style={{ fontSize: 10 }}>対象工程</label>
+                    <select className="form-input" style={{ padding: '4px 8px', fontSize: 11 }} value={newLogStepId || ''} onChange={e => setNewLogStepId(e.target.value || null)}>
+                      <option value="">— 全体・共通 —</option>
+                      {steps.map((s, i) => {
+                        const val = s.step_id || `step-no-${s.step_no || i + 1}`
+                        return (
+                          <option key={val} value={val}>
+                            #{s.step_no} {s.step_name || '工程'}
+                          </option>
+                        )
+                      })}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="form-label" style={{ fontSize: 10 }}>実績工数 (時間) <span style={{ color: 'var(--danger)' }}>*</span></label>
+                    <input type="number" step="0.5" className="form-input" style={{ padding: '4px 8px', fontSize: 11 }} placeholder="例: 2.5" value={newLogHours} onChange={e => setNewLogHours(e.target.value)} />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="form-label" style={{ fontSize: 10 }}>作業種別 (Processing Code)</label>
+                  <select className="form-input" style={{ padding: '4px 8px', fontSize: 11 }} value={newLogProcCodeId || ''} onChange={e => setNewLogProcCodeId(e.target.value ? Number(e.target.value) : null)}>
+                    <option value="">— 作業種別を選択 (省略可) —</option>
+                    {processingCodes.map(pc => (
+                      <option key={pc.processing_code_id} value={pc.processing_code_id}>{pc.processing_name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="form-label" style={{ fontSize: 10 }}>作業内容・詳細メモ</label>
+                  <input type="text" className="form-input" style={{ padding: '4px 8px', fontSize: 11 }} placeholder="作業内容の補足やメモを入力" value={newLogDesc} onChange={e => setNewLogDesc(e.target.value)} />
+                </div>
+              </div>
+
+              <div style={{ padding: '10px 14px', background: 'var(--bg-surface-2)', borderTop: '1px solid var(--border-default)', display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+                <button className="btn btn-secondary" style={{ padding: '4px 12px', fontSize: 11 }} onClick={handleCancelWorklogModal}>キャンセル</button>
+                <button className="btn btn-primary" style={{ padding: '4px 14px', fontSize: 11 }} onClick={handleSaveWorklog} disabled={addingLog}>
+                  <Save size={13} style={{ marginRight: 3 }} /> {addingLog ? '保存中...' : editingLogId ? '💾 更新' : '💾 日報登録'}
+                </button>
+              </div>
+            </div>
           </div>
         )}
 
@@ -876,93 +972,42 @@ export function CenteredQuickJobWizardModal({
 
               </div>
 
-              {/* SUB-COLUMN 2 (RIGHT 62% - HIGH CAPACITY FOR WORKLOGS): WORKLOGS & INPUT FORM */}
+              {/* SUB-COLUMN 2 (RIGHT 62% - EXPANDED HIGH CAPACITY WORKLOGS TABLE): WORKLOGS ONLY */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8, overflowY: 'auto' }}>
                 
-                {/* BLOCK 3: REAL WORKLOGS FILTERED BY SELECTED STEP */}
+                {/* BLOCK 3: REAL WORKLOGS TABLE WITH ADD BUTTON IN HEADER */}
                 <div className="card-flat" style={{ padding: 8, flex: 1, display: 'flex', flexDirection: 'column' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                    <h4 style={{ fontSize: 11, fontWeight: 700, color: '#475569', margin: 0, display: 'flex', alignItems: 'center', gap: 4 }}>
-                      <Clock size={13} color="var(--accent)" /> 
-                      {selectedStepId ? `作業日報 (工程: ${selectedStepInfo?.step_name || ''})` : '作業日報・実績ログ (全工程)'}
-                    </h4>
-                    {selectedStepId && (
-                      <span className="badge badge--info" style={{ fontSize: 9 }}>工程フィルター適用中</span>
-                    )}
-                  </div>
-
-                  {/* COMPACT DENSE WORKLOG INPUT FORM */}
-                  <div style={{ padding: 6, background: editingLogId ? 'var(--tint-orange-bg)' : 'var(--tint-blue-bg)', borderRadius: 5, marginBottom: 8, border: '1px solid var(--border-default)' }}>
-                    <div style={{ fontSize: 10, fontWeight: 700, color: '#0F172A', marginBottom: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span>{editingLogId ? '✏️ 作業日報を編集' : '+ 作業日報を追加'}</span>
-                      {editingLogId && (
-                        <button className="btn btn-secondary" style={{ padding: '1px 5px', fontSize: 8 }} onClick={handleCancelEditWorklog}>
-                          キャンセル
-                        </button>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8, borderBottom: '1px solid var(--border-default)', paddingBottom: 6 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <h4 style={{ fontSize: 11, fontWeight: 700, color: '#475569', margin: 0, display: 'flex', alignItems: 'center', gap: 4 }}>
+                        <Clock size={13} color="var(--accent)" /> 
+                        {selectedStepId ? `作業日報 (工程: ${selectedStepInfo?.step_name || ''})` : '作業日報・実績ログ (全工程)'}
+                      </h4>
+                      {selectedStepId && (
+                        <span className="badge badge--info" style={{ fontSize: 9 }}>工程フィルター適用中</span>
                       )}
                     </div>
-
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 0.8fr', gap: 4, marginBottom: 4 }}>
-                      <div>
-                        <label className="form-label" style={{ fontSize: 8 }}>作業日</label>
-                        <input type="date" className="form-input" style={{ padding: '2px 4px', fontSize: 10 }} value={newLogDate} onChange={e => setNewLogDate(e.target.value)} />
-                      </div>
-                      <div>
-                        <label className="form-label" style={{ fontSize: 8 }}>作業者</label>
-                        <select className="form-input" style={{ padding: '2px 4px', fontSize: 10 }} value={newLogWorkerId} onChange={e => setNewLogWorkerId(e.target.value)}>
-                          {employees.map(emp => <option key={emp.employee_id} value={emp.employee_id}>{emp.employee_name}</option>)}
-                        </select>
-                      </div>
-                      <div>
-                        <label className="form-label" style={{ fontSize: 8 }}>対象工程</label>
-                        <select className="form-input" style={{ padding: '2px 4px', fontSize: 10 }} value={currentStepFilterVal} onChange={e => handleToggleStepFilter(e.target.value || undefined)}>
-                          <option value="">— 全体・共通 —</option>
-                          {steps.map((s, i) => {
-                            const val = s.step_id || `step-no-${s.step_no || i + 1}`
-                            return (
-                              <option key={val} value={val}>
-                                #{s.step_no} {s.step_name || '工程'}
-                              </option>
-                            )
-                          })}
-                        </select>
-                      </div>
-                      <div>
-                        <label className="form-label" style={{ fontSize: 8 }}>工数(h)</label>
-                        <input type="number" step="0.5" className="form-input" style={{ padding: '2px 4px', fontSize: 10 }} placeholder="例: 2.5" value={newLogHours} onChange={e => setNewLogHours(e.target.value)} />
-                      </div>
-                    </div>
                     
-                    <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 2fr auto', gap: 4, alignItems: 'center' }}>
-                      <div>
-                        <select className="form-input" style={{ padding: '2px 4px', fontSize: 10 }} value={newLogProcCodeId || ''} onChange={e => setNewLogProcCodeId(e.target.value ? Number(e.target.value) : null)}>
-                          <option value="">— 作業種別 (省略可) —</option>
-                          {processingCodes.map(pc => (
-                            <option key={pc.processing_code_id} value={pc.processing_code_id}>{pc.processing_name}</option>
-                          ))}
-                        </select>
-                      </div>
-                      <div>
-                        <input type="text" className="form-input" style={{ padding: '2px 6px', fontSize: 10 }} placeholder="作業内容・詳細メモ" value={newLogDesc} onChange={e => setNewLogDesc(e.target.value)} />
-                      </div>
-                      <div>
-                        <button className="btn btn-primary" style={{ padding: '2px 8px', fontSize: 10, flexShrink: 0 }} onClick={handleSaveWorklog} disabled={addingLog}>
-                          {addingLog ? '保存中...' : editingLogId ? '💾 更新' : '💾 日報登録'}
-                        </button>
-                      </div>
-                    </div>
+                    {/* DEDICATED ADD WORKLOG BUTTON TO TRIGGER SUB-MODAL */}
+                    <button 
+                      className="btn btn-primary"
+                      style={{ fontSize: 10, padding: '3px 10px', display: 'flex', alignItems: 'center', gap: 4 }}
+                      onClick={handleOpenCreateWorklogModal}
+                    >
+                      <Plus size={12} /> + 作業日報を追加
+                    </button>
                   </div>
 
-                  {/* DENSE HIGH CAPACITY WORKLOGS TABLE WITH PROPER COLUMN RATIOS */}
+                  {/* DENSE HIGH CAPACITY WORKLOGS TABLE WITH EXPANDED NO-WRAP WORKER NAME */}
                   <div style={{ flex: 1, overflowY: 'auto' }}>
                     {filteredWorklogs.length > 0 ? (
                       <table className="data-table" style={{ width: '100%', fontSize: 11 }}>
                         <thead>
                           <tr>
                             <th style={{ width: 80, padding: '4px 6px' }}>作業日</th>
-                            <th style={{ width: 80, padding: '4px 6px' }}>作業者</th>
-                            <th style={{ width: 70, padding: '4px 6px' }}>対象工程</th>
-                            <th style={{ width: 60, padding: '4px 6px' }}>工数</th>
+                            <th style={{ width: 110, padding: '4px 6px', whiteSpace: 'nowrap' }}>作業者</th>
+                            <th style={{ width: 65, padding: '4px 6px' }}>対象工程</th>
+                            <th style={{ width: 55, padding: '4px 6px' }}>工数</th>
                             <th style={{ padding: '4px 6px' }}>作業種別・詳細メモ</th>
                             <th style={{ width: 45, textAlign: 'center', padding: '4px 6px' }}>操作</th>
                           </tr>
@@ -970,8 +1015,12 @@ export function CenteredQuickJobWizardModal({
                         <tbody>
                           {filteredWorklogs.map(log => (
                             <tr key={log.log_id} style={{ background: editingLogId === log.log_id ? 'var(--tint-orange-bg)' : undefined }}>
-                              <td style={{ fontFamily: 'monospace', fontSize: 11, color: '#0F172A', padding: '4px 6px' }}>{new Date(log.work_date).toLocaleDateString()}</td>
-                              <td style={{ fontWeight: 600, color: '#0F172A', padding: '4px 6px' }}>{log.employee_name}</td>
+                              <td style={{ fontFamily: 'monospace', fontSize: 11, color: '#0F172A', padding: '4px 6px', whiteSpace: 'nowrap' }}>
+                                {new Date(log.work_date).toLocaleDateString()}
+                              </td>
+                              <td style={{ fontWeight: 600, color: '#0F172A', padding: '4px 6px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                {log.employee_name}
+                              </td>
                               <td style={{ padding: '4px 6px' }}>
                                 {log.step_name ? (
                                   <span className="badge badge--info" style={{ fontSize: 9, padding: '1px 5px' }}>{log.step_name}</span>
@@ -979,16 +1028,16 @@ export function CenteredQuickJobWizardModal({
                                   <span style={{ color: 'var(--text-muted)', fontSize: 10 }}>全体</span>
                                 )}
                               </td>
-                              <td style={{ fontFamily: 'monospace', fontWeight: 700, color: 'var(--accent)', fontSize: 12, padding: '4px 6px' }}>{log.hours_spent} h</td>
+                              <td style={{ fontFamily: 'monospace', fontWeight: 700, color: 'var(--accent)', fontSize: 12, padding: '4px 6px', whiteSpace: 'nowrap' }}>
+                                {log.hours_spent} h
+                              </td>
                               <td style={{ color: '#0F172A', padding: '4px 6px', wordBreak: 'break-word' }}>
-                                {log.processing_name ? (
-                                  <span>
-                                    <strong style={{ color: 'var(--accent)', marginRight: 4 }}>[{log.processing_name}]</strong>
-                                    {log.description || ''}
+                                {log.processing_name && (
+                                  <span className="badge badge--neutral" style={{ fontSize: 9, padding: '1px 5px', marginRight: 4, display: 'inline-block' }}>
+                                    {log.processing_name}
                                   </span>
-                                ) : (
-                                  log.description || '-'
                                 )}
+                                <span style={{ fontSize: 11 }}>{log.description || '-'}</span>
                               </td>
                               <td style={{ textAlign: 'center', padding: '4px 6px' }}>
                                 <div style={{ display: 'flex', gap: 3, justifyContent: 'center' }}>
@@ -1005,8 +1054,8 @@ export function CenteredQuickJobWizardModal({
                         </tbody>
                       </table>
                     ) : (
-                      <div style={{ fontSize: 10, color: 'var(--text-muted)', textAlign: 'center', padding: 12 }}>
-                        {selectedStepId ? 'この工程の作業日報は未登録です。上のフォームから追加できます。' : '作業日報は未登録です。上のフォームから追加できます。'}
+                      <div style={{ fontSize: 10, color: 'var(--text-muted)', textAlign: 'center', padding: 20 }}>
+                        {selectedStepId ? 'この工程の作業日報は未登録です。「+ 作業日報を追加」から登録できます。' : '作業日報は未登録です。「+ 作業日報を追加」から登録できます。'}
                       </div>
                     )}
                   </div>
