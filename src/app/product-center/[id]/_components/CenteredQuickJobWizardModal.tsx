@@ -542,10 +542,10 @@ export function CenteredQuickJobWizardModal({
   return (
     <div style={{
       position: 'fixed', inset: 0, background: 'rgba(15, 23, 42, 0.75)', backdropFilter: 'blur(6px)',
-      zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 12
+      zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 10
     }}>
       <div className="card-flat" style={{
-        width: 1320, maxWidth: '98vw', height: '88vh', maxHeight: 860, background: 'var(--bg-surface)',
+        width: 1360, maxWidth: '98vw', height: '90vh', maxHeight: 880, background: 'var(--bg-surface)',
         display: 'flex', flexDirection: 'column', overflow: 'hidden', borderRadius: 8, boxShadow: '0 25px 30px -5px rgba(0, 0, 0, 0.25)',
         position: 'relative'
       }}>
@@ -564,7 +564,7 @@ export function CenteredQuickJobWizardModal({
         )}
 
         {/* TOP BAR */}
-        <div style={{ padding: '10px 16px', background: 'var(--bg-surface-2)', borderBottom: '1px solid var(--border-default)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ padding: '8px 14px', background: 'var(--bg-surface-2)', borderBottom: '1px solid var(--border-default)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <Layers size={18} color="var(--accent)" />
             <h2 style={{ fontSize: 14, fontWeight: 700, margin: 0, color: 'var(--text-primary)' }}>設備・加工Job & 日報管理 Hub</h2>
@@ -573,7 +573,7 @@ export function CenteredQuickJobWizardModal({
         </div>
 
         {/* CONTEXT SPEC HEADER (HIGH DENSITY PRODUCT CENTER SPEC LAYOUT) */}
-        <div style={{ padding: '8px 16px', background: 'var(--tint-teal-bg)', borderBottom: '1px solid var(--border-default)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+        <div style={{ padding: '6px 14px', background: 'var(--tint-teal-bg)', borderBottom: '1px solid var(--border-default)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap', fontSize: 11 }}>
             <div>
               <span style={{ fontSize: 10, color: '#64748B', fontWeight: 600 }}>製品:</span>{' '}
@@ -593,7 +593,7 @@ export function CenteredQuickJobWizardModal({
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <span style={{ fontSize: 11, fontWeight: 600, color: '#64748B' }}>対象設備:</span>
             {equipMode === 'EXISTING' ? (
-              <select className="form-input" value={selectedEquipId} onChange={e => handleSelectEquipment(e.target.value)} style={{ padding: '3px 8px', fontSize: 11, fontWeight: 700, width: 280 }}>
+              <select className="form-input" value={selectedEquipId} onChange={e => handleSelectEquipment(e.target.value)} style={{ padding: '2px 6px', fontSize: 11, fontWeight: 700, width: 260 }}>
                 {equipmentsForRev.map(eq => (
                   <option key={eq.id} value={eq.id}>[{TYPE_BADGE_MAP[eq.type] || eq.type}] {eq.code} - {eq.name}</option>
                 ))}
@@ -603,7 +603,7 @@ export function CenteredQuickJobWizardModal({
             )}
             <button 
               className={`btn ${equipMode === 'NEW' ? 'btn-primary' : 'btn-secondary'}`}
-              style={{ fontSize: 11, padding: '3px 8px' }}
+              style={{ fontSize: 10, padding: '2px 8px' }}
               onClick={() => { setEquipMode(equipMode === 'NEW' ? 'EXISTING' : 'NEW'); setSelectedEquipId(''); handlePrepareNewJob() }}
             >
               {equipMode === 'NEW' ? '既存設備へ' : '+ 新規設備'}
@@ -612,33 +612,33 @@ export function CenteredQuickJobWizardModal({
         </div>
 
         {error && (
-          <div style={{ padding: '8px 16px', background: 'color-mix(in srgb, var(--danger) 10%, transparent)', color: 'var(--danger)', fontSize: 11, display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div style={{ padding: '6px 14px', background: 'color-mix(in srgb, var(--danger) 10%, transparent)', color: 'var(--danger)', fontSize: 11, display: 'flex', alignItems: 'center', gap: 8 }}>
             <AlertTriangle size={15} /> {error}
           </div>
         )}
 
-        {/* MAIN SPLIT PANEL CONTAINER (LEFT 24%, RIGHT 76%) */}
+        {/* MAIN SPLIT PANEL CONTAINER (COMPACT LEFT 210px, RIGHT FLEX 1) */}
         <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
           
-          {/* LEFT PANEL (24%): JOBS LIST TABLE */}
-          <div style={{ width: '24%', minWidth: 260, borderRight: '1px solid var(--border-default)', display: 'flex', flexDirection: 'column', background: 'var(--bg-surface-2)' }}>
-            <div style={{ padding: '10px 12px', borderBottom: '1px solid var(--border-default)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 6 }}>
-                <FileText size={14} color="var(--accent)" /> 加工Job ({equipmentJobs.length})
+          {/* COMPACT LEFT PANEL (210px): JOBS LIST TABLE */}
+          <div style={{ width: 210, flexShrink: 0, borderRight: '1px solid var(--border-default)', display: 'flex', flexDirection: 'column', background: 'var(--bg-surface-2)' }}>
+            <div style={{ padding: '8px 10px', borderBottom: '1px solid var(--border-default)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: '#0F172A', display: 'flex', alignItems: 'center', gap: 4 }}>
+                <FileText size={13} color="var(--accent)" /> 加工Job ({equipmentJobs.length})
               </div>
               <button 
                 className="btn btn-primary" 
-                style={{ fontSize: 10, padding: '3px 8px' }}
+                style={{ fontSize: 9, padding: '2px 6px' }}
                 onClick={handlePrepareNewJob}
               >
-                <Plus size={12} style={{ marginRight: 2 }} /> 新規Job
+                <Plus size={11} style={{ marginRight: 2 }} /> 新規
               </button>
             </div>
 
-            <div style={{ flex: 1, overflowY: 'auto', padding: 6 }}>
+            <div style={{ flex: 1, overflowY: 'auto', padding: 5 }}>
               {equipmentJobs.length === 0 ? (
-                <div style={{ padding: 16, textAlign: 'center', color: 'var(--text-muted)', fontSize: 11 }}>
-                  Job履歴はありません。<br />「新規Job」で追加できます。
+                <div style={{ padding: 12, textAlign: 'center', color: 'var(--text-muted)', fontSize: 10 }}>
+                  Job履歴なし<br />「新規」で追加
                 </div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
@@ -649,27 +649,27 @@ export function CenteredQuickJobWizardModal({
                         key={job.job_id}
                         className="card-flat"
                         style={{
-                          padding: 8,
+                          padding: 6,
                           cursor: 'pointer',
                           borderRadius: 4,
                           borderLeft: isSelected ? '3px solid var(--accent)' : '1px solid var(--border-default)',
-                          background: isSelected ? 'color-mix(in srgb, var(--accent) 10%, transparent)' : 'var(--bg-surface)',
+                          background: isSelected ? 'color-mix(in srgb, var(--accent) 12%, transparent)' : 'var(--bg-surface)',
                           transition: 'all 0.1s ease'
                         }}
                         onClick={() => loadJobDetails(job)}
                       >
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 }}>
-                          <span style={{ fontFamily: 'monospace', fontSize: 11, fontWeight: 700, color: 'var(--accent)' }}>
+                          <span style={{ fontFamily: 'monospace', fontSize: 10, fontWeight: 700, color: 'var(--accent)' }}>
                             {job.job_code}
                           </span>
-                          <span className="badge badge--info" style={{ fontSize: 9, padding: '1px 5px' }}>{job.job_status || 'PENDING'}</span>
+                          <span className="badge badge--info" style={{ fontSize: 8, padding: '0px 4px' }}>{job.job_status || 'PENDING'}</span>
                         </div>
-                        <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        <div style={{ fontSize: 11, fontWeight: 600, color: '#0F172A', marginBottom: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                           {job.job_name || '(名称なし)'}
                         </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 10, color: 'var(--text-muted)' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 9, color: '#64748B' }}>
                           <span>納期: {job.deadline ? new Date(job.deadline).toLocaleDateString() : '-'}</span>
-                          <ChevronRight size={12} color={isSelected ? 'var(--accent)' : '#94A3B8'} />
+                          <ChevronRight size={11} color={isSelected ? 'var(--accent)' : '#94A3B8'} />
                         </div>
                       </div>
                     )
@@ -679,110 +679,110 @@ export function CenteredQuickJobWizardModal({
             </div>
           </div>
 
-          {/* RIGHT PANEL (76%): 2-COLUMN DENSE GRID (DIRECTIVE & STEPS LEFT / WORKLOGS RIGHT) */}
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', padding: 12, background: 'var(--bg-surface)' }}>
+          {/* RIGHT PANEL (FLEX 1): 2-SUB-COLUMN HIGH DENSITY GRID (DIRECTIVE 38% / WORKLOGS 62%) */}
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', padding: 10, background: 'var(--bg-surface)' }}>
             
             {/* PANEL HEADER TITLE BAR */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-default)', paddingBottom: 6, marginBottom: 10 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span className="badge badge--info" style={{ fontSize: 10 }}>{selectedJobId ? '既存Job編集' : '新規Job作成'}</span>
-                <h3 style={{ fontSize: 13, fontWeight: 700, margin: 0 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-default)', paddingBottom: 4, marginBottom: 8 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span className="badge badge--info" style={{ fontSize: 9 }}>{selectedJobId ? '既存Job編集' : '新規Job作成'}</span>
+                <h3 style={{ fontSize: 12, fontWeight: 700, margin: 0, color: '#0F172A' }}>
                   {selectedJobId ? `Job詳細: ${jobName || '名称未設定'}` : '新規Job指示の入力'}
                 </h3>
               </div>
               {selectedJobId && (
-                <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}>
+                <div style={{ fontSize: 10, color: '#475569' }}>
                   {selectedStepId ? `工程 [${selectedStepInfo?.step_name}] 実績: ` : '合計実績工数: '}
-                  <strong style={{ color: 'var(--accent)', fontFamily: 'monospace', fontSize: 13 }}>{totalActualHours.toFixed(1)} h</strong>
+                  <strong style={{ color: 'var(--accent)', fontFamily: 'monospace', fontSize: 13, fontWeight: 700 }}>{totalActualHours.toFixed(1)} h</strong>
                 </div>
               )}
             </div>
 
-            {/* 2-COLUMN DENSE GRID CONTAINER */}
-            <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, overflow: 'hidden' }}>
+            {/* 2-SUB-COLUMN HIGH DENSITY GRID CONTAINER (38% STEPS / 62% WORKLOGS) */}
+            <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '38% 62%', gap: 10, overflow: 'hidden' }}>
               
-              {/* SUB-COLUMN 1 (LEFT 50% OF RIGHT PANEL): DIRECTIVE & STEPS */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10, overflowY: 'auto' }}>
+              {/* SUB-COLUMN 1 (LEFT 38%): DIRECTIVE & STEPS */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, overflowY: 'auto' }}>
                 
                 {/* BLOCK 1: JOB DIRECTIVE FORM */}
-                <div className="card-flat" style={{ padding: 10 }}>
-                  <h4 style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 4 }}>
-                    <Tag size={13} color="var(--accent)" /> 加工指示基本情報 (Job Directive)
+                <div className="card-flat" style={{ padding: 8 }}>
+                  <h4 style={{ fontSize: 10, fontWeight: 700, color: '#475569', marginBottom: 6, display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <Tag size={12} color="var(--accent)" /> 加工指示基本情報 (Job Directive)
                   </h4>
 
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr', gap: 8, marginBottom: 8 }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.4fr', gap: 6, marginBottom: 6 }}>
                     <div>
-                      <label className="form-label" style={{ fontSize: 10 }}>指示区分 (WO Type)</label>
-                      <select className="form-input" style={{ padding: '3px 6px', fontSize: 11 }} value={woType} onChange={e => setWoType(e.target.value)}>
+                      <label className="form-label" style={{ fontSize: 9 }}>指示区分</label>
+                      <select className="form-input" style={{ padding: '2px 4px', fontSize: 10 }} value={woType} onChange={e => setWoType(e.target.value)}>
                         <option value="NEW">新規製作 (NEW)</option>
                         <option value="REPAIR">修理/改造 (REPAIR)</option>
                         <option value="OUTSOURCED">外注 (OUTSOURCED)</option>
                       </select>
                     </div>
                     <div>
-                      <label className="form-label" style={{ fontSize: 10 }}>Job名称</label>
-                      <input type="text" className="form-input" style={{ padding: '3px 6px', fontSize: 11 }} value={jobName} onChange={e => setJobName(e.target.value)} placeholder="例: 1次試作向け修正" />
+                      <label className="form-label" style={{ fontSize: 9 }}>Job名称</label>
+                      <input type="text" className="form-input" style={{ padding: '2px 4px', fontSize: 10 }} value={jobName} onChange={e => setJobName(e.target.value)} placeholder="例: 1次試作向け修正" />
                     </div>
                   </div>
 
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 6, marginBottom: 8 }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 4, marginBottom: 6 }}>
                     <div>
-                      <label className="form-label" style={{ fontSize: 10 }}>担当者</label>
-                      <select className="form-input" style={{ padding: '3px 4px', fontSize: 11 }} value={responsibleId} onChange={e => setResponsibleId(e.target.value)}>
+                      <label className="form-label" style={{ fontSize: 9 }}>担当者</label>
+                      <select className="form-input" style={{ padding: '2px 2px', fontSize: 10 }} value={responsibleId} onChange={e => setResponsibleId(e.target.value)}>
                         <option value="">— 選択 —</option>
                         {employees.map(emp => <option key={emp.employee_id} value={emp.employee_id}>{emp.employee_name}</option>)}
                       </select>
                     </div>
                     <div>
-                      <label className="form-label" style={{ fontSize: 10 }}>製造場所</label>
-                      <select className="form-input" style={{ padding: '3px 4px', fontSize: 11 }} value={manufactureLocation} onChange={e => setManufactureLocation(e.target.value)}>
+                      <label className="form-label" style={{ fontSize: 9 }}>場所</label>
+                      <select className="form-input" style={{ padding: '2px 2px', fontSize: 10 }} value={manufactureLocation} onChange={e => setManufactureLocation(e.target.value)}>
                         <option value="IN_HOUSE">社内</option>
                         <option value="OUTSOURCED">外注</option>
                       </select>
                     </div>
                     <div>
-                      <label className="form-label" style={{ fontSize: 10 }}>着手予定</label>
-                      <input type="date" className="form-input" style={{ padding: '3px 4px', fontSize: 10 }} value={startDate} onChange={e => setStartDate(e.target.value)} />
+                      <label className="form-label" style={{ fontSize: 9 }}>着手予定</label>
+                      <input type="date" className="form-input" style={{ padding: '2px 2px', fontSize: 9 }} value={startDate} onChange={e => setStartDate(e.target.value)} />
                     </div>
                     <div>
-                      <label className="form-label" style={{ fontSize: 10 }}>納期</label>
-                      <input type="date" className="form-input" style={{ padding: '3px 4px', fontSize: 10 }} value={deadline} onChange={e => setDeadline(e.target.value)} />
+                      <label className="form-label" style={{ fontSize: 9 }}>納期</label>
+                      <input type="date" className="form-input" style={{ padding: '2px 2px', fontSize: 9 }} value={deadline} onChange={e => setDeadline(e.target.value)} />
                     </div>
                   </div>
 
                   <div>
-                    <label className="form-label" style={{ fontSize: 10 }}>備考・特記事項</label>
-                    <input type="text" className="form-input" style={{ padding: '3px 6px', fontSize: 11 }} value={notes} onChange={e => setNotes(e.target.value)} placeholder="メモ・注意事項" />
+                    <label className="form-label" style={{ fontSize: 9 }}>備考・特記事項</label>
+                    <input type="text" className="form-input" style={{ padding: '2px 4px', fontSize: 10 }} value={notes} onChange={e => setNotes(e.target.value)} placeholder="メモ・注意事項" />
                   </div>
                 </div>
 
                 {/* BLOCK 2: PROCESSING STEPS WITH STEP FILTER SELECTION */}
-                <div className="card-flat" style={{ padding: 10, flex: 1, display: 'flex', flexDirection: 'column' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                    <h4 style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)', margin: 0, display: 'flex', alignItems: 'center', gap: 4 }}>
-                      <Settings size={13} color="var(--accent)" /> 加工工程リスト (Job Steps)
+                <div className="card-flat" style={{ padding: 8, flex: 1, display: 'flex', flexDirection: 'column' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                    <h4 style={{ fontSize: 10, fontWeight: 700, color: '#475569', margin: 0, display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <Settings size={12} color="var(--accent)" /> 加工工程リスト (Job Steps)
                     </h4>
-                    <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                    <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
                       {selectedStepId && (
-                        <button className="btn btn-secondary" onClick={() => handleToggleStepFilter(undefined)} style={{ fontSize: 9, padding: '1px 6px' }}>
-                          全工程を表示
+                        <button className="btn btn-secondary" onClick={() => handleToggleStepFilter(undefined)} style={{ fontSize: 8, padding: '1px 5px' }}>
+                          全工程表示
                         </button>
                       )}
-                      <button className="btn btn-secondary" onClick={handleAddStep} style={{ fontSize: 10, padding: '2px 6px' }}>
-                        <PlusCircle size={12} style={{ marginRight: 2 }} /> 工程追加
+                      <button className="btn btn-secondary" onClick={handleAddStep} style={{ fontSize: 9, padding: '1px 5px' }}>
+                        <PlusCircle size={11} style={{ marginRight: 2 }} /> 追加
                       </button>
                     </div>
                   </div>
 
                   {/* QUICK STEP FILTER PILLS BAR */}
                   {steps.length > 0 && (
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginBottom: 8, padding: '4px 6px', background: 'var(--bg-surface-2)', borderRadius: 4 }}>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 3, marginBottom: 6, padding: '3px 4px', background: 'var(--bg-surface-2)', borderRadius: 4 }}>
                       <button
                         className={`btn ${selectedStepId === null ? 'btn-primary' : 'btn-secondary'}`}
-                        style={{ fontSize: 9, padding: '1px 6px', height: 20, borderRadius: 10 }}
+                        style={{ fontSize: 8, padding: '1px 5px', height: 18, borderRadius: 8 }}
                         onClick={() => handleToggleStepFilter(undefined)}
                       >
-                        全工程 ({worklogs.length})
+                        全 ({worklogs.length})
                       </button>
                       {steps.map((s, i) => {
                         const key = s.step_id || `step-no-${s.step_no || i + 1}`
@@ -792,7 +792,7 @@ export function CenteredQuickJobWizardModal({
                           <button
                             key={key}
                             className={`btn ${isActive ? 'btn-primary' : 'btn-secondary'}`}
-                            style={{ fontSize: 9, padding: '1px 6px', height: 20, borderRadius: 10 }}
+                            style={{ fontSize: 8, padding: '1px 5px', height: 18, borderRadius: 8 }}
                             onClick={() => handleToggleStepFilter(key)}
                           >
                             #{s.step_no} {s.step_name || '工程'} ({stepLogsCount})
@@ -803,11 +803,11 @@ export function CenteredQuickJobWizardModal({
                   )}
 
                   {steps.length === 0 ? (
-                    <div style={{ padding: 12, textAlign: 'center', color: 'var(--text-muted)', fontSize: 11, border: '1px dashed var(--border-default)', borderRadius: 4 }}>
-                      工程が未登録です。「工程追加」から登録してください。
+                    <div style={{ padding: 10, textAlign: 'center', color: 'var(--text-muted)', fontSize: 10, border: '1px dashed var(--border-default)', borderRadius: 4 }}>
+                      工程が未登録です。「追加」から登録してください。
                     </div>
                   ) : (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4, overflowY: 'auto', flex: 1 }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 3, overflowY: 'auto', flex: 1 }}>
                       {steps.map((step, idx) => {
                         const stepKey = step.step_id || `step-no-${step.step_no || idx + 1}`
                         const isStepSelected = selectedStepId === stepKey
@@ -815,57 +815,57 @@ export function CenteredQuickJobWizardModal({
                           <div 
                             key={idx} 
                             style={{ 
-                              display: 'flex', gap: 6, alignItems: 'center', padding: 6, 
+                              display: 'flex', gap: 4, alignItems: 'center', padding: 4, 
                               background: isStepSelected ? 'color-mix(in srgb, var(--accent) 15%, transparent)' : 'var(--bg-surface-2)', 
                               border: isStepSelected ? '2px solid var(--accent)' : '1px solid var(--border-default)', 
                               borderRadius: 4, cursor: 'pointer', transition: 'all 0.1s ease'
                             }}
                             onClick={() => handleToggleStepFilter(stepKey)}
                           >
-                            <div style={{ width: 18, height: 18, borderRadius: '50%', background: isStepSelected ? 'var(--accent)' : 'var(--border-default)', color: isStepSelected ? '#fff' : 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 700 }}>
+                            <div style={{ width: 16, height: 16, borderRadius: '50%', background: isStepSelected ? 'var(--accent)' : 'var(--border-default)', color: isStepSelected ? '#fff' : 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 8, fontWeight: 700, flexShrink: 0 }}>
                               {step.step_no}
                             </div>
                             <div style={{ flex: 1.5 }}>
                               <input 
                                 type="text" 
                                 className="form-input" 
-                                style={{ padding: '2px 6px', fontSize: 11, fontWeight: isStepSelected ? 700 : 400 }} 
-                                placeholder="工程名 (例: CAD/CAM, CNC加工, 放電, 磨き, 検査)" 
+                                style={{ padding: '2px 4px', fontSize: 10, fontWeight: isStepSelected ? 700 : 400 }} 
+                                placeholder="工程名 (例: CAD/CAM, CNC, 放電, 磨き)" 
                                 value={step.step_name} 
                                 onChange={e => handleUpdateStep(idx, 'step_name', e.target.value)} 
                                 onFocus={() => handleToggleStepFilter(stepKey)}
                               />
                             </div>
-                            <div style={{ flex: 0.8 }}>
+                            <div style={{ width: 55, flexShrink: 0 }}>
                               <input 
                                 type="number" 
                                 className="form-input" 
-                                style={{ padding: '2px 6px', fontSize: 11 }} 
+                                style={{ padding: '2px 4px', fontSize: 10 }} 
                                 placeholder="工数(h)" 
                                 value={step.estimated_hours || ''} 
                                 onChange={e => handleUpdateStep(idx, 'estimated_hours', e.target.value ? Number(e.target.value) : null)} 
                                 onFocus={() => handleToggleStepFilter(stepKey)}
                               />
                             </div>
-                            <div style={{ flex: 1.2 }}>
+                            <div style={{ width: 85, flexShrink: 0 }}>
                               <select 
                                 className="form-input" 
-                                style={{ padding: '2px 4px', fontSize: 11 }} 
+                                style={{ padding: '2px 2px', fontSize: 10 }} 
                                 value={step.assigned_to || ''} 
                                 onChange={e => handleUpdateStep(idx, 'assigned_to', e.target.value)} 
                                 onFocus={() => handleToggleStepFilter(stepKey)}
                               >
-                                <option value="">— 担当者 —</option>
+                                <option value="">— 担当 —</option>
                                 {employees.map(emp => <option key={emp.employee_id} value={emp.employee_id}>{emp.employee_name}</option>)}
                               </select>
                             </div>
                             {isStepSelected ? (
-                              <span style={{ fontSize: 9, color: 'var(--accent)', fontWeight: 700, padding: '1px 4px', flexShrink: 0 }}>✓ 選択中</span>
+                              <span style={{ fontSize: 8, color: 'var(--accent)', fontWeight: 700, padding: '1px 2px', flexShrink: 0 }}>✓ 選択中</span>
                             ) : (
-                              <span style={{ fontSize: 9, color: 'var(--text-muted)', padding: '1px 4px', flexShrink: 0 }}>選択</span>
+                              <span style={{ fontSize: 8, color: 'var(--text-muted)', padding: '1px 2px', flexShrink: 0 }}>選択</span>
                             )}
-                            <button style={{ background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer', padding: 2 }} onClick={(e) => { e.stopPropagation(); handleRemoveStep(idx) }}>
-                              <Trash2 size={13} />
+                            <button style={{ background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer', padding: 1, flexShrink: 0 }} onClick={(e) => { e.stopPropagation(); handleRemoveStep(idx) }}>
+                              <Trash2 size={12} />
                             </button>
                           </div>
                         )
@@ -876,13 +876,13 @@ export function CenteredQuickJobWizardModal({
 
               </div>
 
-              {/* SUB-COLUMN 2 (RIGHT 50% OF RIGHT PANEL): WORKLOGS & INPUT FORM */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10, overflowY: 'auto' }}>
+              {/* SUB-COLUMN 2 (RIGHT 62% - HIGH CAPACITY FOR WORKLOGS): WORKLOGS & INPUT FORM */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, overflowY: 'auto' }}>
                 
                 {/* BLOCK 3: REAL WORKLOGS FILTERED BY SELECTED STEP */}
-                <div className="card-flat" style={{ padding: 10, flex: 1, display: 'flex', flexDirection: 'column' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                    <h4 style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)', margin: 0, display: 'flex', alignItems: 'center', gap: 4 }}>
+                <div className="card-flat" style={{ padding: 8, flex: 1, display: 'flex', flexDirection: 'column' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                    <h4 style={{ fontSize: 11, fontWeight: 700, color: '#475569', margin: 0, display: 'flex', alignItems: 'center', gap: 4 }}>
                       <Clock size={13} color="var(--accent)" /> 
                       {selectedStepId ? `作業日報 (工程: ${selectedStepInfo?.step_name || ''})` : '作業日報・実績ログ (全工程)'}
                     </h4>
@@ -891,29 +891,30 @@ export function CenteredQuickJobWizardModal({
                     )}
                   </div>
 
-                  {/* LOG WORKLOG FORM (NEW OR EDIT MODE WITH STEP & PROCESSING CODE SELECTORS) */}
-                  <div style={{ padding: 8, background: editingLogId ? 'var(--tint-orange-bg)' : 'var(--tint-blue-bg)', borderRadius: 6, marginBottom: 10, border: '1px solid var(--border-default)' }}>
-                    <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 6, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  {/* COMPACT DENSE WORKLOG INPUT FORM */}
+                  <div style={{ padding: 6, background: editingLogId ? 'var(--tint-orange-bg)' : 'var(--tint-blue-bg)', borderRadius: 5, marginBottom: 8, border: '1px solid var(--border-default)' }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: '#0F172A', marginBottom: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <span>{editingLogId ? '✏️ 作業日報を編集' : '+ 作業日報を追加'}</span>
                       {editingLogId && (
-                        <button className="btn btn-secondary" style={{ padding: '1px 6px', fontSize: 9 }} onClick={handleCancelEditWorklog}>
+                        <button className="btn btn-secondary" style={{ padding: '1px 5px', fontSize: 8 }} onClick={handleCancelEditWorklog}>
                           キャンセル
                         </button>
                       )}
                     </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 0.8fr', gap: 6, marginBottom: 6 }}>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 0.8fr', gap: 4, marginBottom: 4 }}>
                       <div>
-                        <label className="form-label" style={{ fontSize: 9 }}>作業日</label>
+                        <label className="form-label" style={{ fontSize: 8 }}>作業日</label>
                         <input type="date" className="form-input" style={{ padding: '2px 4px', fontSize: 10 }} value={newLogDate} onChange={e => setNewLogDate(e.target.value)} />
                       </div>
                       <div>
-                        <label className="form-label" style={{ fontSize: 9 }}>作業者</label>
+                        <label className="form-label" style={{ fontSize: 8 }}>作業者</label>
                         <select className="form-input" style={{ padding: '2px 4px', fontSize: 10 }} value={newLogWorkerId} onChange={e => setNewLogWorkerId(e.target.value)}>
                           {employees.map(emp => <option key={emp.employee_id} value={emp.employee_id}>{emp.employee_name}</option>)}
                         </select>
                       </div>
                       <div>
-                        <label className="form-label" style={{ fontSize: 9 }}>対象工程</label>
+                        <label className="form-label" style={{ fontSize: 8 }}>対象工程</label>
                         <select className="form-input" style={{ padding: '2px 4px', fontSize: 10 }} value={currentStepFilterVal} onChange={e => handleToggleStepFilter(e.target.value || undefined)}>
                           <option value="">— 全体・共通 —</option>
                           {steps.map((s, i) => {
@@ -927,74 +928,75 @@ export function CenteredQuickJobWizardModal({
                         </select>
                       </div>
                       <div>
-                        <label className="form-label" style={{ fontSize: 9 }}>工数(h)</label>
+                        <label className="form-label" style={{ fontSize: 8 }}>工数(h)</label>
                         <input type="number" step="0.5" className="form-input" style={{ padding: '2px 4px', fontSize: 10 }} placeholder="例: 2.5" value={newLogHours} onChange={e => setNewLogHours(e.target.value)} />
                       </div>
                     </div>
                     
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr auto', gap: 6, alignItems: 'center' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 2fr auto', gap: 4, alignItems: 'center' }}>
                       <div>
-                        <select className="form-input" style={{ padding: '3px 6px', fontSize: 10 }} value={newLogProcCodeId || ''} onChange={e => setNewLogProcCodeId(e.target.value ? Number(e.target.value) : null)}>
-                          <option value="">— 作業種別 —</option>
+                        <select className="form-input" style={{ padding: '2px 4px', fontSize: 10 }} value={newLogProcCodeId || ''} onChange={e => setNewLogProcCodeId(e.target.value ? Number(e.target.value) : null)}>
+                          <option value="">— 作業種別 (省略可) —</option>
                           {processingCodes.map(pc => (
                             <option key={pc.processing_code_id} value={pc.processing_code_id}>{pc.processing_name}</option>
                           ))}
                         </select>
                       </div>
                       <div>
-                        <input type="text" className="form-input" style={{ padding: '3px 6px', fontSize: 10 }} placeholder="作業内容・詳細メモ" value={newLogDesc} onChange={e => setNewLogDesc(e.target.value)} />
+                        <input type="text" className="form-input" style={{ padding: '2px 6px', fontSize: 10 }} placeholder="作業内容・詳細メモ" value={newLogDesc} onChange={e => setNewLogDesc(e.target.value)} />
                       </div>
                       <div>
-                        <button className="btn btn-primary" style={{ padding: '3px 10px', fontSize: 10, flexShrink: 0 }} onClick={handleSaveWorklog} disabled={addingLog}>
+                        <button className="btn btn-primary" style={{ padding: '2px 8px', fontSize: 10, flexShrink: 0 }} onClick={handleSaveWorklog} disabled={addingLog}>
                           {addingLog ? '保存中...' : editingLogId ? '💾 更新' : '💾 日報登録'}
                         </button>
                       </div>
                     </div>
                   </div>
 
-                  {/* WORKLOGS TABLE WITH STEP NAME & PROCESSING CODE DISPLAY */}
+                  {/* DENSE HIGH CAPACITY WORKLOGS TABLE WITH PROPER COLUMN RATIOS */}
                   <div style={{ flex: 1, overflowY: 'auto' }}>
                     {filteredWorklogs.length > 0 ? (
-                      <table className="data-table" style={{ width: '100%', fontSize: 10 }}>
+                      <table className="data-table" style={{ width: '100%', fontSize: 11 }}>
                         <thead>
                           <tr>
-                            <th>作業日</th>
-                            <th>作業者</th>
-                            <th>対象工程</th>
-                            <th>実績工数</th>
-                            <th>作業種別・内容</th>
-                            <th style={{ width: 45, textAlign: 'center' }}>操作</th>
+                            <th style={{ width: 80, padding: '4px 6px' }}>作業日</th>
+                            <th style={{ width: 80, padding: '4px 6px' }}>作業者</th>
+                            <th style={{ width: 70, padding: '4px 6px' }}>対象工程</th>
+                            <th style={{ width: 60, padding: '4px 6px' }}>工数</th>
+                            <th style={{ padding: '4px 6px' }}>作業種別・詳細メモ</th>
+                            <th style={{ width: 45, textAlign: 'center', padding: '4px 6px' }}>操作</th>
                           </tr>
                         </thead>
                         <tbody>
                           {filteredWorklogs.map(log => (
                             <tr key={log.log_id} style={{ background: editingLogId === log.log_id ? 'var(--tint-orange-bg)' : undefined }}>
-                              <td style={{ fontFamily: 'monospace' }}>{new Date(log.work_date).toLocaleDateString()}</td>
-                              <td>{log.employee_name}</td>
-                              <td>
+                              <td style={{ fontFamily: 'monospace', fontSize: 11, color: '#0F172A', padding: '4px 6px' }}>{new Date(log.work_date).toLocaleDateString()}</td>
+                              <td style={{ fontWeight: 600, color: '#0F172A', padding: '4px 6px' }}>{log.employee_name}</td>
+                              <td style={{ padding: '4px 6px' }}>
                                 {log.step_name ? (
                                   <span className="badge badge--info" style={{ fontSize: 9, padding: '1px 5px' }}>{log.step_name}</span>
                                 ) : (
-                                  <span style={{ color: 'var(--text-muted)' }}>全体</span>
+                                  <span style={{ color: 'var(--text-muted)', fontSize: 10 }}>全体</span>
                                 )}
                               </td>
-                              <td style={{ fontFamily: 'monospace', fontWeight: 700, color: 'var(--accent)' }}>{log.hours_spent} h</td>
-                              <td style={{ maxWidth: 120, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                              <td style={{ fontFamily: 'monospace', fontWeight: 700, color: 'var(--accent)', fontSize: 12, padding: '4px 6px' }}>{log.hours_spent} h</td>
+                              <td style={{ color: '#0F172A', padding: '4px 6px', wordBreak: 'break-word' }}>
                                 {log.processing_name ? (
-                                  <strong style={{ color: 'var(--text-primary)' }}>
-                                    {log.processing_name}{log.description ? ` (${log.description})` : ''}
-                                  </strong>
+                                  <span>
+                                    <strong style={{ color: 'var(--accent)', marginRight: 4 }}>[{log.processing_name}]</strong>
+                                    {log.description || ''}
+                                  </span>
                                 ) : (
                                   log.description || '-'
                                 )}
                               </td>
-                              <td style={{ textAlign: 'center' }}>
+                              <td style={{ textAlign: 'center', padding: '4px 6px' }}>
                                 <div style={{ display: 'flex', gap: 3, justifyContent: 'center' }}>
                                   <button style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--accent)', padding: 1 }} onClick={() => handleStartEditWorklog(log)} title="編集">
-                                    <Edit2 size={12} />
+                                    <Edit2 size={13} />
                                   </button>
                                   <button style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--danger)', padding: 1 }} onClick={() => handleDeleteWorklog(log.log_id)} title="削除">
-                                    <Trash2 size={12} />
+                                    <Trash2 size={13} />
                                   </button>
                                 </div>
                               </td>
@@ -1018,14 +1020,14 @@ export function CenteredQuickJobWizardModal({
         </div>
 
         {/* FOOTER ACTION BAR */}
-        <div style={{ padding: '8px 16px', background: 'var(--bg-surface-2)', borderTop: '1px solid var(--border-default)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}>
+        <div style={{ padding: '6px 14px', background: 'var(--bg-surface-2)', borderTop: '1px solid var(--border-default)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ fontSize: 10, color: 'var(--text-secondary)' }}>
             選択設備: <strong style={{ color: 'var(--text-primary)', fontFamily: 'monospace' }}>{selectedEquipInfo?.code || newEquipCode || '未選択'}</strong>
           </div>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button className="btn btn-secondary" style={{ padding: '4px 12px', fontSize: 11 }} onClick={() => { showToast('操作をキャンセルしました', 'info'); onClose() }}>閉じる</button>
-            <button className="btn btn-primary" style={{ padding: '4px 14px', fontSize: 11 }} onClick={handleSubmit} disabled={loading}>
-              <Save size={14} style={{ marginRight: 4 }} /> {loading ? '保存中...' : '💾 保存実行'}
+          <div style={{ display: 'flex', gap: 6 }}>
+            <button className="btn btn-secondary" style={{ padding: '3px 10px', fontSize: 10 }} onClick={() => { showToast('操作をキャンセルしました', 'info'); onClose() }}>閉じる</button>
+            <button className="btn btn-primary" style={{ padding: '3px 12px', fontSize: 10 }} onClick={handleSubmit} disabled={loading}>
+              <Save size={13} style={{ marginRight: 3 }} /> {loading ? '保存中...' : '💾 保存実行'}
             </button>
           </div>
         </div>
