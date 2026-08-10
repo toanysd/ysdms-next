@@ -136,8 +136,8 @@ export function CenteredQuickJobWizardModal({
 
   // Form States - Step 4: Component Steps & Worklogs
   const [steps, setSteps] = useState<QuickMoldJobStepInput[]>([
-    { step_no: 1, step_name: '金型本体', type_code: 'MOLD', material_spec: 'A5052', quantity: 1, arrangement: 'REQUIRED', condition: 'NEW', manufacture_location: 'IN_HOUSE' },
-    { step_no: 2, step_name: '木型プラグ', type_code: 'PLUG', material_spec: 'ベニヤ木板', quantity: 1, arrangement: 'REQUIRED', condition: 'NEW', manufacture_location: 'IN_HOUSE' }
+    { step_no: 1, step_name: '金型本体', type_code: 'MOLD', material_spec: '', quantity: 1, arrangement: 'REQUIRED', condition: 'NEW', manufacture_location: 'IN_HOUSE' },
+    { step_no: 2, step_name: '木型プラグ', type_code: 'PLUG', material_spec: '', quantity: 1, arrangement: 'REQUIRED', condition: 'NEW', manufacture_location: 'IN_HOUSE' }
   ])
 
   // New Worklog Input State
@@ -213,25 +213,38 @@ export function CenteredQuickJobWizardModal({
       }
     }
 
-    // C. CAV Spec Match Candidates (auxiliary: WATER_BASE, PRESSURE_BASE, FRAME, PLUG, STACKING)
-    if (targetL && targetW) {
-      const { data: auxCandidates } = await supabase
-        .from('equipment')
-        .select('equipment_id, equipment_type, equipment_code, display_name, usage_status, device_status, actual_length_mm, actual_width_mm, design_revision_id, rack_layers(layer_code, racks(rack_code)), keeper_company:companies!equipment_keeper_company_id_fkey(company_code, company_name)')
-        .not('equipment_type', 'in', '("MOLD","CUTTER","CUTTER_SEPARATE","CUTTER_INLINE","抜型")')
+    // C. Linked equipment set members via equipment_assignments junction table (Strict SSOT)
+    const directEquipIds = Array.from(equipMap.keys())
+    if (directEquipIds.length > 0) {
+      const { data: setAssigns } = await supabase
+        .from('equipment_assignments')
+        .select('parent_equipment_id, child_equipment_id')
+        .or(`parent_equipment_id.in.(${directEquipIds.join(',')}),child_equipment_id.in.(${directEquipIds.join(',')})`)
 
-      if (auxCandidates) {
-        auxCandidates.forEach((aux: any) => {
-          if (equipMap.has(aux.equipment_id)) return
-          const l = aux.actual_length_mm ? Number(aux.actual_length_mm) : null
-          const w = aux.actual_width_mm ? Number(aux.actual_width_mm) : null
-          const isMatch = (l && w) && ((l === targetL && w === targetW) || (l === targetW && w === targetL))
-          if (isMatch) {
-            const rack = formatRackLocationDisplay(aux.rack_layers)
-            const keeper = aux.keeper_company?.company_code || aux.keeper_company?.company_name || 'YSD'
-            equipMap.set(aux.equipment_id, { id: aux.equipment_id, code: aux.equipment_code || '—', name: aux.display_name || '', type: aux.equipment_type || 'AUXILIARY', status: aux.usage_status || 'IN_STOCK', rack, keeper })
-          }
+      if (setAssigns && setAssigns.length > 0) {
+        const assignedIds = new Set<string>()
+        setAssigns.forEach(sa => {
+          if (sa.parent_equipment_id && !equipMap.has(sa.parent_equipment_id)) assignedIds.add(sa.parent_equipment_id)
+          if (sa.child_equipment_id && !equipMap.has(sa.child_equipment_id)) assignedIds.add(sa.child_equipment_id)
         })
+
+        if (assignedIds.size > 0) {
+          const { data: setEquips } = await supabase
+            .from('equipment')
+            .select('equipment_id, equipment_type, equipment_code, display_name, usage_status, device_status, rack_layers(layer_code, racks(rack_code)), keeper_company:companies!equipment_keeper_company_id_fkey(company_code, company_name)')
+            .in('equipment_id', Array.from(assignedIds))
+
+          if (setEquips) {
+            setEquips.forEach((se: any) => {
+              if (!equipMap.has(se.equipment_id)) {
+                const code = se.equipment_code || '—'
+                const rack = formatRackLocationDisplay(se.rack_layers)
+                const keeper = se.keeper_company?.company_code || se.keeper_company?.company_name || 'YSD'
+                equipMap.set(se.equipment_id, { id: se.equipment_id, code, name: se.display_name || '', type: se.equipment_type || 'SET_MEMBER', status: se.usage_status || 'IN_STOCK', rack, keeper })
+              }
+            })
+          }
+        }
       }
     }
 
@@ -413,23 +426,23 @@ export function CenteredQuickJobWizardModal({
     if (scope === 'PLUG_ONLY') {
       setJobName('[プラグ] 修正・削り出し')
       setSteps([
-        { step_no: 1, step_name: '木型プラグ加工', type_code: 'PLUG', material_spec: 'ベニヤ木板', quantity: 1, arrangement: 'REQUIRED', condition: 'REPAIR', manufacture_location: 'IN_HOUSE' }
+        { step_no: 1, step_name: '木型プラグ加工', type_code: 'PLUG', material_spec: '', quantity: 1, arrangement: 'REQUIRED', condition: 'REPAIR', manufacture_location: 'IN_HOUSE' }
       ])
     } else if (scope === 'MOLD_ONLY') {
       setJobName('[金型] 本体加工・修正')
       setSteps([
-        { step_no: 1, step_name: '金型本体マシニング', type_code: 'MOLD', material_spec: 'A5052', quantity: 1, arrangement: 'REQUIRED', condition: 'REPAIR', manufacture_location: 'IN_HOUSE' }
+        { step_no: 1, step_name: '金型本体マシニング', type_code: 'MOLD', material_spec: '', quantity: 1, arrangement: 'REQUIRED', condition: 'REPAIR', manufacture_location: 'IN_HOUSE' }
       ])
     } else if (scope === 'CUTTER_ONLY') {
       setJobName('[抜型] 刃物再研磨・調整')
       setSteps([
-        { step_no: 1, step_name: '抜型刃物調整', type_code: 'CUTTER', material_spec: 'SKD11', quantity: 1, arrangement: 'REQUIRED', condition: 'REPAIR', manufacture_location: 'OUTSOURCED' }
+        { step_no: 1, step_name: '抜型刃物調整', type_code: 'CUTTER', material_spec: '', quantity: 1, arrangement: 'REQUIRED', condition: 'REPAIR', manufacture_location: 'OUTSOURCED' }
       ])
     } else {
       setJobName('新規本型加工一式')
       setSteps([
-        { step_no: 1, step_name: '金型本体', type_code: 'MOLD', material_spec: 'A5052', quantity: 1, arrangement: 'REQUIRED', condition: 'NEW', manufacture_location: 'IN_HOUSE' },
-        { step_no: 2, step_name: '木型プラグ', type_code: 'PLUG', material_spec: 'ベニヤ木板', quantity: 1, arrangement: 'REQUIRED', condition: 'NEW', manufacture_location: 'IN_HOUSE' }
+        { step_no: 1, step_name: '金型本体', type_code: 'MOLD', material_spec: '', quantity: 1, arrangement: 'REQUIRED', condition: 'NEW', manufacture_location: 'IN_HOUSE' },
+        { step_no: 2, step_name: '木型プラグ', type_code: 'PLUG', material_spec: '', quantity: 1, arrangement: 'REQUIRED', condition: 'NEW', manufacture_location: 'IN_HOUSE' }
       ])
     }
   }
