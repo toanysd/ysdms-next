@@ -2872,6 +2872,7 @@
     "frameCategory": "フレーム",
     "plugCategory": "プラグ・他",
     "noEquipmentLinked": "該当する設備はありません",
+    "noEquipmentInCategory": "このカテゴリに該当する設備はありません",
     "confirmUnassign": "この設備の割り当てを解除しますか？",
     "unassignedLink": "未割り当て (クリックで割り当て)",
     "directBinding": "直接紐付け",

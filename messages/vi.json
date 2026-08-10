@@ -2872,6 +2872,7 @@
     "frameCategory": "Khung",
     "plugCategory": "Plug / Khác",
     "noEquipmentLinked": "Không có thiết bị phù hợp",
+    "noEquipmentInCategory": "Không có thiết bị nào trong danh mục này",
     "confirmUnassign": "Bạn có chắc muốn hủy liên kết thiết bị này?",
     "unassignedLink": "Chưa liên kết (bấm để liên kết)",
     "directBinding": "Liên kết trực tiếp",
