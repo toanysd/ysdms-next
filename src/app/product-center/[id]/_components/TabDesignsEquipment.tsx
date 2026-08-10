@@ -1,13 +1,13 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import { useTranslations } from 'next-intl'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import {
   PenTool, Wrench, MapPin, ExternalLink, Link2, Sparkles, FlaskConical, Factory,
   LayoutGrid, List, CheckSquare, Square, ArrowLeftRight, Check, X, RefreshCw,
-  Plus, ChevronDown, Box, AlertCircle, Settings
+  Plus, ChevronDown, Box, AlertCircle, Settings, Clock, Tag, FileText, ChevronRight
 } from 'lucide-react'
 import Link from 'next/link'
 import { isPrototypeDesignOrMold, formatCutterDisplayCode, formatRackLocationDisplay } from '@/lib/utils/moldNaming'
@@ -75,43 +75,18 @@ function buildRevisionTree(revisions: DesignRevision[]): RevisionTreeNode[] {
     rev.parent_design_id != null ||
     isPrototypeDesignOrMold({ design_category: rev.design_category, design_code: rev.design_code })
 
-  const massRevs = revisions.filter(r => !isProto(r))
+  const topRevs = revisions.filter(r => !isProto(r))
   const protoRevs = revisions.filter(r => isProto(r))
 
-  const protoByParent = new Map<string, DesignRevision[]>()
-  const unmatchedProtos: DesignRevision[] = []
-
-  for (const proto of protoRevs) {
-    if (proto.parent_design_id) {
-      const existing = protoByParent.get(proto.parent_design_id) || []
-      existing.push(proto)
-      protoByParent.set(proto.parent_design_id, existing)
-    } else {
-      unmatchedProtos.push(proto)
-    }
-  }
-
-  const tree: RevisionTreeNode[] = massRevs.map(mass => ({
-    revision: mass,
-    children: protoByParent.get(mass.revision_id) || [],
+  return topRevs.map(parent => ({
+    revision: parent,
+    children: protoRevs.filter(c => c.parent_design_id === parent.revision_id),
   }))
-
-  for (const proto of unmatchedProtos) {
-    const alreadyIncluded = tree.some(n =>
-      n.revision.revision_id === proto.revision_id ||
-      n.children.some(c => c.revision_id === proto.revision_id)
-    )
-    if (!alreadyIncluded) {
-      tree.push({ revision: proto, children: [] })
-    }
-  }
-
-  return tree
 }
 
-function parseDimensionPair(text: string | null | undefined): { l: number; w: number } | null {
-  if (!text) return null
-  const match = text.match(/(\d{3,4})\s*[\*x×X\-_]\s*(\d{3,4})/)
+function parseDimensionPair(str: string | null | undefined): { l: number; w: number } | null {
+  if (!str) return null
+  const match = str.match(/(\d{3,4})\s*[x×X]\s*(\d{3,4})/)
   if (match) {
     return { l: parseInt(match[1]), w: parseInt(match[2]) }
   }
@@ -136,7 +111,6 @@ export function TabDesignsEquipment({ productId }: TabDesignsEquipmentProps) {
 
   // Dropdown & Modal Interactive States
   const [showDesignMenu, setShowDesignMenu] = useState(false)
-  const [showMoldPromptDialog, setShowMoldPromptDialog] = useState(false)
 
   // Right Click Context Menu State
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; item: EquipmentItem } | null>(null)
@@ -148,6 +122,42 @@ export function TabDesignsEquipment({ productId }: TabDesignsEquipmentProps) {
     subMode?: string
     targetEquipment?: EquipmentItem | null
   }>({ isOpen: false, mode: 'CREATE_DESIGN' })
+
+  // INLINE EQUIPMENT JOBS PANEL STATE
+  const [selectedEquipmentId, setSelectedEquipmentId] = useState<string | null>(null)
+  const [selectedEquipJobs, setSelectedEquipJobs] = useState<any[]>([])
+  const [loadingJobs, setLoadingJobs] = useState(false)
+  const [selectedJobInPanel, setSelectedJobInPanel] = useState<any | null>(null)
+
+  // Load jobs for selected equipment in inline panel
+  const loadJobsForSelectedEquip = useCallback(async (equipId: string) => {
+    if (!equipId) {
+      setSelectedEquipJobs([])
+      setSelectedJobInPanel(null)
+      return
+    }
+    setLoadingJobs(true)
+    try {
+      const { data: jobs } = await supabase
+        .from('jobs')
+        .select('*, job_steps(*), work_logs(*, employees(employee_name), processing_codes(processing_name))')
+        .eq('equipment_id', equipId)
+        .order('created_at', { ascending: false })
+
+      if (jobs) {
+        setSelectedEquipJobs(jobs)
+        if (jobs.length > 0) setSelectedJobInPanel(jobs[0])
+        else setSelectedJobInPanel(null)
+      } else {
+        setSelectedEquipJobs([])
+        setSelectedJobInPanel(null)
+      }
+    } catch (err) {
+      console.error('Error loading inline equipment jobs:', err)
+    } finally {
+      setLoadingJobs(false)
+    }
+  }, [supabase])
 
   // 1. Load Design Revisions for product
   const loadRevisions = async () => {
@@ -182,20 +192,29 @@ export function TabDesignsEquipment({ productId }: TabDesignsEquipmentProps) {
   }
 
   useEffect(() => {
-    if (productId) loadRevisions()
+    loadRevisions()
   }, [productId])
+
+  const selectedRev = useMemo(() => {
+    return revisions.find(r => r.revision_id === selectedRevId) || null
+  }, [revisions, selectedRevId])
+
+  const revisionTree = useMemo(() => {
+    return buildRevisionTree(revisions)
+  }, [revisions])
 
   // 2. Load Production Equipment Set dynamically per selected revision + CAV Spec Matching
   const fetchEquipmentSet = async () => {
     if (!selectedRevId) {
       setEquipmentList([])
+      setSelectedEquipmentId(null)
       return
     }
 
     try {
-      const selectedRev = revisions.find(r => r.revision_id === selectedRevId)
-      const targetL = selectedRev?.design_length || selectedRev?.cutline_length || null
-      const targetW = selectedRev?.design_width || selectedRev?.cutline_width || null
+      const targetRev = revisions.find(r => r.revision_id === selectedRevId)
+      const targetL = targetRev?.design_length ? Number(targetRev.design_length) : null
+      const targetW = targetRev?.design_width ? Number(targetRev.design_width) : null
 
       const equipMap = new Map<string, EquipmentItem>()
 
@@ -331,6 +350,20 @@ export function TabDesignsEquipment({ productId }: TabDesignsEquipmentProps) {
       }
 
       setEquipmentList(equipList)
+      
+      // Auto-select first equipment for inline panel if none selected
+      const defaultId = (selectedEquipmentId && equipList.some(e => e.id === selectedEquipmentId))
+        ? selectedEquipmentId
+        : (equipList.length > 0 ? equipList[0].id : null)
+
+      if (defaultId) {
+        setSelectedEquipmentId(defaultId)
+        loadJobsForSelectedEquip(defaultId)
+      } else {
+        setSelectedEquipmentId(null)
+        setSelectedEquipJobs([])
+        setSelectedJobInPanel(null)
+      }
     } catch (err) {
       console.error('Error loading equipment set for revision:', err)
     }
@@ -378,152 +411,67 @@ export function TabDesignsEquipment({ productId }: TabDesignsEquipmentProps) {
         await fetchEquipmentSet()
       }
     } catch (err) {
-      console.error('Error toggling linkage:', err)
+      console.error('Error toggling equipment binding:', err)
     } finally {
       setIsTogglingId(null)
     }
   }
 
-  // Reassign Linkage to another revision
-  const handleReassignToRevision = async (targetRevId: string) => {
-    if (!reassigningItem || isTogglingId) return
-
-    setIsTogglingId(reassigningItem.id)
-    try {
-      const isCutter = ['CUTTER', 'CUTTER_SEPARATE', 'CUTTER_INLINE', '抜型'].includes(String(reassigningItem.type || '').toUpperCase())
-
-      if (isCutter) {
-        if (selectedRevId) {
-          await supabase
-            .from('mold_design_cutters')
-            .delete()
-            .eq('mold_design_id', selectedRevId)
-            .eq('cutter_id', reassigningItem.id)
-        }
-        await supabase
-          .from('mold_design_cutters')
-          .upsert({ mold_design_id: targetRevId, cutter_id: reassigningItem.id })
-      } else {
-        await supabase
-          .from('equipment')
-          .update({ design_revision_id: targetRevId })
-          .eq('equipment_id', reassigningItem.id)
-      }
-
-      setReassigningItem(null)
-      await fetchEquipmentSet()
-    } catch (err) {
-      console.error('Error reassigning equipment:', err)
-    } finally {
-      setIsTogglingId(null)
-    }
-  }
-
-  // Action 1: Create Design Handler -> Opens Centered Accordion Wizard Modal right on page
+  // Trigger Creation Modal Options
   const handleTriggerCreateDesign = (subMode: string) => {
     setShowDesignMenu(false)
-    setCenteredWizardModal({
-      isOpen: true,
-      mode: 'CREATE_DESIGN',
-      subMode,
-    })
+    setCenteredWizardModal({ isOpen: true, mode: 'CREATE_DESIGN', subMode })
   }
 
-  // Action 2: Add Equipment / Mold Handler with Existing Mold Prompt
   const handleTriggerAddEquipment = () => {
-    const existingMolds = equipmentList.filter(item => ['MOLD', '金型'].includes(String(item.type || '').toUpperCase()) && item.isBound)
-
-    if (existingMolds.length > 0) {
-      setShowMoldPromptDialog(true)
-    } else {
-      setCenteredWizardModal({
-        isOpen: true,
-        mode: 'CREATE_MOLD',
-        subMode: 'NEW_MOLD_UNIT',
-      })
-    }
+    setCenteredWizardModal({ isOpen: true, mode: 'CREATE_MOLD' })
   }
 
-  // Right-Click Context Menu Action Dispatcher
-  const handleContextMenuAction = async (actionKey: string, item: EquipmentItemContext) => {
-    const target: EquipmentItem = equipmentList.find(e => e.id === item.id) || {
-      ...item,
-      isDirect: item.isDirect ?? false,
-      isBound: item.isBound ?? false,
-      isCavMatch: item.isCavMatch ?? false,
-    }
-
-    if (actionKey === 'CREATE_JOB') {
-      setCenteredWizardModal({
-        isOpen: true,
-        mode: 'CREATE_JOB',
-        subMode: 'OVERHAUL_JOB',
-        targetEquipment: target,
-      })
-    } else if (actionKey === 'CHECK_IN') {
-      await supabase.from('equipment').update({ usage_status: 'IN_STOCK' }).eq('equipment_id', item.id)
-      await fetchEquipmentSet()
-    } else if (actionKey === 'TRANSFER' || actionKey === 'UPDATE_SPECS') {
-      setCenteredWizardModal({
-        isOpen: true,
-        mode: 'UPDATE_EQUIPMENT',
-        targetEquipment: target,
-      })
-    } else if (actionKey === 'SCRAP') {
-      if (confirm(`Scrap equipment ${item.code}?`)) {
-        await supabase.from('equipment').update({ usage_status: 'SCRAPPED' }).eq('equipment_id', item.id)
-        await fetchEquipmentSet()
-      }
-    }
-  }
-
-  const selectedRev = revisions.find(r => r.revision_id === selectedRevId)
-  const revisionTree = useMemo(() => buildRevisionTree(revisions), [revisions])
-
+  // Filter equipment by active category tab
   const filteredEquipment = useMemo(() => {
     if (activeCategory === 'ALL') return equipmentList
     return equipmentList.filter(item => {
-      const tUpper = String(item.type || '').toUpperCase()
-      if (activeCategory === 'MOLD') return ['MOLD', '金型'].includes(tUpper)
-      if (activeCategory === 'CUTTER') return ['CUTTER', 'CUTTER_SEPARATE', 'CUTTER_INLINE', '抜型'].includes(tUpper)
-      if (activeCategory === 'WATER_BASE') return tUpper === 'WATER_BASE'
-      if (activeCategory === 'PRESSURE_BASE') return tUpper === 'PRESSURE_BASE'
-      if (activeCategory === 'FRAME') return tUpper === 'FRAME'
-      if (activeCategory === 'PLUG') return ['PLUG', 'STACKING', 'AUXILIARY'].includes(tUpper)
+      const t = String(item.type || '').toUpperCase()
+      if (activeCategory === 'MOLD') return t === 'MOLD' || t === '金型'
+      if (activeCategory === 'CUTTER') return ['CUTTER', 'CUTTER_SEPARATE', 'CUTTER_INLINE', '抜型'].includes(t)
+      if (activeCategory === 'WATER_BASE') return t === 'WATER_BASE'
+      if (activeCategory === 'PRESSURE_BASE') return t === 'PRESSURE_BASE'
+      if (activeCategory === 'FRAME') return t === 'FRAME'
+      if (activeCategory === 'PLUG') return t === 'PLUG'
       return true
     })
   }, [equipmentList, activeCategory])
 
+  // Category counts
   const categoryCounts = useMemo(() => {
     const counts = { ALL: equipmentList.length, MOLD: 0, CUTTER: 0, WATER_BASE: 0, PRESSURE_BASE: 0, FRAME: 0, PLUG: 0 }
     equipmentList.forEach(item => {
-      const tUpper = String(item.type || '').toUpperCase()
-      if (['MOLD', '金型'].includes(tUpper)) counts.MOLD++
-      else if (['CUTTER', 'CUTTER_SEPARATE', 'CUTTER_INLINE', '抜型'].includes(tUpper)) counts.CUTTER++
-      else if (tUpper === 'WATER_BASE') counts.WATER_BASE++
-      else if (tUpper === 'PRESSURE_BASE') counts.PRESSURE_BASE++
-      else if (tUpper === 'FRAME') counts.FRAME++
-      else counts.PLUG++
+      const t = String(item.type || '').toUpperCase()
+      if (t === 'MOLD' || t === '金型') counts.MOLD++
+      else if (['CUTTER', 'CUTTER_SEPARATE', 'CUTTER_INLINE', '抜型'].includes(t)) counts.CUTTER++
+      else if (t === 'WATER_BASE') counts.WATER_BASE++
+      else if (t === 'PRESSURE_BASE') counts.PRESSURE_BASE++
+      else if (t === 'FRAME') counts.FRAME++
+      else if (t === 'PLUG') counts.PLUG++
     })
     return counts
   }, [equipmentList])
 
-  /** Render a single revision row item */
-  const renderRevisionItem = (rev: DesignRevision, isChild: boolean = false) => {
+  // Render a revision item in the left tree
+  const renderRevisionItem = (rev: DesignRevision, isChild: boolean) => {
     const isSelected = rev.revision_id === selectedRevId
-    const isProto = rev.design_category === 'PROTOTYPE_POCKET' ||
-      rev.parent_design_id != null ||
-      isPrototypeDesignOrMold({ design_category: rev.design_category, design_code: rev.design_code })
+    const isProto = rev.design_category === 'PROTOTYPE_POCKET' || rev.parent_design_id != null || isPrototypeDesignOrMold({ design_category: rev.design_category, design_code: rev.design_code })
 
     return (
       <div
         key={rev.revision_id}
         onClick={() => setSelectedRevId(rev.revision_id)}
         style={{
-          padding: '6px 8px', cursor: 'pointer', borderRadius: 4,
-          background: isSelected ? 'color-mix(in srgb, var(--accent) 8%, transparent)' : 'transparent',
-          borderLeft: isSelected ? '2px solid var(--accent)' : '2px solid transparent',
-          marginLeft: isChild ? 16 : -2, transition: 'all 0.1s ease',
+          padding: '6px 8px', borderRadius: 6, cursor: 'pointer',
+          background: isSelected ? 'color-mix(in srgb, var(--accent) 12%, transparent)' : 'transparent',
+          borderLeft: isSelected ? '3px solid var(--accent)' : '3px solid transparent',
+          marginBottom: 4, transition: 'all 0.12s ease',
+          marginLeft: isChild ? 14 : 0,
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -576,6 +524,8 @@ export function TabDesignsEquipment({ productId }: TabDesignsEquipmentProps) {
     DRAFT: 'badge badge--neutral',
     SUPERSEDED: 'badge badge--neutral',
   }
+
+  const selectedEquipItem = equipmentList.find(e => e.id === selectedEquipmentId)
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '10px 0' }}>
@@ -806,48 +756,59 @@ export function TabDesignsEquipment({ productId }: TabDesignsEquipmentProps) {
                         background: isActive ? theme.bg : 'var(--bg-surface)',
                         color: isActive ? theme.color : 'var(--text-secondary)',
                         cursor: 'pointer', transition: 'all 0.12s ease', display: 'flex', alignItems: 'center', gap: 4,
-                        boxShadow: isActive ? `0 1px 3px ${theme.color}25` : 'none'
                       }}
                     >
-                      <EquipmentTypeIcon type={tab.key === 'ALL' ? null : tab.key} size={11} />
                       <span>{tab.label}</span>
-                      <span style={{ fontSize: 9, opacity: 0.85, fontFamily: 'monospace' }}>({tab.count})</span>
+                      <span style={{ fontSize: 9, opacity: 0.85, fontWeight: 700 }}>({tab.count})</span>
                     </button>
                   )
                 })}
               </div>
             </div>
 
-            {/* Equipment Items List / Grid */}
+            {/* Equipment Set Cards Display (GRID OR LIST VIEW - WIDE NO TRUNCATE CARDS) */}
             {filteredEquipment.length === 0 ? (
-              <span style={{ fontSize: 11, color: 'var(--text-muted)', padding: '10px 0' }}>{t('noEquipmentLinked')}</span>
+              <div style={{ padding: 16, textAlign: 'center', color: 'var(--text-muted)', fontSize: 11, border: '1px dashed var(--border-default)', borderRadius: 6 }}>
+                {t('noEquipmentInCategory')}
+              </div>
             ) : viewMode === 'grid' ? (
-              /* GRID VIEW (Interactive Equipment Cards) */
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 8 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 10 }}>
                 {filteredEquipment.map(item => {
                   const isLoadingThis = isTogglingId === item.id
                   const theme = getEquipmentTypeTheme(item.type)
+                  const isSelected = selectedEquipmentId === item.id
 
                   return (
                     <div
                       key={item.id}
+                      onClick={() => {
+                        setSelectedEquipmentId(item.id)
+                        loadJobsForSelectedEquip(item.id)
+                      }}
                       onContextMenu={(e) => {
                         e.preventDefault()
                         setContextMenu({ x: e.clientX, y: e.clientY, item })
                       }}
                       style={{
                         display: 'flex', flexDirection: 'column', gap: 6, padding: 8, borderRadius: 6,
-                        background: item.isBound ? 'var(--bg-surface-2)' : 'color-mix(in srgb, var(--bg-surface) 60%, transparent)',
-                        border: item.isBound ? `1px solid ${theme.borderColor}` : '1px dashed var(--border-default)',
-                        boxShadow: item.isBound ? `inset 0 3px 0 0 ${theme.color}` : 'none',
-                        position: 'relative', transition: 'all 0.12s ease', cursor: 'context-menu'
+                        background: isSelected
+                          ? 'color-mix(in srgb, var(--accent) 12%, transparent)'
+                          : item.isBound ? 'var(--bg-surface-2)' : 'color-mix(in srgb, var(--bg-surface) 60%, transparent)',
+                        border: isSelected
+                          ? '2px solid var(--accent)'
+                          : item.isBound ? `1px solid ${theme.borderColor}` : '1px dashed var(--border-default)',
+                        boxShadow: isSelected ? '0 4px 12px color-mix(in srgb, var(--accent) 20%, transparent)' : 'none',
+                        position: 'relative', transition: 'all 0.12s ease', cursor: 'pointer'
                       }}
                     >
                       {/* Card Header */}
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0, flex: 1 }}>
                           <button
-                            onClick={() => handleToggleBinding(item)}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleToggleBinding(item)
+                            }}
                             disabled={isLoadingThis}
                             style={{
                               background: 'transparent', border: 'none', cursor: 'pointer', padding: 0,
@@ -869,29 +830,31 @@ export function TabDesignsEquipment({ productId }: TabDesignsEquipmentProps) {
 
                           <Link
                             href={item.url}
-                            style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: 12, color: theme.color, textDecoration: 'none', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                            onClick={e => e.stopPropagation()}
+                            style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: 12, color: theme.color, textDecoration: 'none' }}
                           >
                             {item.code}
                           </Link>
                         </div>
 
                         <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                          {/* JOB COUNT PILL BADGE WITH TOOLTIP & DIRECT LAUNCHER */}
+                          {/* JOB COUNT PILL BADGE WITH DIRECT LAUNCHER */}
                           <button
                             onClick={(e) => {
                               e.stopPropagation()
-                              setCenteredWizardModal({ isOpen: true, mode: 'CREATE_JOB', targetEquipment: item })
+                              setSelectedEquipmentId(item.id)
+                              loadJobsForSelectedEquip(item.id)
                             }}
                             style={{
-                              fontSize: 9, padding: '1px 5px', borderRadius: 8, fontWeight: 700,
+                              fontSize: 9, padding: '1px 6px', borderRadius: 8, fontWeight: 700,
                               border: `1px solid ${item.n_jobs ? 'color-mix(in srgb, var(--accent) 40%, transparent)' : 'var(--border-default)'}`,
-                              background: item.n_jobs ? 'color-mix(in srgb, var(--accent) 12%, transparent)' : 'var(--bg-surface-2)',
+                              background: item.n_jobs ? 'color-mix(in srgb, var(--accent) 15%, transparent)' : 'var(--bg-surface-2)',
                               color: item.n_jobs ? 'var(--accent)' : 'var(--text-muted)',
                               cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 2, transition: 'all 0.12s ease'
                             }}
                             title={item.recent_jobs && item.recent_jobs.length > 0
-                              ? `【Job履歴 - 全${item.n_jobs}件】\n` + item.recent_jobs.map(j => `• ${j.job_code} [${j.job_status}]: ${j.job_name || '名称未設定'}`).join('\n') + '\n\nクリックして Job & 日報 Hub を開く'
-                              : 'Job未登録 - クリックして新規Job作成'
+                              ? `【Job履歴 - 全${item.n_jobs}件】\n` + item.recent_jobs.map(j => `• ${j.job_code} [${j.job_status}]: ${j.job_name || '名称未設定'}`).join('\n')
+                              : 'Job未登録'
                             }
                           >
                             <Settings size={9} />
@@ -901,18 +864,15 @@ export function TabDesignsEquipment({ productId }: TabDesignsEquipmentProps) {
                           <span style={{ fontSize: 9, background: theme.bg, color: theme.color, border: `1px solid ${theme.borderColor}`, padding: '0 5px', borderRadius: 8, fontWeight: 700 }}>
                             {theme.labelJA}
                           </span>
-                          <span className="badge badge--neutral" style={{ fontSize: 9 }}>
-                            {item.status || 'ACTIVE'}
-                          </span>
                         </div>
                       </div>
 
-                      {/* Name & Location */}
-                      <div style={{ fontSize: 11, color: 'var(--text-secondary)', minHeight: 16, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {/* Name & Location (NO TRUNCATE - FULL WORD BREAK DISPLAY) */}
+                      <div style={{ fontSize: 11, fontWeight: 600, color: '#0F172A', wordBreak: 'break-word', whiteSpace: 'normal', minHeight: 20 }}>
                         {item.name || '—'}
                       </div>
 
-                      {/* Footer: Binding State Badges + Reassign Action */}
+                      {/* Footer: Binding State Badges + Selection Indicator */}
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: 4, borderTop: '1px solid var(--border-default)', fontSize: 9 }}>
                         {item.isDirect ? (
                           <span style={{ color: 'var(--accent)', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 2 }}>
@@ -934,17 +894,9 @@ export function TabDesignsEquipment({ productId }: TabDesignsEquipmentProps) {
                           </span>
                         )}
 
-                        <button
-                          onClick={() => setReassigningItem(item)}
-                          style={{
-                            background: 'transparent', border: 'none', cursor: 'pointer',
-                            color: 'var(--text-secondary)', fontSize: 9, display: 'flex', alignItems: 'center', gap: 2,
-                            padding: '1px 4px', borderRadius: 3
-                          }}
-                          title={t('reassignLink')}
-                        >
-                          <ArrowLeftRight size={9} />
-                        </button>
+                        {isSelected && (
+                          <span style={{ fontSize: 9, color: 'var(--accent)', fontWeight: 700 }}>✓ 選択中</span>
+                        )}
                       </div>
                     </div>
                   )
@@ -956,23 +908,35 @@ export function TabDesignsEquipment({ productId }: TabDesignsEquipmentProps) {
                 {filteredEquipment.map(item => {
                   const isLoadingThis = isTogglingId === item.id
                   const theme = getEquipmentTypeTheme(item.type)
+                  const isSelected = selectedEquipmentId === item.id
 
                   return (
                     <div
                       key={item.id}
+                      onClick={() => {
+                        setSelectedEquipmentId(item.id)
+                        loadJobsForSelectedEquip(item.id)
+                      }}
                       onContextMenu={(e) => {
                         e.preventDefault()
                         setContextMenu({ x: e.clientX, y: e.clientY, item })
                       }}
                       style={{
                         display: 'flex', alignItems: 'center', gap: 8, padding: '5px 8px', borderRadius: 4,
-                        background: item.isBound ? theme.bg : 'color-mix(in srgb, var(--bg-surface) 60%, transparent)',
-                        border: item.isBound ? `1px solid ${theme.borderColor}` : '1px dashed var(--border-default)',
-                        cursor: 'context-menu'
+                        background: isSelected
+                          ? 'color-mix(in srgb, var(--accent) 12%, transparent)'
+                          : item.isBound ? theme.bg : 'color-mix(in srgb, var(--bg-surface) 60%, transparent)',
+                        border: isSelected
+                          ? '2px solid var(--accent)'
+                          : item.isBound ? `1px solid ${theme.borderColor}` : '1px dashed var(--border-default)',
+                        cursor: 'pointer'
                       }}
                     >
                       <button
-                        onClick={() => handleToggleBinding(item)}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleToggleBinding(item)
+                        }}
                         disabled={isLoadingThis}
                         style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: 0, color: item.isBound ? theme.color : 'var(--text-muted)', display: 'flex', alignItems: 'center' }}
                       >
@@ -989,6 +953,7 @@ export function TabDesignsEquipment({ productId }: TabDesignsEquipmentProps) {
 
                       <Link
                         href={item.url}
+                        onClick={e => e.stopPropagation()}
                         style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: 12, color: theme.color, textDecoration: 'none' }}
                       >
                         {item.code}
@@ -998,11 +963,12 @@ export function TabDesignsEquipment({ productId }: TabDesignsEquipmentProps) {
                         {theme.labelJA}
                       </span>
 
-                      {/* JOB COUNT PILL BADGE WITH TOOLTIP & DIRECT LAUNCHER */}
+                      {/* JOB COUNT PILL BADGE */}
                       <button
                         onClick={(e) => {
                           e.stopPropagation()
-                          setCenteredWizardModal({ isOpen: true, mode: 'CREATE_JOB', targetEquipment: item })
+                          setSelectedEquipmentId(item.id)
+                          loadJobsForSelectedEquip(item.id)
                         }}
                         style={{
                           fontSize: 9, padding: '1px 5px', borderRadius: 8, fontWeight: 700,
@@ -1011,138 +977,270 @@ export function TabDesignsEquipment({ productId }: TabDesignsEquipmentProps) {
                           color: item.n_jobs ? 'var(--accent)' : 'var(--text-muted)',
                           cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 2, transition: 'all 0.12s ease', flexShrink: 0
                         }}
-                        title={item.recent_jobs && item.recent_jobs.length > 0
-                          ? `【Job履歴 - 全${item.n_jobs}件】\n` + item.recent_jobs.map(j => `• ${j.job_code} [${j.job_status}]: ${j.job_name || '名称未設定'}`).join('\n') + '\n\nクリックして Job & 日報 Hub を開く'
-                          : 'Job未登録 - クリックして新規Job作成'
-                        }
                       >
                         <Settings size={9} />
                         <span>Job:{item.n_jobs || 0}</span>
                       </button>
 
-                      <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-primary)', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      <span style={{ fontSize: 11, fontWeight: 600, color: '#0F172A', flex: 1, minWidth: 0 }}>
                         {item.name}
                       </span>
 
-                      {item.isDirect ? (
-                        <span style={{ fontSize: 9, background: 'color-mix(in srgb, var(--accent) 15%, transparent)', color: 'var(--accent)', padding: '1px 5px', borderRadius: 3, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 3 }}>
-                          <Sparkles size={9} /> {t('directBinding')}
-                        </span>
-                      ) : item.isCavMatch ? (
-                        <span style={{ fontSize: 9, background: 'color-mix(in srgb, #D97706 15%, transparent)', color: '#D97706', padding: '1px 5px', borderRadius: 3, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 3 }}>
-                          <Link2 size={9} /> {t('cavCandidate')}
-                        </span>
-                      ) : (
-                        <span style={{ fontSize: 9, background: 'var(--bg-surface)', color: 'var(--text-muted)', padding: '1px 5px', borderRadius: 3, border: '1px solid var(--border-default)', display: 'flex', alignItems: 'center', gap: 3 }}>
-                          <Link2 size={9} /> {t('sharedBinding')}
-                        </span>
+                      {isSelected && (
+                        <span style={{ fontSize: 9, color: 'var(--accent)', fontWeight: 700, flexShrink: 0 }}>✓ 選択中</span>
                       )}
-
-                      {item.rack !== '—' && (
-                        <span style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: 10, color: 'var(--text-muted)' }}>
-                          <MapPin size={10} />{item.rack}
-                        </span>
-                      )}
-
-                      <span className="badge badge--neutral" style={{ fontSize: 9 }}>
-                        {item.status || 'ACTIVE'}
-                      </span>
-
-                      <button
-                        onClick={() => setReassigningItem(item)}
-                        style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', padding: '2px 4px' }}
-                        title={t('reassignLink')}
-                      >
-                        <ArrowLeftRight size={11} />
-                      </button>
                     </div>
                   )
                 })}
               </div>
             )}
-          </div>
 
+            {/* INLINE DEDICATED EQUIPMENT JOBS & PROGRESS OVERVIEW PANEL */}
+            {selectedEquipItem && (
+              <div className="card-flat" style={{ padding: 12, marginTop: 10, background: 'var(--bg-surface-2)', border: '1px solid var(--border-default)', borderRadius: 8 }}>
+                
+                {/* INLINE PANEL HEADER */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10, borderBottom: '1px solid var(--border-default)', paddingBottom: 6 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <Settings size={16} color="var(--accent)" />
+                    <h3 style={{ fontSize: 13, fontWeight: 700, margin: 0, color: '#0F172A' }}>
+                      選択設備の加工Job・工程進捗一覧: <strong style={{ color: 'var(--accent)', fontFamily: 'monospace' }}>{selectedEquipItem.code}</strong> ({selectedEquipItem.name})
+                    </h3>
+                  </div>
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    <button 
+                      className="btn btn-primary"
+                      style={{ fontSize: 10, padding: '3px 10px', display: 'flex', alignItems: 'center', gap: 4 }}
+                      onClick={() => setCenteredWizardModal({ isOpen: true, mode: 'CREATE_JOB', targetEquipment: selectedEquipItem })}
+                    >
+                      <Plus size={12} /> + 新規Job指示
+                    </button>
+                    <button 
+                      className="btn btn-secondary"
+                      style={{ fontSize: 10, padding: '3px 10px', display: 'flex', alignItems: 'center', gap: 4 }}
+                      onClick={() => setCenteredWizardModal({ isOpen: true, mode: 'CREATE_JOB', targetEquipment: selectedEquipItem })}
+                    >
+                      <Wrench size={12} /> Job & 日報 Hubを開く
+                    </button>
+                  </div>
+                </div>
+
+                {loadingJobs ? (
+                  <div style={{ padding: 20, textAlign: 'center', color: 'var(--text-muted)', fontSize: 11 }}>
+                    <RefreshCw size={16} className="spin" style={{ marginBottom: 6 }} /><br />Jobデータを読み込み中...
+                  </div>
+                ) : selectedEquipJobs.length === 0 ? (
+                  <div style={{ padding: 20, textAlign: 'center', color: 'var(--text-muted)', fontSize: 11, border: '1px dashed var(--border-default)', borderRadius: 6 }}>
+                    この設備 ({selectedEquipItem.code}) に登録された加工Jobはありません。<br />「+ 新規Job指示」ボタンから追加できます。
+                  </div>
+                ) : (
+                  /* SPLIT INLINE PANEL (LEFT 32% JOBS LIST / RIGHT 68% SELECTED JOB DETAILS & STEPS) */
+                  <div style={{ display: 'grid', gridTemplateColumns: '32% 68%', gap: 12 }}>
+                    
+                    {/* LEFT SUB-COLUMN: JOBS LIST */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6, borderRight: '1px solid var(--border-default)', paddingRight: 10 }}>
+                      <div style={{ fontSize: 10, fontWeight: 700, color: '#475569', textTransform: 'uppercase', marginBottom: 2 }}>
+                        登録Job一覧 ({selectedEquipJobs.length}件)
+                      </div>
+
+                      {selectedEquipJobs.map(job => {
+                        const isJobSelected = selectedJobInPanel?.job_id === job.job_id
+                        const stepsCount = job.job_steps?.length || 0
+                        const logsCount = job.work_logs?.length || 0
+                        const totalHours = (job.work_logs || []).reduce((sum: number, l: any) => sum + Number(l.hours_spent || 0), 0)
+
+                        return (
+                          <div
+                            key={job.job_id}
+                            className="card-flat"
+                            style={{
+                              padding: 8,
+                              cursor: 'pointer',
+                              borderRadius: 6,
+                              borderLeft: isJobSelected ? '4px solid var(--accent)' : '1px solid var(--border-default)',
+                              background: isJobSelected ? 'color-mix(in srgb, var(--accent) 12%, transparent)' : 'var(--bg-surface)',
+                              transition: 'all 0.12s ease'
+                            }}
+                            onClick={() => setSelectedJobInPanel(job)}
+                          >
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 }}>
+                              <span style={{ fontFamily: 'monospace', fontSize: 11, fontWeight: 700, color: 'var(--accent)' }}>
+                                {job.job_code}
+                              </span>
+                              <span className="badge badge--info" style={{ fontSize: 8, padding: '0px 4px' }}>
+                                {job.job_status || 'PENDING'}
+                              </span>
+                            </div>
+                            <div style={{ fontSize: 11, fontWeight: 600, color: '#0F172A', marginBottom: 4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                              {job.job_name || '(名称なし)'}
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 9, color: '#64748B' }}>
+                              <span>工程: {stepsCount} | 日報: {logsCount}</span>
+                              <strong style={{ color: 'var(--accent)', fontFamily: 'monospace' }}>{totalHours.toFixed(1)} h</strong>
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+
+                    {/* RIGHT SUB-COLUMN: SELECTED JOB DETAILS, STEPS & WORKLOGS */}
+                    {selectedJobInPanel ? (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                        {/* JOB DIRECTIVE SUMMARY HEADER */}
+                        <div style={{ padding: 8, background: 'var(--bg-surface)', borderRadius: 6, border: '1px solid var(--border-default)' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                            <span style={{ fontSize: 12, fontWeight: 700, color: '#0F172A' }}>
+                              {selectedJobInPanel.job_code}: {selectedJobInPanel.job_name || '名称未設定'}
+                            </span>
+                            <span className="badge badge--neutral" style={{ fontSize: 9 }}>
+                              区分: {selectedJobInPanel.wo_type || 'NEW'}
+                            </span>
+                          </div>
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 6, fontSize: 10, color: '#475569' }}>
+                            <div>着手予定: <strong style={{ color: '#0F172A' }}>{selectedJobInPanel.start_date ? new Date(selectedJobInPanel.start_date).toLocaleDateString() : '-'}</strong></div>
+                            <div>納期: <strong style={{ color: '#0F172A' }}>{selectedJobInPanel.deadline ? new Date(selectedJobInPanel.deadline).toLocaleDateString() : '-'}</strong></div>
+                            <div>場所: <strong style={{ color: '#0F172A' }}>{selectedJobInPanel.manufacture_location === 'IN_HOUSE' ? '社内' : '外注'}</strong></div>
+                            <div>備考: <span style={{ color: '#0F172A' }}>{selectedJobInPanel.notes || '-'}</span></div>
+                          </div>
+                        </div>
+
+                        {/* JOB STEPS LIST TABLE */}
+                        <div>
+                          <div style={{ fontSize: 10, fontWeight: 700, color: '#475569', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
+                            <Settings size={12} color="var(--accent)" /> 加工工程リスト (Job Steps)
+                          </div>
+                          {selectedJobInPanel.job_steps && selectedJobInPanel.job_steps.length > 0 ? (
+                            <table className="data-table" style={{ width: '100%', fontSize: 10 }}>
+                              <thead>
+                                <tr>
+                                  <th style={{ width: 30 }}>#</th>
+                                  <th>工程名</th>
+                                  <th style={{ width: 70 }}>予定工数</th>
+                                  <th style={{ width: 100 }}>担当者</th>
+                                  <th style={{ width: 70 }}>実績工数</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {selectedJobInPanel.job_steps.map((step: any) => {
+                                  const stepLogs = (selectedJobInPanel.work_logs || []).filter((l: any) => l.job_step_id === step.step_id)
+                                  const stepHours = stepLogs.reduce((sum: number, l: any) => sum + Number(l.hours_spent || 0), 0)
+
+                                  return (
+                                    <tr key={step.step_id || step.step_no}>
+                                      <td style={{ fontWeight: 700 }}>{step.step_no}</td>
+                                      <td style={{ fontWeight: 600, color: '#0F172A' }}>{step.step_name}</td>
+                                      <td style={{ fontFamily: 'monospace' }}>{step.estimated_hours ? `${step.estimated_hours} h` : '-'}</td>
+                                      <td>{step.assigned_to || '-'}</td>
+                                      <td style={{ fontFamily: 'monospace', fontWeight: 700, color: 'var(--accent)' }}>{stepHours.toFixed(1)} h</td>
+                                    </tr>
+                                  )
+                                })}
+                              </tbody>
+                            </table>
+                          ) : (
+                            <div style={{ fontSize: 10, color: 'var(--text-muted)', padding: 6 }}>工程未登録</div>
+                          )}
+                        </div>
+
+                        {/* WORKLOGS SUMMARY TABLE */}
+                        <div>
+                          <div style={{ fontSize: 10, fontWeight: 700, color: '#475569', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
+                            <Clock size={12} color="var(--accent)" /> 実績作業日報ログ ({selectedJobInPanel.work_logs?.length || 0}件)
+                          </div>
+                          {selectedJobInPanel.work_logs && selectedJobInPanel.work_logs.length > 0 ? (
+                            <table className="data-table" style={{ width: '100%', fontSize: 10 }}>
+                              <thead>
+                                <tr>
+                                  <th style={{ width: 75 }}>作業日</th>
+                                  <th style={{ width: 90 }}>作業者</th>
+                                  <th style={{ width: 50 }}>工数</th>
+                                  <th>作業種別・内容</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {selectedJobInPanel.work_logs.map((log: any) => (
+                                  <tr key={log.log_id}>
+                                    <td style={{ fontFamily: 'monospace' }}>{new Date(log.work_date).toLocaleDateString()}</td>
+                                    <td style={{ fontWeight: 600, color: '#0F172A', whiteSpace: 'nowrap' }}>{log.employees?.employee_name || '担当者'}</td>
+                                    <td style={{ fontFamily: 'monospace', fontWeight: 700, color: 'var(--accent)' }}>{log.hours_spent} h</td>
+                                    <td>
+                                      {log.processing_codes?.processing_name && (
+                                        <span className="badge badge--neutral" style={{ fontSize: 8, padding: '0 4px', marginRight: 4 }}>
+                                          {log.processing_codes.processing_name}
+                                        </span>
+                                      )}
+                                      <span>{log.description || '-'}</span>
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          ) : (
+                            <div style={{ fontSize: 10, color: 'var(--text-muted)', padding: 6 }}>作業日報未登録</div>
+                          )}
+                        </div>
+
+                      </div>
+                    ) : (
+                      <div style={{ padding: 20, textAlign: 'center', color: 'var(--text-muted)', fontSize: 11 }}>
+                        左側のJobリストからJobを選択してください。
+                      </div>
+                    )}
+
+                  </div>
+                )}
+
+              </div>
+            )}
+
+          </div>
         </div>
       )}
 
-      {/* Dialog Prompt for Existing Mold Detection */}
-      {showMoldPromptDialog && (
-        <div style={{
-          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 99999,
-          display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16
-        }}>
-          <div className="card" style={{ width: 420, padding: 16, background: 'var(--bg-surface)', borderRadius: 8, display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, borderBottom: '1px solid var(--border-default)', paddingBottom: 8 }}>
-              <AlertCircle size={18} style={{ color: '#F59E0B' }} />
-              <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-primary)' }}>
-                {t('existingMoldDetectedTitle')}
-              </span>
-            </div>
-
-            <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}>
-              {t('existingMoldDetectedDesc')}
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              <button
-                className="btn btn-primary"
-                onClick={() => {
-                  setShowMoldPromptDialog(false)
-                  setCenteredWizardModal({ isOpen: true, mode: 'CREATE_MOLD', subMode: 'NEW_MOLD_UNIT' })
-                }}
-                style={{ fontSize: 11, justifyContent: 'flex-start', padding: '8px 12px' }}
-              >
-                ➕ {t('createNewMoldUnit')}
-              </button>
-
-              <button
-                className="btn btn-secondary"
-                onClick={() => {
-                  setShowMoldPromptDialog(false)
-                  const target = equipmentList.find(e => ['MOLD', '金型'].includes(String(e.type || '').toUpperCase()))
-                  setCenteredWizardModal({ isOpen: true, mode: 'CREATE_JOB', subMode: 'OVERHAUL_JOB', targetEquipment: target || null })
-                }}
-                style={{ fontSize: 11, justifyContent: 'flex-start', padding: '8px 12px' }}
-              >
-                🛠️ {t('createModificationJob')}
-              </button>
-            </div>
-
-            <div style={{ display: 'flex', justifyContent: 'flex-end', paddingTop: 4 }}>
-              <button className="btn btn-secondary" style={{ fontSize: 11 }} onClick={() => setShowMoldPromptDialog(false)}>
-                キャンセル
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Floating Context Menu */}
+      {/* Right Click Context Menu */}
       {contextMenu && (
         <EquipmentContextMenu
           x={contextMenu.x}
           y={contextMenu.y}
-          item={contextMenu.item}
+          item={{
+            id: contextMenu.item.id,
+            type: contextMenu.item.type,
+            code: contextMenu.item.code,
+            name: contextMenu.item.name,
+            status: contextMenu.item.status,
+            rack: contextMenu.item.rack,
+            url: contextMenu.item.url,
+          }}
           onClose={() => setContextMenu(null)}
-          onAction={handleContextMenuAction}
+          onAction={(actionKey, item) => {
+            setContextMenu(null)
+            if (actionKey === 'INSPECT') {
+              router.push(item.url)
+            } else if (actionKey === 'QUICK_JOB') {
+              setCenteredWizardModal({
+                isOpen: true,
+                mode: 'CREATE_JOB',
+                targetEquipment: contextMenu.item,
+              })
+            }
+          }}
         />
       )}
 
-      {/* Centered Accordion Wizard Popup Modal */}
+      {/* Centered Quick Wizard Modal Component */}
       <CenteredQuickJobWizardModal
         isOpen={centeredWizardModal.isOpen}
         mode={centeredWizardModal.mode}
         subMode={centeredWizardModal.subMode}
         productId={productId}
-        selectedRev={selectedRev || null}
+        selectedRev={selectedRev}
         targetEquipment={centeredWizardModal.targetEquipment || null}
         onClose={() => setCenteredWizardModal({ isOpen: false, mode: 'CREATE_DESIGN' })}
-        onSuccess={async () => {
-          await loadRevisions()
-          await fetchEquipmentSet()
+        onSuccess={() => {
+          fetchEquipmentSet()
+          if (selectedEquipmentId) loadJobsForSelectedEquip(selectedEquipmentId)
         }}
       />
-
     </div>
   )
 }
