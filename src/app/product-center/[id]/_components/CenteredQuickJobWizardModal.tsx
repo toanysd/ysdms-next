@@ -43,6 +43,8 @@ interface WorkLogItem {
   employee_name?: string
   job_step_id?: string | null
   step_name?: string | null
+  processing_code_id?: number | null
+  processing_name?: string | null
   hours_spent: number
   description?: string
   notes?: string
@@ -99,6 +101,7 @@ export function CenteredQuickJobWizardModal({
 
   // Master Data
   const [employees, setEmployees] = useState<{ employee_id: string; employee_name: string }[]>([])
+  const [processingCodes, setProcessingCodes] = useState<{ processing_code_id: number; processing_name: string }[]>([])
   
   // Context Data
   const [productInfo, setProductInfo] = useState({ code: '', name: '' })
@@ -134,6 +137,7 @@ export function CenteredQuickJobWizardModal({
   const [newLogDate, setNewLogDate] = useState<string>(new Date().toISOString().split('T')[0])
   const [newLogWorkerId, setNewLogWorkerId] = useState<string>('')
   const [newLogStepId, setNewLogStepId] = useState<string | null>(null)
+  const [newLogProcCodeId, setNewLogProcCodeId] = useState<number | null>(null)
   const [newLogHours, setNewLogHours] = useState<string>('')
   const [newLogDesc, setNewLogDesc] = useState<string>('')
   const [addingLog, setAddingLog] = useState(false)
@@ -169,6 +173,7 @@ export function CenteredQuickJobWizardModal({
     setEditingLogId(null)
     setSelectedStepId(null)
     setNewLogStepId(null)
+    setNewLogProcCodeId(null)
     setWoType(job.wo_type || 'NEW')
     setJobName(job.job_name || '')
     setResponsibleId(job.responsible_id || '')
@@ -197,10 +202,10 @@ export function CenteredQuickJobWizardModal({
       setSteps([])
     }
 
-    // Fetch Work Logs joined with job_steps
+    // Fetch Work Logs joined with job_steps and processing_codes
     const { data: logs } = await supabase
       .from('work_logs')
-      .select('log_id, work_date, employee_id, job_step_id, hours_spent, description, notes, employees(employee_name), job_steps(step_name, step_no)')
+      .select('log_id, work_date, employee_id, job_step_id, processing_code_id, hours_spent, description, notes, employees(employee_name), job_steps(step_name, step_no), processing_codes(processing_name)')
       .eq('job_id', job.job_id)
       .order('work_date', { ascending: false })
 
@@ -212,6 +217,8 @@ export function CenteredQuickJobWizardModal({
         employee_name: (l.employees as any)?.employee_name || '担当者',
         job_step_id: l.job_step_id || null,
         step_name: (l.job_steps as any)?.step_name || null,
+        processing_code_id: l.processing_code_id || null,
+        processing_name: (l.processing_codes as any)?.processing_name || null,
         hours_spent: Number(l.hours_spent || 0),
         description: l.description || l.notes || ''
       })))
@@ -225,6 +232,7 @@ export function CenteredQuickJobWizardModal({
     setEditingLogId(null)
     setSelectedStepId(null)
     setNewLogStepId(null)
+    setNewLogProcCodeId(null)
     setWoType('NEW')
     setJobName('')
     setResponsibleId('')
@@ -245,6 +253,15 @@ export function CenteredQuickJobWizardModal({
       if (emps) {
         setEmployees(emps)
         if (emps.length > 0) setNewLogWorkerId(emps[0].employee_id)
+      }
+
+      const { data: procCodes } = await supabase
+        .from('processing_codes')
+        .select('processing_code_id, processing_name')
+        .eq('is_active', true)
+        .order('processing_name')
+      if (procCodes) {
+        setProcessingCodes(procCodes)
       }
 
       if (productId) {
@@ -302,11 +319,8 @@ export function CenteredQuickJobWizardModal({
     }
     setSelectedStepId(stepKey)
     const matchingStep = steps.find((s, i) => (s.step_id || `step-no-${s.step_no || i + 1}`) === stepKey || s.step_id === stepKey)
-    if (matchingStep?.step_id) {
-      setNewLogStepId(matchingStep.step_id)
-    } else {
-      setNewLogStepId(null)
-    }
+    const stepVal = matchingStep?.step_id || stepKey
+    setNewLogStepId(stepVal)
   }
 
   // Work Log Actions
@@ -315,6 +329,7 @@ export function CenteredQuickJobWizardModal({
     setNewLogDate(log.work_date)
     setNewLogWorkerId(log.employee_id)
     setNewLogStepId(log.job_step_id || null)
+    setNewLogProcCodeId(log.processing_code_id || null)
     setNewLogHours(String(log.hours_spent))
     setNewLogDesc(log.description || '')
     showToast('日報の編集モードに入りました', 'info')
@@ -322,6 +337,7 @@ export function CenteredQuickJobWizardModal({
 
   const handleCancelEditWorklog = () => {
     setEditingLogId(null)
+    setNewLogProcCodeId(null)
     setNewLogHours('')
     setNewLogDesc('')
     showToast('編集をキャンセルしました', 'info')
@@ -339,13 +355,18 @@ export function CenteredQuickJobWizardModal({
 
     setAddingLog(true)
     try {
+      const activeStepKey = newLogStepId || selectedStepId
+      const matchingStep = steps.find((s, i) => s.step_id === activeStepKey || (s.step_id || `step-no-${s.step_no || i + 1}`) === activeStepKey)
+      const resolvedStepId = matchingStep?.step_id || null
+
       if (editingLogId) {
         // Update existing worklog
         const { error: updateErr } = await supabase
           .from('work_logs')
           .update({
             employee_id: newLogWorkerId || responsibleId || employees[0]?.employee_id,
-            job_step_id: newLogStepId || null,
+            job_step_id: resolvedStepId,
+            processing_code_id: newLogProcCodeId,
             work_date: newLogDate,
             hours_spent: Number(newLogHours),
             description: newLogDesc || '作業日報'
@@ -360,7 +381,8 @@ export function CenteredQuickJobWizardModal({
         // Insert new worklog
         const { error: insertErr } = await supabase.from('work_logs').insert({
           job_id: selectedJobId,
-          job_step_id: newLogStepId || null,
+          job_step_id: resolvedStepId,
+          processing_code_id: newLogProcCodeId,
           employee_id: newLogWorkerId || responsibleId || employees[0]?.employee_id,
           work_date: newLogDate,
           hours_spent: Number(newLogHours),
@@ -515,6 +537,7 @@ export function CenteredQuickJobWizardModal({
     : worklogs
 
   const totalActualHours = filteredWorklogs.reduce((sum, w) => sum + w.hours_spent, 0)
+  const currentStepFilterVal = newLogStepId || selectedStepId || ''
 
   return (
     <div style={{
@@ -764,7 +787,7 @@ export function CenteredQuickJobWizardModal({
                       {steps.map((s, i) => {
                         const key = s.step_id || `step-no-${s.step_no || i + 1}`
                         const isActive = selectedStepId === key
-                        const stepLogsCount = worklogs.filter(w => w.job_step_id === s.step_id || (w.step_name && s.step_name && w.step_name.trim() === s.step_name.trim())).length
+                        const stepLogsCount = worklogs.filter(w => (w.job_step_id && s.step_id && w.job_step_id === s.step_id) || (w.step_name && s.step_name && w.step_name.trim().toLowerCase() === s.step_name.trim().toLowerCase())).length
                         return (
                           <button
                             key={key}
@@ -868,7 +891,7 @@ export function CenteredQuickJobWizardModal({
                     )}
                   </div>
 
-                  {/* LOG WORKLOG FORM (NEW OR EDIT MODE WITH STEP SELECTOR) */}
+                  {/* LOG WORKLOG FORM (NEW OR EDIT MODE WITH STEP & PROCESSING CODE SELECTORS) */}
                   <div style={{ padding: 8, background: editingLogId ? 'var(--tint-orange-bg)' : 'var(--tint-blue-bg)', borderRadius: 6, marginBottom: 10, border: '1px solid var(--border-default)' }}>
                     <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 6, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <span>{editingLogId ? '✏️ 作業日報を編集' : '+ 作業日報を追加'}</span>
@@ -878,7 +901,7 @@ export function CenteredQuickJobWizardModal({
                         </button>
                       )}
                     </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1.1fr 1fr 1.1fr 0.8fr', gap: 6, marginBottom: 6 }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 0.8fr', gap: 6, marginBottom: 6 }}>
                       <div>
                         <label className="form-label" style={{ fontSize: 9 }}>作業日</label>
                         <input type="date" className="form-input" style={{ padding: '2px 4px', fontSize: 10 }} value={newLogDate} onChange={e => setNewLogDate(e.target.value)} />
@@ -891,13 +914,16 @@ export function CenteredQuickJobWizardModal({
                       </div>
                       <div>
                         <label className="form-label" style={{ fontSize: 9 }}>対象工程</label>
-                        <select className="form-input" style={{ padding: '2px 4px', fontSize: 10 }} value={newLogStepId || ''} onChange={e => setNewLogStepId(e.target.value || null)}>
+                        <select className="form-input" style={{ padding: '2px 4px', fontSize: 10 }} value={currentStepFilterVal} onChange={e => handleToggleStepFilter(e.target.value || undefined)}>
                           <option value="">— 全体・共通 —</option>
-                          {steps.map(s => (
-                            <option key={s.step_id || s.step_no} value={s.step_id || ''}>
-                              #{s.step_no} {s.step_name}
-                            </option>
-                          ))}
+                          {steps.map((s, i) => {
+                            const val = s.step_id || `step-no-${s.step_no || i + 1}`
+                            return (
+                              <option key={val} value={val}>
+                                #{s.step_no} {s.step_name || '工程'}
+                              </option>
+                            )
+                          })}
                         </select>
                       </div>
                       <div>
@@ -905,15 +931,28 @@ export function CenteredQuickJobWizardModal({
                         <input type="number" step="0.5" className="form-input" style={{ padding: '2px 4px', fontSize: 10 }} placeholder="例: 2.5" value={newLogHours} onChange={e => setNewLogHours(e.target.value)} />
                       </div>
                     </div>
-                    <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                      <input type="text" className="form-input" style={{ padding: '3px 6px', fontSize: 10, flex: 1 }} placeholder="作業内容・メモ" value={newLogDesc} onChange={e => setNewLogDesc(e.target.value)} />
-                      <button className="btn btn-primary" style={{ padding: '3px 10px', fontSize: 10, flexShrink: 0 }} onClick={handleSaveWorklog} disabled={addingLog}>
-                        {addingLog ? '保存中...' : editingLogId ? '💾 更新' : '💾 日報登録'}
-                      </button>
+                    
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr auto', gap: 6, alignItems: 'center' }}>
+                      <div>
+                        <select className="form-input" style={{ padding: '3px 6px', fontSize: 10 }} value={newLogProcCodeId || ''} onChange={e => setNewLogProcCodeId(e.target.value ? Number(e.target.value) : null)}>
+                          <option value="">— 作業種別 —</option>
+                          {processingCodes.map(pc => (
+                            <option key={pc.processing_code_id} value={pc.processing_code_id}>{pc.processing_name}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <input type="text" className="form-input" style={{ padding: '3px 6px', fontSize: 10 }} placeholder="作業内容・詳細メモ" value={newLogDesc} onChange={e => setNewLogDesc(e.target.value)} />
+                      </div>
+                      <div>
+                        <button className="btn btn-primary" style={{ padding: '3px 10px', fontSize: 10, flexShrink: 0 }} onClick={handleSaveWorklog} disabled={addingLog}>
+                          {addingLog ? '保存中...' : editingLogId ? '💾 更新' : '💾 日報登録'}
+                        </button>
+                      </div>
                     </div>
                   </div>
 
-                  {/* WORKLOGS TABLE WITH STEP NAME & EDIT/DELETE ACTIONS */}
+                  {/* WORKLOGS TABLE WITH STEP NAME & PROCESSING CODE DISPLAY */}
                   <div style={{ flex: 1, overflowY: 'auto' }}>
                     {filteredWorklogs.length > 0 ? (
                       <table className="data-table" style={{ width: '100%', fontSize: 10 }}>
@@ -923,7 +962,7 @@ export function CenteredQuickJobWizardModal({
                             <th>作業者</th>
                             <th>対象工程</th>
                             <th>実績工数</th>
-                            <th>作業内容</th>
+                            <th>作業種別・内容</th>
                             <th style={{ width: 45, textAlign: 'center' }}>操作</th>
                           </tr>
                         </thead>
@@ -940,7 +979,15 @@ export function CenteredQuickJobWizardModal({
                                 )}
                               </td>
                               <td style={{ fontFamily: 'monospace', fontWeight: 700, color: 'var(--accent)' }}>{log.hours_spent} h</td>
-                              <td style={{ maxWidth: 90, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{log.description || '-'}</td>
+                              <td style={{ maxWidth: 120, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                {log.processing_name ? (
+                                  <strong style={{ color: 'var(--text-primary)' }}>
+                                    {log.processing_name}{log.description ? ` (${log.description})` : ''}
+                                  </strong>
+                                ) : (
+                                  log.description || '-'
+                                )}
+                              </td>
                               <td style={{ textAlign: 'center' }}>
                                 <div style={{ display: 'flex', gap: 3, justifyContent: 'center' }}>
                                   <button style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--accent)', padding: 1 }} onClick={() => handleStartEditWorklog(log)} title="編集">
@@ -957,7 +1004,7 @@ export function CenteredQuickJobWizardModal({
                       </table>
                     ) : (
                       <div style={{ fontSize: 10, color: 'var(--text-muted)', textAlign: 'center', padding: 12 }}>
-                        {selectedStepId ? 'この工程の作業日報は未登録です。' : '作業日報は未登録です。'}
+                        {selectedStepId ? 'この工程の作業日報は未登録です。上のフォームから追加できます。' : '作業日報は未登録です。上のフォームから追加できます。'}
                       </div>
                     )}
                   </div>
