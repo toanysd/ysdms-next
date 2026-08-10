@@ -117,7 +117,7 @@ export function JobQuickViewDrawer({ job, onClose, onOpenStepEdit, onJobUpdated 
   const productName = (job as any).mold_masters?.products?.product_name || (job as any).products?.product_name || '-'
   const moldCode = (job as any).mold_masters?.mold_master_code || (job as any).products?.product_code || '-'
   const companyName = job.companies?.company_name || '-'
-  const jobTypeName = job.job_types?.job_type_name_ja || '-'
+  const jobTypeName = (job as any).job_types?.job_type_name_ja || '-'
   const deadlineOverdue = isOverdue(job.mold_deadline) && job.job_status !== 'COMPLETED'
   const completedSteps = steps.filter(s => s.step_status === 'COMPLETED').length
 

@@ -77,7 +77,7 @@ export async function createWorkOrder(input: CreateWorkOrderInput): Promise<{
   try {
     // Generate code via DB function or server logic
     let wo_code: string | null = null
-    const { data: codeData, error: codeErr } = await supabase.rpc('generate_wo_code')
+    const { data: codeData, error: codeErr } = await supabase.rpc('generate_wo_code' as any)
     
     if (!codeErr && codeData) {
       wo_code = codeData as string
@@ -308,7 +308,7 @@ export async function linkJobToWorkOrder(job_id: string, wo_id: string): Promise
 
   const { error } = await supabase
     .from('jobs')
-    .update({ work_order_id: wo_id })
+    .update({ work_order_id: wo_id } as any)
     .eq('job_id', job_id)
 
   if (error) {

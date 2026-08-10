@@ -6,19 +6,39 @@ import { createClient } from '@/lib/supabase/server'
 // job_steps = Components/Thành phần của Job (KHÔNG phải công đoạn tuần tự)
 // Với Job khuôn: MOLD, PLUG, CUTTER, WATER_BASE... (thiết bị phụ kiện)
 // Các components thực hiện SONG SONG, chỉ cần đúng kỳ hạn.
+export type ProcessStepInput = {
+  step_no: number
+  step_name: string
+  estimated_hours?: number | null
+  assigned_to?: string | null
+  deadline?: string | null
+  notes?: string | null
+}
+
+export type WizardJobInput = {
+  temp_id: string                    // client-side temp ID
+  equipment_type: string             // MOLD, PLUG, CUTTER_SEPARATE, WATER_BASE, PRESSURE_BASE, FRAME
+  equipment_code: string             // e.g. 'M-SMK218R3'
+  equipment_name: string             // display name
+  is_existing: boolean               // true = link to existing equipment
+  existing_equipment_id?: string | null  // UUID of existing equipment (if is_existing)
+  manufacture_location?: string | null   // IN_HOUSE, OUTSOURCED
+  deadline?: string | null
+  steps: ProcessStepInput[]          // processing steps for this job
+}
+
+/** @deprecated — Use ProcessStepInput instead. Kept for backward compat. */
 export type QuickMoldJobStepInput = {
   step_id?: string
   step_no: number
   step_name: string
-  // Component-specific fields (from former MoldComponentInput)
-  type_code?: string | null           // MOLD, PLUG, CUTTER, WATER_BASE, FRAME...
-  track?: string | null               // Component track (synced with type_code)
-  material_spec?: string | null       // A5052, SKD11, ベニヤ木板...
-  quantity?: number | null            // default 1
-  arrangement?: 'REQUIRED' | 'NOT_REQUIRED' | string | null  // 手配
-  condition?: 'NEW' | 'EXISTING' | string | null              // 新規/既存
-  manufacture_location?: 'IN_HOUSE' | 'OUTSOURCED' | string | null // 内製/外注
-  // Step/processing fields
+  type_code?: string | null
+  track?: string | null
+  material_spec?: string | null
+  quantity?: number | null
+  arrangement?: 'REQUIRED' | 'NOT_REQUIRED' | string | null
+  condition?: 'NEW' | 'EXISTING' | string | null
+  manufacture_location?: 'IN_HOUSE' | 'OUTSOURCED' | string | null
   processing_code_id?: number | null
   estimated_hours?: number | null
   assigned_to?: string | null
@@ -26,7 +46,7 @@ export type QuickMoldJobStepInput = {
   notes?: string | null
 }
 
-// @deprecated — Use QuickMoldJobStepInput instead. Kept for backward compat.
+/** @deprecated — Use ProcessStepInput instead. Kept for backward compat. */
 export type MoldComponentInput = QuickMoldJobStepInput
 
 export type QuickMoldJobInput = {
@@ -58,27 +78,30 @@ export type QuickMoldJobInput = {
   has_separate_cutter?: boolean | null
   pocket_prototype?: string | null
 
-  // 3. Physical Mold
-  system_code: string
-  display_name: string
-  physical_stamp?: string | null
-  current_rack_layer_id?: string | null
-
-  // 4. Job Directive
-  job_code: string
-  job_name: string
-  job_type_id?: string | null
-  job_category?: string | null
+  // 3. Work Order
+  wo_name?: string | null
+  wo_type?: string | null   // NEW_SET, REPAIR, REMAKE
   responsible_id?: string | null
   start_date?: string | null
   deadline?: string | null
-  ship_date?: string | null
-  price_quote_required?: boolean | null
-  unit_price?: number | null
   notes?: string | null
 
-  // 5. Job Components (= job_steps: unified components + process info)
-  steps: QuickMoldJobStepInput[]
+  // 4. Jobs (Option C: each job = 1 equipment)
+  jobs?: WizardJobInput[]
+
+  // --- DEPRECATED FIELDS BELOW (Kept for backward compatibility) ---
+  /** @deprecated */ system_code?: string
+  /** @deprecated */ display_name?: string
+  /** @deprecated */ physical_stamp?: string | null
+  /** @deprecated */ current_rack_layer_id?: string | null
+  /** @deprecated */ job_code?: string
+  /** @deprecated */ job_name?: string
+  /** @deprecated */ job_type_id?: string | null
+  /** @deprecated */ job_category?: string | null
+  /** @deprecated */ ship_date?: string | null
+  /** @deprecated */ price_quote_required?: boolean | null
+  /** @deprecated */ unit_price?: number | null
+  /** @deprecated */ steps?: QuickMoldJobStepInput[]
 }
 
 // ── 1. Create New Quick Mold Job Workflow ──────────────────────────────────────
@@ -164,13 +187,6 @@ export async function createQuickMoldJobWorkflow(input: QuickMoldJobInput) {
     }
     const designRevisionId = newRev.revision_id
 
-    // Component Kit Summary (derived from unified steps[])
-    const componentSteps = input.steps.filter(s => s.type_code)
-    let compSummary = ''
-    if (componentSteps.length > 0) {
-      compSummary = '【構成部品・補助設備 Kit】: ' + componentSteps.map(c => `${c.step_name} (x${c.quantity || 1})`).join(', ')
-    }
-
     // Step 3: Work Order (Option C Model)
     let workOrderId: string | null = null
     try {
@@ -182,16 +198,16 @@ export async function createQuickMoldJobWorkflow(input: QuickMoldJobInput) {
         .from('work_orders')
         .insert({
           wo_code: woCode,
-          wo_name: `Chế tạo bộ khuôn ${input.product_code.trim()}`,
+          wo_name: input.wo_name || `Chế tạo bộ khuôn ${input.product_code.trim()}`,
           product_id: productId,
           design_revision_id: designRevisionId,
           company_id: companyId,
-          wo_type: 'NEW_SET',
+          wo_type: input.wo_type || 'NEW_SET',
           wo_status: 'PLANNED',
           deadline: input.deadline || null,
           start_date: input.start_date || null,
           responsible_id: input.responsible_id || null,
-          notes: compSummary || null,
+          notes: input.notes || null,
         })
         .select('wo_id')
         .single()
@@ -203,116 +219,99 @@ export async function createQuickMoldJobWorkflow(input: QuickMoldJobInput) {
       console.warn('Non-blocking error creating Work Order:', woErr)
     }
 
-    // Step 4: Equipment (Unified SSOT) & Legacy Physical Mold
-    let equipmentId: string | null = null
-    const { data: newEquip } = await supabase
-      .from('equipment')
-      .insert({
-        equipment_code: input.system_code.trim(),
-        display_name: input.display_name.trim() || input.system_code.trim(),
-        equipment_type: 'MOLD',
-        physical_stamp: input.physical_stamp?.trim() || null,
-        current_rack_layer_id: input.current_rack_layer_id || null,
-        company_id: companyId,
-        design_revision_id: designRevisionId,
-        device_status: '製作中',
-        usage_status: '保管中',
-        notes: compSummary || null,
-      })
-      .select('equipment_id')
-      .maybeSingle()
+    // Step 4: Process Jobs (1 Job = 1 Equipment)
+    const createdJobIds: string[] = []
+    const createdEquipmentIds: string[] = []
 
-    if (newEquip) {
-      equipmentId = newEquip.equipment_id
-    }
+    for (const jobInput of input.jobs || []) {
+      let equipmentId = jobInput.existing_equipment_id || null
 
-    // Legacy Physical Mold (for backward compatibility)
-    const { data: newMold, error: moldErr } = await supabase
-      .from('physical_molds')
-      .insert({
-        system_code: input.system_code.trim(),
-        display_name: input.display_name.trim() || input.system_code.trim(),
-        physical_stamp: input.physical_stamp?.trim() || null,
-        current_rack_layer_id: input.current_rack_layer_id || null,
-        device_status: '製作中',
-        usage_status: '保管中',
-        notes: compSummary || null,
-      })
-      .select('physical_mold_id')
-      .single()
+      // a. If is_existing=false: Create new Equipment row
+      if (!jobInput.is_existing) {
+        const { data: newEquip, error: equipErr } = await supabase
+          .from('equipment')
+          .insert({
+            equipment_code: jobInput.equipment_code.trim(),
+            display_name: jobInput.equipment_name.trim() || jobInput.equipment_code.trim(),
+            equipment_type: jobInput.equipment_type,
+            company_id: companyId,
+            design_revision_id: designRevisionId,
+            device_status: 'NORMAL',
+            usage_status: 'STORAGE',
+          })
+          .select('equipment_id')
+          .maybeSingle()
+        
+        if (equipErr) {
+          console.warn(`Error creating equipment ${jobInput.equipment_code}:`, equipErr)
+        } else if (newEquip) {
+          equipmentId = newEquip.equipment_id
+        }
+      }
 
-    if (moldErr || !newMold) {
-      return { success: false, error: `Lỗi tạo khuôn vật lý: ${moldErr?.message}` }
-    }
-    const physicalMoldId = newMold.physical_mold_id
+      if (equipmentId) {
+        createdEquipmentIds.push(equipmentId)
+      }
 
-    // Step 5: Job (linked to Work Order and Equipment)
-    const totalEstHours = input.steps.reduce((sum, s) => sum + (s.estimated_hours || 0), 0)
-    const combinedNotes = [input.notes?.trim(), compSummary].filter(Boolean).join('\n')
+      // c. Create Job row
+      const year = new Date().getFullYear()
+      const randSeq = Math.floor(100000 + Math.random() * 900000)
+      const jobCodeStr = `JOB-${year}-${randSeq}`
 
-    const { data: newJob, error: jobErr } = await supabase
-      .from('jobs')
-      .insert({
-        job_code: input.job_code.trim(),
-        job_name: input.job_name.trim(),
-        job_type_id: input.job_type_id || '1',
-        job_category: input.job_category || 'MOLD_NEW',
-        work_order_id: workOrderId,
-        equipment_id: equipmentId,
-        product_id: productId,
-        design_revision_id: designRevisionId,
-        physical_mold_id: physicalMoldId,
-        company_id: companyId,
-        responsible_id: input.responsible_id || null,
-        start_date: input.start_date || null,
-        deadline: input.deadline || null,
-        mold_deadline: input.deadline || null,
-        ship_date: input.ship_date || null,
-        separate_cutter: input.has_separate_cutter || false,
-        price_quote_required: input.price_quote_required || false,
-        unit_price: input.unit_price || null,
-        notes: combinedNotes || null,
-        estimated_hours: totalEstHours || null,
-        job_status: 'PLANNED',
-        overall_progress: 0,
-      })
-      .select('job_id')
-      .single()
+      const totalEstHours = (jobInput.steps || []).reduce((sum: number, s: ProcessStepInput) => sum + (s.estimated_hours || 0), 0)
 
-    if (jobErr || !newJob) {
-      return { success: false, error: `Lỗi tạo Job gia công: ${jobErr?.message}` }
-    }
-    const jobId = newJob.job_id
+      const { data: newJob, error: jobErr } = await supabase
+        .from('jobs')
+        .insert({
+          job_code: jobCodeStr,
+          job_name: `Gia công ${jobInput.equipment_name}`,
+          job_type_id: '1', // required default
+          job_category: 'MOLD_NEW',
+          work_order_id: workOrderId,
+          equipment_id: equipmentId,
+          product_id: productId,
+          design_revision_id: designRevisionId,
+          company_id: companyId,
+          responsible_id: input.responsible_id || null, // inherit from work order if needed
+          deadline: jobInput.deadline || input.deadline || null,
+          estimated_hours: totalEstHours || null,
+          job_status: 'PLANNED',
+          overall_progress: 0,
+        })
+        .select('job_id')
+        .single()
 
-    // Step 6: Batch Insert Job Components (= job_steps with component fields)
-    if (input.steps && input.steps.length > 0) {
-      const stepsPayload = input.steps.map((s, idx) => ({
-        job_id: jobId,
-        step_no: s.step_no || idx + 1,
-        step_name: s.step_name.trim(),
-        type_code: s.type_code || null,
-        track: s.type_code || null,
-        material_spec: s.material_spec || null,
-        quantity: s.quantity || 1,
-        arrangement: s.arrangement || null,
-        condition: s.condition || null,
-        manufacture_location: s.manufacture_location || null,
-        estimated_hours: s.estimated_hours || null,
-        assigned_to: s.assigned_to || null,
-        deadline: s.deadline || null,
-        notes: s.notes || null,
-        step_status: 'PLANNED',
-      }))
+      if (jobErr || !newJob) {
+        return { success: false, error: `Lỗi tạo Job gia công cho ${jobInput.equipment_name}: ${jobErr?.message}` }
+      }
+      const jobId = newJob.job_id
+      createdJobIds.push(jobId)
 
-      await supabase.from('job_steps').insert(stepsPayload)
+      // d. Insert job_steps[] for this job
+      if (jobInput.steps && jobInput.steps.length > 0) {
+        const stepsPayload = jobInput.steps.map((s, idx) => ({
+          job_id: jobId,
+          step_no: s.step_no || idx + 1,
+          step_name: s.step_name.trim(),
+          estimated_hours: s.estimated_hours || null,
+          assigned_to: s.assigned_to || null,
+          deadline: s.deadline || jobInput.deadline || null,
+          notes: s.notes || null,
+          step_status: 'PLANNED',
+          manufacture_location: jobInput.manufacture_location || null,
+        }))
+
+        await supabase.from('job_steps').insert(stepsPayload)
+      }
     }
 
     return {
       success: true,
-      job_id: jobId,
       work_order_id: workOrderId,
-      equipment_id: equipmentId,
-      physical_mold_id: physicalMoldId,
+      job_ids: createdJobIds,
+      job_id: createdJobIds[0] || undefined,
+      equipment_ids: createdEquipmentIds,
+      physical_mold_id: undefined,
       product_id: productId,
       design_revision_id: designRevisionId,
     }
@@ -378,7 +377,7 @@ export async function getQuickMoldJobData(jobId: string) {
 }
 
 // ── 3. Update Existing Quick Mold Job Workflow ─────────────────────────────────
-export async function updateQuickMoldJobWorkflow(jobId: string, input: QuickMoldJobInput) {
+export async function updateQuickMoldJobWorkflow(jobId: string, input: any) {
   const supabase = await createClient()
 
   try {
@@ -432,10 +431,10 @@ export async function updateQuickMoldJobWorkflow(jobId: string, input: QuickMold
     }
 
     // Component summary (derived from unified steps[])
-    const componentSteps = input.steps.filter(s => s.type_code)
+    const componentSteps = (input.steps || []).filter((s: any) => s.type_code)
     let compSummary = ''
     if (componentSteps.length > 0) {
-      compSummary = '【構成部品・補助設備 Kit】: ' + componentSteps.map(c => `${c.step_name} (x${c.quantity || 1})`).join(', ')
+      compSummary = '【構成部品・補助設備 Kit】: ' + componentSteps.map((c: any) => `${c.step_name} (x${c.quantity || 1})`).join(', ')
     }
 
     // 4. Update Physical Mold if exists
@@ -449,7 +448,7 @@ export async function updateQuickMoldJobWorkflow(jobId: string, input: QuickMold
     }
 
     // 5. Update Job
-    const totalEstHours = input.steps.reduce((sum, s) => sum + (s.estimated_hours || 0), 0)
+    const totalEstHours = (input.steps || []).reduce((sum: number, s: any) => sum + (s.estimated_hours || 0), 0)
     const combinedNotes = [input.notes?.trim(), compSummary].filter(Boolean).join('\n')
 
     await supabase.from('jobs').update({
@@ -474,7 +473,7 @@ export async function updateQuickMoldJobWorkflow(jobId: string, input: QuickMold
     await supabase.from('job_steps').delete().eq('job_id', jobId)
 
     if (input.steps && input.steps.length > 0) {
-      const stepsPayload = input.steps.map((s, idx) => ({
+      const stepsPayload = input.steps.map((s: any, idx: number) => ({
         job_id: jobId,
         step_no: s.step_no || idx + 1,
         step_name: s.step_name.trim(),

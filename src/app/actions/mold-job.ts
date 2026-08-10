@@ -442,7 +442,7 @@ export async function getJobsForGantt(searchQuery?: string, fromDate?: string, t
             .order('mold_deadline', { ascending: true, nullsFirst: false })
             .range(from, to)
 
-        data = res.data
+        data = res.data as any
         count = res.count
         error = res.error
     }
