@@ -287,7 +287,7 @@ export function CenteredQuickJobWizardModal({
   useEffect(() => {
     if (!isOpen) return
     setError(null)
-    setCurrentStep(mode === 'CREATE_JOB' ? 3 : mode === 'CREATE_MOLD' ? 2 : 1)
+    setCurrentStep(1)
 
     async function initData() {
       // 1. Fetch Masters
