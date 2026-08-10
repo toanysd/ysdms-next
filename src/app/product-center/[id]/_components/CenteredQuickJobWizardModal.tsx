@@ -294,18 +294,18 @@ export function CenteredQuickJobWizardModal({
     loadEquipmentJobs(equipId)
   }
 
-  const handleToggleStepFilter = (stepId?: string) => {
-    if (!stepId) {
+  const handleToggleStepFilter = (stepKey?: string) => {
+    if (!stepKey) {
       setSelectedStepId(null)
       setNewLogStepId(null)
       return
     }
-    if (selectedStepId === stepId) {
-      setSelectedStepId(null)
-      setNewLogStepId(null)
+    setSelectedStepId(stepKey)
+    const matchingStep = steps.find((s, i) => (s.step_id || `step-no-${s.step_no || i + 1}`) === stepKey || s.step_id === stepKey)
+    if (matchingStep?.step_id) {
+      setNewLogStepId(matchingStep.step_id)
     } else {
-      setSelectedStepId(stepId)
-      setNewLogStepId(stepId)
+      setNewLogStepId(null)
     }
   }
 
@@ -508,8 +508,8 @@ export function CenteredQuickJobWizardModal({
   // Filtered worklogs by step
   const filteredWorklogs = selectedStepId 
     ? worklogs.filter(w => {
-        if (w.job_step_id && w.job_step_id === selectedStepId) return true
-        if (selectedStepInfo && w.step_name && selectedStepInfo.step_name && w.step_name.trim() === selectedStepInfo.step_name.trim()) return true
+        if (selectedStepInfo?.step_id && w.job_step_id && w.job_step_id === selectedStepInfo.step_id) return true
+        if (selectedStepInfo?.step_name && w.step_name && w.step_name.trim().toLowerCase() === selectedStepInfo.step_name.trim().toLowerCase()) return true
         return false
       }) 
     : worklogs
