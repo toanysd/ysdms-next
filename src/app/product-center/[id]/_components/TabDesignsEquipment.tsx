@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation'
 import {
   PenTool, Wrench, MapPin, ExternalLink, Link2, Sparkles, FlaskConical, Factory,
   LayoutGrid, List, CheckSquare, Square, ArrowLeftRight, Check, X, RefreshCw,
-  Plus, ChevronDown, Box, AlertCircle
+  Plus, ChevronDown, Box, AlertCircle, Settings
 } from 'lucide-react'
 import Link from 'next/link'
 import { isPrototypeDesignOrMold, formatCutterDisplayCode, formatRackLocationDisplay } from '@/lib/utils/moldNaming'
@@ -62,6 +62,8 @@ interface EquipmentItem {
   isBound: boolean
   isCavMatch: boolean
   url: string
+  n_jobs?: number
+  recent_jobs?: { job_id: string; job_code: string; job_name: string; job_status: string }[]
 }
 
 type CategoryTab = 'ALL' | 'MOLD' | 'CUTTER' | 'WATER_BASE' | 'PRESSURE_BASE' | 'FRAME' | 'PLUG'
@@ -302,7 +304,33 @@ export function TabDesignsEquipment({ productId }: TabDesignsEquipmentProps) {
         }
       }
 
-      setEquipmentList(Array.from(equipMap.values()))
+      const equipList = Array.from(equipMap.values())
+      if (equipList.length > 0) {
+        const equipIds = equipList.map(e => e.id)
+        const { data: allJobs } = await supabase
+          .from('jobs')
+          .select('job_id, equipment_id, job_code, job_name, job_status, created_at')
+          .in('equipment_id', equipIds)
+          .order('created_at', { ascending: false })
+
+        if (allJobs && allJobs.length > 0) {
+          const jobGroupMap = new Map<string, any[]>()
+          allJobs.forEach(j => {
+            if (j.equipment_id) {
+              if (!jobGroupMap.has(j.equipment_id)) jobGroupMap.set(j.equipment_id, [])
+              jobGroupMap.get(j.equipment_id)!.push(j)
+            }
+          })
+
+          equipList.forEach(item => {
+            const jobsForEquip = jobGroupMap.get(item.id) || []
+            item.n_jobs = jobsForEquip.length
+            item.recent_jobs = jobsForEquip.slice(0, 3)
+          })
+        }
+      }
+
+      setEquipmentList(equipList)
     } catch (err) {
       console.error('Error loading equipment set for revision:', err)
     }
@@ -848,6 +876,28 @@ export function TabDesignsEquipment({ productId }: TabDesignsEquipmentProps) {
                         </div>
 
                         <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                          {/* JOB COUNT PILL BADGE WITH TOOLTIP & DIRECT LAUNCHER */}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setCenteredWizardModal({ isOpen: true, mode: 'CREATE_JOB', targetEquipment: item })
+                            }}
+                            style={{
+                              fontSize: 9, padding: '1px 5px', borderRadius: 8, fontWeight: 700,
+                              border: `1px solid ${item.n_jobs ? 'color-mix(in srgb, var(--accent) 40%, transparent)' : 'var(--border-default)'}`,
+                              background: item.n_jobs ? 'color-mix(in srgb, var(--accent) 12%, transparent)' : 'var(--bg-surface-2)',
+                              color: item.n_jobs ? 'var(--accent)' : 'var(--text-muted)',
+                              cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 2, transition: 'all 0.12s ease'
+                            }}
+                            title={item.recent_jobs && item.recent_jobs.length > 0
+                              ? `【Job履歴 - 全${item.n_jobs}件】\n` + item.recent_jobs.map(j => `• ${j.job_code} [${j.job_status}]: ${j.job_name || '名称未設定'}`).join('\n') + '\n\nクリックして Job & 日報 Hub を開く'
+                              : 'Job未登録 - クリックして新規Job作成'
+                            }
+                          >
+                            <Settings size={9} />
+                            <span>Job:{item.n_jobs || 0}</span>
+                          </button>
+
                           <span style={{ fontSize: 9, background: theme.bg, color: theme.color, border: `1px solid ${theme.borderColor}`, padding: '0 5px', borderRadius: 8, fontWeight: 700 }}>
                             {theme.labelJA}
                           </span>
@@ -947,6 +997,28 @@ export function TabDesignsEquipment({ productId }: TabDesignsEquipmentProps) {
                       <span style={{ fontSize: 9, background: theme.bg, color: theme.color, border: `1px solid ${theme.borderColor}`, padding: '0 5px', borderRadius: 8, fontWeight: 700, flexShrink: 0 }}>
                         {theme.labelJA}
                       </span>
+
+                      {/* JOB COUNT PILL BADGE WITH TOOLTIP & DIRECT LAUNCHER */}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setCenteredWizardModal({ isOpen: true, mode: 'CREATE_JOB', targetEquipment: item })
+                        }}
+                        style={{
+                          fontSize: 9, padding: '1px 5px', borderRadius: 8, fontWeight: 700,
+                          border: `1px solid ${item.n_jobs ? 'color-mix(in srgb, var(--accent) 40%, transparent)' : 'var(--border-default)'}`,
+                          background: item.n_jobs ? 'color-mix(in srgb, var(--accent) 12%, transparent)' : 'var(--bg-surface-2)',
+                          color: item.n_jobs ? 'var(--accent)' : 'var(--text-muted)',
+                          cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 2, transition: 'all 0.12s ease', flexShrink: 0
+                        }}
+                        title={item.recent_jobs && item.recent_jobs.length > 0
+                          ? `【Job履歴 - 全${item.n_jobs}件】\n` + item.recent_jobs.map(j => `• ${j.job_code} [${j.job_status}]: ${j.job_name || '名称未設定'}`).join('\n') + '\n\nクリックして Job & 日報 Hub を開く'
+                          : 'Job未登録 - クリックして新規Job作成'
+                        }
+                      >
+                        <Settings size={9} />
+                        <span>Job:{item.n_jobs || 0}</span>
+                      </button>
 
                       <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-primary)', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {item.name}
