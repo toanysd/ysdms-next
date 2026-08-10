@@ -29,8 +29,6 @@ type ProductData = {
   product_status: string
   pocket_count: number | null
   pieces_per_box: number | null
-  primary_plastic_code: string | null
-  primary_plastic_spec: string | null
   company_id: string
   end_user_company_id: string | null
   notes: string | null
@@ -68,7 +66,7 @@ export default function ProductDataCenterPage() {
         .select(`
           product_id, product_code, product_name, product_name_internal, product_name_en,
           customer_product_name, product_description, first_shipment_date, product_status, pocket_count, pieces_per_box,
-          primary_plastic_code, primary_plastic_spec, company_id, end_user_company_id, notes,
+          company_id, end_user_company_id, notes,
           companies:companies!products_company_id_fkey(company_id, company_name, company_code)
         `)
         .eq('product_id', productId)
@@ -280,8 +278,6 @@ export default function ProductDataCenterPage() {
             productStatus={product.product_status}
             pocketCount={product.pocket_count}
             piecesPerBox={product.pieces_per_box}
-            primaryPlasticCode={product.primary_plastic_code}
-            primaryPlasticSpec={product.primary_plastic_spec}
             firstShipmentDate={product.first_shipment_date}
             notes={product.notes}
           />

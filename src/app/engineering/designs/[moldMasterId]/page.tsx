@@ -80,7 +80,7 @@ type DesignRevision = {
   drawing_pdf_path: string | null
   step_3d_path: string | null
   text_content: string | null
-  version_note: string | null
+  change_summary: string | null
   created_at: string | null
   employees: { employee_name: string } | null
   physical_molds?: { physical_mold_id: string; system_code: string; device_status: string }[] | null
@@ -123,7 +123,7 @@ type FormData = {
   drawing_pdf_path: string
   step_3d_path: string
   notes: string
-  version_note: string
+  change_summary: string
 }
 
 /* ── Status config ────────────────────────────────── */
@@ -152,7 +152,7 @@ const EMPTY_FORM: FormData = {
   plug_type: 'NONE', has_separate_cutter: false, plastic_type_designed: '',
   customer_tray_name: '', customer_equipment_no: '', customer_drawing_no: '', tray_info: '',
   cad_folder_path: '', drawing_pdf_path: '', step_3d_path: '',
-  notes: '', version_note: '',
+  notes: '', change_summary: '',
 }
 
 /* ── Helpers ──────────────────────────────────────── */
@@ -311,7 +311,7 @@ export default function MoldMasterDesignsPage() {
     drawing_pdf_path: r.drawing_pdf_path ?? '',
     step_3d_path: r.step_3d_path ?? '',
     notes: r.text_content ?? '',
-    version_note: r.version_note ?? '',
+    change_summary: r.change_summary ?? '',
   })
 
   const formToPayload = () => ({
@@ -350,7 +350,7 @@ export default function MoldMasterDesignsPage() {
     drawing_pdf_path: strOrNull(form.drawing_pdf_path),
     step_3d_path: strOrNull(form.step_3d_path),
     text_content: strOrNull(form.notes),
-    version_note: strOrNull(form.version_note),
+    change_summary: strOrNull(form.change_summary),
   })
 
   /* ── Modal actions ────────────────────────────────── */
@@ -384,7 +384,7 @@ export default function MoldMasterDesignsPage() {
       revision_number: nextRev,
       status: 'DRAFT',
       approved_date: '',
-      version_note: '',
+      change_summary: '',
     })
   }
 
@@ -870,11 +870,11 @@ export default function MoldMasterDesignsPage() {
                       ></textarea>
                     </div>
                     <div className="form-field">
-                      <label className="form-label">{t('Engineering.versionNote')}</label>
+                      <label className="form-label">{t('Engineering.changeSummary')}</label>
                       <textarea
                         className="form-textarea"
-                        value={form.version_note}
-                        onChange={e => setField('version_note', e.target.value)}
+                        value={form.change_summary}
+                        onChange={e => setField('change_summary', e.target.value)}
                         rows={3}
                       ></textarea>
                     </div>

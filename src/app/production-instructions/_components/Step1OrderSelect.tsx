@@ -16,8 +16,6 @@ interface OrderResult {
     product_id: string
     product_code: string
     product_name: string
-    primary_plastic_code: string | null
-    primary_plastic_spec: string | null
     latest_design_revision_id: string | null
   } | null
   companies: { company_id: string; company_name: string; company_code: string } | null
@@ -52,7 +50,7 @@ export default function Step1OrderSelect({ form, update, onNext }: Props) {
       company_id: c?.company_id ?? '',
       company_code: companyCode,
       template_type: COMPANY_TEMPLATE_MAP[companyCode] ?? 'GENERAL',
-      material_spec: p?.primary_plastic_spec ?? p?.primary_plastic_code ?? '',
+      material_spec: '',
       material_thickness: 0,
       material_width: 0,
       recycled_pct: 0,

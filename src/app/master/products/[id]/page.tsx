@@ -42,7 +42,7 @@ export type ProductDetailData = {
     revision_number: number | null
     status: string | null
     design_date: string | null
-    version_note: string | null
+    change_summary: string | null
     design_length: number | null
     design_width: number | null
     design_height: number | null
@@ -65,7 +65,6 @@ export type ProductDetailData = {
     plug_type: string | null
     has_separate_cutter: boolean | null
     plastic_type_designed: string | null
-    change_summary: string | null
     designer: string | null
     customer_drawing_no: string | null
     plastic_master?: {
@@ -160,13 +159,13 @@ export default function ProductDetailPage() {
         *,
         companies:companies!products_company_id_fkey(company_id, company_name, company_code),
         design_revisions(
-          revision_id, design_code, revision_number, status, design_date, version_note,
+          revision_id, design_code, revision_number, status, design_date, change_summary,
           design_length, design_width, design_height, design_depth,
           cutline_length, cutline_width,
           cavity_count, pocket_numbers, pitch_mm, cavity_pitch_mm, machine_feed_pitch_mm,
           corner_r, chamfer_c, draft_angle, undercut_spec, under_depth,
           orientation, setup_type, has_plug, plug_type, has_separate_cutter, plastic_type_designed,
-          change_summary, designer, customer_drawing_no,
+          designer, customer_drawing_no,
           plastic_master(plastic_code, thickness_mm, color_name_normalized),
           physical_molds(physical_mold_id, system_code, display_name, physical_stamp, usage_status, piece_count),
           cutters(cutter_id, cutter_no, cutter_name, cutter_type, usage_status)

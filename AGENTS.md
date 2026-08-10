@@ -161,6 +161,46 @@ const cutline = item.cutline_length || item.actual_length_mm  // KHÔNG LÀM ĐI
 
 ---
 
+## 5.6. RULE-DATA-02: Schema Compliance — Không Bịa Dữ Liệu (BẮT BUỘC TUYỆT ĐỐI)
+
+### 🚫 Nguyên tắc cốt lõi
+1. **Mọi nội dung xử lý giao diện, mã nguồn và suy luận đều PHẢI dựa vào schema thực tế** (từ `SCHEMA_REFERENCE.md` hoặc `database.types.ts`). Tuyệt đối KHÔNG tự bịa tên cột, tên bảng, hoặc quan hệ FK để phù hợp với yêu cầu.
+
+2. **Nếu cột không tồn tại trong schema → KHÔNG sử dụng trong query hoặc filter**. Ví dụ: `work_logs` KHÔNG CÓ cột `equipment_id` → KHÔNG filter theo trường đó.
+
+3. **Single Source of Truth (SSOT) cho mỗi loại dữ liệu**:
+   - Thông tin nhựa/vật liệu thiết kế: **CHỈ từ `design_revisions.plastic_type_designed`** (KHÔNG dùng `products.primary_plastic_code`)
+   - Thông tin kích thước thiết kế: **CHỈ từ `design_revisions`** (KHÔNG dùng `products.external_length_mm/width_mm`)
+   - Thông tin thiết bị vật lý: **CHỈ từ `equipment`** (KHÔNG dùng `physical_molds`, `cutters` trong code mới)
+
+4. **Trước khi viết query Supabase → PHẢI đọc `SCHEMA_REFERENCE.md`** để verify tên cột, FK, và kiểu dữ liệu.
+
+5. **KHÔNG hardcode dữ liệu mẫu rồi hiển thị như thật**: Nếu DB trống → hiển thị `"—"` hoặc `"データなし"`.
+
+### ❌ Ví dụ SAI (Vi phạm RULE-DATA-02)
+```typescript
+// ❌ SAI — Cột equipment_id KHÔNG TỒN TẠI trong work_logs
+supabase.from('work_logs').select('*').eq('equipment_id', equipId)
+
+// ❌ SAI — Lấy nhựa từ bảng products thay vì design_revisions
+const plasticType = product.primary_plastic_code  // → "PET 0.5t" (sai nguồn)
+
+// ❌ SAI — Tự bịa tên cột
+supabase.from('jobs').select('*').eq('target_scope', 'PLUG_ONLY')  // cột này không tồn tại
+```
+
+### ✅ Ví dụ ĐÚNG
+```typescript
+// ✅ ĐÚNG — work_logs chỉ filter qua job_id
+supabase.from('work_logs').select('*').eq('job_id', jobId)
+
+// ✅ ĐÚNG — Nhựa từ design_revisions (SSOT)
+const plasticType = designRevision.plastic_type_designed  // → "PET 透明 1mm [640] 帯電防止付 シリコン無"
+
+// ✅ ĐÚNG — Dùng cột thực tế trong schema
+supabase.from('jobs').select('*').eq('equipment_id', equipId)  // cột này TỒN TẠI trong jobs
+```
+
 ## 6. CSS / DESIGN SYSTEM RULES
 
 ### 👁️ Quy tắc Font size & Tương phản (BẮT BUỘC để tránh mỏi mắt)

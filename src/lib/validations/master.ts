@@ -54,7 +54,7 @@ export const moldRevisionSchema = z.object({
   revision_code: z.string().min(1, 'reqRevisionCode'),
   version_label: z.string().min(1, 'reqVersionLabel'),
   approved_date: z.string().nullable().optional(),
-  version_note: z.string().nullable().optional(),
+  change_summary: z.string().nullable().optional(),
   product_id: z.string().nullable().optional(),
   
   // Design Dimensions (Optional)

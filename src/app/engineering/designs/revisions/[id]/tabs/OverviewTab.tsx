@@ -273,14 +273,14 @@ export function OverviewTab({
                 <EditRow label={t('cadFolderPath')} value={formData?.cad_folder_path} onChange={v => handleChange('cad_folder_path', v)} />
                 <EditRow label={t('drawingPdfPath')} value={formData?.drawing_pdf_path} onChange={v => handleChange('drawing_pdf_path', v)} />
                 <EditRow label={t('step3dPath')} value={formData?.step_3d_path} onChange={v => handleChange('step_3d_path', v)} />
-                <EditRow label={t('versionNote')} type="textarea" value={formData?.version_note} onChange={v => handleChange('version_note', v)} />
+                <EditRow label={t('versionNote')} type="textarea" value={formData?.change_summary} onChange={v => handleChange('change_summary', v)} />
               </>
             ) : (
               <>
                 <InfoRow label={t('cadFolderPath')} value={rev.cad_folder_path} />
                 <InfoRow label={t('drawingPdfPath')} value={rev.drawing_pdf_path} />
                 <InfoRow label={t('step3dPath')} value={rev.step_3d_path} />
-                <InfoRow label={t('versionNote')} value={rev.version_note} />
+                <InfoRow label={t('versionNote')} value={rev.change_summary} />
               </>
             )}
           </div>

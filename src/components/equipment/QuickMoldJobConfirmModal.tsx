@@ -42,7 +42,6 @@ export function QuickMoldJobConfirmModal({
 
     checkDiff('product_code', 'productCodeLabel')
     checkDiff('customer_product_name', 'customerProductNameLabel')
-    checkDiff('primary_plastic_code', 'primaryPlasticCodeLabel')
     checkDiff('design_code', 'designCodeLabel')
     checkDiff('design_length', 'lengthLabel')
     checkDiff('design_width', 'widthLabel')
@@ -153,7 +152,6 @@ export function QuickMoldJobConfirmModal({
               <strong style={{ color: '#3B82F6', display: 'block', marginBottom: 4 }}>{t('step1Title')}:</strong>
               <div>• {t('productCodeLabel')}: <strong>{formData.product_code}</strong> ({formData.customer_product_name || '—'})</div>
               <div>• {t('customerLabel')}: <strong>{formData.customerName || '—'}</strong></div>
-              <div>• {t('primaryPlasticCodeLabel')}: {formData.primary_plastic_code}</div>
             </div>
 
             <div className="card-flat" style={{ padding: 10, fontSize: 11, background: 'var(--bg-surface-2)' }}>

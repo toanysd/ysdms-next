@@ -103,7 +103,6 @@ export type CreateDesignRevisionInput = {
   design_date?: string | null
   designer?: string | null
   change_summary?: string | null
-  version_note?: string | null
   design_length?: number | null
   design_width?: number | null
   design_height?: number | null
@@ -148,7 +147,6 @@ export async function createDesignRevisionAction(input: CreateDesignRevisionInpu
     design_date: input.design_date || new Date().toISOString().split('T')[0],
     designer: input.designer || null,
     change_summary: input.change_summary || null,
-    version_note: input.version_note || null,
     design_length: input.design_length ?? null,
     design_width: input.design_width ?? null,
     design_height: input.design_height ?? null,

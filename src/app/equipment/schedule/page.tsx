@@ -1,4 +1,5 @@
 import { getJobsForGantt } from '@/app/actions/mold-job'
+import { getWorkOrdersForGantt } from '@/app/actions/work-orders'
 import { createClient } from '@/lib/supabase/server'
 import MoldJobGantt from '@/components/equipment/MoldJobGantt'
 import { Plus } from 'lucide-react'
@@ -31,7 +32,8 @@ export default async function ToolingSchedulePage({ searchParams }: { searchPara
   const fromDate = resolvedSearchParams?.from || startOfThisWeek.toISOString().split('T')[0]
   const toDate = resolvedSearchParams?.to || endOfNextWeek.toISOString().split('T')[0]
 
-  const [jobsData, empData, machData] = await Promise.all([
+  const [woData, jobsData, empData, machData] = await Promise.all([
+    getWorkOrdersForGantt({ search: query, fromDate, toDate, page: 1, pageSize }),
     getJobsForGantt(query, fromDate, toDate, 1, pageSize),
     supabase.from('employees').select('employee_id, employee_name, employee_code').order('employee_name'),
     supabase.from('machines').select('machine_id, machine_name, machine_code').order('machine_name')
@@ -41,6 +43,7 @@ export default async function ToolingSchedulePage({ searchParams }: { searchPara
     console.error('[API Error] Fetching machines failed:', machData.error)
   }
 
+  const workOrders = woData.data
   const jobs = jobsData.data
   const totalJobs = jobsData.count
   const employees = empData.data || []
@@ -92,6 +95,7 @@ export default async function ToolingSchedulePage({ searchParams }: { searchPara
       {/* --- Gantt Chart --- */}
       <div className="flex-1 min-h-0 relative">
         <MoldJobGantt 
+          workOrders={workOrders}
           jobs={jobs} 
           employees={employees} 
           machines={machines}

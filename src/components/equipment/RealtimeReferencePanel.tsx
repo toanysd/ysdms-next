@@ -189,9 +189,7 @@ export function RealtimeReferencePanel({
             {existingProduct.companies && (
               <div>• {t('custLabel')}: <strong>{existingProduct.companies.company_name}</strong> ({existingProduct.companies.company_code})</div>
             )}
-            {existingProduct.primary_plastic_code && (
-              <div>• {t('plasticLabel')}: {existingProduct.primary_plastic_code}</div>
-            )}
+
           </div>
         ) : (
           <div style={{ color: 'var(--text-muted)', fontSize: 10 }}>

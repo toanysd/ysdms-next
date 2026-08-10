@@ -88,7 +88,7 @@ export async function searchOrders(query: string) {
       order_id, order_no,
       order_lines(
         products(
-          product_id, product_code, product_name, primary_plastic_code, primary_plastic_spec,
+          product_id, product_code, product_name,
           design_revisions(revision_id, revision_number)
         )
       ),
@@ -117,8 +117,6 @@ export async function searchOrders(query: string) {
         product_id: product.product_id,
         product_code: product.product_code,
         product_name: product.product_name,
-        primary_plastic_code: product.primary_plastic_code,
-        primary_plastic_spec: product.primary_plastic_spec,
         latest_design_revision_id: latestRevision ? latestRevision.revision_id : null
       } : null,
       companies: order.companies

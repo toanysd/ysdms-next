@@ -51,7 +51,7 @@ export type DesignRevisionDetail = {
   cad_folder_path: string | null
   drawing_pdf_path: string | null
   step_3d_path: string | null
-  version_note: string | null
+  change_summary: string | null
   created_at: string | null
   employees: { employee_name: string } | null
   products: {

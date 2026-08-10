@@ -43,8 +43,6 @@ interface TabOverviewProps {
   productStatus: string
   pocketCount: number | null
   piecesPerBox: number | null
-  primaryPlasticCode: string | null
-  primaryPlasticSpec: string | null
   firstShipmentDate: string | null
   notes: string | null
 }
@@ -75,7 +73,6 @@ type DesignRevItem = {
   has_separate_cutter: boolean | null
   customer_tray_name: string | null
   tray_info: string | null
-  version_note?: string | null
   change_summary?: string | null
   created_at: string
   designer: string | null
@@ -254,7 +251,7 @@ export function TabOverview(props: TabOverviewProps) {
   const {
     productId, companyId, productCode, productName, productNameInternal,
     customerProductName, productDescription, productStatus,
-    pocketCount, piecesPerBox, primaryPlasticCode, primaryPlasticSpec,
+    pocketCount, piecesPerBox,
     firstShipmentDate, notes
   } = props
 
@@ -374,7 +371,7 @@ export function TabOverview(props: TabOverviewProps) {
             design_length, design_width, design_height, design_depth,
             cutline_length, cutline_width, cavity_count, pocket_numbers, cavity_pitch_mm, machine_feed_pitch_mm,
             plastic_type_designed, corner_r, chamfer_c, draft_angle, under_depth, orientation, setup_type, plug_type,
-            has_separate_cutter, customer_tray_name, tray_info, version_note, created_at, designer,
+            has_separate_cutter, customer_tray_name, tray_info, change_summary, created_at, designer,
             design_category, parent_design_id
           `)
           .eq('product_id', productId)
@@ -829,7 +826,7 @@ export function TabOverview(props: TabOverviewProps) {
                 return m ? m[1] : null
               })()} mono />
               <InfoRow label={tPC('piecesPerBoxLabel')} value={piecesPerBox} mono />
-              <InfoRow label={tPC('plasticSpecLabel')} value={primaryPlasticSpec || primaryPlasticCode || activeRev?.plastic_type_designed} mono />
+              <InfoRow label={tPC('plasticSpecLabel')} value={activeRev?.plastic_type_designed} mono />
               <InfoRow label={tPC('firstShipmentLabel')} value={firstShipmentDate} mono />
               {notes && (
                 <div style={{ marginTop: 4, padding: '4px 6px', background: 'var(--bg-surface-2)', borderRadius: 4, fontSize: 11, color: 'var(--text-secondary)' }}>
@@ -1091,14 +1088,14 @@ export function TabOverview(props: TabOverviewProps) {
                         )
                       })()}
 
-                      {(activeRev.change_summary || activeRev.version_note) && (
+                      {(activeRev.change_summary) && (
                         <div style={{
                           padding: '6px 10px', background: 'var(--tint-orange-bg)',
                           border: '1px solid var(--tint-orange-border)', borderRadius: 6,
                           fontSize: 11, color: 'var(--tint-orange-text)', display: 'flex', alignItems: 'center', gap: 6
                         }}>
                           <AlertTriangle size={12} />
-                          <span><strong>{tPC('changeSummary')}:</strong> {activeRev.change_summary || activeRev.version_note}</span>
+                          <span><strong>{tPC('changeSummary')}:</strong> {activeRev.change_summary}</span>
                         </div>
                       )}
                       {/* 3-Column Structured Layout with Horizontal Scroll Protection */}
@@ -1129,7 +1126,7 @@ export function TabOverview(props: TabOverviewProps) {
                                 />
                               )
                             })()}
-                            <SpecCell label={tPC('designedMaterial')} value={activeRev.plastic_type_designed || primaryPlasticCode} isDiff={plasticDiff} diffLabel={tPC('fieldChanged')} mono={false} />
+                            <SpecCell label={tPC('designedMaterial')} value={activeRev.plastic_type_designed} isDiff={plasticDiff} diffLabel={tPC('fieldChanged')} mono={false} />
                             <SpecCell label={tPC('customerTrayName')} value={activeRev.customer_tray_name} isDiff={customerTrayNameDiff} diffLabel={tPC('fieldChanged')} mono={false} />
                             {activeRev.tray_info && (
                               <SpecCell label={tPC('trayInfoLabel')} value={activeRev.tray_info} isDiff={trayInfoDiff} diffLabel={tPC('fieldChanged')} mono={false} />

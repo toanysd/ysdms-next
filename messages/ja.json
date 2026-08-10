@@ -1,4 +1,21 @@
 {
+  "WorkOrders": {
+    "pageTitle": "製作指示一覧",
+    "woCode": "指示コード",
+    "woName": "指示名",
+    "woType": "種類",
+    "woStatus": "状態",
+    "newSet": "新規製作",
+    "repair": "修理",
+    "remake": "改修",
+    "modification": "変更",
+    "planned": "計画済",
+    "inProgress": "進行中",
+    "completed": "完了",
+    "cancelled": "キャンセル",
+    "jobCount": "ジョブ数",
+    "belongsToWo": "所属指示"
+  },
   "TransportModule": {
     "stepEmployee": "担当者を選択",
     "stepCompany": "出荷先を選択",

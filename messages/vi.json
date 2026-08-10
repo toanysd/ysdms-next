@@ -1,4 +1,21 @@
 {
+  "WorkOrders": {
+    "pageTitle": "Danh sách Lệnh gia công",
+    "woCode": "Mã chỉ thị",
+    "woName": "Tên chỉ thị",
+    "woType": "Loại",
+    "woStatus": "Trạng thái",
+    "newSet": "Chế tạo mới",
+    "repair": "Sửa chữa",
+    "remake": "Gia công lại",
+    "modification": "Cải tiến",
+    "planned": "Đã lên kế hoạch",
+    "inProgress": "Đang thực hiện",
+    "completed": "Hoàn thành",
+    "cancelled": "Đã hủy",
+    "jobCount": "Số công việc",
+    "belongsToWo": "Thuộc chỉ thị"
+  },
   "TransportModule": {
     "stepEmployee": "Chọn nhân viên",
     "stepCompany": "Chọn công ty đích",

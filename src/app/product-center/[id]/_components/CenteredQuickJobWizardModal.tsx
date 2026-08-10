@@ -34,7 +34,7 @@ interface DesignRevisionData {
   customer_tray_name: string | null
   parent_design_id: string | null
   design_category: string | null
-  version_note?: string | null
+  change_summary?: string | null
   created_at?: string
 }
 
@@ -160,23 +160,23 @@ export function CenteredQuickJobWizardModal({
     }
   }, [productId, supabase, activeRevId])
 
-  // Load Equipment specifically linked to the active revision + CAV match candidates
+  // Load Equipment specifically linked to the active revision (matches TabDesignsEquipment.tsx)
   const loadEquipmentsForActiveRev = useCallback(async (revId: string | null) => {
     if (!revId) {
       setEquipmentsForRev([])
       return
     }
 
-    const { data: revObj } = await supabase.from('design_revisions').select('*').eq('revision_id', revId).single()
+    const revObj = allRevisions.find(r => r.revision_id === revId)
     const targetL = revObj?.design_length || revObj?.cutline_length || null
     const targetW = revObj?.design_width || revObj?.cutline_width || null
 
     const equipMap = new Map<string, EquipmentData>()
 
-    // Direct equipment
+    // A. Direct equipment linked strictly to this design revision
     const { data: dirEquip } = await supabase
       .from('equipment')
-      .select('equipment_id, equipment_type, equipment_code, display_name, usage_status, device_status, rack_layers(layer_code, racks(rack_code)), keeper_company:companies!equipment_keeper_company_id_fkey(company_code, company_name)')
+      .select('equipment_id, equipment_type, equipment_code, display_name, usage_status, device_status, actual_length_mm, actual_width_mm, rack_layers(layer_code, racks(rack_code)), keeper_company:companies!equipment_keeper_company_id_fkey(company_code, company_name)')
       .eq('design_revision_id', revId)
 
     if (dirEquip) {
@@ -189,18 +189,47 @@ export function CenteredQuickJobWizardModal({
       })
     }
 
-    // Shared cutters via mold_design_cutters junction
+    // B. Shared cutters via mold_design_cutters junction table
+    // FK cutter_id points to legacy cutters table, so lookup via BOTH equipment_id AND legacy_cutter_id
     const { data: juncs } = await supabase.from('mold_design_cutters').select('cutter_id').eq('mold_design_id', revId)
     if (juncs && juncs.length > 0) {
       const cIds = juncs.map(j => j.cutter_id).filter(Boolean)
-      const { data: sCutters } = await supabase.from('equipment').select('equipment_id, equipment_type, equipment_code, display_name, usage_status, device_status, rack_layers(layer_code, racks(rack_code)), keeper_company:companies!equipment_keeper_company_id_fkey(company_code, company_name)').in('equipment_id', cIds)
-      if (sCutters) {
-        sCutters.forEach((sc: any) => {
-          if (!equipMap.has(sc.equipment_id)) {
-            const code = formatCutterDisplayCode(sc.equipment_code)
-            const rack = formatRackLocationDisplay(sc.rack_layers)
-            const keeper = sc.keeper_company?.company_code || sc.keeper_company?.company_name || 'YSD'
-            equipMap.set(sc.equipment_id, { id: sc.equipment_id, code, name: sc.display_name || '', type: 'CUTTER', status: sc.usage_status || 'IN_STOCK', rack, keeper })
+      if (cIds.length > 0) {
+        const { data: sCutters } = await supabase
+          .from('equipment')
+          .select('equipment_id, equipment_type, equipment_code, display_name, usage_status, device_status, rack_layers(layer_code, racks(rack_code)), keeper_company:companies!equipment_keeper_company_id_fkey(company_code, company_name)')
+          .or(`equipment_id.in.(${cIds.join(',')}),legacy_cutter_id.in.(${cIds.join(',')})`)
+
+        if (sCutters) {
+          sCutters.forEach((sc: any) => {
+            if (!equipMap.has(sc.equipment_id)) {
+              const code = formatCutterDisplayCode(sc.equipment_code)
+              const rack = formatRackLocationDisplay(sc.rack_layers)
+              const keeper = sc.keeper_company?.company_code || sc.keeper_company?.company_name || 'YSD'
+              equipMap.set(sc.equipment_id, { id: sc.equipment_id, code, name: sc.display_name || '', type: sc.equipment_type || 'CUTTER', status: sc.usage_status || 'IN_STOCK', rack, keeper })
+            }
+          })
+        }
+      }
+    }
+
+    // C. CAV Spec Match Candidates (auxiliary: WATER_BASE, PRESSURE_BASE, FRAME, PLUG, STACKING)
+    if (targetL && targetW) {
+      const { data: auxCandidates } = await supabase
+        .from('equipment')
+        .select('equipment_id, equipment_type, equipment_code, display_name, usage_status, device_status, actual_length_mm, actual_width_mm, design_revision_id, rack_layers(layer_code, racks(rack_code)), keeper_company:companies!equipment_keeper_company_id_fkey(company_code, company_name)')
+        .not('equipment_type', 'in', '("MOLD","CUTTER","CUTTER_SEPARATE","CUTTER_INLINE","抜型")')
+
+      if (auxCandidates) {
+        auxCandidates.forEach((aux: any) => {
+          if (equipMap.has(aux.equipment_id)) return
+          const l = aux.actual_length_mm ? Number(aux.actual_length_mm) : null
+          const w = aux.actual_width_mm ? Number(aux.actual_width_mm) : null
+          const isMatch = (l && w) && ((l === targetL && w === targetW) || (l === targetW && w === targetL))
+          if (isMatch) {
+            const rack = formatRackLocationDisplay(aux.rack_layers)
+            const keeper = aux.keeper_company?.company_code || aux.keeper_company?.company_name || 'YSD'
+            equipMap.set(aux.equipment_id, { id: aux.equipment_id, code: aux.equipment_code || '—', name: aux.display_name || '', type: aux.equipment_type || 'AUXILIARY', status: aux.usage_status || 'IN_STOCK', rack, keeper })
           }
         })
       }
@@ -211,7 +240,7 @@ export function CenteredQuickJobWizardModal({
     if (list.length > 0 && !activeEquipId) {
       setActiveEquipId(list[0].id)
     }
-  }, [supabase, activeEquipId])
+  }, [supabase, activeEquipId, allRevisions])
 
   // Load Jobs linked specifically to active revision or active equipment
   const loadJobsForActiveEquip = useCallback(async (equipId: string | null, revId: string | null) => {
@@ -237,17 +266,19 @@ export function CenteredQuickJobWizardModal({
     }
   }, [supabase, productId, editingJobId])
 
-  // Load Worklogs linked to active job
-  const loadWorklogsForActiveJob = useCallback(async (jobId: string | null, equipId: string | null) => {
-    let query = supabase.from('work_logs').select('*, employees(employee_name)').order('work_date', { ascending: false })
-
-    if (jobId) {
-      query = query.eq('job_id', jobId)
-    } else {
-      query = query.limit(15)
+  // Load Worklogs linked to active job (work_logs does NOT have equipment_id — RULE-DATA-02)
+  const loadWorklogsForActiveJob = useCallback(async (jobId: string | null) => {
+    if (!jobId) {
+      setWorklogsForJob([])
+      return
     }
+    const { data: logs } = await supabase
+      .from('work_logs')
+      .select('*, employees(employee_name)')
+      .eq('job_id', jobId)
+      .order('work_date', { ascending: false })
+      .limit(50)
 
-    const { data: logs } = await query
     if (logs) setWorklogsForJob(logs)
     else setWorklogsForJob([])
   }, [supabase])
@@ -305,7 +336,7 @@ export function CenteredQuickJobWizardModal({
       setCavityCount(rev.cavity_count || '')
       setPlugType(rev.plug_type || '')
       setPlasticType(rev.plastic_type_designed || '')
-      setVersionNote(rev.version_note || '')
+      setVersionNote(rev.change_summary || '')
 
       setSystemCode(`${rev.design_code || 'REV'} #1`)
       setDisplayName(`${rev.design_code || 'REV'} 金型 #1`)
@@ -321,10 +352,28 @@ export function CenteredQuickJobWizardModal({
     loadJobsForActiveEquip(activeEquipId, activeRevId)
   }, [activeEquipId, activeRevId, loadJobsForActiveEquip])
 
-  // Cascade effect 3: When editingJobId or activeEquipId changes, reload Step 4 worklogs
+  // Cascade effect 3: When editingJobId changes, reload Step 4 worklogs
   useEffect(() => {
-    loadWorklogsForActiveJob(editingJobId, activeEquipId)
-  }, [editingJobId, activeEquipId, loadWorklogsForActiveJob])
+    loadWorklogsForActiveJob(editingJobId)
+  }, [editingJobId, loadWorklogsForActiveJob])
+
+  // Step 2 Filtered Equipment (MUST be before early return — React hooks order rule)
+  const filteredEquipmentsForRev = useMemo(() => {
+    if (equipCategoryTab === 'ALL') return equipmentsForRev
+    return equipmentsForRev.filter(item => {
+      const tUpper = String(item.type || '').toUpperCase()
+      if (equipCategoryTab === 'MOLD') return ['MOLD', '金型'].includes(tUpper)
+      if (equipCategoryTab === 'CUTTER') return ['CUTTER', 'CUTTER_SEPARATE', 'CUTTER_INLINE', '抜型'].includes(tUpper)
+      if (equipCategoryTab === 'WATER_BASE') return tUpper === 'WATER_BASE'
+      if (equipCategoryTab === 'PRESSURE_BASE') return tUpper === 'PRESSURE_BASE'
+      if (equipCategoryTab === 'FRAME') return tUpper === 'FRAME'
+      if (equipCategoryTab === 'PLUG') return ['PLUG', 'STACKING', 'AUXILIARY'].includes(tUpper)
+      return true
+    })
+  }, [equipmentsForRev, equipCategoryTab])
+
+  const activeRevObj = allRevisions.find(r => r.revision_id === activeRevId)
+  const activeEquipObj = equipmentsForRev.find(e => e.id === activeEquipId)
 
   if (!isOpen) return null
 
@@ -436,7 +485,6 @@ export function CenteredQuickJobWizardModal({
         product_code: productCode || 'PROD',
         product_name: productName || 'Product',
         customer_product_name: customerProductName || null,
-        primary_plastic_code: plasticType || null,
 
         design_code: designCode || 'REV1',
         design_length: Number(designLength) || null,
@@ -478,23 +526,7 @@ export function CenteredQuickJobWizardModal({
     }
   }
 
-  // Step 2 Filtered Equipment
-  const filteredEquipmentsForRev = useMemo(() => {
-    if (equipCategoryTab === 'ALL') return equipmentsForRev
-    return equipmentsForRev.filter(item => {
-      const tUpper = String(item.type || '').toUpperCase()
-      if (equipCategoryTab === 'MOLD') return ['MOLD', '金型'].includes(tUpper)
-      if (equipCategoryTab === 'CUTTER') return ['CUTTER', 'CUTTER_SEPARATE', 'CUTTER_INLINE', '抜型'].includes(tUpper)
-      if (equipCategoryTab === 'WATER_BASE') return tUpper === 'WATER_BASE'
-      if (equipCategoryTab === 'PRESSURE_BASE') return tUpper === 'PRESSURE_BASE'
-      if (equipCategoryTab === 'FRAME') return tUpper === 'FRAME'
-      if (equipCategoryTab === 'PLUG') return ['PLUG', 'STACKING', 'AUXILIARY'].includes(tUpper)
-      return true
-    })
-  }, [equipmentsForRev, equipCategoryTab])
-
-  const activeRevObj = allRevisions.find(r => r.revision_id === activeRevId)
-  const activeEquipObj = equipmentsForRev.find(e => e.id === activeEquipId)
+  // (useMemo and derived consts moved before early return — see above)
 
   return (
     <div style={{
@@ -908,9 +940,17 @@ export function CenteredQuickJobWizardModal({
                           外寸: {[rev.design_length, rev.design_width, rev.design_height].filter(Boolean).join('×')} mm | 取数: {rev.cavity_count || '—'}
                         </div>
 
-                        <div style={{ fontSize: 10, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px dashed var(--border-default)', paddingTop: 4 }}>
-                          <span>📝 {rev.version_note || '要約メモなし'}</span>
-                          <span>{rev.created_at?.slice(0, 10) || '—'}</span>
+                        <div style={{ fontSize: 10, color: 'var(--text-muted)', display: 'flex', flexDirection: 'column', gap: 2, borderTop: '1px dashed var(--border-default)', paddingTop: 4 }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                            <span>📝 {rev.change_summary || '変更メモなし'}</span>
+                            <span>{rev.created_at?.slice(0, 10) || '—'}</span>
+                          </div>
+                          {rev.plastic_type_designed && (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                              <span className="badge badge--info" style={{ fontSize: 8 }}>樹脂</span>
+                              <span style={{ fontSize: 10, fontWeight: 600 }}>{rev.plastic_type_designed}</span>
+                            </div>
+                          )}
                         </div>
                       </div>
                     )

@@ -71,9 +71,21 @@ export interface JobForGantt {
         company_name: string
         company_code: string | null
     } | null
-    job_types: {
-        job_type_name_ja: string
-        job_type_name_vi: string
+    work_order_id?: string | null
+    equipment_id?: string | null
+    work_orders?: {
+        wo_id: string
+        wo_code: string
+        wo_name: string
+        wo_status: string
+        wo_type: string
+        deadline: string | null
+    } | null
+    equipment?: {
+        equipment_id: string
+        equipment_code: string
+        display_name: string
+        equipment_type: string
     } | null
 }
 
@@ -369,6 +381,8 @@ export async function getJobsForGantt(searchQuery?: string, fromDate?: string, t
             ),
             design_revisions(design_code, revision_number, design_length, design_width, design_height, design_depth, cutline_length, cutline_width, cavity_count, plastic_type_designed),
             physical_molds(physical_mold_id, system_code, display_name, actual_length_mm, actual_width_mm, actual_height_mm),
+            equipment!jobs_equipment_id_fkey(equipment_id, equipment_code, display_name, equipment_type),
+            work_orders!jobs_work_order_id_fkey(wo_id, wo_code, wo_name, wo_status, wo_type, deadline),
             companies!jobs_company_id_fkey(company_name, company_code),
             job_types(job_type_name_ja, job_type_name_vi)
         `, { count: 'exact' })
@@ -386,9 +400,52 @@ export async function getJobsForGantt(searchQuery?: string, fromDate?: string, t
     const from = (page - 1) * pageSize
     const to = from + pageSize - 1
 
-    const { data, count, error } = await req
+    let { data, count, error } = await req
         .order('mold_deadline', { ascending: true, nullsFirst: false })
         .range(from, to)
+
+    // Fallback: If DB migration hasn't been run on Supabase yet, retry query without work_orders join
+    if (error && (error.message.includes('work_orders') || error.message.includes('jobs_work_order_id_fkey'))) {
+        let fallbackReq = supabase
+            .from('jobs')
+            .select(`
+                *,
+                job_steps(
+                    step_id, job_id, step_no, step_name, step_status,
+                    track, planned_start, planned_end, planned_hours,
+                    actual_hours, estimated_hours, machine_id,
+                    assigned_to, machining_location, deadline, notes, processing_status_id, item_type_id,
+                    processing_statuses!job_steps_processing_status_id_fkey(status_code),
+                    item_types(item_type_id, item_type_code, item_type_name_ja)
+                ),
+                products!jobs_product_id_fkey(
+                    product_id, product_code, product_name_internal,
+                    product_material_specs(material_type, material_grade, thickness_mm, sheet_width_mm)
+                ),
+                design_revisions(design_code, revision_number, design_length, design_width, design_height, design_depth, cutline_length, cutline_width, cavity_count, plastic_type_designed),
+                physical_molds(physical_mold_id, system_code, display_name, actual_length_mm, actual_width_mm, actual_height_mm),
+                companies!jobs_company_id_fkey(company_name, company_code),
+                job_types(job_type_name_ja, job_type_name_vi)
+            `, { count: 'exact' })
+            .neq('job_status', 'CANCELLED')
+
+        if (searchQuery) {
+            fallbackReq = fallbackReq.or(`job_code.ilike.%${searchQuery}%,job_name.ilike.%${searchQuery}%`)
+        }
+
+        if (fromDate && toDate) {
+            const toDateEnd = toDate + ' 23:59:59'
+            fallbackReq = fallbackReq.or(`and(mold_deadline.gte.${fromDate},mold_deadline.lte.${toDateEnd}),and(deadline.gte.${fromDate},deadline.lte.${toDateEnd}),and(start_date.gte.${fromDate},start_date.lte.${toDateEnd}),and(ship_date.gte.${fromDate},ship_date.lte.${toDateEnd})`)
+        }
+
+        const res = await fallbackReq
+            .order('mold_deadline', { ascending: true, nullsFirst: false })
+            .range(from, to)
+
+        data = res.data
+        count = res.count
+        error = res.error
+    }
 
     if (error) {
         console.error('[API Error] getJobsForGantt:', error.message, error.details, error.hint)

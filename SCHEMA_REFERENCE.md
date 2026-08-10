@@ -1,7 +1,7 @@
 # YSDMS NextGen — Database Schema Reference
 > **AI AGENT: Đọc file này TRƯỚC KHI viết bất kỳ Supabase query nào.**
 > Đây là nguồn duy nhất (single source of truth) về cấu trúc DB.
-> **Cập nhật lần cuối: 2026-07-31** — Thêm bảng `equipment`, `equipment_history`, `equipment_assignments`. Thêm cột `job_category`, `equipment_id`, `case_id` vào `jobs`. Backfill `job_category` cho 1,183 jobs (migration `20260731060000`).
+> **Cập nhật lần cuối: 2026-08-10** — Phase C Schema Cleanup: DROP `products.primary_plastic_code/primary_plastic_spec` (SSOT = `design_revisions.plastic_type_designed`). DROP `design_revisions.version_note` (consolidated → `change_summary`). ADD `mold_design_cutters.equipment_id` FK → `equipment(equipment_id)`.
 
 ---
 
@@ -329,6 +329,8 @@ FK:  mold_work_order_id  UUID → mold_work_orders(mwo_id)
 FK:  company_id          UUID → companies(company_id)
 FK:  responsible_id      UUID → employees(employee_id)
 FK:  outsource_company   UUID → companies(company_id)
+FK:  equipment_id        UUID → equipment(equipment_id)
+FK:  work_order_id       UUID → work_orders(wo_id)
      job_code            TEXT UNIQUE NOT NULL
      job_name            TEXT NOT NULL
      start_date          TIMESTAMPTZ    ← Ngày bắt đầu
@@ -343,6 +345,32 @@ FK:  outsource_company   UUID → companies(company_id)
      year_period         INTEGER
      month_period        INTEGER
      notes               TEXT
+```
+
+---
+
+## 🔑 Bảng `work_orders` — Lệnh Sản Xuất / Gia Công Khuôn (Option C)
+
+```
+PK:  wo_id              UUID
+     wo_code            TEXT UNIQUE NOT NULL   ← (VD: 'WO-2026-000001')
+     wo_name            TEXT NOT NULL          ← (VD: 'Chế tạo bộ khuôn ABY-123')
+FK:  product_id         UUID → products(product_id)
+FK:  design_revision_id UUID → design_revisions(revision_id)
+FK:  order_id           UUID → orders(order_id)
+FK:  company_id         UUID → companies(company_id)
+FK:  case_id            UUID → business_cases(id)
+     wo_type            TEXT NOT NULL DEFAULT 'NEW_SET' -- 'NEW_SET'|'REPAIR'|'REMAKE'|'MODIFICATION'|'OTHER'
+     wo_status          TEXT NOT NULL DEFAULT 'PLANNED' -- 'PLANNED'|'IN_PROGRESS'|'COMPLETED'|'CANCELLED'
+     start_date         TIMESTAMPTZ
+     deadline           TIMESTAMPTZ
+     completed_at       TIMESTAMPTZ
+FK:  responsible_id     UUID → employees(employee_id)
+     priority           INTEGER DEFAULT 5
+     notes              TEXT
+     created_at         TIMESTAMPTZ DEFAULT now()
+     updated_at         TIMESTAMPTZ DEFAULT now()
+FK:  created_by         UUID → employees(employee_id)
 ```
 
 ---

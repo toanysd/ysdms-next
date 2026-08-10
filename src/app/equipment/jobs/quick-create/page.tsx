@@ -279,7 +279,6 @@ export default function QuickCreateMoldJobPage() {
     if (productCode !== (initialLoadedData.product_code || '')) return true
     if (productName !== (initialLoadedData.product_name || '')) return true
     if (customerProductName !== (initialLoadedData.customer_product_name || '')) return true
-    if (primaryPlasticCode !== (initialLoadedData.primary_plastic_code || '')) return true
     if (designCode !== (initialLoadedData.design_code || '')) return true
     if (designLength !== (initialLoadedData.design_length || '')) return true
     if (designWidth !== (initialLoadedData.design_width || '')) return true
@@ -548,7 +547,7 @@ export default function QuickCreateMoldJobPage() {
       const prodCode = j.products?.product_code || ''
       const prodName = j.products?.product_name || ''
       const custProdName = j.products?.customer_product_name || ''
-      const plastic = j.products?.primary_plastic_code || 'PET 0.5t'
+      const plastic = j.design_revisions?.plastic_type_designed || '—'
       setProductCode(prodCode)
       setProductName(prodName)
       setCustomerProductName(custProdName)
@@ -585,8 +584,8 @@ export default function QuickCreateMoldJobPage() {
       setTextContent(d.text_content || '')
       setPlugType(d.plug_type || '')
       setHasSeparateCutter(d.has_separate_cutter || false)
-      if (d.version_note?.includes('ポケット試作:')) {
-        setPocketPrototype(d.version_note.replace('ポケット試作:', '').trim())
+      if (d.change_summary?.includes('ポケット試作:')) {
+        setPocketPrototype(d.change_summary.replace('ポケット試作:', '').trim())
       }
 
       // Physical Mold
@@ -649,7 +648,6 @@ export default function QuickCreateMoldJobPage() {
         product_code: prodCode,
         product_name: prodName,
         customer_product_name: custProdName,
-        primary_plastic_code: plastic,
         design_code: desCode,
         design_length: dLen,
         design_width: dWid,
@@ -749,7 +747,6 @@ export default function QuickCreateMoldJobPage() {
     setProductCode(prod.product_code || '')
     setCustomerProductName(prod.customer_product_name || '')
     setProductName(prod.product_name || prod.product_name_internal || '')
-    if (prod.primary_plastic_code) setPrimaryPlasticCode(prod.primary_plastic_code)
 
     if (prod.companies) {
       setCompanyId(prod.companies.company_id)
@@ -922,7 +919,6 @@ export default function QuickCreateMoldJobPage() {
       product_code: productCode,
       product_name: productName,
       customer_product_name: customerProductName,
-      primary_plastic_code: primaryPlasticCode,
       design_code: designCode,
       design_length: designLength ? Number(designLength) : null,
       design_width: designWidth ? Number(designWidth) : null,
@@ -2136,7 +2132,6 @@ export default function QuickCreateMoldJobPage() {
           product_code: productCode,
           product_name: productName,
           customer_product_name: customerProductName,
-          primary_plastic_code: primaryPlasticCode,
           design_code: designCode,
           design_length: designLength ? Number(designLength) : null,
           design_width: designWidth ? Number(designWidth) : null,

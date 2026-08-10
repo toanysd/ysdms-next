@@ -35,7 +35,6 @@ export type QuickMoldJobInput = {
   product_code: string
   product_name: string
   customer_product_name?: string | null
-  primary_plastic_code?: string | null
 
   // 2. Design Revision Specs
   design_code: string
@@ -116,7 +115,6 @@ export async function createQuickMoldJobWorkflow(input: QuickMoldJobInput) {
           product_name_internal: input.product_code.trim(),
           product_name: input.product_name.trim() || input.product_code.trim(),
           customer_product_name: input.customer_product_name?.trim() || null,
-          primary_plastic_code: input.primary_plastic_code?.trim() || null,
           company_id: companyId,
           product_status: 'ACTIVE',
         })
@@ -143,7 +141,7 @@ export async function createQuickMoldJobWorkflow(input: QuickMoldJobInput) {
         design_height: input.design_height || null,
         design_depth: input.design_depth || null,
         cavity_count: input.cavity_count || null,
-        plastic_type_designed: input.plastic_type_designed?.trim() || input.primary_plastic_code?.trim() || null,
+        plastic_type_designed: input.plastic_type_designed?.trim() || null,
         cutline_length: input.cutline_length || null,
         cutline_width: input.cutline_width || null,
         corner_r: input.corner_r?.trim() || null,
@@ -156,7 +154,7 @@ export async function createQuickMoldJobWorkflow(input: QuickMoldJobInput) {
         text_content: input.text_content?.trim() || null,
         plug_type: input.plug_type?.trim() || null,
         has_separate_cutter: input.has_separate_cutter || false,
-        version_note: input.pocket_prototype ? `ポケット試作: ${input.pocket_prototype}` : null,
+        change_summary: input.pocket_prototype ? `ポケット試作: ${input.pocket_prototype}` : null,
       })
       .select('revision_id')
       .single()
@@ -173,7 +171,62 @@ export async function createQuickMoldJobWorkflow(input: QuickMoldJobInput) {
       compSummary = '【構成部品・補助設備 Kit】: ' + componentSteps.map(c => `${c.step_name} (x${c.quantity || 1})`).join(', ')
     }
 
-    // Step 4: Physical Mold
+    // Step 3: Work Order (Option C Model)
+    let workOrderId: string | null = null
+    try {
+      const year = new Date().getFullYear()
+      const randSeq = Math.floor(100000 + Math.random() * 900000)
+      const woCode = `WO-${year}-${randSeq}`
+
+      const { data: woData } = await supabase
+        .from('work_orders')
+        .insert({
+          wo_code: woCode,
+          wo_name: `Chế tạo bộ khuôn ${input.product_code.trim()}`,
+          product_id: productId,
+          design_revision_id: designRevisionId,
+          company_id: companyId,
+          wo_type: 'NEW_SET',
+          wo_status: 'PLANNED',
+          deadline: input.deadline || null,
+          start_date: input.start_date || null,
+          responsible_id: input.responsible_id || null,
+          notes: compSummary || null,
+        })
+        .select('wo_id')
+        .single()
+
+      if (woData) {
+        workOrderId = woData.wo_id
+      }
+    } catch (woErr) {
+      console.warn('Non-blocking error creating Work Order:', woErr)
+    }
+
+    // Step 4: Equipment (Unified SSOT) & Legacy Physical Mold
+    let equipmentId: string | null = null
+    const { data: newEquip } = await supabase
+      .from('equipment')
+      .insert({
+        equipment_code: input.system_code.trim(),
+        display_name: input.display_name.trim() || input.system_code.trim(),
+        equipment_type: 'MOLD',
+        physical_stamp: input.physical_stamp?.trim() || null,
+        current_rack_layer_id: input.current_rack_layer_id || null,
+        company_id: companyId,
+        design_revision_id: designRevisionId,
+        device_status: '製作中',
+        usage_status: '保管中',
+        notes: compSummary || null,
+      })
+      .select('equipment_id')
+      .maybeSingle()
+
+    if (newEquip) {
+      equipmentId = newEquip.equipment_id
+    }
+
+    // Legacy Physical Mold (for backward compatibility)
     const { data: newMold, error: moldErr } = await supabase
       .from('physical_molds')
       .insert({
@@ -193,7 +246,7 @@ export async function createQuickMoldJobWorkflow(input: QuickMoldJobInput) {
     }
     const physicalMoldId = newMold.physical_mold_id
 
-    // Step 5: Job
+    // Step 5: Job (linked to Work Order and Equipment)
     const totalEstHours = input.steps.reduce((sum, s) => sum + (s.estimated_hours || 0), 0)
     const combinedNotes = [input.notes?.trim(), compSummary].filter(Boolean).join('\n')
 
@@ -204,6 +257,8 @@ export async function createQuickMoldJobWorkflow(input: QuickMoldJobInput) {
         job_name: input.job_name.trim(),
         job_type_id: input.job_type_id || '1',
         job_category: input.job_category || 'MOLD_NEW',
+        work_order_id: workOrderId,
+        equipment_id: equipmentId,
         product_id: productId,
         design_revision_id: designRevisionId,
         physical_mold_id: physicalMoldId,
@@ -255,6 +310,8 @@ export async function createQuickMoldJobWorkflow(input: QuickMoldJobInput) {
     return {
       success: true,
       job_id: jobId,
+      work_order_id: workOrderId,
+      equipment_id: equipmentId,
       physical_mold_id: physicalMoldId,
       product_id: productId,
       design_revision_id: designRevisionId,
@@ -344,7 +401,6 @@ export async function updateQuickMoldJobWorkflow(jobId: string, input: QuickMold
         product_code: input.product_code.trim(),
         product_name: input.product_name.trim() || input.product_code.trim(),
         customer_product_name: input.customer_product_name?.trim() || null,
-        primary_plastic_code: input.primary_plastic_code?.trim() || null,
         company_id: companyId || undefined,
       }).eq('product_id', currentJob.product_id)
     }
@@ -358,7 +414,7 @@ export async function updateQuickMoldJobWorkflow(jobId: string, input: QuickMold
         design_height: input.design_height || null,
         design_depth: input.design_depth || null,
         cavity_count: input.cavity_count || null,
-        plastic_type_designed: input.plastic_type_designed?.trim() || input.primary_plastic_code?.trim() || null,
+        plastic_type_designed: input.plastic_type_designed?.trim() || null,
         cutline_length: input.cutline_length || null,
         cutline_width: input.cutline_width || null,
         corner_r: input.corner_r?.trim() || null,
@@ -371,7 +427,7 @@ export async function updateQuickMoldJobWorkflow(jobId: string, input: QuickMold
         text_content: input.text_content?.trim() || null,
         plug_type: input.plug_type?.trim() || null,
         has_separate_cutter: input.has_separate_cutter || false,
-        version_note: input.pocket_prototype ? `ポケット試作: ${input.pocket_prototype}` : null,
+        change_summary: input.pocket_prototype ? `ポケット試作: ${input.pocket_prototype}` : null,
       }).eq('revision_id', currentJob.design_revision_id)
     }
 

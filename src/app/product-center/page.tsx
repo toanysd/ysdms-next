@@ -27,8 +27,6 @@ type ProductItem = {
   customer_product_name: string | null
   product_status: ProductStatus
   pocket_count: number | null
-  primary_plastic_code: string | null
-  primary_plastic_spec: string | null
   notes: string | null
   product_description: string | null
   first_shipment_date: string | null
@@ -172,7 +170,7 @@ export default function ProductCenterIndexPage() {
         .from('products')
         .select(`
           product_id, product_code, product_name, product_name_internal, customer_product_name,
-          product_status, pocket_count, primary_plastic_code, primary_plastic_spec, notes, product_description, first_shipment_date, created_at, updated_at,
+          product_status, pocket_count, notes, product_description, first_shipment_date, created_at, updated_at,
           companies:companies!products_company_id_fkey(company_id, company_name, company_code)
         `, { count: 'exact' })
 
@@ -767,7 +765,7 @@ export default function ProductCenterIndexPage() {
 
                       <td>
                         {(() => {
-                          const plastic = p._design?.plastic_type_designed || p.primary_plastic_code
+                          const plastic = p._design?.plastic_type_designed
                           if (!plastic) return <span style={{ color: 'var(--text-muted)' }}>—</span>
                           return (
                             <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>

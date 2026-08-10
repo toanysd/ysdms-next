@@ -17,7 +17,7 @@ export async function GET(
       *,
       orders(order_no, companies(company_name, company_code)),
       products(
-        product_id, product_code, product_name, primary_plastic_code, primary_plastic_spec,
+        product_id, product_code, product_name,
         design_revisions(
           revision_id, revision_number, customer_drawing_no, cutline_length, cutline_width,
           cavity_count, chamfer_c, has_separate_cutter, tolerance_pitch, setup_type, drawing_pdf_path,

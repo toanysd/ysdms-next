@@ -16,6 +16,7 @@ import { JobQuickViewDrawer } from '@/components/equipment/JobQuickViewDrawer'
 import { calculateAutoSchedule } from '@/lib/scheduling/autoScheduler'
 
 interface Props {
+  workOrders?: any[]
   jobs: JobForGantt[]
   employees?: any[]
   machines?: any[]
@@ -813,7 +814,7 @@ const StaticTableComponent = React.memo(function StaticTableComponent(props: any
   )
 })
 
-export default function MoldJobGantt({ jobs, employees = [], machines = [], initialFromDate, initialToDate }: Props) {
+export default function MoldJobGantt({ workOrders = [], jobs, employees = [], machines = [], initialFromDate, initialToDate }: Props) {
   const router = useRouter()
   const searchParams = useSearchParams()
   const t = useTranslations('Equipment')
@@ -1034,13 +1035,116 @@ export default function MoldJobGantt({ jobs, employees = [], machines = [], init
     const BOUND_START = fromDate ? new Date(fromDate) : new Date()
     const BOUND_END = toDate ? new Date(toDate + ' 23:59:59') : new Date()
     
-    const clampDate = (d: Date) => {
-        if (d.getTime() > 4000000000000) return new Date(BOUND_END)
-        if (d.getTime() < 1000000000000) return new Date(BOUND_START)
-        return d
+    const parseSafeDate = (val: any, fallback: Date): Date => {
+      if (!val) return fallback
+      const d = typeof val === 'string' || typeof val === 'number' ? new Date(val) : val
+      if (!d || isNaN(d.getTime())) return fallback
+      return d
     }
 
-    displayJobs.forEach(job => {
+    const clampDate = (d: Date) => {
+      if (!d || isNaN(d.getTime())) return new Date(BOUND_START)
+      if (d.getTime() > 4000000000000) return new Date(BOUND_END)
+      if (d.getTime() < 1000000000000) return new Date(BOUND_START)
+      return d
+    }
+
+    const makeValidRange = (startDate: Date, endDate: Date) => {
+      let s = clampDate(startDate)
+      let e = clampDate(endDate)
+      if (e.getTime() <= s.getTime()) {
+        e = new Date(s.getTime() + 86400000) // Ensure end is at least 1 day after start
+      }
+      return { start: s, end: e }
+    }
+
+    // 1. Process Work Orders (Option C Model: Work Order -> Jobs -> Steps)
+    if (workOrders && workOrders.length > 0) {
+      workOrders.forEach(wo => {
+        const woJobs = wo.jobs || []
+        if (woJobs.length === 0) return
+
+        let minTime = Infinity
+        let maxTime = -Infinity
+
+        woJobs.forEach((j: any) => {
+          if (j.start_date) {
+            const t = new Date(j.start_date).getTime()
+            if (!isNaN(t) && t < minTime) minTime = t
+          }
+          if (j.deadline || j.mold_deadline) {
+            const t = new Date(j.deadline || j.mold_deadline).getTime()
+            if (!isNaN(t) && t > maxTime) maxTime = t
+          }
+          (j.job_steps || []).forEach((s: any) => {
+            if (s.planned_start) {
+              const t = new Date(s.planned_start).getTime()
+              if (!isNaN(t) && t < minTime) minTime = t
+            }
+            if (s.planned_end || s.deadline) {
+              const t = new Date(s.planned_end || s.deadline).getTime()
+              if (!isNaN(t) && t > maxTime) maxTime = t
+            }
+          })
+        })
+
+        const fallbackStart = wo.start_date ? parseSafeDate(wo.start_date, BOUND_START) : BOUND_START
+        const fallbackEnd = wo.deadline ? parseSafeDate(wo.deadline, new Date(fallbackStart.getTime() + 7 * 86400000)) : new Date(fallbackStart.getTime() + 7 * 86400000)
+
+        const rawWoStart = minTime !== Infinity ? new Date(minTime) : fallbackStart
+        const rawWoEnd = maxTime !== -Infinity ? new Date(maxTime) : fallbackEnd
+
+        const { start: woStart, end: woEnd } = makeValidRange(rawWoStart, rawWoEnd)
+
+        const isWoExpanded = !expandedJobs.has(`wo_${wo.wo_id}`) // expanded by default
+
+        // Level 1: Work Order Node
+        result.push({
+          id: `wo_${wo.wo_id}`,
+          name: `📋 ${wo.wo_code} [${wo.wo_name}]`,
+          type: 'project',
+          progress: wo.wo_status === 'COMPLETED' ? 100 : 50,
+          start: woStart,
+          end: woEnd,
+          isDisabled: true,
+          hideChildren: !isWoExpanded,
+          originalWorkOrder: wo,
+          isWorkOrderHeader: true,
+        } as ExtendedTask)
+
+        if (isWoExpanded) {
+          // Level 2: Child Jobs per Equipment
+          woJobs.forEach((job: any) => {
+            const equipName = job.equipment?.display_name || job.equipment?.equipment_code || job.job_name || job.job_code
+            const equipType = job.equipment?.equipment_type || 'MOLD'
+            const typeIcon = equipType === 'PLUG' ? '🪵' : equipType.includes('CUTTER') ? '✂️' : '🔧'
+
+            const rawJobStart = job.start_date ? parseSafeDate(job.start_date, woStart) : woStart
+            const rawJobEnd = job.deadline ? parseSafeDate(job.deadline, woEnd) : woEnd
+            const { start: jobStart, end: jobEnd } = makeValidRange(rawJobStart, rawJobEnd)
+
+            result.push({
+              id: job.job_id,
+              name: `${typeIcon} Job: ${equipName}`,
+              type: 'task',
+              project: `wo_${wo.wo_id}`,
+              progress: job.job_status === 'COMPLETED' ? 100 : 0,
+              start: jobStart,
+              end: jobEnd,
+              isDisabled: false,
+              originalJob: job,
+              originalJobId: job.job_id,
+            } as ExtendedTask)
+          })
+        }
+      })
+    }
+
+    // 2. Process Standalone / Legacy Jobs (work_order_id = NULL or not in WO list)
+    const woJobIds = new Set(workOrders.flatMap((w: any) => (w.jobs || []).map((j: any) => j.job_id)))
+    const standaloneJobs = displayJobs.filter(j => !j.work_order_id || !woJobIds.has(j.job_id))
+
+    standaloneJobs.forEach(job => {
       const s = JOB_STATUS[job.job_status || 'NEW'] || JOB_STATUS.NEW
       
       let projStart = new Date(8640000000000000)
@@ -1129,10 +1233,9 @@ export default function MoldJobGantt({ jobs, employees = [], machines = [], init
       stepsByTrack.forEach((_, k) => { if (!TRACK_ORDER.includes(k)) presentTracks.push(k) })
 
       const makeDateRange = (startDate: Date, endDate: Date, hasDates: boolean) => {
-          let cs = clampDate(new Date(startDate))
-          let ce = clampDate(new Date(endDate))
-          if (cs.getTime() > ce.getTime()) cs = new Date(ce)
-          if (cs.getTime() === ce.getTime() || !hasDates) ce.setHours(ce.getHours() + 1)
+          let cs = parseSafeDate(startDate, BOUND_START)
+          let ce = parseSafeDate(endDate, BOUND_END)
+          if (ce.getTime() <= cs.getTime() || !hasDates) ce = new Date(cs.getTime() + 86400000)
           return { start: cs, end: ce }
       }
 

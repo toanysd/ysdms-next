@@ -35,7 +35,7 @@ export function MoldRevisionForm({ initialData, moldBaseId, moldBaseCode, sugges
     revision_code: initialData?.revision_code || `${moldBaseCode}-${suggestedLabel || 'R1'}`,
     version_label: initialData?.version_label || suggestedLabel || 'R1',
     approved_date: initialData?.approved_date || '',
-    version_note: initialData?.version_note || '',
+    change_summary: initialData?.change_summary || '',
     design_length: initialData?.design_length || undefined,
     design_width: initialData?.design_width || undefined,
     design_height: initialData?.design_height || undefined,
@@ -174,7 +174,7 @@ export function MoldRevisionForm({ initialData, moldBaseId, moldBaseCode, sugges
                     {t('notes')}
                   </label>
                   <textarea
-                    {...register('version_note')}
+                    {...register('change_summary')}
                     className="w-full h-[60px] text-sm p-2 border border-[var(--mcs-border)] rounded focus:border-[var(--mcs-primary)] outline-none resize-none"
                     placeholder={t('notesPlaceholder')}
                   />

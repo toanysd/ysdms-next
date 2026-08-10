@@ -1221,6 +1221,7 @@ export type Database = {
           alt_plastic_type: string | null
           approved_date: string | null
           cad_folder_path: string | null
+          change_summary: string | null
           cav_type_id: string | null
           cavity_count: number | null
           cavity_pitch_mm: number | null
@@ -1276,7 +1277,7 @@ export type Database = {
           undercut_spec: string | null
           updated_at: string | null
           updated_by: string | null
-          version_note: string | null
+
           water_cooling_plate_spec: string | null
         }
         Insert: {
@@ -1284,6 +1285,7 @@ export type Database = {
           alt_plastic_type?: string | null
           approved_date?: string | null
           cad_folder_path?: string | null
+          change_summary?: string | null
           cav_type_id?: string | null
           cavity_count?: number | null
           cavity_pitch_mm?: number | null
@@ -1339,7 +1341,7 @@ export type Database = {
           undercut_spec?: string | null
           updated_at?: string | null
           updated_by?: string | null
-          version_note?: string | null
+
           water_cooling_plate_spec?: string | null
         }
         Update: {
@@ -1347,6 +1349,7 @@ export type Database = {
           alt_plastic_type?: string | null
           approved_date?: string | null
           cad_folder_path?: string | null
+          change_summary?: string | null
           cav_type_id?: string | null
           cavity_count?: number | null
           cavity_pitch_mm?: number | null
@@ -1402,7 +1405,7 @@ export type Database = {
           undercut_spec?: string | null
           updated_at?: string | null
           updated_by?: string | null
-          version_note?: string | null
+
           water_cooling_plate_spec?: string | null
         }
         Relationships: [
@@ -2519,6 +2522,7 @@ export type Database = {
           unit_price: number | null
           updated_at: string | null
           updated_by: string | null
+          work_order_id: string | null
           year_period: number | null
         }
         Insert: {
@@ -2565,6 +2569,7 @@ export type Database = {
           unit_price?: number | null
           updated_at?: string | null
           updated_by?: string | null
+          work_order_id?: string | null
           year_period?: number | null
         }
         Update: {
@@ -2676,6 +2681,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "physical_molds"
             referencedColumns: ["physical_mold_id"]
+          },
+          {
+            foreignKeyName: "jobs_work_order_id_fkey"
+            columns: ["work_order_id"]
+            isOneToOne: false
+            referencedRelation: "work_orders"
+            referencedColumns: ["wo_id"]
           },
           {
             foreignKeyName: "jobs_processing_item_id_fkey"
@@ -3219,6 +3231,7 @@ export type Database = {
         Row: {
           cutter_id: string
           date_entry: string | null
+          equipment_id: string | null
           id: string
           mold_design_id: string
           notes: string | null
@@ -3226,6 +3239,7 @@ export type Database = {
         Insert: {
           cutter_id: string
           date_entry?: string | null
+          equipment_id?: string | null
           id?: string
           mold_design_id: string
           notes?: string | null
@@ -3233,6 +3247,7 @@ export type Database = {
         Update: {
           cutter_id?: string
           date_entry?: string | null
+          equipment_id?: string | null
           id?: string
           mold_design_id?: string
           notes?: string | null
@@ -3245,8 +3260,16 @@ export type Database = {
             referencedRelation: "cutters"
             referencedColumns: ["cutter_id"]
           },
+          {
+            foreignKeyName: "mold_design_cutters_equipment_id_fkey"
+            columns: ["equipment_id"]
+            isOneToOne: false
+            referencedRelation: "equipment"
+            referencedColumns: ["equipment_id"]
+          },
         ]
       }
+
       mold_disposal_logs: {
         Row: {
           certificate_file: string | null
@@ -5948,8 +5971,6 @@ export type Database = {
           notes: string | null
           pieces_per_box: number | null
           pocket_count: number | null
-          primary_plastic_code: string | null
-          primary_plastic_spec: string | null
           product_code: string
           product_description: string | null
           product_id: string
@@ -5981,8 +6002,6 @@ export type Database = {
           notes?: string | null
           pieces_per_box?: number | null
           pocket_count?: number | null
-          primary_plastic_code?: string | null
-          primary_plastic_spec?: string | null
           product_code: string
           product_description?: string | null
           product_id?: string
@@ -6014,8 +6033,6 @@ export type Database = {
           notes?: string | null
           pieces_per_box?: number | null
           pocket_count?: number | null
-          primary_plastic_code?: string | null
-          primary_plastic_spec?: string | null
           product_code?: string
           product_description?: string | null
           product_id?: string
@@ -7073,7 +7090,124 @@ export type Database = {
           },
         ]
       }
+      work_orders: {
+        Row: {
+          case_id: string | null
+          company_id: string | null
+          completed_at: string | null
+          created_at: string | null
+          created_by: string | null
+          deadline: string | null
+          design_revision_id: string | null
+          notes: string | null
+          order_id: string | null
+          priority: number | null
+          product_id: string | null
+          responsible_id: string | null
+          start_date: string | null
+          updated_at: string | null
+          wo_code: string
+          wo_id: string
+          wo_name: string
+          wo_status: string
+          wo_type: string
+        }
+        Insert: {
+          case_id?: string | null
+          company_id?: string | null
+          completed_at?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          deadline?: string | null
+          design_revision_id?: string | null
+          notes?: string | null
+          order_id?: string | null
+          priority?: number | null
+          product_id?: string | null
+          responsible_id?: string | null
+          start_date?: string | null
+          updated_at?: string | null
+          wo_code: string
+          wo_id?: string
+          wo_name: string
+          wo_status?: string
+          wo_type?: string
+        }
+        Update: {
+          case_id?: string | null
+          company_id?: string | null
+          completed_at?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          deadline?: string | null
+          design_revision_id?: string | null
+          notes?: string | null
+          order_id?: string | null
+          priority?: number | null
+          product_id?: string | null
+          responsible_id?: string | null
+          start_date?: string | null
+          updated_at?: string | null
+          wo_code?: string
+          wo_id?: string
+          wo_name?: string
+          wo_status?: string
+          wo_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_orders_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "business_cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_orders_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "work_orders_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["employee_id"]
+          },
+          {
+            foreignKeyName: "work_orders_design_revision_id_fkey"
+            columns: ["design_revision_id"]
+            isOneToOne: false
+            referencedRelation: "design_revisions"
+            referencedColumns: ["revision_id"]
+          },
+          {
+            foreignKeyName: "work_orders_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["order_id"]
+          },
+          {
+            foreignKeyName: "work_orders_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "work_orders_responsible_id_fkey"
+            columns: ["responsible_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["employee_id"]
+          },
+        ]
+      }
     }
+
     Views: {
       material_inventory_v2: {
         Row: {
