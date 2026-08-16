@@ -1,9 +1,5 @@
 import type { Metadata } from 'next'
-import { Noto_Sans_JP, Inter } from 'next/font/google'
 import './globals.css'
-
-const notoSansJP = Noto_Sans_JP({ subsets: ['latin'], weight: ['400', '600', '700'] })
-const inter = Inter({ subsets: ['latin'], weight: ['400', '500', '600', '700'] })
 
 import Sidebar from '@/components/layout/Sidebar'
 import Topbar from '@/components/layout/Topbar'
@@ -30,7 +26,7 @@ export default async function RootLayout({
 
   return (
     <html lang={locale} suppressHydrationWarning>
-      <body className={`${inter.className} ${notoSansJP.className} antialiased`}>
+      <body className="antialiased">
         <NextIntlClientProvider messages={messages} locale={locale}>
           <ThemeProvider>
             <AuthProvider>
