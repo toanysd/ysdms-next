@@ -7,7 +7,7 @@ import { useTranslations } from 'next-intl'
 import {
   Search, Package, ArrowRight, Database, LayoutGrid, Table,
   RotateCcw, CheckSquare, Square, ExternalLink, Filter, Clock,
-  ArrowUp, ArrowDown, ArrowUpDown, Building2, X
+  ArrowUp, ArrowDown, ArrowUpDown, Building2, X, Plus, Sparkles
 } from 'lucide-react'
 
 import { Pagination } from '@/components/ui/Pagination'
@@ -16,6 +16,8 @@ import { SearchSuggestions } from '@/components/ui/SearchSuggestions'
 import Link from 'next/link'
 
 import ProductFilterDrawer, { ProductFilterState, INITIAL_PRODUCT_FILTERS } from './_components/ProductFilterDrawer'
+import CreateProductModal from './_components/CreateProductModal'
+import { ManufacturingSheetOCRModal } from '@/components/ocr/ManufacturingSheetOCRModal'
 
 type ProductStatus = 'ACTIVE' | 'MAINTENANCE' | 'DISPOSED'
 
@@ -120,6 +122,8 @@ export default function ProductCenterIndexPage() {
 
   // Advanced Filter Drawer State
   const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false)
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
+  const [isOcrModalOpen, setIsOcrModalOpen] = useState(false)
   const [filterState, setFilterState] = useState<ProductFilterState>(INITIAL_PRODUCT_FILTERS)
   const [companiesList, setCompaniesList] = useState<Array<{ company_id: string; company_code: string; company_name: string }>>([])
   const [plasticTypesList, setPlasticTypesList] = useState<string[]>([])
@@ -525,6 +529,38 @@ export default function ProductCenterIndexPage() {
             <RotateCcw size={12} />
           </button>
 
+          {/* AI OCR Button */}
+          <button
+            type="button"
+            onClick={() => setIsOcrModalOpen(true)}
+            className="btn"
+            style={{
+              height: 26,
+              padding: '0 10px',
+              fontSize: 11,
+              gap: 4,
+              background: 'linear-gradient(135deg, #0d9488 0%, #0284c7 100%)',
+              color: '#fff',
+              border: 'none',
+              fontWeight: 600,
+              cursor: 'pointer'
+            }}
+          >
+            <Sparkles size={13} />
+            <span>AI 工程票取込</span>
+          </button>
+
+          {/* Create Product Button */}
+          <button
+            type="button"
+            onClick={() => setIsCreateModalOpen(true)}
+            className="btn btn-primary"
+            style={{ height: 26, padding: '0 10px', fontSize: 11, gap: 4 }}
+          >
+            <Plus size={13} />
+            <span>{tProd('newProduct') || '新規登録'}</span>
+          </button>
+
           {/* Master Link */}
           <Link
             href="/master/products"
@@ -841,6 +877,30 @@ export default function ProductCenterIndexPage() {
         onResetFilters={resetFilters}
         companiesList={companiesList}
         plasticTypesList={plasticTypesList}
+      />
+
+      {/* Create Product Modal */}
+      <CreateProductModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onSuccess={(productId) => {
+          setIsCreateModalOpen(false)
+          fetchProducts()
+          router.push(`/product-center/${productId}`)
+        }}
+      />
+
+      {/* AI Manufacturing Sheet OCR Modal */}
+      <ManufacturingSheetOCRModal
+        isOpen={isOcrModalOpen}
+        onClose={() => setIsOcrModalOpen(false)}
+        onSuccess={(res) => {
+          setIsOcrModalOpen(false)
+          fetchProducts()
+          if (res?.product_id) {
+            router.push(`/product-center/${res.product_id}`)
+          }
+        }}
       />
 
     </div>

@@ -118,16 +118,17 @@ PK:  product_id          UUID
 FK:  company_id          UUID → companies(company_id) NOT NULL  ← BẮT BUỘC
 FK:  mold_master_id      UUID → mold_masters(mold_master_id)   ← DEPRECATED, giữ tạm
      product_code        TEXT UNIQUE   ← Mã nội bộ YSD (compact, bỏ gạch ngang: ADY071)
-     product_name        TEXT          ← Tên SP chính thức từ KH (NULL nếu chưa xác nhận)
+     product_name        TEXT          ← Tên SP chính thức từ KH (NULL nếu chưa có chứng từ, dùng xuất hóa đơn)
      product_name_en     TEXT          ← Tên SP tiếng Anh
-     product_name_internal TEXT        ← Tên nội bộ YSD (hiển thị: ADY-071)
+     product_name_internal TEXT        ← Tên nội bộ YSD (hiển thị có gạch ngang: ADY-071)
+     customer_product_name TEXT        ← Tên hoặc mã part khách hàng gọi (VD: PART-8802-A)
+     product_description TEXT          ← Mô tả SP cho KD/SX / Tên ban đầu (nguồn: 品名 trên 工程票). Luôn có dữ liệu.
      company_pn          TEXT          ← ⚠️ DEPRECATED — Phase 2 sẽ xóa/rename
      product_status      TEXT          ← (KHÔNG phải 'status')
      pocket_count        INTEGER
      pieces_per_box      INTEGER
      box_spec            TEXT
      notes               TEXT          ← Ghi chú tự do (KHÔNG dùng cho mô tả SP)
-     product_description TEXT          ← Mô tả SP cho KD/SX (nguồn: TrayInfoForMoldDesign). Added 2026-08-03
      first_shipment_date DATE          ← 初回出荷日 (denormalized từ jobs.ship_date). Added 2026-08-03
      date_entry          DATE
      legacy_id           TEXT
@@ -137,7 +138,9 @@ FK:  mold_master_id      UUID → mold_masters(mold_master_id)   ← DEPRECATED,
 > [!CAUTION]
 > - `product_code` = **mã nội bộ YSD compact** (ADY071, bỏ gạch ngang). KHÔNG phải tên sản phẩm.
 > - `product_name_internal` = **tên nội bộ YSD hiển thị** (ADY-071, giữ gạch ngang)
-> - `product_name` = **tên chính thức từ khách hàng** (dùng cho hóa đơn). Ban đầu NULL.
+> - `product_description` = **mô tả sản phẩm / tên làm việc** do KD nhập (luôn có ngay từ đầu).
+> - `product_name` = **tên chính thức từ khách hàng trên hóa đơn/hợp đồng** (ban đầu có thể NULL).
+> - `customer_product_name` = **mã part hoặc tên sản phẩm phía khách hàng gọi**.
 > - `company_pn` = **DEPRECATED** — không dùng trong code mới
 > - `company_id` là **NOT NULL** — bắt buộc có khách hàng
 > - **KHÔNG CÓ**: `material_id`, `thickness_mm`, `sact_qr_code`, `derived_from_product_id`
@@ -249,11 +252,11 @@ FK:  shared_plug_from_design_id UUID → design_revisions(revision_id)
      design_weight     TEXT
      cutline_length    NUMERIC
      cutline_width     NUMERIC
-     cavity_count      INTEGER
+     cavity_count      INTEGER       ← 取数 = Pieces per mold cycle (1サイクルで何枚のトレイを成形するか). ※ Pocket数ではない → products.pocket_count
      corner_r          TEXT
      chamfer_c         TEXT
      draft_angle       TEXT
-     cavity_pitch_mm   NUMERIC       ← Bước khuôn (Khoảng cách giữa các cavity)
+     cavity_pitch_mm   NUMERIC       ← Bước khuôn (Khoảng cách tâm giữa các cavity trên khuôn)
      machine_feed_pitch_mm NUMERIC   ← Bước tiến nhựa (送り) - Dùng tính hao phí vật liệu
      orientation       TEXT
      setup_type        TEXT
@@ -663,6 +666,29 @@ FK:  related_equipment_id  UUID → equipment(equipment_id) ON DELETE CASCADE
      notes                 TEXT
 UNIQUE: (primary_equipment_id, related_equipment_id)
 CHECK:  primary_equipment_id <> related_equipment_id
+```
+
+---
+
+## 🔑 Bảng `equipment_photos` — Quản Lý Ảnh Thiết Bị & Khuôn (Supabase Storage)
+
+> Quản lý ảnh chụp thực tế của thiết bị, khuôn, dao cắt lưu trên Bucket `equipment-photos`.
+> Hỗ trợ chụp trực tiếp từ camera di động (nén canvas tự động) và phân loại ảnh.
+
+```
+PK:  photo_id          UUID
+FK:  equipment_id      UUID → equipment(equipment_id) ON DELETE CASCADE NOT NULL
+     storage_path      TEXT NOT NULL   ← Đường dẫn trong Bucket 'equipment-photos' (VD: 'uuid/timestamp_name.jpg')
+     file_name         TEXT
+     file_size_bytes   BIGINT
+     mime_type         TEXT DEFAULT 'image/jpeg'
+     photo_type        TEXT DEFAULT 'OVERVIEW'  ← 'OVERVIEW'|'DETAIL'|'DAMAGE'|'MAINTENANCE'|'DOCUMENT'|'OTHER'
+     caption           TEXT
+     taken_at          TIMESTAMPTZ DEFAULT now()
+FK:  taken_by          UUID → employees(employee_id)
+     sort_order        INTEGER DEFAULT 0
+     created_at        TIMESTAMPTZ DEFAULT now()
+     updated_at        TIMESTAMPTZ DEFAULT now()
 ```
 
 ---

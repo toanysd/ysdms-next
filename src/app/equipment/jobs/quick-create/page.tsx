@@ -45,6 +45,7 @@ import { useSearchHistory } from '@/hooks/useSearchHistory'
 import { SearchSuggestions } from '@/components/ui/SearchSuggestions'
 import { UnsavedChangesModal } from '@/components/ui/UnsavedChangesModal'
 import { WorklogEditModal, WorklogModalData } from '@/components/equipment/WorklogEditModal'
+import { ManufacturingSheetOCRModal } from '@/components/ocr/ManufacturingSheetOCRModal'
 
 type Company = {
   company_id: string
@@ -166,6 +167,7 @@ export default function QuickCreateMoldJobPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const editJobIdParam = searchParams.get('editJobId')
+  const productIdParam = searchParams.get('product_id')
   const locale = useLocale()
   const tText = useCallback((vi: string, ja: string) => locale === 'vi' ? vi : ja, [locale])
   const t = useTranslations('Equipment.QuickCreate')
@@ -260,6 +262,7 @@ export default function QuickCreateMoldJobPage() {
 
   // Confirmation Modal & Saving State
   const [showConfirmModal, setShowConfirmModal] = useState(false)
+  const [isOcrModalOpen, setIsOcrModalOpen] = useState(false)
   const [saving, setSaving] = useState(false)
   const [createdResult, setCreatedResult] = useState<{ jobId: string; moldId: string; isEdit?: boolean } | null>(null)
 
@@ -669,14 +672,96 @@ export default function QuickCreateMoldJobPage() {
     } else {
       alert(`${t('errLoadJob')}: ${res.error}`)
     }
+  }, [supabase, t])
+
+  // ── Load Product Data into Form (when navigating from Product Center or direct product_id) ──
+  const loadProductById = useCallback(async (productId: string) => {
+    setLoadingJobData(true)
+    try {
+      // 1. Fetch product with company
+      // 1. Fetch product
+      const { data: prod, error: prodErr } = await supabase
+        .from('products')
+        .select('*')
+        .eq('product_id', productId)
+        .single()
+
+      if (prodErr || !prod) {
+        console.error('Error fetching product for quick-create:', prodErr)
+        return
+      }
+
+      setProductCode(prod.product_code || '')
+      setCustomerProductName(prod.customer_product_name || '')
+      setProductName(prod.product_name || prod.product_name_internal || '')
+
+      if (prod.company_id) {
+        setCompanyId(prod.company_id)
+        const { data: comp } = await supabase
+          .from('companies')
+          .select('company_id, company_name, company_code')
+          .eq('company_id', prod.company_id)
+          .single()
+
+        if (comp) {
+          setCustomerSearch(`${comp.company_name} (${comp.company_code})`)
+          setCompanies(prev => {
+            if (!prev.some(c => c.company_id === comp.company_id)) {
+              return [comp, ...prev]
+            }
+            return prev
+          })
+        }
+      }
+
+      // 2. Fetch latest design revision for this product
+      const { data: revList } = await supabase
+        .from('design_revisions')
+        .select('*')
+        .eq('product_id', productId)
+        .order('revision_number', { ascending: false, nullsFirst: false })
+        .limit(1)
+
+      if (revList && revList.length > 0) {
+        const d = revList[0]
+        setDesignCode(d.design_code || '')
+        setDesignLength(d.design_length != null ? d.design_length.toString() : '')
+        setDesignWidth(d.design_width != null ? d.design_width.toString() : '')
+        setDesignHeight(d.design_height != null ? d.design_height.toString() : '')
+        setDesignDepth(d.design_depth != null ? d.design_depth.toString() : '')
+        setCavityCount(d.cavity_count != null ? d.cavity_count.toString() : '')
+        setCutlineLength(d.cutline_length != null ? d.cutline_length.toString() : '')
+        setCutlineWidth(d.cutline_width != null ? d.cutline_width.toString() : '')
+        setCornerR(d.corner_r || '')
+        setChamferC(d.chamfer_c || '')
+        setOrientation(d.orientation || '1. 下型')
+        setSetupType(d.setup_type || '1. 普通')
+        setDraftAngle(d.draft_angle || '')
+        setUnderDepth(d.under_depth || '')
+        setUndercutSpec(d.undercut_spec || '')
+        setTextContent(d.text_content || '')
+        setPlugType(d.plug_type || '')
+        setHasSeparateCutter(d.has_separate_cutter || false)
+        setPrimaryPlasticCode(d.plastic_type_designed || '')
+        if (d.change_summary?.includes('ポケット試作:')) {
+          setPocketPrototype(d.change_summary.replace('ポケット試作:', '').trim())
+        }
+      }
+
+      setDisplayName(prod.product_name_internal || prod.product_code || '')
+    } finally {
+      setLoadingJobData(false)
+    }
   }, [supabase])
 
-  // Load Job on URL Param change
+  // Load Job or Product on URL Param change
   useEffect(() => {
     if (editJobIdParam && !loadingMasters) {
       loadJobForEditing(editJobIdParam)
+    } else if (productIdParam && !loadingMasters && !editJobId) {
+      loadProductById(productIdParam)
     }
-  }, [editJobIdParam, loadingMasters, loadJobForEditing])
+  }, [editJobIdParam, productIdParam, loadingMasters, editJobId, loadJobForEditing, loadProductById])
 
   // Live Search Job in DB for top search bar
   useEffect(() => {
@@ -743,7 +828,7 @@ export default function QuickCreateMoldJobPage() {
     setIsCustomerDropdownOpen(false)
   }
 
-  const selectProduct = (prod: any) => {
+  const selectProduct = async (prod: any) => {
     setProductCode(prod.product_code || '')
     setCustomerProductName(prod.customer_product_name || '')
     setProductName(prod.product_name || prod.product_name_internal || '')
@@ -751,6 +836,41 @@ export default function QuickCreateMoldJobPage() {
     if (prod.companies) {
       setCompanyId(prod.companies.company_id)
       setCustomerSearch(`${prod.companies.company_name} (${prod.companies.company_code})`)
+    }
+
+    if (prod.product_id) {
+      const { data: revList } = await supabase
+        .from('design_revisions')
+        .select('*')
+        .eq('product_id', prod.product_id)
+        .order('revision_number', { ascending: false, nullsFirst: false })
+        .limit(1)
+
+      if (revList && revList.length > 0) {
+        const d = revList[0]
+        setDesignCode(d.design_code || '')
+        setDesignLength(d.design_length != null ? d.design_length.toString() : '')
+        setDesignWidth(d.design_width != null ? d.design_width.toString() : '')
+        setDesignHeight(d.design_height != null ? d.design_height.toString() : '')
+        setDesignDepth(d.design_depth != null ? d.design_depth.toString() : '')
+        setCavityCount(d.cavity_count != null ? d.cavity_count.toString() : '')
+        setCutlineLength(d.cutline_length != null ? d.cutline_length.toString() : '')
+        setCutlineWidth(d.cutline_width != null ? d.cutline_width.toString() : '')
+        setCornerR(d.corner_r || '')
+        setChamferC(d.chamfer_c || '')
+        setOrientation(d.orientation || '1. 下型')
+        setSetupType(d.setup_type || '1. 普通')
+        setDraftAngle(d.draft_angle || '')
+        setUnderDepth(d.under_depth || '')
+        setUndercutSpec(d.undercut_spec || '')
+        setTextContent(d.text_content || '')
+        setPlugType(d.plug_type || '')
+        setHasSeparateCutter(d.has_separate_cutter || false)
+        setPrimaryPlasticCode(d.plastic_type_designed || '')
+        if (d.change_summary?.includes('ポケット試作:')) {
+          setPocketPrototype(d.change_summary.replace('ポケット試作:', '').trim())
+        }
+      }
     }
 
     setIsProductDropdownOpen(false)
@@ -995,6 +1115,25 @@ export default function QuickCreateMoldJobPage() {
             <button type="button" onClick={() => handleNavigateExit('up')} className="btn btn-secondary" style={{ height: 26, padding: '0 8px', fontSize: 11, gap: 4 }}>
               <ArrowUpFromLine size={13} />
               <span>{t('upList')}</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsOcrModalOpen(true)}
+              className="btn"
+              style={{
+                height: 26,
+                padding: '0 10px',
+                fontSize: 11,
+                gap: 4,
+                background: 'linear-gradient(135deg, #0d9488 0%, #0284c7 100%)',
+                color: '#fff',
+                border: 'none',
+                fontWeight: 600,
+                cursor: 'pointer'
+              }}
+            >
+              <Sparkles size={13} />
+              <span>AI 工程票取込</span>
             </button>
             <button
               type="button"
@@ -2192,6 +2331,20 @@ export default function QuickCreateMoldJobPage() {
         onClose={() => setShowExitConfirmModal(false)}
         onSaveAndExit={handleSaveAndExit}
         onDiscardAndExit={handleDiscardAndExit}
+      />
+
+      {/* ── AI Manufacturing Sheet OCR Modal ── */}
+      <ManufacturingSheetOCRModal
+        isOpen={isOcrModalOpen}
+        onClose={() => setIsOcrModalOpen(false)}
+        onSuccess={(res) => {
+          setIsOcrModalOpen(false)
+          if (res?.job_id) {
+            router.push(`/equipment/jobs/${res.job_id}`)
+          } else if (res?.product_id) {
+            loadProductById(res.product_id)
+          }
+        }}
       />
     </div>
   )

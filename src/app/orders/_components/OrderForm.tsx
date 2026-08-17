@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect, useCallback } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { AsyncSearchableSelect } from '@/components/ui/AsyncSearchableSelect'
 import { Plus, Trash2, Save, X, ArrowLeft, Send, ChevronDown, ChevronUp } from 'lucide-react'
@@ -32,6 +32,8 @@ export function OrderForm({ initialOrder, isEditing = false, onCancel, onSuccess
   const t = useTranslations('Orders')
   const tCommon = useTranslations('Common')
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const productIdParam = searchParams.get('product_id')
   const supabase = createClient()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -166,6 +168,53 @@ export function OrderForm({ initialOrder, isEditing = false, onCancel, onSuccess
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  // Auto-load product if product_id is passed in query parameters
+  useEffect(() => {
+    if (productIdParam && !initialOrder) {
+      supabase.from('products')
+        .select('product_id, company_id, mold_master_id')
+        .eq('product_id', productIdParam)
+        .single()
+        .then(async ({ data: prod }) => {
+          if (prod) {
+            if (prod.company_id) {
+              setHeader(prev => ({ ...prev, company_id: prod.company_id }))
+            }
+
+            const { data: revs } = await supabase
+              .from('design_revisions')
+              .select('revision_id, design_code, plastic_type_designed, cutline_length, cutline_width, cavity_count, status')
+              .eq('product_id', prod.product_id)
+              .order('design_code', { ascending: false })
+
+            const latestRev = revs && revs.length > 0 ? revs[0] : null
+            if (revs) {
+              setProductRevisions(prev => ({ ...prev, [prod.product_id]: revs as DesignRevisionOption[] }))
+            }
+
+            setLines([{
+              product_id: prod.product_id,
+              design_revision_id: latestRev?.revision_id || null,
+              delivery_site_id: null,
+              line_no: 1,
+              quantity: 0,
+              unit: 'PCS',
+              due_date: '',
+              ship_date: '',
+              is_free_sample: false,
+              charge_type: 'PAID',
+              packing_style: '',
+              shipping_notes: ''
+            }])
+
+            if (latestRev) {
+              loadRevisionDetail(latestRev.revision_id)
+            }
+          }
+        })
+    }
+  }, [productIdParam, initialOrder, supabase, loadRevisionDetail])
 
   const handleAddLine = () => {
     const prevLine = lines.length > 0 ? lines[lines.length - 1] : null;

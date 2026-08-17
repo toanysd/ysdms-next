@@ -67,6 +67,8 @@ const STATUS_LOCALE: Record<string, string> = {
   COMPLETED: '完了',
   PENDING: '未定',
   CANCELLED: 'キャンセル',
+  EXISTING: '流用',
+  SHARED: '流用',
 }
 
 function getDelayColor(
@@ -1113,28 +1115,60 @@ export default function MoldJobGantt({ workOrders = [], jobs, employees = [], ma
         } as ExtendedTask)
 
         if (isWoExpanded) {
-          // Level 2: Child Jobs per Equipment
+          // Level 2: Child Jobs per Equipment (only for manufactured equipment)
           woJobs.forEach((job: any) => {
             const equipName = job.equipment?.display_name || job.equipment?.equipment_code || job.job_name || job.job_code
             const equipType = job.equipment?.equipment_type || 'MOLD'
-            const typeIcon = equipType === 'PLUG' ? '🪵' : equipType.includes('CUTTER') ? '✂️' : '🔧'
+            const typeIcon = equipType.includes('CUTTER') ? '✂️' : '🔧'
 
             const rawJobStart = job.start_date ? parseSafeDate(job.start_date, woStart) : woStart
             const rawJobEnd = job.deadline ? parseSafeDate(job.deadline, woEnd) : woEnd
             const { start: jobStart, end: jobEnd } = makeValidRange(rawJobStart, rawJobEnd)
 
+            const isJobExpanded = expandedJobs.has(job.job_id)
+            const jobSteps = (job.job_steps || []).filter((s: any) => 
+              s.condition !== 'EXISTING' && s.step_status !== 'EXISTING' && s.arrangement !== 'NOT_REQUIRED'
+            )
+
             result.push({
               id: job.job_id,
-              name: `${typeIcon} Job: ${equipName}`,
+              name: `${typeIcon} ${equipName}`,
               type: 'task',
               project: `wo_${wo.wo_id}`,
-              progress: job.job_status === 'COMPLETED' ? 100 : 0,
+              progress: job.job_status === 'COMPLETED' ? 100 : (job.overall_progress || 0),
               start: jobStart,
               end: jobEnd,
               isDisabled: false,
+              hideChildren: !isJobExpanded,
               originalJob: job,
               originalJobId: job.job_id,
             } as ExtendedTask)
+
+            // Level 3: Real processing steps for this job
+            if (isJobExpanded && jobSteps.length > 0) {
+              jobSteps.forEach((step: any, sIdx: number) => {
+                const rawStepStart = step.planned_start ? parseSafeDate(step.planned_start, jobStart) : jobStart
+                const rawStepEnd = step.planned_end || step.deadline ? parseSafeDate(step.planned_end || step.deadline, jobEnd) : jobEnd
+                const { start: stepStart, end: stepEnd } = makeValidRange(rawStepStart, rawStepEnd)
+
+                result.push({
+                  id: `${job.job_id}_step_${step.step_id || sIdx}`,
+                  name: `  ↳ ${step.step_name || '工程'}`,
+                  type: 'task',
+                  project: job.job_id,
+                  progress: step.step_status === 'COMPLETED' ? 100 : 0,
+                  start: stepStart,
+                  end: stepEnd,
+                  isDisabled: false,
+                  originalStep: step,
+                  originalJobId: job.job_id,
+                  styles: {
+                    backgroundColor: 'var(--accent-light, #e0f2f1)',
+                    progressColor: 'var(--accent, #0d9488)',
+                  }
+                } as ExtendedTask)
+              })
+            }
           })
         }
       })
@@ -1224,7 +1258,20 @@ export default function MoldJobGantt({ workOrders = [], jobs, employees = [], ma
       const stepsByTrack = new Map<string, typeof job.job_steps>()
 
       job.job_steps?.forEach(step => {
+        // Only include steps for equipment being manufactured (exclude shared existing equipment)
+        if (
+          (step as any).condition === 'EXISTING' ||
+          (step as any).step_status === 'EXISTING' ||
+          (step as any).arrangement === 'NOT_REQUIRED'
+        ) {
+          return
+        }
         const track = (step.track || 'MOLD').toUpperCase()
+        if (['WATER_BASE', 'WATER COOLING BASE', 'FRAME', 'PRESSIER BASE', 'PRESSURE_BASE', 'STAKING', 'STACKING'].includes(track)) {
+          if ((step as any).condition !== 'NEW' && !(step as any).deadline && !(step as any).estimated_hours) {
+            return
+          }
+        }
         if (!stepsByTrack.has(track)) stepsByTrack.set(track, [])
         stepsByTrack.get(track)!.push(step)
       })
@@ -1325,7 +1372,10 @@ export default function MoldJobGantt({ workOrders = [], jobs, employees = [], ma
                 });
             });
 
-            if (trackSteps.length > 0 && completedCount === trackSteps.length) {
+            const isAllExisting = trackSteps.length > 0 && trackSteps.every((s: any) => s.condition === 'EXISTING' || s.originalStep?.condition === 'EXISTING' || s.step_status === 'EXISTING');
+            if (isAllExisting) {
+                finalTrackStatus = 'EXISTING';
+            } else if (trackSteps.length > 0 && completedCount === trackSteps.length) {
                 finalTrackStatus = 'COMPLETED';
             } else if (totalLogs > 0 && finishedLogs === totalLogs) {
                 finalTrackStatus = 'COMPLETED';

@@ -2,9 +2,10 @@ import type { ProductDetailData, Company, DesignRevisionItem } from '../page'
 import { SearchableSelect } from '@/components/ui/SearchableSelect'
 import { useState, useMemo } from 'react'
 import Link from 'next/link'
-import { ExternalLink, PenTool, LayoutTemplate, Layers, Wrench, Sparkles, GitCompare, Scissors, ShieldCheck, CheckCircle2, Plus } from 'lucide-react'
+import { ExternalLink, PenTool, LayoutTemplate, Layers, Wrench, Sparkles, GitCompare, Scissors, ShieldCheck, CheckCircle2, Plus, Pencil } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { CreateDesignRevisionModal } from '@/components/engineering/CreateDesignRevisionModal'
+import { EditDesignRevisionModal, EditDesignRevisionData } from '@/components/engineering/EditDesignRevisionModal'
 
 function FieldGroup({
   label, sub, required, children,
@@ -84,6 +85,7 @@ export function OverviewTab({
 }) {
   const t = useTranslations('Master.Products.Overview')
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
+  const [editingRevision, setEditingRevision] = useState<EditDesignRevisionData | null>(null)
 
   const getProductStatusLabel = (key: string) => {
     switch (key) {
@@ -237,6 +239,16 @@ export function OverviewTab({
                         <GitCompare size={11} /> {t('diffNotice')} vs Rev {prevRevision.revision_number} ({diffs.size})
                       </span>
                     )}
+                    <button
+                      type="button"
+                      onClick={() => setEditingRevision(activeRevision as EditDesignRevisionData)}
+                      className="btn btn-secondary"
+                      style={{ height: 24, padding: '0 8px', fontSize: 11, display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                      title="設計情報を編集"
+                    >
+                      <Pencil size={11} />
+                      <span>編集 (Sửa)</span>
+                    </button>
                     <Link 
                       href={`/engineering/designs/revisions/${activeRevision.revision_id}`}
                       className="text-[11px] font-bold text-accent hover:underline flex items-center gap-1"
@@ -278,10 +290,10 @@ export function OverviewTab({
                   />
                   <ReadOnlyField 
                     label={t('cavityPitch')} 
-                    sub="Pocket / Feed Pitch" 
+                    sub="取数 / Feed Pitch" 
                     highlighted={diffs.has('cavityCount') || diffs.has('pitch')}
                     value={
-                      `${(activeRevision.cavity_count || activeRevision.pocket_numbers) ? (activeRevision.cavity_count || activeRevision.pocket_numbers) + ' Pocket' : '—'} / ${activeRevision.pitch_mm ? activeRevision.pitch_mm + ' mm' : (activeRevision.cavity_pitch_mm ? activeRevision.cavity_pitch_mm + ' mm' : (activeRevision.machine_feed_pitch_mm ? activeRevision.machine_feed_pitch_mm + ' mm' : '—'))}`
+                      `${activeRevision.cavity_count != null ? activeRevision.cavity_count + ' 取' : '—'} / ${activeRevision.cavity_pitch_mm ? activeRevision.cavity_pitch_mm + ' mm' : (activeRevision.machine_feed_pitch_mm ? activeRevision.machine_feed_pitch_mm + ' mm' : '—')}`
                     } 
                   />
                   <ReadOnlyField 
@@ -600,6 +612,18 @@ export function OverviewTab({
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
         onSuccess={() => {
+          if (onRefresh) onRefresh()
+          else window.location.reload()
+        }}
+      />
+
+      {/* Edit Design Revision Modal */}
+      <EditDesignRevisionModal
+        isOpen={Boolean(editingRevision)}
+        revision={editingRevision}
+        onClose={() => setEditingRevision(null)}
+        onSuccess={() => {
+          setEditingRevision(null)
           if (onRefresh) onRefresh()
           else window.location.reload()
         }}

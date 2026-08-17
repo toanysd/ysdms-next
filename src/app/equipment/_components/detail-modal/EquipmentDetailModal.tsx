@@ -14,6 +14,7 @@ import MoldDetailView from './MoldDetailView'
 import CutterDetailView from './CutterDetailView'
 import StorageStatusCard from './StorageStatusCard'
 import ActionDialogManager from './ActionDialogManager'
+import { EquipmentPhotoGallery } from '@/components/equipment/EquipmentPhotoGallery'
 
 export default function EquipmentDetailModal({
   isOpen,
@@ -27,7 +28,7 @@ export default function EquipmentDetailModal({
   const supabase = createClient()
   const [data, setData] = useState<EquipmentDetailData | null>(initialData || null)
   const [loading, setLoading] = useState<boolean>(false)
-  const [activeTab, setActiveTab] = useState<'specs' | 'revisions' | 'jobs' | 'movements'>('specs')
+  const [activeTab, setActiveTab] = useState<'specs' | 'revisions' | 'jobs' | 'movements' | 'photos'>('specs')
   const [activeAction, setActiveAction] = useState<ActionDialogType>(null)
   const [jobsHistory, setJobsHistory] = useState<any[]>([])
   const [movementsHistory, setMovementsHistory] = useState<any[]>([])
@@ -567,6 +568,12 @@ export default function EquipmentDetailModal({
                   >
                     {t('tabs.movements')} ({statusLogs.length || movementsHistory.length})
                   </button>
+                  <button
+                    className={`tab-item ${activeTab === 'photos' ? 'tab-item--active' : ''}`}
+                    onClick={() => setActiveTab('photos')}
+                  >
+                    📷 写真 (Photos)
+                  </button>
                 </div>
 
                 {/* Tab Views */}
@@ -639,6 +646,15 @@ export default function EquipmentDetailModal({
                     ) : (
                       <div style={{ fontSize: 11, color: 'var(--text-muted)', padding: 12 }}>移動履歴なし</div>
                     )}
+                  </div>
+                )}
+
+                {activeTab === 'photos' && data?.equipment_id && (
+                  <div className="card-flat" style={{ padding: 12, background: 'var(--bg-surface)' }}>
+                    <EquipmentPhotoGallery
+                      equipmentId={data.equipment_id}
+                      equipmentCode={data.equipment_code || data.display_name}
+                    />
                   </div>
                 )}
               </div>

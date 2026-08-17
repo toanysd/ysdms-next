@@ -1703,6 +1703,69 @@ export type Database = {
           },
         ]
       }
+      equipment_photos: {
+        Row: {
+          photo_id: string
+          equipment_id: string
+          storage_path: string
+          file_name: string | null
+          file_size_bytes: number | null
+          mime_type: string | null
+          photo_type: string
+          caption: string | null
+          taken_at: string | null
+          taken_by: string | null
+          sort_order: number | null
+          created_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          photo_id?: string
+          equipment_id: string
+          storage_path: string
+          file_name?: string | null
+          file_size_bytes?: number | null
+          mime_type?: string | null
+          photo_type?: string
+          caption?: string | null
+          taken_at?: string | null
+          taken_by?: string | null
+          sort_order?: number | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          photo_id?: string
+          equipment_id?: string
+          storage_path?: string
+          file_name?: string | null
+          file_size_bytes?: number | null
+          mime_type?: string | null
+          photo_type?: string
+          caption?: string | null
+          taken_at?: string | null
+          taken_by?: string | null
+          sort_order?: number | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "equipment_photos_equipment_id_fkey"
+            columns: ["equipment_id"]
+            isOneToOne: false
+            referencedRelation: "equipment"
+            referencedColumns: ["equipment_id"]
+          },
+          {
+            foreignKeyName: "equipment_photos_taken_by_fkey"
+            columns: ["taken_by"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["employee_id"]
+          }
+        ]
+      }
       equipment_assignments: {
         Row: {
           assignment_id: string

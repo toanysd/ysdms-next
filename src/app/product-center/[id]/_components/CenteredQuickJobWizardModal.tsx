@@ -274,6 +274,10 @@ export function CenteredQuickJobWizardModal({
         }
       }
 
+      // Build equipment list: combine design_revision_id query + targetEquipment
+      const list: EquipmentData[] = []
+      const seenIds = new Set<string>()
+
       if (selectedRev?.revision_id) {
         const { data: equips } = await supabase
           .from('equipment')
@@ -281,28 +285,65 @@ export function CenteredQuickJobWizardModal({
           .eq('design_revision_id', selectedRev.revision_id)
         
         if (equips && equips.length > 0) {
-          const list: EquipmentData[] = equips.map(e => ({
-            id: e.equipment_id,
-            code: e.equipment_code || '',
-            name: e.display_name || '',
-            type: e.equipment_type || '',
-            status: e.usage_status || '',
-            rack: ''
-          }))
-          
-          for (let i = 0; i < list.length; i++) {
-            const { count } = await supabase.from('jobs').select('*', { count: 'exact', head: true }).eq('equipment_id', list[i].id)
-            list[i].n_jobs = count || 0
-          }
-
-          setEquipmentsForRev(list)
-          setEquipMode('EXISTING')
-          const initialId = targetEquipment?.id || list[0].id
-          setSelectedEquipId(initialId)
-          loadEquipmentJobs(initialId)
-        } else {
-          setEquipMode('NEW')
+          equips.forEach(e => {
+            seenIds.add(e.equipment_id)
+            list.push({
+              id: e.equipment_id,
+              code: e.equipment_code || '',
+              name: e.display_name || '',
+              type: e.equipment_type || '',
+              status: e.usage_status || '',
+              rack: ''
+            })
+          })
         }
+      }
+
+      // Ensure targetEquipment is always in the list (may come from shared cutter, CAV match, etc.)
+      if (targetEquipment?.id && !seenIds.has(targetEquipment.id)) {
+        // Fetch fresh data from DB to get accurate info
+        const { data: targetEq } = await supabase
+          .from('equipment')
+          .select('equipment_id, equipment_code, display_name, equipment_type, usage_status')
+          .eq('equipment_id', targetEquipment.id)
+          .maybeSingle()
+
+        if (targetEq) {
+          seenIds.add(targetEq.equipment_id)
+          list.push({
+            id: targetEq.equipment_id,
+            code: targetEq.equipment_code || targetEquipment.code,
+            name: targetEq.display_name || targetEquipment.name,
+            type: targetEq.equipment_type || targetEquipment.type,
+            status: targetEq.usage_status || targetEquipment.status,
+            rack: ''
+          })
+        } else {
+          // DB fetch failed, use the passed-in data
+          list.push({
+            id: targetEquipment.id,
+            code: targetEquipment.code,
+            name: targetEquipment.name,
+            type: targetEquipment.type,
+            status: targetEquipment.status,
+            rack: ''
+          })
+        }
+      }
+
+      if (list.length > 0) {
+        for (let i = 0; i < list.length; i++) {
+          const { count } = await supabase.from('jobs').select('*', { count: 'exact', head: true }).eq('equipment_id', list[i].id)
+          list[i].n_jobs = count || 0
+        }
+
+        setEquipmentsForRev(list)
+        setEquipMode('EXISTING')
+        const initialId = targetEquipment?.id || list[0].id
+        setSelectedEquipId(initialId)
+        loadEquipmentJobs(initialId)
+      } else {
+        setEquipMode('NEW')
       }
     }
     initData()

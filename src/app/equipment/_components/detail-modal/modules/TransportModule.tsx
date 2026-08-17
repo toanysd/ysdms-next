@@ -444,10 +444,10 @@ export default function TransportModule({ data, onClose, onSuccess }: Props) {
           }}
         >
           {[
-            { step: 1, titleJA: '担当・日付', titleVI: 'NV & Ngày' },
-            { step: 2, titleJA: '移動先', titleVI: 'Nơi đến' },
-            { step: 3, titleJA: '備考', titleVI: 'Ghi chú' },
-            { step: 4, titleJA: '確認', titleVI: 'Xác nhận' }
+            { step: 1, key: 'stepEmployee', titleJA: '担当・日付' },
+            { step: 2, key: 'stepCompany', titleJA: '移動先' },
+            { step: 3, key: 'stepNotes', titleJA: '備考' },
+            { step: 4, key: 'stepConfirm', titleJA: '確認' }
           ].map((s, idx) => {
             const isActive = currentStep === s.step
             const isPassed = currentStep > s.step
@@ -482,10 +482,7 @@ export default function TransportModule({ data, onClose, onSuccess }: Props) {
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column' }}>
                     <span style={{ fontSize: 12, fontWeight: isActive ? 700 : 600, color: isActive ? '#3b82f6' : 'var(--text-primary)' }}>
-                      {t(`step${s.step}Title`, { defaultMessage: s.titleJA })}
-                    </span>
-                    <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>
-                      {t(`step${s.step}Desc`, { defaultMessage: s.titleVI })}
+                      {t(s.key as any)}
                     </span>
                   </div>
                 </div>

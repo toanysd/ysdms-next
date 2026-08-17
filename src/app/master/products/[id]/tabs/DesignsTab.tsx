@@ -1,11 +1,14 @@
 'use client'
 
+import React, { useState } from 'react'
 import Link from 'next/link'
-import { PenTool, ExternalLink, Calendar, Layers } from 'lucide-react'
+import { PenTool, ExternalLink, Calendar, Layers, Pencil } from 'lucide-react'
 import type { ProductDetailData } from '../page'
+import { EditDesignRevisionModal, EditDesignRevisionData } from '@/components/engineering/EditDesignRevisionModal'
 
-export function DesignsTab({ product }: { product: ProductDetailData }) {
+export function DesignsTab({ product, onRefresh }: { product: ProductDetailData; onRefresh?: () => void }) {
   const designs = product.design_revisions || []
+  const [editingRevision, setEditingRevision] = useState<EditDesignRevisionData | null>(null)
 
   if (designs.length === 0) {
     return (
@@ -49,7 +52,7 @@ export function DesignsTab({ product }: { product: ProductDetailData }) {
                 ステータス
               </th>
               <th style={{ padding: '6px 10px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)', textAlign: 'right' }}>
-                詳細
+                操作
               </th>
             </tr>
           </thead>
@@ -58,7 +61,7 @@ export function DesignsTab({ product }: { product: ProductDetailData }) {
               const plastic = d.plastic_master
               const plasticText = plastic 
                 ? `${plastic.plastic_code || ''} ${plastic.thickness_mm != null ? plastic.thickness_mm + 'mm' : ''} ${plastic.color_name_normalized || ''}`.trim()
-                : '—'
+                : (d.plastic_type_designed || '—')
 
               return (
                 <tr
@@ -92,14 +95,26 @@ export function DesignsTab({ product }: { product: ProductDetailData }) {
                     </span>
                   </td>
                   <td style={{ padding: '8px 10px', textAlign: 'right' }}>
-                    <Link
-                      href={`/engineering/designs/revisions/${d.revision_id}`}
-                      className="btn btn-secondary"
-                      style={{ height: 26, padding: '0 8px', fontSize: 11, display: 'inline-flex', alignItems: 'center', gap: 3 }}
-                    >
-                      <ExternalLink size={12} />
-                      <span>詳細</span>
-                    </Link>
+                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                      <button
+                        type="button"
+                        onClick={() => setEditingRevision(d as EditDesignRevisionData)}
+                        className="btn btn-secondary"
+                        style={{ height: 26, padding: '0 8px', fontSize: 11, display: 'inline-flex', alignItems: 'center', gap: 3 }}
+                        title="設計情報を編集"
+                      >
+                        <Pencil size={12} />
+                        <span>編集</span>
+                      </button>
+                      <Link
+                        href={`/engineering/designs/revisions/${d.revision_id}`}
+                        className="btn btn-secondary"
+                        style={{ height: 26, padding: '0 8px', fontSize: 11, display: 'inline-flex', alignItems: 'center', gap: 3 }}
+                      >
+                        <ExternalLink size={12} />
+                        <span>詳細</span>
+                      </Link>
+                    </div>
                   </td>
                 </tr>
               )
@@ -107,6 +122,18 @@ export function DesignsTab({ product }: { product: ProductDetailData }) {
           </tbody>
         </table>
       </div>
+
+      {/* Edit Design Revision Modal */}
+      <EditDesignRevisionModal
+        isOpen={Boolean(editingRevision)}
+        revision={editingRevision}
+        onClose={() => setEditingRevision(null)}
+        onSuccess={() => {
+          setEditingRevision(null)
+          if (onRefresh) onRefresh()
+          else window.location.reload()
+        }}
+      />
     </div>
   )
 }

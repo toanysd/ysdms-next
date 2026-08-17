@@ -1,6 +1,6 @@
 'use client'
 
-import React from 'react'
+import React, { Suspense } from 'react'
 import { useRouter } from 'next/navigation'
 import { OrderForm } from '../_components/OrderForm'
 import { ArrowLeft } from 'lucide-react'
@@ -25,7 +25,9 @@ export default function CreateOrderPage() {
         </h1>
       </div>
 
-      <OrderForm />
+      <Suspense fallback={<div className="p-8 text-center" style={{ color: 'var(--text-muted)' }}>Loading...</div>}>
+        <OrderForm />
+      </Suspense>
     </div>
   )
 }

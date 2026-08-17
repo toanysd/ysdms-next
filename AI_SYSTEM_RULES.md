@@ -217,3 +217,24 @@ Hệ thống này được thiết lập theo cơ chế đặc biệt: **"Portab
 - **Form nhập liệu:** Vẫn dùng `form-input`, `form-section` với border + padding
 - **KPI Cards / Dashboard:** Vẫn dùng `card-flat` với padding + border
 - Paper Style CHỈ dùng cho **hiển thị thông số read-only** dạng grid thông tin
+
+---
+
+## 🏭 QUY TẮC NGHIỆP VỤ SẢN XUẤT (BUSINESS RULES)
+
+### [RULE-BIZ-CUTTER] Quy tắc phân loại Dao Cắt (CUTTER_INLINE vs CUTTER_SEPARATE)
+1. **Mặc định là In-Line (`CUTTER_INLINE`):**
+   - Dao cắt được lắp trực tiếp trong máy định hình nhiệt (ILLIG, Asano), cùng nhịp với khuôn, đế làm mát, khung để tạo thành tổ hợp sản xuất khay.
+   - Khi mục **`別抜き`** trên phiếu chỉ thị / thiết kế là **`無`** (không có hoặc không chọn) $\rightarrow$ BẮT BUỘC gán `equipment_type = 'CUTTER_INLINE'`, `design_revisions.has_separate_cutter = false`.
+2. **Dao cắt dập rời (`CUTTER_SEPARATE` / 別抜型):**
+   - Chỉ áp dụng khi mục **`別抜き`** được đánh dấu là **`有`** (có yêu cầu dập rời).
+   - Sản phẩm sau khi định hình sẽ chuyển sang máy dập riêng (Press Machine) và phòng QC thực hiện công đoạn kiểm tra riêng (`別抜き検査`).
+   - Gán `equipment_type = 'CUTTER_SEPARATE'`, `design_revisions.has_separate_cutter = true`.
+
+### [RULE-BIZ-NAME] Quy ước 5 trường Tên Sản Phẩm trong Database
+1. `product_description` (TEXT): **Mô tả làm việc / Tên ban đầu** do nhân viên KD và Kỹ thuật tự xác định trong quá trình thương thảo (nguồn: 品名 trên phiếu 工程票). Trường này **luôn có dữ liệu ngay từ đầu**.
+2. `product_name` (TEXT): **Tên sản phẩm chính thức trên chứng từ** (hóa đơn, hợp đồng xuất khẩu từ khách hàng). Ban đầu có thể để trống (NULL) và được bổ sung khi có chứng từ chính thức.
+3. `product_name_internal` (TEXT): **Tên nội bộ YSD hiển thị có dấu gạch ngang** (VD: `ADY-071`, `TOW-009`).
+4. `product_code` (TEXT UNIQUE): **Mã nội bộ YSD compact bỏ dấu gạch ngang** (VD: `ADY071`, `TOW009`).
+5. `customer_product_name` (TEXT): **Tên hoặc mã part phía khách hàng gọi** (VD: `PART-8802-A`).
+

@@ -15,6 +15,7 @@ import { EquipmentTypeIcon, getEquipmentTypeTheme } from '@/components/ui/Equipm
 import { EquipmentContextMenu, EquipmentItemContext } from './EquipmentContextMenu'
 import { CenteredQuickJobWizardModal, QuickWizardMode } from './CenteredQuickJobWizardModal'
 import { EquipmentJobDrawer } from './EquipmentJobDrawer'
+import { CreateDesignRevisionModal } from './CreateDesignRevisionModal'
 
 interface TabDesignsEquipmentProps {
   productId: string
@@ -111,6 +112,8 @@ export function TabDesignsEquipment({ productId }: TabDesignsEquipmentProps) {
 
   // Dropdown & Modal Interactive States
   const [showDesignMenu, setShowDesignMenu] = useState(false)
+  const [isCreateDesignModalOpen, setIsCreateDesignModalOpen] = useState(false)
+  const [designSubMode, setDesignSubMode] = useState<string>('NEXT_MASS')
 
   // Right Click Context Menu State
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; item: EquipmentItem } | null>(null)
@@ -373,7 +376,8 @@ export function TabDesignsEquipment({ productId }: TabDesignsEquipmentProps) {
   // Trigger Creation Modal Options
   const handleTriggerCreateDesign = (subMode: string) => {
     setShowDesignMenu(false)
-    setCenteredWizardModal({ isOpen: true, mode: 'CREATE_DESIGN', subMode })
+    setDesignSubMode(subMode)
+    setIsCreateDesignModalOpen(true)
   }
 
   const handleTriggerAddEquipment = () => {
@@ -951,13 +955,34 @@ export function TabDesignsEquipment({ productId }: TabDesignsEquipmentProps) {
             url: contextMenu.item.url,
           }}
           onClose={() => setContextMenu(null)}
-          onAction={(actionKey, item) => {
+          onAction={async (actionKey, item) => {
             setContextMenu(null)
             if (actionKey === 'INSPECT') {
               router.push(item.url)
             } else if (actionKey === 'QUICK_JOB') {
               setDrawerEquipment(contextMenu.item)
               setIsDrawerOpen(true)
+            } else if (actionKey === 'CREATE_JOB') {
+              setCenteredWizardModal({
+                isOpen: true,
+                mode: 'CREATE_JOB',
+                subMode: 'OVERHAUL_JOB',
+                targetEquipment: contextMenu.item,
+              })
+            } else if (actionKey === 'CHECK_IN') {
+              await supabase.from('equipment').update({ usage_status: 'IN_STOCK' }).eq('equipment_id', item.id)
+              fetchEquipmentSet()
+            } else if (actionKey === 'TRANSFER' || actionKey === 'UPDATE_SPECS') {
+              setCenteredWizardModal({
+                isOpen: true,
+                mode: 'UPDATE_EQUIPMENT',
+                targetEquipment: contextMenu.item,
+              })
+            } else if (actionKey === 'SCRAP') {
+              if (confirm(`設備 ${item.code} を廃棄しますか?`)) {
+                await supabase.from('equipment').update({ usage_status: 'SCRAPPED' }).eq('equipment_id', item.id)
+                fetchEquipmentSet()
+              }
             }
           }}
         />
@@ -987,6 +1012,20 @@ export function TabDesignsEquipment({ productId }: TabDesignsEquipmentProps) {
           setCenteredWizardModal({ isOpen: true, mode, targetEquipment: targetEquip })
         }}
       />
+      {/* Create Design Revision Modal */}
+      <CreateDesignRevisionModal
+        isOpen={isCreateDesignModalOpen}
+        productId={productId}
+        parentRevision={selectedRev}
+        subMode={designSubMode}
+        onClose={() => setIsCreateDesignModalOpen(false)}
+        onSuccess={(newRevId) => {
+          setIsCreateDesignModalOpen(false)
+          loadRevisions()
+          setSelectedRevId(newRevId)
+        }}
+      />
+
     </div>
   )
 }

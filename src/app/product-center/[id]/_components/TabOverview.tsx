@@ -820,11 +820,7 @@ export function TabOverview(props: TabOverviewProps) {
               <InfoRow label={tProd('productName')} value={productName} />
               <InfoRow label={tPC('customerProductNameLabel')} value={customerProductName} />
               <InfoRow label={tPC('cutlineDimensions')} value={productDimsSpec || '—'} mono />
-              <InfoRow label={tProd('pocketCount')} value={pocketCount || activeRev?.pocket_numbers || activeRev?.cavity_count || (() => {
-                const text = String(activeRev?.tray_info || activeRev?.customer_tray_name || productDescription || '')
-                const m = text.match(/(\d+)\s*(?:個入|取|pocket)/i)
-                return m ? m[1] : null
-              })()} mono />
+              <InfoRow label={tProd('pocketCount')} value={pocketCount != null ? `${pocketCount} 個入` : (activeRev?.pocket_numbers != null ? `${activeRev.pocket_numbers} 個入` : '—')} mono />
               <InfoRow label={tPC('piecesPerBoxLabel')} value={piecesPerBox} mono />
               <InfoRow label={tPC('plasticSpecLabel')} value={activeRev?.plastic_type_designed} mono />
               <InfoRow label={tPC('firstShipmentLabel')} value={firstShipmentDate} mono />
@@ -1138,14 +1134,14 @@ export function TabOverview(props: TabOverviewProps) {
                             <SpecCell label="カットライン" value={formatCutlineSpecString(activeRev)} isDiff={cutlineDimsDiff} diffLabel={tPC('fieldChanged')} />
                             <SpecCell
                               label={tPC('cavityAndPitch')}
-                              value={(activeRev.pocket_numbers || activeRev.cavity_count) ? `${activeRev.pocket_numbers || activeRev.cavity_count} Pocket${activeRev.cavity_pitch_mm ? ' / ' + activeRev.cavity_pitch_mm + 'mm' : ''}` : null}
-                              isDiff={cavityDiff}
+                              value={activeRev.pocket_numbers != null ? `${activeRev.pocket_numbers} Pocket` : (pocketCount != null ? `${pocketCount} Pocket` : null)}
+                              isDiff={isFieldChanged(['pocket_numbers'])}
                               diffLabel={tPC('fieldChanged')}
                             />
                             <SpecCell
                               label={tPC('impressionCount')}
-                              value={(activeRev.pocket_numbers || activeRev.cavity_count) ? `${activeRev.pocket_numbers || activeRev.cavity_count} 取` : null}
-                              isDiff={cavityDiff}
+                              value={activeRev.cavity_count != null ? `${activeRev.cavity_count} 取${activeRev.cavity_pitch_mm ? ' / P:' + activeRev.cavity_pitch_mm + 'mm' : ''}` : null}
+                              isDiff={isFieldChanged(['cavity_count', 'cavity_pitch_mm'])}
                               diffLabel={tPC('fieldChanged')}
                             />
                             <SpecCell label={tPC('setupTypeLabel')} value={activeRev.setup_type} isDiff={setupTypeDiff} diffLabel={tPC('fieldChanged')} mono={false} />

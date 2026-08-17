@@ -57,6 +57,9 @@ function main() {
     while ((match = useTranslationsRegex.exec(content)) !== null) {
       namespaces.push(match[1]);
     }
+    if (/useTranslations\(\s*\)/.test(content)) {
+      namespaces.push('');
+    }
 
     if (namespaces.length === 0) continue; // No translations used in this file
 
@@ -72,10 +75,18 @@ function main() {
       let foundInVi = false;
 
       for (const ns of namespaces) {
-        const fullKey = `${ns}.${key}`;
+        const fullKey = ns ? `${ns}.${key}` : key;
         if (jaKeys.includes(fullKey)) foundInJa = true;
         if (viKeys.includes(fullKey)) foundInVi = true;
         
+        // Handle dynamic template keys like `Namespace.${var}`
+        if (key.includes('${') || key.endsWith('.')) {
+          const prefix = key.split('${')[0];
+          const fullPrefix = ns ? `${ns}.${prefix}` : prefix;
+          if (jaKeys.some(k => k.startsWith(fullPrefix))) foundInJa = true;
+          if (viKeys.some(k => k.startsWith(fullPrefix))) foundInVi = true;
+        }
+
         // Sometimes useTranslations is used without namespace, e.g. useTranslations()
         if (ns === '') {
            if (jaKeys.includes(key)) foundInJa = true;

@@ -188,7 +188,7 @@ export function MoldModal({ isOpen, onClose, onSuccess, editingId, initialData }
           <div className="flex gap-3">
             <div className="flex-1">
               <label className="block text-[11px] font-bold text-slate-600 mb-1" style={{ fontFamily: 'var(--font-jp)' }}>
-                {t('Equipment.status')} <span className="font-normal text-[9px] text-slate-400">{t('Equipment.statusHint')}</span>
+                {t('Equipment.statusLabel')} <span className="font-normal text-[9px] text-slate-400">{t('Equipment.statusHint')}</span>
               </label>
               <select value={formStatus} onChange={e => setFormStatus(e.target.value)} className="form-input w-full" style={{ fontSize: 12 }}>
                 {Object.keys(statusLabels).map(k => <option key={k} value={k}>{(statusLabels as any)[k]}</option>)}

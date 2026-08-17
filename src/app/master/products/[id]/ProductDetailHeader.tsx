@@ -55,6 +55,8 @@ export function ProductDetailHeader({
   const tCommon = useTranslations('Common')
   const tCust = useTranslations('Customers')
 
+  if (!product) return null
+
   const customer = product.companies
   const statusKey = product.product_status === 'ACTIVE' ? 'activeStatus' : product.product_status === 'MAINTENANCE' ? 'maintenanceStatus' : 'disposedStatus'
   const statusText = tMaster(statusKey)

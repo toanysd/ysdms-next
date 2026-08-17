@@ -372,6 +372,7 @@ export async function getJobsForGantt(searchQuery?: string, fromDate?: string, t
                 track, planned_start, planned_end, planned_hours,
                 actual_hours, estimated_hours, machine_id,
                 assigned_to, machining_location, deadline, notes, processing_status_id, item_type_id,
+                condition, arrangement,
                 processing_statuses!job_steps_processing_status_id_fkey(status_code),
                 item_types(item_type_id, item_type_code, item_type_name_ja)
             ),
@@ -415,6 +416,7 @@ export async function getJobsForGantt(searchQuery?: string, fromDate?: string, t
                     track, planned_start, planned_end, planned_hours,
                     actual_hours, estimated_hours, machine_id,
                     assigned_to, machining_location, deadline, notes, processing_status_id, item_type_id,
+                    condition, arrangement,
                     processing_statuses!job_steps_processing_status_id_fkey(status_code),
                     item_types(item_type_id, item_type_code, item_type_name_ja)
                 ),

@@ -192,3 +192,110 @@ export async function createDesignRevisionAction(input: CreateDesignRevisionInpu
   return { success: true, data }
 }
 
+export type UpdateDesignRevisionInput = {
+  revision_id: string
+  product_id?: string | null
+  design_code?: string
+  revision_number?: number | null
+  status?: string
+  design_date?: string | null
+  designer?: string | null
+  designer_id?: string | null
+  change_summary?: string | null
+  design_length?: number | null
+  design_width?: number | null
+  design_height?: number | null
+  design_depth?: number | null
+  cutline_length?: number | null
+  cutline_width?: number | null
+  cavity_count?: number | null
+  pocket_numbers?: number | null
+  cavity_pitch_mm?: number | null
+  machine_feed_pitch_mm?: number | null
+  corner_r?: string | null
+  chamfer_c?: string | null
+  draft_angle?: string | null
+  undercut_spec?: string | null
+  under_depth?: string | null
+  orientation?: string | null
+  setup_type?: string | null
+  plug_type?: string | null
+  has_separate_cutter?: boolean | null
+  plastic_type_designed?: string | null
+  plastic_id?: string | null
+  tolerance_pitch?: string | null
+  tolerance_x?: string | null
+  tolerance_y?: string | null
+  customer_drawing_no?: string | null
+  customer_tray_name?: string | null
+  customer_equipment_no?: string | null
+  tray_info?: string | null
+}
+
+export async function updateDesignRevisionAction(input: UpdateDesignRevisionInput) {
+  const supabase = await createClient()
+
+  if (!input.revision_id) {
+    throw new Error('revision_id is required')
+  }
+
+  const payload: any = {}
+  if (input.design_code !== undefined) payload.design_code = input.design_code?.trim()
+  if (input.revision_number !== undefined) payload.revision_number = input.revision_number
+  if (input.status !== undefined) payload.status = input.status
+  if (input.design_date !== undefined) payload.design_date = input.design_date || null
+  if (input.designer !== undefined) payload.designer = input.designer || null
+  if (input.designer_id !== undefined) payload.designer_id = input.designer_id || null
+  if (input.change_summary !== undefined) payload.change_summary = input.change_summary || null
+  if (input.design_length !== undefined) payload.design_length = input.design_length
+  if (input.design_width !== undefined) payload.design_width = input.design_width
+  if (input.design_height !== undefined) payload.design_height = input.design_height
+  if (input.design_depth !== undefined) payload.design_depth = input.design_depth
+  if (input.cutline_length !== undefined) payload.cutline_length = input.cutline_length
+  if (input.cutline_width !== undefined) payload.cutline_width = input.cutline_width
+  if (input.cavity_count !== undefined) payload.cavity_count = input.cavity_count
+  if (input.pocket_numbers !== undefined) payload.pocket_numbers = input.pocket_numbers
+  if (input.cavity_pitch_mm !== undefined) payload.cavity_pitch_mm = input.cavity_pitch_mm
+  if (input.machine_feed_pitch_mm !== undefined) payload.machine_feed_pitch_mm = input.machine_feed_pitch_mm
+  if (input.corner_r !== undefined) payload.corner_r = input.corner_r || null
+  if (input.chamfer_c !== undefined) payload.chamfer_c = input.chamfer_c || null
+  if (input.draft_angle !== undefined) payload.draft_angle = input.draft_angle || null
+  if (input.undercut_spec !== undefined) payload.undercut_spec = input.undercut_spec || null
+  if (input.under_depth !== undefined) payload.under_depth = input.under_depth || null
+  if (input.orientation !== undefined) payload.orientation = input.orientation || null
+  if (input.setup_type !== undefined) payload.setup_type = input.setup_type || null
+  if (input.plug_type !== undefined) payload.plug_type = input.plug_type || null
+  if (input.has_separate_cutter !== undefined) payload.has_separate_cutter = input.has_separate_cutter
+  if (input.plastic_type_designed !== undefined) payload.plastic_type_designed = input.plastic_type_designed || null
+  if (input.plastic_id !== undefined) payload.plastic_id = input.plastic_id || null
+  if (input.tolerance_pitch !== undefined) payload.tolerance_pitch = input.tolerance_pitch || null
+  if (input.tolerance_x !== undefined) payload.tolerance_x = input.tolerance_x || null
+  if (input.tolerance_y !== undefined) payload.tolerance_y = input.tolerance_y || null
+  if (input.customer_drawing_no !== undefined) payload.customer_drawing_no = input.customer_drawing_no || null
+  if (input.customer_tray_name !== undefined) payload.customer_tray_name = input.customer_tray_name || null
+  if (input.customer_equipment_no !== undefined) payload.customer_equipment_no = input.customer_equipment_no || null
+  if (input.tray_info !== undefined) payload.tray_info = input.tray_info || null
+
+  const { data, error } = await supabase
+    .from('design_revisions')
+    .update(payload)
+    .eq('revision_id', input.revision_id)
+    .select('*')
+    .single()
+
+  if (error) {
+    console.error('[updateDesignRevisionAction Error]:', error)
+    throw new Error(error.message)
+  }
+
+  if (input.product_id) {
+    revalidatePath(`/master/products/${input.product_id}`)
+    revalidatePath(`/product-center/${input.product_id}`)
+    revalidatePath(`/engineering/designs/${input.product_id}`)
+  }
+  revalidatePath(`/engineering/designs/revisions/${input.revision_id}`)
+
+  return { success: true, data }
+}
+
+

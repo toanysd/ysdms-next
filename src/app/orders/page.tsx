@@ -1,6 +1,7 @@
 'use client'
 
-import React, { useEffect, useState, useCallback, useMemo } from 'react'
+import React, { useEffect, useState, useCallback, useMemo, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Plus, Search, FileText, ChevronDown, ChevronRight, Edit, Trash2, X, Package, Calendar, Hash, FilterX } from 'lucide-react'
 import { Pagination } from '@/components/ui/Pagination'
@@ -84,11 +85,14 @@ function generateNextOrderNo(orders: Order[]): string {
 }
 
 // ══════════════════════════════════════════════════════════════════════
-// Main Page Component
+// Inner Page Component
 // ══════════════════════════════════════════════════════════════════════
-export default function OrdersPage() {
+function OrdersContent() {
   const t = useTranslations('Orders')
   const tCommon = useTranslations('Common')
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const filterProductId = searchParams.get('product_id')
   const supabase = createClient()
 
   // ── State ──
@@ -98,6 +102,7 @@ export default function OrdersPage() {
   const [stats, setStats] = useState({ total: 0, production: 0, shipped: 0 })
   const [selectedOrders, setSelectedOrders] = useState<string[]>([])
   const [isApproving, setIsApproving] = useState(false)
+  const [productInfo, setProductInfo] = useState<{ product_code: string; product_name?: string } | null>(null)
 
   // ── Filters & Pagination ──
   const [page, setPage] = useState(1)
@@ -113,11 +118,30 @@ export default function OrdersPage() {
   const [filterStartDate, setFilterStartDate] = useState('')
   const [filterEndDate, setFilterEndDate] = useState('')
 
+  // Load product info if filterProductId exists
+  useEffect(() => {
+    if (filterProductId) {
+      supabase.from('products')
+        .select('product_code, product_name, product_name_internal')
+        .eq('product_id', filterProductId)
+        .single()
+        .then(({ data }) => {
+          if (data) {
+            setProductInfo({
+              product_code: data.product_name_internal || data.product_code,
+              product_name: data.product_name || undefined
+            })
+          }
+        })
+    } else {
+      setProductInfo(null)
+    }
+  }, [filterProductId, supabase])
 
   // Reset page when filters change
   useEffect(() => {
     setPage(1)
-  }, [activeTab, debouncedSearchQuery, filterCustomerId, filterStartDate, filterEndDate])
+  }, [activeTab, debouncedSearchQuery, filterCustomerId, filterStartDate, filterEndDate, filterProductId])
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -158,6 +182,19 @@ export default function OrdersPage() {
       query = query.lte('order_date', filterEndDate)
     }
 
+    if (filterProductId) {
+      const { data: matchedLines } = await supabase
+        .from('order_lines')
+        .select('order_id')
+        .eq('product_id', filterProductId)
+      const orderIds = (matchedLines || []).map(l => l.order_id).filter(Boolean)
+      if (orderIds.length > 0) {
+        query = query.in('order_id', orderIds)
+      } else {
+        query = query.eq('order_id', '00000000-0000-0000-0000-000000000000')
+      }
+    }
+
     // Pagination
     const from = (page - 1) * PAGE_SIZE
     const to = from + PAGE_SIZE - 1
@@ -180,7 +217,7 @@ export default function OrdersPage() {
       setTotalRecords(count || 0)
     }
     setLoading(false)
-  }, [activeTab, debouncedSearchQuery, filterCustomerId, filterStartDate, filterEndDate, page, supabase])
+  }, [activeTab, debouncedSearchQuery, filterCustomerId, filterStartDate, filterEndDate, filterProductId, page, supabase])
 
   useEffect(() => {
     fetchOrders()
@@ -202,6 +239,9 @@ export default function OrdersPage() {
     setFilterCustomerId(null)
     setFilterStartDate('')
     setFilterEndDate('')
+    if (filterProductId) {
+      router.push('/orders')
+    }
   }
 
   // ── Delete order handler ──
@@ -410,6 +450,28 @@ export default function OrdersPage() {
               title={t('toDate')}
             />
           </div>
+
+          {/* Product Filter Pill */}
+          {productInfo && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '4px 10px', borderRadius: '4px', background: 'var(--tint-teal-bg, #f0fdfa)', border: '1px solid var(--accent)' }}>
+              <Package size={14} style={{ color: 'var(--accent)' }} />
+              <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)' }}>
+                {productInfo.product_code}
+              </span>
+              {productInfo.product_name && (
+                <span style={{ fontSize: 11, color: 'var(--text-secondary)' }}>
+                  ({productInfo.product_name})
+                </span>
+              )}
+              <button
+                onClick={() => router.push('/orders')}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: 0, display: 'flex', alignItems: 'center' }}
+                title={t('clear')}
+              >
+                <X size={13} />
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -553,8 +615,14 @@ export default function OrdersPage() {
           </React.Fragment>
         )}
       </div>
-
-
     </div>
+  )
+}
+
+export default function OrdersPage() {
+  return (
+    <Suspense fallback={<div className="p-8 text-center" style={{ color: 'var(--text-muted)' }}>Loading...</div>}>
+      <OrdersContent />
+    </Suspense>
   )
 }
