@@ -50,7 +50,7 @@ type ProductItem = {
 
 type ViewMode = 'grid' | 'table'
 type SortDir = 'asc' | 'desc' | null
-type SortColumn = 'product_code' | 'product_name' | 'customer' | 'pocket_count' | 'product_status' | 'first_shipment_date'
+type SortColumn = 'product_code' | 'product_name' | 'customer' | 'pocket_count' | 'product_status' | 'first_shipment_date' | 'created_at'
 
 const PAGE_SIZE = 48
 
@@ -128,7 +128,7 @@ export default function ProductCenterIndexPage() {
   const [companiesList, setCompaniesList] = useState<Array<{ company_id: string; company_code: string; company_name: string }>>([])
   const [plasticTypesList, setPlasticTypesList] = useState<string[]>([])
 
-  const [sortColumn, setSortColumn] = useState<SortColumn | null>('first_shipment_date')
+  const [sortColumn, setSortColumn] = useState<SortColumn | null>('created_at')
   const [sortDir, setSortDir] = useState<SortDir>('desc')
 
   const [columnWidths, setColumnWidths] = useState<Record<string, number>>(() => {
@@ -213,11 +213,11 @@ export default function ProductCenterIndexPage() {
       const from = (currentPage - 1) * PAGE_SIZE
       const to = from + PAGE_SIZE - 1
 
-      const serverSortable: SortColumn[] = ['product_code', 'product_name', 'pocket_count', 'product_status', 'first_shipment_date']
+      const serverSortable: SortColumn[] = ['product_code', 'product_name', 'pocket_count', 'product_status', 'first_shipment_date', 'created_at']
       if (sortColumn && sortDir && serverSortable.includes(sortColumn)) {
         req = req.order(sortColumn, { ascending: sortDir === 'asc', nullsFirst: false })
       } else {
-        req = req.order('first_shipment_date', { ascending: false, nullsFirst: false })
+        req = req.order('created_at', { ascending: false, nullsFirst: false })
       }
 
       const { data, count, error } = await req.range(from, to)
@@ -289,13 +289,13 @@ export default function ProductCenterIndexPage() {
 
     if (sortColumn !== col) {
       setSortColumn(col)
-      setSortDir(col === 'first_shipment_date' ? 'desc' : 'asc')
+      setSortDir(col === 'first_shipment_date' || col === 'created_at' ? 'desc' : 'asc')
     } else if (sortDir === 'asc') {
       setSortDir('desc')
     } else if (sortDir === 'desc') {
       setSortDir('asc')
     } else {
-      setSortColumn('first_shipment_date')
+      setSortColumn('created_at')
       setSortDir('desc')
     }
     setCurrentPage(1)
@@ -776,13 +776,20 @@ export default function ProductCenterIndexPage() {
                       </td>
 
                       <td>
-                        {p.product_description || p.product_name ? (
-                          <div className="text-[13px] font-medium" style={{ color: 'var(--text-primary)' }}>
-                            {p.product_description || p.product_name}
-                          </div>
-                        ) : (
-                          <span style={{ color: 'var(--text-muted)', fontSize: 11 }}>—</span>
-                        )}
+                        <div className="flex flex-col gap-0.5">
+                          {p.product_description || p.product_name ? (
+                            <div className="text-[13px] font-medium" style={{ color: 'var(--text-primary)' }}>
+                              {p.product_description || p.product_name}
+                            </div>
+                          ) : (
+                            <span style={{ color: 'var(--text-muted)', fontSize: 11 }}>—</span>
+                          )}
+                          {p.product_name_internal && p.product_name_internal !== (p.product_description || p.product_name) && (
+                            <span className="font-mono text-[10.5px] font-semibold" style={{ color: 'var(--text-muted)' }}>
+                              [{p.product_name_internal}]
+                            </span>
+                          )}
+                        </div>
                       </td>
 
                       <td>
@@ -893,13 +900,12 @@ export default function ProductCenterIndexPage() {
       {/* AI Manufacturing Sheet OCR Modal */}
       <ManufacturingSheetOCRModal
         isOpen={isOcrModalOpen}
-        onClose={() => setIsOcrModalOpen(false)}
-        onSuccess={(res) => {
+        onClose={() => {
           setIsOcrModalOpen(false)
           fetchProducts()
-          if (res?.product_id) {
-            router.push(`/product-center/${res.product_id}`)
-          }
+        }}
+        onSuccess={() => {
+          fetchProducts()
         }}
       />
 

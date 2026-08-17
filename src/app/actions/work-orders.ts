@@ -231,14 +231,13 @@ export async function getWorkOrdersForGantt(params: {
   if (params.search?.trim()) {
     const q = `%${params.search.trim()}%`
     query = query.or(`wo_code.ilike.${q},wo_name.ilike.${q}`)
-  }
-
-  if (params.fromDate) {
-    query = query.gte('deadline', params.fromDate)
-  }
-
-  if (params.toDate) {
-    query = query.lte('deadline', params.toDate)
+  } else {
+    if (params.fromDate) {
+      query = query.gte('deadline', params.fromDate)
+    }
+    if (params.toDate) {
+      query = query.lte('deadline', params.toDate)
+    }
   }
 
   query = query.order('deadline', { ascending: true, nullsFirst: false }).range(from, to)

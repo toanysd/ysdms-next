@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import type { JobForGantt, JobStepRow } from '@/app/actions/mold-job'
 import { Gantt, Task, ViewMode } from 'gantt-task-react'
 import 'gantt-task-react/dist/index.css'
-import { Edit2, Save, Undo, ChevronLeft, ChevronRight, Crosshair } from 'lucide-react'
+import { Edit2, Save, Undo, ChevronLeft, ChevronRight, Crosshair, Sparkles, ClipboardList, Printer } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { MultiSelectDropdown } from '@/components/ui/MultiSelectDropdown'
 import { useTranslations } from 'next-intl'
@@ -13,6 +13,8 @@ import { shiftJobDates, applyAutoScheduleUpdates } from '@/app/actions/mold-job'
 import { EditStepModal } from '@/app/equipment/jobs/[id]/tabs/EditStepModal'
 import { WorklogFormShared } from '@/components/worklogs/WorklogFormShared'
 import { JobQuickViewDrawer } from '@/components/equipment/JobQuickViewDrawer'
+import { ManufacturingSheetOCRModal } from '@/components/ocr/ManufacturingSheetOCRModal'
+import { DailyWorklogQuickModal } from '@/components/worklogs/DailyWorklogQuickModal'
 import { calculateAutoSchedule } from '@/lib/scheduling/autoScheduler'
 
 interface Props {
@@ -287,6 +289,49 @@ const TaskRow = React.memo(function TaskRow({
   const step = t.originalStep
   const isActual = t.isActualRow === true
 
+  if ((t as any).isAddStepRow) {
+    return (
+      <div 
+        style={{
+          height: rowHeight, width: rowWidth,
+          display: 'flex', alignItems: 'center',
+          padding: '0 12px 0 28px',
+          borderBottom: '1px dashed var(--border-default)',
+          backgroundColor: 'rgba(13, 148, 136, 0.04)',
+          cursor: 'pointer',
+        }}
+        onClick={(e) => {
+          e.stopPropagation()
+          onEditStep({
+            type: 'task',
+            isAddStepRow: true,
+            originalJobId: (t as any).originalJobId,
+            originalJob: (t as any).originalJob,
+          } as any)
+        }}
+      >
+        <button
+          type="button"
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+            fontSize: 11,
+            fontWeight: 700,
+            color: 'var(--accent)',
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            padding: 0,
+          }}
+        >
+          <span style={{ fontSize: 13, fontWeight: 800 }}>＋</span>
+          <span>工程追加 (Thêm công đoạn cho job này)</span>
+        </button>
+      </div>
+    )
+  }
+
   if (t.id === 'dummy_timeline_bound') {
      return <div style={{ height: rowHeight, overflow: 'hidden' }}></div>
   }
@@ -527,9 +572,23 @@ const TaskRow = React.memo(function TaskRow({
                 const stepTrack = t.originalStep?.track || 'MOLD'
                 const tMeta = TRACK_META[stepTrack.toUpperCase()] || { badge: '?', color: 'var(--accent)', bg: 'var(--accent-light)' }
                 const isWorkLog = !!t.originalWorkLog
-                const stepName = isWorkLog 
+                let stepName = isWorkLog 
                     ? (t.originalWorkLog?.processing_name || t.name || 'N/A')
                     : (t.originalStep?.step_name || t.name || 'N/A')
+                
+                // Format step name for clean domain terminology and prevent redundant labels
+                if (!isWorkLog) {
+                  const upperTrack = stepTrack.toUpperCase()
+                  if (stepName === 'カッター' || stepName === 'CUTTER' || stepName === '抜型') {
+                    stepName = '抜型製作'
+                  } else if (stepName === 'プラグ' && upperTrack === 'PLUG') {
+                    stepName = 'プラグ製作'
+                  } else if (stepName === 'アルミ材' && upperTrack === 'MOLD') {
+                    stepName = 'アルミ材手配'
+                  } else if (stepName === '金型' && upperTrack === 'MOLD') {
+                    stepName = '金型製作'
+                  }
+                }
                 return (
                   <div 
                     style={{ display: 'flex', alignItems: 'center', gap: 4, flex: 1, minWidth: 0, cursor: 'pointer' }}
@@ -700,25 +759,31 @@ const TaskRow = React.memo(function TaskRow({
           </div>
 
           <div style={{ padding: '0 2px', display: 'flex', alignItems: 'center', justifyContent: isTask ? 'flex-start' : 'center', paddingLeft: isTask ? '28px' : '0px', gap: 2, minWidth: 0 }}>
-            {!isTask && (t.originalJob?.mold_deadline || t.originalJob?.deadline) ? (
-              delayInfo ? (
+            {(() => {
+              const targetDl = isTask
+                ? (currentStepData?.deadline || t.originalStep?.deadline)
+                : (isTrack ? t.trackDeadline : (t.originalJob?.mold_deadline || t.originalJob?.deadline))
+              
+              if (!targetDl) return <span style={{ color: 'var(--text-muted)', fontSize: 9.5 }}>—</span>
+
+              return delayInfo ? (
                 <span 
-                  style={{ fontSize: 11, color: delayInfo.color, backgroundColor: delayInfo.bg, padding: '2.5px 7px', borderRadius: '4px', fontWeight: 800, cursor: 'pointer', textDecoration: 'underline', textDecorationStyle: 'dotted', whiteSpace: 'nowrap' }}
-                  onClick={(e) => { e.stopPropagation(); onScrollToDate(t.originalJob?.mold_deadline || t.originalJob?.deadline, index, t.originalJob?.mold_deadline || t.originalJob?.deadline) }}
+                  style={{ fontSize: 10, color: delayInfo.color, backgroundColor: delayInfo.bg, padding: '2px 6px', borderRadius: '4px', fontWeight: 800, cursor: 'pointer', textDecoration: 'underline', textDecorationStyle: 'dotted', whiteSpace: 'nowrap' }}
+                  onClick={(e) => { e.stopPropagation(); onScrollToDate(targetDl, index, targetDl) }}
                   title={tIntl('scrollToDeadline')}
                 >
-                  {formatShortDateWithDay(t.originalJob.mold_deadline || t.originalJob.deadline)}
+                  {formatShortDateWithDay(targetDl)}
                 </span>
               ) : (
                 <span 
-                  style={{ fontSize: 11, color: statusColor, cursor: 'pointer', textDecoration: 'underline', textDecorationStyle: 'dotted', whiteSpace: 'nowrap', fontWeight: 800 }}
-                  onClick={(e) => { e.stopPropagation(); onScrollToDate(t.originalJob?.mold_deadline || t.originalJob?.deadline, index, t.originalJob?.mold_deadline || t.originalJob?.deadline) }}
+                  style={{ fontSize: 10, color: statusColor, cursor: 'pointer', textDecoration: 'underline', textDecorationStyle: 'dotted', whiteSpace: 'nowrap', fontWeight: 700 }}
+                  onClick={(e) => { e.stopPropagation(); onScrollToDate(targetDl, index, targetDl) }}
                   title={tIntl('scrollToDeadline')}
                 >
-                  {formatShortDateWithDay(t.originalJob.mold_deadline || t.originalJob.deadline)}
+                  {formatShortDateWithDay(targetDl)}
                 </span>
               )
-            ) : null}
+            })()}
           </div>
         </>
       )}
@@ -837,6 +902,10 @@ export default function MoldJobGantt({ workOrders = [], jobs, employees = [], ma
   const [visibleMonth, setVisibleMonth] = useState<string>('')
   const [quickViewJob, setQuickViewJob] = useState<JobForGantt | null>(null)
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null)
+  const [isOCRModalOpen, setIsOCRModalOpen] = useState(false)
+  const [isWorklogModalOpen, setIsWorklogModalOpen] = useState(false)
+  const [worklogDefaultJobId, setWorklogDefaultJobId] = useState<string | undefined>(undefined)
+  const [isPrintNippoModalOpen, setIsPrintNippoModalOpen] = useState(false)
 
   const wrapperRef = useRef<HTMLDivElement>(null)
   const [ganttHeight, setGanttHeight] = useState(600)
@@ -1227,11 +1296,16 @@ export default function MoldJobGantt({ workOrders = [], jobs, employees = [], ma
       if (cProjStart.getTime() > cProjEnd.getTime()) cProjStart = new Date(cProjEnd)
       if (cProjStart.getTime() === cProjEnd.getTime()) cProjEnd.setHours(cProjEnd.getHours() + 1)
 
+      let rawJobName = (job as any).mold_masters?.products?.product_name || (job as any).products?.product_name
+        ? `${job.job_code} ${(job as any).mold_masters?.products?.product_name || (job as any).products?.product_name}`
+        : job.job_name || job.job_code
+
+      // Clean revision display format: e.g. "新規金型製作: TOW-004 (R1)" -> "新規金型製作: TOW-004-R1"
+      const cleanedJobName = rawJobName.replace(/\s*\(([Rr]\d+)\)/g, '-$1')
+
       result.push({
         id: job.job_id,
-        name: (job as any).mold_masters?.products?.product_name || (job as any).products?.product_name
-          ? `${job.job_code} ${(job as any).mold_masters?.products?.product_name || (job as any).products?.product_name}`
-          : job.job_name || job.job_code,
+        name: cleanedJobName,
         start: cProjStart,
         end: cProjEnd,
         progress: job.overall_progress || 0,
@@ -1297,7 +1371,7 @@ export default function MoldJobGantt({ workOrders = [], jobs, employees = [], ma
         trackSteps.forEach(s => {
           if (s.deadline) {
             const dStr = typeof s.deadline === 'string' ? s.deadline.split('T')[0] : s.deadline
-            if (!trackDeadline || dStr < trackDeadline) trackDeadline = dStr
+            if (!trackDeadline || dStr > trackDeadline) trackDeadline = dStr
           }
         })
         if (!trackDeadline && (trackCode === 'MOLD' || trackCode === 'FINISH')) {
@@ -1588,14 +1662,32 @@ export default function MoldJobGantt({ workOrders = [], jobs, employees = [], ma
               // ── Normal step: render as-is ──
               const hasPlanned = !!(step.planned_start && step.planned_end)
               const hasActual  = !!(step.actual_start  && step.actual_end)
-              const pStart = hasPlanned ? new Date(step.planned_start!) : new Date(projStart)
-              const pEnd   = hasPlanned ? new Date(step.planned_end!)   : new Date(projStart)
-              const aStart = hasActual ? new Date(step.actual_start!) : new Date(projStart)
-              const aEnd   = hasActual ? new Date(step.actual_end!) : new Date(projStart)
+              const stepDl = step.deadline ? new Date(step.deadline) : null
+              
+              let pStart: Date
+              let pEnd: Date
+              let hasPlannedStep = hasPlanned
+
+              if (hasPlanned) {
+                pStart = new Date(step.planned_start!)
+                pEnd   = new Date(step.planned_end!)
+              } else if (stepDl) {
+                pEnd = new Date(stepDl)
+                const daysNeeded = step.estimated_hours ? Math.ceil(step.estimated_hours / 8) : 1
+                pStart = new Date(pEnd.getTime() - daysNeeded * 86400000)
+                hasPlannedStep = true
+              } else {
+                pStart = new Date(projStart)
+                pEnd   = new Date(projStart)
+                pEnd.setDate(pEnd.getDate() + 1)
+              }
+
+              const aStart = hasActual ? new Date(step.actual_start!) : pStart
+              const aEnd   = hasActual ? new Date(step.actual_end!) : pEnd
 
               pushTaskRows(
                   step.step_id, step.step_name || 'N/A',
-                  pStart, pEnd, hasPlanned,
+                  pStart, pEnd, hasPlannedStep,
                   aStart, aEnd, hasActual,
                   progress, stepS,
                   step, null, dependencies
@@ -1603,6 +1695,25 @@ export default function MoldJobGantt({ workOrders = [], jobs, employees = [], ma
           }
         })
       })
+
+      // Push + Add Step row at the bottom of the expanded job
+      if (expandedJobs.has(job.job_id)) {
+        result.push({
+          id: `${job.job_id}_add_step_row`,
+          name: '＋ 工程追加',
+          start: new Date(projStart),
+          end: new Date(projEnd),
+          progress: 0,
+          type: 'task',
+          project: job.job_id,
+          dependencies: [],
+          styles: { backgroundColor: 'transparent', progressColor: 'transparent', backgroundSelectedColor: 'transparent' },
+          isAddStepRow: true,
+          originalJobId: job.job_id,
+          originalJob: job,
+          isDisabled: false
+        } as any)
+      }
 
     })
 
@@ -1973,6 +2084,12 @@ export default function MoldJobGantt({ workOrders = [], jobs, employees = [], ma
   }, [])
 
   const handleEditStep = useCallback((task: ExtendedTask) => {
+    if ((task as any).isAddStepRow) {
+      setEditingJobId((task as any).originalJobId)
+      setEditingStep(null)
+      setEditingWorklog(null)
+      return
+    }
     if (task.isDisabled) return
     if (task.type === 'project' && task.originalJob) {
       setQuickViewJob(task.originalJob)
@@ -1988,8 +2105,14 @@ export default function MoldJobGantt({ workOrders = [], jobs, employees = [], ma
   }, [])
 
   const handleTaskDoubleClick = useCallback((task: Task) => {
-    if (task.isDisabled) return
     const extTask = task as ExtendedTask
+    if ((extTask as any).isAddStepRow) {
+      setEditingJobId((extTask as any).originalJobId)
+      setEditingStep(null)
+      setEditingWorklog(null)
+      return
+    }
+    if (task.isDisabled) return
     if (extTask.type === 'project' && extTask.originalJob) {
       setQuickViewJob(extTask.originalJob)
     } else if (extTask.type === 'task' && extTask.originalWorkLog && extTask.originalJobId && extTask.originalStep) {
@@ -2526,7 +2649,107 @@ export default function MoldJobGantt({ workOrders = [], jobs, employees = [], ma
         </div>
 
         <div className="flex items-center gap-1.5">
-          <button className="btn btn-secondary text-[10px] px-2 py-0.5 h-5" onClick={() => setIsPanelExpanded(!isPanelExpanded)}>
+          <button
+            type="button"
+            className="btn text-[10.5px] px-2.5 py-1 flex items-center gap-1.5 shadow-sm font-bold cursor-pointer"
+            style={{
+              backgroundColor: 'var(--bg-surface)',
+              borderColor: 'var(--border-default)',
+              color: 'var(--text-primary)',
+            }}
+            onClick={() => {
+              const targetJob = jobs.find(j => j.job_id === selectedJobId) || jobs[0]
+              if (targetJob) {
+                const firstStep = targetJob.job_steps?.[0] || {
+                  step_id: '',
+                  step_no: 1,
+                  step_name: targetJob.job_name || '作業',
+                  track: 'MOLD',
+                  step_status: 'IN_PROGRESS',
+                  planned_hours: null,
+                  actual_hours: null,
+                  deadline: targetJob.mold_deadline || targetJob.deadline || null,
+                  notes: null,
+                }
+                setEditingJobId(targetJob.job_id)
+                setEditingStep(firstStep)
+                setEditingWorklog(null)
+              } else {
+                setEditingJobId('caeb4ec3-065a-4653-b69a-19e6dbc4287a')
+                setEditingStep({
+                  step_id: '840d180d-2d92-4ff3-827d-a915806238f7',
+                  step_no: 1,
+                  step_name: '社内作業',
+                  track: 'GENERAL',
+                  step_status: 'IN_PROGRESS',
+                  planned_hours: 0,
+                  actual_hours: 0,
+                  deadline: null,
+                  notes: null,
+                })
+                setEditingWorklog(null)
+              }
+            }}
+            title="日報・作業ログを記録 (Giao diện 2 panel chuẩn A4)"
+          >
+            <ClipboardList size={13} style={{ color: 'var(--accent)' }} />
+            <span>日報入力</span>
+          </button>
+
+          <button
+            type="button"
+            className="btn text-[10.5px] px-2.5 py-1 flex items-center gap-1.5 shadow-sm font-bold cursor-pointer"
+            style={{
+              backgroundColor: 'var(--tint-blue-bg)',
+              borderColor: 'var(--tint-blue-border)',
+              color: 'var(--tint-blue-text)',
+            }}
+            onClick={() => {
+              setEditingJobId('caeb4ec3-065a-4653-b69a-19e6dbc4287a')
+              setEditingStep({
+                step_id: '840d180d-2d92-4ff3-827d-a915806238f7',
+                step_no: 1,
+                step_name: '社内作業',
+                track: 'GENERAL',
+                step_status: 'IN_PROGRESS',
+                planned_hours: 0,
+                actual_hours: 0,
+                deadline: null,
+                notes: null,
+              })
+              setEditingWorklog(null)
+            }}
+            title="5S・保全・金型管理など社内作業の日報を入力 (Giao diện 2 panel chuẩn A4)"
+          >
+            <span>📌 社内作業日報</span>
+          </button>
+
+          <button
+            type="button"
+            className="btn text-[10.5px] px-2.5 py-1 flex items-center gap-1.5 shadow-sm font-bold cursor-pointer"
+            style={{
+              backgroundColor: 'var(--tint-orange-bg, #FFF7ED)',
+              borderColor: 'var(--tint-orange-border, #FED7AA)',
+              color: 'var(--tint-orange-text, #C2410C)',
+            }}
+            onClick={() => setIsPrintNippoModalOpen(true)}
+            title="本日の日報記録書を確認・印刷・PDF出力"
+          >
+            <Printer size={13} />
+            <span>🖨️ 日報印刷</span>
+          </button>
+
+          <button
+            type="button"
+            className="btn btn-primary text-[10.5px] px-2.5 py-1 flex items-center gap-1.5 shadow-sm"
+            style={{ background: 'linear-gradient(135deg, #0d9488 0%, #0f766e 100%)', color: '#ffffff' }}
+            onClick={() => setIsOCRModalOpen(true)}
+          >
+            <Sparkles size={13} className="text-amber-300" />
+            <span>AI 工程票取込</span>
+          </button>
+
+          <button className="btn btn-secondary text-[10px] px-2 py-0.5 h-6" onClick={() => setIsPanelExpanded(!isPanelExpanded)}>
             {isPanelExpanded ? '◀' : '▶'}
           </button>
 
@@ -2674,6 +2897,24 @@ export default function MoldJobGantt({ workOrders = [], jobs, employees = [], ma
         </div>
       )}
 
+      {isWorklogModalOpen && (
+        <div style={{ position: 'relative', zIndex: 9999 }}>
+          <WorklogFormShared
+            mode="modal"
+            defaultJobId={worklogDefaultJobId}
+            onCancel={() => {
+              setIsWorklogModalOpen(false)
+              setWorklogDefaultJobId(undefined)
+            }}
+            onSuccess={() => {
+              setIsWorklogModalOpen(false)
+              setWorklogDefaultJobId(undefined)
+              router.refresh()
+            }}
+          />
+        </div>
+      )}
+
       {quickViewJob && (
         <JobQuickViewDrawer
           job={quickViewJob}
@@ -2685,6 +2926,24 @@ export default function MoldJobGantt({ workOrders = [], jobs, employees = [], ma
           onJobUpdated={() => {
             router.refresh()
           }}
+        />
+      )}
+
+      {isOCRModalOpen && (
+        <ManufacturingSheetOCRModal
+          isOpen={isOCRModalOpen}
+          onClose={() => setIsOCRModalOpen(false)}
+          onSuccess={() => {
+            setIsOCRModalOpen(false)
+            router.refresh()
+          }}
+        />
+      )}
+
+      {isPrintNippoModalOpen && (
+        <DailyWorklogQuickModal
+          isOpen={isPrintNippoModalOpen}
+          onClose={() => setIsPrintNippoModalOpen(false)}
         />
       )}
     </div>

@@ -4,7 +4,8 @@ import React, { useState, useRef, useEffect } from 'react'
 import {
   Sparkles, Camera, Upload, X, Check, AlertCircle, Loader2, ArrowRight,
   ExternalLink, FileText, CheckCircle2, RefreshCw, Key, Image as ImageIcon,
-  Wrench, ZoomIn, ZoomOut, RotateCcw, Search, CheckSquare, Square, Box, Layers
+  Wrench, ZoomIn, ZoomOut, RotateCcw, Search, CheckSquare, Square, Box, Layers,
+  FilePlus2, Calendar
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -76,6 +77,9 @@ export function ManufacturingSheetOCRModal({
     product_description: string
     customer_name: string
     company_id: string
+    customer_code: string
+    ocr_customer_name: string
+    ocr_customer_prefix: string
     customer_product_name: string
     designer_name: string
     sheet_date: string
@@ -96,7 +100,7 @@ export function ManufacturingSheetOCRModal({
     draft_angle: string
     tolerance_info: string
     packaging_info: string
-    quotation_amount: string
+    quotation_attached: string
     cost_amount: string
     price_quote_required: boolean
     shipping_deadline: string
@@ -108,6 +112,9 @@ export function ManufacturingSheetOCRModal({
     customer_code_prefix: '',
     product_description: '',
     customer_name: '',
+    customer_code: '',
+    ocr_customer_name: '',
+    ocr_customer_prefix: '',
     company_id: '',
     customer_product_name: '',
     designer_name: '',
@@ -129,7 +136,7 @@ export function ManufacturingSheetOCRModal({
     draft_angle: '',
     tolerance_info: '',
     packaging_info: '',
-    quotation_amount: '',
+    quotation_attached: '',
     cost_amount: '',
     price_quote_required: false,
     shipping_deadline: '',
@@ -138,6 +145,7 @@ export function ManufacturingSheetOCRModal({
   })
 
   const [moldHandlingMode, setMoldHandlingMode] = useState<'REUSE_EXISTING' | 'CREATE_NEW'>('REUSE_EXISTING')
+  const [existingHandlingMode, setExistingHandlingMode] = useState<'ENRICH_EXISTING' | 'NEW_REVISION'>('ENRICH_EXISTING')
   const [existingProductInfo, setExistingProductInfo] = useState<any | null>(null)
 
   const fileInputRef = useRef<HTMLInputElement | null>(null)
@@ -234,6 +242,9 @@ export function ManufacturingSheetOCRModal({
         customer_code_prefix: d.customer_code_prefix || '',
         product_description: d.product_description || '',
         customer_name: d.customer_name || '',
+        customer_code: '',
+        ocr_customer_name: d.customer_name || '',
+        ocr_customer_prefix: d.customer_code_prefix || '',
         company_id: '',
         customer_product_name: d.customer_product_name || '',
         designer_name: d.designer_name || '',
@@ -255,7 +266,7 @@ export function ManufacturingSheetOCRModal({
         draft_angle: d.draft_angle || '',
         tolerance_info: d.tolerance_info || '',
         packaging_info: d.packaging_info || '',
-        quotation_amount: d.quotation_amount != null ? d.quotation_amount.toString() : '',
+        quotation_attached: d.quotation_attached || (d.price_quote_required ? '有' : '') || '',
         cost_amount: d.cost_amount != null ? d.cost_amount.toString() : '',
         price_quote_required: Boolean(d.price_quote_required),
         shipping_deadline: d.shipping_deadline || '',
@@ -289,7 +300,16 @@ export function ManufacturingSheetOCRModal({
             setFormData((prev) => ({
               ...prev,
               company_id: compJson.data[0].company_id,
-              customer_name: compJson.data[0].company_name
+              customer_name: compJson.data[0].company_name,
+              customer_code: compJson.data[0].company_code || '',
+              ocr_customer_name: d.customer_name || '',
+              ocr_customer_prefix: d.customer_code_prefix || ''
+            }))
+          } else {
+            setFormData((prev) => ({
+              ...prev,
+              ocr_customer_name: d.customer_name || '',
+              ocr_customer_prefix: d.customer_code_prefix || ''
             }))
           }
         } catch (e) {
@@ -423,12 +443,13 @@ export function ManufacturingSheetOCRModal({
         draft_angle: formData.draft_angle,
         tolerance_info: formData.tolerance_info || undefined,
         packaging_info: formData.packaging_info || undefined,
-        quotation_amount: formData.quotation_amount ? parseFloat(formData.quotation_amount) : undefined,
+        quotation_attached: formData.quotation_attached || undefined,
         cost_amount: formData.cost_amount ? parseFloat(formData.cost_amount) : undefined,
-        price_quote_required: formData.price_quote_required,
+        price_quote_required: ['有', '要', '✓', 'true', '添付済'].includes(formData.quotation_attached.trim()),
         shipping_deadline: formData.shipping_deadline || undefined,
         mold_deadline: formData.mold_deadline || undefined,
         mold_handling_mode: moldHandlingMode,
+        existing_handling_mode: existingHandlingMode,
         components: formData.components
       }
 
@@ -452,6 +473,54 @@ export function ManufacturingSheetOCRModal({
     } finally {
       setSaving(false)
     }
+  }
+
+  // Reset form to scan the next sheet
+  const handleResetForNextSheet = () => {
+    setSelectedFile(null)
+    setImagePreview(null)
+    setSavedResult(null)
+    setError(null)
+    setExistingProductInfo(null)
+    setZoomLevel(1)
+    setFormData({
+      product_code: '',
+      product_name_internal: '',
+      customer_code_prefix: '',
+      product_description: '',
+      customer_name: '',
+      customer_code: '',
+      ocr_customer_name: '',
+      ocr_customer_prefix: '',
+      company_id: '',
+      customer_product_name: '',
+      designer_name: '',
+      sheet_date: '',
+      revision_number: 0,
+      design_length: '',
+      design_width: '',
+      design_depth: '',
+      cutline_length: '',
+      cutline_width: '',
+      pieces_per_cycle: '',
+      pocket_count: '',
+      plastic_type_designed: '',
+      plastic_id: '',
+      plug_type: '',
+      has_separate_cutter: false,
+      corner_r: '',
+      chamfer_c: '',
+      draft_angle: '',
+      tolerance_info: '',
+      packaging_info: '',
+      quotation_attached: '',
+      cost_amount: '',
+      price_quote_required: false,
+      shipping_deadline: '',
+      mold_deadline: '',
+      components: []
+    })
+    setStep('UPLOAD')
   }
 
   const handleComponentChange = (idx: number, field: keyof ComponentItem, val: any) => {
@@ -796,33 +865,105 @@ export function ManufacturingSheetOCRModal({
                 <div className="card-flat" style={{ padding: 14, background: 'var(--bg-surface-2)' }}>
                   {existingProductInfo && (
                     <div style={{
-                      marginBottom: 12,
-                      padding: '10px 14px',
+                      marginBottom: 14,
+                      padding: '12px 14px',
                       backgroundColor: '#fffbeb',
                       border: '1.5px solid #f59e0b',
                       borderRadius: 8,
                       display: 'flex',
-                      alignItems: 'flex-start',
+                      flexDirection: 'column',
                       gap: 10
                     }}>
-                      <span style={{ fontSize: 18, lineHeight: 1 }}>⚠️</span>
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontSize: 12, fontWeight: 700, color: '#92400e', marginBottom: 2 }}>
-                          {t('productExistsAlert', { code: existingProductInfo.product_name_internal || existingProductInfo.product_code })}
-                        </div>
-                        <div style={{ fontSize: 11, color: '#b45309', lineHeight: 1.4 }}>
-                          {t('productExistsDesc')}
-                        </div>
-                        {existingProductInfo.existingRevs && existingProductInfo.existingRevs.length > 0 && (
-                          <div style={{ marginTop: 6, fontSize: 10.5, color: '#78350f', display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'center' }}>
-                            <span style={{ fontWeight: 600 }}>📋 {t('existingRevs')}</span>
-                            {existingProductInfo.existingRevs.map((r: any, i: number) => (
-                              <span key={i} className="badge badge--neutral" style={{ fontSize: 9.5, padding: '1px 6px' }}>
-                                R{r.revision_number} ({r.design_code})
-                              </span>
-                            ))}
+                      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <span style={{ fontSize: 20 }}>⚠️</span>
+                          <div>
+                            <div style={{ fontSize: 13, fontWeight: 800, color: '#92400e' }}>
+                              {t('productExistsAlert', { code: existingProductInfo.product_name_internal || existingProductInfo.product_code })}
+                            </div>
+                            <div style={{ fontSize: 11, color: '#b45309', marginTop: 1 }}>
+                              {existingProductInfo.company_name ? `得意先: ${existingProductInfo.company_code ? `[${existingProductInfo.company_code}] ` : ''}${existingProductInfo.company_name}` : ''}
+                            </div>
                           </div>
-                        )}
+                        </div>
+
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <a
+                            href={`/product-center/${existingProductInfo.product_id}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="btn btn-secondary"
+                            style={{ fontSize: 11, padding: '4px 10px', gap: 4, display: 'inline-flex', alignItems: 'center', textDecoration: 'none' }}
+                          >
+                            <ExternalLink size={12} />
+                            <span>{t('viewProductDetail')}</span>
+                          </a>
+                        </div>
+                      </div>
+
+                      {/* Current status inspection */}
+                      <div style={{ background: '#fef3c7', padding: '8px 12px', borderRadius: 6, fontSize: 11, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                        <div>
+                          <span style={{ fontWeight: 600, color: '#78350f' }}>📋 製作指示 (Work Order): </span>
+                          {existingProductInfo.hasWorkOrder ? (
+                            <span className="badge badge--success" style={{ fontSize: 9.5, padding: '1px 6px', fontWeight: 700 }}>
+                              {t('woStatusRegistered')} ({existingProductInfo.workOrders?.[0]?.wo_code || 'WO'})
+                            </span>
+                          ) : (
+                            <span className="badge badge--warning" style={{ fontSize: 9.5, padding: '1px 6px', fontWeight: 700 }}>
+                              {t('woStatusUnregistered')}
+                            </span>
+                          )}
+                        </div>
+                        <div>
+                          <span style={{ fontWeight: 600, color: '#78350f' }}>📐 CAD設計: </span>
+                          {existingProductInfo.existingRevs && existingProductInfo.existingRevs.length > 0 ? (
+                            <span>{existingProductInfo.existingRevs.map((r: any) => `R${r.revision_number}`).join(', ')}</span>
+                          ) : (
+                            <span style={{ color: '#92400e' }}>未登録</span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Action selector */}
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 2 }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                          <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, cursor: 'pointer', fontSize: 11.5 }}>
+                            <input
+                              type="radio"
+                              name="existingHandling"
+                              checked={existingHandlingMode === 'ENRICH_EXISTING'}
+                              onChange={() => {
+                                setExistingHandlingMode('ENRICH_EXISTING')
+                                setMoldHandlingMode('REUSE_EXISTING')
+                                setFormData(prev => ({ ...prev, revision_number: 0 }))
+                              }}
+                              style={{ marginTop: 2 }}
+                            />
+                            <div>
+                              <strong style={{ color: '#92400e' }}>{t('existingActionEnrich')}</strong>
+                              <div style={{ color: '#b45309', fontSize: 10.5 }}>{t('existingActionEnrichDesc')}</div>
+                            </div>
+                          </label>
+
+                          <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, cursor: 'pointer', fontSize: 11.5 }}>
+                            <input
+                              type="radio"
+                              name="existingHandling"
+                              checked={existingHandlingMode === 'NEW_REVISION'}
+                              onChange={() => {
+                                setExistingHandlingMode('NEW_REVISION')
+                                const nextRev = (existingProductInfo.existingRevs?.length || 0)
+                                setFormData(prev => ({ ...prev, revision_number: nextRev > 0 ? nextRev : 1 }))
+                              }}
+                              style={{ marginTop: 2 }}
+                            />
+                            <div>
+                              <strong style={{ color: '#78350f' }}>{t('existingActionNewRev')}</strong>
+                              <div style={{ color: '#b45309', fontSize: 10.5 }}>{t('existingActionNewRevDesc')}</div>
+                            </div>
+                          </label>
+                        </div>
                       </div>
                     </div>
                   )}
@@ -867,7 +1008,7 @@ export function ManufacturingSheetOCRModal({
 
                     <div>
                       <label className="form-label" style={{ fontSize: 11, fontWeight: 600 }}>
-                        {t('customer')}
+                        {t('customer')} <span style={{ color: 'var(--status-error)' }}>*</span>
                       </label>
                       <AsyncSearchableSelect
                         fetchOptions={async (q) => {
@@ -880,9 +1021,24 @@ export function ManufacturingSheetOCRModal({
                           }))
                         }}
                         value={formData.company_id}
+                        initialOption={formData.company_id ? {
+                          value: formData.company_id,
+                          label: formData.customer_code ? `${formData.customer_code} — ${formData.customer_name}` : formData.customer_name
+                        } : null}
                         onChange={(val) => setFormData((prev) => ({ ...prev, company_id: val || '' }))}
-                        placeholder={formData.customer_name ? `OCR: ${formData.customer_name}` : t('customerSearch')}
+                        placeholder={t('customerSearch')}
                       />
+                      {(formData.ocr_customer_name || formData.ocr_customer_prefix) && (
+                        <div style={{ marginTop: 4, fontSize: 10.5, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 4 }}>
+                          <span style={{ fontWeight: 600, color: 'var(--accent)' }}>🔍 {t('ocrExtractedLabel')}:</span>
+                          <span style={{ fontFamily: 'monospace', fontWeight: 600 }}>
+                            {formData.ocr_customer_prefix ? `[${formData.ocr_customer_prefix}] ` : ''}{formData.ocr_customer_name || '—'}
+                          </span>
+                          <span className="badge badge--warning" style={{ fontSize: 9, padding: '0 4px', lineHeight: '14px' }}>
+                            {t('needConfirmBadge')}
+                          </span>
+                        </div>
+                      )}
                     </div>
 
                     <div>
@@ -947,10 +1103,10 @@ export function ManufacturingSheetOCRModal({
                     </div>
                   </div>
 
-                  {formData.revision_number > 0 && (
+                  {existingProductInfo && existingHandlingMode === 'NEW_REVISION' && (
                     <div style={{ marginTop: 10, padding: '8px 12px', background: 'var(--bg-surface-3)', borderRadius: 6, border: '1px solid var(--border-default)' }}>
                       <span style={{ fontSize: 11, fontWeight: 700, display: 'block', marginBottom: 6, color: 'var(--accent)' }}>
-                        🔧 {t('moldHandling', { rev: formData.revision_number })}
+                        🔧 {t('moldHandling', { rev: formData.revision_number || 1 })}
                       </span>
                       <div style={{ display: 'flex', gap: 16 }}>
                         <label style={{ fontSize: 11, display: 'flex', alignItems: 'center', gap: 5, cursor: 'pointer' }}>
@@ -1293,12 +1449,11 @@ export function ManufacturingSheetOCRModal({
                         {t('quotation')}
                       </label>
                       <input
-                        type="number"
-                        value={formData.quotation_amount}
-                        onChange={(e) => setFormData({ ...formData, quotation_amount: e.target.value })}
+                        type="text"
+                        value={formData.quotation_attached}
+                        onChange={(e) => setFormData({ ...formData, quotation_attached: e.target.value })}
                         className="form-input"
-                        style={{ fontFamily: 'monospace' }}
-                        placeholder="—"
+                        placeholder="有 / 無 / 添付済"
                       />
                     </div>
 
@@ -1308,6 +1463,7 @@ export function ManufacturingSheetOCRModal({
                       </label>
                       <input
                         type="number"
+                        step="any"
                         value={formData.cost_amount}
                         onChange={(e) => setFormData({ ...formData, cost_amount: e.target.value })}
                         className="form-input"
@@ -1472,25 +1628,41 @@ export function ManufacturingSheetOCRModal({
                   ← {t('backToUpload')}
                 </button>
 
-                <button
-                  type="button"
-                  onClick={handleSaveToDatabase}
-                  disabled={saving}
-                  className="btn btn-primary"
-                  style={{ fontSize: 13, padding: '8px 24px', gap: 6 }}
-                >
-                  {saving ? (
-                    <React.Fragment>
-                      <Loader2 size={16} className="animate-spin" />
-                      <span>{t('saving')}</span>
-                    </React.Fragment>
-                  ) : (
-                    <React.Fragment>
-                      <CheckCircle2 size={16} />
-                      <span>{t('confirmSave')}</span>
-                    </React.Fragment>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  {existingProductInfo && (
+                    <a
+                      href={`/product-center/${existingProductInfo.product_id}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="btn btn-secondary"
+                      style={{ fontSize: 12, padding: '7px 14px', gap: 6, display: 'inline-flex', alignItems: 'center', textDecoration: 'none' }}
+                      onClick={handleClose}
+                    >
+                      <ExternalLink size={13} />
+                      <span>{t('btnSkipToProductDetail')}</span>
+                    </a>
                   )}
-                </button>
+
+                  <button
+                    type="button"
+                    onClick={handleSaveToDatabase}
+                    disabled={saving}
+                    className="btn btn-primary"
+                    style={{ fontSize: 13, padding: '8px 24px', gap: 6 }}
+                  >
+                    {saving ? (
+                      <React.Fragment>
+                        <Loader2 size={16} className="animate-spin" />
+                        <span>{t('saving')}</span>
+                      </React.Fragment>
+                    ) : (
+                      <React.Fragment>
+                        <CheckCircle2 size={16} />
+                        <span>{t('confirmSave')}</span>
+                      </React.Fragment>
+                    )}
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -1498,7 +1670,7 @@ export function ManufacturingSheetOCRModal({
 
         {/* STEP 3: SUCCESS VIEW */}
         {step === 'SUCCESS' && savedResult && (
-          <div style={{ padding: 36, textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
+          <div style={{ padding: '36px 24px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
             <div
               style={{
                 width: 64,
@@ -1522,26 +1694,77 @@ export function ManufacturingSheetOCRModal({
               {t('successDesc')}
             </p>
 
-            <div style={{ display: 'flex', gap: 12, marginTop: 12 }}>
+            {/* Summary info box */}
+            <div
+              className="card-flat"
+              style={{
+                background: 'var(--bg-surface-2)',
+                padding: '14px 24px',
+                borderRadius: 8,
+                display: 'flex',
+                gap: 24,
+                justifyContent: 'center',
+                alignItems: 'center',
+                marginTop: 4,
+                border: '1px solid var(--border-default)'
+              }}
+            >
+              <div>
+                <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{t('createdProduct')}</div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--accent)', fontFamily: 'monospace' }}>
+                  {savedResult.product_name_internal || savedResult.product_code}
+                </div>
+              </div>
+              <div style={{ width: 1, height: 24, background: 'var(--border-default)' }} />
+              <div>
+                <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{t('createdJob')}</div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'monospace' }}>
+                  {savedResult.job_code || '—'}
+                </div>
+              </div>
+            </div>
+
+            {/* Action Choice Buttons */}
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, justifyContent: 'center', marginTop: 14 }}>
+              <button
+                type="button"
+                onClick={handleResetForNextSheet}
+                className="btn btn-primary"
+                style={{ fontSize: 13, padding: '9px 20px', gap: 7 }}
+              >
+                <FilePlus2 size={16} />
+                <span>{t('btnContinueNextSheet')}</span>
+              </button>
+
               <Link
                 href={`/product-center/${savedResult.product_id}`}
-                className="btn btn-primary"
-                style={{ fontSize: 13, padding: '8px 18px', gap: 6, textDecoration: 'none' }}
+                className="btn btn-secondary"
+                style={{ fontSize: 13, padding: '9px 18px', gap: 7, textDecoration: 'none' }}
                 onClick={onClose}
               >
+                <ExternalLink size={15} />
                 <span>{t('btnViewProduct')}</span>
-                <ArrowRight size={15} />
               </Link>
 
               <Link
                 href={`/equipment/schedule`}
                 className="btn btn-secondary"
-                style={{ fontSize: 13, padding: '8px 18px', gap: 6, textDecoration: 'none' }}
+                style={{ fontSize: 13, padding: '9px 18px', gap: 7, textDecoration: 'none' }}
                 onClick={onClose}
               >
-                <Wrench size={15} />
+                <Calendar size={15} />
                 <span>{t('btnViewSchedule')}</span>
               </Link>
+
+              <button
+                type="button"
+                onClick={onClose}
+                className="btn btn-secondary"
+                style={{ fontSize: 13, padding: '9px 16px', gap: 6 }}
+              >
+                <X size={15} />
+                <span>{t('btnClose')}</span>
+              </button>
             </div>
           </div>
         )}

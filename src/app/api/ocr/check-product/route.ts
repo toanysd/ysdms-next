@@ -42,6 +42,18 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ exists: false, product: null })
     }
 
+    const { data: workOrders } = await supabase
+      .from('work_orders')
+      .select('wo_id, wo_code, wo_name, wo_status, created_at')
+      .eq('product_id', product.product_id)
+      .limit(5)
+
+    const { data: jobs } = await supabase
+      .from('jobs')
+      .select('job_id, job_code, job_name, job_status, created_at')
+      .eq('product_id', product.product_id)
+      .limit(5)
+
     return NextResponse.json({
       exists: true,
       product: {
@@ -51,7 +63,12 @@ export async function GET(request: NextRequest) {
         product_description: product.product_description,
         company_id: product.company_id,
         company_name: (product.companies as any)?.company_name || null,
-        existingRevs: (product.design_revisions || []).sort((a: any, b: any) => (a.revision_number || 0) - (b.revision_number || 0))
+        company_code: (product.companies as any)?.company_code || null,
+        existingRevs: (product.design_revisions || []).sort((a: any, b: any) => (a.revision_number || 0) - (b.revision_number || 0)),
+        hasWorkOrder: Boolean(workOrders && workOrders.length > 0),
+        workOrders: workOrders || [],
+        hasJobs: Boolean(jobs && jobs.length > 0),
+        jobs: jobs || []
       }
     })
   } catch (err: any) {

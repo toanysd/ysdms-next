@@ -26,6 +26,7 @@ interface OCRResponseData {
   draft_angle: string | null
   tolerance_info: string | null
   packaging_info: string | null
+  quotation_attached: string | null
   quotation_amount: number | null
   cost_amount: number | null
   price_quote_required: boolean | null
@@ -136,10 +137,8 @@ function normalizeExtractedData(raw: any): OCRResponseData {
   // New fields
   const tolerance_info = src.tolerance_info || specs.tolerance_info || src['公差'] || specs['寸法公差'] || null
   const packaging_info = src.packaging_info || specs.packaging_info || src['荷姿'] || src['梱包'] || null
-  const quotation_amount = parseNum(src.quotation_amount ?? src['見積'])
   const cost_amount = parseNum(src.cost_amount ?? src['原価'])
-  const rawPriceQuote = src.price_quote_required ?? src['見積要']
-  const price_quote_required = rawPriceQuote === true || rawPriceQuote === '要' || rawPriceQuote === 'true' ? true : rawPriceQuote === false || rawPriceQuote === '不要' ? false : null
+  const quotation_attached = src.quotation_attached || src['見積添付'] || src.price_quote_required || src['見積要'] || null
   const shipping_deadline = src.shipping_deadline || src['出荷納期'] || null
   const mold_deadline_val = src.mold_deadline || src['金型納期'] || null
 
@@ -175,7 +174,7 @@ function normalizeExtractedData(raw: any): OCRResponseData {
     customer_product_name: customer_product_name || null,
     designer_name: designer_name || null,
     sheet_date: sheet_date || null,
-    revision_number: revision_number || 1,
+    revision_number: revision_number ?? 0,
     design_length,
     design_width,
     design_height,
@@ -192,9 +191,10 @@ function normalizeExtractedData(raw: any): OCRResponseData {
     draft_angle,
     tolerance_info: tolerance_info ? String(tolerance_info) : null,
     packaging_info: packaging_info ? String(packaging_info) : null,
-    quotation_amount,
+    quotation_attached: quotation_attached ? String(quotation_attached) : null,
+    quotation_amount: null,
     cost_amount,
-    price_quote_required,
+    price_quote_required: quotation_attached ? ['有', '要', '✓', 'true', '添付済'].includes(String(quotation_attached).trim()) : null,
     shipping_deadline: shipping_deadline || null,
     mold_deadline: mold_deadline_val || null,
     components
@@ -261,7 +261,7 @@ Carefully read handwriting and stamp seals across the document:
    - 客先品番 (Customer Part No): customer_product_name.
    - 作成日 / 発行日: sheet_date (YYYY-MM-DD).
    - 設計担当: designer_name.
-   - Rev / 版数: revision_number (number, default 1). This is a REFERENCE version only.
+   - Rev / 版数: revision_number (number, default 0). Default is STRICTLY 0 (first initial edition / 初版, no suffix). Only set to 1, 2, 3 if the sheet explicitly states "R1", "R2", "Rev.1", "改修1", etc.
 
 2. Technical Specs:
    - 型寸法 (Mold Dimensions in mm): design_length, design_width, design_depth.
@@ -277,10 +277,9 @@ Carefully read handwriting and stamp seals across the document:
    - 公差 / 寸法公差: tolerance_info (any tolerance specifications found).
    - 荷姿 / 梱包: packaging_info (packaging specifications, box spec, pieces per box).
 
-3. Cost & Quotation:
-   - 見積 (Quotation amount): quotation_amount (number or null).
-   - 原価 (Cost): cost_amount (number or null).
-   - 見積要/不要: price_quote_required (boolean: true if 要, false if 不要).
+3. Cost & Quotation (見積添付・原価):
+   - 見積添付 (Quotation Attached): quotation_attached (e.g. "有", "無", "✓", "添付済" or null). Note: This is an attachment/check status, NOT an amount!
+   - 原価 (Cost / Quoted Unit Price): cost_amount (number or null, e.g. 84.7). This is the quoted unit price in yen.
 
 4. Deadlines (納期):
    - CRITICAL: Carefully distinguish the 3 different types of dates on the sheet:
@@ -317,7 +316,7 @@ Respond ONLY with a valid JSON object:
   "customer_product_name": null,
   "designer_name": null,
   "sheet_date": null,
-  "revision_number": 1,
+  "revision_number": 0,
   "design_length": 590,
   "design_width": 350,
   "design_depth": null,
@@ -333,9 +332,8 @@ Respond ONLY with a valid JSON object:
   "draft_angle": null,
   "tolerance_info": null,
   "packaging_info": null,
-  "quotation_amount": null,
-  "cost_amount": null,
-  "price_quote_required": null,
+  "quotation_attached": "有",
+  "cost_amount": 84.7,
   "shipping_deadline": null,
   "mold_deadline": null,
   "components": [

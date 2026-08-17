@@ -25,6 +25,7 @@ type JobRow = {
   job_status: string | null
   overall_progress: number | null
   mold_deadline: string | null
+  deadline?: string | null
   created_at: string | null
   priority: number | null
   job_types: { job_type_name_ja: string; job_type_name_vi: string } | null
@@ -62,9 +63,9 @@ function JobsPageContent() {
   const filterRevision = urlSearchParams.get('revision') || ''
   const filterPhysicalMold = urlSearchParams.get('physical_mold') || ''
   
-  // Sorting state
-  const [sortCol, setSortCol] = useState(urlSearchParams.get('sort') || 'created_at')
-  const [sortDir, setSortDir] = useState<'asc'|'desc'>((urlSearchParams.get('dir') as 'asc'|'desc') || 'desc')
+  // Sorting state - Default: Earliest upcoming deadline first (deadline ASC)
+  const [sortCol, setSortCol] = useState(urlSearchParams.get('sort') || 'mold_deadline')
+  const [sortDir, setSortDir] = useState<'asc'|'desc'>((urlSearchParams.get('dir') as 'asc'|'desc') || 'asc')
   
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [linkMoldModalJob, setLinkMoldModalJob] = useState<{ jobId: string; jobCode: string; jobName: string } | null>(null)
@@ -94,10 +95,10 @@ function JobsPageContent() {
       if (search) params.set('search', search)
       else params.delete('search')
       
-      if (sortCol !== 'created_at') params.set('sort', sortCol)
+      if (sortCol !== 'mold_deadline') params.set('sort', sortCol)
       else params.delete('sort')
       
-      if (sortDir !== 'desc') params.set('dir', sortDir)
+      if (sortDir !== 'asc') params.set('dir', sortDir)
       else params.delete('dir')
       
       if (filterStatus) params.set('status', filterStatus)
@@ -127,6 +128,7 @@ function JobsPageContent() {
         job_status,
         overall_progress,
         mold_deadline,
+        deadline,
         created_at,
         priority,
         job_types(job_type_name_ja, job_type_name_vi),
@@ -155,7 +157,7 @@ function JobsPageContent() {
     // Pagination & Sorting
     const from = (page - 1) * PAGE_SIZE
     const to = from + PAGE_SIZE - 1
-    query = query.range(from, to).order(sortCol, { ascending: sortDir === 'asc' })
+    query = query.range(from, to).order(sortCol, { ascending: sortDir === 'asc', nullsFirst: false })
 
     const { data, count, error: fetchError } = await query
 
@@ -450,10 +452,10 @@ function JobsPageContent() {
                         </div>
                       </td>
                       <td>
-                        {job.mold_deadline ? (
+                        {job.mold_deadline || job.deadline ? (
                           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                             <Calendar size={10} style={{ color: 'var(--text-muted)' }} />
-                            {new Date(job.mold_deadline).toLocaleDateString('ja-JP')}
+                            {new Date(job.mold_deadline || job.deadline!).toLocaleDateString('ja-JP')}
                           </span>
                         ) : '—'}
                       </td>

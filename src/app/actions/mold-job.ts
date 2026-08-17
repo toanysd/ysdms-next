@@ -389,11 +389,22 @@ export async function getJobsForGantt(searchQuery?: string, fromDate?: string, t
         `, { count: 'exact' })
         .neq('job_status', 'CANCELLED')
         
-    if (searchQuery) {
-        req = req.or(`job_code.ilike.%${searchQuery}%,job_name.ilike.%${searchQuery}%`)
-    }
+    if (searchQuery?.trim()) {
+        const cleanQ = searchQuery.trim()
+        const [{ data: matchingProducts }, { data: matchingEquip }] = await Promise.all([
+            supabase.from('products').select('product_id').or(`product_code.ilike.%${cleanQ}%,product_name_internal.ilike.%${cleanQ}%,product_name.ilike.%${cleanQ}%`).limit(50),
+            supabase.from('equipment').select('equipment_id').or(`equipment_code.ilike.%${cleanQ}%,display_name.ilike.%${cleanQ}%`).limit(50)
+        ])
 
-    if (fromDate && toDate) {
+        const pIds = matchingProducts?.map(p => p.product_id) || []
+        const eIds = matchingEquip?.map(e => e.equipment_id) || []
+
+        const orConditions = [`job_code.ilike.%${cleanQ}%`, `job_name.ilike.%${cleanQ}%`]
+        if (pIds.length > 0) orConditions.push(`product_id.in.(${pIds.join(',')})`)
+        if (eIds.length > 0) orConditions.push(`equipment_id.in.(${eIds.join(',')})`)
+
+        req = req.or(orConditions.join(','))
+    } else if (fromDate && toDate) {
         const toDateEnd = toDate + ' 23:59:59'
         req = req.or(`and(mold_deadline.gte.${fromDate},mold_deadline.lte.${toDateEnd}),and(deadline.gte.${fromDate},deadline.lte.${toDateEnd}),and(start_date.gte.${fromDate},start_date.lte.${toDateEnd}),and(ship_date.gte.${fromDate},ship_date.lte.${toDateEnd})`)
     }
@@ -431,11 +442,22 @@ export async function getJobsForGantt(searchQuery?: string, fromDate?: string, t
             `, { count: 'exact' })
             .neq('job_status', 'CANCELLED')
 
-        if (searchQuery) {
-            fallbackReq = fallbackReq.or(`job_code.ilike.%${searchQuery}%,job_name.ilike.%${searchQuery}%`)
-        }
+        if (searchQuery?.trim()) {
+            const cleanQ = searchQuery.trim()
+            const [{ data: matchingProducts }, { data: matchingEquip }] = await Promise.all([
+                supabase.from('products').select('product_id').or(`product_code.ilike.%${cleanQ}%,product_name_internal.ilike.%${cleanQ}%,product_name.ilike.%${cleanQ}%`).limit(50),
+                supabase.from('equipment').select('equipment_id').or(`equipment_code.ilike.%${cleanQ}%,display_name.ilike.%${cleanQ}%`).limit(50)
+            ])
 
-        if (fromDate && toDate) {
+            const pIds = matchingProducts?.map(p => p.product_id) || []
+            const eIds = matchingEquip?.map(e => e.equipment_id) || []
+
+            const orConditions = [`job_code.ilike.%${cleanQ}%`, `job_name.ilike.%${cleanQ}%`]
+            if (pIds.length > 0) orConditions.push(`product_id.in.(${pIds.join(',')})`)
+            if (eIds.length > 0) orConditions.push(`equipment_id.in.(${eIds.join(',')})`)
+
+            fallbackReq = fallbackReq.or(orConditions.join(','))
+        } else if (fromDate && toDate) {
             const toDateEnd = toDate + ' 23:59:59'
             fallbackReq = fallbackReq.or(`and(mold_deadline.gte.${fromDate},mold_deadline.lte.${toDateEnd}),and(deadline.gte.${fromDate},deadline.lte.${toDateEnd}),and(start_date.gte.${fromDate},start_date.lte.${toDateEnd}),and(ship_date.gte.${fromDate},ship_date.lte.${toDateEnd})`)
         }

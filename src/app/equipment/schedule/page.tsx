@@ -29,8 +29,9 @@ export default async function ToolingSchedulePage({ searchParams }: { searchPara
   endOfNextWeek.setDate(endOfNextWeek.getDate() + 13)
   endOfNextWeek.setHours(23,59,59,999)
 
-  const fromDate = resolvedSearchParams?.from || startOfThisWeek.toISOString().split('T')[0]
-  const toDate = resolvedSearchParams?.to || endOfNextWeek.toISOString().split('T')[0]
+  const hasExplicitDates = !!resolvedSearchParams?.from && !!resolvedSearchParams?.to
+  const fromDate = hasExplicitDates ? resolvedSearchParams.from : (query.trim() ? undefined : startOfThisWeek.toISOString().split('T')[0])
+  const toDate = hasExplicitDates ? resolvedSearchParams.to : (query.trim() ? undefined : endOfNextWeek.toISOString().split('T')[0])
 
   const [woData, jobsData, empData, machData] = await Promise.all([
     getWorkOrdersForGantt({ search: query, fromDate, toDate, page: 1, pageSize }),

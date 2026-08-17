@@ -28,12 +28,14 @@ interface SaveOCRInput {
   draft_angle?: string
   tolerance_info?: string
   packaging_info?: string
+  quotation_attached?: string
   quotation_amount?: number
   cost_amount?: number
   price_quote_required?: boolean
   shipping_deadline?: string
   mold_deadline?: string
   mold_handling_mode?: 'REUSE_EXISTING' | 'CREATE_NEW'
+  existing_handling_mode?: 'ENRICH_EXISTING' | 'NEW_REVISION'
   components?: Array<{
     type_code: string
     step_name: string
@@ -136,7 +138,9 @@ export async function POST(request: NextRequest) {
         product_description: body.product_description || undefined,
         customer_product_name: body.customer_product_name || undefined,
         pocket_count: body.pocket_count || undefined,
-        box_spec: body.packaging_info || undefined
+        box_spec: body.packaging_info || undefined,
+        first_shipment_date: body.shipping_deadline || undefined,
+        updated_at: new Date().toISOString()
       }).eq('product_id', productId)
     } else {
       const { data: newProd, error: prodErr } = await supabase
@@ -151,6 +155,7 @@ export async function POST(request: NextRequest) {
             company_id: companyId,
             pocket_count: body.pocket_count || null,
             box_spec: body.packaging_info || null,
+            first_shipment_date: body.shipping_deadline || null,
             product_status: 'ACTIVE'
           }
         ])
@@ -163,9 +168,10 @@ export async function POST(request: NextRequest) {
       productId = newProd.product_id
     }
 
-    // ─── 3. Create Design Revision (SSOT) ────────────────────────────
+    // ─── 3. Create or Enrich Design Revision (SSOT) ───────────────────
+    const existingHandlingMode = body.existing_handling_mode || 'ENRICH_EXISTING'
     const revNum = body.revision_number != null && !isNaN(body.revision_number) ? body.revision_number : 0
-    const designCode = body.design_code || (revNum > 0 ? `${baseInternal}-R${revNum}` : baseInternal)
+    let designCode = body.design_code || (revNum > 0 ? `${baseInternal}-R${revNum}` : baseInternal)
 
     // Find CAV Type ID from mold dimensions if available
     let matchedCavTypeId: string | null = null
@@ -181,50 +187,148 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const { data: newRev, error: revErr } = await supabase
-      .from('design_revisions')
-      .insert([{
-        product_id: productId,
-        company_id: companyId,
-        design_code: designCode,
-        revision_number: revNum,
-        design_category: 'MASS',
-        status: 'APPROVED',
-        cav_type_id: matchedCavTypeId || undefined,
-        plastic_type_designed: body.plastic_type_designed || null,
-        plastic_id: body.plastic_id || null,
-        design_length: body.design_length || null,
-        design_width: body.design_width || null,
-        design_height: body.design_height || null,
-        design_depth: body.design_depth || null,
-        cutline_length: body.cutline_length || null,
-        cutline_width: body.cutline_width || null,
-        cavity_count: body.pieces_per_cycle || null,
-        plug_type: body.plug_type || null,
-        has_separate_cutter: body.has_separate_cutter || false,
-        corner_r: body.corner_r || null,
-        chamfer_c: body.chamfer_c || null,
-        draft_angle: body.draft_angle || null,
-        tolerance_pitch: body.tolerance_info || null,
-        change_summary: '新規金型製造工程票 (AI OCR 自動取込)'
-      }])
-      .select('revision_id')
-      .single()
-
-    if (revErr || !newRev) {
-      throw new Error(`Failed to create design revision: ${revErr?.message}`)
+    // Normalize plug_type: DB check constraint allows only 'NONE', 'OWNED', 'SHARED'
+    const rawPlugType = (body.plug_type || '').toString().trim()
+    let normalizedPlugType: string = 'NONE'
+    if (rawPlugType === 'NONE' || rawPlugType === 'OWNED' || rawPlugType === 'SHARED') {
+      normalizedPlugType = rawPlugType
+    } else if (rawPlugType && rawPlugType !== 'なし' && rawPlugType.toLowerCase() !== 'none') {
+      normalizedPlugType = 'OWNED'
     }
-    const revisionId = newRev.revision_id
 
-    // ─── 4. Create Work Order (Parent for all jobs) ───────────────────
+    let revisionId: string | null = null
+    let existingRev: any = null
+
+    // 1. Try finding revision for this product by revision_number
+    const { data: revByNum } = await supabase
+      .from('design_revisions')
+      .select('revision_id, revision_number, design_code')
+      .eq('product_id', productId)
+      .eq('revision_number', revNum)
+      .limit(1)
+      .maybeSingle()
+
+    if (revByNum) {
+      existingRev = revByNum
+    } else {
+      // 2. Try finding revision by design_code (to avoid duplicate key collision on design_code)
+      const { data: revByCode } = await supabase
+        .from('design_revisions')
+        .select('revision_id, revision_number, design_code')
+        .eq('design_code', designCode)
+        .limit(1)
+        .maybeSingle()
+
+      if (revByCode) {
+        existingRev = revByCode
+      } else if (existingHandlingMode === 'ENRICH_EXISTING') {
+        // 3. If ENRICH_EXISTING, find the latest revision of this product to enrich
+        const { data: latestRev } = await supabase
+          .from('design_revisions')
+          .select('revision_id, revision_number, design_code')
+          .eq('product_id', productId)
+          .order('revision_number', { ascending: false, nullsFirst: false })
+          .limit(1)
+          .maybeSingle()
+
+        if (latestRev) {
+          existingRev = latestRev
+        }
+      }
+    }
+
+    if (existingRev) {
+      revisionId = existingRev.revision_id
+      await supabase
+        .from('design_revisions')
+        .update({
+          design_code: existingRev.design_code || designCode,
+          cav_type_id: matchedCavTypeId || undefined,
+          plastic_type_designed: body.plastic_type_designed || undefined,
+          plastic_id: body.plastic_id || undefined,
+          design_length: body.design_length || undefined,
+          design_width: body.design_width || undefined,
+          design_height: body.design_height || undefined,
+          design_depth: body.design_depth || undefined,
+          cutline_length: body.cutline_length || undefined,
+          cutline_width: body.cutline_width || undefined,
+          cavity_count: body.pieces_per_cycle || undefined,
+          plug_type: normalizedPlugType,
+          has_separate_cutter: body.has_separate_cutter || false,
+          corner_r: body.corner_r || undefined,
+          chamfer_c: body.chamfer_c || undefined,
+          draft_angle: body.draft_angle || undefined,
+          tolerance_pitch: body.tolerance_info || undefined,
+          change_summary: '新規金型製造工程票 (AI OCR 自動補完・更新)'
+        })
+        .eq('revision_id', revisionId!)
+    } else {
+      // Check if designCode collides with an existing code from another product or rev
+      const { data: duplicateCodeCheck } = await supabase
+        .from('design_revisions')
+        .select('revision_id')
+        .eq('design_code', designCode)
+        .limit(1)
+        .maybeSingle()
+
+      if (duplicateCodeCheck) {
+        // Disambiguate by appending next revision suffix
+        const { data: productRevs } = await supabase
+          .from('design_revisions')
+          .select('revision_number')
+          .eq('product_id', productId!)
+          .order('revision_number', { ascending: false, nullsFirst: false })
+          .limit(1)
+        const nextRevNum = (productRevs?.[0]?.revision_number || 0) + 1
+        designCode = `${baseInternal}-R${nextRevNum}`
+      }
+
+      const { data: newRev, error: revErr } = await supabase
+        .from('design_revisions')
+        .insert([{
+          product_id: productId,
+          company_id: companyId,
+          design_code: designCode,
+          revision_number: revNum,
+          design_category: 'MASS',
+          status: 'APPROVED',
+          cav_type_id: matchedCavTypeId || undefined,
+          plastic_type_designed: body.plastic_type_designed || null,
+          plastic_id: body.plastic_id || null,
+          design_length: body.design_length || null,
+          design_width: body.design_width || null,
+          design_height: body.design_height || null,
+          design_depth: body.design_depth || null,
+          cutline_length: body.cutline_length || null,
+          cutline_width: body.cutline_width || null,
+          cavity_count: body.pieces_per_cycle || null,
+          plug_type: normalizedPlugType,
+          has_separate_cutter: body.has_separate_cutter || false,
+          corner_r: body.corner_r || null,
+          chamfer_c: body.chamfer_c || null,
+          draft_angle: body.draft_angle || null,
+          tolerance_pitch: body.tolerance_info || null,
+          change_summary: '新規金型製造工程票 (AI OCR 自動取込)'
+        }])
+        .select('revision_id')
+        .single()
+
+      if (revErr || !newRev) {
+        throw new Error(`Failed to create design revision: ${revErr?.message}`)
+      }
+      revisionId = newRev.revision_id
+    }
+
+    // ─── 4. Create or Update Work Order (Parent for all jobs) ─────────
     const moldHandlingMode = body.mold_handling_mode || 'REUSE_EXISTING'
     const year = new Date().getFullYear()
     const randSeq = Math.floor(100000 + Math.random() * 900000)
     const woCode = `WO-${year}-${randSeq}`
     const woType = revNum > 0 ? (moldHandlingMode === 'REUSE_EXISTING' ? 'MODIFICATION' : 'NEW_SET') : 'NEW_SET'
-    const woName = revNum > 0 
-      ? (moldHandlingMode === 'REUSE_EXISTING' ? `金型改修: ${baseInternal} (R${revNum})` : `新規金型製作: ${baseInternal} (R${revNum})`)
-      : `新規金型製作: ${baseInternal}`
+    const revSuffix = revNum > 0 ? `-R${revNum}` : ''
+    const woName = moldHandlingMode === 'REUSE_EXISTING' 
+      ? `金型改修: ${baseInternal}${revSuffix}`
+      : `新規金型製作: ${baseInternal}${revSuffix}`
 
     // Determine deadline = MAX of component deadlines or shipping deadline
     const componentDeadlines = (body.components || [])
@@ -235,23 +339,43 @@ export async function POST(request: NextRequest) {
       ? componentDeadlines[componentDeadlines.length - 1]
       : body.shipping_deadline || null
 
-    const { data: newWO } = await supabase
+    let workOrderId: string | null = null
+    const { data: existingWO } = await supabase
       .from('work_orders')
-      .insert([{
-        wo_code: woCode,
-        wo_name: woName,
-        product_id: productId,
-        design_revision_id: revisionId,
-        company_id: companyId,
-        wo_type: woType,
-        wo_status: 'PLANNED',
-        start_date: new Date().toISOString().split('T')[0],
-        deadline: maxDeadline || undefined
-      }])
       .select('wo_id')
+      .eq('product_id', productId!)
+      .eq('design_revision_id', revisionId!)
+      .limit(1)
       .maybeSingle()
 
-    const workOrderId = newWO?.wo_id || null
+    if (existingWO) {
+      workOrderId = existingWO.wo_id
+      await supabase
+        .from('work_orders')
+        .update({
+          deadline: maxDeadline || undefined,
+          wo_status: 'PLANNED'
+        })
+        .eq('wo_id', workOrderId)
+    } else {
+      const { data: newWO } = await supabase
+        .from('work_orders')
+        .insert([{
+          wo_code: woCode,
+          wo_name: woName,
+          product_id: productId,
+          design_revision_id: revisionId,
+          company_id: companyId,
+          wo_type: woType,
+          wo_status: 'PLANNED',
+          start_date: new Date().toISOString().split('T')[0],
+          deadline: maxDeadline || undefined
+        }])
+        .select('wo_id')
+        .maybeSingle()
+
+      workOrderId = newWO?.wo_id || null
+    }
 
     // ─── 5. Create & Link Equipment (Kit Members) ─────────────────────
     let moldEquipmentId: string | null = null
@@ -420,109 +544,176 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // ─── 6. Create Manufacturing Jobs (jobs table) under Work Order ──
-    // 6a. Main Mold Job (MOLD)
+    // ─── 6. Create or Update Master Manufacturing Job (jobs table) with Standard Steps ──
     const moldJobCode = `JOB-${baseCode}-${Date.now().toString().slice(-4)}`
-    const moldJobName = revNum > 0 
-      ? (moldHandlingMode === 'REUSE_EXISTING' ? `金型改修: ${baseInternal} (R${revNum})` : `新規金型製作: ${baseInternal} (R${revNum})`)
-      : `新規金型製作: ${baseInternal}`
-    const moldCategory = revNum > 0 && moldHandlingMode === 'REUSE_EXISTING' ? 'MOLD_MODIFY' : 'MOLD_NEW'
-    const moldTypeId = revNum > 0 && moldHandlingMode === 'REUSE_EXISTING' ? '2' : '1'
-    const moldDeadline = body.mold_deadline || moldComponent?.deadline || maxDeadline || undefined
+    const isModification = moldHandlingMode === 'REUSE_EXISTING'
+    const moldJobName = isModification 
+      ? `金型改修: ${baseInternal}${revSuffix}`
+      : `新規金型製作: ${baseInternal}${revSuffix}`
+    const moldCategory = isModification ? 'MOLD_MODIFY' : 'MOLD_NEW'
+    const moldTypeId = isModification ? '2' : '1'
+    const moldDeadline = body.mold_deadline || maxDeadline || undefined
 
-    const { data: newMoldJob, error: jobErr } = await supabase
+    let moldJobId: string | null = null
+    const { data: existingJob } = await supabase
       .from('jobs')
-      .insert([{
-        job_code: moldJobCode,
-        job_name: moldJobName,
-        product_id: productId,
-        equipment_id: moldEquipmentId,
-        design_revision_id: revisionId,
-        company_id: companyId,
-        job_status: 'NEW',
-        job_type_id: moldTypeId,
-        job_category: moldCategory,
-        separate_cutter: body.has_separate_cutter || false,
-        has_plug: Boolean(body.plug_type && body.plug_type !== 'なし'),
-        start_date: new Date().toISOString().split('T')[0],
-        work_order_id: workOrderId || undefined,
-        deadline: moldDeadline,
-        ship_date: body.shipping_deadline || undefined,
-        mold_deadline: body.mold_deadline || undefined,
-        unit_price: body.quotation_amount ?? undefined,
-        price_quote_required: body.price_quote_required ?? undefined
-      }])
       .select('job_id')
-      .single()
+      .eq('product_id', productId!)
+      .eq('design_revision_id', revisionId!)
+      .limit(1)
+      .maybeSingle()
 
-    if (jobErr || !newMoldJob) {
-      throw new Error(`Failed to create mold manufacturing job: ${jobErr?.message}`)
-    }
-    const moldJobId = newMoldJob.job_id
+    if (existingJob) {
+      moldJobId = existingJob.job_id
+      await supabase
+        .from('jobs')
+        .update({
+          job_name: moldJobName,
+          equipment_id: moldEquipmentId || undefined,
+          company_id: companyId,
+          separate_cutter: body.has_separate_cutter || false,
+          has_plug: Boolean(body.plug_type && body.plug_type !== 'なし'),
+          deadline: moldDeadline,
+          ship_date: body.shipping_deadline || undefined,
+          mold_deadline: body.mold_deadline || undefined,
+          unit_price: body.cost_amount ? parseFloat(String(body.cost_amount)) : (body.quotation_amount ? parseFloat(String(body.quotation_amount)) : undefined),
+          price_quote_required: body.price_quote_required ?? (body.quotation_attached ? ['有', '要', '✓', 'true', '添付済'].includes(String(body.quotation_attached).trim()) : undefined)
+        })
+        .eq('job_id', moldJobId)
 
-    // Insert actual step(s) for Mold Job
-    if (moldComponent) {
-      await supabase.from('job_steps').insert([{
-        job_id: moldJobId,
-        step_no: 1,
-        step_name: moldComponent.step_name || '本型加工',
-        track: 'MOLD',
-        type_code: 'MOLD',
-        material_spec: moldComponent.material_spec || 'アルミ材',
-        arrangement: moldComponent.arrangement || 'REQUIRED',
-        condition: 'NEW',
-        step_status: 'NEW',
-        manufacture_location: moldComponent.manufacture_location || 'IN_HOUSE',
-        deadline: moldComponent.deadline || moldDeadline || null,
-        estimated_hours: moldComponent.estimated_hours || null
-      }])
-    }
-
-    // 6b. Cutter Job (CUTTER) — only created if Cutter is NEW
-    let cutterJobId: string | null = null
-    if (cutterIsNew && cutterEquipmentId) {
-      const cutterJobCode = `JOB-CUT-${baseCode}-${Date.now().toString().slice(-4)}`
-      const cutterJobName = revNum > 0 ? `抜型製作: ${baseInternal} (R${revNum})` : `抜型製作: ${baseInternal}`
-      const cutterDeadline = cutterComponent?.deadline || maxDeadline || undefined
-
-      const { data: newCutterJob } = await supabase
+      await supabase.from('job_steps').delete().eq('job_id', moldJobId)
+    } else {
+      const { data: newMoldJob, error: jobErr } = await supabase
         .from('jobs')
         .insert([{
-          job_code: cutterJobCode,
-          job_name: cutterJobName,
+          job_code: moldJobCode,
+          job_name: moldJobName,
           product_id: productId,
-          equipment_id: cutterEquipmentId,
+          equipment_id: moldEquipmentId,
           design_revision_id: revisionId,
           company_id: companyId,
           job_status: 'NEW',
-          job_type_id: '3', // 3 = 抜型製作
-          job_category: 'CUTTER_NEW',
+          job_type_id: moldTypeId,
+          job_category: moldCategory,
+          separate_cutter: body.has_separate_cutter || false,
+          has_plug: Boolean(body.plug_type && body.plug_type !== 'なし'),
           start_date: new Date().toISOString().split('T')[0],
-          work_order_id: workOrderId || undefined,
-          deadline: cutterDeadline,
-          ship_date: body.shipping_deadline || undefined
+          work_order_id: workOrderId,
+          deadline: moldDeadline,
+          ship_date: body.shipping_deadline || undefined,
+          mold_deadline: body.mold_deadline || undefined,
+          unit_price: body.cost_amount ? parseFloat(String(body.cost_amount)) : (body.quotation_amount ? parseFloat(String(body.quotation_amount)) : undefined),
+          price_quote_required: body.price_quote_required ?? (body.quotation_attached ? ['有', '要', '✓', 'true', '添付済'].includes(String(body.quotation_attached).trim()) : undefined)
         }])
         .select('job_id')
-        .maybeSingle()
+        .single()
 
-      if (newCutterJob) {
-        cutterJobId = newCutterJob.job_id
-        await supabase.from('job_steps').insert([{
-          job_id: cutterJobId,
-          step_no: 1,
-          step_name: cutterComponent?.step_name || '抜型製作',
-          track: 'CUTTER',
-          type_code: 'CUTTER',
-          material_spec: cutterComponent?.material_spec || null,
-          arrangement: cutterComponent?.arrangement || 'REQUIRED',
-          condition: 'NEW',
-          step_status: 'NEW',
-          manufacture_location: cutterComponent?.manufacture_location || 'IN_HOUSE',
-          deadline: cutterComponent?.deadline || cutterDeadline || null,
-          estimated_hours: cutterComponent?.estimated_hours || null
-        }])
+      if (jobErr || !newMoldJob) {
+        throw new Error(`Failed to create mold manufacturing job: ${jobErr?.message}`)
       }
+      moldJobId = newMoldJob.job_id
     }
+
+    // Insert component steps strictly from the OCR sheet (1 step per equipment component / milestone)
+    const moldComp = body.components?.find(c => c.type_code === 'MOLD')
+    const plugComp = body.components?.find(c => c.type_code === 'PLUG')
+    const cutterComp = body.components?.find(c => c.type_code === 'CUTTER')
+    const hasPlugRequirement = plugComp?.arrangement === 'REQUIRED' || Boolean(body.plug_type && body.plug_type !== 'なし')
+    const hasCutterRequirement = cutterComp?.arrangement === 'REQUIRED' || !cutterComp || cutterComp.condition === 'NEW'
+
+    const jobStepsToInsert: any[] = []
+    let stepNo = 1
+
+    // 1. Track [M] 金型
+    if (moldComp?.deadline && moldComp.deadline !== moldDeadline) {
+      jobStepsToInsert.push({
+        job_id: moldJobId,
+        step_no: stepNo++,
+        step_name: 'アルミ材手配',
+        track: 'MOLD',
+        type_code: 'MOLD',
+        material_spec: moldComp.material_spec || 'アルミ材',
+        arrangement: 'REQUIRED',
+        condition: 'NEW',
+        step_status: 'PENDING',
+        manufacture_location: moldComp.manufacture_location || 'IN_HOUSE',
+        deadline: moldComp.deadline,
+        estimated_hours: null
+      })
+    }
+    jobStepsToInsert.push({
+      job_id: moldJobId,
+      step_no: stepNo++,
+      step_name: '金型製作',
+      track: 'MOLD',
+      type_code: 'MOLD',
+      material_spec: moldComp?.material_spec || 'アルミ材',
+      arrangement: 'REQUIRED',
+      condition: 'NEW',
+      step_status: 'PENDING',
+      manufacture_location: moldComp?.manufacture_location || 'IN_HOUSE',
+      deadline: moldDeadline || null,
+      estimated_hours: null
+    })
+
+    // 2. Track [P] プラグ
+    if (hasPlugRequirement) {
+      const plugDl = plugComp?.deadline || moldDeadline || null
+      jobStepsToInsert.push({
+        job_id: moldJobId,
+        step_no: stepNo++,
+        step_name: 'プラグ製作',
+        track: 'PLUG',
+        type_code: 'PLUG',
+        material_spec: plugComp?.material_spec || null,
+        arrangement: 'REQUIRED',
+        condition: 'NEW',
+        step_status: 'PENDING',
+        manufacture_location: plugComp?.manufacture_location || 'IN_HOUSE',
+        deadline: plugDl,
+        estimated_hours: null
+      })
+    }
+
+    // 3. Track [C] 抜型
+    if (hasCutterRequirement) {
+      const cutterDl = cutterComp?.deadline || moldDeadline || null
+      jobStepsToInsert.push({
+        job_id: moldJobId,
+        step_no: stepNo++,
+        step_name: '抜型製作',
+        track: 'CUTTER',
+        type_code: 'CUTTER',
+        material_spec: cutterComp?.material_spec || '抜型',
+        arrangement: 'REQUIRED',
+        condition: 'NEW',
+        step_status: 'PENDING',
+        manufacture_location: cutterComp?.manufacture_location || 'IN_HOUSE',
+        deadline: cutterDl,
+        estimated_hours: null
+      })
+    }
+
+    // 4. Other auxiliary components (Water base, Frame...)
+    const otherComps = body.components?.filter(c => !['MOLD', 'PLUG', 'CUTTER'].includes(c.type_code)) || []
+    for (const oc of otherComps) {
+      jobStepsToInsert.push({
+        job_id: moldJobId,
+        step_no: stepNo++,
+        step_name: oc.step_name || oc.type_code,
+        track: oc.type_code,
+        type_code: oc.type_code,
+        material_spec: oc.material_spec || null,
+        arrangement: oc.arrangement || 'NOT_REQUIRED',
+        condition: oc.condition || 'EXISTING',
+        step_status: 'PENDING',
+        manufacture_location: oc.manufacture_location || 'IN_HOUSE',
+        deadline: oc.deadline || null,
+        estimated_hours: oc.estimated_hours || null
+      })
+    }
+
+    await supabase.from('job_steps').insert(jobStepsToInsert)
 
     return NextResponse.json({
       success: true,
@@ -534,7 +725,6 @@ export async function POST(request: NextRequest) {
         cutter_equipment_id: cutterEquipmentId,
         equipment_count: createdEquipmentIds.length,
         job_id: moldJobId,
-        cutter_job_id: cutterJobId,
         job_code: moldJobCode,
         product_code: cleanCode,
         product_name_internal: cleanInternal

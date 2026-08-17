@@ -21,6 +21,7 @@ export interface AsyncSearchableSelectProps {
   minChars?: number
   /** Debounce ms (default 300) */
   debounceMs?: number
+  initialOption?: SelectOption | null
 }
 
 /**
@@ -50,6 +51,7 @@ export const AsyncSearchableSelect: React.FC<AsyncSearchableSelectProps> = ({
   disabled = false,
   minChars = 0,
   debounceMs = 300,
+  initialOption = null,
 }) => {
   const t = useTranslations('Common')
   const displayPlaceholder = placeholder || t('selectPlaceholder')
@@ -57,7 +59,7 @@ export const AsyncSearchableSelect: React.FC<AsyncSearchableSelectProps> = ({
   const [search, setSearch] = useState('')
   const [options, setOptions] = useState<SelectOption[]>([])
   const [loading, setLoading] = useState(false)
-  const [selectedOption, setSelectedOption] = useState<SelectOption | null>(null)
+  const [selectedOption, setSelectedOption] = useState<SelectOption | null>(initialOption)
   const containerRef = useRef<HTMLDivElement>(null)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const cacheRef = useRef<Map<string, SelectOption[]>>(new Map())
@@ -88,6 +90,15 @@ export const AsyncSearchableSelect: React.FC<AsyncSearchableSelectProps> = ({
       setLoading(false)
     }
   }, [fetchOptions, minChars, value, selectedOption])
+
+  // Sync initialOption and value
+  useEffect(() => {
+    if (initialOption && (!value || initialOption.value === value)) {
+      setSelectedOption(initialOption)
+    } else if (!value) {
+      setSelectedOption(null)
+    }
+  }, [initialOption, value])
 
   // Debounce search
   useEffect(() => {

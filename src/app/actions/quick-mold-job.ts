@@ -64,6 +64,7 @@ export type QuickMoldJobInput = {
   design_depth?: number | null
   cavity_count?: number | null
   plastic_type_designed?: string | null
+  plastic_id?: string | null
   cutline_length?: number | null
   cutline_width?: number | null
   corner_r?: string | null
@@ -84,6 +85,8 @@ export type QuickMoldJobInput = {
   responsible_id?: string | null
   start_date?: string | null
   deadline?: string | null
+  ship_date?: string | null
+  first_shipment_date?: string | null
   notes?: string | null
 
   // 4. Jobs (Option C: each job = 1 equipment)
@@ -98,7 +101,6 @@ export type QuickMoldJobInput = {
   /** @deprecated */ job_name?: string
   /** @deprecated */ job_type_id?: string | null
   /** @deprecated */ job_category?: string | null
-  /** @deprecated */ ship_date?: string | null
   /** @deprecated */ price_quote_required?: boolean | null
   /** @deprecated */ unit_price?: number | null
   /** @deprecated */ steps?: QuickMoldJobStepInput[]
@@ -139,6 +141,7 @@ export async function createQuickMoldJobWorkflow(input: QuickMoldJobInput) {
           product_name: input.product_name.trim() || input.product_code.trim(),
           customer_product_name: input.customer_product_name?.trim() || null,
           company_id: companyId,
+          first_shipment_date: input.ship_date || input.first_shipment_date || null,
           product_status: 'ACTIVE',
         })
         .select('product_id')
@@ -165,6 +168,7 @@ export async function createQuickMoldJobWorkflow(input: QuickMoldJobInput) {
         design_depth: input.design_depth || null,
         cavity_count: input.cavity_count || null,
         plastic_type_designed: input.plastic_type_designed?.trim() || null,
+        plastic_id: input.plastic_id || null,
         cutline_length: input.cutline_length || null,
         cutline_width: input.cutline_width || null,
         corner_r: input.corner_r?.trim() || null,
@@ -331,7 +335,7 @@ export async function getQuickMoldJobData(jobId: string) {
         companies:companies!jobs_company_id_fkey(*),
         products(*, companies:companies!products_company_id_fkey(*)),
         design_revisions(*),
-        physical_molds(*),
+        equipment(*),
         job_steps(*)
       `)
       .eq('job_id', jobId)
@@ -364,10 +368,18 @@ export async function getQuickMoldJobData(jobId: string) {
       if (comp) resolvedCompany = comp
     }
 
+    const physical_molds = (job as any).equipment ? {
+      system_code: (job as any).equipment.equipment_code,
+      display_name: (job as any).equipment.display_name,
+      physical_stamp: (job as any).equipment.physical_stamp || (job as any).equipment.equipment_code,
+      device_status: (job as any).equipment.device_status || (job as any).equipment.usage_status
+    } : null
+
     return {
       success: true,
       job: {
         ...job,
+        physical_molds,
         resolved_company: resolvedCompany
       } as any,
     }
@@ -384,7 +396,7 @@ export async function updateQuickMoldJobWorkflow(jobId: string, input: any) {
     // 1. Fetch current job references
     const { data: currentJob } = await supabase
       .from('jobs')
-      .select('job_id, product_id, design_revision_id, physical_mold_id')
+      .select('job_id, product_id, design_revision_id, equipment_id')
       .eq('job_id', jobId)
       .single()
 
@@ -401,6 +413,8 @@ export async function updateQuickMoldJobWorkflow(jobId: string, input: any) {
         product_name: input.product_name.trim() || input.product_code.trim(),
         customer_product_name: input.customer_product_name?.trim() || null,
         company_id: companyId || undefined,
+        first_shipment_date: input.ship_date || input.first_shipment_date || undefined,
+        updated_at: new Date().toISOString()
       }).eq('product_id', currentJob.product_id)
     }
 
@@ -414,6 +428,7 @@ export async function updateQuickMoldJobWorkflow(jobId: string, input: any) {
         design_depth: input.design_depth || null,
         cavity_count: input.cavity_count || null,
         plastic_type_designed: input.plastic_type_designed?.trim() || null,
+        plastic_id: input.plastic_id || null,
         cutline_length: input.cutline_length || null,
         cutline_width: input.cutline_width || null,
         corner_r: input.corner_r?.trim() || null,
@@ -437,14 +452,14 @@ export async function updateQuickMoldJobWorkflow(jobId: string, input: any) {
       compSummary = '【構成部品・補助設備 Kit】: ' + componentSteps.map((c: any) => `${c.step_name} (x${c.quantity || 1})`).join(', ')
     }
 
-    // 4. Update Physical Mold if exists
-    if (currentJob.physical_mold_id) {
-      await supabase.from('physical_molds').update({
-        system_code: input.system_code.trim(),
-        display_name: input.display_name.trim() || input.system_code.trim(),
+    // 4. Update Equipment (Mold) if exists
+    if (currentJob.equipment_id) {
+      await supabase.from('equipment').update({
+        equipment_code: input.system_code?.trim() || input.display_name?.trim(),
+        display_name: input.display_name?.trim() || input.system_code?.trim(),
         physical_stamp: input.physical_stamp?.trim() || null,
         notes: compSummary || null,
-      }).eq('physical_mold_id', currentJob.physical_mold_id)
+      }).eq('equipment_id', currentJob.equipment_id)
     }
 
     // 5. Update Job
@@ -496,7 +511,8 @@ export async function updateQuickMoldJobWorkflow(jobId: string, input: any) {
     return {
       success: true,
       job_id: jobId,
-      physical_mold_id: currentJob.physical_mold_id,
+      equipment_id: currentJob.equipment_id,
+      physical_mold_id: currentJob.equipment_id,
     }
   } catch (err: any) {
     return { success: false, error: err.message || 'Lỗi cập nhật hệ thống' }

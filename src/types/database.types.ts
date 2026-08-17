@@ -6028,6 +6028,7 @@ export type Database = {
           end_user_company_id: string | null
           external_length_mm: number | null
           external_width_mm: number | null
+          first_shipment_date: string | null
           legacy_id: string | null
           legacy_specs: Json | null
           mold_master_id: string | null
@@ -6059,6 +6060,7 @@ export type Database = {
           end_user_company_id?: string | null
           external_length_mm?: number | null
           external_width_mm?: number | null
+          first_shipment_date?: string | null
           legacy_id?: string | null
           legacy_specs?: Json | null
           mold_master_id?: string | null
@@ -6090,6 +6092,7 @@ export type Database = {
           end_user_company_id?: string | null
           external_length_mm?: number | null
           external_width_mm?: number | null
+          first_shipment_date?: string | null
           legacy_id?: string | null
           legacy_specs?: Json | null
           mold_master_id?: string | null

@@ -90,6 +90,28 @@ function getSearchVariants(term: string): string[] {
   return Array.from(set)
 }
 
+function autoMatchPlastic(text: string, masters: PlasticMaster[]): PlasticMaster | null {
+  if (!text || masters.length === 0) return null
+  const familyMatch = text.match(/(PET|PP|PS|PVC|ABS|HIPS|OPS|A-PET)/i)
+  const thicknessMatch = text.match(/(\d+\.?\d*)\s*(?:mm|t)/i)
+  if (!familyMatch) return null
+  const family = familyMatch[1].toUpperCase()
+  const thick = thicknessMatch ? parseFloat(thicknessMatch[1]) : null
+
+  // 1. Try matching both family and thickness
+  if (thick != null) {
+    const exact = masters.find(pm => 
+      pm.plastic_family?.toUpperCase().includes(family) && 
+      Math.abs((pm.thickness_mm || 0) - thick) < 0.05
+    )
+    if (exact) return exact
+  }
+
+  // 2. Try matching family only
+  const famMatch = masters.find(pm => pm.plastic_family?.toUpperCase().includes(family))
+  return famMatch || null
+}
+
 // ── Standard Default Job Types (Includes Equipment & Tooling Job Types) ──
 const DEFAULT_JOB_TYPES: JobType[] = [
   { job_type_id: '1', job_type_name_ja: '新規金型' },
@@ -209,6 +231,8 @@ export default function QuickCreateMoldJobPage() {
   const [customerProductName, setCustomerProductName] = useState('')
   const [productName, setProductName] = useState('')
   const [primaryPlasticCode, setPrimaryPlasticCode] = useState('')
+  const [plasticTypeDesigned, setPlasticTypeDesigned] = useState('')
+  const [plasticId, setPlasticId] = useState('')
   const [productSearchResults, setProductSearchResults] = useState<any[]>([])
   const [isProductDropdownOpen, setIsProductDropdownOpen] = useState(false)
   const [productHighlightedIndex, setProductHighlightedIndex] = useState(0)
@@ -550,11 +574,28 @@ export default function QuickCreateMoldJobPage() {
       const prodCode = j.products?.product_code || ''
       const prodName = j.products?.product_name || ''
       const custProdName = j.products?.customer_product_name || ''
-      const plastic = j.design_revisions?.plastic_type_designed || '—'
+      const plasticText = j.design_revisions?.plastic_type_designed || ''
+      const pId = j.design_revisions?.plastic_id || ''
       setProductCode(prodCode)
       setProductName(prodName)
       setCustomerProductName(custProdName)
-      setPrimaryPlasticCode(plastic)
+      setPlasticTypeDesigned(plasticText)
+      setPlasticId(pId)
+
+      if (pId) {
+        const matched = plasticMasters.find(pm => pm.plastic_id === pId)
+        if (matched) setPrimaryPlasticCode(matched.plastic_code)
+      } else if (plasticText) {
+        const auto = autoMatchPlastic(plasticText, plasticMasters)
+        if (auto) {
+          setPlasticId(auto.plastic_id)
+          setPrimaryPlasticCode(auto.plastic_code)
+        } else {
+          setPrimaryPlasticCode('')
+        }
+      } else {
+        setPrimaryPlasticCode('')
+      }
 
       // Design Revision Specs
       const d = j.design_revisions || {}
@@ -742,7 +783,24 @@ export default function QuickCreateMoldJobPage() {
         setTextContent(d.text_content || '')
         setPlugType(d.plug_type || '')
         setHasSeparateCutter(d.has_separate_cutter || false)
-        setPrimaryPlasticCode(d.plastic_type_designed || '')
+        const pText = d.plastic_type_designed || ''
+        const pId = d.plastic_id || ''
+        setPlasticTypeDesigned(pText)
+        setPlasticId(pId)
+        if (pId) {
+          const matched = plasticMasters.find(pm => pm.plastic_id === pId)
+          if (matched) setPrimaryPlasticCode(matched.plastic_code)
+        } else if (pText) {
+          const auto = autoMatchPlastic(pText, plasticMasters)
+          if (auto) {
+            setPlasticId(auto.plastic_id)
+            setPrimaryPlasticCode(auto.plastic_code)
+          } else {
+            setPrimaryPlasticCode('')
+          }
+        } else {
+          setPrimaryPlasticCode('')
+        }
         if (d.change_summary?.includes('ポケット試作:')) {
           setPocketPrototype(d.change_summary.replace('ポケット試作:', '').trim())
         }
@@ -866,7 +924,24 @@ export default function QuickCreateMoldJobPage() {
         setTextContent(d.text_content || '')
         setPlugType(d.plug_type || '')
         setHasSeparateCutter(d.has_separate_cutter || false)
-        setPrimaryPlasticCode(d.plastic_type_designed || '')
+        const pText = d.plastic_type_designed || ''
+        const pId = d.plastic_id || ''
+        setPlasticTypeDesigned(pText)
+        setPlasticId(pId)
+        if (pId) {
+          const matched = plasticMasters.find(pm => pm.plastic_id === pId)
+          if (matched) setPrimaryPlasticCode(matched.plastic_code)
+        } else if (pText) {
+          const auto = autoMatchPlastic(pText, plasticMasters)
+          if (auto) {
+            setPlasticId(auto.plastic_id)
+            setPrimaryPlasticCode(auto.plastic_code)
+          } else {
+            setPrimaryPlasticCode('')
+          }
+        } else {
+          setPrimaryPlasticCode('')
+        }
         if (d.change_summary?.includes('ポケット試作:')) {
           setPocketPrototype(d.change_summary.replace('ポケット試作:', '').trim())
         }
@@ -1045,6 +1120,8 @@ export default function QuickCreateMoldJobPage() {
       design_height: designHeight ? Number(designHeight) : null,
       design_depth: designDepth ? Number(designDepth) : null,
       cavity_count: cavityCount ? Number(cavityCount) : null,
+      plastic_type_designed: plasticTypeDesigned || null,
+      plastic_id: plasticId || null,
       cutline_length: cutlineLength ? Number(cutlineLength) : null,
       cutline_width: cutlineWidth ? Number(cutlineWidth) : null,
       corner_r: cornerR,
@@ -1460,34 +1537,75 @@ export default function QuickCreateMoldJobPage() {
                     />
                   </div>
 
-                  <div>
-                    <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 2 }}>
-                      {t('primaryPlasticCodeLabel')}
-                    </label>
-                    <select
-                      className="form-input"
-                      style={{ height: 28, fontSize: 12, padding: '2px 6px' }}
-                      value={primaryPlasticCode}
-                      onChange={e => setPrimaryPlasticCode(e.target.value)}
-                    >
-                      <option value="">— {tCommon('selectPlaceholder')} —</option>
-                      {plasticMasters.length > 0 ? (
-                        plasticMasters.map(pm => (
-                          <option key={pm.plastic_id} value={pm.plastic_code}>
-                            {pm.plastic_code} {pm.plastic_family ? `(${pm.plastic_family})` : ''}
-                          </option>
-                        ))
-                      ) : (
-                        <>
-                          <option value="PET 0.5t">PET 0.5t</option>
-                          <option value="PET 0.3t">PET 0.3t</option>
-                          <option value="PP 0.5t">PP 0.5t</option>
-                          <option value="PS 0.4t">PS 0.4t</option>
-                          <option value="A-PET 0.5t">A-PET 0.5t</option>
-                          <option value="CONDUCTIVE PS">CONDUCTIVE PS</option>
-                        </>
-                      )}
-                    </select>
+                  <div className="flex flex-col gap-1">
+                    <div>
+                      <div className="flex items-center justify-between" style={{ marginBottom: 2 }}>
+                        <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-secondary)' }}>
+                          {t('plasticTypeDesignedLabel')}
+                        </label>
+                        {plasticId && (
+                          <span className="badge badge--success" style={{ fontSize: 9, padding: '0 4px', lineHeight: '14px' }}>
+                            ✓ {t('autoMatchedPlasticBadge')}
+                          </span>
+                        )}
+                      </div>
+                      <input
+                        type="text"
+                        placeholder={t('plasticTypeDesignedPlaceholder')}
+                        className="form-input font-mono"
+                        style={{ height: 28, fontSize: 11, padding: '2px 6px', fontWeight: 600 }}
+                        value={plasticTypeDesigned}
+                        onChange={e => {
+                          const val = e.target.value
+                          setPlasticTypeDesigned(val)
+                          const auto = autoMatchPlastic(val, plasticMasters)
+                          if (auto) {
+                            setPlasticId(auto.plastic_id)
+                            setPrimaryPlasticCode(auto.plastic_code)
+                          }
+                        }}
+                      />
+                    </div>
+
+                    <div>
+                      <label style={{ display: 'block', fontSize: 10, fontWeight: 600, color: 'var(--text-muted)', marginBottom: 1 }}>
+                        {t('primaryPlasticCodeLabel')}
+                      </label>
+                      <select
+                        className="form-input"
+                        style={{ height: 24, fontSize: 11, padding: '1px 4px' }}
+                        value={plasticId || primaryPlasticCode}
+                        onChange={e => {
+                          const val = e.target.value
+                          const found = plasticMasters.find(pm => pm.plastic_id === val || pm.plastic_code === val)
+                          if (found) {
+                            setPlasticId(found.plastic_id)
+                            setPrimaryPlasticCode(found.plastic_code)
+                          } else {
+                            setPlasticId('')
+                            setPrimaryPlasticCode(val)
+                          }
+                        }}
+                      >
+                        <option value="">— {tCommon('selectPlaceholder')} —</option>
+                        {plasticMasters.length > 0 ? (
+                          plasticMasters.map(pm => (
+                            <option key={pm.plastic_id} value={pm.plastic_id}>
+                              {pm.plastic_code} {pm.plastic_family ? `(${pm.plastic_family}${pm.thickness_mm ? ` ${pm.thickness_mm}mm` : ''})` : ''}
+                            </option>
+                          ))
+                        ) : (
+                          <>
+                            <option value="PET 0.5t">PET 0.5t</option>
+                            <option value="PET 0.3t">PET 0.3t</option>
+                            <option value="PP 0.5t">PP 0.5t</option>
+                            <option value="PS 0.4t">PS 0.4t</option>
+                            <option value="A-PET 0.5t">A-PET 0.5t</option>
+                            <option value="CONDUCTIVE PS">CONDUCTIVE PS</option>
+                          </>
+                        )}
+                      </select>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1759,7 +1877,7 @@ export default function QuickCreateMoldJobPage() {
                         }
 
                         return componentEntries.map(({ comp, originalIdx }) => (
-                          <tr key={comp.type_code || originalIdx}>
+                          <tr key={`comp-${comp.type_code || 'step'}-${originalIdx}`}>
                             <td style={{ padding: '3px 6px' }}>
                               <select
                                 className="form-input"

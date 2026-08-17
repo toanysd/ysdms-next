@@ -1,10 +1,16 @@
 'use client'
 
 import { useTranslations } from 'next-intl'
-
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { X, Save, Loader2, ListPlus, Plus, Trash2, Clock } from 'lucide-react'
+import {
+  X, Loader2, Trash2, Clock,
+  Calendar, CheckCircle2, FileText, ChevronDown, ChevronUp,
+  Printer, FileDown, Eye, Plus, Layers, User,
+  Edit3
+} from 'lucide-react'
+import { SearchableSelect } from '@/components/ui/SearchableSelect'
+import { DailyWorklogA4Sheet, PRICE_MAP, NippoItem } from '@/components/worklogs/DailyWorklogA4Sheet'
 
 type StepData = {
   step_id: string
@@ -22,6 +28,7 @@ type StepData = {
   assigned_to: string | null
   deadline: string | null
   notes: string | null
+  item_type_id?: number | null
   processing_status_id?: number | null
 }
 
@@ -33,182 +40,297 @@ type Props = {
   onSaved: () => void
 }
 
+const QUICK_HOURS = [0.5, 1.0, 1.5, 2.0, 3.0, 4.0, 6.0, 8.0]
+const STORAGE_KEY_LAST_WORKER = 'ysdms_last_selected_worker_id'
+
 export function EditStepModal({ step, jobId, nextStepNo, onClose, onSaved }: Props) {
   const t = useTranslations()
-
   const supabase = createClient()
   const isNew = !step
 
-  const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  
-  // Reference data
-  const [stdProcesses, setStdProcesses] = useState<any[]>([])
-  const [machines, setMachines] = useState<any[]>([])
+
+  // Master Reference Data fetched from DB tables (NO hardcoding)
+  const [itemTypes, setItemTypes] = useState<any[]>([])
+  const [processingCodes, setProcessingCodes] = useState<{ value: string; label: string }[]>([])
+  const [rawCodes, setRawCodes] = useState<any[]>([])
   const [employees, setEmployees] = useState<any[]>([])
-  const [processingCodes, setProcessingCodes] = useState<any[]>([])
-  const [processingStatuses, setProcessingStatuses] = useState<any[]>([])
 
-  // Form state - Left Panel
-  const [stepNo, setStepNo] = useState(step?.step_no || nextStepNo)
+  // Step Configuration State (For New Step or Editing Step metadata)
+  const [isEditingStepConfig, setIsEditingStepConfig] = useState(isNew)
   const [stepName, setStepName] = useState(step?.step_name || '')
-  const [track, setTrack] = useState(step?.track || '')
-  const [stepStatus, setStepStatus] = useState(step?.step_status || 'PENDING')
-  const [processingStatusId, setProcessingStatusId] = useState<string>(step?.processing_status_id?.toString() || '')
-  const [plannedStart, setPlannedStart] = useState(step?.planned_start?.slice(0, 10) || '')
-  const [plannedEnd, setPlannedEnd] = useState(step?.planned_end?.slice(0, 10) || '')
-  const [plannedHours, setPlannedHours] = useState<string>(step?.planned_hours?.toString() || '')
-  const [actualHours, setActualHours] = useState<string>(step?.actual_hours?.toString() || '')
-  const [estimatedHours, setEstimatedHours] = useState<string>(step?.estimated_hours?.toString() || '')
-  const [machiningLocation, setMachiningLocation] = useState(step?.machining_location || '')
-  const [machineId, setMachineId] = useState(step?.machine_id || '')
-  const [assignedTo, setAssignedTo] = useState(step?.assigned_to || '')
-  const [deadline, setDeadline] = useState(step?.deadline?.slice(0, 10) || '')
-  const [notes, setNotes] = useState(step?.notes || '')
+  const [selectedItemTypeId, setSelectedItemTypeId] = useState<string>(step?.item_type_id ? String(step.item_type_id) : '7')
+  const [stepTrack, setStepTrack] = useState(step?.track || 'STACKING')
+  const [stepNo, setStepNo] = useState(step?.step_no || nextStepNo || 1)
+  const [plannedHours, setPlannedHours] = useState(step?.planned_hours ? String(step.planned_hours) : '2.0')
+  const [stepDeadline, setStepDeadline] = useState(step?.deadline ? step.deadline.split('T')[0] : '')
+  const [stepAssignedTo, setStepAssignedTo] = useState(step?.assigned_to || '')
+  const [stepNotes, setStepNotes] = useState(step?.notes || '')
+  const [savingStep, setSavingStep] = useState(false)
 
-  // Logs state - Right Panel
+  // Job metadata for clear context anchor
+  const [jobMeta, setJobMeta] = useState<{
+    job_code?: string | null
+    job_name?: string | null
+    job_category?: string | null
+    deadline?: string | null
+    mold_deadline?: string | null
+  } | null>(null)
+
+  // Worklogs list for this step (all dates)
   const [logs, setLogs] = useState<any[]>([])
   const [loadingLogs, setLoadingLogs] = useState(false)
 
-  // Log Form state
+  // Worklogs for this worker on selected date (All jobs today)
+  const [todayWorkerLogs, setTodayWorkerLogs] = useState<any[]>([])
+  const [loadingTodayLogs, setLoadingTodayLogs] = useState(false)
+  const [isStepHistoryExpanded, setIsStepHistoryExpanded] = useState(false)
+
+  // Focused Log Form State
   const [editingLogId, setEditingLogId] = useState<string | null>(null)
-  const [logPlannedDate, setLogPlannedDate] = useState('')
-  const [logPlannedHours, setLogPlannedHours] = useState('')
   const [logWorkDate, setLogWorkDate] = useState(new Date().toISOString().split('T')[0])
   const [logWorker, setLogWorker] = useState('')
-  const [logMachine, setLogMachine] = useState('')
-  const [logCode, setLogCode] = useState('')
-  const [logHours, setLogHours] = useState('')
+  const [logHours, setLogHours] = useState('1.0')
+  const [selectedCodeId, setSelectedCodeId] = useState<string>('')
+  const [customDescription, setCustomDescription] = useState('')
   const [logNotes, setLogNotes] = useState('')
-  const [logStatusId, setLogStatusId] = useState('')
+  const [logIsFinished, setLogIsFinished] = useState(false)
   const [addingLog, setAddingLog] = useState(false)
 
+  // ── Load All Master Data Dynamically from DB ──
   useEffect(() => {
-    async function loadRefs() {
+    async function loadMeta() {
+      // 1. Fetch Job Info
+      if (jobId) {
+        const { data: jData } = await supabase
+          .from('jobs')
+          .select('job_id, job_code, job_name, job_category, deadline, mold_deadline')
+          .eq('job_id', jobId)
+          .maybeSingle()
+        if (jData) {
+          setJobMeta(jData)
+          if (isNew && !stepDeadline) {
+            const dl = jData.mold_deadline || (jData.deadline ? jData.deadline.split('T')[0] : '')
+            if (dl) setStepDeadline(dl)
+          }
+        }
+
+        if (isNew) {
+          const { data: latestSteps } = await supabase
+            .from('job_steps')
+            .select('step_no')
+            .eq('job_id', jobId)
+            .order('step_no', { ascending: false })
+            .limit(1)
+
+          const nextNo = (latestSteps && latestSteps.length > 0 && latestSteps[0].step_no != null)
+            ? latestSteps[0].step_no + 1
+            : 1
+          setStepNo(nextNo)
+        }
+      }
+
+      // 2. Fetch Item Types (Phân nhánh), Processing Codes, Employees
       const [
-        { data: std }, 
-        { data: mac }, 
-        { data: emp },
-        { data: codes },
-        { data: pStatus }
+        { data: itData },
+        { data: codesData },
+        { data: empData }
       ] = await Promise.all([
-        supabase.from('standard_process_times').select('id, process_name_ja, track, default_hours').eq('is_active', true),
-        supabase.from('machines').select('machine_id, machine_name, machine_type').order('machine_name'),
-        supabase.from('employees').select('employee_id, employee_name').eq('is_active', true).order('employee_name'),
-        supabase.from('processing_codes').select('processing_code_id, processing_name, category').eq('is_active', true).order('category').order('processing_name'),
-        supabase.from('processing_statuses').select('status_id, status_code, status_name_vi').order('status_id')
+        supabase.from('item_types').select('*').order('item_type_id'),
+        supabase.from('processing_codes').select('processing_code_id, processing_name').eq('is_active', true).order('processing_code_id'),
+        supabase.from('employees').select('employee_id, employee_name, employee_name_short, employee_code').eq('is_active', true).order('employee_name')
       ])
-      if (std) setStdProcesses(std)
-      if (mac) setMachines(mac)
-      if (emp) setEmployees(emp)
-      if (codes) setProcessingCodes(codes)
-      if (pStatus) setProcessingStatuses(pStatus)
+
+      if (itData && itData.length > 0) {
+        setItemTypes(itData)
+        if (step?.item_type_id) {
+          setSelectedItemTypeId(String(step.item_type_id))
+        } else if (isNew && !stepName) {
+          // Default to STACKING (id=7) or first item
+          const stkItem = itData.find(i => i.item_type_code === 'STAKING' || i.item_type_code === 'STACKING') || itData[0]
+          setSelectedItemTypeId(String(stkItem.item_type_id))
+          setStepName(stkItem.item_type_name_ja + '製作')
+          setStepTrack(stkItem.item_type_code?.toUpperCase() || 'STACKING')
+        }
+      }
+
+      if (codesData) {
+        setRawCodes(codesData)
+        const codeOptions = codesData.map(c => ({
+          value: String(c.processing_code_id),
+          label: `[${c.processing_code_id}] ${c.processing_name}`
+        }))
+        setProcessingCodes(codeOptions)
+      }
+
+      if (empData) {
+        setEmployees(empData)
+        // Restore last selected worker from localStorage
+        const lastWorker = localStorage.getItem(STORAGE_KEY_LAST_WORKER)
+        if (lastWorker && empData.some(e => e.employee_id === lastWorker)) {
+          setLogWorker(lastWorker)
+        } else if (empData.length > 0 && !logWorker) {
+          setLogWorker(empData[0].employee_id)
+        }
+      }
     }
-    loadRefs()
-  }, [])
+    loadMeta()
+  }, [jobId, isNew, step, supabase])
 
-  const fetchLogs = useCallback(async () => {
-    if (isNew || !step?.step_id) return
-    setLoadingLogs(true)
-    const { data, error: err } = await supabase
-      .from('work_logs')
-      .select(`
-        *,
-        employees(employee_name),
-        processing_codes(processing_name),
-        processing_statuses(status_code)
-      `)
-      .eq('job_step_id', step.step_id)
-      .order('work_date', { ascending: false })
-      .order('created_at', { ascending: false })
+  // When changing item_type in Create Step, also auto set track and step name
+  const handleItemTypeChange = (itId: string) => {
+    setSelectedItemTypeId(itId)
+    const it = itemTypes.find(i => String(i.item_type_id) === itId)
+    if (it) {
+      const code = it.item_type_code?.toUpperCase() || 'MOLD'
+      if (code.includes('PLUG')) setStepTrack('PLUG')
+      else if (code.includes('CUTTER')) setStepTrack('CUTTER')
+      else if (code.includes('STAKING') || code.includes('STACKING')) setStepTrack('STACKING')
+      else if (code.includes('BASE') || code.includes('WATER') || code.includes('PRESS')) setStepTrack('BASE')
+      else setStepTrack('MOLD')
 
-    if (!err && data) setLogs(data)
-    setLoadingLogs(false)
-  }, [step?.step_id, isNew])
-
-  useEffect(() => {
-    fetchLogs()
-  }, [fetchLogs])
-
-  const applyStdProcess = (procId: string) => {
-    const p = stdProcesses.find(x => x.id === procId)
-    if (p) {
-      setStepName(p.process_name_ja)
-      setTrack(p.track || '')
-      setEstimatedHours(p.default_hours?.toString() || '')
-      setPlannedHours('')
+      // Set default step name if empty or generic
+      setStepName(it.item_type_name_ja + (it.item_type_name_ja.endsWith('製作') || it.item_type_name_ja.endsWith('加工') ? '' : '製作'))
     }
   }
 
-  const handleSaveStep = async () => {
-    if (!stepName.trim()) {
-      setError(t('Equipment.valStepNameReq'))
+  // Handle worker change and persist to localStorage
+  const handleWorkerChange = (val: string | null) => {
+    const newWorkerId = val || ''
+    setLogWorker(newWorkerId)
+    if (newWorkerId) {
+      localStorage.setItem(STORAGE_KEY_LAST_WORKER, newWorkerId)
+    }
+  }
+
+  // Fetch worklogs for this step
+  const fetchLogs = useCallback(async () => {
+    if (!step?.step_id) return
+    setLoadingLogs(true)
+    const { data } = await supabase
+      .from('work_logs')
+      .select('log_id, work_date, hours_spent, description, notes, is_finished, employee_id, processing_code_id, employees:employee_id(employee_name), processing_codes:processing_code_id(processing_code_id, processing_name)')
+      .eq('job_step_id', step.step_id)
+      .order('work_date', { ascending: false })
+
+    if (data) setLogs(data)
+    setLoadingLogs(false)
+  }, [step?.step_id, supabase])
+
+  // Fetch today's worklogs for this worker across ALL jobs
+  const fetchTodayLogs = useCallback(async () => {
+    if (!logWorker || !logWorkDate) {
+      setTodayWorkerLogs([])
       return
     }
+    setLoadingTodayLogs(true)
+    const { data } = await supabase
+      .from('work_logs')
+      .select(`
+        log_id, work_date, hours_spent, description, notes, is_finished, processing_code_id,
+        jobs:job_id(
+          job_code,
+          job_name,
+          physical_molds:equipment_id(equipment_code),
+          products:product_id(product_code)
+        ),
+        job_steps:job_step_id(step_no, step_name),
+        processing_codes:processing_code_id(processing_code_id, processing_name)
+      `)
+      .eq('employee_id', logWorker)
+      .eq('work_date', logWorkDate)
+      .order('created_at', { ascending: true })
 
-    setSaving(true)
-    setError(null)
+    if (data) setTodayWorkerLogs(data)
+    setLoadingTodayLogs(false)
+  }, [logWorker, logWorkDate, supabase])
 
+  useEffect(() => {
+    if (step?.step_id) fetchLogs()
+  }, [step?.step_id, fetchLogs])
+
+  useEffect(() => {
+    fetchTodayLogs()
+  }, [fetchTodayLogs])
+
+  // ── SAVE / CREATE STEP CONFIGURATION ──
+  const handleSaveStepConfig = async () => {
+    if (!stepName.trim()) {
+      alert('工程名を入力または選択してください (Vui lòng nhập tên công đoạn)')
+      return
+    }
+    setSavingStep(true)
     try {
-      const payload = {
+      const itIdNum = selectedItemTypeId ? parseInt(selectedItemTypeId) : null
+      const payload: any = {
         job_id: jobId,
         step_no: stepNo,
-        step_name: stepName,
-        step_status: stepStatus,
-        processing_status_id: processingStatusId ? parseInt(processingStatusId) : null,
-        track: track || null,
-        planned_start: plannedStart || null,
-        planned_end: plannedEnd || null,
+        step_name: stepName.trim(),
+        item_type_id: itIdNum,
+        track: stepTrack || 'STACKING',
         planned_hours: plannedHours ? parseFloat(plannedHours) : null,
-        actual_hours: actualHours ? parseFloat(actualHours) : null,
-        estimated_hours: estimatedHours ? parseFloat(estimatedHours) : null,
-        machining_location: machiningLocation || null,
-        machine_id: machineId || null,
-        assigned_to: assignedTo || null,
-        deadline: deadline || null,
-        notes: notes || null,
-        updated_at: new Date().toISOString(),
+        deadline: stepDeadline || null,
+        assigned_to: stepAssignedTo || null,
+        notes: stepNotes.trim() || null,
+        step_status: step?.step_status || 'PENDING',
       }
 
       if (isNew) {
-        const { error: insErr } = await supabase.from('job_steps').insert([payload])
-        if (insErr) throw new Error(insErr.message)
-      } else {
-        const { error: updErr } = await supabase
+        // Query latest max step_no for this job to prevent duplicate key constraint
+        const { data: latestSteps } = await supabase
           .from('job_steps')
-          .update(payload)
-          .eq('step_id', step.step_id)
-        if (updErr) throw new Error(updErr.message)
-      }
-
-      const { data: allSteps } = await supabase.from('job_steps').select('step_status').eq('job_id', jobId)
-
-      if (allSteps && allSteps.length > 0) {
-        const completed = allSteps.filter(s => s.step_status === 'COMPLETED').length
-        const progress = Math.round((completed / allSteps.length) * 100)
-        const inProgress = allSteps.some(s => s.step_status === 'IN_PROGRESS')
-
-        await supabase
-          .from('jobs')
-          .update({
-            overall_progress: progress,
-            job_status: progress >= 100 ? 'COMPLETED' : (progress > 0 || inProgress) ? 'IN_PROGRESS' : 'NEW',
-            updated_at: new Date().toISOString(),
-          })
+          .select('step_no')
           .eq('job_id', jobId)
-      }
+          .order('step_no', { ascending: false })
+          .limit(1)
 
-      onSaved()
+        const finalStepNo = (latestSteps && latestSteps.length > 0 && latestSteps[0].step_no != null)
+          ? latestSteps[0].step_no + 1
+          : (stepNo || 1)
+
+        payload.step_no = finalStepNo
+
+        const { error } = await supabase.from('job_steps').insert([payload])
+        if (error) throw error
+        onSaved()
+        onClose()
+      } else {
+        const { error } = await supabase.from('job_steps').update(payload).eq('step_id', step.step_id)
+        if (error) throw error
+        onSaved()
+        setIsEditingStepConfig(false)
+      }
     } catch (err: any) {
-      setError(err.message || t('Common.updateError'))
+      alert('エラー: ' + err.message)
     } finally {
-      setSaving(false)
+      setSavingStep(false)
     }
   }
 
+  // ── SAVE DAILY WORKLOG ENTRY ──
   const handleSaveLog = async () => {
-    if (!logCode && !logNotes) {
-      alert(t('Equipment.valLogContentReq'))
+    if (!logWorker) {
+      alert('作業者を選択してください')
+      return
+    }
+    const hours = parseFloat(logHours)
+    if (!hours || isNaN(hours) || hours <= 0) {
+      alert('実績時間を正しく入力してください')
+      return
+    }
+
+    let desc = customDescription.trim()
+    let codeId: number | null = null
+    if (selectedCodeId) {
+      codeId = parseInt(selectedCodeId)
+      const matched = rawCodes.find(c => c.processing_code_id === codeId)
+      if (matched) {
+        desc = matched.processing_name
+      }
+    }
+
+    if (!desc && !codeId && !logNotes.trim()) {
+      alert('加工コード（作業内容）を選択してください')
       return
     }
 
@@ -216,466 +338,968 @@ export function EditStepModal({ step, jobId, nextStepNo, onClose, onSaved }: Pro
     try {
       const payload = {
         job_id: jobId,
-        job_step_id: step?.step_id,
-        planned_date: logPlannedDate || null,
-        planned_hours: logPlannedHours ? parseFloat(logPlannedHours) : null,
-        work_date: logWorkDate || '',
-        hours_spent: logHours ? parseFloat(logHours) : null,
-        employee_id: logWorker || '',
-        machine_id: logMachine || null,
-        processing_code_id: logCode ? parseInt(logCode) : null,
-        notes: logNotes || null,
-        processing_status_id: logStatusId ? parseInt(logStatusId) : null,
-        is_finished: logStatusId ? processingStatuses.find(s => s.status_id === parseInt(logStatusId))?.status_code?.includes('完了') || false : false
-      }
-      
-      let error;
-      if (editingLogId) {
-        ({ error } = await supabase.from('work_logs').update(payload).eq('log_id', editingLogId))
-      } else {
-        ({ error } = await supabase.from('work_logs').insert([payload]))
-      }
-      
-      if (error) throw new Error(error.message)
-      
-      const { data: allLogs } = await supabase.from('work_logs').select('hours_spent').eq('job_step_id', step!.step_id)
-      if (allLogs) {
-        const total = allLogs.reduce((sum, l) => sum + (l.hours_spent || 0), 0)
-        setActualHours(total.toString())
-        await supabase.from('job_steps').update({ actual_hours: total }).eq('step_id', step!.step_id)
+        job_step_id: step?.step_id || null,
+        work_date: logWorkDate || new Date().toISOString().split('T')[0],
+        hours_spent: hours,
+        employee_id: logWorker,
+        processing_code_id: codeId,
+        description: desc || null,
+        notes: logNotes.trim() || null,
+        is_finished: logIsFinished,
       }
 
+      if (editingLogId) {
+        const { error } = await supabase.from('work_logs').update(payload).eq('log_id', editingLogId)
+        if (error) throw error
+      } else {
+        const { error } = await supabase.from('work_logs').insert([payload])
+        if (error) throw error
+      }
+
+      // Update actual hours sum on the step
+      if (step?.step_id) {
+        const { data: allLogs } = await supabase
+          .from('work_logs')
+          .select('hours_spent')
+          .eq('job_step_id', step.step_id)
+        
+        if (allLogs) {
+          const total = Math.round(allLogs.reduce((sum, l) => sum + (l.hours_spent || 0), 0) * 100) / 100
+          await supabase.from('job_steps').update({ actual_hours: total }).eq('step_id', step.step_id)
+        }
+      }
+
+      // Reset form fields
       setEditingLogId(null)
-      setLogCode('')
-      setLogHours('')
+      setSelectedCodeId('')
+      setCustomDescription('')
       setLogNotes('')
-      setLogPlannedHours('')
-      setLogWorker('')
-      setLogMachine('')
-      setLogStatusId('')
-      
+      setLogHours('1.0')
+      setLogIsFinished(false)
+
       fetchLogs()
+      fetchTodayLogs()
       onSaved()
     } catch (err: any) {
-      alert(t('Common.updateError') + err.message)
+      alert('エラー: ' + err.message)
     } finally {
       setAddingLog(false)
     }
   }
 
-  const handleEditLog = (log: any) => {
-    setEditingLogId(log.log_id)
-    setLogPlannedDate(log.planned_date || '')
-    setLogPlannedHours(log.planned_hours?.toString() || '')
-    setLogWorkDate(log.work_date || '')
-    setLogWorker(log.employee_id || '')
-    setLogMachine(log.machine_id || '')
-    setLogCode(log.processing_code_id?.toString() || '')
-    setLogHours(log.hours_spent?.toString() || '')
-    setLogNotes(log.notes || '')
-    setLogStatusId(log.processing_status_id?.toString() || '')
-  }
-
-  const handleCancelEditLog = () => {
-    setEditingLogId(null)
-    setLogCode('')
-    setLogHours('')
-    setLogNotes('')
-    setLogPlannedHours('')
-    setLogWorker('')
-    setLogMachine('')
-    setLogStatusId('')
-  }
-
   const handleDeleteLog = async (logId: string) => {
-    if (!window.confirm(t('Common.deleteConfirm'))) return
-    
+    if (!window.confirm('この作業日報を削除してもよろしいですか？')) return
     const { error } = await supabase.from('work_logs').delete().eq('log_id', logId)
-    if (error) {
-      alert(t('Common.deleteError') + error.message)
-    } else {
+    if (!error) {
       fetchLogs()
+      fetchTodayLogs()
       onSaved()
     }
   }
 
-  return (
-    <div style={{
-      position: 'fixed', inset: 0, zIndex: 999999,
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-    }}>
-      <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.5)' }} onClick={onClose} />
+  // Print Nippo Sheet Action
+  const handlePrintSheet = (isPdf = false) => {
+    const printContent = document.getElementById('nippo-a4-sheet-container')
+    if (!printContent) return
 
-      <div className="card" style={{
-        position: 'relative', 
-        width: isNew ? 640 : 1100,
-        maxWidth: '95vw',
-        height: '90vh', 
-        display: 'flex', flexDirection: 'column',
-        padding: 0, zIndex: 1,
-      }}>
-        {/* Header */}
-        <div style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          padding: '16px 20px', borderBottom: '1px solid var(--border-default)',
-        }}>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span className="badge" style={{ backgroundColor: 'var(--bg-surface-3)', color: 'var(--text-primary)' }}>
-                #{stepNo}
-              </span>
-              <span style={{ fontWeight: 700, fontSize: 16 }}>
-                {isNew ? t('Equipment.themCongOan') : t('Equipment.thongTinCongOan')}
-              </span>
+    const printWin = window.open('', '_blank', 'width=1050,height=800')
+    if (!printWin) return
+
+    const workerObj = employees.find(e => e.employee_id === logWorker)
+    const workerName = workerObj ? workerObj.employee_name : '担当者'
+
+    printWin.document.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>日報記録書_${workerName}_${logWorkDate}</title>
+          <style>
+            @page {
+              size: A4 landscape;
+              margin: 0;
+            }
+            html, body {
+              width: 100%;
+              height: 100%;
+              margin: 0;
+              padding: 0;
+              background: #fff;
+              color: #000;
+              font-family: "MS PGothic", "Meiryo", "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif;
+              -webkit-print-color-adjust: exact;
+              print-color-adjust: exact;
+            }
+            .nippo-a4-sheet {
+              transform: none !important;
+              box-shadow: none !important;
+              border: none !important;
+              padding: 22mm 12mm 20mm 12mm !important;
+              width: 100% !important;
+              height: 100% !important;
+              box-sizing: border-box !important;
+              page-break-inside: avoid;
+            }
+            .nippo-row-actions {
+              display: none !important;
+            }
+          </style>
+        </head>
+        <body>
+          ${printContent.innerHTML}
+          <script>
+            window.onload = function() {
+              window.print();
+            }
+            window.onafterprint = function() {
+              window.close();
+            }
+          </script>
+        </body>
+      </html>
+    `)
+    printWin.document.close()
+
+    alert(`【印刷完了】\n日報記録書の印刷・PDF出力処理が完了しました。\n（対象: ${workerName}様・${logWorkDate}）`)
+  }
+
+  const selectedWorker = employees.find(e => e.employee_id === logWorker)
+  const selectedWorkerName = selectedWorker?.employee_name || '担当者'
+  const selectedWorkerShort = selectedWorker?.employee_name_short || selectedWorkerName
+  const totalTodayHours = Math.round(todayWorkerLogs.reduce((sum, l) => sum + (l.hours_spent || 0), 0) * 100) / 100
+
+  const employeeOptions = employees.map(e => ({
+    value: e.employee_id,
+    label: `[${e.employee_code || '—'}] ${e.employee_name}`
+  }))
+
+  const nippoItems: NippoItem[] = useMemo(() => {
+    return todayWorkerLogs.map(l => {
+      const pName = l.processing_codes?.processing_name || l.description || ''
+      const moldCode = l.jobs?.physical_molds?.equipment_code || l.jobs?.products?.product_code || l.jobs?.job_code || ''
+      return {
+        log_id: l.log_id,
+        model_code: moldCode,
+        processing_name: pName,
+        notes: l.notes || '',
+        hours_spent: l.hours_spent,
+        price_value: ''
+      }
+    })
+  }, [todayWorkerLogs])
+
+  // Current item type name for badge
+  const currentItemType = itemTypes.find(i => String(i.item_type_id) === (step?.item_type_id ? String(step.item_type_id) : selectedItemTypeId))
+  const currentItemTypeName = currentItemType?.item_type_name_ja || step?.track || '金型'
+  const assignedWorkerName = employees.find(e => e.employee_id === (step?.assigned_to || stepAssignedTo))?.employee_name
+
+  return (
+    <div
+      style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 9999,
+        backgroundColor: 'rgba(15, 23, 42, 0.65)',
+        backdropFilter: 'blur(3px)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: 14,
+      }}
+      onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
+    >
+      <div
+        className="card-flat"
+        style={{
+          width: '100%',
+          maxWidth: isNew ? '580px' : '1360px',
+          background: 'var(--bg-surface)',
+          borderRadius: 8,
+          boxShadow: '0 25px 30px -5px rgba(0, 0, 0, 0.3)',
+          display: 'flex',
+          flexDirection: 'column',
+          maxHeight: '96vh',
+          overflow: 'hidden',
+          transition: 'max-width 0.2s ease',
+        }}
+      >
+        {/* ── Modal Header: Context Anchor ── */}
+        <div
+          style={{
+            padding: '12px 20px',
+            borderBottom: '1px solid var(--border-default)',
+            background: 'var(--tint-teal-bg)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div
+              style={{
+                width: 32,
+                height: 32,
+                borderRadius: 6,
+                background: '#fff',
+                border: '1px solid var(--tint-teal-border)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'var(--accent)',
+              }}
+            >
+              {isNew ? <Plus size={18} /> : <Clock size={18} />}
+            </div>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                <span style={{ fontSize: 15, fontWeight: 800, color: 'var(--text-primary)' }}>
+                  {isNew ? '新規工程の追加' : '作業日報の記録・工程情報'}
+                </span>
+                {jobMeta && (
+                  <span
+                    className="font-mono text-[12px] font-bold"
+                    style={{
+                      background: 'var(--tint-blue-bg)',
+                      color: 'var(--tint-blue-text)',
+                      padding: '2px 8px',
+                      borderRadius: 4,
+                      border: '1px solid var(--tint-blue-border)',
+                    }}
+                  >
+                    [{jobMeta.job_code}] {jobMeta.job_name}
+                  </span>
+                )}
+                {!isNew && step && (
+                  <span
+                    className="text-[12px] font-bold"
+                    style={{
+                      background: 'var(--tint-purple-bg, #EDE9FE)',
+                      color: 'var(--tint-purple-text, #7C3AED)',
+                      padding: '2px 8px',
+                      borderRadius: 4,
+                      border: '1px solid var(--tint-purple-border, #DDD6FE)',
+                    }}
+                  >
+                    {jobMeta?.job_code === '社内作業' || jobMeta?.job_category === 'INTERNAL_OPS' ? '' : `Step ${step.step_no}. `}{step.step_name} [{currentItemTypeName}]
+                  </span>
+                )}
+              </div>
+              <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>
+                {isNew
+                  ? 'スタッキング・金型・プラグ・抜型などの新しい工程を登録します'
+                  : '対象工程を確認し、日報（実績工数・加工コード）を正確に記録します'}
+              </div>
             </div>
           </div>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}>
-            <X size={18} />
+          <button
+            onClick={onClose}
+            style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: 4 }}
+          >
+            <X size={20} />
           </button>
         </div>
 
-        {/* Body - Split Pane */}
-        <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
-          
-          {/* Left Panel - Step Edit */}
-          <div style={{ 
-            flex: isNew ? 1 : '0 0 50%', 
-            padding: 20, 
-            overflowY: 'auto',
-            borderRight: isNew ? 'none' : '1px solid var(--border-default)',
-            display: 'flex', flexDirection: 'column', gap: 16
-          }}>
-            <h3 style={{ margin: 0, fontSize: 14, color: 'var(--text-secondary)' }}>
-              {t('Equipment.thongTinCongOan')}
-            </h3>
-
-            {error && (
-              <div style={{ padding: '8px 12px', background: 'var(--status-error)', color: '#fff', borderRadius: 'var(--radius-sm)', fontSize: 12 }}>
-                {error}
-              </div>
-            )}
-
-            {isNew && (
-              <div style={{ background: 'var(--bg-surface-2)', padding: 12, borderRadius: 'var(--radius-md)', border: '1px solid var(--border-default)' }}>
-                <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--accent)' }}>
-                  <ListPlus size={14} />
-                  {t('Equipment.chonTuQuyTrinhChuan')}
+        {/* ── IF IS_NEW: CLEAN COMPACT STEP CREATION FORM (NO PROCESSING CODES) ── */}
+        {isNew ? (
+          <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: 14, overflowY: 'auto' }}>
+            
+            {/* Field 1: 分類 (Item Type from DB) & Step Name */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <div>
+                <label className="form-label" style={{ fontSize: 11.5, fontWeight: 700 }}>
+                  項目分類 (Phân loại hạng mục) <span style={{ color: 'red' }}>*</span>
                 </label>
-                <select className="form-input" onChange={e => applyStdProcess(e.target.value)} defaultValue="">
-                  <option value="">-- {t('Equipment.nhapThuCong')} --</option>
-                  {stdProcesses.map(p => (
-                    <option key={p.id} value={p.id}>
-                      [{p.track}] {p.process_name_ja} ({p.default_hours}h)
+                <select
+                  className="form-input font-bold"
+                  style={{ fontSize: 13, height: 38 }}
+                  value={selectedItemTypeId}
+                  onChange={(e) => handleItemTypeChange(e.target.value)}
+                >
+                  {itemTypes.map((it) => (
+                    <option key={it.item_type_id} value={String(it.item_type_id)}>
+                      {it.item_type_name_ja} ({it.item_type_code})
                     </option>
                   ))}
                 </select>
               </div>
-            )}
 
-            <div className="form-grid-2">
               <div>
-                <label className="form-label">
-                  {t('Equipment.tenCongOan')}
+                <label className="form-label" style={{ fontSize: 11.5, fontWeight: 700 }}>
+                  工程名 (Tên công đoạn) <span style={{ color: 'red' }}>*</span>
                 </label>
-                <input className="form-input" value={stepName} onChange={e => setStepName(e.target.value)} />
-              </div>
-              <div>
-                <label className="form-label">
-                  {t('Equipment.track')}
-                </label>
-                <input className="form-input" value={track} onChange={e => setTrack(e.target.value)} placeholder="MOLD, PLUG, FINISH..." />
-              </div>
-            </div>
-
-            <div className="form-grid-2">
-              <div>
-                <label className="form-label">
-                  {t('Equipment.trangThai')}
-                </label>
-                <select className="form-input" value={processingStatusId} onChange={e => setProcessingStatusId(e.target.value)}>
-                  <option value="">-- {t('Equipment.tuDong')} --</option>
-                  {processingStatuses.map(opt => (
-                    <option key={opt.status_id} value={opt.status_id}>
-                      {opt.status_code}{opt.status_name_vi ? ` / ${opt.status_name_vi}` : ''}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="form-label">
-                  {t('Equipment.thuTu')}
-                </label>
-                <input type="number" className="form-input" value={stepNo} onChange={e => setStepNo(parseInt(e.target.value) || 1)} />
-              </div>
-            </div>
-
-            <div className="form-grid-2">
-              <div>
-                <label className="form-label">
-                  {t('Equipment.batAuDuKien')}
-                </label>
-                <input type="date" className="form-input" value={plannedStart} onChange={e => setPlannedStart(e.target.value)} />
-              </div>
-              <div>
-                <label className="form-label">
-                  {t('Equipment.ketThucDuKien')}
-                </label>
-                <input type="date" className="form-input" value={plannedEnd} onChange={e => setPlannedEnd(e.target.value)} />
-              </div>
-            </div>
-
-            <div className="form-grid-3" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
-              <div>
-                <label className="form-label">
-                  {t('Equipment.gioDuKien')}
-                </label>
-                <input 
-                  type="number" 
-                  step="0.5" 
-                  min="0" 
-                  className="form-input" 
-                  value={plannedHours} 
-                  onChange={e => setPlannedHours(e.target.value)} 
-                  placeholder={estimatedHours || ''}
-                  onFocus={e => {
-                    if (!plannedHours && estimatedHours) {
-                      setPlannedHours(estimatedHours);
-                      setTimeout(() => e.target.select(), 0);
-                    }
-                  }}
+                <input
+                  type="text"
+                  className="form-input font-bold"
+                  style={{ fontSize: 13, height: 38 }}
+                  placeholder="例: スタッキング製作、全型製作..."
+                  value={stepName}
+                  onChange={(e) => setStepName(e.target.value)}
+                  autoFocus
                 />
               </div>
+            </div>
+
+            {/* Field 2: 予定工数 & 期日 */}
+            <div style={{ display: 'grid', gridTemplateColumns: '130px 1fr', gap: 12 }}>
               <div>
-                <label className="form-label">
-                  {t('Equipment.gioThucTe')}
+                <label className="form-label" style={{ fontSize: 11.5, fontWeight: 700 }}>
+                  予定工数 (h)
                 </label>
-                <input type="number" step="0.5" min="0" className="form-input" value={actualHours} onChange={e => setActualHours(e.target.value)} />
+                <input
+                  type="number"
+                  step="0.5"
+                  min="0"
+                  className="form-input font-mono font-bold text-center"
+                  style={{ fontSize: 15, height: 38, color: 'var(--accent)' }}
+                  placeholder="2.0"
+                  value={plannedHours}
+                  onChange={(e) => setPlannedHours(e.target.value)}
+                />
               </div>
+
               <div>
-                <label className="form-label">
-                  {t('Equipment.hanChot')}
+                <label className="form-label" style={{ fontSize: 11.5, fontWeight: 700 }}>
+                  完了期日 (Kỳ hạn hoàn thành)
                 </label>
-                <input type="date" className="form-input" value={deadline} onChange={e => setDeadline(e.target.value)} />
+                <div style={{ position: 'relative' }}>
+                  <Calendar
+                    size={14}
+                    style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }}
+                  />
+                  <input
+                    type="date"
+                    className="form-input font-mono font-bold"
+                    style={{ paddingLeft: 30, fontSize: 13, height: 38 }}
+                    value={stepDeadline}
+                    onChange={(e) => setStepDeadline(e.target.value)}
+                  />
+                </div>
               </div>
             </div>
 
-            <div>
-              <label className="form-label">
-                {t('Equipment.ghiChu')}
-              </label>
-              <textarea className="form-textarea" rows={2} value={notes} onChange={e => setNotes(e.target.value)} />
+            {/* Field 3: 担当者 & 備考 */}
+            <div style={{ display: 'grid', gridTemplateColumns: '180px 1fr', gap: 12 }}>
+              <div>
+                <label className="form-label" style={{ fontSize: 11.5, fontWeight: 700 }}>
+                  担当作業者 (Người phụ trách)
+                </label>
+                <select
+                  className="form-input"
+                  style={{ fontSize: 12, height: 38 }}
+                  value={stepAssignedTo}
+                  onChange={(e) => setStepAssignedTo(e.target.value)}
+                >
+                  <option value="">— 選択なし —</option>
+                  {employees.map((e) => (
+                    <option key={e.employee_id} value={e.employee_id}>
+                      [{e.employee_code || '—'}] {e.employee_name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="form-label" style={{ fontSize: 11.5, fontWeight: 700 }}>
+                  備考 (Ghi chú)
+                </label>
+                <input
+                  type="text"
+                  className="form-input"
+                  style={{ fontSize: 12, height: 38 }}
+                  placeholder="特記事項、治具など..."
+                  value={stepNotes}
+                  onChange={(e) => setStepNotes(e.target.value)}
+                />
+              </div>
             </div>
 
-            {/* Footer for Left Panel */}
-            <div style={{ marginTop: 'auto', paddingTop: 16, display: 'flex', justifyContent: 'space-between', gap: 8 }}>
-              <div>
-                {!isNew && (
-                  <button 
-                    className="btn btn-secondary hover-danger" 
-                    style={{ padding: '0 8px', height: 32 }}
-                    onClick={async () => {
-                      if (window.confirm(t('Common.deleteConfirm'))) {
-                        setSaving(true)
-                        const { error } = await supabase.from('job_steps').delete().eq('step_id', step!.step_id)
-                        setSaving(false)
-                        if (!error) onSaved()
-                        else alert(error.message)
-                      }
-                    }} 
-                    disabled={saving}
-                    title={t('Common.delete')}
+            {/* Action Buttons */}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 6 }}>
+              <button type="button" className="btn btn-secondary" onClick={onClose} style={{ fontSize: 12, padding: '7px 20px' }}>
+                キャンセル
+              </button>
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={handleSaveStepConfig}
+                disabled={savingStep}
+                style={{ fontSize: 13, padding: '8px 24px', gap: 6 }}
+              >
+                {savingStep ? <Loader2 size={15} className="animate-spin" /> : <CheckCircle2 size={15} />}
+                <span>{savingStep ? '登録中...' : '工程を登録する (Tạo công đoạn)'}</span>
+              </button>
+            </div>
+          </div>
+        ) : (
+          /* ── IF !IS_NEW: 2-PANEL SPLIT SCREEN WORKLOG RECORDING BODY ── */
+          <div style={{ flex: 1, overflowY: 'auto', display: 'flex', background: 'var(--bg-base, #F1F5F9)' }}>
+            
+            {/* ◀ LEFT PANEL: Step Info Card + Worklog Input Card (450px width) ◀ */}
+            <div
+              style={{
+                width: '450px',
+                borderRight: '1px solid var(--border-default)',
+                padding: '14px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 12,
+                overflowY: 'auto',
+                background: 'var(--bg-surface)',
+              }}
+            >
+              {error && (
+                <div style={{ padding: '8px 12px', background: 'var(--tint-error-bg)', color: 'var(--tint-error-text)', fontSize: 12, borderRadius: 6 }}>
+                  {error}
+                </div>
+              )}
+
+              {/* ── 1. STEP SPECIFICATION ANCHOR CARD ── */}
+              <div
+                style={{
+                  border: '1px solid var(--border-default)',
+                  borderRadius: 8,
+                  background: '#fff',
+                  overflow: 'hidden',
+                }}
+              >
+                <div
+                  style={{
+                    padding: '8px 12px',
+                    background: 'var(--tint-purple-bg, #EDE9FE)',
+                    borderBottom: '1px solid var(--tint-purple-border, #DDD6FE)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <Layers size={14} style={{ color: 'var(--tint-purple-text, #7C3AED)' }} />
+                    <span style={{ fontSize: 12, fontWeight: 800, color: 'var(--tint-purple-text, #7C3AED)' }}>
+                      対象工程情報 (Thông tin công đoạn)
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setIsEditingStepConfig(!isEditingStepConfig)}
+                    style={{
+                      fontSize: 10.5,
+                      fontWeight: 700,
+                      color: 'var(--tint-purple-text, #7C3AED)',
+                      background: '#fff',
+                      border: '1px solid var(--tint-purple-border, #DDD6FE)',
+                      borderRadius: 4,
+                      padding: '2px 7px',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 4,
+                    }}
                   >
-                    <Trash2 size={14} style={{ color: 'var(--status-error)' }} />
+                    <Edit3 size={11} />
+                    <span>{isEditingStepConfig ? '日報入力に戻る' : '工程設定を変更'}</span>
                   </button>
+                </div>
+
+                {isEditingStepConfig ? (
+                  /* Inline Edit Step Config Form */
+                  <div style={{ padding: 12, display: 'flex', flexDirection: 'column', gap: 10, background: '#FAFAFA' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 140px', gap: 8 }}>
+                      <div>
+                        <label className="form-label" style={{ fontSize: 10.5, fontWeight: 700 }}>工程名</label>
+                        <input
+                          type="text"
+                          className="form-input font-bold"
+                          style={{ fontSize: 12, height: 32 }}
+                          value={stepName}
+                          onChange={(e) => setStepName(e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <label className="form-label" style={{ fontSize: 10.5, fontWeight: 700 }}>分類</label>
+                        <select
+                          className="form-input font-bold"
+                          style={{ fontSize: 11, height: 32 }}
+                          value={selectedItemTypeId}
+                          onChange={(e) => handleItemTypeChange(e.target.value)}
+                        >
+                          {itemTypes.map((it) => (
+                            <option key={it.item_type_id} value={String(it.item_type_id)}>
+                              {it.item_type_name_ja}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '100px 1fr', gap: 8 }}>
+                      <div>
+                        <label className="form-label" style={{ fontSize: 10.5, fontWeight: 700 }}>予定工数(h)</label>
+                        <input
+                          type="number"
+                          step="0.5"
+                          className="form-input font-mono text-center font-bold"
+                          style={{ fontSize: 12, height: 32 }}
+                          value={plannedHours}
+                          onChange={(e) => setPlannedHours(e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <label className="form-label" style={{ fontSize: 10.5, fontWeight: 700 }}>期日 (Deadline)</label>
+                        <input
+                          type="date"
+                          className="form-input font-mono"
+                          style={{ fontSize: 11.5, height: 32 }}
+                          value={stepDeadline}
+                          onChange={(e) => setStepDeadline(e.target.value)}
+                        />
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      className="btn btn-primary"
+                      onClick={handleSaveStepConfig}
+                      disabled={savingStep}
+                      style={{ fontSize: 11.5, padding: '5px 12px', justifyContent: 'center' }}
+                    >
+                      {savingStep ? '保存中...' : '工程設定を保存'}
+                    </button>
+                  </div>
+                ) : (
+                  /* Step Info Readonly Specs */
+                  <div style={{ padding: '10px 12px', fontSize: 11.5, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--text-primary)' }}>
+                        {jobMeta?.job_code === '社内作業' || jobMeta?.job_category === 'INTERNAL_OPS' ? '' : `Step ${step?.step_no}. `}{step?.step_name}
+                      </span>
+                      <span
+                        className="font-mono font-bold"
+                        style={{
+                          fontSize: 10.5,
+                          background: 'var(--tint-purple-bg, #EDE9FE)',
+                          color: 'var(--tint-purple-text, #7C3AED)',
+                          padding: '1px 6px',
+                          borderRadius: 3,
+                          border: '1px solid var(--tint-purple-border, #DDD6FE)',
+                        }}
+                      >
+                        {currentItemTypeName}
+                      </span>
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px 12px', color: 'var(--text-secondary)', fontSize: 11 }}>
+                      <div>
+                        予定工数: <strong className="font-mono" style={{ color: 'var(--text-primary)' }}>{step?.planned_hours ? `${step.planned_hours}h` : '—'}</strong>
+                      </div>
+                      <div>
+                        累計実績: <strong className="font-mono" style={{ color: 'var(--accent)' }}>{step?.actual_hours || 0}h</strong>
+                      </div>
+                      <div>
+                        完了期日: <strong className="font-mono" style={{ color: step?.deadline ? '#DC2626' : 'var(--text-primary)' }}>{step?.deadline ? step.deadline.split('T')[0] : '—'}</strong>
+                      </div>
+                      <div>
+                        担当: <strong style={{ color: 'var(--text-primary)' }}>{assignedWorkerName || '—'}</strong>
+                      </div>
+                    </div>
+                  </div>
                 )}
               </div>
-              
-              <div style={{ display: 'flex', gap: 8 }}>
-                <button className="btn btn-primary" onClick={handleSaveStep} disabled={saving}>
-                  {t('Equipment.luu')}
-                </button>
+
+              {/* ── 2. FOCUSED WORKLOG INPUT CARD ── */}
+              <div
+                style={{
+                  border: '1px solid var(--border-default)',
+                  borderRadius: 8,
+                  background: '#fff',
+                  overflow: 'hidden',
+                }}
+              >
+                <div
+                  style={{
+                    padding: '7px 12px',
+                    background: 'var(--tint-blue-bg)',
+                    borderBottom: '1px solid var(--tint-blue-border)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                  }}
+                >
+                  <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--tint-blue-text)', display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <Clock size={13} />
+                    <span>{editingLogId ? '日報データの編集' : '新規日報の登録'}</span>
+                  </div>
+                  {editingLogId && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditingLogId(null)
+                        setSelectedCodeId('')
+                        setCustomDescription('')
+                        setLogNotes('')
+                        setLogHours('1.0')
+                      }}
+                      style={{ fontSize: 11, color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer' }}
+                    >
+                      編集キャンセル
+                    </button>
+                  )}
+                </div>
+
+                <div style={{ padding: 12, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {/* Row 1: Work Date & Worker */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '140px 1fr', gap: 8 }}>
+                    <div>
+                      <label className="form-label" style={{ fontSize: 11, fontWeight: 700 }}>
+                        作業日 <span style={{ color: 'red' }}>*</span>
+                      </label>
+                      <div style={{ position: 'relative' }}>
+                        <Calendar
+                          size={13}
+                          style={{ position: 'absolute', left: 8, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }}
+                        />
+                        <input
+                          type="date"
+                          className="form-input font-mono"
+                          style={{ paddingLeft: 28, fontSize: 12, fontWeight: 600, height: 34 }}
+                          value={logWorkDate}
+                          onChange={(e) => setLogWorkDate(e.target.value)}
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 }}>
+                        <label className="form-label" style={{ fontSize: 11, fontWeight: 700, margin: 0 }}>
+                          作業者 <span style={{ color: 'red' }}>*</span>
+                        </label>
+                        <span style={{ fontSize: 9.5, color: 'var(--accent)', fontWeight: 600 }}>
+                          ✓ 記憶中
+                        </span>
+                      </div>
+                      <SearchableSelect
+                        options={employeeOptions}
+                        value={logWorker}
+                        onChange={handleWorkerChange}
+                        maxDropdownHeight="300px"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Row 2: Actual Hours with Quick Chips */}
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 3 }}>
+                      <label className="form-label" style={{ fontSize: 11, fontWeight: 700, margin: 0 }}>
+                        実績工数 (h) <span style={{ color: 'red' }}>*</span>
+                      </label>
+                      <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>クイック選択:</span>
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '70px 1fr', gap: 6, alignItems: 'center' }}>
+                      <input
+                        type="number"
+                        step="0.25"
+                        min="0.25"
+                        max="24"
+                        className="form-input font-mono text-center"
+                        style={{ fontSize: 15, fontWeight: 800, color: 'var(--accent)', height: 34 }}
+                        value={logHours}
+                        onChange={(e) => setLogHours(e.target.value)}
+                      />
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
+                        {QUICK_HOURS.map((h) => {
+                          const isSelected = parseFloat(logHours) === h
+                          return (
+                            <button
+                              key={h}
+                              type="button"
+                              onClick={() => setLogHours(String(h))}
+                              style={{
+                                padding: '2px 5px',
+                                fontSize: 10.5,
+                                fontWeight: 700,
+                                fontFamily: 'monospace',
+                                borderRadius: 3,
+                                border: `1px solid ${isSelected ? 'var(--accent)' : 'var(--border-default)'}`,
+                                background: isSelected ? 'var(--accent)' : 'var(--bg-muted, #F8FAFC)',
+                                color: isSelected ? '#fff' : 'var(--text-secondary)',
+                                cursor: 'pointer',
+                              }}
+                            >
+                              {h}h
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Row 3: Processing Code */}
+                  <div>
+                    <label className="form-label" style={{ fontSize: 11, fontWeight: 700 }}>
+                      加工コード・作業内容 <span style={{ color: 'red' }}>*</span>
+                    </label>
+                    <SearchableSelect
+                      options={processingCodes}
+                      value={selectedCodeId}
+                      onChange={(v) => {
+                        setSelectedCodeId(v || '')
+                        if (v) {
+                          const matched = rawCodes.find(c => c.processing_code_id === parseInt(v))
+                          if (matched) setCustomDescription(matched.processing_name)
+                        }
+                      }}
+                      placeholder="コードまたは作業名で検索（例: 21 穴あけ、12 ミガキ...）"
+                      maxDropdownHeight="300px"
+                    />
+                  </div>
+
+                  {/* Row 4: Notes */}
+                  <div>
+                    <label className="form-label" style={{ fontSize: 11, fontWeight: 700 }}>
+                      備考・申し送り (Ghi chú)
+                    </label>
+                    <input
+                      type="text"
+                      className="form-input"
+                      style={{ fontSize: 11.5, height: 34 }}
+                      placeholder="治具、引き継ぎ事項、特記事項など..."
+                      value={logNotes}
+                      onChange={(e) => setLogNotes(e.target.value)}
+                    />
+                  </div>
+
+                  {/* Step Finished Toggle */}
+                  <div
+                    style={{
+                      padding: '5px 8px',
+                      borderRadius: 5,
+                      background: logIsFinished ? 'var(--tint-teal-bg)' : '#F8FAFC',
+                      border: `1px solid ${logIsFinished ? 'var(--tint-teal-border)' : 'var(--border-default)'}`,
+                      display: 'flex',
+                      alignItems: 'center',
+                      cursor: 'pointer',
+                    }}
+                    onClick={() => setLogIsFinished(!logIsFinished)}
+                  >
+                    <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', margin: 0 }}>
+                      <input
+                        type="checkbox"
+                        checked={logIsFinished}
+                        onChange={(e) => setLogIsFinished(e.target.checked)}
+                        style={{ width: 14, height: 14, accentColor: 'var(--accent)', cursor: 'pointer' }}
+                      />
+                      <span style={{ fontSize: 11, fontWeight: 700, color: logIsFinished ? 'var(--accent)' : 'var(--text-primary)' }}>
+                        この工程を完了にする (Hoàn thành công đoạn)
+                      </span>
+                    </label>
+                  </div>
+
+                  {/* Submit Log Button */}
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    onClick={handleSaveLog}
+                    disabled={addingLog}
+                    style={{ fontSize: 12.5, padding: '7px 16px', gap: 6, width: '100%', justifyContent: 'center', marginTop: 2 }}
+                  >
+                    {addingLog ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
+                    <span>{addingLog ? '登録中...' : editingLogId ? '日報を更新' : '日報を登録する'}</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* ── 3. STEP ALL-TIME HISTORY COLLAPSIBLE ── */}
+              <div
+                style={{
+                  border: '1px solid var(--border-default)',
+                  borderRadius: 6,
+                  background: '#fff',
+                  overflow: 'hidden',
+                }}
+              >
+                <div
+                  style={{
+                    padding: '6px 10px',
+                    background: '#F8FAFC',
+                    borderBottom: isStepHistoryExpanded ? '1px solid var(--border-default)' : 'none',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    cursor: 'pointer',
+                  }}
+                  onClick={() => setIsStepHistoryExpanded(!isStepHistoryExpanded)}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <FileText size={13} style={{ color: 'var(--text-secondary)' }} />
+                    <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)' }}>
+                      この工程の全期間履歴（Step {step?.step_no}）
+                    </span>
+                    <span className="badge badge--neutral" style={{ fontSize: 10 }}>
+                      {logs.length}件
+                    </span>
+                  </div>
+                  <button type="button" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)' }}>
+                    {isStepHistoryExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                  </button>
+                </div>
+
+                {isStepHistoryExpanded && (
+                  <div style={{ padding: 6 }}>
+                    {logs.length === 0 ? (
+                      <div style={{ padding: 8, textAlign: 'center', color: 'var(--text-muted)', fontSize: 10.5 }}>
+                        — 過去日報なし —
+                      </div>
+                    ) : (
+                      <table className="data-table" style={{ fontSize: 10, width: '100%' }}>
+                        <thead>
+                          <tr>
+                            <th>作業日</th>
+                            <th>作業者</th>
+                            <th>工数</th>
+                            <th>内容</th>
+                            <th>操作</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {logs.map((l) => (
+                            <tr key={l.log_id}>
+                              <td className="font-mono">{l.work_date}</td>
+                              <td>{l.employees?.employee_name || '—'}</td>
+                              <td className="font-mono text-right font-bold" style={{ color: 'var(--accent)' }}>{l.hours_spent || 0}h</td>
+                              <td>{l.description || '—'}</td>
+                              <td className="text-center">
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteLog(l.log_id)}
+                                  style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'var(--status-error)', padding: 2 }}
+                                >
+                                  <Trash2 size={11} />
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* ▶ RIGHT PANEL: Live A4 Nippo Sheet Preview & Export Tools ▶ */}
+            <div
+              style={{
+                flex: 1,
+                padding: '14px 18px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 10,
+                overflowY: 'auto',
+              }}
+            >
+              {/* Action Bar on top of sheet preview */}
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  background: '#fff',
+                  padding: '7px 12px',
+                  borderRadius: 6,
+                  border: '1px solid var(--border-default)',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <Eye size={14} style={{ color: 'var(--accent)' }} />
+                  <span style={{ fontSize: 12, fontWeight: 800, color: 'var(--text-primary)' }}>
+                    日報記録書プレビュー（{selectedWorkerShort} ・ {logWorkDate}）
+                  </span>
+                  <span
+                    className="font-mono font-bold"
+                    style={{
+                      fontSize: 11,
+                      background: 'var(--tint-teal-bg)',
+                      color: 'var(--accent)',
+                      padding: '2px 8px',
+                      borderRadius: 4,
+                      border: '1px solid var(--tint-teal-border)',
+                    }}
+                  >
+                    本日合計: {totalTodayHours} H
+                  </span>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <button
+                    type="button"
+                    className="btn btn-secondary flex items-center gap-1.5 shadow-sm"
+                    style={{ fontSize: 11, padding: '4px 12px' }}
+                    onClick={() => handlePrintSheet(false)}
+                  >
+                    <Printer size={13} />
+                    <span>印刷 (Print)</span>
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-primary flex items-center gap-1.5 shadow-sm"
+                    style={{ fontSize: 11, padding: '4px 12px' }}
+                    onClick={() => handlePrintSheet(true)}
+                  >
+                    <FileDown size={13} />
+                    <span>PDF出力</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* ── A4 Sheet Replica Container (Rendered exactly with DailyWorklogA4Sheet) ── */}
+              <div
+                id="nippo-a4-sheet-container"
+                style={{
+                  background: '#fff',
+                  padding: '10px',
+                  borderRadius: 6,
+                  boxShadow: '0 2px 10px rgba(0,0,0,0.08)',
+                  border: '1px solid #CBD5E1',
+                  overflowX: 'auto',
+                  display: 'flex',
+                  justifyContent: 'center',
+                }}
+              >
+                <DailyWorklogA4Sheet
+                  workDate={logWorkDate}
+                  workerName={selectedWorkerName}
+                  totalHours={totalTodayHours}
+                  items={nippoItems}
+                  onEditItem={(item) => {
+                    const targetLog = todayWorkerLogs.find(l => l.log_id === item.log_id)
+                    if (targetLog) {
+                      setEditingLogId(targetLog.log_id)
+                      setLogWorkDate(targetLog.work_date || logWorkDate)
+                      setLogHours(targetLog.hours_spent ? String(targetLog.hours_spent) : '')
+                      setSelectedCodeId(targetLog.processing_code_id ? String(targetLog.processing_code_id) : '')
+                      setLogNotes(targetLog.notes || '')
+                    }
+                  }}
+                  onDeleteItem={(logId) => handleDeleteLog(logId)}
+                />
               </div>
             </div>
           </div>
+        )}
 
-          {/* Right Panel - Worklogs */}
-          {!isNew && (
-            <div style={{ flex: '0 0 50%', display: 'flex', flexDirection: 'column', background: 'var(--bg-surface-2)' }}>
-              
-              {/* Form Add/Edit Log */}
-              <div style={{ padding: 20, borderBottom: '1px solid var(--border-default)', background: 'var(--bg-surface)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                  <h3 style={{ margin: 0, fontSize: 14, color: 'var(--text-secondary)' }}>
-                    {editingLogId ? t('Common.edit') : t('Common.addNew')}
-                  </h3>
-                  {editingLogId && (
-                    <button className="btn-icon" onClick={handleCancelEditLog} title={t('Common.cancel')}>
-                      <X size={16} />
-                    </button>
-                  )}
-                </div>
-                
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
-                  <div>
-                    <label className="form-label">{t('Equipment.logPlannedDate')}</label>
-                    <input type="date" className="form-input form-input-sm" value={logPlannedDate} onChange={e => setLogPlannedDate(e.target.value)} />
-                  </div>
-                  <div>
-                    <label className="form-label">{t('Equipment.logPlannedHours')}</label>
-                    <input type="number" step="0.1" min="0" className="form-input form-input-sm" value={logPlannedHours} onChange={e => setLogPlannedHours(e.target.value)} />
-                  </div>
-                  
-                  <div>
-                    <label className="form-label">{t('Equipment.logWorkDate')}</label>
-                    <input type="date" className="form-input form-input-sm" value={logWorkDate} onChange={e => setLogWorkDate(e.target.value)} />
-                  </div>
-                  <div>
-                    <label className="form-label">{t('Equipment.logActualHours')}</label>
-                    <input type="number" step="0.1" min="0" className="form-input form-input-sm" value={logHours} onChange={e => setLogHours(e.target.value)} />
-                  </div>
-
-                  <div>
-                    <label className="form-label">{t('Equipment.logWorker')}</label>
-                    <select className="form-input form-input-sm" value={logWorker} onChange={e => setLogWorker(e.target.value)}>
-                      <option value="">-- {t('Common.selectPlaceholder')} --</option>
-                      {employees.map(e => <option key={e.employee_id} value={e.employee_id}>{e.employee_name}</option>)}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="form-label">{t('Equipment.logMachine')}</label>
-                    <select className="form-input form-input-sm" value={logMachine} onChange={e => setLogMachine(e.target.value)}>
-                      <option value="">-- {t('Common.selectPlaceholder')} --</option>
-                      {machines.map(m => <option key={m.machine_id} value={m.machine_id}>[{m.machine_type}] {m.machine_name}</option>)}
-                    </select>
-                  </div>
-
-                  <div style={{ gridColumn: 'span 2' }}>
-                    <label className="form-label">{t('Equipment.logProcessingCode')} *</label>
-                    <select className="form-input form-input-sm" value={logCode} onChange={e => setLogCode(e.target.value)}>
-                      <option value="">-- {t('Equipment.nhapThuCong')} --</option>
-                      {processingCodes.map(c => (
-                        <option key={c.processing_code_id} value={c.processing_code_id}>
-                          {c.category ? `[${c.category}] ` : ''}{c.processing_name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div style={{ gridColumn: 'span 2' }}>
-                    <label className="form-label">{t('Equipment.ghiChu')}</label>
-                    <input type="text" className="form-input form-input-sm" value={logNotes} onChange={e => setLogNotes(e.target.value)} />
-                  </div>
-                  <div style={{ gridColumn: 'span 2' }}>
-                    <label className="form-label">{t('Equipment.trangThai')}</label>
-                    <select className="form-input form-input-sm" value={logStatusId} onChange={e => setLogStatusId(e.target.value)}>
-                      <option value="">-- {t('Common.selectPlaceholder')} --</option>
-                      {processingStatuses.map(s => (
-                        <option key={s.status_id} value={s.status_id}>
-                          {s.status_code}{s.status_name_vi ? ` / ${s.status_name_vi}` : ''}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-                
-                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
-                  {editingLogId && (
-                    <button type="button" className="btn btn-secondary text-xs" onClick={handleCancelEditLog}>
-                      {t('Common.cancel')}
-                    </button>
-                  )}
-                  <button 
-                    type="button" 
-                    className="btn btn-primary text-xs" 
-                    onClick={handleSaveLog} 
-                    disabled={addingLog}
-                  >
-                    {addingLog ? '...' : (editingLogId ? t('Common.save') : t('Common.addNew'))}
-                  </button>
-                </div>
-              </div>
-
-              {/* Log History */}
-              <div style={{ flex: 1, padding: 20, overflowY: 'auto' }}>
-                <h3 style={{ margin: '0 0 12px 0', fontSize: 13, display: 'flex', alignItems: 'center', gap: 6, color: 'var(--text-muted)' }}>
-                  <Clock size={14} />
-                  {t('Equipment.lichSuKeHoach')}
-                </h3>
-
-                {loadingLogs ? (
-                  <div style={{ padding: 20, textAlign: 'center', color: 'var(--text-muted)' }}>
-                    <Loader2 size={16} className="animate-spin" style={{ margin: '0 auto' }} />
-                  </div>
-                ) : logs.length === 0 ? (
-                  <div style={{ padding: 20, textAlign: 'center', color: 'var(--text-muted)', fontSize: 12, background: 'var(--bg-surface)', borderRadius: 6 }}>
-                    {t('Equipment.noLogs')}
-                  </div>
-                ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                    {logs.map(log => (
-                      <div 
-                        key={log.log_id} 
-                        className={`card-flat ${editingLogId === log.log_id ? 'border-primary' : ''}`} 
-                        style={{ 
-                          padding: 12, 
-                          display: 'flex', 
-                          alignItems: 'flex-start', 
-                          justifyContent: 'space-between', 
-                          gap: 12,
-                          cursor: 'pointer',
-                          borderWidth: editingLogId === log.log_id ? 2 : 1,
-                          borderColor: editingLogId === log.log_id ? 'var(--accent)' : 'var(--border-default)'
-                        }}
-                        onClick={() => handleEditLog(log)}
-                      >
-                        <div style={{ flex: 1 }}>
-                          <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                            {log.planned_date && (
-                              <span className="badge badge--warning font-mono" style={{ fontSize: 11, padding: '2px 6px' }}>
-                                {new Date(log.planned_date).toLocaleDateString('ja-JP')} ({log.planned_hours || 0}h)
-                              </span>
-                            )}
-                            {log.work_date && (
-                              <span className="badge badge--success font-mono" style={{ fontSize: 11, padding: '2px 6px' }}>
-                                {new Date(log.work_date).toLocaleDateString('ja-JP')} ({log.hours_spent || 0}h)
-                              </span>
-                            )}
-                            <span style={{ fontWeight: 600, fontSize: 12 }}>
-                              {log.employees?.employee_name || '—'}
-                            </span>
-                            <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-                              {log.machines?.machine_name || '—'}
-                            </span>
-                          </div>
-                          <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-primary)' }}>
-                            {log.processing_codes?.processing_name || '—'}
-                          </div>
-                          {log.notes && (
-                            <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4 }}>
-                              {log.notes}
-                            </div>
-                          )}
-                        </div>
-                        <button 
-                          className="btn-icon hover-danger"
-                          style={{ padding: 4, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDeleteLog(log.log_id);
-                          }}
-                          title={t('Common.delete')}
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
+        {/* ── Modal Footer ── */}
+        <div
+          style={{
+            padding: '10px 20px',
+            borderTop: '1px solid var(--border-default)',
+            background: 'var(--bg-surface)',
+            display: 'flex',
+            justifyContent: 'flex-end',
+          }}
+        >
+          <button className="btn btn-secondary" onClick={onClose} style={{ fontSize: 12, padding: '5px 18px' }}>
+            閉じる (Đóng)
+          </button>
         </div>
       </div>
     </div>
   )
 }
-

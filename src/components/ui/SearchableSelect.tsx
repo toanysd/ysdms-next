@@ -13,9 +13,10 @@ export interface SearchableSelectProps {
   onChange: (val: string | null) => void;
   placeholder?: string;
   disabled?: boolean;
+  maxDropdownHeight?: string;
 }
 
-export const SearchableSelect: React.FC<SearchableSelectProps> = ({ options, value, onChange, placeholder, disabled }) => {
+export const SearchableSelect: React.FC<SearchableSelectProps> = ({ options, value, onChange, placeholder, disabled, maxDropdownHeight = '300px' }) => {
   const t = useTranslations('Common')
   const [isOpen, setIsOpen] = useState(false)
   const [search, setSearch] = useState('')
@@ -41,7 +42,7 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({ options, val
   return (
     <div className="relative w-full text-[12px]" ref={containerRef}>
       <div 
-        className={`w-full h-[32px] px-2 border rounded flex items-center justify-between bg-[var(--bg-surface)] ${disabled ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'} border-[var(--border-default)]`}
+        className={`w-full h-[34px] px-2.5 border rounded flex items-center justify-between bg-[var(--bg-surface)] ${disabled ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'} border-[var(--border-default)]`}
         onClick={() => { if(!disabled) { setIsOpen(!isOpen); setSearch(''); } }}
       >
         <span className={selectedOption ? 'text-[var(--text-primary)] font-semibold' : 'text-[var(--text-muted)] truncate'}>
@@ -62,8 +63,8 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({ options, val
 
       {isOpen && (
         <div 
-          className="absolute left-0 top-full mt-1 w-full z-50 bg-[var(--bg-surface)] border border-[var(--border-default)] rounded shadow-lg overflow-hidden"
-          style={{ maxHeight: '200px', display: 'flex', flexDirection: 'column' }}
+          className="absolute left-0 top-full mt-1 w-full z-50 bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-md shadow-xl overflow-hidden"
+          style={{ maxHeight: maxDropdownHeight, display: 'flex', flexDirection: 'column' }}
         >
           <div className="p-1.5 border-b border-[var(--border-subtle)] flex items-center gap-1.5 bg-[var(--bg-surface-2)]">
             <Search size={12} className="text-[var(--text-muted)]" />

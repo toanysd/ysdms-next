@@ -222,7 +222,7 @@ export default function MoldMasterDesignsPage() {
     setLoading(true)
     const { data, error: err } = await supabase
       .from('design_revisions')
-      .select('*, employees!designer_id(employee_name), mold_revisions(physical_molds(physical_mold_id, system_code, device_status)), jobs(job_id, job_code, job_name, job_status)')
+      .select('*, employees!designer_id(employee_name), equipment(equipment_id, equipment_code, equipment_type, status), jobs(job_id, job_code, job_name, job_status)')
       .eq('product_id', moldMasterId)
       .order('revision_number', { ascending: false })
     if (err) {
@@ -231,7 +231,11 @@ export default function MoldMasterDesignsPage() {
     } else {
       const formattedData = data?.map(rev => ({
         ...rev,
-        physical_molds: rev.mold_revisions?.flatMap((mr: any) => mr.physical_molds || []) || []
+        physical_molds: ((rev as any).equipment || []).map((eq: any) => ({
+          physical_mold_id: eq.equipment_id,
+          system_code: eq.equipment_code,
+          device_status: eq.status
+        }))
       }))
       setRevisions((formattedData as unknown as DesignRevision[]) || [])
     }
