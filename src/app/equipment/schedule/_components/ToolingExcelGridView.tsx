@@ -72,7 +72,7 @@ export default function ToolingExcelGridView({
         })
     }, [jobs, trackFilter, searchQuery])
 
-    // Generate date rows
+    // Generate date columns
     const start = parseISO(startDateStr)
     const dateList: string[] = useMemo(() => {
         const list: string[] = []
@@ -82,8 +82,8 @@ export default function ToolingExcelGridView({
         return list
     }, [start, daysCount])
 
-    // Defined Machine Columns
-    const machineColumns = useMemo(() => {
+    // Generate Machine Rows
+    const machineRows = useMemo(() => {
         const mainMachines = machines.filter(m => {
             const name = (m.machine_code || m.machine_name || '').toUpperCase()
             return name.includes('CMX') || name.includes('MILLTAP') || name.includes('MILLAC') || name.includes('DURA') || name.includes('CNC')
@@ -99,274 +99,138 @@ export default function ToolingExcelGridView({
 
     // Check if step falls on date
     const isStepOnDate = (step: JobStepRow, dateStr: string, job: JobForGantt) => {
-        // 1. Check work_logs
         if (step.work_logs && step.work_logs.some(w => w.work_date === dateStr)) return true
-
-        // 2. Check planned dates
         if (step.planned_start && step.planned_end) {
             const pStart = step.planned_start.split('T')[0]
             const pEnd = step.planned_end.split('T')[0]
             if (dateStr >= pStart && dateStr <= pEnd) return true
         }
-
-        // 3. Fallback to deadline or single date
         if (step.deadline && step.deadline.split('T')[0] === dateStr) return true
-
-        // 4. If step has no dates, fallback to job dates
         if (!step.planned_start && !step.deadline && job.start_date && job.mold_deadline) {
             const jStart = job.start_date.split('T')[0]
             const jEnd = job.mold_deadline.split('T')[0]
             if (dateStr >= jStart && dateStr <= jEnd) return true
         }
-
         return false
     }
 
     return (
         <div className="w-full h-full flex flex-col overflow-hidden bg-[var(--bg-surface-2)]">
-            {/* Perspective: Machine Centric */}
-            {perspective === 'machine' ? (
-                <div className="w-full h-full overflow-auto">
-                    <div className="inline-block min-w-max bg-[var(--bg-surface)] border-b border-r border-[var(--border-default)]">
-                        {/* Header Row (Machines) - STICKY TOP */}
-                        <div className="flex border-b border-[var(--border-default)] bg-[var(--bg-surface)] sticky top-0 z-20 shadow-xs">
-                            <div className="w-24 shrink-0 border-r border-[var(--border-default)] p-2.5 sticky left-0 bg-[var(--bg-surface)] z-30 font-bold text-[12px] text-[var(--text-muted)] flex items-center justify-center">
-                                {t('table.machine')} / {t('today')}
-                            </div>
-                            {machineColumns.map(col => (
-                                <div key={col.id} className="w-[300px] shrink-0 border-r border-[var(--border-default)] p-2 flex flex-col items-center justify-center bg-[var(--bg-surface-hover)]">
-                                    <div className="font-bold text-[13px] text-[var(--text-primary)] font-mono flex items-center gap-1.5">
-                                        <span>{col.code}</span>
-                                    </div>
-                                    <span className="text-[10px] text-[var(--text-muted)] truncate max-w-[280px]">
-                                        {col.name}
-                                    </span>
-                                </div>
-                            ))}
+            <div className="w-full h-full overflow-auto">
+                <div className="inline-block min-w-max bg-[var(--bg-surface)] border-b border-r border-[var(--border-default)]">
+                    
+                    {/* TOP HEADER ROW: Dates */}
+                    <div className="flex border-b border-[var(--border-default)] bg-[var(--bg-surface)] sticky top-0 z-20 shadow-xs">
+                        {/* Top-Left Corner: Machine / Trạm label */}
+                        <div className="w-48 shrink-0 border-r border-[var(--border-default)] p-2 sticky left-0 bg-[var(--bg-surface)] z-30 font-bold text-[12px] text-[var(--text-muted)] flex flex-col justify-center shadow-[2px_0_5px_-2px_rgba(0,0,0,0.04)]">
+                            <div className="text-center">{t('table.machine')}</div>
+                            <div className="text-[10px] font-normal opacity-70 text-center">Máy & Trạm gia công</div>
                         </div>
-
-                        {/* Date Rows */}
-                        {dateList.map((dateStr, rIdx) => {
+                        
+                        {/* Dates */}
+                        {dateList.map((dateStr) => {
                             const parsedDate = parseISO(dateStr)
                             const isToday = isSameDay(parsedDate, new Date())
                             const dayIndex = parsedDate.getDay().toString() as '0'|'1'|'2'|'3'|'4'|'5'|'6'
-                            const dayLabel = tDays(dayIndex)
                             const isWeekend = dayIndex === '0' || dayIndex === '6'
-
+                            
                             return (
                                 <div 
-                                    key={dateStr} 
-                                    className={`flex border-b border-[var(--border-default)] min-h-[90px] ${
-                                        isToday 
-                                            ? 'bg-[var(--tint-teal-bg)]/30' 
-                                            : isWeekend 
-                                                ? 'bg-[var(--bg-surface-2)]/60' 
-                                                : 'bg-[var(--bg-surface)]'
+                                    key={dateStr}
+                                    className={`w-[150px] shrink-0 border-r border-[var(--border-default)] p-1.5 flex flex-col items-center justify-center ${
+                                        isToday ? 'bg-[var(--tint-teal-bg)]' : isWeekend ? 'bg-[var(--bg-surface-2)]' : 'bg-[var(--bg-surface-hover)]'
                                     }`}
                                 >
-                                    {/* Date Row Header - STICKY LEFT */}
-                                    <div className="w-24 shrink-0 border-r border-[var(--border-default)] py-2 px-1 flex flex-col justify-center items-center sticky left-0 z-10 bg-inherit shadow-[2px_0_5px_-2px_rgba(0,0,0,0.04)]">
-                                        <div className={`font-bold text-[15px] tabular-nums font-mono leading-none ${isToday ? 'text-[var(--accent)] font-extrabold' : 'text-[var(--text-primary)]'}`}>
-                                            {format(parsedDate, 'MM/dd')}
-                                        </div>
-                                        <div className={`text-[11px] font-bold mt-1 ${isWeekend ? 'text-red-500' : 'text-[var(--text-muted)]'}`}>
-                                            ({dayLabel})
-                                        </div>
-                                        {isToday && (
-                                            <span className="mt-1 px-1.5 py-0.2 rounded bg-[var(--accent)] text-white text-[9px] font-bold uppercase">
-                                                {t('today')}
-                                            </span>
-                                        )}
+                                    <div className={`font-mono font-bold text-[14px] ${isToday ? 'text-[var(--accent)]' : 'text-[var(--text-primary)]'}`}>
+                                        {format(parsedDate, 'MM/dd')}
                                     </div>
-
-                                    {/* Cells for each machine */}
-                                    {machineColumns.map(col => {
-                                        // Collect matching steps
-                                        const matchingItems: { job: JobForGantt, step: JobStepRow }[] = []
-                                        
-                                        filteredJobs.forEach(job => {
-                                            (job.job_steps || []).forEach(step => {
-                                                const matchMachine = col.type === 'CNC' 
-                                                    ? step.machine_id === col.id 
-                                                    : col.type === 'MANUAL'
-                                                        ? (!step.machine_id || step.machining_location?.includes('社内') || step.step_name?.includes('ミガキ') || step.step_name?.includes('仕上') || step.step_name?.includes('ネル'))
-                                                        : (step.machining_location?.includes('外注') || step.machining_location?.includes('協力'))
-
-                                                if (matchMachine && isStepOnDate(step, dateStr, job)) {
-                                                    matchingItems.push({ job, step })
-                                                }
-                                            })
-                                        })
-
-                                        const totalHours = matchingItems.reduce((sum, item) => sum + (Number(item.step.planned_hours) || Number(item.step.estimated_hours) || 0), 0)
-                                        const isOverloaded = totalHours > 8.5
-
-                                        return (
-                                            <div 
-                                                key={`${dateStr}-${col.id}`}
-                                                className="w-[300px] shrink-0 border-r border-[var(--border-default)] p-1.5 flex flex-col gap-1.5 relative group hover:bg-[var(--bg-surface-hover)]/70 transition-colors"
-                                            >
-                                                {/* Header in cell: Total load indicator */}
-                                                {matchingItems.length > 0 && (
-                                                    <div className="flex justify-between items-center px-1 pb-1 border-b border-[var(--border-default)] text-[10px] text-[var(--text-muted)]">
-                                                        <span className="font-semibold">{matchingItems.length} 件</span>
-                                                        <span className={`font-mono font-bold px-1 rounded ${isOverloaded ? 'bg-red-100 text-red-700 font-extrabold border border-red-200' : 'bg-[var(--bg-surface-2)] text-[var(--text-secondary)]'}`}>
-                                                            Σ {totalHours.toFixed(1)}h {isOverloaded ? '⚠️' : ''}
-                                                        </span>
-                                                    </div>
-                                                )}
-
-                                                {/* Job Task Cards */}
-                                                <div className="flex flex-col gap-1.5 flex-1">
-                                                    {matchingItems.map(({ job, step }) => (
-                                                        <ToolingJobCard 
-                                                            key={`${job.job_id}-${step.step_id}`}
-                                                            job={job}
-                                                            step={step}
-                                                            empName={empMap.get(step.assigned_to || '') || empMap.get((job as any).responsible_id || '')}
-                                                            machName={machMap.get(step.machine_id || '')}
-                                                            onOpenJob={setSelectedJobForDrawer}
-                                                            onEditStep={(st, j) => setSelectedStepForEdit({ step: st, job: j })}
-                                                            onQuickLog={(j, st) => setSelectedJobForWorklog({ job: j, step: st })}
-                                                        />
-                                                    ))}
-                                                </div>
-
-                                                {matchingItems.length === 0 && (
-                                                    <div className="h-full flex items-center justify-center opacity-0 group-hover:opacity-40 text-[10px] text-[var(--text-muted)] italic">
-                                                        {t('noTasks')}
-                                                    </div>
-                                                )}
-                                            </div>
-                                        )
-                                    })}
+                                    <div className={`text-[10px] font-semibold ${isWeekend ? 'text-red-500' : 'text-[var(--text-muted)]'}`}>
+                                        ({tDays(dayIndex)})
+                                    </div>
+                                    {isToday && (
+                                        <span className="mt-0.5 px-1.5 py-0.5 rounded bg-[var(--accent)] text-white text-[9px] font-bold uppercase shadow-xs">
+                                            {t('today')}
+                                        </span>
+                                    )}
                                 </div>
                             )
                         })}
                     </div>
-                </div>
-            ) : (
-                /* Perspective: Job & Work Object Centric */
-                <div className="w-full h-full overflow-auto">
-                    <div className="inline-block min-w-max bg-[var(--bg-surface)] border-b border-r border-[var(--border-default)]">
-                        {/* Header Row */}
-                        <div className="flex border-b border-[var(--border-default)] bg-[var(--bg-surface)] sticky top-0 z-20 shadow-xs">
-                            <div className="w-56 shrink-0 border-r border-[var(--border-default)] p-2 sticky left-0 bg-[var(--bg-surface)] z-30 font-bold text-[12px] text-[var(--text-muted)]">
-                                {t('table.job')} / {t('table.track')}
-                            </div>
-                            <div className="w-24 shrink-0 border-r border-[var(--border-default)] p-2 sticky left-56 bg-[var(--bg-surface)] z-30 font-bold text-[12px] text-[var(--text-muted)] text-center">
-                                {t('table.moldDeadline')}
-                            </div>
-                            <div className="w-20 shrink-0 border-r border-[var(--border-default)] p-2 sticky left-80 bg-[var(--bg-surface)] z-30 font-bold text-[12px] text-[var(--text-muted)] text-center">
-                                {t('table.progress')}
+
+                    {/* BODY ROWS: Machines */}
+                    {machineRows.map(mach => (
+                        <div key={mach.id} className="flex border-b border-[var(--border-default)] min-h-[90px] bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] transition-colors">
+                            {/* Left Sticky Cell: Machine Name */}
+                            <div className="w-48 shrink-0 border-r border-[var(--border-default)] p-3 sticky left-0 z-10 bg-[var(--bg-surface)] shadow-[2px_0_5px_-2px_rgba(0,0,0,0.04)] flex flex-col justify-center">
+                                <div className="font-bold text-[13px] text-[var(--text-primary)] font-mono">
+                                    {mach.code}
+                                </div>
+                                <div className="text-[11px] text-[var(--text-muted)] mt-1 break-words whitespace-normal">
+                                    {mach.name}
+                                </div>
                             </div>
 
+                            {/* Cells for each Date */}
                             {dateList.map((dateStr) => {
-                                const parsedDate = parseISO(dateStr)
-                                const isToday = isSameDay(parsedDate, new Date())
-                                const dayIndex = parsedDate.getDay().toString() as '0'|'1'|'2'|'3'|'4'|'5'|'6'
-                                const isWeekend = dayIndex === '0' || dayIndex === '6'
+                                // Find steps for this mach + date
+                                const matchingItems: { job: JobForGantt, step: JobStepRow }[] = []
+                                filteredJobs.forEach(job => {
+                                    (job.job_steps || []).forEach(step => {
+                                        const matchMachine = mach.type === 'CNC' 
+                                            ? step.machine_id === mach.id 
+                                            : mach.type === 'MANUAL'
+                                                ? (!step.machine_id || step.machining_location?.includes('社内') || step.step_name?.includes('ミガキ') || step.step_name?.includes('仕上') || step.step_name?.includes('ネル'))
+                                                : (step.machining_location?.includes('外注') || step.machining_location?.includes('協力'))
+
+                                        if (matchMachine && isStepOnDate(step, dateStr, job)) {
+                                            matchingItems.push({ job, step })
+                                        }
+                                    })
+                                })
+
+                                const totalHours = matchingItems.reduce((sum, item) => sum + (Number(item.step.planned_hours) || Number(item.step.estimated_hours) || 0), 0)
+                                const isOverloaded = totalHours > 8.5
+                                const isToday = isSameDay(parseISO(dateStr), new Date())
 
                                 return (
                                     <div 
-                                        key={dateStr} 
-                                        className={`w-28 shrink-0 border-r border-[var(--border-default)] p-1.5 flex flex-col items-center justify-center ${
-                                            isToday ? 'bg-[var(--tint-teal-bg)]' : isWeekend ? 'bg-[var(--bg-surface-2)]' : 'bg-[var(--bg-surface-hover)]'
+                                        key={`${mach.id}-${dateStr}`}
+                                        className={`w-[150px] shrink-0 border-r border-[var(--border-default)] p-1.5 flex flex-col gap-1.5 relative group hover:bg-[var(--bg-surface-hover)] transition-colors ${
+                                            isToday ? 'bg-[var(--tint-teal-bg)]/20' : ''
                                         }`}
                                     >
-                                        <div className={`font-mono font-bold text-[13px] ${isToday ? 'text-[var(--accent)]' : 'text-[var(--text-primary)]'}`}>
-                                            {format(parsedDate, 'MM/dd')}
-                                        </div>
-                                        <div className={`text-[10px] font-semibold ${isWeekend ? 'text-red-500' : 'text-[var(--text-muted)]'}`}>
-                                            ({tDays(dayIndex)})
+                                        {/* Total load header */}
+                                        {matchingItems.length > 0 && (
+                                            <div className="flex justify-between items-center px-1 pb-1 border-b border-[var(--border-default)] text-[10px] text-[var(--text-muted)]">
+                                                <span className="font-semibold">{matchingItems.length} 件</span>
+                                                <span className={`font-mono font-bold px-1 rounded ${isOverloaded ? 'bg-red-100 text-red-700 font-extrabold border border-red-200' : 'bg-[var(--bg-surface-2)] text-[var(--text-secondary)]'}`}>
+                                                    Σ {totalHours.toFixed(1)}h {isOverloaded ? '⚠️' : ''}
+                                                </span>
+                                            </div>
+                                        )}
+
+                                        {/* Task Cards */}
+                                        <div className="flex flex-col gap-1.5 flex-1">
+                                            {matchingItems.map(({ job, step }) => (
+                                                <ToolingJobCard 
+                                                    key={`${job.job_id}-${step.step_id}`}
+                                                    job={job}
+                                                    step={step}
+                                                    empName={empMap.get(step.assigned_to || '') || empMap.get((job as any).responsible_id || '')}
+                                                    machName={mach.name}
+                                                    onOpenJob={setSelectedJobForDrawer}
+                                                    onEditStep={(st, j) => setSelectedStepForEdit({ step: st, job: j })}
+                                                    onQuickLog={(j, st) => setSelectedJobForWorklog({ job: j, step: st })}
+                                                />
+                                            ))}
                                         </div>
                                     </div>
                                 )
                             })}
                         </div>
-
-                        {/* Job Rows */}
-                        {filteredJobs.map((job) => {
-                            const steps = job.job_steps || []
-                            const moldSteps = steps.filter(s => s.track === 'MOLD' || !s.track)
-                            const plugSteps = steps.filter(s => s.track === 'PLUG')
-                            const cutterSteps = steps.filter(s => s.track === 'CUTTER')
-
-                            const tracks = [
-                                { key: 'MOLD', label: '本型', color: 'var(--accent)', steps: moldSteps },
-                                ...(job.has_plug || plugSteps.length > 0 ? [{ key: 'PLUG', label: 'プラグ', color: 'var(--status-warning)', steps: plugSteps }] : []),
-                                ...(cutterSteps.length > 0 ? [{ key: 'CUTTER', label: '抜型', color: 'var(--brand-purple, #9333ea)', steps: cutterSteps }] : [])
-                            ]
-
-                            return (
-                                <React.Fragment key={job.job_id}>
-                                    {tracks.map((tr, tIdx) => (
-                                        <div key={`${job.job_id}-${tr.key}`} className="flex border-b border-[var(--border-default)] hover:bg-[var(--bg-surface-hover)] transition-colors min-h-[44px]">
-                                            {/* Fixed Left Job & Track Info */}
-                                            <div 
-                                                onClick={() => setSelectedJobForDrawer(job)}
-                                                className="w-56 shrink-0 border-r border-[var(--border-default)] p-2 sticky left-0 z-10 bg-[var(--bg-surface)] flex items-center justify-between gap-1.5 cursor-pointer shadow-[2px_0_5px_-2px_rgba(0,0,0,0.04)]"
-                                            >
-                                                <div className="flex flex-col min-w-0">
-                                                    <div className="flex items-center gap-1">
-                                                        <span className="font-mono font-bold text-[12px] text-[var(--accent)] truncate">
-                                                            {job.products?.product_code || job.job_code}
-                                                        </span>
-                                                        <span className="text-[9px] font-bold px-1 rounded" style={{ backgroundColor: 'var(--bg-surface-2)', color: tr.color }}>
-                                                            {tr.label}
-                                                        </span>
-                                                    </div>
-                                                    <span className="text-[10px] text-[var(--text-muted)] truncate" title={job.job_name}>
-                                                        {job.job_name}
-                                                    </span>
-                                                </div>
-                                            </div>
-
-                                            {/* Fixed Deadline */}
-                                            <div className="w-24 shrink-0 border-r border-[var(--border-default)] p-2 sticky left-56 z-10 bg-[var(--bg-surface)] flex items-center justify-center font-mono text-[11px] font-bold text-[var(--text-primary)]">
-                                                {job.mold_deadline ? format(parseISO(job.mold_deadline), 'MM/dd') : '—'}
-                                            </div>
-
-                                            {/* Fixed Progress */}
-                                            <div className="w-20 shrink-0 border-r border-[var(--border-default)] p-2 sticky left-80 z-10 bg-[var(--bg-surface)] flex items-center justify-center">
-                                                <div className="w-full bg-[var(--bg-surface-2)] rounded-full h-2 overflow-hidden border border-[var(--border-default)]">
-                                                    <div 
-                                                        className="bg-[var(--accent)] h-full transition-all"
-                                                        style={{ width: `${job.overall_progress || 0}%` }}
-                                                    />
-                                                </div>
-                                            </div>
-
-                                            {/* Calendar Date Columns */}
-                                            {dateList.map((dateStr) => {
-                                                const activeSteps = tr.steps.filter(s => isStepOnDate(s, dateStr, job))
-
-                                                return (
-                                                    <div key={dateStr} className="w-28 shrink-0 border-r border-[var(--border-default)] p-1 flex flex-col gap-1 items-center justify-center">
-                                                        {activeSteps.map(st => (
-                                                            <div 
-                                                                key={st.step_id}
-                                                                onClick={(e) => {
-                                                                    e.stopPropagation()
-                                                                    setSelectedStepForEdit({ step: st, job })
-                                                                }}
-                                                                className="w-full text-center px-1.5 py-0.5 rounded text-[10px] font-bold font-mono bg-[var(--tint-teal-bg)] text-[var(--accent)] border border-[var(--accent)]/30 hover:shadow-xs cursor-pointer truncate"
-                                                                title={`[${st.step_name}] ${st.planned_hours || st.estimated_hours || 0}h`}
-                                                            >
-                                                                {st.step_name}
-                                                            </div>
-                                                        ))}
-                                                    </div>
-                                                )
-                                            })}
-                                        </div>
-                                    ))}
-                                </React.Fragment>
-                            )
-                        })}
-                    </div>
+                    ))}
                 </div>
-            )}
+            </div>
 
             {/* Quick View Drawer */}
             {selectedJobForDrawer && (
