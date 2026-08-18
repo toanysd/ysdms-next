@@ -389,6 +389,8 @@ export async function getJobsForGantt(searchQuery?: string, fromDate?: string, t
         `, { count: 'exact' })
         .neq('job_status', 'CANCELLED')
         
+    let stepJobIds: string[] = []
+
     if (searchQuery?.trim()) {
         const cleanQ = searchQuery.trim()
         const [{ data: matchingProducts }, { data: matchingEquip }] = await Promise.all([
@@ -406,14 +408,35 @@ export async function getJobsForGantt(searchQuery?: string, fromDate?: string, t
         req = req.or(orConditions.join(','))
     } else if (fromDate && toDate) {
         const toDateEnd = toDate + ' 23:59:59'
-        req = req.or(`and(mold_deadline.gte.${fromDate},mold_deadline.lte.${toDateEnd}),and(deadline.gte.${fromDate},deadline.lte.${toDateEnd}),and(start_date.gte.${fromDate},start_date.lte.${toDateEnd}),and(ship_date.gte.${fromDate},ship_date.lte.${toDateEnd})`)
+
+        // Pass 1: Find jobs that have job_steps matching date criteria (deadline, planned_start, planned_end)
+        const { data: stepHits } = await supabase
+            .from('job_steps')
+            .select('job_id')
+            .or(`and(deadline.gte.${fromDate},deadline.lte.${toDateEnd}),and(planned_start.gte.${fromDate},planned_start.lte.${toDateEnd}),and(planned_end.gte.${fromDate},planned_end.lte.${toDateEnd})`)
+
+        stepJobIds = Array.from(new Set(stepHits?.map(s => s.job_id).filter(Boolean) || []))
+
+        const orConditions = [
+            `and(mold_deadline.gte.${fromDate},mold_deadline.lte.${toDateEnd})`,
+            `and(deadline.gte.${fromDate},deadline.lte.${toDateEnd})`,
+            `and(start_date.gte.${fromDate},start_date.lte.${toDateEnd})`,
+            `and(ship_date.gte.${fromDate},ship_date.lte.${toDateEnd})`
+        ]
+        if (stepJobIds.length > 0) {
+            orConditions.push(`job_id.in.(${stepJobIds.join(',')})`)
+        }
+
+        req = req.or(orConditions.join(','))
     }
 
     const from = (page - 1) * pageSize
     const to = from + pageSize - 1
 
     let { data, count, error } = await req
-        .order('mold_deadline', { ascending: true, nullsFirst: false })
+        .order('mold_deadline', { ascending: false, nullsFirst: false })
+        .order('deadline', { ascending: false, nullsFirst: false })
+        .order('created_at', { ascending: false })
         .range(from, to)
 
     // Fallback: If DB migration hasn't been run on Supabase yet, retry query without work_orders join
@@ -459,11 +482,22 @@ export async function getJobsForGantt(searchQuery?: string, fromDate?: string, t
             fallbackReq = fallbackReq.or(orConditions.join(','))
         } else if (fromDate && toDate) {
             const toDateEnd = toDate + ' 23:59:59'
-            fallbackReq = fallbackReq.or(`and(mold_deadline.gte.${fromDate},mold_deadline.lte.${toDateEnd}),and(deadline.gte.${fromDate},deadline.lte.${toDateEnd}),and(start_date.gte.${fromDate},start_date.lte.${toDateEnd}),and(ship_date.gte.${fromDate},ship_date.lte.${toDateEnd})`)
+            const orConditions = [
+                `and(mold_deadline.gte.${fromDate},mold_deadline.lte.${toDateEnd})`,
+                `and(deadline.gte.${fromDate},deadline.lte.${toDateEnd})`,
+                `and(start_date.gte.${fromDate},start_date.lte.${toDateEnd})`,
+                `and(ship_date.gte.${fromDate},ship_date.lte.${toDateEnd})`
+            ]
+            if (stepJobIds.length > 0) {
+                orConditions.push(`job_id.in.(${stepJobIds.join(',')})`)
+            }
+            fallbackReq = fallbackReq.or(orConditions.join(','))
         }
 
         const res = await fallbackReq
-            .order('mold_deadline', { ascending: true, nullsFirst: false })
+            .order('mold_deadline', { ascending: false, nullsFirst: false })
+            .order('deadline', { ascending: false, nullsFirst: false })
+            .order('created_at', { ascending: false })
             .range(from, to)
 
         data = res.data as any

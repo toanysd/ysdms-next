@@ -21,6 +21,7 @@ export interface DailyWorklogA4SheetProps {
   totalHours: number
   items: NippoItem[]
   scale?: number
+  stampUrl?: string
   onEditItem?: (item: NippoItem) => void
   onDeleteItem?: (logId: string) => void
 }
@@ -33,6 +34,7 @@ export function DailyWorklogA4Sheet({
   totalHours,
   items,
   scale = 1.0,
+  stampUrl,
   onEditItem,
   onDeleteItem,
 }: DailyWorklogA4SheetProps) {
@@ -157,7 +159,20 @@ export function DailyWorklogA4Sheet({
             >
               確認印
             </div>
-            <div style={{ flex: 1 }}></div>
+            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+              {stampUrl && (
+                <img
+                  src={stampUrl}
+                  alt="確認印"
+                  style={{
+                    width: '38px',
+                    height: '38px',
+                    objectFit: 'contain',
+                    transform: 'rotate(-4deg)',
+                  }}
+                />
+              )}
+            </div>
           </div>
         </div>
 

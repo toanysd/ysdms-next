@@ -320,13 +320,14 @@ export async function POST(request: NextRequest) {
     }
 
     // ─── 4. Create or Update Work Order (Parent for all jobs) ─────────
-    const moldHandlingMode = body.mold_handling_mode || 'REUSE_EXISTING'
+    const moldHandlingMode = body.mold_handling_mode || 'CREATE_NEW'
+    const isModification = revNum > 0 && moldHandlingMode === 'REUSE_EXISTING'
     const year = new Date().getFullYear()
     const randSeq = Math.floor(100000 + Math.random() * 900000)
     const woCode = `WO-${year}-${randSeq}`
-    const woType = revNum > 0 ? (moldHandlingMode === 'REUSE_EXISTING' ? 'MODIFICATION' : 'NEW_SET') : 'NEW_SET'
+    const woType = isModification ? 'MODIFICATION' : 'NEW_SET'
     const revSuffix = revNum > 0 ? `-R${revNum}` : ''
-    const woName = moldHandlingMode === 'REUSE_EXISTING' 
+    const woName = isModification 
       ? `金型改修: ${baseInternal}${revSuffix}`
       : `新規金型製作: ${baseInternal}${revSuffix}`
 
@@ -546,12 +547,12 @@ export async function POST(request: NextRequest) {
 
     // ─── 6. Create or Update Master Manufacturing Job (jobs table) with Standard Steps ──
     const moldJobCode = `JOB-${baseCode}-${Date.now().toString().slice(-4)}`
-    const isModification = moldHandlingMode === 'REUSE_EXISTING'
-    const moldJobName = isModification 
+    const isJobModification = revNum > 0 && moldHandlingMode === 'REUSE_EXISTING'
+    const moldJobName = isJobModification 
       ? `金型改修: ${baseInternal}${revSuffix}`
       : `新規金型製作: ${baseInternal}${revSuffix}`
-    const moldCategory = isModification ? 'MOLD_MODIFY' : 'MOLD_NEW'
-    const moldTypeId = isModification ? '2' : '1'
+    const moldCategory = isJobModification ? 'MOLD_MODIFY' : 'MOLD_NEW'
+    const moldTypeId = isJobModification ? '2' : '1'
     const moldDeadline = body.mold_deadline || maxDeadline || undefined
 
     let moldJobId: string | null = null
@@ -563,6 +564,7 @@ export async function POST(request: NextRequest) {
       .limit(1)
       .maybeSingle()
 
+    let hasRecordedLogs = false
     if (existingJob) {
       moldJobId = existingJob.job_id
       await supabase
@@ -581,7 +583,15 @@ export async function POST(request: NextRequest) {
         })
         .eq('job_id', moldJobId)
 
-      await supabase.from('job_steps').delete().eq('job_id', moldJobId)
+      const { count: logCount } = await supabase
+        .from('work_logs')
+        .select('*', { count: 'exact', head: true })
+        .eq('job_id', moldJobId)
+
+      hasRecordedLogs = Boolean(logCount && logCount > 0)
+      if (!hasRecordedLogs) {
+        await supabase.from('job_steps').delete().eq('job_id', moldJobId)
+      }
     } else {
       const { data: newMoldJob, error: jobErr } = await supabase
         .from('jobs')
@@ -621,23 +631,38 @@ export async function POST(request: NextRequest) {
     const hasPlugRequirement = plugComp?.arrangement === 'REQUIRED' || Boolean(body.plug_type && body.plug_type !== 'なし')
     const hasCutterRequirement = cutterComp?.arrangement === 'REQUIRED' || !cutterComp || cutterComp.condition === 'NEW'
 
+    const targetYear = (moldDeadline ? new Date(moldDeadline).getFullYear() : (body.shipping_deadline ? new Date(body.shipping_deadline).getFullYear() : new Date().getFullYear())) || new Date().getFullYear()
+
+    const normalizeDl = (dStr?: string | null) => {
+      if (!dStr) return null
+      const m = String(dStr).match(/^(\d{4})-(\d{2}-\d{2}.*)$/)
+      if (m && targetYear && parseInt(m[1], 10) !== targetYear) {
+        return `${targetYear}-${m[2]}`
+      }
+      return dStr
+    }
+
     const jobStepsToInsert: any[] = []
     let stepNo = 1
 
+    const normalizedMoldCompDl = normalizeDl(moldComp?.deadline)
+    const normalizedPlugCompDl = normalizeDl(plugComp?.deadline)
+    const normalizedCutterCompDl = normalizeDl(cutterComp?.deadline)
+
     // 1. Track [M] 金型
-    if (moldComp?.deadline && moldComp.deadline !== moldDeadline) {
+    if (normalizedMoldCompDl && normalizedMoldCompDl !== moldDeadline) {
       jobStepsToInsert.push({
         job_id: moldJobId,
         step_no: stepNo++,
         step_name: 'アルミ材手配',
         track: 'MOLD',
         type_code: 'MOLD',
-        material_spec: moldComp.material_spec || 'アルミ材',
+        material_spec: moldComp?.material_spec || 'アルミ材',
         arrangement: 'REQUIRED',
         condition: 'NEW',
         step_status: 'PENDING',
-        manufacture_location: moldComp.manufacture_location || 'IN_HOUSE',
-        deadline: moldComp.deadline,
+        manufacture_location: moldComp?.manufacture_location || 'IN_HOUSE',
+        deadline: normalizedMoldCompDl,
         estimated_hours: null
       })
     }
@@ -658,7 +683,7 @@ export async function POST(request: NextRequest) {
 
     // 2. Track [P] プラグ
     if (hasPlugRequirement) {
-      const plugDl = plugComp?.deadline || moldDeadline || null
+      const plugDl = normalizedPlugCompDl || moldDeadline || null
       jobStepsToInsert.push({
         job_id: moldJobId,
         step_no: stepNo++,
@@ -677,7 +702,7 @@ export async function POST(request: NextRequest) {
 
     // 3. Track [C] 抜型
     if (hasCutterRequirement) {
-      const cutterDl = cutterComp?.deadline || moldDeadline || null
+      const cutterDl = normalizedCutterCompDl || moldDeadline || null
       jobStepsToInsert.push({
         job_id: moldJobId,
         step_no: stepNo++,
@@ -708,12 +733,14 @@ export async function POST(request: NextRequest) {
         condition: oc.condition || 'EXISTING',
         step_status: 'PENDING',
         manufacture_location: oc.manufacture_location || 'IN_HOUSE',
-        deadline: oc.deadline || null,
+        deadline: normalizeDl(oc.deadline) || null,
         estimated_hours: oc.estimated_hours || null
       })
     }
 
-    await supabase.from('job_steps').insert(jobStepsToInsert)
+    if (!existingJob || !hasRecordedLogs) {
+      await supabase.from('job_steps').insert(jobStepsToInsert)
+    }
 
     return NextResponse.json({
       success: true,

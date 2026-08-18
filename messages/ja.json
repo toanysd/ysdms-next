@@ -1708,6 +1708,9 @@
     "details": "詳細"
   },
   "Equipment": {
+    "statusPending": "未着手",
+    "statusInProgress": "進行中",
+    "statusCompleted": "完了",
     "tabs": {
       "overview": "概要",
       "steps": "工程",
@@ -1798,6 +1801,18 @@
     "keHoach": "計画",
     "danhSachCongOan": "工程一覧",
     "themCongOan": "工程追加",
+    "themCongDoanJobNay": "＋ 工程追加",
+    "dangChon": "選択中",
+    "xoaChon": "選択解除",
+    "nhapNhatKyChoMucNay": "選択中の項目に日報を入力",
+    "expandAll": "全展開",
+    "expandTracksOnly": "工程・設備のみ",
+    "collapseAll": "全折畳",
+    "shippingDeadline": "出荷期日",
+    "moldDeadline": "完成期日",
+    "toggleWorklogs": "日報明細",
+    "hienThiNhatKy": "日報表示",
+    "anNhatKy": "日報非表示",
     "openHubView": "詳細ページへ",
     "editMold": "金型編集",
     "registerMold": "金型登録",

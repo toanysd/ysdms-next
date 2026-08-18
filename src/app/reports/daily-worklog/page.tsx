@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import { format } from 'date-fns'
 import { Printer, FileDown } from 'lucide-react'
 import { DailyWorklogA4Sheet, PRICE_MAP, NippoItem } from '@/components/worklogs/DailyWorklogA4Sheet'
+import { getEmployeeStampUrl } from '@/lib/utils/stampUtils'
 
 type Employee = {
   employee_id: string
@@ -219,6 +220,7 @@ export default function DailyWorklogReportPage() {
             workerName={selectedEmployeeName}
             totalHours={totalHours}
             items={nippoItems}
+            stampUrl={getEmployeeStampUrl(employees.find(e => e.employee_id === selectedEmployeeId))}
           />
         </div>
       </div>

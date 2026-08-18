@@ -5,13 +5,12 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import type { JobForGantt, JobStepRow } from '@/app/actions/mold-job'
 import { Gantt, Task, ViewMode } from 'gantt-task-react'
 import 'gantt-task-react/dist/index.css'
-import { Edit2, Save, Undo, ChevronLeft, ChevronRight, Crosshair, Sparkles, ClipboardList, Printer } from 'lucide-react'
+import { Edit2, Save, Undo, ChevronLeft, ChevronRight, Crosshair, Sparkles, ClipboardList, Printer, CalendarRange } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { MultiSelectDropdown } from '@/components/ui/MultiSelectDropdown'
 import { useTranslations } from 'next-intl'
 import { shiftJobDates, applyAutoScheduleUpdates } from '@/app/actions/mold-job'
 import { EditStepModal } from '@/app/equipment/jobs/[id]/tabs/EditStepModal'
-import { WorklogFormShared } from '@/components/worklogs/WorklogFormShared'
 import { JobQuickViewDrawer } from '@/components/equipment/JobQuickViewDrawer'
 import { ManufacturingSheetOCRModal } from '@/components/ocr/ManufacturingSheetOCRModal'
 import { DailyWorklogQuickModal } from '@/components/worklogs/DailyWorklogQuickModal'
@@ -174,25 +173,26 @@ interface HeaderProps {
   isPanelExpanded: boolean
   gridTemplate: string
   onExpandAll: () => void
+  onExpandTracksOnly: () => void
   onCollapseAll: () => void
 }
 
 const CustomTaskListHeader = React.memo(function CustomTaskListHeader({
-  headerHeight, fontFamily, onExpandAll, onCollapseAll
+  headerHeight, fontFamily, onExpandAll, onExpandTracksOnly, onCollapseAll
 }: HeaderProps) {
   const { gridTemplate, isPanelExpanded, showDates } = React.useContext(GanttHandlersContext)
   const tIntl = useTranslations('Equipment')
   
   const hStyle: React.CSSProperties = { textOverflow: 'ellipsis', whiteSpace: 'nowrap', overflow: 'hidden', textTransform: 'uppercase', letterSpacing: '0.05em' }
   const hHide: React.CSSProperties = { ...hStyle, display: isPanelExpanded ? 'block' : 'none' }
-  const hDateHide: React.CSSProperties = { ...hStyle, display: isPanelExpanded && showDates ? 'block' : 'none' }
   
   return (
     <div style={{ height: headerHeight, fontFamily, fontSize: 10, display: 'grid', gridTemplateColumns: gridTemplate, alignItems: 'center', padding: '0 4px', borderBottom: '1px solid var(--border-default)', fontWeight: 600, color: 'var(--text-muted)', backgroundColor: 'var(--bg-surface)' }}>
       <div style={{ ...hStyle, display: 'flex', alignItems: 'center', gap: '4px' }}>
         <div className="flex gap-0.5" style={{ zIndex: 10 }}>
-           <button className="flex items-center justify-center bg-[var(--bg-surface-2)] hover:bg-[var(--bg-hover)] border border-[var(--border-default)] rounded-sm h-4 w-4 text-[10px]" onClick={onExpandAll} title="全展開 (Expand All)">+</button>
-           <button className="flex items-center justify-center bg-[var(--bg-surface-2)] hover:bg-[var(--bg-hover)] border border-[var(--border-default)] rounded-sm h-4 w-4 text-[10px]" onClick={onCollapseAll} title="全折畳 (Collapse All)">-</button>
+           <button className="flex items-center justify-center bg-[var(--bg-surface-2)] hover:bg-[var(--bg-hover)] border border-[var(--border-default)] rounded-sm h-4.5 px-1 text-[9px] font-bold cursor-pointer" onClick={onCollapseAll} title={tIntl('collapseAll')}>－</button>
+           <button className="flex items-center justify-center bg-[var(--bg-surface-2)] hover:bg-[var(--bg-hover)] border border-[var(--border-default)] rounded-sm h-4.5 px-1 text-[9px] font-bold text-[var(--accent)] cursor-pointer" onClick={onExpandTracksOnly} title={tIntl('expandTracksOnly')}>⚙️</button>
+           <button className="flex items-center justify-center bg-[var(--bg-surface-2)] hover:bg-[var(--bg-hover)] border border-[var(--border-default)] rounded-sm h-4.5 px-1 text-[9px] font-bold cursor-pointer" onClick={onExpandAll} title={tIntl('expandAll')}>＋</button>
         </div>
         <span>ジョブ / 工程</span>
       </div>
@@ -201,9 +201,14 @@ const CustomTaskListHeader = React.memo(function CustomTaskListHeader({
       <div style={{ ...hHide, textAlign: 'center' }} title="実績時間">実績H</div>
       <div style={{ ...hHide, textAlign: 'center' }} title="実績日">実績日</div>
       <div style={{ ...hHide, textAlign: 'center' }}>状態</div>
-      <div style={{ ...hDateHide, textAlign: 'center' }}>開始</div>
-      <div style={{ ...hDateHide, textAlign: 'center' }}>終了</div>
-      <div style={{ ...hHide, textAlign: 'center' }}>期限</div>
+      {showDates && (
+        <>
+          <div style={{ ...hHide, textAlign: 'center' }}>開始</div>
+          <div style={{ ...hHide, textAlign: 'center' }}>終了</div>
+        </>
+      )}
+      <div style={{ ...hHide, textAlign: 'center', color: 'var(--text-primary)', fontWeight: 700 }} title="金型・構成部品の完成期日">{tIntl('moldDeadline')}</div>
+      <div style={{ ...hHide, textAlign: 'center', color: 'var(--accent)', fontWeight: 700 }} title="製品の出荷期日">{tIntl('shippingDeadline')}</div>
     </div>
   )
 })
@@ -229,6 +234,8 @@ interface TableProps {
   onOpenQuickView: (job: JobForGantt) => void
   selectedJobId: string | null
   onSelectJob: (jobId: string | null) => void
+  selectedTaskId?: string | null
+  onSelectTask?: (task: ExtendedTask) => void
   originalTasks?: ExtendedTask[]
   showDates?: boolean
 }
@@ -236,9 +243,12 @@ interface TableProps {
 const TaskRow = React.memo(function TaskRow({
   t, index, rowHeight, rowWidth, gridTemplate, isPanelExpanded,
   isExpanded, currentStepData, machOptions, empOptions, expandedTracks,
-  onExpanderClick, onScrollToDate, onEditStep, onUpdateLocalStep, onOpenQuickView, selectedJobId, onSelectJob, showDates
+  onExpanderClick, onScrollToDate, onEditStep, onUpdateLocalStep, onOpenQuickView, 
+  selectedJobId, onSelectJob, selectedTaskId, onSelectTask, showDates
 }: any) {
   const tIntl = useTranslations('Equipment')
+  
+  const isSelected = t.id === selectedTaskId || (t.type === 'project' && t.id === selectedJobId && !selectedTaskId)
   
   let expanderSymbol = ""
   if (t.type === 'project') {
@@ -297,9 +307,12 @@ const TaskRow = React.memo(function TaskRow({
           display: 'flex', alignItems: 'center',
           padding: '0 12px 0 28px',
           borderBottom: '1px dashed var(--border-default)',
-          backgroundColor: 'rgba(13, 148, 136, 0.04)',
+          backgroundColor: 'var(--bg-surface-2, #f8fafc)',
           cursor: 'pointer',
+          transition: 'background-color 0.15s ease',
         }}
+        onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-surface-3, #f1f5f9)')}
+        onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-surface-2, #f8fafc)')}
         onClick={(e) => {
           e.stopPropagation()
           onEditStep({
@@ -317,16 +330,16 @@ const TaskRow = React.memo(function TaskRow({
             alignItems: 'center',
             gap: 6,
             fontSize: 11,
-            fontWeight: 700,
-            color: 'var(--accent)',
+            fontWeight: 600,
+            color: 'var(--text-muted)',
             background: 'none',
             border: 'none',
             cursor: 'pointer',
             padding: 0,
           }}
         >
-          <span style={{ fontSize: 13, fontWeight: 800 }}>＋</span>
-          <span>工程追加 (Thêm công đoạn cho job này)</span>
+          <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-muted)' }}>＋</span>
+          <span>{tIntl('themCongDoanJobNay')}</span>
         </button>
       </div>
     )
@@ -375,13 +388,17 @@ const TaskRow = React.memo(function TaskRow({
 
     return (
       <div 
+        onClick={() => onSelectTask && onSelectTask(t)}
         style={{
           height: rowHeight, width: rowWidth,
           display: 'grid', gridTemplateColumns: gridTemplate,
           alignItems: 'center', padding: '0 4px',
           borderBottom: '1px solid var(--border-subtle)',
-          backgroundColor: 'var(--bg-surface-2)',
-          borderLeft: `3px solid ${trackMeta!.color}`,
+          backgroundColor: isSelected ? 'rgba(13, 148, 136, 0.12)' : 'var(--bg-surface-2)',
+          borderLeft: isSelected ? '4px solid var(--accent)' : `3px solid ${trackMeta!.color}`,
+          boxShadow: isSelected ? 'inset 0 0 0 1px rgba(13, 148, 136, 0.25)' : 'none',
+          cursor: 'pointer',
+          transition: 'background-color 0.15s ease',
         }}
         onDoubleClick={(e) => { 
           e.stopPropagation(); 
@@ -511,8 +528,24 @@ const TaskRow = React.memo(function TaskRow({
   }
 
   return (
-    <div style={{ height: rowHeight, width: rowWidth, display: 'grid', gridTemplateColumns: gridTemplate, alignItems: 'center', padding: '0 4px', borderBottom: '1px solid var(--border-subtle)', backgroundColor: rowBg }}>
-      <div style={{ display: 'flex', alignItems: 'center', minWidth: 0 }}>
+    <div 
+      onClick={() => onSelectTask && onSelectTask(t)}
+      style={{ 
+        height: rowHeight, 
+        width: rowWidth, 
+        display: 'grid', 
+        gridTemplateColumns: gridTemplate, 
+        alignItems: 'center', 
+        padding: '0 4px', 
+        borderBottom: '1px solid var(--border-subtle)', 
+        borderLeft: isSelected ? '4px solid var(--accent)' : '4px solid transparent',
+        backgroundColor: isSelected ? 'rgba(13, 148, 136, 0.12)' : rowBg,
+        boxShadow: isSelected ? 'inset 0 0 0 1px rgba(13, 148, 136, 0.25)' : 'none',
+        cursor: 'pointer',
+        transition: 'background-color 0.15s ease, border-left-color 0.15s ease',
+      }}
+    >
+      <div style={{ display: 'flex', alignItems: 'center', minWidth: 0, gridColumn: t.type === 'project' && isPanelExpanded ? '1 / 6' : undefined }}>
         <div 
           style={{ width: 14, cursor: 'pointer', textAlign: 'center', userSelect: 'none', color: 'var(--text-muted)', fontSize: 9 }} 
           onClick={() => onExpanderClick(t)}
@@ -635,82 +668,86 @@ const TaskRow = React.memo(function TaskRow({
 
       {isPanelExpanded && (
         <>
-          <div style={{ padding: '0 4px', minWidth: 0 }}>
-            {isTask && !isActual ? (
-              t.originalWorkLog ? (
-                <span style={{ fontSize: 9, color: 'var(--text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', display: 'block' }}
-                  title={t.originalWorkLog.employee_names?.join(', ') || '-'}
-                >
-                  {t.originalWorkLog.employee_names?.[0] || '-'}
-                </span>
-              ) : (
-                <select 
-                  className="form-input bg-white w-full" 
-                  style={{ padding: '0 2px', fontSize: 10, height: 20, borderColor: 'transparent', backgroundColor: 'transparent' }}
-                  value={currentStepData?.machine_id || ''}
-                  onChange={(e) => onUpdateLocalStep(step!.step_id, { machine_id: e.target.value || null })}
-                >
-                  <option value="">-</option>
-                  {machOptions.map((m: any) => <option key={m.id} value={m.id}>{m.label}</option>)}
-                </select>
-              )
-            ) : null}
-          </div>
-          <div style={{ padding: '0 4px', textAlign: 'center', minWidth: 0, fontSize: 10 }}>
-            {isTask && !isActual ? (
-              t.originalWorkLog ? (
-                <span style={{ fontFamily: 'monospace' }}>
-                  {t.originalWorkLog.total_planned_hours || '-'}
-                </span>
-              ) : (
-                <input 
-                  type="number" 
-                  className="form-input bg-white w-full text-center" 
-                  style={{ padding: '0 2px', fontSize: 10, height: 20, borderColor: 'transparent', backgroundColor: 'transparent' }}
-                  value={currentStepData?.planned_hours ?? ''}
-                  onChange={(e) => onUpdateLocalStep(step!.step_id, { planned_hours: e.target.value ? Number(e.target.value) : null })}
-                />
-              )
-            ) : null}
-          </div>
+          {t.type !== 'project' && (
+            <>
+              <div style={{ padding: '0 4px', minWidth: 0 }}>
+                {isTask && !isActual ? (
+                  t.originalWorkLog ? (
+                    <span style={{ fontSize: 9, color: 'var(--text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', display: 'block' }}
+                      title={t.originalWorkLog.employee_names?.join(', ') || '-'}
+                    >
+                      {t.originalWorkLog.employee_names?.[0] || '-'}
+                    </span>
+                  ) : (
+                    <select 
+                      className="form-input bg-white w-full" 
+                      style={{ padding: '0 2px', fontSize: 10, height: 20, borderColor: 'transparent', backgroundColor: 'transparent' }}
+                      value={currentStepData?.machine_id || ''}
+                      onChange={(e) => onUpdateLocalStep(step!.step_id, { machine_id: e.target.value || null })}
+                    >
+                      <option value="">-</option>
+                      {machOptions.map((m: any) => <option key={m.id} value={m.id}>{m.label}</option>)}
+                    </select>
+                  )
+                ) : null}
+              </div>
+              <div style={{ padding: '0 4px', textAlign: 'center', minWidth: 0, fontSize: 10 }}>
+                {isTask && !isActual ? (
+                  t.originalWorkLog ? (
+                    <span style={{ fontFamily: 'monospace' }}>
+                      {t.originalWorkLog.total_planned_hours || '-'}
+                    </span>
+                  ) : (
+                    <input 
+                      type="number" 
+                      className="form-input bg-white w-full text-center" 
+                      style={{ padding: '0 2px', fontSize: 10, height: 20, borderColor: 'transparent', backgroundColor: 'transparent' }}
+                      value={currentStepData?.planned_hours ?? ''}
+                      onChange={(e) => onUpdateLocalStep(step!.step_id, { planned_hours: e.target.value ? Number(e.target.value) : null })}
+                    />
+                  )
+                ) : null}
+              </div>
 
-          <div style={{ padding: '0 4px', textAlign: 'center', minWidth: 0, fontSize: 10, color: statusColor }}>
-            {isTask && !isActual ? (
-              t.originalWorkLog ? (
-                <span style={{ fontFamily: 'monospace', fontWeight: 600 }}>
-                  {t.originalWorkLog.total_actual_hours || '-'}
-                </span>
-              ) : (
-                <span>{currentStepData?.actual_hours || '-'}</span>
-              )
-            ) : null}
-          </div>
+              <div style={{ padding: '0 4px', textAlign: 'center', minWidth: 0, fontSize: 10, color: statusColor }}>
+                {isTask && !isActual ? (
+                  t.originalWorkLog ? (
+                    <span style={{ fontFamily: 'monospace', fontWeight: 600 }}>
+                      {t.originalWorkLog.total_actual_hours || '-'}
+                    </span>
+                  ) : (
+                    <span>{currentStepData?.actual_hours || '-'}</span>
+                  )
+                ) : null}
+              </div>
 
-          <div style={{ padding: '0 4px', textAlign: 'center', minWidth: 0, fontSize: 10, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-            {isTask ? (
-              t.originalWorkLog?.work_date ? (
-                <span 
-                  style={{ cursor: 'pointer', textDecoration: 'underline', textDecorationStyle: 'dotted', color: 'var(--text-primary)', whiteSpace: 'nowrap' }}
-                  onClick={(e) => { e.stopPropagation(); onScrollToDate(t.originalWorkLog.work_date, index, t.originalWorkLog.work_date) }}
-                  title="作業日にスクロール"
-                >
-                  {formatShortDateWithDay(t.originalWorkLog.work_date)}
-                </span>
-              ) : t.originalStep?.actual_start || t.originalStep?.actual_end ? (
-                <span 
-                  style={{ cursor: 'pointer', textDecoration: 'underline', textDecorationStyle: 'dotted', color: 'var(--text-primary)', whiteSpace: 'nowrap' }}
-                  onClick={(e) => { e.stopPropagation(); onScrollToDate(t.originalStep.actual_start || t.originalStep.actual_end, index, t.originalStep.actual_start || t.originalStep.actual_end) }}
-                  title="実績日にスクロール"
-                >
-                  {formatShortDateWithDay(t.originalStep.actual_start || t.originalStep.actual_end)}
-                </span>
-              ) : (
-                <span style={{ color: 'var(--text-muted)' }}>-</span>
-              )
-            ) : (
-              <span style={{ color: 'var(--text-muted)' }}>-</span>
-            )}
-          </div>
+              <div style={{ padding: '0 4px', textAlign: 'center', minWidth: 0, fontSize: 10, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                {isTask ? (
+                  t.originalWorkLog?.work_date ? (
+                    <span 
+                      style={{ cursor: 'pointer', textDecoration: 'underline', textDecorationStyle: 'dotted', color: 'var(--text-primary)', whiteSpace: 'nowrap' }}
+                      onClick={(e) => { e.stopPropagation(); onScrollToDate(t.originalWorkLog.work_date, index, t.originalWorkLog.work_date) }}
+                      title="作業日にスクロール"
+                    >
+                      {formatShortDateWithDay(t.originalWorkLog.work_date)}
+                    </span>
+                  ) : t.originalStep?.actual_start || t.originalStep?.actual_end ? (
+                    <span 
+                      style={{ cursor: 'pointer', textDecoration: 'underline', textDecorationStyle: 'dotted', color: 'var(--text-primary)', whiteSpace: 'nowrap' }}
+                      onClick={(e) => { e.stopPropagation(); onScrollToDate(t.originalStep.actual_start || t.originalStep.actual_end, index, t.originalStep.actual_start || t.originalStep.actual_end) }}
+                      title="実績日にスクロール"
+                    >
+                      {formatShortDateWithDay(t.originalStep.actual_start || t.originalStep.actual_end)}
+                    </span>
+                  ) : (
+                    <span style={{ color: 'var(--text-muted)' }}>-</span>
+                  )
+                ) : (
+                  <span style={{ color: 'var(--text-muted)' }}>-</span>
+                )}
+              </div>
+            </>
+          )}
 
           <div style={{ textAlign: 'center', fontSize: 10, minWidth: 0, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
             {t.isDisabled ? '' : (
@@ -718,45 +755,49 @@ const TaskRow = React.memo(function TaskRow({
                 <span style={{
                   color: delayInfo.color,
                   backgroundColor: delayInfo.bg,
-                  padding: '2px 6px',
+                  padding: '2px 5px',
                   borderRadius: '4px',
                   fontWeight: 700,
-                  fontSize: 9,
+                  fontSize: 9.5,
                   whiteSpace: 'nowrap'
                 }}>
                   {statusText}
                 </span>
               ) : (
-                <span style={{ color: statusColor, fontWeight: 500, whiteSpace: 'nowrap' }}>
+                <span style={{ color: statusColor, fontWeight: 600, fontSize: 10, whiteSpace: 'nowrap' }}>
                   {statusText}
                 </span>
               )
             )}
           </div>
 
-          <div style={{ textAlign: 'center', fontSize: 10, minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', display: showDates ? 'block' : 'none' }}>
-            {t.isDisabled ? '' : (
-              <span 
-                style={{ cursor: 'pointer', textDecoration: 'underline', textDecorationStyle: 'dotted', color: statusColor }}
-                onClick={(e) => { e.stopPropagation(); onScrollToDate(isTask ? currentStepData?.planned_start : t.start, index, isTask ? currentStepData?.planned_start : t.start) }}
-                title={tIntl('scrollToPlannedStart')}
-              >
-                {formatShortDateWithDay(isTask ? currentStepData?.planned_start : t.start)}
-              </span>
-            )}
-          </div>
-          
-          <div style={{ textAlign: 'center', fontSize: 10, minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', display: showDates ? 'block' : 'none' }}>
-            {t.isDisabled ? '' : (
-              <span 
-                style={{ cursor: 'pointer', textDecoration: 'underline', textDecorationStyle: 'dotted', color: statusColor }}
-                onClick={(e) => { e.stopPropagation(); onScrollToDate(isTask ? currentStepData?.planned_end : t.end, index, isTask ? currentStepData?.planned_end : t.end) }}
-                title={tIntl('scrollToPlannedEnd')}
-              >
-                {formatShortDateWithDay(isTask ? currentStepData?.planned_end : t.end)}
-              </span>
-            )}
-          </div>
+          {showDates && (
+            <>
+              <div style={{ textAlign: 'center', fontSize: 10, minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {t.isDisabled ? '' : (
+                  <span 
+                    style={{ cursor: 'pointer', textDecoration: 'underline', textDecorationStyle: 'dotted', color: statusColor }}
+                    onClick={(e) => { e.stopPropagation(); onScrollToDate(isTask ? currentStepData?.planned_start : t.start, index, isTask ? currentStepData?.planned_start : t.start) }}
+                    title={tIntl('scrollToPlannedStart')}
+                  >
+                    {formatShortDateWithDay(isTask ? currentStepData?.planned_start : t.start)}
+                  </span>
+                )}
+              </div>
+              
+              <div style={{ textAlign: 'center', fontSize: 10, minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {t.isDisabled ? '' : (
+                  <span 
+                    style={{ cursor: 'pointer', textDecoration: 'underline', textDecorationStyle: 'dotted', color: statusColor }}
+                    onClick={(e) => { e.stopPropagation(); onScrollToDate(isTask ? currentStepData?.planned_end : t.end, index, isTask ? currentStepData?.planned_end : t.end) }}
+                    title={tIntl('scrollToPlannedEnd')}
+                  >
+                    {formatShortDateWithDay(isTask ? currentStepData?.planned_end : t.end)}
+                  </span>
+                )}
+              </div>
+            </>
+          )}
 
           <div style={{ padding: '0 2px', display: 'flex', alignItems: 'center', justifyContent: isTask ? 'flex-start' : 'center', paddingLeft: isTask ? '28px' : '0px', gap: 2, minWidth: 0 }}>
             {(() => {
@@ -785,6 +826,41 @@ const TaskRow = React.memo(function TaskRow({
               )
             })()}
           </div>
+
+          {/* 出荷期日 (Shipping / Product Deadline) */}
+          <div style={{ padding: '0 2px', display: 'flex', alignItems: 'center', justifyContent: 'center', minWidth: 0 }}>
+            {(() => {
+              if (t.type === 'project') {
+                const shipDate = t.originalJob?.ship_date || (t.originalJob as any)?.work_orders?.delivery_date || (t.originalJob as any)?.work_orders?.deadline
+                if (!shipDate) return <span style={{ color: 'var(--text-muted)', fontSize: 9.5 }}>—</span>
+
+                const moldDl = t.originalJob?.mold_deadline || t.originalJob?.deadline
+                const isConflict = moldDl && new Date(shipDate).getTime() < new Date(moldDl).getTime()
+
+                return (
+                  <span 
+                    style={{ 
+                      fontSize: 10, 
+                      color: isConflict ? 'var(--status-error, #dc2626)' : 'var(--accent, #0d9488)', 
+                      backgroundColor: isConflict ? 'rgba(239, 68, 68, 0.1)' : 'var(--tint-teal-bg, rgba(13, 148, 136, 0.08))',
+                      padding: '2px 5px',
+                      borderRadius: '4px',
+                      cursor: 'pointer', 
+                      textDecoration: 'underline', 
+                      textDecorationStyle: 'dotted', 
+                      whiteSpace: 'nowrap', 
+                      fontWeight: 700 
+                    }}
+                    onClick={(e) => { e.stopPropagation(); onScrollToDate(shipDate, index, shipDate) }}
+                    title={isConflict ? `出荷期日: ${formatShortDateWithDay(shipDate)} (⚠️ 金型完成期日より前です)` : `出荷期日: ${formatShortDateWithDay(shipDate)}`}
+                  >
+                    {formatShortDateWithDay(shipDate)}
+                  </span>
+                )
+              }
+              return <span style={{ color: 'var(--text-muted)', fontSize: 9.5 }}>—</span>
+            })()}
+          </div>
         </>
       )}
     </div>
@@ -795,7 +871,8 @@ const CustomTaskListTable = React.memo(function CustomTaskListTable({
   rowHeight, rowWidth, tasks: currentTasks, fontFamily, onExpanderClick,
   isPanelExpanded, gridTemplate, expandedJobs, expandedTracks, localSteps,
   machOptions, empOptions, compareMode, originalTasks,
-  onScrollToDate, onEditStep, onUpdateLocalStep, onOpenQuickView, selectedJobId, onSelectJob, showDates,
+  onScrollToDate, onEditStep, onUpdateLocalStep, onOpenQuickView, 
+  selectedJobId, onSelectJob, selectedTaskId, onSelectTask, showDates,
 }: TableProps) {
   return (
     <div style={{ fontFamily, fontSize: 10, color: 'var(--text-primary)', borderRight: '1px solid var(--border-default)' }}>
@@ -825,6 +902,8 @@ const CustomTaskListTable = React.memo(function CustomTaskListTable({
             onOpenQuickView={onOpenQuickView}
             selectedJobId={selectedJobId}
             onSelectJob={onSelectJob}
+            selectedTaskId={selectedTaskId}
+            onSelectTask={onSelectTask}
             showDates={showDates}
           />
         )
@@ -844,6 +923,7 @@ const StaticHeaderComponent = React.memo(function StaticHeaderComponent(props: a
       isPanelExpanded={ctx.isPanelExpanded}
       gridTemplate={ctx.gridTemplate}
       onExpandAll={ctx.onExpandAll}
+      onExpandTracksOnly={ctx.onExpandTracksOnly}
       onCollapseAll={ctx.onCollapseAll}
     />
   )
@@ -875,6 +955,8 @@ const StaticTableComponent = React.memo(function StaticTableComponent(props: any
       onOpenQuickView={ctx.onOpenQuickView}
       selectedJobId={data.selectedJobId}
       onSelectJob={ctx.onSelectJob}
+      selectedTaskId={data.selectedTaskId}
+      onSelectTask={ctx.onSelectTask}
       originalTasks={data.originalTasks}
       showDates={ctx.showDates}
     />
@@ -906,6 +988,18 @@ export default function MoldJobGantt({ workOrders = [], jobs, employees = [], ma
   const [isWorklogModalOpen, setIsWorklogModalOpen] = useState(false)
   const [worklogDefaultJobId, setWorklogDefaultJobId] = useState<string | undefined>(undefined)
   const [isPrintNippoModalOpen, setIsPrintNippoModalOpen] = useState(false)
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null)
+  const [selectedTask, setSelectedTask] = useState<ExtendedTask | null>(null)
+
+  const handleSelectTask = useCallback((task: ExtendedTask) => {
+    setSelectedTaskId(prev => prev === task.id ? null : task.id)
+    setSelectedTask(prev => prev?.id === task.id ? null : task)
+    if (task.originalJobId) {
+      setSelectedJobId(task.originalJobId)
+    } else if (task.type === 'project') {
+      setSelectedJobId(task.id)
+    }
+  }, [])
 
   const wrapperRef = useRef<HTMLDivElement>(null)
   const [ganttHeight, setGanttHeight] = useState(600)
@@ -1129,125 +1223,23 @@ export default function MoldJobGantt({ workOrders = [], jobs, employees = [], ma
       return { start: s, end: e }
     }
 
-    // 1. Process Work Orders (Option C Model: Work Order -> Jobs -> Steps)
-    if (workOrders && workOrders.length > 0) {
-      workOrders.forEach(wo => {
-        const woJobs = wo.jobs || []
-        if (woJobs.length === 0) return
+    // Sort jobs by deadline descending: newest (latest deadline) at the top, oldest at the bottom
+    const sortedJobs = [...displayJobs].sort((a, b) => {
+      const dlA = a.mold_deadline || a.deadline || ''
+      const dlB = b.mold_deadline || b.deadline || ''
+      if (dlA && dlB) {
+        const diff = new Date(dlB).getTime() - new Date(dlA).getTime()
+        if (diff !== 0) return diff
+      } else if (dlA && !dlB) {
+        return -1
+      } else if (!dlA && dlB) {
+        return 1
+      }
+      return (new Date(b.created_at || 0).getTime()) - (new Date(a.created_at || 0).getTime())
+    })
 
-        let minTime = Infinity
-        let maxTime = -Infinity
-
-        woJobs.forEach((j: any) => {
-          if (j.start_date) {
-            const t = new Date(j.start_date).getTime()
-            if (!isNaN(t) && t < minTime) minTime = t
-          }
-          if (j.deadline || j.mold_deadline) {
-            const t = new Date(j.deadline || j.mold_deadline).getTime()
-            if (!isNaN(t) && t > maxTime) maxTime = t
-          }
-          (j.job_steps || []).forEach((s: any) => {
-            if (s.planned_start) {
-              const t = new Date(s.planned_start).getTime()
-              if (!isNaN(t) && t < minTime) minTime = t
-            }
-            if (s.planned_end || s.deadline) {
-              const t = new Date(s.planned_end || s.deadline).getTime()
-              if (!isNaN(t) && t > maxTime) maxTime = t
-            }
-          })
-        })
-
-        const fallbackStart = wo.start_date ? parseSafeDate(wo.start_date, BOUND_START) : BOUND_START
-        const fallbackEnd = wo.deadline ? parseSafeDate(wo.deadline, new Date(fallbackStart.getTime() + 7 * 86400000)) : new Date(fallbackStart.getTime() + 7 * 86400000)
-
-        const rawWoStart = minTime !== Infinity ? new Date(minTime) : fallbackStart
-        const rawWoEnd = maxTime !== -Infinity ? new Date(maxTime) : fallbackEnd
-
-        const { start: woStart, end: woEnd } = makeValidRange(rawWoStart, rawWoEnd)
-
-        const isWoExpanded = !expandedJobs.has(`wo_${wo.wo_id}`) // expanded by default
-
-        // Level 1: Work Order Node
-        result.push({
-          id: `wo_${wo.wo_id}`,
-          name: `📋 ${wo.wo_code} [${wo.wo_name}]`,
-          type: 'project',
-          progress: wo.wo_status === 'COMPLETED' ? 100 : 50,
-          start: woStart,
-          end: woEnd,
-          isDisabled: true,
-          hideChildren: !isWoExpanded,
-          originalWorkOrder: wo,
-          isWorkOrderHeader: true,
-        } as ExtendedTask)
-
-        if (isWoExpanded) {
-          // Level 2: Child Jobs per Equipment (only for manufactured equipment)
-          woJobs.forEach((job: any) => {
-            const equipName = job.equipment?.display_name || job.equipment?.equipment_code || job.job_name || job.job_code
-            const equipType = job.equipment?.equipment_type || 'MOLD'
-            const typeIcon = equipType.includes('CUTTER') ? '✂️' : '🔧'
-
-            const rawJobStart = job.start_date ? parseSafeDate(job.start_date, woStart) : woStart
-            const rawJobEnd = job.deadline ? parseSafeDate(job.deadline, woEnd) : woEnd
-            const { start: jobStart, end: jobEnd } = makeValidRange(rawJobStart, rawJobEnd)
-
-            const isJobExpanded = expandedJobs.has(job.job_id)
-            const jobSteps = (job.job_steps || []).filter((s: any) => 
-              s.condition !== 'EXISTING' && s.step_status !== 'EXISTING' && s.arrangement !== 'NOT_REQUIRED'
-            )
-
-            result.push({
-              id: job.job_id,
-              name: `${typeIcon} ${equipName}`,
-              type: 'task',
-              project: `wo_${wo.wo_id}`,
-              progress: job.job_status === 'COMPLETED' ? 100 : (job.overall_progress || 0),
-              start: jobStart,
-              end: jobEnd,
-              isDisabled: false,
-              hideChildren: !isJobExpanded,
-              originalJob: job,
-              originalJobId: job.job_id,
-            } as ExtendedTask)
-
-            // Level 3: Real processing steps for this job
-            if (isJobExpanded && jobSteps.length > 0) {
-              jobSteps.forEach((step: any, sIdx: number) => {
-                const rawStepStart = step.planned_start ? parseSafeDate(step.planned_start, jobStart) : jobStart
-                const rawStepEnd = step.planned_end || step.deadline ? parseSafeDate(step.planned_end || step.deadline, jobEnd) : jobEnd
-                const { start: stepStart, end: stepEnd } = makeValidRange(rawStepStart, rawStepEnd)
-
-                result.push({
-                  id: `${job.job_id}_step_${step.step_id || sIdx}`,
-                  name: `  ↳ ${step.step_name || '工程'}`,
-                  type: 'task',
-                  project: job.job_id,
-                  progress: step.step_status === 'COMPLETED' ? 100 : 0,
-                  start: stepStart,
-                  end: stepEnd,
-                  isDisabled: false,
-                  originalStep: step,
-                  originalJobId: job.job_id,
-                  styles: {
-                    backgroundColor: 'var(--accent-light, #e0f2f1)',
-                    progressColor: 'var(--accent, #0d9488)',
-                  }
-                } as ExtendedTask)
-              })
-            }
-          })
-        }
-      })
-    }
-
-    // 2. Process Standalone / Legacy Jobs (work_order_id = NULL or not in WO list)
-    const woJobIds = new Set(workOrders.flatMap((w: any) => (w.jobs || []).map((j: any) => j.job_id)))
-    const standaloneJobs = displayJobs.filter(j => !j.work_order_id || !woJobIds.has(j.job_id))
-
-    standaloneJobs.forEach(job => {
+    // Process all jobs uniformly with full 3-level breakdown (Job -> Tracks -> Steps -> Add Step row)
+    sortedJobs.forEach(job => {
       const s = JOB_STATUS[job.job_status || 'NEW'] || JOB_STATUS.NEW
       
       let projStart = new Date(8640000000000000)
@@ -1296,12 +1288,30 @@ export default function MoldJobGantt({ workOrders = [], jobs, employees = [], ma
       if (cProjStart.getTime() > cProjEnd.getTime()) cProjStart = new Date(cProjEnd)
       if (cProjStart.getTime() === cProjEnd.getTime()) cProjEnd.setHours(cProjEnd.getHours() + 1)
 
-      let rawJobName = (job as any).mold_masters?.products?.product_name || (job as any).products?.product_name
-        ? `${job.job_code} ${(job as any).mold_masters?.products?.product_name || (job as any).products?.product_name}`
-        : job.job_name || job.job_code
+      // Extract Product Code, Job Type, and WO Code from DB relations
+      const prodCode = (job as any).products?.product_name_internal || (job as any).products?.product_code || (job as any).mold_masters?.products?.product_name_internal || ''
+      const typeName = (job as any).job_types?.job_type_name_ja || ((job as any).job_name?.includes(':') ? (job as any).job_name.split(':')[0].trim() : '')
+      const woCode = (job as any).work_orders?.wo_code
 
-      // Clean revision display format: e.g. "新規金型製作: TOW-004 (R1)" -> "新規金型製作: TOW-004-R1"
-      const cleanedJobName = rawJobName.replace(/\s*\(([Rr]\d+)\)/g, '-$1')
+      let cleanedJobName = job.job_name || job.job_code
+
+      if (prodCode) {
+        let revSuffix = ''
+        if ((job as any).design_revisions?.revision_number !== undefined && (job as any).design_revisions?.revision_number > 0) {
+          revSuffix = `-R${(job as any).design_revisions.revision_number}`
+        }
+        const fullProductDisplay = prodCode.includes('-R') || !revSuffix ? prodCode : `${prodCode}${revSuffix}`
+        const displayType = typeName || ((job as any).job_name?.replace(/^[A-Z0-9_-]+[:\s]*/i, '') || '金型製作')
+        
+        cleanedJobName = `${fullProductDisplay}: ${displayType}`
+        if (woCode) {
+          cleanedJobName = `${cleanedJobName} [${woCode}]`
+        }
+      } else {
+        if (woCode) {
+          cleanedJobName = `${cleanedJobName} [${woCode}]`
+        }
+      }
 
       result.push({
         id: job.job_id,
@@ -1700,7 +1710,7 @@ export default function MoldJobGantt({ workOrders = [], jobs, employees = [], ma
       if (expandedJobs.has(job.job_id)) {
         result.push({
           id: `${job.job_id}_add_step_row`,
-          name: '＋ 工程追加',
+          name: t('themCongDoanJobNay'),
           start: new Date(projStart),
           end: new Date(projEnd),
           progress: 0,
@@ -2076,6 +2086,11 @@ export default function MoldJobGantt({ workOrders = [], jobs, employees = [], ma
       })
     })
     setExpandedTracks(allTrackIds)
+  }, [jobs])
+
+  const handleExpandTracksOnly = useCallback(() => {
+    setExpandedJobs(new Set(jobs.map(j => j.job_id)))
+    setExpandedTracks(new Set())
   }, [jobs])
 
   const handleCollapseAll = useCallback(() => {
@@ -2485,10 +2500,10 @@ export default function MoldJobGantt({ workOrders = [], jobs, employees = [], ma
     }
   }, [searchParams, initialFromDate, initialToDate, tasks, handleScrollToDate])
 
-  // Updated with 実績日 (Execution Date) column — now 9 cols
+  // Updated with 完成期日 & 出荷期日 columns — 10 cols when showDates, 8 cols otherwise
   const GRID_TEMPLATE = isPanelExpanded 
-    ? (showDates ? '160px 90px 45px 45px 75px 55px 65px 65px 90px' : '220px 90px 45px 45px 75px 85px 0 0 90px') 
-    : '200px 0 0 0 0 0 0 0 0'
+    ? (showDates ? '150px 65px 36px 36px 58px 52px 55px 55px 72px 72px' : '190px 70px 38px 38px 60px 60px 75px 75px') 
+    : '200px'
 
   // Stable context: only handlers and options — does NOT include localSteps or expandedJobs
   // This means editing a step does NOT cause StaticHeaderComponent to re-render
@@ -2503,11 +2518,13 @@ export default function MoldJobGantt({ workOrders = [], jobs, employees = [], ma
     onEditStep: handleEditStep,
     onUpdateLocalStep: updateLocalStep,
     onExpandAll: handleExpandAll,
+    onExpandTracksOnly: handleExpandTracksOnly,
     onCollapseAll: handleCollapseAll,
     onOpenQuickView: setQuickViewJob,
     onSelectJob: setSelectedJobId,
+    onSelectTask: handleSelectTask,
     showDates,
-  }), [isPanelExpanded, GRID_TEMPLATE, machOptions, empOptions, compareMode, handleScrollToDate, handleEditStep, updateLocalStep, handleExpandAll, handleCollapseAll, showDates])
+  }), [isPanelExpanded, GRID_TEMPLATE, machOptions, empOptions, compareMode, handleScrollToDate, handleEditStep, updateLocalStep, handleExpandAll, handleExpandTracksOnly, handleCollapseAll, handleSelectTask, showDates])
 
   // Volatile context: changes frequently (on every edit/expand)
   // Only StaticTableComponent subscribes to this
@@ -2515,8 +2532,10 @@ export default function MoldJobGantt({ workOrders = [], jobs, employees = [], ma
     expandedJobs, expandedTracks,
     localSteps,
     selectedJobId,
+    selectedTaskId,
+    selectedTask,
     originalTasks: tasks,
-  }), [expandedJobs, expandedTracks, localSteps, selectedJobId, tasks])
+  }), [expandedJobs, expandedTracks, localSteps, selectedJobId, selectedTaskId, selectedTask, tasks])
 
   if (tasks.length === 0) return null
   const hasEdits = Object.keys(localSteps).length > 0
@@ -2528,153 +2547,162 @@ export default function MoldJobGantt({ workOrders = [], jobs, employees = [], ma
     <GanttHandlersContext.Provider value={handlersValue}>
     <GanttDataContext.Provider value={dataValue}>
       <div className="card-flat flex flex-col h-full" style={{ overflow: 'hidden' }}>
-        <div className="flex items-center justify-between border-b px-2 py-1.5 gap-2 shrink-0" style={{ borderColor: 'var(--border-default)', backgroundColor: 'var(--bg-surface)' }}>
-        <div className="flex items-center gap-1.5">
-          <div className="flex items-center border rounded overflow-hidden shadow-sm" style={{ borderColor: 'var(--border-default)', backgroundColor: 'var(--bg-surface-2)' }}>
-            <button className="px-2 py-0.5 transition-colors flex items-center text-[10px] hover:bg-[var(--bg-hover)] h-5" style={{ color: 'var(--text-secondary)' }} onClick={() => shiftDateRange(-1)} title={t('prev')}>
-              <ChevronLeft size={11} />
-            </button>
-            <div style={{ width: 1, backgroundColor: 'var(--border-default)', alignSelf: 'stretch' }} />
-            <button className="px-2.5 py-0.5 transition-colors text-[10px] font-semibold hover:bg-[var(--bg-hover)] h-5 flex items-center" style={{ color: 'var(--text-primary)' }} onClick={handleTodayClick} title={t('today')}>
-              {t('today')}
-            </button>
-            <div style={{ width: 1, backgroundColor: 'var(--border-default)', alignSelf: 'stretch' }} />
-            <button className="px-2 py-0.5 transition-colors flex items-center text-[10px] hover:bg-[var(--bg-hover)] h-5" style={{ color: 'var(--text-secondary)' }} onClick={() => shiftDateRange(1)} title={t('next')}>
-              <ChevronRight size={11} />
-            </button>
+        <div className="flex items-center justify-between border-b px-2.5 py-1 gap-2 shrink-0 flex-wrap md:flex-nowrap" style={{ borderColor: 'var(--border-default)', backgroundColor: 'var(--bg-surface)' }}>
+          {/* GROUP 1: Time Navigation & Scope */}
+          <div className="flex items-center gap-1.5 flex-shrink-0">
+            {/* Quick Shift buttons */}
+            <div className="flex items-center border rounded overflow-hidden shadow-sm h-7" style={{ borderColor: 'var(--border-default)', backgroundColor: 'var(--bg-surface-2)' }}>
+              <button className="px-2 transition-colors flex items-center text-[10px] hover:bg-[var(--bg-hover)] h-full cursor-pointer" style={{ color: 'var(--text-secondary)' }} onClick={() => shiftDateRange(-1)} title={t('prev')}>
+                <ChevronLeft size={12} />
+              </button>
+              <div className="w-px h-full bg-[var(--border-default)]" />
+              <button className="px-2.5 transition-colors text-[10.5px] font-semibold hover:bg-[var(--bg-hover)] h-full flex items-center cursor-pointer" style={{ color: 'var(--text-primary)' }} onClick={handleTodayClick} title={t('today')}>
+                {t('today')}
+              </button>
+              <div className="w-px h-full bg-[var(--border-default)]" />
+              <button className="px-2 transition-colors flex items-center text-[10px] hover:bg-[var(--bg-hover)] h-full cursor-pointer" style={{ color: 'var(--text-secondary)' }} onClick={() => shiftDateRange(1)} title={t('next')}>
+                <ChevronRight size={12} />
+              </button>
+            </div>
+
+            {/* Date Pickers */}
+            <div className="flex items-center gap-1 px-1.5 border rounded shadow-sm h-7" style={{ backgroundColor: 'var(--bg-surface-2)', borderColor: 'var(--border-default)' }}>
+              <input type="date" className="form-input text-[10.5px] py-0 px-0.5 h-5 w-[100px] bg-transparent border-0 font-mono text-[var(--text-primary)]" value={fromDate} onChange={e => { setFromDate(e.target.value); setActivePreset(''); handleApplyDateFilter(e.target.value, toDateRef.current); }} />
+              <span className="text-[10px] text-[var(--text-muted)] font-bold">~</span>
+              <input type="date" className="form-input text-[10.5px] py-0 px-0.5 h-5 w-[100px] bg-transparent border-0 font-mono text-[var(--text-primary)]" value={toDate} onChange={e => { setToDate(e.target.value); setActivePreset(''); handleApplyDateFilter(fromDateRef.current, e.target.value); }} />
+            </div>
+
+            {/* Presets */}
+            <div className="flex p-0.5 rounded border shadow-sm items-center h-7 gap-0.5" style={{ backgroundColor: 'var(--bg-surface-2)', borderColor: 'var(--border-default)' }}>
+              <button className={`px-2 py-0.5 font-medium rounded-sm border transition-all text-[10px] h-5.5 flex items-center cursor-pointer ${activePreset === '2W' ? activeFilterCls : inactiveCls}`} onClick={() => setViewRange('2W')}>2週間</button>
+              <button className={`px-2 py-0.5 font-medium rounded-sm border transition-all text-[10px] h-5.5 flex items-center cursor-pointer ${activePreset === '1M' ? activeFilterCls : inactiveCls}`} onClick={() => setViewRange('1M')}>1ヶ月</button>
+              <button className={`px-2 py-0.5 font-medium rounded-sm border transition-all text-[10px] h-5.5 flex items-center cursor-pointer ${activePreset === '3M' ? activeFilterCls : inactiveCls}`} onClick={() => setViewRange('3M')}>3ヶ月</button>
+            </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <span className="text-[10px] font-semibold px-1" style={{ color: 'var(--text-primary)' }}>
-              {fromDate.replace(/-/g, '/')} <span style={{ color: 'var(--text-muted)' }}>~</span> {toDate.replace(/-/g, '/')}
-            </span>
-            {visibleMonth && (
-              <span className="text-[11px] font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: 'var(--accent-subtle)', color: 'var(--accent)' }}>
-                {visibleMonth}
-              </span>
-            )}
-          </div>
+          {/* GROUP 2: View Unit, Compare & Columns */}
+          <div className="flex items-center gap-1.5 flex-shrink-0">
+            {/* Expansion levels */}
+            <div className="flex p-0.5 rounded border shadow-sm items-center h-7 gap-0.5" style={{ backgroundColor: 'var(--bg-surface-2)', borderColor: 'var(--border-default)' }}>
+              <button 
+                type="button"
+                className={`px-2 py-0.5 font-medium rounded-sm border transition-all text-[10px] h-5.5 flex items-center cursor-pointer ${expandedJobs.size === 0 ? activeFilterCls : inactiveCls}`} 
+                onClick={handleCollapseAll}
+                title={t('collapseAll')}
+              >
+                {t('collapseAll')}
+              </button>
+              <button 
+                type="button"
+                className={`px-2 py-0.5 font-medium rounded-sm border transition-all text-[10px] h-5.5 flex items-center cursor-pointer ${expandedJobs.size > 0 && expandedTracks.size === 0 ? activeFilterCls : inactiveCls}`} 
+                onClick={handleExpandTracksOnly}
+                title={t('expandTracksOnly')}
+              >
+                ⚙️ {t('expandTracksOnly')}
+              </button>
+              <button 
+                type="button"
+                className={`px-2 py-0.5 font-medium rounded-sm border transition-all text-[10px] h-5.5 flex items-center cursor-pointer ${expandedTracks.size > 0 ? activeFilterCls : inactiveCls}`} 
+                onClick={handleExpandAll}
+                title={t('expandAll')}
+              >
+                ＋ {t('expandAll')}
+              </button>
+            </div>
 
-          <div className="flex items-center gap-0.5 p-0.5 border rounded" style={{ backgroundColor: 'var(--bg-surface-2)', borderColor: 'var(--border-default)' }}>
-            <input type="date" className="form-input text-[10px] py-0 px-1 h-5 w-24" style={{ backgroundColor: 'var(--bg-surface)' }} value={fromDate} onChange={e => { setFromDate(e.target.value); setActivePreset(''); handleApplyDateFilter(e.target.value, toDateRef.current); }} />
-            <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>-</span>
-            <input type="date" className="form-input text-[10px] py-0 px-1 h-5 w-24" style={{ backgroundColor: 'var(--bg-surface)' }} value={toDate} onChange={e => { setToDate(e.target.value); setActivePreset(''); handleApplyDateFilter(fromDateRef.current, e.target.value); }} />
-          </div>
-        </div>
+            {/* View Resolution */}
+            <div className="flex p-0.5 rounded border shadow-sm items-center h-7 gap-0.5" style={{ backgroundColor: 'var(--bg-surface-2)', borderColor: 'var(--border-default)' }}>
+              <button className={`px-2.5 py-0.5 font-medium rounded-sm border transition-all text-[10px] h-5.5 flex items-center cursor-pointer ${viewMode === ViewMode.Day ? activeFilterCls : inactiveCls}`} onClick={() => setViewMode(ViewMode.Day)}>日</button>
+              <button className={`px-2.5 py-0.5 font-medium rounded-sm border transition-all text-[10px] h-5.5 flex items-center cursor-pointer ${viewMode === ViewMode.Week ? activeFilterCls : inactiveCls}`} onClick={() => setViewMode(ViewMode.Week)}>週</button>
+              <button className={`px-2.5 py-0.5 font-medium rounded-sm border transition-all text-[10px] h-5.5 flex items-center cursor-pointer ${viewMode === ViewMode.Month ? activeFilterCls : inactiveCls}`} onClick={() => setViewMode(ViewMode.Month)}>月</button>
+            </div>
 
-        <div className="flex items-center gap-2">
-          {/* Tối ưu hóa Toggle */}
-          <div className="flex items-center gap-2 px-2 py-1 rounded border shadow-sm" style={{ backgroundColor: isDraftMode ? 'var(--accent-subtle)' : 'var(--bg-surface-2)', borderColor: isDraftMode ? 'var(--accent)' : 'var(--border-default)' }}>
-            <span className="text-[11px] font-semibold" style={{ color: isDraftMode ? 'var(--accent)' : 'var(--text-secondary)' }}>
-              {t('optimizeAI')}
-            </span>
+            {/* Compare Mode */}
+            <div className="flex p-0.5 rounded border shadow-sm items-center h-7 gap-0.5" style={{ backgroundColor: 'var(--bg-surface-2)', borderColor: 'var(--border-default)' }}>
+              <button className={`px-3 py-0.5 font-medium rounded-sm border transition-all text-[10.5px] h-5.5 flex items-center cursor-pointer ${compareMode === 'PLANNED' ? activeFilterCls : inactiveCls}`} onClick={() => setCompareMode('PLANNED')}>予定</button>
+              <button className={`px-3 py-0.5 font-medium rounded-sm border transition-all text-[10.5px] h-5.5 flex items-center cursor-pointer ${compareMode === 'ACTUAL' ? activeFilterCls : inactiveCls}`} onClick={() => setCompareMode('ACTUAL')}>実績</button>
+              <button className={`px-3 py-0.5 font-medium rounded-sm border transition-all text-[10.5px] h-5.5 flex items-center cursor-pointer ${compareMode === 'COMPARE' ? activeFilterCls : inactiveCls}`} onClick={() => setCompareMode('COMPARE')}>予実比較</button>
+            </div>
+
+            {/* Dates toggle */}
             <button 
-              className={`relative inline-flex h-4 w-7 items-center rounded-full transition-colors ${isDraftMode ? 'bg-[var(--accent)]' : 'bg-[var(--bg-surface-3)]'}`}
+              type="button"
+              className={`flex items-center gap-1 px-2 rounded border shadow-sm h-7 text-[10px] font-medium transition-all cursor-pointer ${showDates ? 'bg-[var(--accent-subtle)] border-[var(--accent-light)] text-[var(--accent)]' : 'bg-[var(--bg-surface-2)] border-[var(--border-default)] text-[var(--text-secondary)]'}`}
+              onClick={() => setShowDates(!showDates)}
+              title="開始日・終了日列の表示切り替え"
+            >
+              <CalendarRange size={12} />
+              <span>日程</span>
+            </button>
+          </div>
+
+          {/* GROUP 3: Action Buttons */}
+          <div className="flex items-center gap-1.5 flex-shrink-0">
+            {/* Worklog Input */}
+            <button
+              type="button"
+              className="btn text-[10.5px] px-2.5 h-7 flex items-center gap-1.5 shadow-sm font-bold cursor-pointer transition-all"
+              style={{
+                backgroundColor: selectedTask ? 'var(--tint-teal-bg, #f0fdfa)' : 'var(--bg-surface)',
+                borderColor: selectedTask ? 'var(--accent)' : 'var(--border-default)',
+                color: selectedTask ? 'var(--accent)' : 'var(--text-primary)',
+              }}
               onClick={() => {
-                if (!isDraftMode) {
-                  const { draftJobs, hasOverdue, updates } = calculateAutoSchedule(jobs, { allowSaturday: false, maxHoursPerDay: 8 })
-                  setDraftJobs(draftJobs)
-                  setDraftUpdates(updates)
-                  setIsDraftMode(true)
+                if (selectedTask?.originalStep && selectedTask.originalJobId) {
+                  setEditingJobId(selectedTask.originalJobId)
+                  setEditingStep(selectedTask.originalStep)
+                  setEditingWorklog(selectedTask.originalWorkLog || null)
+                  return
+                }
+
+                const targetJob = (selectedTask?.originalJobId ? jobs.find(j => j.job_id === selectedTask.originalJobId) : null) || (selectedJobId ? jobs.find(j => j.job_id === selectedJobId) : null) || jobs[0]
+                if (targetJob) {
+                  const firstStep = targetJob.job_steps?.[0] || {
+                    step_id: '',
+                    step_no: 1,
+                    step_name: targetJob.job_name || '作業',
+                    track: 'MOLD',
+                    step_status: 'IN_PROGRESS',
+                    planned_hours: null,
+                    actual_hours: null,
+                    deadline: targetJob.mold_deadline || targetJob.deadline || null,
+                    notes: null,
+                  }
+                  setEditingJobId(targetJob.job_id)
+                  setEditingStep(firstStep)
+                  setEditingWorklog(null)
                 } else {
-                  setIsDraftMode(false)
-                  setDraftJobs([])
-                  setDraftUpdates([])
+                  setEditingJobId('caeb4ec3-065a-4653-b69a-19e6dbc4287a')
+                  setEditingStep({
+                    step_id: '840d180d-2d92-4ff3-827d-a915806238f7',
+                    step_no: 1,
+                    step_name: '社内作業',
+                    track: 'GENERAL',
+                    step_status: 'IN_PROGRESS',
+                    planned_hours: 0,
+                    actual_hours: 0,
+                    deadline: null,
+                    notes: null,
+                  })
+                  setEditingWorklog(null)
                 }
               }}
+              title={selectedTask ? `選択中: ${selectedTask.name} (クリックして日報入力)` : "日報・作業ログを記録"}
             >
-              <span className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${isDraftMode ? 'translate-x-3.5' : 'translate-x-0.5'}`} />
+              <ClipboardList size={13} style={{ color: 'var(--accent)' }} />
+              <span>日報入力</span>
             </button>
-            {isDraftMode && (
-              <div className="flex items-center gap-1 border-l pl-2 ml-1" style={{ borderColor: 'var(--accent)' }}>
-                <button 
-                   className="btn text-[10px] px-2 py-0.5" 
-                   style={{ backgroundColor: 'white', color: 'var(--accent)', border: '1px solid var(--accent)' }}
-                   onClick={() => setIsDraftMode(false)}
-                   disabled={isDraftSaving}
-                >{tCommon('cancel')}</button>
-                <button 
-                   className="btn btn-primary text-[10px] px-2 py-0.5"
-                   disabled={isDraftSaving}
-                   onClick={async () => {
-                     setIsDraftSaving(true)
-                     try {
-                        await applyAutoScheduleUpdates(draftUpdates)
-                        setIsDraftMode(false)
-                        router.refresh()
-                     } catch(e) {
-                        console.error(e)
-                     } finally {
-                        setIsDraftSaving(false)
-                     }
-                   }}
-                >{isDraftSaving ? tCommon('saving') : t('saveSchedule')}</button>
-              </div>
-            )}
-          </div>
 
-          <div className="flex p-1 rounded border text-[11px] shadow-sm items-center gap-1.5" style={{ backgroundColor: 'var(--bg-surface-2)', borderColor: 'var(--border-default)' }}>
-            <span className="text-[9px] font-semibold text-[var(--text-secondary)] px-1">データ範囲</span>
-            <div className="flex gap-0.5">
-              <button className={`px-2 py-0.5 font-medium rounded-sm border transition-all text-[10px] ${activePreset === '2W' ? activeFilterCls : inactiveCls}`} onClick={() => setViewRange('2W')}>2週間</button>
-              <button className={`px-2 py-0.5 font-medium rounded-sm border transition-all text-[10px] ${activePreset === '1M' ? activeFilterCls : inactiveCls}`} onClick={() => setViewRange('1M')}>1ヶ月</button>
-              <button className={`px-2 py-0.5 font-medium rounded-sm border transition-all text-[10px] ${activePreset === '3M' ? activeFilterCls : inactiveCls}`} onClick={() => setViewRange('3M')}>3ヶ月</button>
-            </div>
-          </div>
-
-          <div className="flex p-1 rounded border text-[11px] shadow-sm items-center gap-1.5" style={{ backgroundColor: 'var(--bg-surface-2)', borderColor: 'var(--border-default)' }}>
-            <span className="text-[9px] font-semibold text-[var(--text-secondary)] px-1">表示単位</span>
-            <div className="flex gap-0.5">
-              <button className={`px-3 py-0.5 font-medium rounded-sm border transition-all text-[10px] ${viewMode === ViewMode.Day ? activeFilterCls : inactiveCls}`} onClick={() => setViewMode(ViewMode.Day)}>日</button>
-              <button className={`px-3 py-0.5 font-medium rounded-sm border transition-all text-[10px] ${viewMode === ViewMode.Week ? activeFilterCls : inactiveCls}`} onClick={() => setViewMode(ViewMode.Week)}>週</button>
-              <button className={`px-3 py-0.5 font-medium rounded-sm border transition-all text-[10px] ${viewMode === ViewMode.Month ? activeFilterCls : inactiveCls}`} onClick={() => setViewMode(ViewMode.Month)}>月</button>
-            </div>
-          </div>
-
-          <div className="flex p-1 rounded border text-[11px] shadow-sm" style={{ backgroundColor: 'var(--bg-surface-2)', borderColor: 'var(--border-default)' }}>
-            <button className={`px-5 py-1.5 font-medium rounded-sm border transition-all ${compareMode === 'PLANNED' ? activeFilterCls : inactiveCls}`} onClick={() => setCompareMode('PLANNED')}>予定</button>
-            <button className={`px-5 py-1.5 font-medium rounded-sm border transition-all ${compareMode === 'ACTUAL' ? activeFilterCls : inactiveCls}`} onClick={() => setCompareMode('ACTUAL')}>実績</button>
-            <button className={`px-5 py-1.5 font-medium rounded-sm border transition-all ${compareMode === 'COMPARE' ? activeFilterCls : inactiveCls}`} onClick={() => setCompareMode('COMPARE')}>予実比較</button>
-          </div>
-
-          <div className="flex p-1 rounded border text-[11px] shadow-sm items-center gap-1.5" style={{ backgroundColor: 'var(--bg-surface-2)', borderColor: 'var(--border-default)' }}>
-            <span className="text-[10px] font-semibold" style={{ color: 'var(--text-secondary)' }}>開始/終了日</span>
-            <button 
-              className={`relative inline-flex h-3.5 w-6 items-center rounded-full transition-colors ${showDates ? 'bg-[var(--accent)]' : 'bg-[var(--bg-surface-3)]'}`}
-              onClick={() => setShowDates(!showDates)}
-            >
-              <span className={`inline-block h-2.5 w-2.5 transform rounded-full bg-white transition-transform ${showDates ? 'translate-x-3' : 'translate-x-0.5'}`} />
-            </button>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-1.5">
-          <button
-            type="button"
-            className="btn text-[10.5px] px-2.5 py-1 flex items-center gap-1.5 shadow-sm font-bold cursor-pointer"
-            style={{
-              backgroundColor: 'var(--bg-surface)',
-              borderColor: 'var(--border-default)',
-              color: 'var(--text-primary)',
-            }}
-            onClick={() => {
-              const targetJob = jobs.find(j => j.job_id === selectedJobId) || jobs[0]
-              if (targetJob) {
-                const firstStep = targetJob.job_steps?.[0] || {
-                  step_id: '',
-                  step_no: 1,
-                  step_name: targetJob.job_name || '作業',
-                  track: 'MOLD',
-                  step_status: 'IN_PROGRESS',
-                  planned_hours: null,
-                  actual_hours: null,
-                  deadline: targetJob.mold_deadline || targetJob.deadline || null,
-                  notes: null,
-                }
-                setEditingJobId(targetJob.job_id)
-                setEditingStep(firstStep)
-                setEditingWorklog(null)
-              } else {
+            {/* Internal Worklog */}
+            <button
+              type="button"
+              className="btn text-[10.5px] px-2.5 h-7 flex items-center gap-1.5 shadow-sm font-bold cursor-pointer"
+              style={{
+                backgroundColor: 'var(--tint-blue-bg)',
+                borderColor: 'var(--tint-blue-border)',
+                color: 'var(--tint-blue-text)',
+              }}
+              onClick={() => {
                 setEditingJobId('caeb4ec3-065a-4653-b69a-19e6dbc4287a')
                 setEditingStep({
                   step_id: '840d180d-2d92-4ff3-827d-a915806238f7',
@@ -2688,70 +2716,44 @@ export default function MoldJobGantt({ workOrders = [], jobs, employees = [], ma
                   notes: null,
                 })
                 setEditingWorklog(null)
-              }
-            }}
-            title="日報・作業ログを記録 (Giao diện 2 panel chuẩn A4)"
-          >
-            <ClipboardList size={13} style={{ color: 'var(--accent)' }} />
-            <span>日報入力</span>
-          </button>
+              }}
+              title="5S・保全・金型管理など社内作業の日報を入力"
+            >
+              <span>📌 社内作業日報</span>
+            </button>
 
-          <button
-            type="button"
-            className="btn text-[10.5px] px-2.5 py-1 flex items-center gap-1.5 shadow-sm font-bold cursor-pointer"
-            style={{
-              backgroundColor: 'var(--tint-blue-bg)',
-              borderColor: 'var(--tint-blue-border)',
-              color: 'var(--tint-blue-text)',
-            }}
-            onClick={() => {
-              setEditingJobId('caeb4ec3-065a-4653-b69a-19e6dbc4287a')
-              setEditingStep({
-                step_id: '840d180d-2d92-4ff3-827d-a915806238f7',
-                step_no: 1,
-                step_name: '社内作業',
-                track: 'GENERAL',
-                step_status: 'IN_PROGRESS',
-                planned_hours: 0,
-                actual_hours: 0,
-                deadline: null,
-                notes: null,
-              })
-              setEditingWorklog(null)
-            }}
-            title="5S・保全・金型管理など社内作業の日報を入力 (Giao diện 2 panel chuẩn A4)"
-          >
-            <span>📌 社内作業日報</span>
-          </button>
+            {/* Print */}
+            <button
+              type="button"
+              className="btn text-[10.5px] px-2.5 h-7 flex items-center gap-1.5 shadow-sm font-bold cursor-pointer"
+              style={{
+                backgroundColor: 'var(--tint-orange-bg, #FFF7ED)',
+                borderColor: 'var(--tint-orange-border, #FED7AA)',
+                color: 'var(--tint-orange-text, #C2410C)',
+              }}
+              onClick={() => setIsPrintNippoModalOpen(true)}
+              title="本日の日報記録書を確認・印刷・PDF出力"
+            >
+              <Printer size={13} />
+              <span>🖨️ 日報印刷</span>
+            </button>
 
-          <button
-            type="button"
-            className="btn text-[10.5px] px-2.5 py-1 flex items-center gap-1.5 shadow-sm font-bold cursor-pointer"
-            style={{
-              backgroundColor: 'var(--tint-orange-bg, #FFF7ED)',
-              borderColor: 'var(--tint-orange-border, #FED7AA)',
-              color: 'var(--tint-orange-text, #C2410C)',
-            }}
-            onClick={() => setIsPrintNippoModalOpen(true)}
-            title="本日の日報記録書を確認・印刷・PDF出力"
-          >
-            <Printer size={13} />
-            <span>🖨️ 日報印刷</span>
-          </button>
+            {/* AI OCR */}
+            <button
+              type="button"
+              className="btn btn-primary text-[10.5px] px-2.5 h-7 flex items-center gap-1.5 shadow-sm cursor-pointer"
+              style={{ background: 'linear-gradient(135deg, #0d9488 0%, #0f766e 100%)', color: '#ffffff' }}
+              onClick={() => setIsOCRModalOpen(true)}
+            >
+              <Sparkles size={13} className="text-amber-300" />
+              <span>AI 工程票取込</span>
+            </button>
 
-          <button
-            type="button"
-            className="btn btn-primary text-[10.5px] px-2.5 py-1 flex items-center gap-1.5 shadow-sm"
-            style={{ background: 'linear-gradient(135deg, #0d9488 0%, #0f766e 100%)', color: '#ffffff' }}
-            onClick={() => setIsOCRModalOpen(true)}
-          >
-            <Sparkles size={13} className="text-amber-300" />
-            <span>AI 工程票取込</span>
-          </button>
-
-          <button className="btn btn-secondary text-[10px] px-2 py-0.5 h-6" onClick={() => setIsPanelExpanded(!isPanelExpanded)}>
-            {isPanelExpanded ? '◀' : '▶'}
-          </button>
+            {/* Expand / Collapse panel */}
+            <button className="btn btn-secondary text-[10px] px-2 h-7 cursor-pointer" onClick={() => setIsPanelExpanded(!isPanelExpanded)} title={isPanelExpanded ? 'パネルを折りたたむ' : 'パネルを展開'}>
+              {isPanelExpanded ? '◀' : '▶'}
+            </button>
+          </div>
 
           {hasEdits && (
             <div className="flex items-center gap-1 ml-1 pl-1.5" style={{ borderLeft: '1px solid var(--border-default)' }}>
@@ -2765,7 +2767,6 @@ export default function MoldJobGantt({ workOrders = [], jobs, employees = [], ma
             </div>
           )}
         </div>
-      </div>
 
       {/* Gantt Area */}
       <div id="gantt-container" ref={wrapperRef} className="relative w-full flex-1 overflow-hidden bg-white" style={{ minHeight: '300px' }}>
@@ -2848,7 +2849,7 @@ export default function MoldJobGantt({ workOrders = [], jobs, employees = [], ma
           onProgressChange={handleTaskChange}
           onDoubleClick={handleTaskDoubleClick}
           onExpanderClick={handleExpanderClick}
-          listCellWidth={isPanelExpanded ? "715px" : "200px"}
+          listCellWidth={isPanelExpanded ? (showDates ? "670px" : "620px") : "200px"}
           columnWidth={viewMode === ViewMode.Month ? 150 : 60}
           fontFamily="var(--font-jp)"
           fontSize="10px"
@@ -2859,60 +2860,34 @@ export default function MoldJobGantt({ workOrders = [], jobs, employees = [], ma
         />
       </div>
 
-      {editingJobId && !editingWorklog && (
+      {editingJobId && (
         <EditStepModal
           jobId={editingJobId}
           step={editingStep}
           nextStepNo={editingStep?.step_no || 1}
+          initialLog={editingWorklog}
           onClose={() => {
             setEditingJobId(null)
             setEditingStep(null)
+            setEditingWorklog(null)
           }}
           onSaved={() => {
             setEditingJobId(null)
             setEditingStep(null)
+            setEditingWorklog(null)
             router.refresh()
           }}
         />
       )}
 
-      {editingJobId && editingWorklog && (
-        <div style={{ position: 'relative', zIndex: 9999 }}>
-          <WorklogFormShared
-            mode="modal"
-            defaultJobId={editingJobId}
-            initialData={editingWorklog}
-            onCancel={() => {
-              setEditingJobId(null)
-              setEditingStep(null)
-              setEditingWorklog(null)
-            }}
-            onSuccess={() => {
-              setEditingJobId(null)
-              setEditingStep(null)
-              setEditingWorklog(null)
-              router.refresh()
-            }}
-          />
-        </div>
-      )}
-
       {isWorklogModalOpen && (
-        <div style={{ position: 'relative', zIndex: 9999 }}>
-          <WorklogFormShared
-            mode="modal"
-            defaultJobId={worklogDefaultJobId}
-            onCancel={() => {
-              setIsWorklogModalOpen(false)
-              setWorklogDefaultJobId(undefined)
-            }}
-            onSuccess={() => {
-              setIsWorklogModalOpen(false)
-              setWorklogDefaultJobId(undefined)
-              router.refresh()
-            }}
-          />
-        </div>
+        <DailyWorklogQuickModal
+          isOpen={isWorklogModalOpen}
+          onClose={() => {
+            setIsWorklogModalOpen(false)
+            setWorklogDefaultJobId(undefined)
+          }}
+        />
       )}
 
       {quickViewJob && (

@@ -6,6 +6,7 @@ import { format } from 'date-fns'
 import { X, Printer, FileDown, Calendar, User, Loader2, Edit3, Trash2, CheckCircle2, AlertCircle } from 'lucide-react'
 import { DailyWorklogA4Sheet, PRICE_MAP, NippoItem } from '@/components/worklogs/DailyWorklogA4Sheet'
 import { SearchableSelect } from '@/components/ui/SearchableSelect'
+import { getEmployeeStampUrl } from '@/lib/utils/stampUtils'
 
 type Props = {
   isOpen: boolean
@@ -62,9 +63,16 @@ export function DailyWorklogQuickModal({
   const [selectedDate, setSelectedDate] = useState<string>(
     initialDate || format(new Date(), 'yyyy-MM-dd')
   )
-  const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>(initialEmployeeId || '')
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>(() => {
+    if (initialEmployeeId) return initialEmployeeId
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem(STORAGE_KEY_LAST_WORKER) || ''
+    }
+    return ''
+  })
   const [logs, setLogs] = useState<WorkLog[]>([])
   const [loading, setLoading] = useState(false)
+  const [showStamp, setShowStamp] = useState(true)
 
   // Edit Single Log State
   const [editingLog, setEditingLog] = useState<{
@@ -94,14 +102,13 @@ export function DailyWorklogQuickModal({
 
       if (empData && empData.length > 0) {
         setEmployees(empData)
-        const lastEmpId = localStorage.getItem(STORAGE_KEY_LAST_WORKER)
-        if (initialEmployeeId && empData.some(e => e.employee_id === initialEmployeeId)) {
-          setSelectedEmployeeId(initialEmployeeId)
-        } else if (lastEmpId && empData.some(e => e.employee_id === lastEmpId)) {
-          setSelectedEmployeeId(lastEmpId)
-        } else {
-          setSelectedEmployeeId(empData[0].employee_id)
-        }
+        setSelectedEmployeeId(prev => {
+          if (prev && empData.some(e => e.employee_id === prev)) return prev
+          const lastEmpId = typeof window !== 'undefined' ? localStorage.getItem(STORAGE_KEY_LAST_WORKER) : null
+          if (initialEmployeeId && empData.some(e => e.employee_id === initialEmployeeId)) return initialEmployeeId
+          if (lastEmpId && empData.some(e => e.employee_id === lastEmpId)) return lastEmpId
+          return empData[0].employee_id
+        })
       }
 
       if (jData) {
@@ -308,10 +315,18 @@ export function DailyWorklogQuickModal({
     alert(`【印刷完了】\n日報記録書の印刷・PDF出力処理が完了しました。\n（対象: ${empName}様・${selectedDate}）`)
   }
 
-  const selectedEmployeeName = useMemo(() => {
-    const emp = employees.find(e => e.employee_id === selectedEmployeeId)
-    return emp ? emp.employee_name : ''
+  const selectedEmployeeObj = useMemo(() => {
+    return employees.find(e => e.employee_id === selectedEmployeeId) || null
   }, [employees, selectedEmployeeId])
+
+  const selectedEmployeeName = useMemo(() => {
+    return selectedEmployeeObj ? selectedEmployeeObj.employee_name : ''
+  }, [selectedEmployeeObj])
+
+  const dynamicStampUrl = useMemo(() => {
+    if (!showStamp) return undefined
+    return getEmployeeStampUrl(selectedEmployeeObj)
+  }, [showStamp, selectedEmployeeObj])
 
   const totalHours = useMemo(() => {
     return Math.round(logs.reduce((sum, log) => sum + (log.hours_spent || 0), 0) * 100) / 100
@@ -472,6 +487,23 @@ export function DailyWorklogQuickModal({
               本日合計: {totalHours} H ({logs.length}件)
             </div>
 
+            {/* Stamp Toggle */}
+            <button
+              type="button"
+              className="btn flex items-center gap-1.5 shadow-sm font-bold"
+              style={{
+                fontSize: 11,
+                padding: '5px 10px',
+                background: showStamp ? 'var(--tint-orange-bg, #FFF7ED)' : 'var(--bg-surface)',
+                borderColor: showStamp ? 'var(--tint-orange-border, #FED7AA)' : 'var(--border-default)',
+                color: showStamp ? 'var(--tint-orange-text, #C2410C)' : 'var(--text-muted)',
+              }}
+              onClick={() => setShowStamp(!showStamp)}
+              title={showStamp ? '確認印を押印中（クリックで無効化）' : '確認印なし（クリックで押印）'}
+            >
+              <span>{showStamp ? '🔴 押印: ON' : '⚪ 押印: OFF'}</span>
+            </button>
+
             {/* Print Buttons */}
             <button
               type="button"
@@ -522,32 +554,48 @@ export function DailyWorklogQuickModal({
             position: 'relative',
           }}
         >
-          {loading ? (
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '300px', gap: 12 }}>
-              <Loader2 size={32} className="animate-spin" style={{ color: 'var(--accent)' }} />
-              <span style={{ fontSize: 13, color: 'var(--text-muted)', fontWeight: 600 }}>日報データを読み込み中...</span>
-            </div>
-          ) : (
-            <div
-              id="daily-worklog-quick-sheet"
-              style={{
-                background: '#fff',
-                boxShadow: '0 4px 20px rgba(0, 0, 0, 0.12)',
-                borderRadius: 4,
-                display: 'inline-block',
-                position: 'relative',
-              }}
-            >
-              <DailyWorklogA4Sheet
-                workDate={selectedDate}
-                workerName={selectedEmployeeName}
-                totalHours={totalHours}
-                items={nippoItems}
-                onEditItem={handleEditRow}
-                onDeleteItem={handleDeleteLog}
-              />
-            </div>
-          )}
+          <div
+            id="daily-worklog-quick-sheet"
+            style={{
+              background: '#fff',
+              boxShadow: '0 4px 20px rgba(0, 0, 0, 0.12)',
+              borderRadius: 4,
+              display: 'inline-block',
+              position: 'relative',
+              opacity: loading ? 0.7 : 1,
+              transition: 'opacity 0.15s ease',
+            }}
+          >
+            {loading && (
+              <div
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  background: 'rgba(255, 255, 255, 0.45)',
+                  zIndex: 20,
+                  borderRadius: 4,
+                  backdropFilter: 'blur(1px)',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#fff', padding: '8px 16px', borderRadius: 8, boxShadow: '0 4px 12px rgba(0,0,0,0.12)', border: '1px solid var(--border-default)' }}>
+                  <Loader2 size={18} className="animate-spin" style={{ color: 'var(--accent)' }} />
+                  <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)' }}>読み込み中...</span>
+                </div>
+              </div>
+            )}
+            <DailyWorklogA4Sheet
+              workDate={selectedDate}
+              workerName={selectedEmployeeName}
+              totalHours={totalHours}
+              items={nippoItems}
+              stampUrl={dynamicStampUrl}
+              onEditItem={handleEditRow}
+              onDeleteItem={handleDeleteLog}
+            />
+          </div>
         </div>
 
         {/* ── DIRECT ROW EDIT MODAL POPUP ── */}

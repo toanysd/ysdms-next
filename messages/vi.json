@@ -1708,6 +1708,9 @@
     "details": "Chi tiết"
   },
   "Equipment": {
+    "statusPending": "Chưa bắt đầu",
+    "statusInProgress": "Đang thực hiện",
+    "statusCompleted": "Hoàn thành",
     "tabs": {
       "overview": "Tổng quan",
       "steps": "Các bước",
@@ -1799,6 +1802,18 @@
     "keHoach": "Kế hoạch",
     "danhSachCongOan": "Danh sách công đoạn",
     "themCongOan": "Thêm công đoạn",
+    "themCongDoanJobNay": "＋ Thêm công đoạn",
+    "dangChon": "Đang chọn",
+    "xoaChon": "Bỏ chọn",
+    "nhapNhatKyChoMucNay": "Nhập nhật ký cho mục đang chọn",
+    "expandAll": "Mở rộng tất cả",
+    "expandTracksOnly": "Công đoạn / Thiết bị",
+    "collapseAll": "Thu gọn tất cả",
+    "shippingDeadline": "Hạn xuất hàng",
+    "moldDeadline": "Hạn hoàn thành",
+    "toggleWorklogs": "Chi tiết nhật ký",
+    "hienThiNhatKy": "Hiện nhật ký",
+    "anNhatKy": "Ẩn nhật ký",
     "openHubView": "Mở Hub View",
     "editMold": "Chỉnh sửa Khuôn",
     "registerMold": "Đăng ký Khuôn",

@@ -144,7 +144,7 @@ export function ManufacturingSheetOCRModal({
     components: []
   })
 
-  const [moldHandlingMode, setMoldHandlingMode] = useState<'REUSE_EXISTING' | 'CREATE_NEW'>('REUSE_EXISTING')
+  const [moldHandlingMode, setMoldHandlingMode] = useState<'REUSE_EXISTING' | 'CREATE_NEW'>('CREATE_NEW')
   const [existingHandlingMode, setExistingHandlingMode] = useState<'ENRICH_EXISTING' | 'NEW_REVISION'>('ENRICH_EXISTING')
   const [existingProductInfo, setExistingProductInfo] = useState<any | null>(null)
 

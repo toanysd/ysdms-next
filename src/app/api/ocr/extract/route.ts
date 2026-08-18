@@ -56,6 +56,51 @@ function parseNum(v: any): number | null {
   return null
 }
 
+function parseDateToISO(val: any, defaultYear?: number): string | null {
+  if (!val) return null
+  const str = String(val).trim()
+  if (!str) return null
+
+  const yr = defaultYear || new Date().getFullYear()
+
+  // 1. Japanese Era Reiwa (R8.8.20, R08.8.20, R8/8/20, 令和8年8月20日)
+  const reiwaMatch = str.match(/(?:R|令和)\s*(\d+)[.\/年\s]+(\d+)[.\/月\s]+(\d+)/i)
+  if (reiwaMatch) {
+    const rYear = 2018 + parseInt(reiwaMatch[1], 10)
+    const month = String(parseInt(reiwaMatch[2], 10)).padStart(2, '0')
+    const day = String(parseInt(reiwaMatch[3], 10)).padStart(2, '0')
+    return `${rYear}-${month}-${day}`
+  }
+
+  // 2. Japanese Era Heisei (H30.8.20, 平成30年8月20日)
+  const heiseiMatch = str.match(/(?:H|平成)\s*(\d+)[.\/年\s]+(\d+)[.\/月\s]+(\d+)/i)
+  if (heiseiMatch) {
+    const hYear = 1988 + parseInt(heiseiMatch[1], 10)
+    const month = String(parseInt(heiseiMatch[2], 10)).padStart(2, '0')
+    const day = String(parseInt(heiseiMatch[3], 10)).padStart(2, '0')
+    return `${hYear}-${month}-${day}`
+  }
+
+  // 3. 4-digit Year format (2026-08-20, 2026/8/20, 2026.8.20, 2026年8月20日)
+  const fullMatch = str.match(/(\d{4})[.\-\/年\s]+(\d{1,2})[.\-\/月\s]+(\d{1,2})/)
+  if (fullMatch) {
+    const y = fullMatch[1]
+    const m = String(parseInt(fullMatch[2], 10)).padStart(2, '0')
+    const d = String(parseInt(fullMatch[3], 10)).padStart(2, '0')
+    return `${y}-${m}-${d}`
+  }
+
+  // 4. Month/Day only format (8/20, 8/20(木), 8.20, 8月20日)
+  const mdMatch = str.match(/(\d{1,2})[.\-\/月\s]+(\d{1,2})/)
+  if (mdMatch) {
+    const m = String(parseInt(mdMatch[1], 10)).padStart(2, '0')
+    const d = String(parseInt(mdMatch[2], 10)).padStart(2, '0')
+    return `${yr}-${m}-${d}`
+  }
+
+  return null
+}
+
 function normalizeExtractedData(raw: any): OCRResponseData {
   const src = raw?.data || raw?.sheet || raw?.result || raw?.new_mold_manufacturing_process_sheet || raw?.manufacturing_sheet || raw || {}
   const prod = src.product_information || src.product_info || src.product || {}
@@ -103,7 +148,28 @@ function normalizeExtractedData(raw: any): OCRResponseData {
   const customer_name = src.customer_name || prod.customer_name || src.customer || prod.customer || src['得意先'] || null
   const customer_product_name = src.customer_product_name || prod.customer_product_name || src.customer_part_no || prod.customer_part_no || src['客先品番'] || null
   const designer_name = src.designer_name || prod.designer_name || src.designer || prod.designer || src['設計担当'] || null
-  const sheet_date = src.sheet_date || prod.sheet_date || src.issue_date || prod.date || src['作成日'] || src['発行日'] || null
+
+  const currentYear = new Date().getFullYear()
+  const rawSheetDate = src.sheet_date || prod.sheet_date || src.issue_date || prod.date || src['作成日'] || src['発行日'] || null
+  const rawShipping = src.shipping_deadline || src['出荷納期'] || null
+  const rawMoldDl = src.mold_deadline || src['金型納期'] || null
+
+  const sheet_date = parseDateToISO(rawSheetDate, currentYear)
+  const shipping_deadline = parseDateToISO(rawShipping, currentYear)
+  const mold_deadline_val = parseDateToISO(rawMoldDl, currentYear)
+
+  const baseYear = (mold_deadline_val ? parseInt(mold_deadline_val.slice(0, 4), 10) : (shipping_deadline ? parseInt(shipping_deadline.slice(0, 4), 10) : currentYear)) || currentYear
+
+  const normalizeComponentDate = (dStr?: any) => {
+    if (!dStr) return null
+    const iso = parseDateToISO(dStr, baseYear)
+    if (!iso) return null
+    const m = iso.match(/^(\d{4})-(\d{2}-\d{2})$/)
+    if (m && parseInt(m[1], 10) !== baseYear) {
+      return `${baseYear}-${m[2]}`
+    }
+    return iso
+  }
 
   const design_length = parseNum(src.design_length ?? specs.design_length ?? specs.mold_length ?? src.mold_length ?? specs.length ?? src.length)
   const design_width = parseNum(src.design_width ?? specs.design_width ?? specs.mold_width ?? src.mold_width ?? specs.width ?? src.width)
@@ -139,8 +205,6 @@ function normalizeExtractedData(raw: any): OCRResponseData {
   const packaging_info = src.packaging_info || specs.packaging_info || src['荷姿'] || src['梱包'] || null
   const cost_amount = parseNum(src.cost_amount ?? src['原価'])
   const quotation_attached = src.quotation_attached || src['見積添付'] || src.price_quote_required || src['見積要'] || null
-  const shipping_deadline = src.shipping_deadline || src['出荷納期'] || null
-  const mold_deadline_val = src.mold_deadline || src['金型納期'] || null
 
   const components = Array.isArray(componentsRaw) ? componentsRaw.map((c: any) => {
     const typeCode = (c.type_code || c.type || 'MOLD').toUpperCase()
@@ -160,7 +224,7 @@ function normalizeExtractedData(raw: any): OCRResponseData {
       arrangement: (c.arrangement === 'NOT_REQUIRED' || c.arrangement === '不要') ? 'NOT_REQUIRED' : 'REQUIRED',
       condition,
       manufacture_location: (c.manufacture_location === 'OUTSOURCED' || c.manufacture_location === '外注') ? 'OUTSOURCED' : 'IN_HOUSE',
-      deadline: c.deadline || null,
+      deadline: normalizeComponentDate(c.deadline) || null,
       estimated_hours: parseNum(c.estimated_hours || c.hours)
     }
   }) : []

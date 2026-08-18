@@ -11,6 +11,7 @@ import {
 } from 'lucide-react'
 import { SearchableSelect } from '@/components/ui/SearchableSelect'
 import { DailyWorklogA4Sheet, PRICE_MAP, NippoItem } from '@/components/worklogs/DailyWorklogA4Sheet'
+import { getEmployeeStampUrl } from '@/lib/utils/stampUtils'
 
 type StepData = {
   step_id: string
@@ -36,6 +37,7 @@ type Props = {
   step: StepData | null
   jobId: string
   nextStepNo: number
+  initialLog?: any
   onClose: () => void
   onSaved: () => void
 }
@@ -43,7 +45,7 @@ type Props = {
 const QUICK_HOURS = [0.5, 1.0, 1.5, 2.0, 3.0, 4.0, 6.0, 8.0]
 const STORAGE_KEY_LAST_WORKER = 'ysdms_last_selected_worker_id'
 
-export function EditStepModal({ step, jobId, nextStepNo, onClose, onSaved }: Props) {
+export function EditStepModal({ step, jobId, nextStepNo, initialLog, onClose, onSaved }: Props) {
   const t = useTranslations()
   const supabase = createClient()
   const isNew = !step
@@ -86,16 +88,37 @@ export function EditStepModal({ step, jobId, nextStepNo, onClose, onSaved }: Pro
   const [loadingTodayLogs, setLoadingTodayLogs] = useState(false)
   const [isStepHistoryExpanded, setIsStepHistoryExpanded] = useState(false)
 
-  // Focused Log Form State
-  const [editingLogId, setEditingLogId] = useState<string | null>(null)
-  const [logWorkDate, setLogWorkDate] = useState(new Date().toISOString().split('T')[0])
-  const [logWorker, setLogWorker] = useState('')
-  const [logHours, setLogHours] = useState('1.0')
-  const [selectedCodeId, setSelectedCodeId] = useState<string>('')
-  const [customDescription, setCustomDescription] = useState('')
-  const [logNotes, setLogNotes] = useState('')
-  const [logIsFinished, setLogIsFinished] = useState(false)
+  // Focused Log Form State (Pre-populate with initialLog if provided)
+  const [editingLogId, setEditingLogId] = useState<string | null>(initialLog?.log_id || initialLog?.id || null)
+  const [logWorkDate, setLogWorkDate] = useState(
+    initialLog?.work_date ? initialLog.work_date.split('T')[0] : new Date().toISOString().split('T')[0]
+  )
+  const [logWorker, setLogWorker] = useState(initialLog?.employee_id || '')
+  const [logHours, setLogHours] = useState(
+    initialLog?.hours_spent !== undefined && initialLog?.hours_spent !== null
+      ? String(initialLog.hours_spent)
+      : '1.0'
+  )
+  const [selectedCodeId, setSelectedCodeId] = useState<string>(
+    initialLog?.processing_code_id ? String(initialLog.processing_code_id) : ''
+  )
+  const [customDescription, setCustomDescription] = useState(initialLog?.description || '')
+  const [logNotes, setLogNotes] = useState(initialLog?.notes || '')
+  const [logIsFinished, setLogIsFinished] = useState(Boolean(initialLog?.is_finished))
   const [addingLog, setAddingLog] = useState(false)
+
+  useEffect(() => {
+    if (initialLog) {
+      setEditingLogId(initialLog.log_id || initialLog.id || null)
+      if (initialLog.work_date) setLogWorkDate(initialLog.work_date.split('T')[0])
+      if (initialLog.employee_id) setLogWorker(initialLog.employee_id)
+      if (initialLog.hours_spent !== undefined && initialLog.hours_spent !== null) setLogHours(String(initialLog.hours_spent))
+      if (initialLog.processing_code_id) setSelectedCodeId(String(initialLog.processing_code_id))
+      if (initialLog.description) setCustomDescription(initialLog.description)
+      if (initialLog.notes) setLogNotes(initialLog.notes)
+      if (initialLog.is_finished !== undefined) setLogIsFinished(Boolean(initialLog.is_finished))
+    }
+  }, [initialLog])
 
   // ── Load All Master Data Dynamically from DB ──
   useEffect(() => {
@@ -1268,6 +1291,7 @@ export function EditStepModal({ step, jobId, nextStepNo, onClose, onSaved }: Pro
                   workerName={selectedWorkerName}
                   totalHours={totalTodayHours}
                   items={nippoItems}
+                  stampUrl={getEmployeeStampUrl(selectedWorker)}
                   onEditItem={(item) => {
                     const targetLog = todayWorkerLogs.find(l => l.log_id === item.log_id)
                     if (targetLog) {

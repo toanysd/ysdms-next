@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Plus, Pencil, Trash2, Clock, User, Briefcase, Loader2, Calendar } from 'lucide-react'
 import { useTranslations } from 'next-intl'
-import { WorklogFormShared, type WorklogInitialData } from '@/components/worklogs/WorklogFormShared'
+import { EditStepModal } from './EditStepModal'
 
 type WorklogRow = {
   log_id: string
@@ -16,6 +16,7 @@ type WorklogRow = {
   is_finished: boolean | null
   description: string | null
   notes: string | null
+  processing_code_id?: number | null
   employees: { employee_name: string } | null
   job_steps: { step_name: string; step_no: number } | null
 }
@@ -29,7 +30,8 @@ export function LogsTab({ job, onRefresh }: { job: any; onRefresh: () => void })
 
   // Modal state
   const [modalOpen, setModalOpen] = useState(false)
-  const [editingLog, setEditingLog] = useState<WorklogInitialData | null>(null)
+  const [selectedStep, setSelectedStep] = useState<any | null>(null)
+  const [editingLog, setEditingLog] = useState<any | null>(null)
 
   const jobSteps = useMemo(() => (
     (job.job_steps || []).map((s: any) => ({
@@ -47,9 +49,9 @@ export function LogsTab({ job, onRefresh }: { job: any; onRefresh: () => void })
       .from('work_logs')
       .select(`
         log_id, job_id, job_step_id, employee_id,
-        work_date, hours_spent, is_finished, description, notes,
+        work_date, hours_spent, is_finished, description, notes, processing_code_id,
         employees(employee_name),
-        job_steps(step_name, step_no)
+        job_steps(step_id, step_name, step_no)
       `)
       .eq('job_id', job.job_id)
       .order('work_date', { ascending: false })
@@ -69,19 +71,16 @@ export function LogsTab({ job, onRefresh }: { job: any; onRefresh: () => void })
     else { fetchLogs(); onRefresh() }
   }
 
-  const handleOpenCreate = () => { setEditingLog(null); setModalOpen(true) }
+  const handleOpenCreate = () => {
+    setSelectedStep(job.job_steps?.[0] || null)
+    setEditingLog(null)
+    setModalOpen(true)
+  }
+
   const handleOpenEdit = (log: WorklogRow) => {
-    setEditingLog({
-      log_id: log.log_id,
-      work_date: log.work_date,
-      employee_id: log.employee_id,
-      job_id: log.job_id,
-      job_step_id: log.job_step_id,
-      hours_spent: log.hours_spent,
-      is_finished: log.is_finished ?? false,
-      description: log.description,
-      notes: log.notes,
-    })
+    const matchedStep = (job.job_steps || []).find((s: any) => s.step_id === log.job_step_id)
+    setSelectedStep(matchedStep || job.job_steps?.[0] || null)
+    setEditingLog(log)
     setModalOpen(true)
   }
 
@@ -229,15 +228,15 @@ export function LogsTab({ job, onRefresh }: { job: any; onRefresh: () => void })
         </div>
       </div>
 
-      {/* ── Modal (WorklogFormShared) ── */}
+      {/* ── Modal (EditStepModal - Unified 2-Panel A4 Preview) ── */}
       {modalOpen && (
-        <WorklogFormShared
-          mode="modal"
-          defaultJobId={job.job_id}
-          preloadedSteps={jobSteps}
-          initialData={editingLog}
-          onSuccess={() => { setModalOpen(false); fetchLogs(); onRefresh() }}
-          onCancel={() => setModalOpen(false)}
+        <EditStepModal
+          jobId={job.job_id}
+          step={selectedStep}
+          nextStepNo={(job.job_steps || []).length + 1}
+          initialLog={editingLog}
+          onClose={() => { setModalOpen(false); setEditingLog(null); setSelectedStep(null) }}
+          onSaved={() => { setModalOpen(false); setEditingLog(null); setSelectedStep(null); fetchLogs(); onRefresh() }}
         />
       )}
     </div>

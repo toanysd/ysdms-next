@@ -176,7 +176,10 @@ export async function getWorkOrders(params: {
     query = query.lte('deadline', params.toDate)
   }
 
-  query = query.order('deadline', { ascending: true, nullsFirst: false }).range(from, to)
+  query = query
+    .order('deadline', { ascending: false, nullsFirst: false })
+    .order('created_at', { ascending: false })
+    .range(from, to)
 
   const { data, count, error } = await query
 
@@ -231,6 +234,45 @@ export async function getWorkOrdersForGantt(params: {
   if (params.search?.trim()) {
     const q = `%${params.search.trim()}%`
     query = query.or(`wo_code.ilike.${q},wo_name.ilike.${q}`)
+  } else if (params.fromDate && params.toDate) {
+    const toDateEnd = params.toDate + ' 23:59:59'
+
+    // Pass 1: Find work_orders whose child jobs or steps have dates in range
+    const [{ data: jobHits }, { data: stepHits }] = await Promise.all([
+      supabase
+        .from('jobs')
+        .select('work_order_id')
+        .not('work_order_id', 'is', null)
+        .or(`and(mold_deadline.gte.${params.fromDate},mold_deadline.lte.${toDateEnd}),and(deadline.gte.${params.fromDate},deadline.lte.${toDateEnd}),and(start_date.gte.${params.fromDate},start_date.lte.${toDateEnd}),and(ship_date.gte.${params.fromDate},ship_date.lte.${toDateEnd})`),
+      supabase
+        .from('job_steps')
+        .select('job_id')
+        .or(`and(deadline.gte.${params.fromDate},deadline.lte.${toDateEnd}),and(planned_start.gte.${params.fromDate},planned_start.lte.${toDateEnd}),and(planned_end.gte.${params.fromDate},planned_end.lte.${toDateEnd})`)
+    ])
+
+    const extraWoIds: string[] = (jobHits?.map(j => j.work_order_id).filter(Boolean) as string[]) || []
+
+    const stepJobIds = Array.from(new Set(stepHits?.map(s => s.job_id).filter(Boolean) || []))
+    if (stepJobIds.length > 0) {
+      const { data: stepJobs } = await supabase
+        .from('jobs')
+        .select('work_order_id')
+        .in('job_id', stepJobIds)
+        .not('work_order_id', 'is', null)
+      if (stepJobs) {
+        extraWoIds.push(...(stepJobs.map(j => j.work_order_id).filter(Boolean) as string[]))
+      }
+    }
+
+    const uniqueWoIds = Array.from(new Set(extraWoIds))
+    const conditions = [
+      `and(deadline.gte.${params.fromDate},deadline.lte.${toDateEnd})`,
+      `and(start_date.gte.${params.fromDate},start_date.lte.${toDateEnd})`
+    ]
+    if (uniqueWoIds.length > 0) {
+      conditions.push(`wo_id.in.(${uniqueWoIds.join(',')})`)
+    }
+    query = query.or(conditions.join(','))
   } else {
     if (params.fromDate) {
       query = query.gte('deadline', params.fromDate)
@@ -240,7 +282,10 @@ export async function getWorkOrdersForGantt(params: {
     }
   }
 
-  query = query.order('deadline', { ascending: true, nullsFirst: false }).range(from, to)
+  query = query
+    .order('deadline', { ascending: false, nullsFirst: false })
+    .order('created_at', { ascending: false })
+    .range(from, to)
 
   const { data, count, error } = await query
 
