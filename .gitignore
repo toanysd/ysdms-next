@@ -50,6 +50,7 @@ add_col.js
 /temp_ai/
 
 # Data and backups
+/backups/
 /source_data/
 !/source_data/csv-access-data/
 /source_data/csv-access-data/archived/
