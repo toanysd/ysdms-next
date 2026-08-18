@@ -81,6 +81,29 @@ export default function ToolingExcelGridView({
         return list
     }, [start, daysCount])
 
+    // Check if step falls on date: STRICT DEADLINE MATCH & ONLY INSTRUCTED/ACTIVE STEPS
+    const isStepOnDate = (step: JobStepRow, dateStr: string, job: JobForGantt) => {
+        const hasLogs = step.work_logs && step.work_logs.length > 0
+        const hasHours = Number(step.planned_hours) > 0 || Number(step.estimated_hours) > 0 || (step.actual_hours && step.actual_hours > 0)
+        const isCompletedOrActive = step.step_status === 'COMPLETED' || step.step_status === 'IN_PROGRESS' || (step.processing_statuses?.status_code && !step.processing_statuses.status_code.includes('未'))
+
+        // 1. Step explicit deadline matches this date
+        if (step.deadline) {
+            const stepDl = step.deadline.split('T')[0]
+            if (stepDl === dateStr) return true
+        }
+
+        // 2. If step has no explicit deadline, only match if job mold_deadline matches AND step is actually instructed/active
+        if (!step.deadline) {
+            const moldDl = job.mold_deadline ? job.mold_deadline.split('T')[0] : null
+            if (moldDl === dateStr && (hasLogs || hasHours || isCompletedOrActive)) {
+                return true
+            }
+        }
+
+        return false
+    }
+
     return (
         <div className="w-full h-full flex flex-col overflow-hidden bg-[var(--bg-surface-2)]">
             <div className="w-full h-full overflow-x-auto overflow-y-auto">
@@ -95,20 +118,10 @@ export default function ToolingExcelGridView({
                         const jobsOnDateMap = new Map<string, { job: JobForGantt, steps: JobStepRow[] }>()
 
                         filteredJobs.forEach(job => {
-                            const jobMoldDl = job.mold_deadline ? job.mold_deadline.split('T')[0] : null
-                            const jobDl = job.deadline ? job.deadline.split('T')[0] : null
-                            const isJobDue = jobMoldDl === dateStr || jobDl === dateStr
+                            const matchingSteps = (job.job_steps || []).filter(step => isStepOnDate(step, dateStr, job))
 
-                            const matchingSteps = (job.job_steps || []).filter(step => {
-                                if (step.deadline) {
-                                    return step.deadline.split('T')[0] === dateStr
-                                }
-                                return isJobDue
-                            })
-
-                            if (isJobDue || matchingSteps.length > 0) {
-                                const allRelevantSteps = matchingSteps.length > 0 ? matchingSteps : (job.job_steps || [])
-                                jobsOnDateMap.set(job.job_id, { job, steps: allRelevantSteps })
+                            if (matchingSteps.length > 0) {
+                                jobsOnDateMap.set(job.job_id, { job, steps: matchingSteps })
                             }
                         })
 

@@ -86,7 +86,7 @@ export function EditStepModal({ step, jobId, nextStepNo, initialLog, onClose, on
   // Worklogs for this worker on selected date (All jobs today)
   const [todayWorkerLogs, setTodayWorkerLogs] = useState<any[]>([])
   const [loadingTodayLogs, setLoadingTodayLogs] = useState(false)
-  const [isStepHistoryExpanded, setIsStepHistoryExpanded] = useState(false)
+  const [isStepHistoryExpanded, setIsStepHistoryExpanded] = useState(true)
 
   // Focused Log Form State (Pre-populate with initialLog if provided)
   const [editingLogId, setEditingLogId] = useState<string | null>(initialLog?.log_id || initialLog?.id || null)

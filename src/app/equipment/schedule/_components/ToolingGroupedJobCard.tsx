@@ -88,8 +88,7 @@ export default function ToolingGroupedJobCard({
 
     const productCode = job.products?.product_code || job.job_code || 'JOB'
 
-    // Total Hours
-    const totalPlannedHours = steps.reduce((sum, s) => sum + (Number(s.planned_hours) || Number(s.estimated_hours) || 0), 0)
+    // Total Actual Machining Hours (from work logs) ONLY
     const totalActualHours = steps.reduce((sum, s) => {
         const logSum = (s.work_logs || []).reduce((wSum, w) => wSum + (Number(w.hours_spent) || 0), 0)
         return sum + (s.actual_hours || logSum || 0)
@@ -153,24 +152,16 @@ export default function ToolingGroupedJobCard({
                     )}
                 </div>
 
-                {/* Row 3: Total Machining Hours Summary (Theo Nhật Ký Thực Tế) */}
+                {/* Row 3: Status + Total Actual Machining Hours ONLY */}
                 <div className="flex justify-between items-center text-[10px] font-mono pl-4 pt-0.5 border-t border-[var(--border-default)]/40 mt-0.5">
                     <span className="text-[var(--text-muted)]">
                         状態: <span className="font-semibold text-[var(--text-primary)]">{isJobCompleted ? '完了' : isJobInProgress ? '進行中' : '新規'}</span>
                     </span>
-                    <span className="font-bold">
-                        {totalActualHours > 0 ? (
-                            <span className="text-[var(--status-success)]">
-                                実績: {totalActualHours.toFixed(1)}h{totalPlannedHours > 0 ? ` / 予: ${totalPlannedHours.toFixed(1)}h` : ''}
-                            </span>
-                        ) : totalPlannedHours > 0 ? (
-                            <span className="text-[var(--text-secondary)]">
-                                予: {totalPlannedHours.toFixed(1)}h
-                            </span>
-                        ) : (
-                            <span className="text-[var(--text-muted)] opacity-60">工数未定</span>
-                        )}
-                    </span>
+                    {totalActualHours > 0 && (
+                        <span className="font-bold text-[var(--status-success)]">
+                            実績: {totalActualHours.toFixed(1)}h
+                        </span>
+                    )}
                 </div>
             </div>
 
@@ -183,7 +174,6 @@ export default function ToolingGroupedJobCard({
                         const empName = empMap.get(step.assigned_to || '') || empMap.get((job as any).responsible_id || '')
                         const machName = machMap.get(step.machine_id || '')
                         
-                        const stepPlannedHours = Number(step.planned_hours) || Number(step.estimated_hours) || 0
                         const stepLogHours = (step.work_logs || []).reduce((sum, w) => sum + (Number(w.hours_spent) || 0), 0)
                         const stepActualHours = step.actual_hours || stepLogHours || 0
 
@@ -242,7 +232,7 @@ export default function ToolingGroupedJobCard({
                                     </div>
                                 </div>
 
-                                {/* Row 2: Machining Hours (Nhật Ký Thực Tế) + Assignee / Machine */}
+                                {/* Row 2: Actual Machining Hours (実績) + Assignee / Machine */}
                                 <div className="flex items-center justify-between text-[10px] text-[var(--text-muted)] pt-1 border-t border-[var(--border-default)]/40 mt-0.5 font-mono">
                                     {/* Left: Assignee & Machine */}
                                     <div className="flex items-center gap-1 truncate max-w-[130px]">
@@ -260,18 +250,14 @@ export default function ToolingGroupedJobCard({
                                         )}
                                     </div>
 
-                                    {/* Right: Actual Logged Hours vs Planned Hours */}
+                                    {/* Right: Actual Logged Hours ONLY */}
                                     <div className="flex items-center gap-1 shrink-0">
                                         {stepActualHours > 0 ? (
                                             <span className="font-bold text-[var(--status-success)] bg-[var(--tint-teal-bg)] px-1 rounded border border-[var(--status-success)]/30">
-                                                実績: {stepActualHours.toFixed(1)}h{stepPlannedHours > 0 ? ` / 予: ${stepPlannedHours.toFixed(1)}h` : ''}
-                                            </span>
-                                        ) : stepPlannedHours > 0 ? (
-                                            <span className="text-[var(--text-secondary)]">
-                                                予: {stepPlannedHours.toFixed(1)}h
+                                                実績: {stepActualHours.toFixed(1)}h
                                             </span>
                                         ) : (
-                                            <span className="opacity-40">—</span>
+                                            <span className="opacity-0">—</span>
                                         )}
                                     </div>
                                 </div>
