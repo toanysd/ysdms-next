@@ -108,7 +108,7 @@ function UnifiedEquipmentPageContent() {
         equipment_id, equipment_code, display_name, equipment_type,
         dimensions, actual_length_mm, actual_width_mm, actual_height_mm,
         device_status, usage_status, material_spec, manufacturing_date,
-        companies(company_name, company_code),
+        companies:companies!equipment_company_id_fkey(company_name, company_code),
         rack_layers(
           layer_code,
           racks(rack_code)
