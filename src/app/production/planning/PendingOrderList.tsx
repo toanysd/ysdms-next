@@ -36,7 +36,7 @@ function DraggableOrderItem({ item, onClick, urgencyColor }: { item: any, onClic
                     ></div>
                 </div>
                 <div className="text-[12px] font-mono font-bold text-[var(--mcs-text)] tabular-nums text-right w-[80px]">
-                    {item.total_planned_qty} <span className="text-[10px] font-normal text-[var(--mcs-text-muted)]">/ {item.total_requested_qty}</span>
+                    {item.total_planned || 0} <span className="text-[10px] font-normal text-[var(--mcs-text-muted)]">/ {item.total_requested_qty}</span>
                 </div>
             </div>
         </div>

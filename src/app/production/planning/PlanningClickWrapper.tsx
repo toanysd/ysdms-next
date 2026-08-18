@@ -70,12 +70,14 @@ export default function PlanningClickWrapper({
                 const molds = await getProductPhysicalMolds(item.detail?.product_id || '')
                 const defaultMoldId = molds && molds.length > 0 ? molds[0].id : null
 
+                const remainingQty = Math.max(1, (item.total_requested_qty || item.total_ordered || 0) - (item.total_planned || 0))
+
                 payloads.push({
                     order_item_id: orderId,
                     machine_instance_id: selectedCell.machineId,
                     mold_physical_id: defaultMoldId,
                     planned_date: selectedCell.dateStr,
-                    planned_quantity: item.total_requested_qty - item.total_planned_qty,
+                    planned_quantity: remainingQty,
                     shift: selectedCell.shift,
                 })
             }

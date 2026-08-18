@@ -47,7 +47,7 @@ export default function CreatePlanForm({ item, onClose }: { item: any, onClose: 
         resolver: zodResolver(planSchema),
         defaultValues: {
             order_item_id: item.order_item_id,
-            planned_quantity: Math.max(0, item.total_requested_qty - item.total_planned_qty),
+            planned_quantity: Math.max(0, (item.total_requested_qty || item.total_ordered || 0) - (item.total_planned || 0)),
             planned_date: new Date().toISOString().split('T')[0]
         }
     })
@@ -114,7 +114,7 @@ export default function CreatePlanForm({ item, onClose }: { item: any, onClose: 
                         <option value="">{t('selectMold')}</option>
                         {molds.map((mold) => (
                             <option key={mold.id} value={mold.id}>
-                                {mold.physical_code} ({mold.status})
+                                {mold.physical_code || mold.system_code} ({mold.status || mold.device_status || 'ACTIVE'})
                             </option>
                         ))}
                     </select>

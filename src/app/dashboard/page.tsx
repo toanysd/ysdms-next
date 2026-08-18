@@ -8,6 +8,7 @@ import {
   ExternalLink, RefreshCw
 } from 'lucide-react'
 import { getDashboardData, RealDashboardData } from '@/app/actions/dashboard'
+import { QuickActionsHub } from './_components/QuickActionsHub'
 
 export default function DashboardPage() {
   const t = useTranslations('Dashboard')
@@ -161,6 +162,8 @@ export default function DashboardPage() {
         </div>
 
       </div>
+      {/* ── Row 1.5: Quick Business Action Hub ── */}
+      <QuickActionsHub />
 
       {/* ── Row 2: 4 Real Analytics Cards ── */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, flexShrink: 0 }}>

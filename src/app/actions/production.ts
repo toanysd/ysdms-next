@@ -346,7 +346,7 @@ export async function getProductionPlansByDate(dateStr: string) {
                 orders(order_status, order_no)
             )
         `)
-        .gte('planned_start', `${dateStr}T00:00:00Z`)
+        .gte('planned_start', `${dateStr}T00:00:00.000Z`)
         .lte('planned_start', `${dateStr}T23:59:59.999Z`)
 
     if (error) {
@@ -354,23 +354,41 @@ export async function getProductionPlansByDate(dateStr: string) {
         return []
     }
     
-    return data.map((d: any) => ({
-        ...d,
-        id: d.po_id,
-        planned_date: d.planned_start,
-        machine_instance_id: d.machine_id,
-        order_item_id: d.order_line_id,
-        machine_instance: d.machines ? { id: d.machines.machine_id, name: d.machines.machine_name, internal_code: d.machines.machine_code } : null,
-        order_items: d.order_lines ? {
-            id: d.order_lines.line_id,
-            product_id: d.order_lines.product_id,
-            delivery_date: d.order_lines.due_date,
-            quantity: d.order_lines.quantity,
-            product_pn_raw: d.order_lines.products?.product_code,
-            orders: { status: d.order_lines.orders?.order_status, slip_no: d.order_lines.orders?.order_no },
-            product_master: { code: d.order_lines.products?.product_code, name: d.order_lines.products?.product_name }
-        } : null
-    }))
+    return data.map((d: any) => {
+        let meta: any = {}
+        try {
+            if (d.notes && d.notes.startsWith('{') && d.notes.endsWith('}')) {
+                meta = JSON.parse(d.notes)
+            }
+        } catch(e) {}
+
+        const moldCode = d.physical_molds?.system_code || ''
+
+        return {
+            ...d,
+            id: d.po_id,
+            planned_date: d.planned_start ? d.planned_start.split('T')[0] : dateStr,
+            machine_instance_id: d.machine_id,
+            order_item_id: d.order_line_id,
+            operator_name: meta.operator_name || d.requester_code || '',
+            estimated_hours: meta.estimated_hours !== undefined ? meta.estimated_hours : null,
+            shift: meta.shift || 'DAY',
+            quantity_note: meta.quantity_note || '',
+            notes: meta.notes !== undefined ? meta.notes : d.notes,
+            delivery_date: d.delivery_date || d.order_lines?.due_date || null,
+            machine_instance: d.machines ? { id: d.machines.machine_id, name: d.machines.machine_name, internal_code: d.machines.machine_code } : null,
+            mold_physical: d.physical_molds ? { id: d.physical_molds.physical_mold_id, physical_code: moldCode, system_code: moldCode } : null,
+            order_items: d.order_lines ? {
+                id: d.order_lines.line_id,
+                product_id: d.order_lines.product_id,
+                delivery_date: d.order_lines.due_date,
+                quantity: d.order_lines.quantity,
+                product_pn_raw: d.order_lines.products?.product_code,
+                orders: { status: d.order_lines.orders?.order_status, slip_no: d.order_lines.orders?.order_no },
+                product_master: { code: d.order_lines.products?.product_code, name: d.order_lines.products?.product_name }
+            } : null
+        }
+    })
 }
 
 export async function getProductionPlansByDateRange(startDateStr: string, endDateStr: string) {
@@ -387,31 +405,49 @@ export async function getProductionPlansByDateRange(startDateStr: string, endDat
                 orders(order_status, order_no)
             )
         `)
-        .gte('planned_start', startDateStr)
-        .lte('planned_start', endDateStr)
+        .gte('planned_start', `${startDateStr}T00:00:00.000Z`)
+        .lte('planned_start', `${endDateStr}T23:59:59.999Z`)
 
     if (error) {
         console.error('[API Error] getProductionPlansByDateRange:', error)
         return []
     }
     
-    return data.map((d: any) => ({
-        ...d,
-        id: d.po_id,
-        planned_date: d.planned_start,
-        machine_instance_id: d.machine_id,
-        order_item_id: d.order_line_id,
-        machine_instance: d.machines ? { id: d.machines.machine_id, name: d.machines.machine_name, internal_code: d.machines.machine_code } : null,
-        order_items: d.order_lines ? {
-            id: d.order_lines.line_id,
-            product_id: d.order_lines.product_id,
-            delivery_date: d.order_lines.due_date,
-            quantity: d.order_lines.quantity,
-            product_pn_raw: d.order_lines.products?.product_code,
-            orders: { status: d.order_lines.orders?.order_status, slip_no: d.order_lines.orders?.order_no },
-            product_master: { code: d.order_lines.products?.product_code, name: d.order_lines.products?.product_name }
-        } : null
-    }))
+    return data.map((d: any) => {
+        let meta: any = {}
+        try {
+            if (d.notes && d.notes.startsWith('{') && d.notes.endsWith('}')) {
+                meta = JSON.parse(d.notes)
+            }
+        } catch(e) {}
+
+        const moldCode = d.physical_molds?.system_code || ''
+
+        return {
+            ...d,
+            id: d.po_id,
+            planned_date: d.planned_start ? d.planned_start.split('T')[0] : startDateStr,
+            machine_instance_id: d.machine_id,
+            order_item_id: d.order_line_id,
+            operator_name: meta.operator_name || d.requester_code || '',
+            estimated_hours: meta.estimated_hours !== undefined ? meta.estimated_hours : null,
+            shift: meta.shift || 'DAY',
+            quantity_note: meta.quantity_note || '',
+            notes: meta.notes !== undefined ? meta.notes : d.notes,
+            delivery_date: d.delivery_date || d.order_lines?.due_date || null,
+            machine_instance: d.machines ? { id: d.machines.machine_id, name: d.machines.machine_name, internal_code: d.machines.machine_code } : null,
+            mold_physical: d.physical_molds ? { id: d.physical_molds.physical_mold_id, physical_code: moldCode, system_code: moldCode } : null,
+            order_items: d.order_lines ? {
+                id: d.order_lines.line_id,
+                product_id: d.order_lines.product_id,
+                delivery_date: d.order_lines.due_date,
+                quantity: d.order_lines.quantity,
+                product_pn_raw: d.order_lines.products?.product_code,
+                orders: { status: d.order_lines.orders?.order_status, slip_no: d.order_lines.orders?.order_no },
+                product_master: { code: d.order_lines.products?.product_code, name: d.order_lines.products?.product_name }
+            } : null
+        }
+    })
 }
 
 // Lấy danh sách Kanban: Cột 1 (Cần Chạy)
@@ -540,19 +576,44 @@ export async function getProductPhysicalMolds(productId: string) {
         id: e.equipment_id,
         physical_mold_id: e.equipment_id,
         system_code: e.equipment_code,
-        device_status: e.device_status
+        physical_code: e.equipment_code,
+        device_status: e.device_status,
+        status: e.device_status
     }))
 }
 
 // Lấy toàn bộ khuôn vật lý
 export async function getAllPhysicalMolds() {
     const supabase = await createClient()
+    const { data: equips } = await supabase
+        .from('equipment')
+        .select('equipment_id, equipment_code, device_status, display_name')
+        .eq('equipment_type', 'MOLD')
+
+    if (equips && equips.length > 0) {
+        return equips.map(e => ({
+            id: e.equipment_id,
+            physical_mold_id: e.equipment_id,
+            system_code: e.equipment_code,
+            physical_code: e.equipment_code,
+            device_status: e.device_status,
+            status: e.device_status
+        }))
+    }
+
     const { data: allMolds } = await supabase
         .from('physical_molds')
         .select('physical_mold_id, system_code, device_status')
         .eq('device_status', 'ACTIVE')
 
-    return allMolds || []
+    return (allMolds || []).map(m => ({
+        id: m.physical_mold_id,
+        physical_mold_id: m.physical_mold_id,
+        system_code: m.system_code,
+        physical_code: m.system_code,
+        device_status: m.device_status,
+        status: m.device_status
+    }))
 }
 
 // Lấy danh sách các khuôn ĐÃ BỊ CHIẾM DỤNG trong một ngày/ca cụ thể
@@ -607,13 +668,21 @@ export async function getOperators() {
 
 export async function createProductionPlanAction(payload: ProductionPlanInsert) {
     const supabase = await createClient()
+    const meta = {
+        operator_name: payload.operator_name || '',
+        estimated_hours: payload.estimated_hours,
+        shift: payload.shift || 'DAY',
+        quantity_note: payload.quantity_note || '',
+        notes: payload.notes || ''
+    }
+
     const finalPayload = { 
       order_line_id: payload.order_item_id || payload.order_line_id,
       machine_id: payload.machine_instance_id || payload.machine_id || '',
       planned_start: payload.planned_date || payload.schedule_date || new Date().toISOString(),
       planned_quantity: payload.planned_quantity,
       physical_mold_id: payload.mold_physical_id || null,
-      notes: payload.notes,
+      notes: JSON.stringify(meta),
       po_code: 'PO-' + Math.random().toString(36).substring(2, 10).toUpperCase(),
       po_status: 'PLANNED'
     }
@@ -637,16 +706,25 @@ export async function createProductionPlanAction(payload: ProductionPlanInsert) 
 
 export async function createProductionPlansBatchAction(payloads: ProductionPlanInsert[]) {
     const supabase = await createClient()
-    const finalPayloads = payloads.map(payload => ({
-      order_line_id: payload.order_item_id || payload.order_line_id,
-      machine_id: payload.machine_instance_id || payload.machine_id || '',
-      planned_start: payload.planned_date || payload.schedule_date || new Date().toISOString(),
-      planned_quantity: payload.planned_quantity,
-      physical_mold_id: payload.mold_physical_id || null,
-      notes: payload.notes,
-      po_code: 'PO-' + Math.random().toString(36).substring(2, 10).toUpperCase(),
-      po_status: 'PLANNED'
-    }))
+    const finalPayloads = payloads.map(payload => {
+      const meta = {
+          operator_name: payload.operator_name || '',
+          estimated_hours: payload.estimated_hours,
+          shift: payload.shift || 'DAY',
+          quantity_note: payload.quantity_note || '',
+          notes: payload.notes || ''
+      }
+      return {
+        order_line_id: payload.order_item_id || payload.order_line_id,
+        machine_id: payload.machine_instance_id || payload.machine_id || '',
+        planned_start: payload.planned_date || payload.schedule_date || new Date().toISOString(),
+        planned_quantity: payload.planned_quantity,
+        physical_mold_id: payload.mold_physical_id || null,
+        notes: JSON.stringify(meta),
+        po_code: 'PO-' + Math.random().toString(36).substring(2, 10).toUpperCase(),
+        po_status: 'PLANNED'
+      }
+    })
 
     const { data, error } = await supabase
         .from('production_orders')
@@ -669,7 +747,7 @@ export async function updateProductionPlanAction(planId: string, payload: Partia
     
     const { data: plan } = await supabase
         .from('production_orders')
-        .select('po_status')
+        .select('po_status, notes')
         .eq('po_id', planId)
         .single()
 
@@ -677,12 +755,28 @@ export async function updateProductionPlanAction(planId: string, payload: Partia
         throw new Error('Không thể sửa kế hoạch đang chạy hoặc đã hoàn thành')
     }
 
+    let existingMeta: any = {}
+    try {
+        if (plan?.notes && plan.notes.startsWith('{') && plan.notes.endsWith('}')) {
+            existingMeta = JSON.parse(plan.notes)
+        }
+    } catch(e) {}
+
+    const updatedMeta = {
+        ...existingMeta,
+        ...(payload.operator_name !== undefined ? { operator_name: payload.operator_name } : {}),
+        ...(payload.estimated_hours !== undefined ? { estimated_hours: payload.estimated_hours } : {}),
+        ...(payload.shift !== undefined ? { shift: payload.shift } : {}),
+        ...(payload.quantity_note !== undefined ? { quantity_note: payload.quantity_note } : {}),
+        ...(payload.notes !== undefined ? { notes: payload.notes } : {})
+    }
+
     const updatePayload: any = {}
     if (payload.planned_date || payload.schedule_date) updatePayload.planned_start = payload.planned_date || payload.schedule_date
     if (payload.machine_instance_id || payload.machine_id) updatePayload.machine_id = payload.machine_instance_id || payload.machine_id
     if (payload.planned_quantity !== undefined) updatePayload.planned_quantity = payload.planned_quantity
-    if (payload.notes !== undefined) updatePayload.notes = payload.notes
     if (payload.mold_physical_id !== undefined) updatePayload.physical_mold_id = payload.mold_physical_id
+    updatePayload.notes = JSON.stringify(updatedMeta)
     updatePayload.updated_at = new Date().toISOString()
 
     const { error } = await supabase
