@@ -73,20 +73,28 @@ export function EditStepModal({ step, jobId, nextStepNo, initialLog, onClose, on
 
   // Status options for Step/Component
   const STEP_STATUS_OPTIONS = [
-    { value: 'PENDING', label: '未着手', bg: 'var(--bg-surface-2, #F1F5F9)', text: 'var(--text-muted, #64748B)', border: 'var(--border-default, #CBD5E1)' },
-    { value: 'IN_PROGRESS', label: '進行中', bg: 'var(--tint-amber-bg, #FEF3C7)', text: 'var(--status-warning, #D97706)', border: '#F59E0B' },
-    { value: 'COMPLETED', label: '完了', bg: 'var(--status-success-bg, #DCFCE7)', text: 'var(--status-success, #16A34A)', border: '#22C55E' },
-    { value: 'ON_HOLD', label: '保留', bg: 'var(--tint-purple-bg, #EDE9FE)', text: '#7C3AED', border: '#8B5CF6' },
-    { value: 'CANCELLED', label: '中止', bg: '#FEE2E2', text: '#DC2626', border: '#EF4444' },
+    { value: 'PENDING', label: '未着手', icon: '⚪', bg: 'var(--bg-surface-2, #F1F5F9)', text: 'var(--text-muted, #64748B)', border: 'var(--border-default, #CBD5E1)' },
+    { value: 'IN_PROGRESS', label: '進行中', icon: '🟠', bg: 'var(--tint-amber-bg, #FEF3C7)', text: 'var(--status-warning, #D97706)', border: '#F59E0B' },
+    { value: 'COMPLETED', label: '完了', icon: '🟢', bg: 'var(--status-success-bg, #DCFCE7)', text: 'var(--status-success, #16A34A)', border: '#22C55E' },
+    { value: 'ON_HOLD', label: '保留', icon: '🟣', bg: 'var(--tint-purple-bg, #EDE9FE)', text: '#7C3AED', border: '#8B5CF6' },
+    { value: 'CANCELLED', label: '中止', icon: '🔴', bg: '#FEE2E2', text: '#DC2626', border: '#EF4444' },
   ]
 
   const handleUpdateStepStatus = async (newStatus: string) => {
     setStepStatus(newStatus)
     if (step?.step_id) {
       try {
+        let procStatusId: number | null = null
+        if (newStatus === 'COMPLETED') procStatusId = 8 // F.完了
+        else if (newStatus === 'IN_PROGRESS') procStatusId = 9 // N.進行中
+        else if (newStatus === 'PENDING') procStatusId = 1 // 0.未確認
+
+        const payload: any = { step_status: newStatus }
+        if (procStatusId) payload.processing_status_id = procStatusId
+
         const { error } = await supabase
           .from('job_steps')
-          .update({ step_status: newStatus })
+          .update(payload)
           .eq('step_id', step.step_id)
         if (error) throw error
         onSaved()
@@ -953,17 +961,22 @@ export function EditStepModal({ step, jobId, nextStepNo, initialLog, onClose, on
                               style={{
                                 padding: '2px 8px',
                                 fontSize: 10.5,
-                                fontWeight: isActive ? 800 : 500,
+                                fontWeight: isActive ? 800 : 600,
                                 borderRadius: 4,
                                 border: `1px solid ${isActive ? opt.border : 'var(--border-default)'}`,
                                 background: isActive ? opt.bg : '#fff',
-                                color: isActive ? opt.text : 'var(--text-muted)',
+                                color: isActive ? opt.text : 'var(--text-secondary)',
                                 cursor: 'pointer',
                                 boxShadow: isActive ? '0 1px 2px rgba(0,0,0,0.06)' : 'none',
                                 transition: 'all 0.15s ease',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 3,
                               }}
                             >
-                              {isActive ? '✓ ' : ''}{opt.label}
+                              <span>{opt.icon}</span>
+                              <span>{opt.label}</span>
+                              {isActive && <span style={{ marginLeft: 2, fontSize: 10 }}>✓</span>}
                             </button>
                           )
                         })}
