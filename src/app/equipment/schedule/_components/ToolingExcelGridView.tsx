@@ -91,26 +91,18 @@ export default function ToolingExcelGridView({
         ]
     }, [machines, t])
 
-    // Check if step falls on date (STRICT: only falls on exact planned range, work log date, or deadline - NEVER spam whole job duration)
+    // Check if step falls on date: ONLY MATCH EXACT DEADLINE (KỲ HẠN)
     const isStepOnDate = (step: JobStepRow, dateStr: string, job: JobForGantt) => {
-        // 1. Work logs date
-        if (step.work_logs && step.work_logs.some(w => w.work_date === dateStr)) return true
-
-        // 2. Explicit planned start & end range
-        if (step.planned_start && step.planned_end) {
-            const pStart = step.planned_start.split('T')[0]
-            const pEnd = step.planned_end.split('T')[0]
-            if (dateStr >= pStart && dateStr <= pEnd) return true
+        // 1. Step deadline matches this date
+        if (step.deadline) {
+            const stepDl = step.deadline.split('T')[0]
+            if (stepDl === dateStr) return true
         }
 
-        // 3. Step deadline
-        if (step.deadline && step.deadline.split('T')[0] === dateStr) return true
-
-        // 4. Single-day fallback: only on mold_deadline date if step has no dates
-        if (!step.planned_start && !step.deadline && (!step.work_logs || step.work_logs.length === 0)) {
-            if (job.mold_deadline && job.mold_deadline.split('T')[0] === dateStr) {
-                return true
-            }
+        // 2. If step has no deadline of its own, check if job's mold_deadline matches this date
+        if (!step.deadline) {
+            const moldDl = job.mold_deadline ? job.mold_deadline.split('T')[0] : null
+            if (moldDl === dateStr) return true
         }
 
         return false
@@ -139,7 +131,7 @@ export default function ToolingExcelGridView({
                             return (
                                 <div 
                                     key={dateStr}
-                                    className={`w-[150px] shrink-0 border-r border-[var(--border-default)] p-1.5 flex flex-col items-center justify-center ${
+                                    className={`w-[160px] shrink-0 border-r border-[var(--border-default)] p-1.5 flex flex-col items-center justify-center ${
                                         isToday ? 'bg-[var(--tint-teal-bg)]' : isWeekend ? 'bg-[var(--bg-surface-2)]' : 'bg-[var(--bg-surface-hover)]'
                                     }`}
                                 >
@@ -197,7 +189,7 @@ export default function ToolingExcelGridView({
                                 return (
                                     <div 
                                         key={`${mach.id}-${dateStr}`}
-                                        className={`w-[150px] shrink-0 border-r border-[var(--border-default)] p-1.5 flex flex-col gap-1.5 relative group hover:bg-[var(--bg-surface-hover)] transition-colors ${
+                                        className={`w-[160px] shrink-0 border-r border-[var(--border-default)] p-1.5 flex flex-col gap-1.5 relative group hover:bg-[var(--bg-surface-hover)] transition-colors ${
                                             isToday ? 'bg-[var(--tint-teal-bg)]/20' : ''
                                         }`}
                                     >
