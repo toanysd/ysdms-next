@@ -64,11 +64,37 @@ export function EditStepModal({ step, jobId, nextStepNo, initialLog, onClose, on
   const [selectedItemTypeId, setSelectedItemTypeId] = useState<string>(step?.item_type_id ? String(step.item_type_id) : '7')
   const [stepTrack, setStepTrack] = useState(step?.track || 'STACKING')
   const [stepNo, setStepNo] = useState(step?.step_no || nextStepNo || 1)
+  const [stepStatus, setStepStatus] = useState<string>(step?.step_status || 'PENDING')
   const [plannedHours, setPlannedHours] = useState(step?.planned_hours ? String(step.planned_hours) : '2.0')
   const [stepDeadline, setStepDeadline] = useState(step?.deadline ? step.deadline.split('T')[0] : '')
   const [stepAssignedTo, setStepAssignedTo] = useState(step?.assigned_to || '')
   const [stepNotes, setStepNotes] = useState(step?.notes || '')
   const [savingStep, setSavingStep] = useState(false)
+
+  // Status options for Step/Component
+  const STEP_STATUS_OPTIONS = [
+    { value: 'PENDING', label: '未着手', bg: 'var(--bg-surface-2, #F1F5F9)', text: 'var(--text-muted, #64748B)', border: 'var(--border-default, #CBD5E1)' },
+    { value: 'IN_PROGRESS', label: '進行中', bg: 'var(--tint-amber-bg, #FEF3C7)', text: 'var(--status-warning, #D97706)', border: '#F59E0B' },
+    { value: 'COMPLETED', label: '完了', bg: 'var(--status-success-bg, #DCFCE7)', text: 'var(--status-success, #16A34A)', border: '#22C55E' },
+    { value: 'ON_HOLD', label: '保留', bg: 'var(--tint-purple-bg, #EDE9FE)', text: '#7C3AED', border: '#8B5CF6' },
+    { value: 'CANCELLED', label: '中止', bg: '#FEE2E2', text: '#DC2626', border: '#EF4444' },
+  ]
+
+  const handleUpdateStepStatus = async (newStatus: string) => {
+    setStepStatus(newStatus)
+    if (step?.step_id) {
+      try {
+        const { error } = await supabase
+          .from('job_steps')
+          .update({ step_status: newStatus })
+          .eq('step_id', step.step_id)
+        if (error) throw error
+        onSaved()
+      } catch (err: any) {
+        alert('ステータス更新エラー: ' + err.message)
+      }
+    }
+  }
 
   // Job metadata for clear context anchor
   const [jobMeta, setJobMeta] = useState<{
@@ -232,7 +258,7 @@ export function EditStepModal({ step, jobId, nextStepNo, initialLog, onClose, on
     setLoadingLogs(true)
     const { data } = await supabase
       .from('work_logs')
-      .select('log_id, work_date, hours_spent, description, notes, is_finished, employee_id, processing_code_id, employees:employee_id(employee_name), processing_codes:processing_code_id(processing_code_id, processing_name)')
+      .select('log_id, work_date, hours_spent, description, notes, is_finished, employee_id, processing_code_id, employees:employee_id(employee_name, employee_name_short), processing_codes:processing_code_id(processing_code_id, processing_name)')
       .eq('job_step_id', step.step_id)
       .order('work_date', { ascending: false })
 
@@ -778,10 +804,11 @@ export function EditStepModal({ step, jobId, nextStepNo, initialLog, onClose, on
               {/* ── 1. STEP SPECIFICATION ANCHOR CARD ── */}
               <div
                 style={{
-                  border: '1px solid var(--border-default)',
+                  border: '1px solid var(--tint-purple-border, #DDD6FE)',
                   borderRadius: 8,
-                  background: '#fff',
+                  background: 'var(--tint-purple-bg, #F5F3FF)',
                   overflow: 'hidden',
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
                 }}
               >
                 <div
@@ -888,10 +915,11 @@ export function EditStepModal({ step, jobId, nextStepNo, initialLog, onClose, on
                     </button>
                   </div>
                 ) : (
-                  /* Step Info Readonly Specs */
-                  <div style={{ padding: '10px 12px', fontSize: 11.5, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  /* Step Info Full-Tinted Container */
+                  <div style={{ padding: '10px 12px', fontSize: 11.5, display: 'flex', flexDirection: 'column', gap: 8, background: 'rgba(237, 233, 254, 0.4)' }}>
+                    {/* Row 1: Step Name + Track Badge */}
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--text-primary)' }}>
+                      <span style={{ fontSize: 13.5, fontWeight: 800, color: 'var(--text-primary)' }}>
                         {jobMeta?.job_code === '社内作業' || jobMeta?.job_category === 'INTERNAL_OPS' ? '' : `Step ${step?.step_no}. `}{step?.step_name}
                       </span>
                       <span
@@ -900,8 +928,8 @@ export function EditStepModal({ step, jobId, nextStepNo, initialLog, onClose, on
                           fontSize: 10.5,
                           background: 'var(--tint-purple-bg, #EDE9FE)',
                           color: 'var(--tint-purple-text, #7C3AED)',
-                          padding: '1px 6px',
-                          borderRadius: 3,
+                          padding: '2px 8px',
+                          borderRadius: 4,
                           border: '1px solid var(--tint-purple-border, #DDD6FE)',
                         }}
                       >
@@ -909,15 +937,49 @@ export function EditStepModal({ step, jobId, nextStepNo, initialLog, onClose, on
                       </span>
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px 12px', color: 'var(--text-secondary)', fontSize: 11 }}>
+                    {/* Row 2: Interactive Step Status Buttons */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', paddingTop: 2 }}>
+                      <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)' }}>
+                        工程状態:
+                      </span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                        {STEP_STATUS_OPTIONS.map((opt) => {
+                          const isActive = (stepStatus || step?.step_status || 'PENDING') === opt.value
+                          return (
+                            <button
+                              key={opt.value}
+                              type="button"
+                              onClick={() => handleUpdateStepStatus(opt.value)}
+                              style={{
+                                padding: '2px 8px',
+                                fontSize: 10.5,
+                                fontWeight: isActive ? 800 : 500,
+                                borderRadius: 4,
+                                border: `1px solid ${isActive ? opt.border : 'var(--border-default)'}`,
+                                background: isActive ? opt.bg : '#fff',
+                                color: isActive ? opt.text : 'var(--text-muted)',
+                                cursor: 'pointer',
+                                boxShadow: isActive ? '0 1px 2px rgba(0,0,0,0.06)' : 'none',
+                                transition: 'all 0.15s ease',
+                              }}
+                            >
+                              {isActive ? '✓ ' : ''}{opt.label}
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Row 3: Specs Grid */}
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px 12px', color: 'var(--text-secondary)', fontSize: 11, paddingTop: 6, borderTop: '1px dashed var(--tint-purple-border, #DDD6FE)' }}>
                       <div>
-                        予定工数: <strong className="font-mono" style={{ color: 'var(--text-primary)' }}>{step?.planned_hours ? `${step.planned_hours}h` : '—'}</strong>
+                        予定工数: <strong className="font-mono" style={{ color: 'var(--text-primary)' }}>{plannedHours ? `${plannedHours}h` : step?.planned_hours ? `${step.planned_hours}h` : '—'}</strong>
                       </div>
                       <div>
-                        累計実績: <strong className="font-mono" style={{ color: 'var(--accent)' }}>{step?.actual_hours || 0}h</strong>
+                        累計実績: <strong className="font-mono" style={{ color: 'var(--status-success)' }}>{Math.round(logs.reduce((sum, l) => sum + (Number(l.hours_spent) || 0), 0) * 10) / 10}h</strong>
                       </div>
                       <div>
-                        完了期日: <strong className="font-mono" style={{ color: step?.deadline ? '#DC2626' : 'var(--text-primary)' }}>{step?.deadline ? step.deadline.split('T')[0] : '—'}</strong>
+                        完了期日: <strong className="font-mono" style={{ color: (stepDeadline || step?.deadline) ? '#DC2626' : 'var(--text-primary)' }}>{(stepDeadline || step?.deadline) ? (stepDeadline || step?.deadline?.split('T')[0]) : '—'}</strong>
                       </div>
                       <div>
                         担当: <strong style={{ color: 'var(--text-primary)' }}>{assignedWorkerName || '—'}</strong>
@@ -1089,32 +1151,6 @@ export function EditStepModal({ step, jobId, nextStepNo, initialLog, onClose, on
                     />
                   </div>
 
-                  {/* Step Finished Toggle */}
-                  <div
-                    style={{
-                      padding: '5px 8px',
-                      borderRadius: 5,
-                      background: logIsFinished ? 'var(--tint-teal-bg)' : '#F8FAFC',
-                      border: `1px solid ${logIsFinished ? 'var(--tint-teal-border)' : 'var(--border-default)'}`,
-                      display: 'flex',
-                      alignItems: 'center',
-                      cursor: 'pointer',
-                    }}
-                    onClick={() => setLogIsFinished(!logIsFinished)}
-                  >
-                    <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', margin: 0 }}>
-                      <input
-                        type="checkbox"
-                        checked={logIsFinished}
-                        onChange={(e) => setLogIsFinished(e.target.checked)}
-                        style={{ width: 14, height: 14, accentColor: 'var(--accent)', cursor: 'pointer' }}
-                      />
-                      <span style={{ fontSize: 11, fontWeight: 700, color: logIsFinished ? 'var(--accent)' : 'var(--text-primary)' }}>
-                        この工程を完了にする (Hoàn thành công đoạn)
-                      </span>
-                    </label>
-                  </div>
-
                   {/* Submit Log Button */}
                   <button
                     type="button"
@@ -1165,34 +1201,43 @@ export function EditStepModal({ step, jobId, nextStepNo, initialLog, onClose, on
                 </div>
 
                 {isStepHistoryExpanded && (
-                  <div style={{ padding: 6 }}>
+                  <div style={{ padding: 4 }}>
                     {logs.length === 0 ? (
                       <div style={{ padding: 8, textAlign: 'center', color: 'var(--text-muted)', fontSize: 10.5 }}>
                         — 過去日報なし —
                       </div>
                     ) : (
-                      <table className="data-table" style={{ fontSize: 10, width: '100%' }}>
+                      <table className="data-table" style={{ fontSize: 10, width: '100%', tableLayout: 'fixed' }}>
                         <thead>
                           <tr>
-                            <th>作業日</th>
-                            <th>作業者</th>
-                            <th>工数</th>
-                            <th>内容</th>
-                            <th>操作</th>
+                            <th style={{ width: 75, padding: '3px 4px', whiteSpace: 'nowrap' }}>作業日</th>
+                            <th style={{ width: 105, padding: '3px 4px', whiteSpace: 'nowrap' }}>作業者</th>
+                            <th style={{ width: 42, padding: '3px 4px', whiteSpace: 'nowrap', textAlign: 'right' }}>工数</th>
+                            <th style={{ padding: '3px 4px', whiteSpace: 'nowrap' }}>内容</th>
+                            <th style={{ width: 24, padding: '3px 2px', textAlign: 'center' }}></th>
                           </tr>
                         </thead>
                         <tbody>
                           {logs.map((l) => (
                             <tr key={l.log_id}>
-                              <td className="font-mono">{l.work_date}</td>
-                              <td>{l.employees?.employee_name || '—'}</td>
-                              <td className="font-mono text-right font-bold" style={{ color: 'var(--accent)' }}>{l.hours_spent || 0}h</td>
-                              <td>{l.description || '—'}</td>
-                              <td className="text-center">
+                              <td className="font-mono" style={{ fontSize: 9.5, padding: '3px 4px', whiteSpace: 'nowrap' }}>
+                                {l.work_date}
+                              </td>
+                              <td style={{ fontSize: 10, padding: '3px 4px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={l.employees?.employee_name || ''}>
+                                {l.employees?.employee_name_short || l.employees?.employee_name || '—'}
+                              </td>
+                              <td className="font-mono text-right font-bold" style={{ color: 'var(--accent)', fontSize: 10.5, padding: '3px 4px', whiteSpace: 'nowrap' }}>
+                                {l.hours_spent || 0}h
+                              </td>
+                              <td style={{ fontSize: 9.5, padding: '3px 4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={l.description || l.notes || ''}>
+                                {l.description || l.notes || '—'}
+                              </td>
+                              <td className="text-center" style={{ padding: '3px 2px' }}>
                                 <button
                                   type="button"
                                   onClick={() => handleDeleteLog(l.log_id)}
                                   style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'var(--status-error)', padding: 2 }}
+                                  title="削除"
                                 >
                                   <Trash2 size={11} />
                                 </button>
