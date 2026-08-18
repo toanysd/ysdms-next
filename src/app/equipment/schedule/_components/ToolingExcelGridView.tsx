@@ -84,33 +84,35 @@ export default function ToolingExcelGridView({
 
     // Generate Machine Rows
     const machineRows = useMemo(() => {
-        const mainMachines = machines.filter(m => {
-            const name = (m.machine_code || m.machine_name || '').toUpperCase()
-            return name.includes('CMX') || name.includes('MILLTAP') || name.includes('MILLAC') || name.includes('DURA') || name.includes('CNC')
-        })
-
-        // Standard groups
         return [
-            ...mainMachines.map(m => ({ id: m.machine_id, code: m.machine_code || m.machine_name, name: m.machine_name, type: 'CNC' })),
+            ...machines.map(m => ({ id: m.machine_id, code: m.machine_code || m.machine_name, name: m.machine_name, type: 'CNC' })),
             { id: '__MANUAL__', code: t('manualWork'), name: '手仕上・ミガキ・組立', type: 'MANUAL' },
             { id: '__OUTSOURCE__', code: t('outsourceWork'), name: '外注・特殊', type: 'OUTSOURCE' }
         ]
     }, [machines, t])
 
-    // Check if step falls on date
+    // Check if step falls on date (STRICT: only falls on exact planned range, work log date, or deadline - NEVER spam whole job duration)
     const isStepOnDate = (step: JobStepRow, dateStr: string, job: JobForGantt) => {
+        // 1. Work logs date
         if (step.work_logs && step.work_logs.some(w => w.work_date === dateStr)) return true
+
+        // 2. Explicit planned start & end range
         if (step.planned_start && step.planned_end) {
             const pStart = step.planned_start.split('T')[0]
             const pEnd = step.planned_end.split('T')[0]
             if (dateStr >= pStart && dateStr <= pEnd) return true
         }
+
+        // 3. Step deadline
         if (step.deadline && step.deadline.split('T')[0] === dateStr) return true
-        if (!step.planned_start && !step.deadline && job.start_date && job.mold_deadline) {
-            const jStart = job.start_date.split('T')[0]
-            const jEnd = job.mold_deadline.split('T')[0]
-            if (dateStr >= jStart && dateStr <= jEnd) return true
+
+        // 4. Single-day fallback: only on mold_deadline date if step has no dates
+        if (!step.planned_start && !step.deadline && (!step.work_logs || step.work_logs.length === 0)) {
+            if (job.mold_deadline && job.mold_deadline.split('T')[0] === dateStr) {
+                return true
+            }
         }
+
         return false
     }
 
