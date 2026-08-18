@@ -155,7 +155,7 @@ export function EditStepModal({ step, jobId, nextStepNo, initialLog, onClose, on
   // Worklogs for this worker on selected date (All jobs today)
   const [todayWorkerLogs, setTodayWorkerLogs] = useState<any[]>([])
   const [loadingTodayLogs, setLoadingTodayLogs] = useState(false)
-  const [isStepHistoryExpanded, setIsStepHistoryExpanded] = useState(true)
+  const [isStepHistoryExpanded, setIsStepHistoryExpanded] = useState(false)
 
   // Focused Log Form State (Pre-populate with initialLog if provided)
   const [editingLogId, setEditingLogId] = useState<string | null>(initialLog?.log_id || initialLog?.id || null)
@@ -1250,7 +1250,7 @@ export function EditStepModal({ step, jobId, nextStepNo, initialLog, onClose, on
                 </div>
 
                 {isStepHistoryExpanded && (
-                  <div style={{ padding: 4 }}>
+                  <div style={{ padding: 4, maxHeight: 200, overflowY: 'auto' }}>
                     {logs.length === 0 ? (
                       <div style={{ padding: 8, textAlign: 'center', color: 'var(--text-muted)', fontSize: 10.5 }}>
                         — 過去日報なし —
