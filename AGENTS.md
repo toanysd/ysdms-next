@@ -266,6 +266,10 @@ const { data, error, count } = await supabase
 
 **Pagination**: `PAGE_SIZE = 50` mặc định. Dùng component `<Pagination />` từ `@/components/ui/Pagination`.
 
+### 7.1. TABLE SORTING RULE (Quy tắc Sắp xếp Bảng Dữ liệu - BẮT BUỘC)
+- Mặc định tất cả các bảng dữ liệu (Sản phẩm `products`, Thiết bị `equipment`, Đơn hàng `orders`, Chỉ thị/Job `jobs`, v.v.) **BẮT BUỘC sắp xếp theo thứ tự TỪ MỚI ĐẾN CŨ (Mới nhất ở trên cùng - `ORDER BY ... DESC`)**.
+- Đối với trường Ngày xuất hàng đầu tiên (`first_shipment_date` / `出荷納期`): Khi sắp xếp, ưu tiên thứ tự từ **MỚI ĐẾN CŨ (`DESC`)**, các bản ghi có hạn mới nhất/gần nhất nằm ở trên cùng.
+
 ---
 
 ## 8. SIDEBAR REGISTRATION

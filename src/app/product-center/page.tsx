@@ -129,7 +129,7 @@ export default function ProductCenterIndexPage() {
   const [plasticTypesList, setPlasticTypesList] = useState<string[]>([])
 
   const [sortColumn, setSortColumn] = useState<SortColumn | null>('first_shipment_date')
-  const [sortDir, setSortDir] = useState<SortDir>('asc')
+  const [sortDir, setSortDir] = useState<SortDir>('desc')
 
   const [columnWidths, setColumnWidths] = useState<Record<string, number>>(() => {
     const initial: Record<string, number> = {}
