@@ -105,30 +105,16 @@ export default async function ToolingSchedulePage(props: ToolingSchedulePageProp
       {/* --- Main View Content --- */}
       <div className="flex-1 min-h-0 relative rounded-md overflow-hidden border border-[var(--border-default)]">
         {activeView === 'grid' ? (
-          perspective === 'machine' ? (
-            <ToolingExcelGridView 
-              jobs={jobs}
-              workOrders={workOrders}
-              machines={machines}
-              employees={employees}
-              startDateStr={fromDateFinal}
-              daysCount={daysCount}
-              perspective={perspective}
-              trackFilter={trackFilter}
-              searchQuery={query}
-            />
-          ) : (
-            <ToolingCalendarMatrix 
-              jobs={jobs}
-              workOrders={workOrders}
-              machines={machines}
-              employees={employees}
-              startDateStr={fromDateFinal}
-              daysCount={daysCount}
-              trackFilter={trackFilter}
-              searchQuery={query}
-            />
-          )
+          <ToolingExcelGridView 
+            jobs={jobs}
+            workOrders={workOrders}
+            machines={machines}
+            employees={employees}
+            startDateStr={fromDateFinal}
+            daysCount={daysCount}
+            trackFilter={trackFilter}
+            searchQuery={query}
+          />
         ) : (
           <MoldJobGantt 
             workOrders={workOrders}

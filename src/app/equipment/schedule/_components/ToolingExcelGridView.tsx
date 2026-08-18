@@ -16,7 +16,7 @@ interface ToolingExcelGridViewProps {
     employees: any[]
     startDateStr: string
     daysCount?: number
-    perspective?: 'machine' | 'job'
+    perspective?: string
     trackFilter?: 'ALL' | 'MOLD' | 'PLUG' | 'CUTTER'
     searchQuery?: string
 }
@@ -28,7 +28,6 @@ export default function ToolingExcelGridView({
     employees = [],
     startDateStr,
     daysCount = 14,
-    perspective = 'machine',
     trackFilter = 'ALL',
     searchQuery = ''
 }: ToolingExcelGridViewProps) {
@@ -82,155 +81,101 @@ export default function ToolingExcelGridView({
         return list
     }, [start, daysCount])
 
-    // Generate Machine Rows
-    const machineRows = useMemo(() => {
-        return [
-            ...machines.map(m => ({ id: m.machine_id, code: m.machine_code || m.machine_name, name: m.machine_name, type: 'CNC' })),
-            { id: '__MANUAL__', code: t('manualWork'), name: '手仕上・ミガキ・組立', type: 'MANUAL' },
-            { id: '__OUTSOURCE__', code: t('outsourceWork'), name: '外注・特殊', type: 'OUTSOURCE' }
-        ]
-    }, [machines, t])
-
-    // Check if step falls on date: STRICT DEADLINE MATCH
-    const isStepOnDate = (step: JobStepRow, dateStr: string, job: JobForGantt) => {
-        // 1. Step deadline matches this date
-        if (step.deadline) {
-            const stepDl = step.deadline.split('T')[0]
-            if (stepDl === dateStr) return true
-        }
-
-        // 2. If step has no deadline of its own, check if job's mold_deadline matches this date
-        if (!step.deadline) {
-            const moldDl = job.mold_deadline ? job.mold_deadline.split('T')[0] : null
-            if (moldDl === dateStr) return true
-        }
-
-        return false
-    }
-
     return (
         <div className="w-full h-full flex flex-col overflow-hidden bg-[var(--bg-surface-2)]">
-            <div className="w-full h-full overflow-auto">
-                <div className="inline-block min-w-max bg-[var(--bg-surface)] border-b border-r border-[var(--border-default)]">
-                    
-                    {/* TOP HEADER ROW: Dates */}
-                    <div className="flex border-b border-[var(--border-default)] bg-[var(--bg-surface)] sticky top-0 z-20 shadow-xs">
-                        {/* Top-Left Corner: Machine / Trạm label */}
-                        <div className="w-48 shrink-0 border-r border-[var(--border-default)] p-2 sticky left-0 bg-[var(--bg-surface)] z-30 font-bold text-[12px] text-[var(--text-muted)] flex flex-col justify-center shadow-[2px_0_5px_-2px_rgba(0,0,0,0.04)]">
-                            <div className="text-center">{t('table.machine')}</div>
-                            <div className="text-[10px] font-normal opacity-70 text-center">Máy & Trạm gia công</div>
-                        </div>
-                        
-                        {/* Dates */}
-                        {dateList.map((dateStr) => {
-                            const parsedDate = parseISO(dateStr)
-                            const isToday = isSameDay(parsedDate, new Date())
-                            const dayIndex = parsedDate.getDay().toString() as '0'|'1'|'2'|'3'|'4'|'5'|'6'
-                            const isWeekend = dayIndex === '0' || dayIndex === '6'
-                            
-                            return (
-                                <div 
-                                    key={dateStr}
-                                    className={`w-[180px] shrink-0 border-r border-[var(--border-default)] p-1.5 flex flex-col items-center justify-center ${
-                                        isToday ? 'bg-[var(--tint-teal-bg)]' : isWeekend ? 'bg-[var(--bg-surface-2)]' : 'bg-[var(--bg-surface-hover)]'
-                                    }`}
-                                >
-                                    <div className={`font-mono font-bold text-[14px] ${isToday ? 'text-[var(--accent)]' : 'text-[var(--text-primary)]'}`}>
-                                        {format(parsedDate, 'MM/dd')}
+            <div className="w-full h-full overflow-x-auto overflow-y-auto">
+                <div className="flex min-w-max h-full min-h-[500px] bg-[var(--bg-surface)] p-2 gap-2">
+                    {dateList.map((dateStr) => {
+                        const parsedDate = parseISO(dateStr)
+                        const isToday = isSameDay(parsedDate, new Date())
+                        const dayIndex = parsedDate.getDay().toString() as '0'|'1'|'2'|'3'|'4'|'5'|'6'
+                        const isWeekend = dayIndex === '0' || dayIndex === '6'
+
+                        // Group all jobs that have deadlines matching this dateStr
+                        const jobsOnDateMap = new Map<string, { job: JobForGantt, steps: JobStepRow[] }>()
+
+                        filteredJobs.forEach(job => {
+                            const jobMoldDl = job.mold_deadline ? job.mold_deadline.split('T')[0] : null
+                            const jobDl = job.deadline ? job.deadline.split('T')[0] : null
+                            const isJobDue = jobMoldDl === dateStr || jobDl === dateStr
+
+                            const matchingSteps = (job.job_steps || []).filter(step => {
+                                if (step.deadline) {
+                                    return step.deadline.split('T')[0] === dateStr
+                                }
+                                return isJobDue
+                            })
+
+                            if (isJobDue || matchingSteps.length > 0) {
+                                const allRelevantSteps = matchingSteps.length > 0 ? matchingSteps : (job.job_steps || [])
+                                jobsOnDateMap.set(job.job_id, { job, steps: allRelevantSteps })
+                            }
+                        })
+
+                        const groupedJobs = Array.from(jobsOnDateMap.values())
+                        const totalJobsCount = groupedJobs.length
+                        const totalStepsCount = groupedJobs.reduce((sum, g) => sum + g.steps.length, 0)
+
+                        return (
+                            <div 
+                                key={dateStr}
+                                className={`w-[270px] shrink-0 flex flex-col rounded-lg border transition-all overflow-hidden bg-[var(--bg-surface)] ${
+                                    isToday 
+                                        ? 'border-[var(--accent)] shadow-sm' 
+                                        : isWeekend 
+                                            ? 'border-[var(--border-default)] bg-[var(--bg-surface-2)]/30' 
+                                            : 'border-[var(--border-default)]'
+                                }`}
+                            >
+                                {/* Column Header: Date + Count */}
+                                <div className={`p-2.5 flex items-center justify-between border-b ${
+                                    isToday ? 'bg-[var(--tint-teal-bg)] border-[var(--accent)]/30' : 'bg-[var(--bg-surface-2)]/70 border-[var(--border-default)]'
+                                }`}>
+                                    <div className="flex items-center gap-1.5">
+                                        <span className={`font-mono font-bold text-[15px] ${isToday ? 'text-[var(--accent)]' : 'text-[var(--text-primary)]'}`}>
+                                            {format(parsedDate, 'MM/dd')}
+                                        </span>
+                                        <span className={`text-[11px] font-bold ${isWeekend ? 'text-red-500' : 'text-[var(--text-muted)]'}`}>
+                                            ({tDays(dayIndex)})
+                                        </span>
+                                        {isToday && (
+                                            <span className="px-1.5 py-0.2 rounded bg-[var(--accent)] text-white text-[9px] font-bold uppercase shadow-xs">
+                                                {t('today')}
+                                            </span>
+                                        )}
                                     </div>
-                                    <div className={`text-[10px] font-semibold ${isWeekend ? 'text-red-500' : 'text-[var(--text-muted)]'}`}>
-                                        ({tDays(dayIndex)})
-                                    </div>
-                                    {isToday && (
-                                        <span className="mt-0.5 px-1.5 py-0.5 rounded bg-[var(--accent)] text-white text-[9px] font-bold uppercase shadow-xs">
-                                            {t('today')}
+
+                                    {totalJobsCount > 0 && (
+                                        <span className="text-[10px] font-bold font-mono px-1.5 py-0.5 rounded bg-[var(--bg-surface)] text-[var(--text-secondary)] border border-[var(--border-default)]">
+                                            {totalJobsCount} 案件 ({totalStepsCount} 項目)
                                         </span>
                                     )}
                                 </div>
-                            )
-                        })}
-                    </div>
 
-                    {/* BODY ROWS: Machines */}
-                    {machineRows.map(mach => (
-                        <div key={mach.id} className="flex border-b border-[var(--border-default)] min-h-[90px] bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] transition-colors">
-                            {/* Left Sticky Cell: Machine Name */}
-                            <div className="w-48 shrink-0 border-r border-[var(--border-default)] p-3 sticky left-0 z-10 bg-[var(--bg-surface)] shadow-[2px_0_5px_-2px_rgba(0,0,0,0.04)] flex flex-col justify-center">
-                                <div className="font-bold text-[13px] text-[var(--text-primary)] font-mono">
-                                    {mach.code}
-                                </div>
-                                <div className="text-[11px] text-[var(--text-muted)] mt-1 break-words whitespace-normal">
-                                    {mach.name}
+                                {/* Column Content: Stack of Grouped Job Cards */}
+                                <div className="p-2 flex flex-col gap-2 overflow-y-auto flex-1 max-h-[calc(100vh-230px)]">
+                                    {groupedJobs.map(({ job, steps }) => (
+                                        <ToolingGroupedJobCard 
+                                            key={job.job_id}
+                                            job={job}
+                                            steps={steps}
+                                            empMap={empMap}
+                                            machMap={machMap}
+                                            onOpenJob={setSelectedJobForDrawer}
+                                            onEditStep={(st, j) => setSelectedStepForEdit({ step: st, job: j })}
+                                            onQuickLog={(j, st) => setSelectedJobForWorklog({ job: j, step: st })}
+                                        />
+                                    ))}
+
+                                    {groupedJobs.length === 0 && (
+                                        <div className="h-36 flex flex-col items-center justify-center text-[var(--text-muted)] text-[11px] italic opacity-40">
+                                            <span>— {t('noTasks')} —</span>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
-
-                            {/* Cells for each Date */}
-                            {dateList.map((dateStr) => {
-                                // Group steps by Job ID for this (machine, date)
-                                const groupedMap = new Map<string, { job: JobForGantt, steps: JobStepRow[] }>()
-
-                                filteredJobs.forEach(job => {
-                                    (job.job_steps || []).forEach(step => {
-                                        const matchMachine = mach.type === 'CNC' 
-                                            ? step.machine_id === mach.id 
-                                            : mach.type === 'MANUAL'
-                                                ? (!step.machine_id || step.machining_location?.includes('社内') || step.step_name?.includes('ミガキ') || step.step_name?.includes('仕上') || step.step_name?.includes('ネル'))
-                                                : (step.machining_location?.includes('外注') || step.machining_location?.includes('協力'))
-
-                                        if (matchMachine && isStepOnDate(step, dateStr, job)) {
-                                            if (!groupedMap.has(job.job_id)) {
-                                                groupedMap.set(job.job_id, { job, steps: [] })
-                                            }
-                                            groupedMap.get(job.job_id)!.steps.push(step)
-                                        }
-                                    })
-                                })
-
-                                const groupedJobs = Array.from(groupedMap.values())
-                                const totalStepsCount = groupedJobs.reduce((sum, g) => sum + g.steps.length, 0)
-                                const totalHours = groupedJobs.reduce((sum, g) => {
-                                    return sum + g.steps.reduce((sSum, st) => sSum + (Number(st.planned_hours) || Number(st.estimated_hours) || 0), 0)
-                                }, 0)
-                                const isOverloaded = totalHours > 8.5
-                                const isToday = isSameDay(parseISO(dateStr), new Date())
-
-                                return (
-                                    <div 
-                                        key={`${mach.id}-${dateStr}`}
-                                        className={`w-[180px] shrink-0 border-r border-[var(--border-default)] p-1.5 flex flex-col gap-1.5 relative group hover:bg-[var(--bg-surface-hover)] transition-colors ${
-                                            isToday ? 'bg-[var(--tint-teal-bg)]/20' : ''
-                                        }`}
-                                    >
-                                        {/* Total load header */}
-                                        {groupedJobs.length > 0 && (
-                                            <div className="flex justify-between items-center px-1 pb-1 border-b border-[var(--border-default)] text-[10px] text-[var(--text-muted)]">
-                                                <span className="font-semibold">{groupedJobs.length} 案件 ({totalStepsCount} 項目)</span>
-                                                <span className={`font-mono font-bold px-1 rounded ${isOverloaded ? 'bg-red-100 text-red-700 font-extrabold border border-red-200' : 'bg-[var(--bg-surface-2)] text-[var(--text-secondary)]'}`}>
-                                                    Σ {totalHours.toFixed(1)}h {isOverloaded ? '⚠️' : ''}
-                                                </span>
-                                            </div>
-                                        )}
-
-                                        {/* Tree / Grouped Job Cards */}
-                                        <div className="flex flex-col gap-2 flex-1">
-                                            {groupedJobs.map(({ job, steps }) => (
-                                                <ToolingGroupedJobCard 
-                                                    key={job.job_id}
-                                                    job={job}
-                                                    steps={steps}
-                                                    empMap={empMap}
-                                                    machMap={machMap}
-                                                    onOpenJob={setSelectedJobForDrawer}
-                                                    onEditStep={(st, j) => setSelectedStepForEdit({ step: st, job: j })}
-                                                    onQuickLog={(j, st) => setSelectedJobForWorklog({ job: j, step: st })}
-                                                />
-                                            ))}
-                                        </div>
-                                    </div>
-                                )
-                            })}
-                        </div>
-                    ))}
+                        )
+                    })}
                 </div>
             </div>
 

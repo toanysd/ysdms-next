@@ -164,36 +164,6 @@ export default function ToolingScheduleToolbar({
 
                 {/* View Switcher: Gantt vs Excel Grid */}
                 <div className="flex items-center gap-2">
-                    {/* If in Grid View: Perspective Switcher */}
-                    {activeView === 'grid' && (
-                        <div className="flex items-center bg-[var(--bg-surface-2)] rounded p-0.5 border border-[var(--border-default)] mr-2">
-                            <button
-                                onClick={() => updateUrl({ perspective: 'machine' })}
-                                className={`flex items-center gap-1 px-2.5 py-1 rounded-[3px] text-[11px] font-bold transition-all ${
-                                    perspective === 'machine'
-                                        ? 'bg-[var(--accent)] text-white shadow-xs'
-                                        : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
-                                }`}
-                                title={t('byMachine')}
-                            >
-                                <Cpu size={13} />
-                                <span>{t('byMachine')}</span>
-                            </button>
-                            <button
-                                onClick={() => updateUrl({ perspective: 'job' })}
-                                className={`flex items-center gap-1 px-2.5 py-1 rounded-[3px] text-[11px] font-bold transition-all ${
-                                    perspective === 'job'
-                                        ? 'bg-[var(--accent)] text-white shadow-xs'
-                                        : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
-                                }`}
-                                title={t('byJob')}
-                            >
-                                <Layers size={13} />
-                                <span>{t('byJob')}</span>
-                            </button>
-                        </div>
-                    )}
-
                     {/* View Switcher Tabs */}
                     <div className="flex items-center bg-[var(--bg-surface-2)] rounded p-0.5 border border-[var(--border-default)]">
                         <button
