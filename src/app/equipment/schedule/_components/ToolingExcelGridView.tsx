@@ -4,7 +4,7 @@ import React, { useState, useMemo } from 'react'
 import type { JobForGantt, JobStepRow } from '@/app/actions/mold-job'
 import { format, parseISO, addDays, isSameDay } from 'date-fns'
 import { useTranslations } from 'next-intl'
-import ToolingJobCard from './ToolingJobCard'
+import ToolingGroupedJobCard from './ToolingGroupedJobCard'
 import { JobQuickViewDrawer } from '@/components/equipment/JobQuickViewDrawer'
 import { EditStepModal } from '@/app/equipment/jobs/[id]/tabs/EditStepModal'
 import { DailyWorklogQuickModal } from '@/components/worklogs/DailyWorklogQuickModal'
@@ -91,7 +91,7 @@ export default function ToolingExcelGridView({
         ]
     }, [machines, t])
 
-    // Check if step falls on date: ONLY MATCH EXACT DEADLINE (KỲ HẠN)
+    // Check if step falls on date: STRICT DEADLINE MATCH
     const isStepOnDate = (step: JobStepRow, dateStr: string, job: JobForGantt) => {
         // 1. Step deadline matches this date
         if (step.deadline) {
@@ -131,7 +131,7 @@ export default function ToolingExcelGridView({
                             return (
                                 <div 
                                     key={dateStr}
-                                    className={`w-[160px] shrink-0 border-r border-[var(--border-default)] p-1.5 flex flex-col items-center justify-center ${
+                                    className={`w-[180px] shrink-0 border-r border-[var(--border-default)] p-1.5 flex flex-col items-center justify-center ${
                                         isToday ? 'bg-[var(--tint-teal-bg)]' : isWeekend ? 'bg-[var(--bg-surface-2)]' : 'bg-[var(--bg-surface-hover)]'
                                     }`}
                                 >
@@ -166,8 +166,9 @@ export default function ToolingExcelGridView({
 
                             {/* Cells for each Date */}
                             {dateList.map((dateStr) => {
-                                // Find steps for this mach + date
-                                const matchingItems: { job: JobForGantt, step: JobStepRow }[] = []
+                                // Group steps by Job ID for this (machine, date)
+                                const groupedMap = new Map<string, { job: JobForGantt, steps: JobStepRow[] }>()
+
                                 filteredJobs.forEach(job => {
                                     (job.job_steps || []).forEach(step => {
                                         const matchMachine = mach.type === 'CNC' 
@@ -177,41 +178,48 @@ export default function ToolingExcelGridView({
                                                 : (step.machining_location?.includes('外注') || step.machining_location?.includes('協力'))
 
                                         if (matchMachine && isStepOnDate(step, dateStr, job)) {
-                                            matchingItems.push({ job, step })
+                                            if (!groupedMap.has(job.job_id)) {
+                                                groupedMap.set(job.job_id, { job, steps: [] })
+                                            }
+                                            groupedMap.get(job.job_id)!.steps.push(step)
                                         }
                                     })
                                 })
 
-                                const totalHours = matchingItems.reduce((sum, item) => sum + (Number(item.step.planned_hours) || Number(item.step.estimated_hours) || 0), 0)
+                                const groupedJobs = Array.from(groupedMap.values())
+                                const totalStepsCount = groupedJobs.reduce((sum, g) => sum + g.steps.length, 0)
+                                const totalHours = groupedJobs.reduce((sum, g) => {
+                                    return sum + g.steps.reduce((sSum, st) => sSum + (Number(st.planned_hours) || Number(st.estimated_hours) || 0), 0)
+                                }, 0)
                                 const isOverloaded = totalHours > 8.5
                                 const isToday = isSameDay(parseISO(dateStr), new Date())
 
                                 return (
                                     <div 
                                         key={`${mach.id}-${dateStr}`}
-                                        className={`w-[160px] shrink-0 border-r border-[var(--border-default)] p-1.5 flex flex-col gap-1.5 relative group hover:bg-[var(--bg-surface-hover)] transition-colors ${
+                                        className={`w-[180px] shrink-0 border-r border-[var(--border-default)] p-1.5 flex flex-col gap-1.5 relative group hover:bg-[var(--bg-surface-hover)] transition-colors ${
                                             isToday ? 'bg-[var(--tint-teal-bg)]/20' : ''
                                         }`}
                                     >
                                         {/* Total load header */}
-                                        {matchingItems.length > 0 && (
+                                        {groupedJobs.length > 0 && (
                                             <div className="flex justify-between items-center px-1 pb-1 border-b border-[var(--border-default)] text-[10px] text-[var(--text-muted)]">
-                                                <span className="font-semibold">{matchingItems.length} 件</span>
+                                                <span className="font-semibold">{groupedJobs.length} 案件 ({totalStepsCount} 項目)</span>
                                                 <span className={`font-mono font-bold px-1 rounded ${isOverloaded ? 'bg-red-100 text-red-700 font-extrabold border border-red-200' : 'bg-[var(--bg-surface-2)] text-[var(--text-secondary)]'}`}>
                                                     Σ {totalHours.toFixed(1)}h {isOverloaded ? '⚠️' : ''}
                                                 </span>
                                             </div>
                                         )}
 
-                                        {/* Task Cards */}
-                                        <div className="flex flex-col gap-1.5 flex-1">
-                                            {matchingItems.map(({ job, step }) => (
-                                                <ToolingJobCard 
-                                                    key={`${job.job_id}-${step.step_id}`}
+                                        {/* Tree / Grouped Job Cards */}
+                                        <div className="flex flex-col gap-2 flex-1">
+                                            {groupedJobs.map(({ job, steps }) => (
+                                                <ToolingGroupedJobCard 
+                                                    key={job.job_id}
                                                     job={job}
-                                                    step={step}
-                                                    empName={empMap.get(step.assigned_to || '') || empMap.get((job as any).responsible_id || '')}
-                                                    machName={mach.name}
+                                                    steps={steps}
+                                                    empMap={empMap}
+                                                    machMap={machMap}
                                                     onOpenJob={setSelectedJobForDrawer}
                                                     onEditStep={(st, j) => setSelectedStepForEdit({ step: st, job: j })}
                                                     onQuickLog={(j, st) => setSelectedJobForWorklog({ job: j, step: st })}
