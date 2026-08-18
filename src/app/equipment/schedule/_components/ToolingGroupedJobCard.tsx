@@ -3,7 +3,7 @@
 import React, { useState } from 'react'
 import type { JobForGantt, JobStepRow } from '@/app/actions/mold-job'
 import { format } from 'date-fns'
-import { ChevronDown, ChevronRight, Layers, Clock, User, AlertCircle } from 'lucide-react'
+import { ChevronDown, ChevronRight, CheckCircle2, Clock, User, AlertCircle } from 'lucide-react'
 
 interface ToolingGroupedJobCardProps {
     job: JobForGantt
@@ -31,7 +31,23 @@ function resolveTrack(step: JobStepRow): string {
     return 'MOLD'
 }
 
-function getDelayBadge(deadlineStr: string | null | undefined, isCompleted: boolean) {
+function resolveStepStatus(step: JobStepRow): { label: string, badgeClass: string } {
+    const status = step.step_status || ''
+    const code = step.processing_statuses?.status_code || ''
+
+    if (status === 'COMPLETED' || code.includes('完了')) {
+        return { label: '完了', badgeClass: 'bg-[var(--status-success-bg, #e6f4ea)] text-[var(--status-success)] border border-[var(--status-success)]/30 font-bold' }
+    }
+    if (status === 'IN_PROGRESS' || code.includes('進行') || (step.work_logs && step.work_logs.length > 0)) {
+        return { label: '進行中', badgeClass: 'bg-[var(--tint-amber-bg)] text-[var(--status-warning)] border border-[var(--status-warning)]/40 font-bold' }
+    }
+    if (status === 'CANCELLED' || code.includes('中止')) {
+        return { label: '中止', badgeClass: 'bg-red-100 text-red-700 border border-red-200' }
+    }
+    return { label: '未着手', badgeClass: 'bg-[var(--bg-surface-2)] text-[var(--text-muted)] border border-[var(--border-default)]' }
+}
+
+function getDeadlineBadge(deadlineStr: string | null | undefined, isCompleted: boolean) {
     if (!deadlineStr) return null
     const deadline = new Date(deadlineStr)
     deadline.setHours(0, 0, 0, 0)
@@ -41,16 +57,16 @@ function getDelayBadge(deadlineStr: string | null | undefined, isCompleted: bool
     today.setHours(0, 0, 0, 0)
 
     if (isCompleted) {
-        return { label: format(deadline, 'MM/dd'), badgeClass: 'badge badge--success text-[10px]' }
+        return { label: format(deadline, 'MM/dd'), badgeClass: 'badge badge--success text-[9px]' }
     }
 
     const diffDays = Math.ceil((deadline.getTime() - today.getTime()) / (1000 * 3600 * 24))
     if (diffDays < 0) {
-        return { label: `! ${format(deadline, 'MM/dd')}`, badgeClass: 'badge badge--error font-bold text-[10px] animate-pulse' }
+        return { label: `! ${format(deadline, 'MM/dd')}`, badgeClass: 'badge badge--error font-bold text-[9px] animate-pulse' }
     } else if (diffDays <= 2) {
-        return { label: format(deadline, 'MM/dd'), badgeClass: 'badge badge--warning font-bold text-[10px]' }
+        return { label: format(deadline, 'MM/dd'), badgeClass: 'badge badge--warning font-bold text-[9px]' }
     }
-    return { label: format(deadline, 'MM/dd'), badgeClass: 'badge badge--neutral text-[10px]' }
+    return { label: format(deadline, 'MM/dd'), badgeClass: 'badge badge--neutral text-[9px]' }
 }
 
 export default function ToolingGroupedJobCard({
@@ -67,11 +83,13 @@ export default function ToolingGroupedJobCard({
     const isJobCompleted = job.job_status === 'COMPLETED'
     const isJobInProgress = job.job_status === 'IN_PROGRESS'
 
-    const deadline = job.mold_deadline || job.deadline
-    const delayBadge = getDelayBadge(deadline, isJobCompleted)
+    const jobDeadline = job.mold_deadline || job.deadline
+    const jobDelayBadge = getDeadlineBadge(jobDeadline, isJobCompleted)
 
     const productCode = job.products?.product_code || job.job_code || 'JOB'
-    const totalHours = steps.reduce((sum, s) => sum + (Number(s.planned_hours) || Number(s.estimated_hours) || 0), 0)
+
+    // Total Hours
+    const totalPlannedHours = steps.reduce((sum, s) => sum + (Number(s.planned_hours) || Number(s.estimated_hours) || 0), 0)
     const totalActualHours = steps.reduce((sum, s) => {
         const logSum = (s.work_logs || []).reduce((wSum, w) => wSum + (Number(w.hours_spent) || 0), 0)
         return sum + (s.actual_hours || logSum || 0)
@@ -79,9 +97,9 @@ export default function ToolingGroupedJobCard({
 
     return (
         <div 
-            className={`rounded-[5px] border transition-all shadow-xs hover:shadow-md bg-[var(--bg-surface)] ${
+            className={`rounded-[6px] border transition-all shadow-xs hover:shadow-md bg-[var(--bg-surface)] ${
                 isJobCompleted 
-                    ? 'border-[var(--border-default)] opacity-85' 
+                    ? 'border-[var(--border-default)] opacity-90' 
                     : isJobInProgress 
                         ? 'border-l-3 border-l-[var(--accent)] border-[var(--border-default)]' 
                         : 'border-[var(--border-default)]'
@@ -90,7 +108,7 @@ export default function ToolingGroupedJobCard({
             {/* ─── PARENT JOB HEADER ─── */}
             <div 
                 onClick={() => onOpenJob && onOpenJob(job)}
-                className="p-1.5 cursor-pointer hover:bg-[var(--bg-surface-hover)] transition-colors rounded-t-[4px] flex flex-col gap-1 border-b border-[var(--border-default)]/60 bg-[var(--bg-surface-2)]/40"
+                className="p-2 cursor-pointer hover:bg-[var(--bg-surface-hover)] transition-colors rounded-t-[5px] flex flex-col gap-1 border-b border-[var(--border-default)]/70 bg-[var(--bg-surface-2)]/50"
             >
                 {/* Row 1: Code + Badge + Expand toggle */}
                 <div className="flex justify-between items-center gap-1">
@@ -104,56 +122,77 @@ export default function ToolingGroupedJobCard({
                             className="p-0.5 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors rounded hover:bg-[var(--bg-surface-2)] shrink-0"
                             title={isExpanded ? 'Thu gọn' : 'Mở rộng cây'}
                         >
-                            {isExpanded ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
+                            {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
                         </button>
-                        <span className="font-bold text-[12px] font-mono text-[var(--accent)] truncate">
+                        <span className="font-bold text-[13px] font-mono text-[var(--accent)] truncate">
                             {productCode}
                         </span>
                         {steps.length > 1 && (
-                            <span className="px-1 py-0.2 rounded text-[9px] font-bold bg-[var(--bg-surface-2)] text-[var(--text-muted)] border border-[var(--border-default)] shrink-0">
+                            <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-[var(--bg-surface-2)] text-[var(--text-muted)] border border-[var(--border-default)] shrink-0">
                                 {steps.length} 項目
                             </span>
                         )}
                     </div>
 
-                    {delayBadge && (
-                        <span className={`shrink-0 ${delayBadge.badgeClass}`} title="期日">
-                            {delayBadge.label}
+                    {jobDelayBadge && (
+                        <span className={`shrink-0 ${jobDelayBadge.badgeClass}`} title="金型期日">
+                            {jobDelayBadge.label}
                         </span>
                     )}
                 </div>
 
                 {/* Row 2: Job Name / Customer */}
-                <div className="flex justify-between items-center text-[10px] text-[var(--text-muted)] pl-4">
+                <div className="flex justify-between items-center text-[11px] text-[var(--text-muted)] pl-4">
                     <span className="truncate font-medium text-[var(--text-primary)]" title={job.job_name}>
                         {job.job_name}
                     </span>
                     {job.companies?.company_name && (
-                        <span className="truncate max-w-[65px] font-jp opacity-80 shrink-0 ml-1 text-right" title={job.companies.company_name}>
+                        <span className="truncate max-w-[75px] font-jp opacity-85 shrink-0 ml-1 text-right text-[10px] bg-[var(--bg-surface)] px-1 rounded border border-[var(--border-default)]/60" title={job.companies.company_name}>
                             {job.companies.company_code || job.companies.company_name}
                         </span>
                     )}
                 </div>
 
-                {/* Total Hours summary if > 0 */}
-                {totalHours > 0 && (
-                    <div className="flex justify-end items-center text-[9px] font-mono text-[var(--text-secondary)] pl-4">
-                        <span>計: {totalActualHours > 0 ? `${totalActualHours.toFixed(1)}/` : ''}{totalHours.toFixed(1)}h</span>
-                    </div>
-                )}
+                {/* Row 3: Total Machining Hours Summary (Theo Nhật Ký Thực Tế) */}
+                <div className="flex justify-between items-center text-[10px] font-mono pl-4 pt-0.5 border-t border-[var(--border-default)]/40 mt-0.5">
+                    <span className="text-[var(--text-muted)]">
+                        状態: <span className="font-semibold text-[var(--text-primary)]">{isJobCompleted ? '完了' : isJobInProgress ? '進行中' : '新規'}</span>
+                    </span>
+                    <span className="font-bold">
+                        {totalActualHours > 0 ? (
+                            <span className="text-[var(--status-success)]">
+                                実績: {totalActualHours.toFixed(1)}h{totalPlannedHours > 0 ? ` / 予: ${totalPlannedHours.toFixed(1)}h` : ''}
+                            </span>
+                        ) : totalPlannedHours > 0 ? (
+                            <span className="text-[var(--text-secondary)]">
+                                予: {totalPlannedHours.toFixed(1)}h
+                            </span>
+                        ) : (
+                            <span className="text-[var(--text-muted)] opacity-60">工数未定</span>
+                        )}
+                    </span>
+                </div>
             </div>
 
             {/* ─── TREE / SUB-ITEMS UNDERNEATH ─── */}
             {isExpanded && (
-                <div className="p-1 flex flex-col gap-1 bg-[var(--bg-surface)] rounded-b-[4px]">
-                    {steps.map((step, idx) => {
+                <div className="p-1.5 flex flex-col gap-1.5 bg-[var(--bg-surface)] rounded-b-[5px]">
+                    {steps.map((step) => {
                         const track = resolveTrack(step)
                         const trackMeta = TRACK_CONFIG[track] || TRACK_CONFIG.MOLD
                         const empName = empMap.get(step.assigned_to || '') || empMap.get((job as any).responsible_id || '')
                         const machName = machMap.get(step.machine_id || '')
-                        const stepHours = step.planned_hours || step.estimated_hours || 0
-                        const isStepDone = step.step_status === 'COMPLETED' || step.processing_statuses?.status_code?.includes('完了')
-                        const isStepActive = step.step_status === 'IN_PROGRESS' || step.processing_statuses?.status_code?.includes('進行中')
+                        
+                        const stepPlannedHours = Number(step.planned_hours) || Number(step.estimated_hours) || 0
+                        const stepLogHours = (step.work_logs || []).reduce((sum, w) => sum + (Number(w.hours_spent) || 0), 0)
+                        const stepActualHours = step.actual_hours || stepLogHours || 0
+
+                        const statusMeta = resolveStepStatus(step)
+                        const isStepDone = statusMeta.label === '完了'
+                        const isStepActive = statusMeta.label === '進行中'
+
+                        const stepDeadline = step.deadline || job.mold_deadline
+                        const stepDeadlineBadge = getDeadlineBadge(stepDeadline, isStepDone)
 
                         return (
                             <div
@@ -166,16 +205,16 @@ export default function ToolingGroupedJobCard({
                                     e.stopPropagation()
                                     if (onQuickLog) onQuickLog(job, step)
                                 }}
-                                className={`group/step relative rounded-[3px] p-1 border transition-all cursor-pointer flex flex-col gap-0.5 text-[10px] ${
+                                className={`group/step relative rounded-[4px] p-1.5 border transition-all cursor-pointer flex flex-col gap-1 text-[11px] ${
                                     isStepDone 
-                                        ? 'bg-[var(--bg-surface-2)]/60 border-[var(--border-default)] opacity-75' 
+                                        ? 'bg-[var(--bg-surface-2)]/60 border-[var(--border-default)] opacity-80 hover:opacity-100' 
                                         : isStepActive 
-                                            ? 'bg-[var(--tint-teal-bg)]/30 border border-[var(--accent)]/40' 
+                                            ? 'bg-[var(--tint-teal-bg)]/30 border border-[var(--accent)]/50 shadow-xs' 
                                             : 'bg-[var(--bg-surface)] border-[var(--border-default)] hover:border-[var(--accent)] hover:bg-[var(--bg-surface-hover)]'
                                 }`}
-                                title={`[${step.step_name}] ${stepHours > 0 ? `${stepHours}h` : ''}\nダブルクリックで日報入力`}
+                                title={`[${step.step_name}]\nダブルクリックで日報入力`}
                             >
-                                {/* Step Branch Row: Track Badge + Step Name */}
+                                {/* Row 1: Track Badge + Step Name + Status + Deadline */}
                                 <div className="flex items-center justify-between gap-1 min-w-0">
                                     <div className="flex items-center gap-1 min-w-0">
                                         <span 
@@ -184,32 +223,58 @@ export default function ToolingGroupedJobCard({
                                         >
                                             {trackMeta.label}
                                         </span>
-                                        <span className="font-medium text-[var(--text-primary)] truncate group-hover/step:text-[var(--accent)]">
+                                        <span className="font-semibold text-[var(--text-primary)] truncate group-hover/step:text-[var(--accent)]">
                                             {step.step_name}
                                         </span>
                                     </div>
-                                    {stepHours > 0 && (
-                                        <span className="font-mono text-[9px] text-[var(--text-muted)] shrink-0 ml-1">
-                                            {stepHours}h
-                                        </span>
-                                    )}
-                                </div>
 
-                                {/* Step Sub-row: Assignee / Machine if available */}
-                                {(empName || machName) && (
-                                    <div className="flex items-center justify-between text-[9px] text-[var(--text-muted)] pt-0.5 border-t border-[var(--border-default)]/40 mt-0.5">
-                                        {empName ? (
-                                            <span className="truncate flex items-center gap-0.5">
-                                                👤 {empName}
-                                            </span>
-                                        ) : <span />}
-                                        {machName && (
-                                            <span className="truncate font-mono opacity-80 text-right">
-                                                ⚙️ {machName}
+                                    <div className="flex items-center gap-1 shrink-0">
+                                        {/* Status Badge */}
+                                        <span className={`px-1 py-0.2 rounded text-[8px] font-bold ${statusMeta.badgeClass}`}>
+                                            {statusMeta.label}
+                                        </span>
+                                        {/* Step Deadline Badge */}
+                                        {stepDeadlineBadge && (
+                                            <span className={`px-1 py-0.2 rounded font-mono font-bold text-[9px] ${stepDeadlineBadge.badgeClass}`} title="期日">
+                                                {stepDeadlineBadge.label}
                                             </span>
                                         )}
                                     </div>
-                                )}
+                                </div>
+
+                                {/* Row 2: Machining Hours (Nhật Ký Thực Tế) + Assignee / Machine */}
+                                <div className="flex items-center justify-between text-[10px] text-[var(--text-muted)] pt-1 border-t border-[var(--border-default)]/40 mt-0.5 font-mono">
+                                    {/* Left: Assignee & Machine */}
+                                    <div className="flex items-center gap-1 truncate max-w-[130px]">
+                                        {empName ? (
+                                            <span className="truncate flex items-center gap-0.5 text-[var(--text-secondary)] font-sans">
+                                                👤 {empName}
+                                            </span>
+                                        ) : (
+                                            <span className="opacity-40 italic">未割当</span>
+                                        )}
+                                        {machName && (
+                                            <span className="truncate opacity-75 font-sans">
+                                                • {machName}
+                                            </span>
+                                        )}
+                                    </div>
+
+                                    {/* Right: Actual Logged Hours vs Planned Hours */}
+                                    <div className="flex items-center gap-1 shrink-0">
+                                        {stepActualHours > 0 ? (
+                                            <span className="font-bold text-[var(--status-success)] bg-[var(--tint-teal-bg)] px-1 rounded border border-[var(--status-success)]/30">
+                                                実績: {stepActualHours.toFixed(1)}h{stepPlannedHours > 0 ? ` / 予: ${stepPlannedHours.toFixed(1)}h` : ''}
+                                            </span>
+                                        ) : stepPlannedHours > 0 ? (
+                                            <span className="text-[var(--text-secondary)]">
+                                                予: {stepPlannedHours.toFixed(1)}h
+                                            </span>
+                                        ) : (
+                                            <span className="opacity-40">—</span>
+                                        )}
+                                    </div>
+                                </div>
                             </div>
                         )
                     })}
