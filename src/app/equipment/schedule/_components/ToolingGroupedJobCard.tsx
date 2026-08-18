@@ -210,12 +210,8 @@ export default function ToolingGroupedJobCard({
                                     e.stopPropagation()
                                     if (onQuickLog) onQuickLog(job, step)
                                 }}
-                                className={`group/step rounded-[5px] px-2 py-1.5 border transition-all cursor-pointer flex items-center justify-between gap-1.5 text-[11px] shadow-2xs ${
-                                    isStepDone 
-                                        ? 'bg-white border-[var(--border-default)] opacity-75 hover:opacity-100 hover:border-[var(--status-success)]' 
-                                        : isStepActive 
-                                            ? 'bg-white border-[var(--accent)] shadow-xs hover:border-[var(--accent-hover)] ring-1 ring-[var(--accent)]/20' 
-                                            : 'bg-white border-[var(--border-default)] hover:border-[var(--accent)] hover:bg-[var(--bg-surface-hover)]'
+                                className={`group/step rounded-[5px] px-2 py-1.5 border transition-all cursor-pointer flex items-center justify-between gap-1.5 text-[11px] bg-white border-[var(--border-default)] hover:border-[var(--accent)] hover:shadow-xs ${
+                                    isStepDone ? 'opacity-75 hover:opacity-100' : ''
                                 }`}
                                 title={`[${step.step_name}]\nダブルクリックで日報入力`}
                             >
