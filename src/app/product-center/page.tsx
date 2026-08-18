@@ -128,8 +128,8 @@ export default function ProductCenterIndexPage() {
   const [companiesList, setCompaniesList] = useState<Array<{ company_id: string; company_code: string; company_name: string }>>([])
   const [plasticTypesList, setPlasticTypesList] = useState<string[]>([])
 
-  const [sortColumn, setSortColumn] = useState<SortColumn | null>('created_at')
-  const [sortDir, setSortDir] = useState<SortDir>('desc')
+  const [sortColumn, setSortColumn] = useState<SortColumn | null>('first_shipment_date')
+  const [sortDir, setSortDir] = useState<SortDir>('asc')
 
   const [columnWidths, setColumnWidths] = useState<Record<string, number>>(() => {
     const initial: Record<string, number> = {}
