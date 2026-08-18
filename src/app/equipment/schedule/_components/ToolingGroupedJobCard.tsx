@@ -113,15 +113,15 @@ export default function ToolingGroupedJobCard({
                         : 'border-[var(--border-default)] border-l-[4px] border-l-slate-400'
             }`}
         >
-            {/* ─── PARENT JOB HEADER (VISUAL ANCHOR) ─── */}
+            {/* ─── PARENT JOB HEADER (VISUAL ANCHOR - DEEPER TINT) ─── */}
             <div 
                 onClick={() => onOpenJob && onOpenJob(job)}
-                className={`p-2.5 cursor-pointer hover:bg-slate-100/80 transition-colors flex flex-col gap-1.5 border-b border-[var(--border-default)] ${
+                className={`p-2.5 cursor-pointer hover:brightness-95 transition-all flex flex-col gap-1.5 border-b ${
                     isJobInProgress 
-                        ? 'bg-[var(--tint-teal-bg)]/60' 
+                        ? 'bg-[#E6F4EA] border-[#B7E1CD]' 
                         : isJobCompleted 
-                            ? 'bg-slate-100/50' 
-                            : 'bg-slate-50'
+                            ? 'bg-[#E2E8F0] border-[#CBD5E1]' 
+                            : 'bg-[#E9EEF4] border-[#CBD5E1]'
                 }`}
             >
                 {/* Row 1: Code + Badge + Expand toggle */}
