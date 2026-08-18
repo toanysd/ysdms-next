@@ -6,9 +6,14 @@ import { format, parseISO, addDays, isSameDay } from 'date-fns'
 import { useTranslations } from 'next-intl'
 import { useRouter } from 'next/navigation'
 import ToolingGroupedJobCard from './ToolingGroupedJobCard'
+import ToolingMonthJobPill from './ToolingMonthJobPill'
 import { JobQuickViewDrawer } from '@/components/equipment/JobQuickViewDrawer'
 import { EditStepModal } from '@/app/equipment/jobs/[id]/tabs/EditStepModal'
 import { DailyWorklogQuickModal } from '@/components/worklogs/DailyWorklogQuickModal'
+
+import { TimeframeMode } from './ToolingScheduleToolbar'
+
+const DAYS_JA = ['日', '月', '火', '水', '木', '金', '土']
 
 interface ToolingExcelGridViewProps {
     jobs: JobForGantt[]
@@ -17,6 +22,7 @@ interface ToolingExcelGridViewProps {
     employees: any[]
     startDateStr: string
     daysCount?: number
+    timeframe?: TimeframeMode
     perspective?: string
     trackFilter?: 'ALL' | 'MOLD' | 'PLUG' | 'CUTTER'
     searchQuery?: string
@@ -29,6 +35,7 @@ export default function ToolingExcelGridView({
     employees = [],
     startDateStr,
     daysCount = 14,
+    timeframe = 'week2',
     trackFilter = 'ALL',
     searchQuery = ''
 }: ToolingExcelGridViewProps) {
@@ -45,7 +52,7 @@ export default function ToolingExcelGridView({
     // Modal / Drawer states
     const [selectedJobForDrawer, setSelectedJobForDrawer] = useState<JobForGantt | null>(null)
     const [selectedStepForEdit, setSelectedStepForEdit] = useState<{ step: JobStepRow, job: JobForGantt } | null>(null)
-    const [selectedJobForWorklog, setSelectedJobForWorklog] = useState<{ job: JobForGantt, step?: JobStepRow } | null>(null)
+    const [selectedJobForWorklog, setSelectedJobForWorklog] = useState<{ job: JobForGantt, step?: JobStepRow, date?: string } | null>(null)
 
     // Lookup maps
     const empMap = useMemo(() => {
@@ -79,15 +86,17 @@ export default function ToolingExcelGridView({
         })
     }, [liveJobs, trackFilter, searchQuery])
 
-    // Generate date columns
+    // Generate date list based on timeframe
     const start = parseISO(startDateStr)
+    const activeDaysCount = timeframe === 'week1' ? 7 : timeframe === 'week2' ? 14 : Math.max(daysCount, 28)
+    
     const dateList: string[] = useMemo(() => {
         const list: string[] = []
-        for (let i = 0; i < daysCount; i++) {
+        for (let i = 0; i < activeDaysCount; i++) {
             list.push(format(addDays(start, i), 'yyyy-MM-dd'))
         }
         return list
-    }, [start, daysCount])
+    }, [start, activeDaysCount])
 
     // Check if step falls on date: STRICT DEADLINE MATCH & ONLY INSTRUCTED/ACTIVE STEPS
     const isStepOnDate = (step: JobStepRow, dateStr: string, job: JobForGantt) => {
@@ -112,93 +121,194 @@ export default function ToolingExcelGridView({
         return false
     }
 
-    return (
-        <div className="w-full h-full flex flex-col overflow-hidden bg-[var(--bg-surface-2)]">
-            <div className="w-full h-full overflow-x-auto overflow-y-auto">
-                <div className="flex min-w-max h-full min-h-[500px] bg-[var(--bg-surface)] p-2 gap-2">
-                    {dateList.map((dateStr) => {
-                        const parsedDate = parseISO(dateStr)
-                        const isToday = isSameDay(parsedDate, new Date())
-                        const dayIndex = parsedDate.getDay().toString() as '0'|'1'|'2'|'3'|'4'|'5'|'6'
-                        const isWeekend = dayIndex === '0' || dayIndex === '6'
+    // Group jobs for a specific date
+    const getGroupedJobsForDate = (dateStr: string) => {
+        const dateJobMap = new Map<string, { job: JobForGantt, steps: JobStepRow[] }>()
+        
+        filteredJobs.forEach(job => {
+            const matchingSteps = (job.job_steps || []).filter(step => isStepOnDate(step, dateStr, job))
+            if (matchingSteps.length > 0) {
+                dateJobMap.set(job.job_id, {
+                    job,
+                    steps: matchingSteps
+                })
+            }
+        })
 
-                        // Group all jobs that have deadlines matching this dateStr
-                        const jobsOnDateMap = new Map<string, { job: JobForGantt, steps: JobStepRow[] }>()
+        return Array.from(dateJobMap.values())
+    }
 
-                        filteredJobs.forEach(job => {
-                            const matchingSteps = (job.job_steps || []).filter(step => isStepOnDate(step, dateStr, job))
+    // Render single standard day column (Used in 1-Week and 2-Weeks Views)
+    const renderDayColumn = (dateStr: string, isCompact: boolean = false) => {
+        const parsedDate = parseISO(dateStr)
+        const dayIndex = parsedDate.getDay()
+        const isWeekend = dayIndex === 0 || dayIndex === 6
+        const isToday = isSameDay(parsedDate, new Date())
+        const groupedJobs = getGroupedJobsForDate(dateStr)
+        const totalJobsCount = groupedJobs.length
+        const totalStepsCount = groupedJobs.reduce((sum, g) => sum + g.steps.length, 0)
 
-                            if (matchingSteps.length > 0) {
-                                jobsOnDateMap.set(job.job_id, { job, steps: matchingSteps })
-                            }
-                        })
+        return (
+            <div 
+                key={dateStr}
+                className={`flex flex-col h-full rounded-lg border transition-all overflow-hidden bg-white ${
+                    isToday 
+                        ? 'border-[var(--accent)] shadow-md ring-2 ring-[var(--accent)]/20' 
+                        : isWeekend 
+                            ? 'border-[var(--border-default)] bg-slate-50/40' 
+                            : 'border-[var(--border-default)] shadow-xs'
+                }`}
+            >
+                {/* Column Header: Date + Count */}
+                <div className={`px-2.5 py-2 flex items-center justify-between border-b shrink-0 ${
+                    isToday ? 'bg-[var(--tint-teal-bg)] border-[var(--accent)]/30' : 'bg-slate-100/70 border-[var(--border-default)]'
+                }`}>
+                    <div className="flex items-center gap-1.5 min-w-0">
+                        <span className={`font-mono font-bold text-[14px] ${isToday ? 'text-[var(--accent)]' : 'text-[var(--text-primary)]'}`}>
+                            {format(parsedDate, 'MM/dd')}
+                        </span>
+                        <span className={`text-[11px] font-bold ${isWeekend ? 'text-red-500' : 'text-[var(--text-muted)]'}`}>
+                            ({DAYS_JA[dayIndex]})
+                        </span>
+                        {isToday && (
+                            <span className="px-1.5 py-0.2 rounded bg-[var(--accent)] text-white text-[8.5px] font-bold uppercase shadow-2xs">
+                                {t('today')}
+                            </span>
+                        )}
+                    </div>
 
-                        const groupedJobs = Array.from(jobsOnDateMap.values())
-                        const totalJobsCount = groupedJobs.length
-                        const totalStepsCount = groupedJobs.reduce((sum, g) => sum + g.steps.length, 0)
+                    {totalJobsCount > 0 && (
+                        <span className="text-[9.5px] font-bold font-mono px-1.5 py-0.2 rounded bg-white text-[var(--text-secondary)] border border-[var(--border-default)] shadow-2xs shrink-0">
+                            {totalJobsCount} 案件 {isCompact ? '' : `(${totalStepsCount} 項目)`}
+                        </span>
+                    )}
+                </div>
 
-                        return (
-                            <div 
-                                key={dateStr}
-                                className={`w-[270px] shrink-0 flex flex-col rounded-lg border transition-all overflow-hidden bg-[var(--bg-surface)] ${
-                                    isToday 
-                                        ? 'border-[var(--accent)] shadow-sm' 
-                                        : isWeekend 
-                                            ? 'border-[var(--border-default)] bg-[var(--bg-surface-2)]/30' 
-                                            : 'border-[var(--border-default)]'
-                                }`}
-                            >
-                                {/* Column Header: Date + Count */}
-                                <div className={`p-2.5 flex items-center justify-between border-b ${
-                                    isToday ? 'bg-[var(--tint-teal-bg)] border-[var(--accent)]/30' : 'bg-[var(--bg-surface-2)]/70 border-[var(--border-default)]'
-                                }`}>
-                                    <div className="flex items-center gap-1.5">
-                                        <span className={`font-mono font-bold text-[15px] ${isToday ? 'text-[var(--accent)]' : 'text-[var(--text-primary)]'}`}>
-                                            {format(parsedDate, 'MM/dd')}
-                                        </span>
-                                        <span className={`text-[11px] font-bold ${isWeekend ? 'text-red-500' : 'text-[var(--text-muted)]'}`}>
-                                            ({tDays(dayIndex)})
-                                        </span>
-                                        {isToday && (
-                                            <span className="px-1.5 py-0.2 rounded bg-[var(--accent)] text-white text-[9px] font-bold uppercase shadow-xs">
-                                                {t('today')}
-                                            </span>
-                                        )}
-                                    </div>
+                {/* Column Content: Stack of Grouped Job Cards */}
+                <div className={`p-2 flex flex-col gap-2.5 overflow-y-auto flex-1 bg-slate-50/60 ${isCompact ? 'max-h-full' : ''}`}>
+                    {groupedJobs.map(({ job, steps }) => (
+                        <ToolingGroupedJobCard 
+                            key={job.job_id}
+                            job={job}
+                            steps={steps}
+                            empMap={empMap}
+                            machMap={machMap}
+                            onOpenJob={setSelectedJobForDrawer}
+                            onEditStep={(st, j) => setSelectedStepForEdit({ step: st, job: j })}
+                            onQuickLog={(j, st) => setSelectedJobForWorklog({ job: j, step: st, date: dateStr })}
+                        />
+                    ))}
 
-                                    {totalJobsCount > 0 && (
-                                        <span className="text-[10px] font-bold font-mono px-1.5 py-0.5 rounded bg-[var(--bg-surface)] text-[var(--text-secondary)] border border-[var(--border-default)]">
-                                            {totalJobsCount} 案件 ({totalStepsCount} 項目)
-                                        </span>
-                                    )}
-                                </div>
-
-                                {/* Column Content: Stack of Grouped Job Cards with Clear Visual Separation */}
-                                <div className="p-2 flex flex-col gap-3 overflow-y-auto flex-1 max-h-[calc(100vh-230px)] bg-slate-50/60">
-                                    {groupedJobs.map(({ job, steps }) => (
-                                        <ToolingGroupedJobCard 
-                                            key={job.job_id}
-                                            job={job}
-                                            steps={steps}
-                                            empMap={empMap}
-                                            machMap={machMap}
-                                            onOpenJob={setSelectedJobForDrawer}
-                                            onEditStep={(st, j) => setSelectedStepForEdit({ step: st, job: j })}
-                                            onQuickLog={(j, st) => setSelectedJobForWorklog({ job: j, step: st })}
-                                        />
-                                    ))}
-
-                                    {groupedJobs.length === 0 && (
-                                        <div className="h-36 flex flex-col items-center justify-center text-[var(--text-muted)] text-[11px] italic opacity-40">
-                                            <span>— {t('noTasks')} —</span>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        )
-                    })}
+                    {groupedJobs.length === 0 && (
+                        <div className="flex-1 min-h-[60px] flex flex-col items-center justify-center text-[var(--text-muted)] text-[10.5px] italic opacity-40">
+                            <span>— {t('noTasks')} —</span>
+                        </div>
+                    )}
                 </div>
             </div>
+        )
+    }
+
+    // Render Month Day Cell (Used in Month Calendar Grid View)
+    const renderMonthCell = (dateStr: string) => {
+        const parsedDate = parseISO(dateStr)
+        const dayIndex = parsedDate.getDay()
+        const isWeekend = dayIndex === 0 || dayIndex === 6
+        const isToday = isSameDay(parsedDate, new Date())
+        const groupedJobs = getGroupedJobsForDate(dateStr)
+
+        return (
+            <div
+                key={dateStr}
+                className={`flex flex-col h-full bg-white border border-slate-200 overflow-hidden transition-all hover:bg-slate-50/60 p-1 ${
+                    isToday ? 'bg-emerald-50/30 border-emerald-400 ring-1 ring-emerald-400/30' : isWeekend ? 'bg-slate-50/40' : ''
+                }`}
+            >
+                {/* Cell Header: Date + Badge */}
+                <div className="flex justify-between items-center px-1 pb-1 mb-1 border-b border-slate-100 text-[11px]">
+                    <div className="flex items-center gap-1">
+                        <span className={`font-mono font-bold ${isToday ? 'text-emerald-700 font-extrabold' : isWeekend ? 'text-red-500' : 'text-slate-700'}`}>
+                            {format(parsedDate, 'MM/dd')}
+                        </span>
+                        <span className={`text-[9.5px] ${isWeekend ? 'text-red-400' : 'text-slate-400'}`}>
+                            ({DAYS_JA[dayIndex]})
+                        </span>
+                    </div>
+
+                    {groupedJobs.length > 0 && (
+                        <span className="text-[9px] font-bold font-mono px-1 rounded bg-slate-100 text-slate-600 border border-slate-200">
+                            {groupedJobs.length} 件
+                        </span>
+                    )}
+                </div>
+
+                {/* Cell Body: List of compact Month Job Pills */}
+                <div className="flex flex-col gap-1 overflow-y-auto flex-1">
+                    {groupedJobs.map(({ job, steps }) => (
+                        <React.Fragment key={job.job_id}>
+                            {steps.map(step => (
+                                <ToolingMonthJobPill 
+                                    key={step.step_id}
+                                    job={job}
+                                    step={step}
+                                    onClick={(j, st) => setSelectedStepForEdit({ step: st, job: j })}
+                                    onDoubleClick={(j, st) => setSelectedJobForWorklog({ job: j, step: st, date: dateStr })}
+                                />
+                            ))}
+                        </React.Fragment>
+                    ))}
+
+                    {groupedJobs.length === 0 && (
+                        <div className="h-full flex items-center justify-center text-slate-300 text-[9px] italic">
+                            —
+                        </div>
+                    )}
+                </div>
+            </div>
+        )
+    }
+
+    return (
+        <div className="w-full h-full flex flex-col overflow-hidden bg-[var(--bg-surface-2)]">
+            {/* ─── 1. TIMEFRAME = 1 WEEK: 7 COLUMNS AUTO-FIT VIEWPORT ─── */}
+            {timeframe === 'week1' && (
+                <div className="grid grid-cols-7 gap-2.5 h-full w-full p-2.5 overflow-hidden">
+                    {dateList.slice(0, 7).map(dateStr => renderDayColumn(dateStr, false))}
+                </div>
+            )}
+
+            {/* ─── 2. TIMEFRAME = 2 WEEKS: 2-ROW SPLIT GRID (7 COLS X 2 ROWS) ─── */}
+            {timeframe === 'week2' && (
+                <div className="flex flex-col gap-2.5 h-full w-full p-2.5 overflow-hidden">
+                    {/* Row 1: Week 1 (Days 1-7) */}
+                    <div className="grid grid-cols-7 gap-2 flex-1 min-h-0 overflow-hidden">
+                        {dateList.slice(0, 7).map(dateStr => renderDayColumn(dateStr, true))}
+                    </div>
+                    {/* Row 2: Week 2 (Days 8-14) */}
+                    <div className="grid grid-cols-7 gap-2 flex-1 min-h-0 overflow-hidden">
+                        {dateList.slice(7, 14).map(dateStr => renderDayColumn(dateStr, true))}
+                    </div>
+                </div>
+            )}
+
+            {/* ─── 3. TIMEFRAME = 1 MONTH: STANDARD MONTH CALENDAR GRID (7 COLS X 4-5 ROWS) ─── */}
+            {timeframe === 'month' && (
+                <div className="flex flex-col h-full w-full p-2.5 overflow-hidden">
+                    {/* Month Weekdays Header */}
+                    <div className="grid grid-cols-7 gap-1.5 pb-1.5 shrink-0 text-center font-bold text-[11px] text-slate-600 border-b border-slate-200">
+                        {['月 (Mon)', '火 (Tue)', '水 (Wed)', '木 (Thu)', '金 (Fri)', '土 (Sat)', '日 (Sun)'].map((dayName, idx) => (
+                            <div key={dayName} className={`py-1 rounded bg-slate-100 ${idx >= 5 ? 'text-red-600' : ''}`}>
+                                {dayName}
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* Month Grid Cells */}
+                    <div className="grid grid-cols-7 gap-1.5 flex-1 min-h-0 overflow-y-auto pt-1.5">
+                        {dateList.map(dateStr => renderMonthCell(dateStr))}
+                    </div>
+                </div>
+            )}
 
             {/* Quick View Drawer */}
             {selectedJobForDrawer && (
@@ -224,7 +334,6 @@ export default function ToolingExcelGridView({
                         router.refresh()
                     }}
                     onSaved={() => {
-                        // Refresh server state while keeping modal open for user actions
                         router.refresh()
                     }}
                 />
@@ -236,7 +345,7 @@ export default function ToolingExcelGridView({
                     isOpen={!!selectedJobForWorklog}
                     onClose={() => setSelectedJobForWorklog(null)}
                     initialEmployeeId={selectedJobForWorklog.step?.assigned_to || (selectedJobForWorklog.job as any).responsible_id || undefined}
-                    initialDate={format(new Date(), 'yyyy-MM-dd')}
+                    initialDate={selectedJobForWorklog.date || format(new Date(), 'yyyy-MM-dd')}
                 />
             )}
         </div>

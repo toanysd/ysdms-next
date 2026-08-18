@@ -112,6 +112,7 @@ export default async function ToolingSchedulePage(props: ToolingSchedulePageProp
             employees={employees}
             startDateStr={fromDateFinal}
             daysCount={daysCount}
+            timeframe={timeframe}
             trackFilter={trackFilter}
             searchQuery={query}
           />
