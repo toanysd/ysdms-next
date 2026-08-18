@@ -10,6 +10,9 @@ interface ToolingGroupedJobCardProps {
     steps: JobStepRow[]
     empMap: Map<string, string>
     machMap: Map<string, string>
+    currentColumnDate?: string
+    isExpanded?: boolean
+    onToggleExpand?: () => void
     onOpenJob?: (job: JobForGantt) => void
     onEditStep?: (step: JobStepRow, job: JobForGantt) => void
     onQuickLog?: (job: JobForGantt, step?: JobStepRow) => void
@@ -56,7 +59,7 @@ function resolveStepStatus(step: JobStepRow): { label: string, badgeClass: strin
     return { label: '未着手', badgeClass: 'bg-[var(--bg-surface-2)] text-[var(--text-muted)] border border-[var(--border-default)]' }
 }
 
-function getDeadlineBadge(deadlineStr: string | null | undefined, isCompleted: boolean) {
+function getDeadlineBadge(deadlineStr: string | null | undefined, isCompleted: boolean, currentColumnDate?: string) {
     if (!deadlineStr) return null
     const deadline = new Date(deadlineStr)
     deadline.setHours(0, 0, 0, 0)
@@ -65,17 +68,28 @@ function getDeadlineBadge(deadlineStr: string | null | undefined, isCompleted: b
     const today = new Date()
     today.setHours(0, 0, 0, 0)
 
-    if (isCompleted) {
-        return { label: format(deadline, 'MM/dd'), badgeClass: 'badge badge--success text-[9px]' }
+    const diffDays = Math.ceil((deadline.getTime() - today.getTime()) / (1000 * 3600 * 24))
+    const isOverdue = !isCompleted && diffDays < 0
+
+    // If deadline matches current column date and NOT overdue, suppress badge to save horizontal space
+    if (currentColumnDate) {
+        const colDate = new Date(currentColumnDate)
+        colDate.setHours(0, 0, 0, 0)
+        if (colDate.getTime() === deadline.getTime() && !isOverdue) {
+            return null
+        }
     }
 
-    const diffDays = Math.ceil((deadline.getTime() - today.getTime()) / (1000 * 3600 * 24))
-    if (diffDays < 0) {
-        return { label: `! ${format(deadline, 'MM/dd')}`, badgeClass: 'badge badge--error font-bold text-[9px] animate-pulse' }
-    } else if (diffDays <= 2) {
-        return { label: format(deadline, 'MM/dd'), badgeClass: 'badge badge--warning font-bold text-[9px]' }
+    if (isCompleted) {
+        return { label: format(deadline, 'MM/dd'), badgeClass: 'badge badge--success text-[8.5px]' }
     }
-    return { label: format(deadline, 'MM/dd'), badgeClass: 'badge badge--neutral text-[9px]' }
+
+    if (isOverdue) {
+        return { label: `! ${format(deadline, 'MM/dd')}`, badgeClass: 'badge badge--error font-bold text-[8.5px] animate-pulse' }
+    } else if (diffDays <= 2) {
+        return { label: format(deadline, 'MM/dd'), badgeClass: 'badge badge--warning font-bold text-[8.5px]' }
+    }
+    return { label: format(deadline, 'MM/dd'), badgeClass: 'badge badge--neutral text-[8.5px]' }
 }
 
 export default function ToolingGroupedJobCard({
@@ -83,17 +97,30 @@ export default function ToolingGroupedJobCard({
     steps,
     empMap,
     machMap,
+    currentColumnDate,
+    isExpanded: controlledExpanded,
+    onToggleExpand,
     onOpenJob,
     onEditStep,
     onQuickLog
 }: ToolingGroupedJobCardProps) {
-    const [isExpanded, setIsExpanded] = useState(true)
+    const [localExpanded, setLocalExpanded] = useState(true)
+    const isExpanded = controlledExpanded !== undefined ? controlledExpanded : localExpanded
+
+    const handleToggle = (e: React.MouseEvent) => {
+        e.stopPropagation()
+        if (onToggleExpand) {
+            onToggleExpand()
+        } else {
+            setLocalExpanded(!localExpanded)
+        }
+    }
 
     const isJobCompleted = job.job_status === 'COMPLETED'
     const isJobInProgress = job.job_status === 'IN_PROGRESS'
 
     const jobDeadline = job.mold_deadline || job.deadline
-    const jobDelayBadge = getDeadlineBadge(jobDeadline, isJobCompleted)
+    const jobDelayBadge = getDeadlineBadge(jobDeadline, isJobCompleted, currentColumnDate)
 
     const productCode = job.products?.product_code || job.job_code || 'JOB'
 
@@ -105,7 +132,7 @@ export default function ToolingGroupedJobCard({
 
     return (
         <div 
-            className={`rounded-lg border transition-all shadow-xs hover:shadow-md bg-white overflow-hidden mb-2 ${
+            className={`rounded-lg border transition-all shadow-xs hover:shadow-md bg-white overflow-hidden mb-1.5 ${
                 isJobCompleted 
                     ? 'border-[var(--border-default)] border-l-[4px] border-l-[var(--status-success)] opacity-90' 
                     : isJobInProgress 
@@ -116,7 +143,7 @@ export default function ToolingGroupedJobCard({
             {/* ─── PARENT JOB HEADER (VISUAL ANCHOR - DEEPER TINT) ─── */}
             <div 
                 onClick={() => onOpenJob && onOpenJob(job)}
-                className={`p-2.5 cursor-pointer hover:brightness-95 transition-all flex flex-col gap-1.5 border-b ${
+                className={`p-2 cursor-pointer hover:brightness-95 transition-all flex flex-col gap-1 border-b ${
                     isJobInProgress 
                         ? 'bg-[#E6F4EA] border-[#B7E1CD]' 
                         : isJobCompleted 
@@ -126,23 +153,23 @@ export default function ToolingGroupedJobCard({
             >
                 {/* Row 1: Code + Badge + Expand toggle */}
                 <div className="flex justify-between items-center gap-1">
-                    <div className="flex items-center gap-1.5 min-w-0">
+                    <div className="flex items-center gap-1 min-w-0">
                         <button
                             type="button"
-                            onClick={(e) => {
-                                e.stopPropagation()
-                                setIsExpanded(!isExpanded)
-                            }}
+                            onClick={handleToggle}
                             className="p-0.5 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors rounded hover:bg-white shrink-0"
-                            title={isExpanded ? 'Thu gọn' : 'Mở rộng cây'}
+                            title={isExpanded ? 'Thu gọn công đoạn' : 'Mở rộng công đoạn'}
                         >
                             {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
                         </button>
-                        <span className="font-bold text-[13.5px] font-mono text-[var(--accent)] tracking-tight truncate">
+                        <span className="font-bold text-[13px] font-mono text-[var(--accent)] tracking-tight truncate">
                             {productCode}
                         </span>
                         {steps.length > 0 && (
-                            <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-white text-[var(--text-secondary)] border border-[var(--border-default)] shadow-2xs shrink-0">
+                            <span 
+                                onClick={handleToggle}
+                                className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-white text-[var(--text-secondary)] border border-[var(--border-default)] shadow-2xs shrink-0 cursor-pointer hover:border-[var(--accent)]"
+                            >
                                 {steps.length} 項目
                             </span>
                         )}
@@ -156,19 +183,19 @@ export default function ToolingGroupedJobCard({
                 </div>
 
                 {/* Row 2: Job Name / Customer */}
-                <div className="flex justify-between items-center text-[11px] text-[var(--text-muted)] pl-4.5">
+                <div className="flex justify-between items-center text-[11px] text-[var(--text-muted)] pl-4">
                     <span className="truncate font-semibold text-[var(--text-primary)]" title={job.job_name}>
                         {job.job_name}
                     </span>
                     {job.companies?.company_name && (
-                        <span className="truncate max-w-[75px] font-jp opacity-90 shrink-0 ml-1 text-right text-[9.5px] bg-white px-1.5 py-0.2 rounded border border-[var(--border-default)] shadow-2xs font-medium" title={job.companies.company_name}>
+                        <span className="truncate max-w-[70px] font-jp opacity-90 shrink-0 ml-1 text-right text-[9.5px] bg-white px-1.5 py-0.2 rounded border border-[var(--border-default)] shadow-2xs font-medium" title={job.companies.company_name}>
                             {job.companies.company_code || job.companies.company_name}
                         </span>
                     )}
                 </div>
 
                 {/* Row 3: Status + Total Actual Machining Hours */}
-                <div className="flex justify-between items-center text-[10px] font-mono pl-4.5 pt-1 border-t border-[var(--border-default)]/60">
+                <div className="flex justify-between items-center text-[10px] font-mono pl-4 pt-0.5 border-t border-[var(--border-default)]/60">
                     <span className="text-[var(--text-secondary)]">
                         状態: <strong className="font-bold text-[var(--text-primary)]">{isJobCompleted ? '完了' : isJobInProgress ? '進行中' : '新規'}</strong>
                     </span>
@@ -182,9 +209,9 @@ export default function ToolingGroupedJobCard({
                 </div>
             </div>
 
-            {/* ─── TREE / SUB-ITEMS (SINGLE ROW COMPACT & CLEAN) ─── */}
+            {/* ─── TREE / SUB-ITEMS (SINGLE ROW COMPACT & CLEAN - 100% VISIBLE NAME) ─── */}
             {isExpanded && (
-                <div className="p-1.5 flex flex-col gap-1 bg-[#F8FAFC] rounded-b-lg">
+                <div className="p-1 flex flex-col gap-1 bg-[#F8FAFC] rounded-b-lg">
                     {steps.map((step) => {
                         const track = resolveTrack(step)
                         const trackMeta = TRACK_CONFIG[track] || TRACK_CONFIG.MOLD
@@ -194,10 +221,9 @@ export default function ToolingGroupedJobCard({
 
                         const statusMeta = resolveStepStatus(step)
                         const isStepDone = statusMeta.label === '完了'
-                        const isStepActive = statusMeta.label === '進行中'
 
                         const stepDeadline = step.deadline || job.mold_deadline
-                        const stepDeadlineBadge = getDeadlineBadge(stepDeadline, isStepDone)
+                        const stepDeadlineBadge = getDeadlineBadge(stepDeadline, isStepDone, currentColumnDate)
 
                         return (
                             <div
@@ -210,41 +236,41 @@ export default function ToolingGroupedJobCard({
                                     e.stopPropagation()
                                     if (onQuickLog) onQuickLog(job, step)
                                 }}
-                                className={`group/step rounded-[5px] px-2 py-1.5 border transition-all cursor-pointer flex items-center justify-between gap-1.5 text-[11px] bg-white border-[var(--border-default)] hover:border-[var(--accent)] hover:shadow-xs ${
+                                className={`group/step rounded-[4px] px-1.5 py-1 border transition-all cursor-pointer flex items-center justify-between gap-1.5 text-[11px] bg-white border-[var(--border-default)] hover:border-[var(--accent)] hover:shadow-xs ${
                                     isStepDone ? 'opacity-75 hover:opacity-100' : ''
                                 }`}
                                 title={`[${step.step_name}]\nダブルクリックで日報入力`}
                             >
-                                {/* Left: Track Badge + Step Name */}
+                                {/* Left: Track Badge + Full Step Name (No truncation) */}
                                 <div className="flex items-center gap-1.5 min-w-0 flex-1">
                                     <span 
-                                        className="px-1.5 py-0.5 rounded font-bold text-[8.5px] uppercase shrink-0 shadow-2xs"
+                                        className="px-1 py-0.2 rounded font-bold text-[8.5px] uppercase shrink-0 shadow-2xs"
                                         style={{ backgroundColor: trackMeta.bg, color: trackMeta.text }}
                                     >
                                         {trackMeta.label}
                                     </span>
-                                    <span className="font-semibold text-[var(--text-primary)] truncate group-hover/step:text-[var(--accent)]" title={step.step_name}>
+                                    <span className="font-semibold text-[var(--text-primary)] truncate group-hover/step:text-[var(--accent)] text-[11px]" title={step.step_name}>
                                         {step.step_name}
                                     </span>
                                 </div>
 
-                                {/* Right: Status + Deadline + Actual Machining Hours (All on 1 single row) */}
+                                {/* Right: Status + Warning Deadline (if different/overdue) + Actual Machining Hours */}
                                 <div className="flex items-center gap-1 shrink-0">
                                     {/* Status Badge */}
-                                    <span className={`px-1.5 py-0.2 rounded text-[8.5px] font-bold ${statusMeta.badgeClass}`}>
+                                    <span className={`px-1 py-0.2 rounded text-[8px] font-bold ${statusMeta.badgeClass}`}>
                                         {statusMeta.label}
                                     </span>
 
-                                    {/* Step Deadline Badge */}
+                                    {/* Step Deadline Badge (Only when overdue or different from column date) */}
                                     {stepDeadlineBadge && (
-                                        <span className={`px-1 py-0.2 rounded font-mono font-bold text-[9px] ${stepDeadlineBadge.badgeClass}`} title="期日">
+                                        <span className={`px-1 py-0.2 rounded font-mono font-bold text-[8.5px] ${stepDeadlineBadge.badgeClass}`} title="期日">
                                             {stepDeadlineBadge.label}
                                         </span>
                                     )}
 
-                                    {/* Actual Logged Machining Hours (Lũy kế giờ thực tế) */}
+                                    {/* Actual Logged Machining Hours */}
                                     {stepActualHours > 0 && (
-                                        <span className="font-mono font-bold text-[9.5px] text-[var(--status-success)] bg-[var(--tint-teal-bg)] px-1.5 py-0.2 rounded border border-[var(--status-success)]/30 shrink-0" title="実績工数">
+                                        <span className="font-mono font-bold text-[9px] text-[var(--status-success)] bg-[var(--tint-teal-bg)] px-1 py-0.2 rounded border border-[var(--status-success)]/30 shrink-0" title="実績工数">
                                             {stepActualHours.toFixed(1)}h
                                         </span>
                                     )}
