@@ -173,8 +173,8 @@ export default function ToolingExcelGridView({
                                     )}
                                 </div>
 
-                                {/* Column Content: Stack of Grouped Job Cards */}
-                                <div className="p-2 flex flex-col gap-2 overflow-y-auto flex-1 max-h-[calc(100vh-230px)]">
+                                {/* Column Content: Stack of Grouped Job Cards with Clear Visual Separation */}
+                                <div className="p-2 flex flex-col gap-3 overflow-y-auto flex-1 max-h-[calc(100vh-230px)] bg-slate-50/60">
                                     {groupedJobs.map(({ job, steps }) => (
                                         <ToolingGroupedJobCard 
                                             key={job.job_id}

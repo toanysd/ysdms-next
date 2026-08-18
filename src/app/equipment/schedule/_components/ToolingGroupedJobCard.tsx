@@ -3,7 +3,7 @@
 import React, { useState } from 'react'
 import type { JobForGantt, JobStepRow } from '@/app/actions/mold-job'
 import { format } from 'date-fns'
-import { ChevronDown, ChevronRight, CheckCircle2, Clock, User, AlertCircle } from 'lucide-react'
+import { ChevronDown, ChevronRight } from 'lucide-react'
 
 interface ToolingGroupedJobCardProps {
     job: JobForGantt
@@ -105,18 +105,24 @@ export default function ToolingGroupedJobCard({
 
     return (
         <div 
-            className={`rounded-[6px] border transition-all shadow-xs hover:shadow-md bg-[var(--bg-surface)] ${
+            className={`rounded-lg border transition-all shadow-xs hover:shadow-md bg-white overflow-hidden mb-2 ${
                 isJobCompleted 
-                    ? 'border-[var(--border-default)] opacity-90' 
+                    ? 'border-[var(--border-default)] border-l-[4px] border-l-[var(--status-success)] opacity-90' 
                     : isJobInProgress 
-                        ? 'border-l-3 border-l-[var(--accent)] border-[var(--border-default)]' 
-                        : 'border-[var(--border-default)]'
+                        ? 'border-[var(--border-default)] border-l-[4px] border-l-[var(--accent)]' 
+                        : 'border-[var(--border-default)] border-l-[4px] border-l-slate-400'
             }`}
         >
-            {/* ─── PARENT JOB HEADER ─── */}
+            {/* ─── PARENT JOB HEADER (VISUAL ANCHOR) ─── */}
             <div 
                 onClick={() => onOpenJob && onOpenJob(job)}
-                className="p-2 cursor-pointer hover:bg-[var(--bg-surface-hover)] transition-colors rounded-t-[5px] flex flex-col gap-1 border-b border-[var(--border-default)]/70 bg-[var(--bg-surface-2)]/50"
+                className={`p-2.5 cursor-pointer hover:bg-slate-100/80 transition-colors flex flex-col gap-1.5 border-b border-[var(--border-default)] ${
+                    isJobInProgress 
+                        ? 'bg-[var(--tint-teal-bg)]/60' 
+                        : isJobCompleted 
+                            ? 'bg-slate-100/50' 
+                            : 'bg-slate-50'
+                }`}
             >
                 {/* Row 1: Code + Badge + Expand toggle */}
                 <div className="flex justify-between items-center gap-1">
@@ -127,16 +133,16 @@ export default function ToolingGroupedJobCard({
                                 e.stopPropagation()
                                 setIsExpanded(!isExpanded)
                             }}
-                            className="p-0.5 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors rounded hover:bg-[var(--bg-surface-2)] shrink-0"
+                            className="p-0.5 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors rounded hover:bg-white shrink-0"
                             title={isExpanded ? 'Thu gọn' : 'Mở rộng cây'}
                         >
                             {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
                         </button>
-                        <span className="font-bold text-[13px] font-mono text-[var(--accent)] truncate">
+                        <span className="font-bold text-[13.5px] font-mono text-[var(--accent)] tracking-tight truncate">
                             {productCode}
                         </span>
-                        {steps.length > 1 && (
-                            <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-[var(--bg-surface-2)] text-[var(--text-muted)] border border-[var(--border-default)] shrink-0">
+                        {steps.length > 0 && (
+                            <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-white text-[var(--text-secondary)] border border-[var(--border-default)] shadow-2xs shrink-0">
                                 {steps.length} 項目
                             </span>
                         )}
@@ -150,38 +156,38 @@ export default function ToolingGroupedJobCard({
                 </div>
 
                 {/* Row 2: Job Name / Customer */}
-                <div className="flex justify-between items-center text-[11px] text-[var(--text-muted)] pl-4">
-                    <span className="truncate font-medium text-[var(--text-primary)]" title={job.job_name}>
+                <div className="flex justify-between items-center text-[11px] text-[var(--text-muted)] pl-4.5">
+                    <span className="truncate font-semibold text-[var(--text-primary)]" title={job.job_name}>
                         {job.job_name}
                     </span>
                     {job.companies?.company_name && (
-                        <span className="truncate max-w-[75px] font-jp opacity-85 shrink-0 ml-1 text-right text-[10px] bg-[var(--bg-surface)] px-1 rounded border border-[var(--border-default)]/60" title={job.companies.company_name}>
+                        <span className="truncate max-w-[75px] font-jp opacity-90 shrink-0 ml-1 text-right text-[9.5px] bg-white px-1.5 py-0.2 rounded border border-[var(--border-default)] shadow-2xs font-medium" title={job.companies.company_name}>
                             {job.companies.company_code || job.companies.company_name}
                         </span>
                     )}
                 </div>
 
-                {/* Row 3: Status + Total Actual Machining Hours ONLY */}
-                <div className="flex justify-between items-center text-[10px] font-mono pl-4 pt-0.5 border-t border-[var(--border-default)]/40 mt-0.5">
-                    <span className="text-[var(--text-muted)]">
-                        状態: <span className="font-semibold text-[var(--text-primary)]">{isJobCompleted ? '完了' : isJobInProgress ? '進行中' : '新規'}</span>
+                {/* Row 3: Status + Total Actual Machining Hours */}
+                <div className="flex justify-between items-center text-[10px] font-mono pl-4.5 pt-1 border-t border-[var(--border-default)]/60">
+                    <span className="text-[var(--text-secondary)]">
+                        状態: <strong className="font-bold text-[var(--text-primary)]">{isJobCompleted ? '完了' : isJobInProgress ? '進行中' : '新規'}</strong>
                     </span>
-                    {totalActualHours > 0 && (
-                        <span className="font-bold text-[var(--status-success)]">
+                    {totalActualHours > 0 ? (
+                        <span className="font-bold text-[var(--status-success)] bg-white px-1.5 py-0.2 rounded border border-[var(--status-success)]/30 shadow-2xs">
                             実績: {totalActualHours.toFixed(1)}h
                         </span>
+                    ) : (
+                        <span className="text-[var(--text-muted)] opacity-50">—</span>
                     )}
                 </div>
             </div>
 
-            {/* ─── TREE / SUB-ITEMS UNDERNEATH ─── */}
+            {/* ─── TREE / SUB-ITEMS (SINGLE ROW COMPACT & CLEAN) ─── */}
             {isExpanded && (
-                <div className="p-1.5 flex flex-col gap-1.5 bg-[var(--bg-surface)] rounded-b-[5px]">
+                <div className="p-1.5 flex flex-col gap-1 bg-[#F8FAFC] rounded-b-lg">
                     {steps.map((step) => {
                         const track = resolveTrack(step)
                         const trackMeta = TRACK_CONFIG[track] || TRACK_CONFIG.MOLD
-                        const empName = empMap.get(step.assigned_to || '') || empMap.get((job as any).responsible_id || '')
-                        const machName = machMap.get(step.machine_id || '')
                         
                         const stepLogHours = (step.work_logs || []).reduce((sum, w) => sum + (Number(w.hours_spent) || 0), 0)
                         const stepActualHours = step.actual_hours || stepLogHours || 0
@@ -204,71 +210,48 @@ export default function ToolingGroupedJobCard({
                                     e.stopPropagation()
                                     if (onQuickLog) onQuickLog(job, step)
                                 }}
-                                className={`group/step relative rounded-[4px] p-1.5 border transition-all cursor-pointer flex flex-col gap-1 text-[11px] ${
+                                className={`group/step rounded-[5px] px-2 py-1.5 border transition-all cursor-pointer flex items-center justify-between gap-1.5 text-[11px] shadow-2xs ${
                                     isStepDone 
-                                        ? 'bg-[var(--bg-surface-2)]/60 border-[var(--border-default)] opacity-80 hover:opacity-100' 
+                                        ? 'bg-white border-[var(--border-default)] opacity-75 hover:opacity-100 hover:border-[var(--status-success)]' 
                                         : isStepActive 
-                                            ? 'bg-[var(--tint-teal-bg)]/30 border border-[var(--accent)]/50 shadow-xs' 
-                                            : 'bg-[var(--bg-surface)] border-[var(--border-default)] hover:border-[var(--accent)] hover:bg-[var(--bg-surface-hover)]'
+                                            ? 'bg-white border-[var(--accent)] shadow-xs hover:border-[var(--accent-hover)] ring-1 ring-[var(--accent)]/20' 
+                                            : 'bg-white border-[var(--border-default)] hover:border-[var(--accent)] hover:bg-[var(--bg-surface-hover)]'
                                 }`}
                                 title={`[${step.step_name}]\nダブルクリックで日報入力`}
                             >
-                                {/* Row 1: Track Badge + Step Name + Status + Deadline */}
-                                <div className="flex items-center justify-between gap-1 min-w-0">
-                                    <div className="flex items-center gap-1 min-w-0">
-                                        <span 
-                                            className="px-1 py-0.2 rounded font-bold text-[8px] uppercase shrink-0"
-                                            style={{ backgroundColor: trackMeta.bg, color: trackMeta.text }}
-                                        >
-                                            {trackMeta.label}
-                                        </span>
-                                        <span className="font-semibold text-[var(--text-primary)] truncate group-hover/step:text-[var(--accent)]">
-                                            {step.step_name}
-                                        </span>
-                                    </div>
-
-                                    <div className="flex items-center gap-1 shrink-0">
-                                        {/* Status Badge */}
-                                        <span className={`px-1 py-0.2 rounded text-[8px] font-bold ${statusMeta.badgeClass}`}>
-                                            {statusMeta.label}
-                                        </span>
-                                        {/* Step Deadline Badge */}
-                                        {stepDeadlineBadge && (
-                                            <span className={`px-1 py-0.2 rounded font-mono font-bold text-[9px] ${stepDeadlineBadge.badgeClass}`} title="期日">
-                                                {stepDeadlineBadge.label}
-                                            </span>
-                                        )}
-                                    </div>
+                                {/* Left: Track Badge + Step Name */}
+                                <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                                    <span 
+                                        className="px-1.5 py-0.5 rounded font-bold text-[8.5px] uppercase shrink-0 shadow-2xs"
+                                        style={{ backgroundColor: trackMeta.bg, color: trackMeta.text }}
+                                    >
+                                        {trackMeta.label}
+                                    </span>
+                                    <span className="font-semibold text-[var(--text-primary)] truncate group-hover/step:text-[var(--accent)]" title={step.step_name}>
+                                        {step.step_name}
+                                    </span>
                                 </div>
 
-                                {/* Row 2: Actual Machining Hours (実績) + Assignee / Machine */}
-                                <div className="flex items-center justify-between text-[10px] text-[var(--text-muted)] pt-1 border-t border-[var(--border-default)]/40 mt-0.5 font-mono">
-                                    {/* Left: Assignee & Machine */}
-                                    <div className="flex items-center gap-1 truncate max-w-[130px]">
-                                        {empName ? (
-                                            <span className="truncate flex items-center gap-0.5 text-[var(--text-secondary)] font-sans">
-                                                👤 {empName}
-                                            </span>
-                                        ) : (
-                                            <span className="opacity-40 italic">未割当</span>
-                                        )}
-                                        {machName && (
-                                            <span className="truncate opacity-75 font-sans">
-                                                • {machName}
-                                            </span>
-                                        )}
-                                    </div>
+                                {/* Right: Status + Deadline + Actual Machining Hours (All on 1 single row) */}
+                                <div className="flex items-center gap-1 shrink-0">
+                                    {/* Status Badge */}
+                                    <span className={`px-1.5 py-0.2 rounded text-[8.5px] font-bold ${statusMeta.badgeClass}`}>
+                                        {statusMeta.label}
+                                    </span>
 
-                                    {/* Right: Actual Logged Hours ONLY */}
-                                    <div className="flex items-center gap-1 shrink-0">
-                                        {stepActualHours > 0 ? (
-                                            <span className="font-bold text-[var(--status-success)] bg-[var(--tint-teal-bg)] px-1 rounded border border-[var(--status-success)]/30">
-                                                実績: {stepActualHours.toFixed(1)}h
-                                            </span>
-                                        ) : (
-                                            <span className="opacity-0">—</span>
-                                        )}
-                                    </div>
+                                    {/* Step Deadline Badge */}
+                                    {stepDeadlineBadge && (
+                                        <span className={`px-1 py-0.2 rounded font-mono font-bold text-[9px] ${stepDeadlineBadge.badgeClass}`} title="期日">
+                                            {stepDeadlineBadge.label}
+                                        </span>
+                                    )}
+
+                                    {/* Actual Logged Machining Hours (Lũy kế giờ thực tế) */}
+                                    {stepActualHours > 0 && (
+                                        <span className="font-mono font-bold text-[9.5px] text-[var(--status-success)] bg-[var(--tint-teal-bg)] px-1.5 py-0.2 rounded border border-[var(--status-success)]/30 shrink-0" title="実績工数">
+                                            {stepActualHours.toFixed(1)}h
+                                        </span>
+                                    )}
                                 </div>
                             </div>
                         )
