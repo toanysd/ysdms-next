@@ -1,9 +1,10 @@
 'use client'
 
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useEffect } from 'react'
 import type { JobForGantt, JobStepRow } from '@/app/actions/mold-job'
 import { format, parseISO, addDays, isSameDay } from 'date-fns'
 import { useTranslations } from 'next-intl'
+import { useRouter } from 'next/navigation'
 import ToolingGroupedJobCard from './ToolingGroupedJobCard'
 import { JobQuickViewDrawer } from '@/components/equipment/JobQuickViewDrawer'
 import { EditStepModal } from '@/app/equipment/jobs/[id]/tabs/EditStepModal'
@@ -33,6 +34,13 @@ export default function ToolingExcelGridView({
 }: ToolingExcelGridViewProps) {
     const t = useTranslations('Equipment.Schedule')
     const tDays = useTranslations('Equipment.Schedule.days')
+    const router = useRouter()
+
+    const [liveJobs, setLiveJobs] = useState<JobForGantt[]>(jobs)
+
+    useEffect(() => {
+        setLiveJobs(jobs)
+    }, [jobs])
 
     // Modal / Drawer states
     const [selectedJobForDrawer, setSelectedJobForDrawer] = useState<JobForGantt | null>(null)
@@ -54,7 +62,7 @@ export default function ToolingExcelGridView({
 
     // Filter jobs
     const filteredJobs = useMemo(() => {
-        return jobs.filter(j => {
+        return liveJobs.filter(j => {
             if (trackFilter === 'MOLD' && !j.job_steps?.some(s => s.track === 'MOLD')) return false
             if (trackFilter === 'PLUG' && !j.has_plug && !j.job_steps?.some(s => s.track === 'PLUG')) return false
             if (trackFilter === 'CUTTER' && !j.job_steps?.some(s => s.track === 'CUTTER')) return false
@@ -69,7 +77,7 @@ export default function ToolingExcelGridView({
             }
             return true
         })
-    }, [jobs, trackFilter, searchQuery])
+    }, [liveJobs, trackFilter, searchQuery])
 
     // Generate date columns
     const start = parseISO(startDateStr)
@@ -211,8 +219,14 @@ export default function ToolingExcelGridView({
                     step={selectedStepForEdit.step}
                     jobId={selectedStepForEdit.job.job_id}
                     nextStepNo={(selectedStepForEdit.job.job_steps?.length || 0) + 1}
-                    onClose={() => setSelectedStepForEdit(null)}
-                    onSaved={() => setSelectedStepForEdit(null)}
+                    onClose={() => {
+                        setSelectedStepForEdit(null)
+                        router.refresh()
+                    }}
+                    onSaved={() => {
+                        // Refresh server state while keeping modal open for user actions
+                        router.refresh()
+                    }}
                 />
             )}
 

@@ -73,11 +73,46 @@ export function EditStepModal({ step, jobId, nextStepNo, initialLog, onClose, on
 
   // Status options for Step/Component
   const STEP_STATUS_OPTIONS = [
-    { value: 'PENDING', label: '未着手', icon: '⚪', bg: 'var(--bg-surface-2, #F1F5F9)', text: 'var(--text-muted, #64748B)', border: 'var(--border-default, #CBD5E1)' },
-    { value: 'IN_PROGRESS', label: '進行中', icon: '🟠', bg: 'var(--tint-amber-bg, #FEF3C7)', text: 'var(--status-warning, #D97706)', border: '#F59E0B' },
-    { value: 'COMPLETED', label: '完了', icon: '🟢', bg: 'var(--status-success-bg, #DCFCE7)', text: 'var(--status-success, #16A34A)', border: '#22C55E' },
-    { value: 'ON_HOLD', label: '保留', icon: '🟣', bg: 'var(--tint-purple-bg, #EDE9FE)', text: '#7C3AED', border: '#8B5CF6' },
-    { value: 'CANCELLED', label: '中止', icon: '🔴', bg: '#FEE2E2', text: '#DC2626', border: '#EF4444' },
+    { 
+      value: 'PENDING', 
+      label: '未着手', 
+      icon: '⚪', 
+      activeBg: '#E2E8F0', 
+      activeText: '#0F172A', 
+      activeBorder: '#64748B' 
+    },
+    { 
+      value: 'IN_PROGRESS', 
+      label: '進行中', 
+      icon: '🟠', 
+      activeBg: '#FEF3C7', 
+      activeText: '#92400E', 
+      activeBorder: '#F59E0B' 
+    },
+    { 
+      value: 'COMPLETED', 
+      label: '完了', 
+      icon: '🟢', 
+      activeBg: '#DCFCE7', 
+      activeText: '#15803D', 
+      activeBorder: '#16A34A' 
+    },
+    { 
+      value: 'ON_HOLD', 
+      label: '保留', 
+      icon: '🟣', 
+      activeBg: '#EDE9FE', 
+      activeText: '#6D28D9', 
+      activeBorder: '#8B5CF6' 
+    },
+    { 
+      value: 'CANCELLED', 
+      label: '中止', 
+      icon: '🔴', 
+      activeBg: '#FEE2E2', 
+      activeText: '#B91C1C', 
+      activeBorder: '#EF4444' 
+    },
   ]
 
   const handleUpdateStepStatus = async (newStatus: string) => {
@@ -809,29 +844,30 @@ export function EditStepModal({ step, jobId, nextStepNo, initialLog, onClose, on
                 </div>
               )}
 
-              {/* ── 1. STEP SPECIFICATION ANCHOR CARD ── */}
+              {/* ── 1. STEP SPECIFICATION ANCHOR CARD (PARENT ENTITY) ── */}
               <div
                 style={{
-                  border: '1px solid var(--tint-purple-border, #DDD6FE)',
+                  border: '1.5px solid #DDD6FE',
+                  borderLeft: '5px solid #7C3AED',
                   borderRadius: 8,
-                  background: 'var(--tint-purple-bg, #F5F3FF)',
+                  background: '#F5F3FF',
                   overflow: 'hidden',
-                  boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
+                  boxShadow: '0 2px 5px rgba(124, 58, 237, 0.08)',
                 }}
               >
                 <div
                   style={{
                     padding: '8px 12px',
-                    background: 'var(--tint-purple-bg, #EDE9FE)',
-                    borderBottom: '1px solid var(--tint-purple-border, #DDD6FE)',
+                    background: '#EDE9FE',
+                    borderBottom: '1px solid #DDD6FE',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <Layers size={14} style={{ color: 'var(--tint-purple-text, #7C3AED)' }} />
-                    <span style={{ fontSize: 12, fontWeight: 800, color: 'var(--tint-purple-text, #7C3AED)' }}>
+                    <Layers size={15} style={{ color: '#7C3AED' }} />
+                    <span style={{ fontSize: 12.5, fontWeight: 800, color: '#6D28D9' }}>
                       対象工程情報 (Thông tin công đoạn)
                     </span>
                   </div>
@@ -841,11 +877,11 @@ export function EditStepModal({ step, jobId, nextStepNo, initialLog, onClose, on
                     style={{
                       fontSize: 10.5,
                       fontWeight: 700,
-                      color: 'var(--tint-purple-text, #7C3AED)',
+                      color: '#6D28D9',
                       background: '#fff',
-                      border: '1px solid var(--tint-purple-border, #DDD6FE)',
+                      border: '1px solid #DDD6FE',
                       borderRadius: 4,
-                      padding: '2px 7px',
+                      padding: '2px 8px',
                       cursor: 'pointer',
                       display: 'flex',
                       alignItems: 'center',
@@ -924,30 +960,30 @@ export function EditStepModal({ step, jobId, nextStepNo, initialLog, onClose, on
                   </div>
                 ) : (
                   /* Step Info Full-Tinted Container */
-                  <div style={{ padding: '10px 12px', fontSize: 11.5, display: 'flex', flexDirection: 'column', gap: 8, background: 'rgba(237, 233, 254, 0.4)' }}>
+                  <div style={{ padding: '10px 12px', fontSize: 11.5, display: 'flex', flexDirection: 'column', gap: 8, background: '#F5F3FF' }}>
                     {/* Row 1: Step Name + Track Badge */}
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <span style={{ fontSize: 13.5, fontWeight: 800, color: 'var(--text-primary)' }}>
+                      <span style={{ fontSize: 13.5, fontWeight: 800, color: '#1E1B4B' }}>
                         {jobMeta?.job_code === '社内作業' || jobMeta?.job_category === 'INTERNAL_OPS' ? '' : `Step ${step?.step_no}. `}{step?.step_name}
                       </span>
                       <span
                         className="font-mono font-bold"
                         style={{
                           fontSize: 10.5,
-                          background: 'var(--tint-purple-bg, #EDE9FE)',
-                          color: 'var(--tint-purple-text, #7C3AED)',
+                          background: '#EDE9FE',
+                          color: '#6D28D9',
                           padding: '2px 8px',
                           borderRadius: 4,
-                          border: '1px solid var(--tint-purple-border, #DDD6FE)',
+                          border: '1px solid #DDD6FE',
                         }}
                       >
                         {currentItemTypeName}
                       </span>
                     </div>
 
-                    {/* Row 2: Interactive Step Status Buttons */}
+                    {/* Row 2: Interactive Step Status Buttons with Rich Active Styling */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', paddingTop: 2 }}>
-                      <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)' }}>
+                      <span style={{ fontSize: 11, fontWeight: 700, color: '#4B5563' }}>
                         工程状態:
                       </span>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
@@ -959,15 +995,15 @@ export function EditStepModal({ step, jobId, nextStepNo, initialLog, onClose, on
                               type="button"
                               onClick={() => handleUpdateStepStatus(opt.value)}
                               style={{
-                                padding: '2px 8px',
+                                padding: '3px 8px',
                                 fontSize: 10.5,
-                                fontWeight: isActive ? 800 : 600,
+                                fontWeight: isActive ? 800 : 500,
                                 borderRadius: 4,
-                                border: `1px solid ${isActive ? opt.border : 'var(--border-default)'}`,
-                                background: isActive ? opt.bg : '#fff',
-                                color: isActive ? opt.text : 'var(--text-secondary)',
+                                border: isActive ? `1.5px solid ${opt.activeBorder}` : '1px solid #CBD5E1',
+                                background: isActive ? opt.activeBg : '#FFFFFF',
+                                color: isActive ? opt.activeText : '#64748B',
                                 cursor: 'pointer',
-                                boxShadow: isActive ? '0 1px 2px rgba(0,0,0,0.06)' : 'none',
+                                boxShadow: isActive ? `0 0 0 2px ${opt.activeBorder}30, 0 1px 2px rgba(0,0,0,0.05)` : 'none',
                                 transition: 'all 0.15s ease',
                                 display: 'flex',
                                 alignItems: 'center',
@@ -976,7 +1012,7 @@ export function EditStepModal({ step, jobId, nextStepNo, initialLog, onClose, on
                             >
                               <span>{opt.icon}</span>
                               <span>{opt.label}</span>
-                              {isActive && <span style={{ marginLeft: 2, fontSize: 10 }}>✓</span>}
+                              {isActive && <span style={{ marginLeft: 2, fontSize: 10, fontWeight: 900 }}>✓</span>}
                             </button>
                           )
                         })}
@@ -984,18 +1020,18 @@ export function EditStepModal({ step, jobId, nextStepNo, initialLog, onClose, on
                     </div>
 
                     {/* Row 3: Specs Grid */}
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px 12px', color: 'var(--text-secondary)', fontSize: 11, paddingTop: 6, borderTop: '1px dashed var(--tint-purple-border, #DDD6FE)' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px 12px', color: '#475569', fontSize: 11, paddingTop: 6, borderTop: '1px dashed #DDD6FE' }}>
                       <div>
-                        予定工数: <strong className="font-mono" style={{ color: 'var(--text-primary)' }}>{plannedHours ? `${plannedHours}h` : step?.planned_hours ? `${step.planned_hours}h` : '—'}</strong>
+                        予定工数: <strong className="font-mono" style={{ color: '#0F172A' }}>{plannedHours ? `${plannedHours}h` : step?.planned_hours ? `${step.planned_hours}h` : '—'}</strong>
                       </div>
                       <div>
-                        累計実績: <strong className="font-mono" style={{ color: 'var(--status-success)' }}>{Math.round(logs.reduce((sum, l) => sum + (Number(l.hours_spent) || 0), 0) * 10) / 10}h</strong>
+                        累計実績: <strong className="font-mono" style={{ color: '#16A34A', fontWeight: 800 }}>{Math.round(logs.reduce((sum, l) => sum + (Number(l.hours_spent) || 0), 0) * 10) / 10}h</strong>
                       </div>
                       <div>
-                        完了期日: <strong className="font-mono" style={{ color: (stepDeadline || step?.deadline) ? '#DC2626' : 'var(--text-primary)' }}>{(stepDeadline || step?.deadline) ? (stepDeadline || step?.deadline?.split('T')[0]) : '—'}</strong>
+                        完了期日: <strong className="font-mono" style={{ color: (stepDeadline || step?.deadline) ? '#DC2626' : '#0F172A' }}>{(stepDeadline || step?.deadline) ? (stepDeadline || step?.deadline?.split('T')[0]) : '—'}</strong>
                       </div>
                       <div>
-                        担当: <strong style={{ color: 'var(--text-primary)' }}>{assignedWorkerName || '—'}</strong>
+                        担当: <strong style={{ color: '#0F172A' }}>{assignedWorkerName || '—'}</strong>
                       </div>
                     </div>
                   </div>

@@ -38,11 +38,20 @@ function resolveStepStatus(step: JobStepRow): { label: string, badgeClass: strin
     if (status === 'COMPLETED' || code.includes('完了')) {
         return { label: '完了', badgeClass: 'bg-[var(--status-success-bg, #e6f4ea)] text-[var(--status-success)] border border-[var(--status-success)]/30 font-bold' }
     }
-    if (status === 'IN_PROGRESS' || code.includes('進行') || (step.work_logs && step.work_logs.length > 0)) {
-        return { label: '進行中', badgeClass: 'bg-[var(--tint-amber-bg)] text-[var(--status-warning)] border border-[var(--status-warning)]/40 font-bold' }
+    if (status === 'ON_HOLD' || code.includes('保留')) {
+        return { label: '保留', badgeClass: 'bg-[var(--tint-purple-bg, #f3e8ff)] text-[var(--brand-purple, #9333ea)] border border-[var(--brand-purple, #9333ea)]/40 font-bold' }
     }
     if (status === 'CANCELLED' || code.includes('中止')) {
         return { label: '中止', badgeClass: 'bg-red-100 text-red-700 border border-red-200' }
+    }
+    if (status === 'IN_PROGRESS' || code.includes('進行')) {
+        return { label: '進行中', badgeClass: 'bg-[var(--tint-amber-bg)] text-[var(--status-warning)] border border-[var(--status-warning)]/40 font-bold' }
+    }
+    if (status === 'PENDING') {
+        return { label: '未着手', badgeClass: 'bg-[var(--bg-surface-2)] text-[var(--text-muted)] border border-[var(--border-default)]' }
+    }
+    if (step.work_logs && step.work_logs.length > 0) {
+        return { label: '進行中', badgeClass: 'bg-[var(--tint-amber-bg)] text-[var(--status-warning)] border border-[var(--status-warning)]/40 font-bold' }
     }
     return { label: '未着手', badgeClass: 'bg-[var(--bg-surface-2)] text-[var(--text-muted)] border border-[var(--border-default)]' }
 }

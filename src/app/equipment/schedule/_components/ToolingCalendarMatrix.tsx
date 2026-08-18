@@ -4,6 +4,7 @@ import React, { useState, useMemo, useCallback } from 'react'
 import type { JobForGantt, JobStepRow } from '@/app/actions/mold-job'
 import { format, parseISO, addDays, isSameDay } from 'date-fns'
 import { useTranslations } from 'next-intl'
+import { useRouter } from 'next/navigation'
 import { ChevronRight, ChevronDown, Crosshair, Sparkles, CheckCircle2, Clock, AlertTriangle, Layers, User, Plus } from 'lucide-react'
 import { JobQuickViewDrawer } from '@/components/equipment/JobQuickViewDrawer'
 import { EditStepModal } from '@/app/equipment/jobs/[id]/tabs/EditStepModal'
@@ -83,6 +84,7 @@ export default function ToolingCalendarMatrix({
     searchQuery = ''
 }: ToolingCalendarMatrixProps) {
     const t = useTranslations('Equipment.Schedule')
+    const router = useRouter()
     const tDays = useTranslations('Equipment.Schedule.days')
 
     // Tree expand state
@@ -586,8 +588,13 @@ export default function ToolingCalendarMatrix({
                     step={selectedStepForEdit.step}
                     jobId={selectedStepForEdit.job.job_id}
                     nextStepNo={(selectedStepForEdit.job.job_steps?.length || 0) + 1}
-                    onClose={() => setSelectedStepForEdit(null)}
-                    onSaved={() => setSelectedStepForEdit(null)}
+                    onClose={() => {
+                        setSelectedStepForEdit(null)
+                        router.refresh()
+                    }}
+                    onSaved={() => {
+                        router.refresh()
+                    }}
                 />
             )}
 
