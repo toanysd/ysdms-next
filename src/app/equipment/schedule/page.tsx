@@ -2,6 +2,7 @@ import { getJobsForGantt } from '@/app/actions/mold-job'
 import { getWorkOrdersForGantt } from '@/app/actions/work-orders'
 import { createClient } from '@/lib/supabase/server'
 import MoldJobGantt from '@/components/equipment/MoldJobGantt'
+import ToolingCalendarMatrix from './_components/ToolingCalendarMatrix'
 import ToolingExcelGridView from './_components/ToolingExcelGridView'
 import ToolingScheduleToolbar, { TimeframeMode, ViewMode, PerspectiveMode, TrackFilter } from './_components/ToolingScheduleToolbar'
 import { format, parseISO, addDays } from 'date-fns'
@@ -28,7 +29,7 @@ export default async function ToolingSchedulePage(props: ToolingSchedulePageProp
   const query = resolvedSearchParams?.search || ''
   const activeView: ViewMode = (resolvedSearchParams?.view as ViewMode) || 'gantt'
   const timeframe: TimeframeMode = (resolvedSearchParams?.timeframe as TimeframeMode) || 'week2'
-  const perspective: PerspectiveMode = (resolvedSearchParams?.perspective as PerspectiveMode) || 'machine'
+  const perspective: PerspectiveMode = (resolvedSearchParams?.perspective as PerspectiveMode) || 'job'
   const trackFilter: TrackFilter = (resolvedSearchParams?.track as TrackFilter) || 'ALL'
   const pageSize = 500
 
@@ -104,17 +105,30 @@ export default async function ToolingSchedulePage(props: ToolingSchedulePageProp
       {/* --- Main View Content --- */}
       <div className="flex-1 min-h-0 relative rounded-md overflow-hidden border border-[var(--border-default)]">
         {activeView === 'grid' ? (
-          <ToolingExcelGridView 
-            jobs={jobs}
-            workOrders={workOrders}
-            machines={machines}
-            employees={employees}
-            startDateStr={fromDateFinal}
-            daysCount={daysCount}
-            perspective={perspective}
-            trackFilter={trackFilter}
-            searchQuery={query}
-          />
+          perspective === 'machine' ? (
+            <ToolingExcelGridView 
+              jobs={jobs}
+              workOrders={workOrders}
+              machines={machines}
+              employees={employees}
+              startDateStr={fromDateFinal}
+              daysCount={daysCount}
+              perspective={perspective}
+              trackFilter={trackFilter}
+              searchQuery={query}
+            />
+          ) : (
+            <ToolingCalendarMatrix 
+              jobs={jobs}
+              workOrders={workOrders}
+              machines={machines}
+              employees={employees}
+              startDateStr={fromDateFinal}
+              daysCount={daysCount}
+              trackFilter={trackFilter}
+              searchQuery={query}
+            />
+          )
         ) : (
           <MoldJobGantt 
             workOrders={workOrders}
