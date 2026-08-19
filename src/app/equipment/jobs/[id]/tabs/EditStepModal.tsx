@@ -574,7 +574,7 @@ export function EditStepModal({ step, jobId, nextStepNo = 1, initialLog, mode = 
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                 <span style={{ fontSize: 14, fontWeight: 800, color: 'var(--text-primary)' }}>{isNew ? '新規工程の追加' : '作業日報の記録・工程情報'}</span>
                 {jobMeta && <span className="font-mono text-[11.5px] font-bold" style={{ background: 'var(--tint-blue-bg)', color: 'var(--tint-blue-text)', padding: '1px 8px', borderRadius: 4, border: '1px solid var(--tint-blue-border)' }}>[{jobMeta.job_code}] {jobMeta.job_name}</span>}
-                {!isNew && activeStep && <span className="text-[11.5px] font-bold" style={{ background: 'var(--tint-purple-bg, #EDE9FE)', color: 'var(--tint-purple-text, #7C3AED)', padding: '1px 8px', borderRadius: 4, border: '1px solid var(--tint-purple-border, #DDD6FE)' }}>{jobMeta?.job_code === '社内作業' || jobMeta?.job_category === 'INTERNAL_OPS' ? '' : `Step ${activeStep.step_no}. `}{activeStep.step_name} [{currentItemTypeName}]</span>}
+                {!isNew && activeStep && <span className="text-[11.5px] font-bold" style={{ background: 'var(--tint-purple-bg, #EDE9FE)', color: 'var(--tint-purple-text, #7C3AED)', padding: '1px 8px', borderRadius: 4, border: '1px solid var(--tint-purple-border, #DDD6FE)' }}>{activeStep.step_name} [{currentItemTypeName}]</span>}
               </div>
             </div>
           </div>
@@ -643,7 +643,7 @@ export function EditStepModal({ step, jobId, nextStepNo = 1, initialLog, mode = 
                   maxDropdownHeight="200px"
                 />
 
-                {jobStepsList.length > 0 && (
+                {jobStepsList.length > 0 ? (
                   <div style={{ marginTop: 2 }}>
                     <div style={{ fontSize: 10.5, fontWeight: 700, color: 'var(--text-muted)', marginBottom: 4 }}>
                       工程一覧 (Danh sách công đoạn - {jobStepsList.length} 件):
@@ -672,11 +672,15 @@ export function EditStepModal({ step, jobId, nextStepNo = 1, initialLog, mode = 
                             }}
                           >
                             <span>{stStatus?.icon || '⚪'}</span>
-                            <span>Step {st.step_no}. {st.step_name}</span>
+                            <span>{st.step_name}</span>
                           </button>
                         )
                       })}
                     </div>
+                  </div>
+                ) : (
+                  <div style={{ padding: '6px 4px', fontSize: 10.5, color: 'var(--text-muted)' }}>
+                    {activeJobId ? '— このジョブには工程が登録されていません —' : '— 上の検索バーまたは「📌 社内作業」からジョブを選択してください —'}
                   </div>
                 )}
               </div>
@@ -688,17 +692,23 @@ export function EditStepModal({ step, jobId, nextStepNo = 1, initialLog, mode = 
                     <Layers size={14} style={{ color: '#7C3AED' }} />
                     <span style={{ fontSize: 12, fontWeight: 800, color: '#6D28D9' }}>対象工程情報 (Thông tin công đoạn)</span>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => setIsEditingStepConfig(!isEditingStepConfig)}
-                    style={{ fontSize: 10, fontWeight: 700, color: '#6D28D9', background: '#fff', border: '1px solid #DDD6FE', borderRadius: 4, padding: '2px 6px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}
-                  >
-                    <Edit3 size={11} />
-                    <span>{isEditingStepConfig ? '表示に戻る' : '工程設定を変更'}</span>
-                  </button>
+                  {activeStep && (
+                    <button
+                      type="button"
+                      onClick={() => setIsEditingStepConfig(!isEditingStepConfig)}
+                      style={{ fontSize: 10, fontWeight: 700, color: '#6D28D9', background: '#fff', border: '1px solid #DDD6FE', borderRadius: 4, padding: '2px 6px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}
+                    >
+                      <Edit3 size={11} />
+                      <span>{isEditingStepConfig ? '表示に戻る' : '工程設定を変更'}</span>
+                    </button>
+                  )}
                 </div>
 
-                {isEditingStepConfig ? (
+                {!activeStep ? (
+                  <div style={{ padding: '14px 10px', textAlign: 'center', color: '#64748B', fontSize: 11 }}>
+                    — ジョブ・工程を選択すると詳細が表示されます —
+                  </div>
+                ) : isEditingStepConfig ? (
                   <div style={{ padding: 10, display: 'flex', flexDirection: 'column', gap: 8, background: '#FAFAFA' }}>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 130px', gap: 8 }}>
                       <div>
@@ -730,7 +740,7 @@ export function EditStepModal({ step, jobId, nextStepNo = 1, initialLog, mode = 
                   <div style={{ padding: '8px 10px', fontSize: 11, display: 'flex', flexDirection: 'column', gap: 6, background: '#F5F3FF' }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                       <span style={{ fontSize: 13, fontWeight: 800, color: '#1E1B4B' }}>
-                        {jobMeta?.job_code === '社内作業' || jobMeta?.job_category === 'INTERNAL_OPS' ? '' : `Step ${activeStep?.step_no}. `}{activeStep?.step_name || '作業'}
+                        {activeStep?.step_name || '作業'}
                       </span>
                       <span className="font-mono font-bold" style={{ fontSize: 10, background: '#EDE9FE', color: '#6D28D9', padding: '1px 6px', borderRadius: 4, border: '1px solid #DDD6FE' }}>
                         {currentItemTypeName}

@@ -361,7 +361,7 @@ export default function ToolingScheduleToolbar({
 
             {isWorklogModalOpen && (
                 <EditStepModal
-                    jobId={worklogJobId || 'caeb4ec3-065a-4653-b69a-19e6dbc4287a'}
+                    jobId={worklogJobId || null}
                     step={null}
                     nextStepNo={1}
                     onClose={() => {
