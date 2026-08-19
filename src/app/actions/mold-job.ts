@@ -363,7 +363,7 @@ export async function deleteMoldJobAction(jobId: string) {
 // READ 窶・Gantt Chart data
 // 笏€笏€笏€笏€笏€笏€笏€笏€笏€笏€笏€笏€笏€笏€笏€笏€笏€笏€笏€笏€笏€笏€笏€笏€笏€笏€笏€笏€笏€笏€笏€笏€笏€笏€笏€笏€笏€笏€笏€笏€笏€笏€笏€笏€笏€笏€笏€笏€笏€笏€笏€笏€笏€笏€笏€笏€笏€笏€笏€笏€笏€笏€笏€笏€笏€笏€笏€笏€笏€
 
-export async function getJobsForGantt(searchQuery?: string, fromDate?: string, toDate?: string, page: number = 1, pageSize: number = 50): Promise<{ data: JobForGantt[], count: number }> {
+export async function getJobsForGantt(searchQuery?: string, fromDate?: string, toDate?: string, page: number = 1, pageSize: number = 50, trackFilter?: string): Promise<{ data: JobForGantt[], count: number }> {
     const supabase = await createClient()
 
     let req = supabase
@@ -417,17 +417,20 @@ export async function getJobsForGantt(searchQuery?: string, fromDate?: string, t
             .from('job_steps')
             .select('job_id')
             .or(`and(deadline.gte.${fromDate},deadline.lte.${toDateEnd}),and(planned_start.gte.${fromDate},planned_start.lte.${toDateEnd}),and(planned_end.gte.${fromDate},planned_end.lte.${toDateEnd})`)
+            .limit(100)
 
         stepJobIds = Array.from(new Set(stepHits?.map(s => s.job_id).filter(Boolean) || []))
 
         const orConditions = [
             `and(mold_deadline.gte.${fromDate},mold_deadline.lte.${toDateEnd})`,
             `and(deadline.gte.${fromDate},deadline.lte.${toDateEnd})`,
-            `and(start_date.gte.${fromDate},start_date.lte.${toDateEnd})`,
-            `and(ship_date.gte.${fromDate},ship_date.lte.${toDateEnd})`
+            `and(ship_date.gte.${fromDate},ship_date.lte.${toDateEnd})`,
+            `and(target_completion_date.gte.${fromDate},target_completion_date.lte.${toDateEnd})`
         ]
+
         if (stepJobIds.length > 0) {
-            orConditions.push(`job_id.in.(${stepJobIds.join(',')})`)
+            const safeStepJobIds = stepJobIds.slice(0, 80)
+            orConditions.push(`job_id.in.(${safeStepJobIds.join(',')})`)
         }
 
         req = req.or(orConditions.join(','))
@@ -515,6 +518,50 @@ export async function getJobsForGantt(searchQuery?: string, fromDate?: string, t
     
     const finalData = data || []
     
+    // Auto-fetch companion sibling jobs (e.g. companion DESIGN job or companion MOLD job) for the active products in this date range
+    if (finalData.length > 0) {
+        const existingJobIds = new Set(finalData.map(j => j.job_id))
+        const matchedProductIds = Array.from(new Set(finalData.map((j: any) => j.product_id).filter(Boolean)))
+        
+        if (matchedProductIds.length > 0) {
+            const { data: siblingJobs } = await supabase
+                .from('jobs')
+                .select(`
+                    *,
+                    job_steps(
+                        step_id, job_id, step_no, step_name, step_status,
+                        track, planned_start, planned_end, planned_hours,
+                        actual_hours, estimated_hours, machine_id,
+                        assigned_to, machining_location, deadline, notes, processing_status_id, item_type_id,
+                        condition, arrangement,
+                        processing_statuses!job_steps_processing_status_id_fkey(status_code),
+                        item_types(item_type_id, item_type_code, item_type_name_ja)
+                    ),
+                    products!jobs_product_id_fkey(
+                        product_id, product_code, product_name_internal,
+                        product_material_specs(material_type, material_grade, thickness_mm, sheet_width_mm)
+                    ),
+                    design_revisions(design_code, revision_number, design_length, design_width, design_height, design_depth, cutline_length, cutline_width, cavity_count, plastic_type_designed),
+                    physical_molds(physical_mold_id, system_code, display_name, actual_length_mm, actual_width_mm, actual_height_mm),
+                    equipment!jobs_equipment_id_fkey(equipment_id, equipment_code, display_name, equipment_type),
+                    work_orders!jobs_work_order_id_fkey(wo_id, wo_code, wo_name, wo_status, wo_type, deadline),
+                    companies!jobs_company_id_fkey(company_name, company_code),
+                    job_types(job_type_name_ja, job_type_name_vi)
+                `)
+                .in('product_id', matchedProductIds)
+                .neq('job_status', 'CANCELLED')
+            
+            if (siblingJobs) {
+                siblingJobs.forEach(sj => {
+                    if (!existingJobIds.has(sj.job_id)) {
+                        existingJobIds.add(sj.job_id)
+                        finalData.push(sj as any)
+                    }
+                })
+            }
+        }
+    }
+
     if (finalData.length > 0) {
         const fetchedJobIds = finalData.map(j => j.job_id)
         let allLogs: any[] = []

@@ -320,8 +320,6 @@ export function DailyWorklogQuickModal({
       </html>
     `)
     printWin.document.close()
-
-    alert(`【印刷完了】\n日報記録書の印刷・PDF出力処理が完了しました。\n（対象: ${empName}様・${selectedDate}）`)
   }
 
   const selectedEmployeeObj = useMemo(() => {

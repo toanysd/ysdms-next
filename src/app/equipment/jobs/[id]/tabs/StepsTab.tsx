@@ -13,7 +13,8 @@ const STEP_STATUS_MAP: Record<string, { key: string; color: string }> = {
 }
 
 export function StepsTab({ job, onRefresh }: { job: any; onRefresh?: () => void }) {
-  const t = useTranslations()
+  const t = useTranslations('Equipment')
+  const tCommon = useTranslations('Common')
 
   const steps = [...(job.job_steps || [])].sort((a: any, b: any) => a.step_no - b.step_no)
   const supabase = createClient()
@@ -51,10 +52,8 @@ export function StepsTab({ job, onRefresh }: { job: any; onRefresh?: () => void 
 
   const SortTh = ({ col, label, style }: { col: string; label: string; style?: React.CSSProperties }) => (
     <th style={{ ...style, cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSort(col)}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-        <div>
-          {label}
-        </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 4, justifyContent: style?.textAlign === 'center' ? 'center' : 'flex-start' }}>
+        <span>{label}</span>
         <SortIcon col={col} />
       </div>
     </th>
@@ -72,7 +71,7 @@ export function StepsTab({ job, onRefresh }: { job: any; onRefresh?: () => void 
 
   const handleDelete = async (e: React.MouseEvent, stepId: string, stepName: string) => {
     e.stopPropagation()
-    if (!window.confirm(t('Common.deleteConfirm'))) {
+    if (!window.confirm(tCommon('deleteConfirm'))) {
       return
     }
     
@@ -81,7 +80,7 @@ export function StepsTab({ job, onRefresh }: { job: any; onRefresh?: () => void 
     setDeleting(null)
     
     if (error) {
-      alert(t('Common.deleteError') + error.message)
+      alert(tCommon('deleteError') + error.message)
     } else {
       onRefresh?.()
     }
@@ -99,11 +98,11 @@ export function StepsTab({ job, onRefresh }: { job: any; onRefresh?: () => void 
         <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-default)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 6, color: 'var(--text-primary)' }}>
             <Clock size={16} style={{ color: 'var(--accent)' }} />
-            {t('Equipment.danhSachCongOan')}
+            {t('danhSachCongOan')}
           </h3>
           <button className="btn btn-primary text-xs" onClick={openCreateModal}>
             <Plus size={14} />
-            {t('Equipment.themCongOan')}
+            {t('themCongOan')}
           </button>
         </div>
         
@@ -112,16 +111,16 @@ export function StepsTab({ job, onRefresh }: { job: any; onRefresh?: () => void 
             <thead>
               <tr>
                 <SortTh col="step_no" label="No." style={{ width: 55, textAlign: 'center' }} />
-                <SortTh col="step_name" label={t('Equipment.tenCongOan')} style={{ width: 180 }} />
+                <SortTh col="step_name" label={t('tenCongOan')} style={{ width: 180 }} />
                 <th style={{ width: 80 }}>
-                  {t('Equipment.track')}
+                  {t('track')}
                 </th>
-                <SortTh col="step_status" label={t('Equipment.trangThai')} style={{ width: 100 }} />
-                <SortTh col="planned_start" label={t('Equipment.batAuDuKien')} style={{ width: 110 }} />
-                <SortTh col="planned_end" label={t('Equipment.ketThucDuKien')} style={{ width: 110 }} />
-                <SortTh col="planned_hours" label={t('Equipment.gioDuKien')} style={{ width: 80 }} />
-                <SortTh col="actual_hours" label={t('Equipment.gioThucTe')} style={{ width: 80 }} />
-                <SortTh col="deadline" label={t('Equipment.hanChot')} style={{ width: 100 }} />
+                <SortTh col="step_status" label={t('trangThai')} style={{ width: 100 }} />
+                <SortTh col="planned_start" label={t('batAuDuKien')} style={{ width: 110 }} />
+                <SortTh col="planned_end" label={t('ketThucDuKien')} style={{ width: 110 }} />
+                <SortTh col="planned_hours" label={t('gioDuKien')} style={{ width: 80 }} />
+                <SortTh col="actual_hours" label={t('gioThucTe')} style={{ width: 80 }} />
+                <SortTh col="deadline" label={t('hanChot')} style={{ width: 100 }} />
                 <th style={{ width: 140 }}>備考 (Ghi chú)</th>
                 <th style={{ width: 70 }}></th>
               </tr>
@@ -130,7 +129,7 @@ export function StepsTab({ job, onRefresh }: { job: any; onRefresh?: () => void 
               {sortedSteps.length === 0 ? (
                 <tr>
                   <td colSpan={11} style={{ padding: 40, textAlign: 'center', color: 'var(--text-muted)' }}>
-                    {t('Equipment.noSteps')}
+                    {t('noSteps')}
                   </td>
                 </tr>
               ) : (
@@ -156,7 +155,7 @@ export function StepsTab({ job, onRefresh }: { job: any; onRefresh?: () => void 
                         <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: stLabel.color }}>
                           {isCompleted ? <CheckCircle2 size={14} /> : <Circle size={14} />}
                           <span style={{ fontWeight: isCompleted || isRunning ? 700 : 400 }}>
-                            {step.processing_statuses?.status_code || (t as any)(`Equipment.${stLabel.key}`) || stLabel.key}
+                            {step.processing_statuses?.status_code || (stLabel?.key ? (t as any)(stLabel.key) : '') || stLabel?.key}
                           </span>
                         </div>
                       </td>
@@ -188,7 +187,7 @@ export function StepsTab({ job, onRefresh }: { job: any; onRefresh?: () => void 
                             onClick={(e) => { e.stopPropagation(); openEditModal(step) }}
                             className="btn-icon"
                             style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: 4 }}
-                            title={t('Common.edit')}
+                            title={tCommon('edit')}
                           >
                             <Pencil size={14} />
                           </button>
@@ -196,7 +195,7 @@ export function StepsTab({ job, onRefresh }: { job: any; onRefresh?: () => void 
                             onClick={(e) => handleDelete(e, step.step_id, step.step_name)}
                             className="btn-icon hover-danger"
                             style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: 4 }}
-                            title={t('Common.delete')}
+                            title={tCommon('delete')}
                             disabled={deleting === step.step_id}
                           >
                             <Trash2 size={14} />

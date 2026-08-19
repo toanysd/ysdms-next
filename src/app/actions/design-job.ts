@@ -30,6 +30,10 @@ export interface CreateDesignJobInput {
     notes?: string | null
     is_post_production?: boolean   // True = post-production modification Design Job
     modification_number?: number   // For post-production: MOD1, MOD2...
+    deadline?: string | null
+    mold_deadline?: string | null
+    ship_date?: string | null
+    target_completion_date?: string | null
 }
 
 export interface DesignJobResult {
@@ -112,6 +116,10 @@ export async function createDesignJobAction(
             overall_progress: 0,
             priority: 5,
             start_date: new Date().toISOString().split('T')[0],
+            deadline: input.deadline || input.mold_deadline || null,
+            mold_deadline: input.mold_deadline || null,
+            ship_date: input.ship_date || null,
+            target_completion_date: input.target_completion_date || null,
             notes: input.is_post_production
                 ? `POST_PRODUCTION — 設計変更 #${input.modification_number || 1}`
                 : '初回設計 (Initial Design)',
@@ -139,6 +147,8 @@ export async function createDesignJobAction(
         step_name: s.step_name,
         step_status: 'NOT_STARTED',
         track: 'DESIGN',
+        deadline: input.mold_deadline || input.deadline || null,
+        target_completion_date: input.target_completion_date || null,
         notes: s.step_name,
     }))
 

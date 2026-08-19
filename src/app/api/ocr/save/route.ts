@@ -35,6 +35,7 @@ interface SaveOCRInput {
   price_quote_required?: boolean
   shipping_deadline?: string
   mold_deadline?: string
+  design_category?: string
   mold_handling_mode?: 'REUSE_EXISTING' | 'CREATE_NEW'
   existing_handling_mode?: 'ENRICH_EXISTING' | 'NEW_REVISION'
   components?: Array<{
@@ -823,6 +824,61 @@ export async function POST(request: NextRequest) {
 
     if (!existingJob || !hasRecordedLogs) {
       await supabase.from('job_steps').insert(jobStepsToInsert)
+    }
+
+    // ─── 7. Auto-create Design Job for the Product & Revision ───────
+    try {
+      const designJobCode = `DES-${cleanCode}`
+      const { data: existingDesignJob } = await supabase
+        .from('jobs')
+        .select('job_id')
+        .eq('product_id', productId!)
+        .eq('job_category', 'DESIGN')
+        .limit(1)
+        .maybeSingle()
+
+      if (!existingDesignJob) {
+        const designJobName = `${cleanInternal} 設計`
+        const { data: newDesJob } = await supabase
+          .from('jobs')
+          .insert([{
+            job_code: designJobCode,
+            job_name: designJobName,
+            job_type_id: '9', // 設計
+            job_category: 'DESIGN',
+            product_id: productId,
+            design_revision_id: revisionId,
+            company_id: companyId,
+            job_status: 'NEW',
+            overall_progress: 0,
+            priority: 5,
+            start_date: new Date().toISOString().split('T')[0],
+            mold_deadline: moldDeadline || undefined,
+            ship_date: body.shipping_deadline || undefined,
+            deadline: moldDeadline || undefined,
+            target_completion_date: targetCompletionDate || undefined,
+            work_order_id: workOrderId || undefined,
+            notes: 'AI OCR 工程票取込 自動作成'
+          }])
+          .select('job_id')
+          .maybeSingle()
+
+        if (newDesJob) {
+          const hasProto = body.design_category === 'PROTOTYPE_POCKET' || Boolean(body.components?.some(c => c.step_name?.includes('試作')))
+          const desSteps = hasProto
+            ? [
+                { job_id: newDesJob.job_id, step_no: 1, step_name: '試作金型作成', step_status: 'NOT_STARTED', track: 'DESIGN', deadline: moldDeadline || null, target_completion_date: targetCompletionDate || null, notes: '試作金型作成' },
+                { job_id: newDesJob.job_id, step_no: 2, step_name: '本型設計', step_status: 'NOT_STARTED', track: 'DESIGN', deadline: moldDeadline || null, target_completion_date: targetCompletionDate || null, notes: '本型設計' }
+              ]
+            : [
+                { job_id: newDesJob.job_id, step_no: 1, step_name: '本型設計', step_status: 'NOT_STARTED', track: 'DESIGN', deadline: moldDeadline || null, target_completion_date: targetCompletionDate || null, notes: '本型設計' }
+              ]
+
+          await supabase.from('job_steps').insert(desSteps)
+        }
+      }
+    } catch (desErr) {
+      console.warn('Non-blocking Design Job creation error in OCR save:', desErr)
     }
 
     return NextResponse.json({

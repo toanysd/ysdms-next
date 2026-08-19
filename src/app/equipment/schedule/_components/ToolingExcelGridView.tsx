@@ -143,11 +143,12 @@ export default function ToolingExcelGridView({
         return false
     }
 
-    // Group jobs for a specific date
+    // Group jobs for a specific date (unifying Design and Mold jobs for the same product)
     const getGroupedJobsForDate = (dateStr: string) => {
         const dateJobMap = new Map<string, { job: JobForGantt, steps: JobStepRow[] }>()
         
         filteredJobs.forEach(job => {
+            const groupKey = (job as any).product_id || job.products?.product_id || (job as any).work_order_id || job.job_id
             let matchingSteps = (job.job_steps || []).filter(step => isStepOnDate(step, dateStr, job))
             if (trackFilter && trackFilter !== 'ALL') {
                 matchingSteps = matchingSteps.filter(step => {
@@ -160,10 +161,19 @@ export default function ToolingExcelGridView({
                 })
             }
             if (matchingSteps.length > 0) {
-                dateJobMap.set(job.job_id, {
-                    job,
-                    steps: matchingSteps
-                })
+                if (!dateJobMap.has(groupKey)) {
+                    dateJobMap.set(groupKey, {
+                        job,
+                        steps: [...matchingSteps]
+                    })
+                } else {
+                    const existing = dateJobMap.get(groupKey)!
+                    existing.steps.push(...matchingSteps)
+                    // Prefer manufacturing job over DESIGN job for header display
+                    if (job.job_category !== 'DESIGN' && existing.job.job_category === 'DESIGN') {
+                        existing.job = job
+                    }
+                }
             }
         })
 

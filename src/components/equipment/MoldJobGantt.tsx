@@ -357,6 +357,7 @@ const TaskRow = React.memo(function TaskRow({
       : 'transparent'
 
   const TRACK_META: Record<string, { badge: string; color: string; bg: string; label: string }> = {
+    DESIGN:             { badge: 'D', color: '#7c3aed', bg: '#f3e8ff', label: '設計' },
     ALUMI:              { badge: 'A', color: '#6d4c41', bg: '#efebe9', label: 'アルミ材' },
     MOLD:               { badge: 'M', color: '#1565c0', bg: '#e3f2fd', label: '金型' },
     PLUG:               { badge: 'P', color: '#e65100', bg: '#fff3e0', label: 'プラグ' },
@@ -1239,32 +1240,100 @@ export default function MoldJobGantt({ workOrders = [], jobs, employees = [], ma
       return (new Date(b.created_at || 0).getTime()) - (new Date(a.created_at || 0).getTime())
     })
 
-    // Process all jobs uniformly with full 3-level breakdown (Job -> Tracks -> Steps -> Add Step row)
+    // 1. Group jobs by product_id (or work_order_id or job_id)
+    const productGroups = new Map<string, {
+      groupKey: string
+      primaryJob: JobForGantt
+      jobs: JobForGantt[]
+      allSteps: JobStepRow[]
+    }>()
+
     sortedJobs.forEach(job => {
-      // If trackFilter is set, only include jobs that have at least one step for this track
-      if (trackFilter && trackFilter !== 'ALL') {
-        const hasMatchingStep = job.job_steps?.some(step => {
-          if (
-            (step as any).condition === 'EXISTING' ||
-            (step as any).step_status === 'EXISTING' ||
-            (step as any).arrangement === 'NOT_REQUIRED'
-          ) {
-            return false
-          }
-          const track = (step.track || 'MOLD').toUpperCase()
-          if (trackFilter === 'MOLD') return track === 'MOLD' || track === 'ALUMI' || track === 'FINISH'
-          return track === trackFilter
+      const groupKey = (job as any).product_id || job.products?.product_id || (job as any).work_order_id || job.job_id
+      if (!productGroups.has(groupKey)) {
+        productGroups.set(groupKey, {
+          groupKey,
+          primaryJob: job,
+          jobs: [job],
+          allSteps: [...(job.job_steps || [])]
         })
-        if (!hasMatchingStep) return
+      } else {
+        const group = productGroups.get(groupKey)!
+        group.jobs.push(job)
+        group.allSteps.push(...(job.job_steps || []))
+        // Prefer manufacturing job (MOLD_NEW, MOLD, etc.) over generic DESIGN job for card title and primary status
+        if (job.job_category !== 'DESIGN' && group.primaryJob.job_category === 'DESIGN') {
+          group.primaryJob = job
+        }
+      }
+    })
+
+    const TRACK_ORDER = ['DESIGN', 'TEST MOLD', 'ALUMI', 'MOLD', 'PLUG', 'CUTTER', 'WATER COOLING BASE', 'PRESSIER BASE', 'STAKING', 'FRAME', 'MACHINE', 'OTHER', 'FINISH']
+
+    // 2. Process all product groups uniformly with full 3-level breakdown (Product -> Tracks -> Steps -> Add Step row)
+    productGroups.forEach(group => {
+      const { primaryJob, jobs: groupJobs, allSteps } = group
+
+      // Tag all steps properly
+      allSteps.forEach(s => {
+        const itemTypes = (s as any).item_types
+        if (itemTypes?.item_type_code) {
+          s.track = itemTypes.item_type_code
+        } else if (!s.track && s.step_name) {
+          const upperName = s.step_name.toUpperCase()
+          if (upperName.includes('PLUG') || upperName.includes('プラグ')) s.track = 'PLUG'
+          else if (upperName.includes('CUTTER') || upperName.includes('抜型')) s.track = 'CUTTER'
+          else if (upperName.includes('FINISH') || upperName.includes('仕上げ')) s.track = 'FINISH'
+          else if (upperName.includes('DESIGN') || upperName.includes('設計')) s.track = 'DESIGN'
+          else s.track = 'MOLD'
+        }
+        // If the step belongs to a DESIGN job, ensure its track is DESIGN
+        const parentJob = groupJobs.find(j => j.job_id === s.job_id)
+        if (parentJob?.job_category === 'DESIGN' || parentJob?.job_code?.startsWith('DES-')) {
+          s.track = 'DESIGN'
+        }
+      })
+
+      const stepsByTrack = new Map<string, JobStepRow[]>()
+      allSteps.forEach(step => {
+        if (
+          (step as any).condition === 'EXISTING' ||
+          (step as any).step_status === 'EXISTING' ||
+          (step as any).arrangement === 'NOT_REQUIRED'
+        ) {
+          return
+        }
+        const track = (step.track || 'MOLD').toUpperCase()
+        if (['WATER_BASE', 'WATER COOLING BASE', 'FRAME', 'PRESSIER BASE', 'PRESSURE_BASE', 'STAKING', 'STACKING'].includes(track)) {
+          if ((step as any).condition !== 'NEW' && !(step as any).deadline && !(step as any).estimated_hours) {
+            return
+          }
+        }
+        if (!stepsByTrack.has(track)) stepsByTrack.set(track, [])
+        stepsByTrack.get(track)!.push(step)
+      })
+
+      let presentTracks = TRACK_ORDER.filter(t => stepsByTrack.has(t))
+      stepsByTrack.forEach((_, k) => { if (!TRACK_ORDER.includes(k)) presentTracks.push(k) })
+
+      if (trackFilter && trackFilter !== 'ALL') {
+        presentTracks = presentTracks.filter(t => {
+          if (trackFilter === 'DESIGN') return t === 'DESIGN' || t === 'TEST MOLD'
+          if (trackFilter === 'MOLD') return t === 'MOLD' || t === 'ALUMI' || t === 'FINISH'
+          return t === trackFilter
+        })
       }
 
-      const s = JOB_STATUS[job.job_status || 'NEW'] || JOB_STATUS.NEW
+      // If no tracks match the filter for this product, skip it
+      if (presentTracks.length === 0) return
+
+      const s = JOB_STATUS[primaryJob.job_status || 'NEW'] || JOB_STATUS.NEW
       
       let projStart = new Date(8640000000000000)
       let projEnd = new Date(-8640000000000000)
       let hasValidSteps = false
 
-      job.job_steps?.forEach(step => {
+      allSteps.forEach(step => {
         const dates: Date[] = []
         if (step.planned_start) dates.push(new Date(step.planned_start))
         if (step.planned_end) dates.push(new Date(step.planned_end))
@@ -1289,7 +1358,7 @@ export default function MoldJobGantt({ workOrders = [], jobs, employees = [], ma
       })
 
       if (!hasValidSteps) {
-        const targetDl = job.mold_deadline || job.deadline
+        const targetDl = primaryJob.mold_deadline || primaryJob.deadline || groupJobs.find(j => j.mold_deadline)?.mold_deadline
         if (targetDl) {
             projEnd = new Date(targetDl)
             projStart = new Date(projEnd)
@@ -1307,19 +1376,19 @@ export default function MoldJobGantt({ workOrders = [], jobs, employees = [], ma
       if (cProjStart.getTime() === cProjEnd.getTime()) cProjEnd.setHours(cProjEnd.getHours() + 1)
 
       // Extract Product Code, Job Type, and WO Code from DB relations
-      const prodCode = (job as any).products?.product_name_internal || (job as any).products?.product_code || (job as any).mold_masters?.products?.product_name_internal || ''
-      const typeName = (job as any).job_types?.job_type_name_ja || ((job as any).job_name?.includes(':') ? (job as any).job_name.split(':')[0].trim() : '')
-      const woCode = (job as any).work_orders?.wo_code
+      const prodCode = (primaryJob as any).products?.product_name_internal || (primaryJob as any).products?.product_code || (primaryJob as any).mold_masters?.products?.product_name_internal || ''
+      const typeName = (primaryJob as any).job_types?.job_type_name_ja || ((primaryJob as any).job_name?.includes(':') ? (primaryJob as any).job_name.split(':')[0].trim() : '')
+      const woCode = (primaryJob as any).work_orders?.wo_code
 
-      let cleanedJobName = job.job_name || job.job_code
+      let cleanedJobName = primaryJob.job_name || primaryJob.job_code
 
       if (prodCode) {
         let revSuffix = ''
-        if ((job as any).design_revisions?.revision_number !== undefined && (job as any).design_revisions?.revision_number > 0) {
-          revSuffix = `-R${(job as any).design_revisions.revision_number}`
+        if ((primaryJob as any).design_revisions?.revision_number !== undefined && (primaryJob as any).design_revisions?.revision_number > 0) {
+          revSuffix = `-R${(primaryJob as any).design_revisions.revision_number}`
         }
         const fullProductDisplay = prodCode.includes('-R') || !revSuffix ? prodCode : `${prodCode}${revSuffix}`
-        const displayType = typeName || ((job as any).job_name?.replace(/^[A-Z0-9_-]+[:\s]*/i, '') || '金型製作')
+        const displayType = typeName || ((primaryJob as any).job_name?.replace(/^[A-Z0-9_-]+[:\s]*/i, '') || '金型製作')
         
         cleanedJobName = `${fullProductDisplay}: ${displayType}`
         if (woCode) {
@@ -1331,62 +1400,22 @@ export default function MoldJobGantt({ workOrders = [], jobs, employees = [], ma
         }
       }
 
+      // Calculate aggregated progress
+      const totalSteps = allSteps.length
+      const completedSteps = allSteps.filter(s => s.step_status === 'COMPLETED' || (s as any).processing_statuses?.status_code?.includes('完了')).length
+      const groupProgress = totalSteps > 0 ? Math.round((completedSteps / totalSteps) * 100) : (primaryJob.overall_progress || 0)
+
       result.push({
-        id: job.job_id,
+        id: primaryJob.job_id,
         name: cleanedJobName,
         start: cProjStart,
         end: cProjEnd,
-        progress: job.overall_progress || 0,
+        progress: groupProgress,
         type: 'project',
-        hideChildren: !expandedJobs.has(job.job_id),
+        hideChildren: !expandedJobs.has(primaryJob.job_id),
         styles: { backgroundColor: s.color, progressColor: s.progressColor },
-        originalJob: job,
+        originalJob: primaryJob,
       })
-
-      job.job_steps?.forEach(s => {
-          const itemTypes = (s as any).item_types
-          if (itemTypes?.item_type_code) {
-              s.track = itemTypes.item_type_code
-          } else if (!s.track && s.step_name) {
-              const upperName = s.step_name.toUpperCase()
-              if (upperName.includes('PLUG') || upperName.includes('プラグ')) s.track = 'PLUG'
-              else if (upperName.includes('CUTTER') || upperName.includes('抜型')) s.track = 'CUTTER'
-              else if (upperName.includes('FINISH') || upperName.includes('仕上げ')) s.track = 'FINISH'
-              else s.track = 'MOLD'
-          }
-      })
-
-      const TRACK_ORDER = ['ALUMI', 'MOLD', 'PLUG', 'CUTTER', 'WATER COOLING BASE', 'PRESSIER BASE', 'STAKING', 'FRAME', 'MACHINE', 'OTHER', 'TEST MOLD', 'FINISH']
-      const stepsByTrack = new Map<string, typeof job.job_steps>()
-
-      job.job_steps?.forEach(step => {
-        // Only include steps for equipment being manufactured (exclude shared existing equipment)
-        if (
-          (step as any).condition === 'EXISTING' ||
-          (step as any).step_status === 'EXISTING' ||
-          (step as any).arrangement === 'NOT_REQUIRED'
-        ) {
-          return
-        }
-        const track = (step.track || 'MOLD').toUpperCase()
-        if (['WATER_BASE', 'WATER COOLING BASE', 'FRAME', 'PRESSIER BASE', 'PRESSURE_BASE', 'STAKING', 'STACKING'].includes(track)) {
-          if ((step as any).condition !== 'NEW' && !(step as any).deadline && !(step as any).estimated_hours) {
-            return
-          }
-        }
-        if (!stepsByTrack.has(track)) stepsByTrack.set(track, [])
-        stepsByTrack.get(track)!.push(step)
-      })
-
-      let presentTracks = TRACK_ORDER.filter(t => stepsByTrack.has(t))
-      stepsByTrack.forEach((_, k) => { if (!TRACK_ORDER.includes(k)) presentTracks.push(k) })
-
-      if (trackFilter && trackFilter !== 'ALL') {
-        presentTracks = presentTracks.filter(t => {
-          if (trackFilter === 'MOLD') return t === 'MOLD' || t === 'ALUMI' || t === 'FINISH'
-          return t === trackFilter
-        })
-      }
 
       const makeDateRange = (startDate: Date, endDate: Date, hasDates: boolean) => {
           let cs = parseSafeDate(startDate, BOUND_START)
@@ -1395,7 +1424,7 @@ export default function MoldJobGantt({ workOrders = [], jobs, employees = [], ma
           return { start: cs, end: ce }
       }
 
-      if (!expandedJobs.has(job.job_id)) return;
+      if (!expandedJobs.has(primaryJob.job_id)) return
 
       presentTracks.forEach(trackCode => {
         const trackSteps = stepsByTrack.get(trackCode) || []
@@ -1410,7 +1439,7 @@ export default function MoldJobGantt({ workOrders = [], jobs, employees = [], ma
           }
         })
         if (!trackDeadline && (trackCode === 'MOLD' || trackCode === 'FINISH')) {
-          trackDeadline = job.mold_deadline || job.deadline || null
+          trackDeadline = primaryJob.mold_deadline || primaryJob.deadline || null
         }
 
         let tStart = new Date(8640000000000000)
@@ -1439,32 +1468,26 @@ export default function MoldJobGantt({ workOrders = [], jobs, employees = [], ma
           })
         })
 
-        // Use deadline as fallback for bar end
         if (!tHasDates && trackDeadline) {
           tEnd = new Date(trackDeadline)
-          tStart = new Date(tEnd.getTime() - 7 * 86400000) // 1 week before deadline
+          tStart = new Date(tEnd.getTime() - 7 * 86400000)
           tHasDates = true
         }
         if (!tHasDates) { tStart = new Date(projStart); tEnd = new Date(projEnd) }
         if (tStart.getTime() > tEnd.getTime()) tEnd = new Date(tStart.getTime() + 3600000)
         const { start: ctStart, end: ctEnd } = makeDateRange(tStart, tEnd, tHasDates)
 
-        const trackId = `${job.job_id}_track_${trackCode}`
+        const trackId = `${primaryJob.job_id}_track_${trackCode}`
 
-        // Track Header row - now always visible
         const trackBarStyle = { 
             backgroundColor: 'var(--accent-light, #e0f2f1)', 
             progressColor: 'var(--accent)', 
             backgroundSelectedColor: 'var(--accent-light)' 
         }
 
-        // Container step = any step that has item_type_id (linked to item_types table)
         const containerStep = trackSteps.find(s => (s as any).item_type_id != null)
-        
-        // Priority 1: Manual status from Container Step
         let finalTrackStatus = containerStep?.processing_statuses?.status_code || null;
 
-        // Priority 2: Auto-calculate from Level 3 (work_logs)
         if (!finalTrackStatus) {
             let totalLogs = 0;
             let finishedLogs = 0;
@@ -1474,7 +1497,6 @@ export default function MoldJobGantt({ workOrders = [], jobs, employees = [], ma
                 const wls = (s as any).work_logs || [];
                 totalLogs += wls.length;
                 wls.forEach((wl: any) => {
-                    // A worklog is "finished" if is_finished=true OR its status contains 完了
                     const statusCode = wl.processing_statuses?.status_code || '';
                     if (wl.is_finished || statusCode.includes('完了')) finishedLogs++;
                     if (wl.hours_spent > 0) hasHours = true;
@@ -1502,8 +1524,8 @@ export default function MoldJobGantt({ workOrders = [], jobs, employees = [], ma
           end: ctEnd,
           progress: trackProgress,
           type: 'task',
-          project: job.job_id,
-          originalJobId: job.job_id,
+          project: primaryJob.job_id,
+          originalJobId: primaryJob.job_id,
           originalStep: containerStep,
           dependencies: [],
           styles: trackBarStyle,
@@ -1518,10 +1540,8 @@ export default function MoldJobGantt({ workOrders = [], jobs, employees = [], ma
           trackStatus: finalTrackStatus,
         } as ExtendedTask)
 
-        // If track is not expanded, don't push its steps
         if (!expandedTracks.has(trackId)) return;
 
-        // Function to push task rows (reused for step or worklogs)
         const pushTaskRows = (
             taskId: string, name: string,
             pStart: Date, pEnd: Date, hasPlanned: boolean,
@@ -1532,6 +1552,7 @@ export default function MoldJobGantt({ workOrders = [], jobs, employees = [], ma
         ) => {
             const { start: cPStart, end: cPEnd } = makeDateRange(pStart, pEnd, hasPlanned);
             const { start: cAStart, end: cAEnd } = makeDateRange(aStart, aEnd, hasActual);
+            const stepJobId = originalStep?.job_id || primaryJob.job_id
 
             if (compareMode === 'PLANNED') {
                 result.push({
@@ -1541,23 +1562,23 @@ export default function MoldJobGantt({ workOrders = [], jobs, employees = [], ma
                     progress, type: 'task', project: trackId, dependencies: hasPlanned ? dependencies : [],
                     styles: hasPlanned 
                         ? (isDraftMode 
-                            ? { backgroundColor: '#f3e8ff', progressColor: '#a855f7', backgroundSelectedColor: '#a855f7' } // Purple for draft
+                            ? { backgroundColor: '#f3e8ff', progressColor: '#a855f7', backgroundSelectedColor: '#a855f7' }
                             : { backgroundColor: stepS.color, progressColor: stepS.progressColor }) 
                         : { backgroundColor: 'var(--planned-ghost)', progressColor: 'transparent', backgroundSelectedColor: 'transparent' },
-                    originalStep, originalWorkLog, originalJobId: job.job_id, isActualRow: false
+                    originalStep, originalWorkLog, originalJobId: stepJobId, isActualRow: false
                 });
             } else if (compareMode === 'ACTUAL') {
                 if (hasActual) {
                     result.push({
                         id: taskId + '_actual', name, start: cAStart, end: cAEnd, progress: 100, type: 'task', project: trackId, dependencies: [],
                         styles: { backgroundColor: stepS.color, progressColor: stepS.progressColor, backgroundSelectedColor: stepS.progressColor },
-                        originalStep, originalWorkLog, originalJobId: job.job_id, isActualRow: true
+                        originalStep, originalWorkLog, originalJobId: stepJobId, isActualRow: true
                     });
                 } else {
                     result.push({
                         id: taskId + '_actual', name: '', start: cPStart, end: cPEnd, progress: 0, type: 'task', project: trackId, dependencies: [],
                         styles: { backgroundColor: 'var(--actual-ghost)', progressColor: 'transparent', backgroundSelectedColor: 'transparent' },
-                        originalStep, originalWorkLog, originalJobId: job.job_id, isActualRow: true
+                        originalStep, originalWorkLog, originalJobId: stepJobId, isActualRow: true
                     });
                 }
             } else if (compareMode === 'COMPARE') {
@@ -1566,37 +1587,33 @@ export default function MoldJobGantt({ workOrders = [], jobs, employees = [], ma
                     styles: isDraftMode 
                         ? { backgroundColor: 'var(--compare-draft)', progressColor: 'transparent', backgroundSelectedColor: 'transparent' }
                         : { backgroundColor: 'var(--compare-planned)', progressColor: 'transparent', backgroundSelectedColor: 'transparent' },
-                    originalStep, originalWorkLog, originalJobId: job.job_id, isActualRow: false
+                    originalStep, originalWorkLog, originalJobId: stepJobId, isActualRow: false
                 });
                 if (hasActual) {
                     result.push({
                         id: taskId + '_actual', name, start: cAStart, end: cAEnd, progress: 100, type: 'task', project: trackId, dependencies: [],
                         styles: { backgroundColor: stepS.color, progressColor: stepS.progressColor, backgroundSelectedColor: stepS.progressColor },
-                        originalStep, originalWorkLog, originalJobId: job.job_id, isActualRow: true
+                        originalStep, originalWorkLog, originalJobId: stepJobId, isActualRow: true
                     });
                 } else {
                     result.push({
                         id: taskId + '_actual', name: '', start: cPStart, end: cPEnd, progress: 0, type: 'task', project: trackId, dependencies: [],
                         styles: { backgroundColor: 'var(--actual-ghost)', progressColor: 'transparent', backgroundSelectedColor: 'transparent' },
-                        originalStep, originalWorkLog, originalJobId: job.job_id, isActualRow: true
+                        originalStep, originalWorkLog, originalJobId: stepJobId, isActualRow: true
                     });
                 }
             }
         };
 
-        // Individual step bars
         trackSteps.sort((a, b) => (a.step_no || 0) - (b.step_no || 0)).forEach((step, index) => {
           const dependencies = index > 0 ? [trackSteps[index - 1].step_id + '_planned'] : []
           const stepStatusCode = (step as any).processing_statuses?.status_code;
           const progress = stepStatusCode ? resolveProgress(stepStatusCode) : (step.step_status === 'COMPLETED' ? 100 : step.step_status === 'IN_PROGRESS' ? 50 : 0);
           const stepS = stepStatusCode ? resolveStatusColor(stepStatusCode) : (STEP_STATUS[step.step_status || 'PENDING'] || STEP_STATUS.PENDING);
-          // Container step = has item_type_id (linked to item_types lookup table)
           const isContainerStep = (step as any).item_type_id != null
           const wls = (step as any).work_logs || []
 
           if (isContainerStep && wls.length > 0) {
-              // ── Container step with worklogs: render worklogs as Level 3 ──
-              // Group worklogs by processing_code_id
               const wlGroups = new Map<number | string, typeof wls>()
               wls.forEach((wl: any) => {
                   const key = wl.processing_code_id ?? 'none'
@@ -1606,19 +1623,11 @@ export default function MoldJobGantt({ workOrders = [], jobs, employees = [], ma
 
               let subIndex = 0
               wlGroups.forEach((logs, codeId) => {
-                  // Processing name from the code, NOT employee name
                   const procName = logs[0]?.processing_codes?.processing_name || '作業'
-                  
-                  // Sum actual hours across all entries in this group
                   const totalActualHours = logs.reduce((sum: number, l: any) => sum + (l.hours_spent || 0), 0)
-                  
-                  // Get planned hours from first log's planned_hours (user-entered)
                   const totalPlannedHours = logs[0]?.planned_hours || 0
-                  
-                  // Collect unique employees for tooltip
                   const employeeNames = [...new Set(logs.map((l: any) => l.employees?.employee_name).filter(Boolean))]
 
-                  // Calculate ACTUAL date range from work_date entries
                   let earliestDate: Date | null = null
                   let latestDate: Date | null = null
                   logs.forEach((l: any) => {
@@ -1630,71 +1639,46 @@ export default function MoldJobGantt({ workOrders = [], jobs, employees = [], ma
                   })
                   const hasActualWl = !!(earliestDate && latestDate)
                   
-                  // ── Calculate PLANNED date range ──
-                  // Priority: 1) planned_date from worklog  2) step deadline  3) fallback to actual dates
                   let pStart: Date
                   let pEnd: Date
                   let hasPlannedWl: boolean
                   
                   if (logs[0]?.planned_date) {
-                      // User explicitly set a planned date
                       pStart = new Date(logs[0].planned_date)
                       const daysNeeded = totalPlannedHours > 0 ? Math.ceil(totalPlannedHours / 8) : 1
                       pEnd = new Date(pStart.getTime() + daysNeeded * 86400000)
                       hasPlannedWl = true
                   } else if (step.deadline || step.planned_end) {
-                      // Calculate backwards from step deadline
                       const baseEnd = new Date(step.deadline || step.planned_end!)
                       const daysNeeded = totalPlannedHours > 0 ? Math.ceil(totalPlannedHours / 8) : 1
                       pStart = new Date(baseEnd.getTime() - daysNeeded * 86400000)
                       pEnd = new Date(baseEnd)
                       hasPlannedWl = true
                   } else if (hasActualWl) {
-                      // No planned dates but has actual data → show ghost bar at actual position
-                      // hasPlannedWl stays FALSE → pushTaskRows renders ghost/dashed bar in PLANNED mode
-                      pStart = new Date(earliestDate!)
-                      pEnd = new Date(latestDate!.getTime() + 86400000)
+                      pStart = earliestDate!
+                      pEnd = latestDate!
                       hasPlannedWl = false
                   } else {
-                      // No data at all → use project range
                       pStart = new Date(projStart)
-                      pEnd = new Date(projStart)
-                      pEnd.setDate(pEnd.getDate() + 1)
+                      pEnd = new Date(projEnd)
                       hasPlannedWl = false
                   }
-                  
-                  // Actual date range
-                  let aStart: Date = earliestDate || pStart
-                  let aEnd: Date = latestDate ? new Date((latestDate as unknown as Date).getTime() + 86400000) : pEnd
 
-                  const wlId = `${step.step_id}_wl_${codeId}_${subIndex}`
-                  const wProgress = hasActualWl ? 50 : 0
-
-                  // Build the enriched worklog info for UI display
-                  const workLogInfo = {
-                      ...logs[0],
-                      processing_name: procName,
-                      total_actual_hours: Math.round(totalActualHours * 100) / 100,
-                      total_planned_hours: totalPlannedHours,
-                      employee_names: employeeNames,
-                      log_count: logs.length,
-                  }
+                  const aStart = hasActualWl ? earliestDate! : pStart
+                  const aEnd   = hasActualWl ? latestDate!   : pEnd
+                  const wlProgress = logs.some((l: any) => l.is_finished) ? 100 : totalActualHours > 0 ? 50 : 0
+                  const wlStatus = logs.some((l: any) => l.is_finished) ? resolveStatusColor('完了') : totalActualHours > 0 ? resolveStatusColor('進行中') : STEP_STATUS.PENDING
 
                   pushTaskRows(
-                      wlId, procName,
+                      `${step.step_id}_wl_${codeId}`, procName,
                       pStart, pEnd, hasPlannedWl,
                       aStart, aEnd, hasActualWl,
-                      wProgress, stepS,
-                      step, workLogInfo,
-                      []
+                      wlProgress, wlStatus,
+                      step, logs[0], subIndex > 0 ? [`${step.step_id}_wl_${Array.from(wlGroups.keys())[subIndex - 1]}_planned`] : dependencies
                   )
                   subIndex++
               })
-          } else if (isContainerStep && wls.length === 0) {
-              // Container step with NO worklogs: skip (track header already represents it)
-              // Vấn đề 1: IRI-015 shows empty MOLD row → don't render
           } else {
-              // ── Normal step: render as-is ──
               const hasPlanned = !!(step.planned_start && step.planned_end)
               const hasActual  = !!(step.actual_start  && step.actual_end)
               const stepDl = step.deadline ? new Date(step.deadline) : null
@@ -1731,21 +1715,20 @@ export default function MoldJobGantt({ workOrders = [], jobs, employees = [], ma
         })
       })
 
-      // Push + Add Step row at the bottom of the expanded job
-      if (expandedJobs.has(job.job_id)) {
+      if (expandedJobs.has(primaryJob.job_id)) {
         result.push({
-          id: `${job.job_id}_add_step_row`,
+          id: `${primaryJob.job_id}_add_step_row`,
           name: t('themCongDoanJobNay'),
           start: new Date(projStart),
           end: new Date(projEnd),
           progress: 0,
           type: 'task',
-          project: job.job_id,
+          project: primaryJob.job_id,
           dependencies: [],
           styles: { backgroundColor: 'transparent', progressColor: 'transparent', backgroundSelectedColor: 'transparent' },
           isAddStepRow: true,
-          originalJobId: job.job_id,
-          originalJob: job,
+          originalJobId: primaryJob.job_id,
+          originalJob: primaryJob,
           isDisabled: false
         } as any)
       }

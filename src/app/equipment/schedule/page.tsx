@@ -63,7 +63,7 @@ export default async function ToolingSchedulePage(props: ToolingSchedulePageProp
 
   const [woData, jobsData, empData, machData] = await Promise.all([
     getWorkOrdersForGantt({ search: query, fromDate, toDate, page: 1, pageSize }),
-    getJobsForGantt(query, fromDate, toDate, 1, pageSize),
+    getJobsForGantt(query, fromDate, toDate, 1, pageSize, trackFilter),
     supabase.from('employees').select('employee_id, employee_name, employee_code').order('employee_name'),
     supabase.from('machines').select('machine_id, machine_name, machine_code').order('machine_name')
   ])
