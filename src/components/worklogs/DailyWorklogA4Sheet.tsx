@@ -22,6 +22,7 @@ export interface DailyWorklogA4SheetProps {
   items: NippoItem[]
   scale?: number
   stampUrl?: string
+  hidePriceTableInPreview?: boolean
   onEditItem?: (item: NippoItem) => void
   onDeleteItem?: (logId: string) => void
 }
@@ -35,6 +36,7 @@ export function DailyWorklogA4Sheet({
   items,
   scale = 1.0,
   stampUrl,
+  hidePriceTableInPreview = false,
   onEditItem,
   onDeleteItem,
 }: DailyWorklogA4SheetProps) {
@@ -94,6 +96,9 @@ export function DailyWorklogA4Sheet({
           }
           .nippo-data-row {
             background-color: transparent !important;
+          }
+          .nippo-price-table-section {
+            display: grid !important;
           }
         }
         .nippo-data-row:hover {
@@ -514,8 +519,9 @@ export function DailyWorklogA4Sheet({
 
       {/* ── 3. BOTTOM REFERENCE PRICE TABLES (Exact Nippo7 Alignment) ── */}
       <div
+        className="nippo-price-table-section"
         style={{
-          display: 'grid',
+          display: hidePriceTableInPreview ? 'none' : 'grid',
           gridTemplateColumns: '1fr 1fr 1fr',
           gap: '24px',
           marginTop: '6px',

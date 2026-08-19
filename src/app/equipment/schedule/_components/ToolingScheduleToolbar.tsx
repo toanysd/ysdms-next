@@ -3,10 +3,11 @@
 import React, { useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { format, parseISO, addDays, addMonths, subDays, subMonths } from 'date-fns'
-import { ChevronLeft, ChevronRight, LayoutGrid, BarChart2, Search, ClipboardList, Printer, Sparkles } from 'lucide-react'
+import { ChevronLeft, ChevronRight, LayoutGrid, BarChart2, Search, ClipboardList, Printer, Sparkles, Briefcase } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { ManufacturingSheetOCRModal } from '@/components/ocr/ManufacturingSheetOCRModal'
 import { DailyWorklogQuickModal } from '@/components/worklogs/DailyWorklogQuickModal'
+import { EditStepModal } from '@/app/equipment/jobs/[id]/tabs/EditStepModal'
 
 export type TimeframeMode = 'week1' | 'week2' | 'month' | 'custom'
 export type ViewMode = 'gantt' | 'grid'
@@ -50,6 +51,7 @@ export default function ToolingScheduleToolbar({
     const [isOCRModalOpen, setIsOCRModalOpen] = useState(false)
     const [isWorklogModalOpen, setIsWorklogModalOpen] = useState(false)
     const [isPrintModalOpen, setIsPrintModalOpen] = useState(false)
+    const [worklogJobId, setWorklogJobId] = useState<string | null>(null)
 
     useEffect(() => { setLocalStart(currentDate) }, [currentDate])
     useEffect(() => { setLocalEnd(endDate) }, [endDate])
@@ -262,17 +264,34 @@ export default function ToolingScheduleToolbar({
                     </form>
                 </div>
 
-                {/* Block 4: Common Action Buttons (Worklog, Print, AI OCR) */}
+                {/* Block 4: Common Action Buttons (Worklog, Internal, Print, AI OCR) */}
                 <div className="flex items-center gap-1.5 shrink-0">
                     {/* Worklog Entry */}
                     <button
                         type="button"
-                        onClick={() => setIsWorklogModalOpen(true)}
+                        onClick={() => {
+                            setWorklogJobId(null)
+                            setIsWorklogModalOpen(true)
+                        }}
                         className="btn text-[10.5px] px-2 h-[26px] flex items-center gap-1 font-bold shadow-2xs border border-[var(--accent)]/40 text-[var(--accent)] bg-[var(--tint-teal-bg)] hover:brightness-95 cursor-pointer"
-                        title="日報・作業ログを記録"
+                        title="日報・作業ログを記録（ジョブ選択可能）"
                     >
                         <ClipboardList size={12} />
                         <span className="whitespace-nowrap">日報入力</span>
+                    </button>
+
+                    {/* Quick Internal Worklog Button */}
+                    <button
+                        type="button"
+                        onClick={() => {
+                            setWorklogJobId('caeb4ec3-065a-4653-b69a-19e6dbc4287a')
+                            setIsWorklogModalOpen(true)
+                        }}
+                        className="btn text-[10.5px] px-2 h-[26px] flex items-center gap-1 font-bold shadow-2xs border border-blue-200 text-blue-700 bg-blue-50 hover:bg-blue-100 cursor-pointer"
+                        title="社内作業（5S・保全・金型管理など）の日報を直接入力"
+                    >
+                        <Briefcase size={12} />
+                        <span className="whitespace-nowrap">社内作業</span>
                     </button>
 
                     {/* Print Daily Report */}
@@ -341,13 +360,18 @@ export default function ToolingScheduleToolbar({
             )}
 
             {isWorklogModalOpen && (
-                <DailyWorklogQuickModal
-                    isOpen={isWorklogModalOpen}
+                <EditStepModal
+                    jobId={worklogJobId || 'caeb4ec3-065a-4653-b69a-19e6dbc4287a'}
+                    step={null}
+                    nextStepNo={1}
                     onClose={() => {
                         setIsWorklogModalOpen(false)
+                        setWorklogJobId(null)
                         router.refresh()
                     }}
-                    initialDate={currentDate}
+                    onSaved={() => {
+                        router.refresh()
+                    }}
                 />
             )}
 

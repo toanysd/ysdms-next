@@ -7,7 +7,7 @@ import {
   X, Loader2, Trash2, Clock,
   Calendar, CheckCircle2, FileText, ChevronDown, ChevronUp,
   Printer, FileDown, Eye, Plus, Layers, User,
-  Edit3
+  Edit3, Briefcase
 } from 'lucide-react'
 import { SearchableSelect } from '@/components/ui/SearchableSelect'
 import { DailyWorklogA4Sheet, PRICE_MAP, NippoItem } from '@/components/worklogs/DailyWorklogA4Sheet'
@@ -34,9 +34,9 @@ type StepData = {
 }
 
 type Props = {
-  step: StepData | null
-  jobId: string
-  nextStepNo: number
+  step?: StepData | null
+  jobId?: string | null
+  nextStepNo?: number
   initialLog?: any
   onClose: () => void
   onSaved: () => void
@@ -45,7 +45,7 @@ type Props = {
 const QUICK_HOURS = [0.5, 1.0, 1.5, 2.0, 3.0, 4.0, 6.0, 8.0]
 const STORAGE_KEY_LAST_WORKER = 'ysdms_last_selected_worker_id'
 
-export function EditStepModal({ step, jobId, nextStepNo, initialLog, onClose, onSaved }: Props) {
+export function EditStepModal({ step, jobId, nextStepNo = 1, initialLog, onClose, onSaved }: Props) {
   const t = useTranslations()
   const supabase = createClient()
   const isNew = !step
@@ -207,15 +207,70 @@ export function EditStepModal({ step, jobId, nextStepNo, initialLog, onClose, on
     }
   }, [initialLog])
 
+  const [activeJobId, setActiveJobId] = useState<string>(jobId || '')
+  const [activeStep, setActiveStep] = useState<any>(step || null)
+  const [allJobsOptions, setAllJobsOptions] = useState<{ value: string; label: string }[]>([])
+  const [jobStepsList, setJobStepsList] = useState<any[]>([])
+
+  useEffect(() => {
+    if (jobId) setActiveJobId(jobId)
+  }, [jobId])
+
+  useEffect(() => {
+    if (step) setActiveStep(step)
+  }, [step])
+
+  const handleSelectJob = async (newJobId: string) => {
+    setActiveJobId(newJobId)
+    if (!newJobId) {
+      setJobMeta(null)
+      setActiveStep(null)
+      setJobStepsList([])
+      return
+    }
+
+    // 1. Fetch Job Info
+    const { data: jData } = await supabase
+      .from('jobs')
+      .select('job_id, job_code, job_name, job_category, deadline, mold_deadline')
+      .eq('job_id', newJobId)
+      .maybeSingle()
+    if (jData) {
+      setJobMeta(jData)
+    }
+
+    // 2. Fetch Job Steps
+    const { data: stps } = await supabase
+      .from('job_steps')
+      .select('*')
+      .eq('job_id', newJobId)
+      .order('step_no')
+
+    if (stps && stps.length > 0) {
+      setJobStepsList(stps)
+      setActiveStep(stps[0])
+      setStepName(stps[0].step_name || '')
+      setStepStatus(stps[0].step_status || 'PENDING')
+      setPlannedHours(stps[0].planned_hours ? String(stps[0].planned_hours) : '2.0')
+      setStepDeadline(stps[0].deadline ? stps[0].deadline.split('T')[0] : '')
+      setStepTrack(stps[0].track || 'MOLD')
+      setSelectedItemTypeId(stps[0].item_type_id ? String(stps[0].item_type_id) : '1')
+    } else {
+      setJobStepsList([])
+      setActiveStep(null)
+    }
+  }
+
   // ── Load All Master Data Dynamically from DB ──
   useEffect(() => {
     async function loadMeta() {
+      const targetJob = activeJobId || jobId
       // 1. Fetch Job Info
-      if (jobId) {
+      if (targetJob) {
         const { data: jData } = await supabase
           .from('jobs')
           .select('job_id, job_code, job_name, job_category, deadline, mold_deadline')
-          .eq('job_id', jobId)
+          .eq('job_id', targetJob)
           .maybeSingle()
         if (jData) {
           setJobMeta(jData)
@@ -225,22 +280,51 @@ export function EditStepModal({ step, jobId, nextStepNo, initialLog, onClose, on
           }
         }
 
-        if (isNew) {
-          const { data: latestSteps } = await supabase
-            .from('job_steps')
-            .select('step_no')
-            .eq('job_id', jobId)
-            .order('step_no', { ascending: false })
-            .limit(1)
+        const { data: stps } = await supabase
+          .from('job_steps')
+          .select('*')
+          .eq('job_id', targetJob)
+          .order('step_no')
+        if (stps) {
+          setJobStepsList(stps)
+          if (!activeStep && stps.length > 0) setActiveStep(stps[0])
+        }
 
-          const nextNo = (latestSteps && latestSteps.length > 0 && latestSteps[0].step_no != null)
-            ? latestSteps[0].step_no + 1
+        if (isNew) {
+          const nextNo = (stps && stps.length > 0 && stps[stps.length - 1].step_no != null)
+            ? stps[stps.length - 1].step_no + 1
             : 1
           setStepNo(nextNo)
         }
       }
 
-      // 2. Fetch Item Types (Phân nhánh), Processing Codes, Employees
+      // 2. Fetch All Jobs for Selector
+      const { data: jList } = await supabase
+        .from('jobs')
+        .select('job_id, job_code, job_name, job_category, products(product_code, product_name_internal)')
+        .neq('job_status', 'CANCELLED')
+        .order('job_code')
+
+      if (jList) {
+        const sorted = [...jList].sort((a, b) => {
+          const aIsInternal = a.job_code === '社内作業' || a.job_category === 'INTERNAL_OPS'
+          const bIsInternal = b.job_code === '社内作業' || b.job_category === 'INTERNAL_OPS'
+          if (aIsInternal && !bIsInternal) return -1
+          if (!aIsInternal && bIsInternal) return 1
+          return (a.job_code || '').localeCompare(b.job_code || '')
+        })
+
+        setAllJobsOptions(sorted.map(j => {
+          const pCode = (j as any).products?.product_name_internal || (j as any).products?.product_code || ''
+          const prefix = j.job_code === '社内作業' ? '📌 ' : pCode ? `[${pCode}] ` : `[${j.job_code}] `
+          return {
+            value: j.job_id,
+            label: `${prefix}${j.job_name || j.job_code}`
+          }
+        }))
+      }
+
+      // 3. Fetch Item Types (Phân nhánh), Processing Codes, Employees
       const [
         { data: itData },
         { data: codesData },
@@ -285,7 +369,7 @@ export function EditStepModal({ step, jobId, nextStepNo, initialLog, onClose, on
       }
     }
     loadMeta()
-  }, [jobId, isNew, step, supabase])
+  }, [jobId, activeJobId, isNew, step, supabase])
 
   // When changing item_type in Create Step, also auto set track and step name
   const handleItemTypeChange = (itId: string) => {
@@ -391,11 +475,13 @@ export function EditStepModal({ step, jobId, nextStepNo, initialLog, onClose, on
       }
 
       if (isNew) {
+        const targetJobId = activeJobId || jobId || 'caeb4ec3-065a-4653-b69a-19e6dbc4287a'
+        payload.job_id = targetJobId
         // Query latest max step_no for this job to prevent duplicate key constraint
         const { data: latestSteps } = await supabase
           .from('job_steps')
           .select('step_no')
-          .eq('job_id', jobId)
+          .eq('job_id', targetJobId)
           .order('step_no', { ascending: false })
           .limit(1)
 
@@ -410,7 +496,7 @@ export function EditStepModal({ step, jobId, nextStepNo, initialLog, onClose, on
         onSaved()
         onClose()
       } else {
-        const { error } = await supabase.from('job_steps').update(payload).eq('step_id', step.step_id)
+        const { error } = await supabase.from('job_steps').update(payload).eq('step_id', step?.step_id || activeStep?.step_id)
         if (error) throw error
         onSaved()
         setIsEditingStepConfig(false)
@@ -451,9 +537,12 @@ export function EditStepModal({ step, jobId, nextStepNo, initialLog, onClose, on
 
     setAddingLog(true)
     try {
+      const targetJobId: string = activeJobId || jobId || 'caeb4ec3-065a-4653-b69a-19e6dbc4287a'
+      const targetStepId: string | null = activeStep?.step_id || step?.step_id || null
+
       const payload = {
-        job_id: jobId,
-        job_step_id: step?.step_id || null,
+        job_id: targetJobId,
+        job_step_id: targetStepId,
         work_date: logWorkDate || new Date().toISOString().split('T')[0],
         hours_spent: hours,
         employee_id: logWorker,
@@ -472,15 +561,15 @@ export function EditStepModal({ step, jobId, nextStepNo, initialLog, onClose, on
       }
 
       // Update actual hours sum on the step
-      if (step?.step_id) {
+      if (targetStepId) {
         const { data: allLogs } = await supabase
           .from('work_logs')
           .select('hours_spent')
-          .eq('job_step_id', step.step_id)
+          .eq('job_step_id', targetStepId)
         
         if (allLogs) {
           const total = Math.round(allLogs.reduce((sum, l) => sum + (l.hours_spent || 0), 0) * 100) / 100
-          await supabase.from('job_steps').update({ actual_hours: total }).eq('step_id', step.step_id)
+          await supabase.from('job_steps').update({ actual_hours: total }).eq('step_id', targetStepId)
         }
       }
 
@@ -911,6 +1000,82 @@ export function EditStepModal({ step, jobId, nextStepNo, initialLog, onClose, on
                   {error}
                 </div>
               )}
+
+              {/* ── 0. JOB & STEP QUICK SWITCHER / SEARCH BAR ── */}
+              <div
+                style={{
+                  border: '1px solid var(--border-default)',
+                  borderRadius: 8,
+                  background: '#F8FAFC',
+                  padding: '8px 10px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 6,
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6 }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <Briefcase size={13} style={{ color: 'var(--accent)' }} />
+                    対象ジョブ (Chọn Job / Hạng mục):
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => handleSelectJob('caeb4ec3-065a-4653-b69a-19e6dbc4287a')}
+                    style={{
+                      fontSize: 10,
+                      fontWeight: 800,
+                      color: '#1D4ED8',
+                      background: '#EFF6FF',
+                      border: '1px solid #BFDBFE',
+                      borderRadius: 4,
+                      padding: '2px 8px',
+                      cursor: 'pointer',
+                    }}
+                    title="社内作業（5S・保全・金型管理など）を素早く選択"
+                  >
+                    📌 社内作業
+                  </button>
+                </div>
+
+                <SearchableSelect
+                  options={allJobsOptions}
+                  value={activeJobId}
+                  onChange={(v) => handleSelectJob(v || '')}
+                  placeholder="ジョブ・型番・製品名で検索..."
+                  maxDropdownHeight="200px"
+                />
+
+                {jobStepsList.length > 0 && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
+                    <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
+                      工程 (Công đoạn):
+                    </span>
+                    <select
+                      value={activeStep?.step_id || ''}
+                      onChange={(e) => {
+                        const found = jobStepsList.find(s => s.step_id === e.target.value)
+                        if (found) {
+                          setActiveStep(found)
+                          setStepName(found.step_name || '')
+                          setStepStatus(found.step_status || 'PENDING')
+                          setPlannedHours(found.planned_hours ? String(found.planned_hours) : '2.0')
+                          setStepDeadline(found.deadline ? found.deadline.split('T')[0] : '')
+                          setStepTrack(found.track || 'MOLD')
+                          setSelectedItemTypeId(found.item_type_id ? String(found.item_type_id) : '1')
+                        }
+                      }}
+                      className="form-input"
+                      style={{ fontSize: 11, height: 28, padding: '2px 6px', flex: 1, background: '#fff' }}
+                    >
+                      {jobStepsList.map((st) => (
+                        <option key={st.step_id} value={st.step_id}>
+                          Step {st.step_no}. {st.step_name} [{st.track || '金型'}]
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+              </div>
 
               {/* ── 1. STEP SPECIFICATION ANCHOR CARD (PARENT ENTITY) ── */}
               <div
@@ -1518,6 +1683,7 @@ export function EditStepModal({ step, jobId, nextStepNo, initialLog, onClose, on
                   workerName={selectedWorkerName}
                   totalHours={totalTodayHours}
                   items={nippoItems}
+                  hidePriceTableInPreview={true}
                   stampUrl={getEmployeeStampUrl(selectedWorker)}
                   onEditItem={(item) => {
                     const targetLog = todayWorkerLogs.find(l => l.log_id === item.log_id)
