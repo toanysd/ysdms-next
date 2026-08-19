@@ -75,9 +75,15 @@ export default function ToolingExcelGridView({
     // Filter jobs
     const filteredJobs = useMemo(() => {
         return liveJobs.filter(j => {
-            if (trackFilter === 'MOLD' && !j.job_steps?.some(s => s.track === 'MOLD')) return false
-            if (trackFilter === 'PLUG' && !j.has_plug && !j.job_steps?.some(s => s.track === 'PLUG')) return false
-            if (trackFilter === 'CUTTER' && !j.job_steps?.some(s => s.track === 'CUTTER')) return false
+            if (trackFilter && trackFilter !== 'ALL') {
+                const hasMatchingStep = j.job_steps?.some(s => {
+                    if ((s as any).condition === 'EXISTING' || (s as any).step_status === 'EXISTING' || (s as any).arrangement === 'NOT_REQUIRED') return false
+                    const track = (s.track || 'MOLD').toUpperCase()
+                    if (trackFilter === 'MOLD') return track === 'MOLD' || track === 'ALUMI' || track === 'FINISH'
+                    return track === trackFilter
+                })
+                if (!hasMatchingStep) return false
+            }
 
             if (searchQuery.trim()) {
                 const q = searchQuery.toLowerCase()
@@ -137,7 +143,14 @@ export default function ToolingExcelGridView({
         const dateJobMap = new Map<string, { job: JobForGantt, steps: JobStepRow[] }>()
         
         filteredJobs.forEach(job => {
-            const matchingSteps = (job.job_steps || []).filter(step => isStepOnDate(step, dateStr, job))
+            let matchingSteps = (job.job_steps || []).filter(step => isStepOnDate(step, dateStr, job))
+            if (trackFilter && trackFilter !== 'ALL') {
+                matchingSteps = matchingSteps.filter(step => {
+                    const track = (step.track || 'MOLD').toUpperCase()
+                    if (trackFilter === 'MOLD') return track === 'MOLD' || track === 'ALUMI' || track === 'FINISH'
+                    return track === trackFilter
+                })
+            }
             if (matchingSteps.length > 0) {
                 dateJobMap.set(job.job_id, {
                     job,

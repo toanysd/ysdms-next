@@ -124,6 +124,7 @@ export default async function ToolingSchedulePage(props: ToolingSchedulePageProp
             machines={machines}
             initialFromDate={fromDate}
             initialToDate={toDate}
+            trackFilter={trackFilter}
           />
         )}
       </div>

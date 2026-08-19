@@ -23,6 +23,7 @@ interface Props {
   machines?: any[]
   initialFromDate?: string
   initialToDate?: string
+  trackFilter?: 'ALL' | 'MOLD' | 'PLUG' | 'CUTTER'
 }
 
 export interface ExtendedTask extends Task {
@@ -963,7 +964,7 @@ const StaticTableComponent = React.memo(function StaticTableComponent(props: any
   )
 })
 
-export default function MoldJobGantt({ workOrders = [], jobs, employees = [], machines = [], initialFromDate, initialToDate }: Props) {
+export default function MoldJobGantt({ workOrders = [], jobs, employees = [], machines = [], initialFromDate, initialToDate, trackFilter = 'ALL' }: Props) {
   const router = useRouter()
   const searchParams = useSearchParams()
   const t = useTranslations('Equipment')
@@ -1240,6 +1241,23 @@ export default function MoldJobGantt({ workOrders = [], jobs, employees = [], ma
 
     // Process all jobs uniformly with full 3-level breakdown (Job -> Tracks -> Steps -> Add Step row)
     sortedJobs.forEach(job => {
+      // If trackFilter is set, only include jobs that have at least one step for this track
+      if (trackFilter && trackFilter !== 'ALL') {
+        const hasMatchingStep = job.job_steps?.some(step => {
+          if (
+            (step as any).condition === 'EXISTING' ||
+            (step as any).step_status === 'EXISTING' ||
+            (step as any).arrangement === 'NOT_REQUIRED'
+          ) {
+            return false
+          }
+          const track = (step.track || 'MOLD').toUpperCase()
+          if (trackFilter === 'MOLD') return track === 'MOLD' || track === 'ALUMI' || track === 'FINISH'
+          return track === trackFilter
+        })
+        if (!hasMatchingStep) return
+      }
+
       const s = JOB_STATUS[job.job_status || 'NEW'] || JOB_STATUS.NEW
       
       let projStart = new Date(8640000000000000)
@@ -1360,8 +1378,15 @@ export default function MoldJobGantt({ workOrders = [], jobs, employees = [], ma
         stepsByTrack.get(track)!.push(step)
       })
 
-      const presentTracks = TRACK_ORDER.filter(t => stepsByTrack.has(t))
+      let presentTracks = TRACK_ORDER.filter(t => stepsByTrack.has(t))
       stepsByTrack.forEach((_, k) => { if (!TRACK_ORDER.includes(k)) presentTracks.push(k) })
+
+      if (trackFilter && trackFilter !== 'ALL') {
+        presentTracks = presentTracks.filter(t => {
+          if (trackFilter === 'MOLD') return t === 'MOLD' || t === 'ALUMI' || t === 'FINISH'
+          return t === trackFilter
+        })
+      }
 
       const makeDateRange = (startDate: Date, endDate: Date, hasDates: boolean) => {
           let cs = parseSafeDate(startDate, BOUND_START)
@@ -1810,7 +1835,7 @@ export default function MoldJobGantt({ workOrders = [], jobs, employees = [], ma
     }
 
     return result
-  }, [jobs, draftJobs, isDraftMode, compareMode, expandedJobs, expandedTracks, fromDate, toDate, initialFromDate, initialToDate])
+  }, [jobs, draftJobs, isDraftMode, compareMode, expandedJobs, expandedTracks, fromDate, toDate, initialFromDate, initialToDate, trackFilter])
 
   // Keep tasksRef updated without triggering re-renders
   tasksRef.current = tasks;
@@ -2636,119 +2661,8 @@ export default function MoldJobGantt({ workOrders = [], jobs, employees = [], ma
             </button>
           </div>
 
-          {/* GROUP 3: Action Buttons */}
+          {/* GROUP 3: Panel Toggle */}
           <div className="flex items-center gap-1.5 flex-shrink-0">
-            {/* Worklog Input */}
-            <button
-              type="button"
-              className="btn text-[10.5px] px-2.5 h-7 flex items-center gap-1.5 shadow-sm font-bold cursor-pointer transition-all"
-              style={{
-                backgroundColor: selectedTask ? 'var(--tint-teal-bg, #f0fdfa)' : 'var(--bg-surface)',
-                borderColor: selectedTask ? 'var(--accent)' : 'var(--border-default)',
-                color: selectedTask ? 'var(--accent)' : 'var(--text-primary)',
-              }}
-              onClick={() => {
-                if (selectedTask?.originalStep && selectedTask.originalJobId) {
-                  setEditingJobId(selectedTask.originalJobId)
-                  setEditingStep(selectedTask.originalStep)
-                  setEditingWorklog(selectedTask.originalWorkLog || null)
-                  return
-                }
-
-                const targetJob = (selectedTask?.originalJobId ? jobs.find(j => j.job_id === selectedTask.originalJobId) : null) || (selectedJobId ? jobs.find(j => j.job_id === selectedJobId) : null) || jobs[0]
-                if (targetJob) {
-                  const firstStep = targetJob.job_steps?.[0] || {
-                    step_id: '',
-                    step_no: 1,
-                    step_name: targetJob.job_name || '作業',
-                    track: 'MOLD',
-                    step_status: 'IN_PROGRESS',
-                    planned_hours: null,
-                    actual_hours: null,
-                    deadline: targetJob.mold_deadline || targetJob.deadline || null,
-                    notes: null,
-                  }
-                  setEditingJobId(targetJob.job_id)
-                  setEditingStep(firstStep)
-                  setEditingWorklog(null)
-                } else {
-                  setEditingJobId('caeb4ec3-065a-4653-b69a-19e6dbc4287a')
-                  setEditingStep({
-                    step_id: '840d180d-2d92-4ff3-827d-a915806238f7',
-                    step_no: 1,
-                    step_name: '社内作業',
-                    track: 'GENERAL',
-                    step_status: 'IN_PROGRESS',
-                    planned_hours: 0,
-                    actual_hours: 0,
-                    deadline: null,
-                    notes: null,
-                  })
-                  setEditingWorklog(null)
-                }
-              }}
-              title={selectedTask ? `選択中: ${selectedTask.name} (クリックして日報入力)` : "日報・作業ログを記録"}
-            >
-              <ClipboardList size={13} style={{ color: 'var(--accent)' }} />
-              <span>日報入力</span>
-            </button>
-
-            {/* Internal Worklog */}
-            <button
-              type="button"
-              className="btn text-[10.5px] px-2.5 h-7 flex items-center gap-1.5 shadow-sm font-bold cursor-pointer"
-              style={{
-                backgroundColor: 'var(--tint-blue-bg)',
-                borderColor: 'var(--tint-blue-border)',
-                color: 'var(--tint-blue-text)',
-              }}
-              onClick={() => {
-                setEditingJobId('caeb4ec3-065a-4653-b69a-19e6dbc4287a')
-                setEditingStep({
-                  step_id: '840d180d-2d92-4ff3-827d-a915806238f7',
-                  step_no: 1,
-                  step_name: '社内作業',
-                  track: 'GENERAL',
-                  step_status: 'IN_PROGRESS',
-                  planned_hours: 0,
-                  actual_hours: 0,
-                  deadline: null,
-                  notes: null,
-                })
-                setEditingWorklog(null)
-              }}
-              title="5S・保全・金型管理など社内作業の日報を入力"
-            >
-              <span>📌 社内作業日報</span>
-            </button>
-
-            {/* Print */}
-            <button
-              type="button"
-              className="btn text-[10.5px] px-2.5 h-7 flex items-center gap-1.5 shadow-sm font-bold cursor-pointer"
-              style={{
-                backgroundColor: 'var(--tint-orange-bg, #FFF7ED)',
-                borderColor: 'var(--tint-orange-border, #FED7AA)',
-                color: 'var(--tint-orange-text, #C2410C)',
-              }}
-              onClick={() => setIsPrintNippoModalOpen(true)}
-              title="本日の日報記録書を確認・印刷・PDF出力"
-            >
-              <Printer size={13} />
-              <span>🖨️ 日報印刷</span>
-            </button>
-
-            {/* AI OCR */}
-            <button
-              type="button"
-              className="btn btn-primary text-[10.5px] px-2.5 h-7 flex items-center gap-1.5 shadow-sm cursor-pointer"
-              style={{ background: 'linear-gradient(135deg, #0d9488 0%, #0f766e 100%)', color: '#ffffff' }}
-              onClick={() => setIsOCRModalOpen(true)}
-            >
-              <Sparkles size={13} className="text-amber-300" />
-              <span>AI 工程票取込</span>
-            </button>
-
             {/* Expand / Collapse panel */}
             <button className="btn btn-secondary text-[10px] px-2 h-7 cursor-pointer" onClick={() => setIsPanelExpanded(!isPanelExpanded)} title={isPanelExpanded ? 'パネルを折りたたむ' : 'パネルを展開'}>
               {isPanelExpanded ? '◀' : '▶'}
