@@ -59,6 +59,7 @@ export function DailyWorklogQuickModal({
   const [jobsList, setJobsList] = useState<{ value: string; label: string }[]>([])
   const [processingCodes, setProcessingCodes] = useState<{ value: string; label: string }[]>([])
   const [rawCodes, setRawCodes] = useState<any[]>([])
+  const [departmentFilter, setDepartmentFilter] = useState<string>('ALL')
 
   const [selectedDate, setSelectedDate] = useState<string>(
     initialDate || format(new Date(), 'yyyy-MM-dd')
@@ -72,7 +73,15 @@ export function DailyWorklogQuickModal({
   })
   const [logs, setLogs] = useState<WorkLog[]>([])
   const [loading, setLoading] = useState(false)
-  const [showStamp, setShowStamp] = useState(true)
+  const [showStamp, setShowStamp] = useState(false)
+  const [showHours, setShowHours] = useState(true)
+
+  // Reset date on open to ensure current date
+  useEffect(() => {
+    if (isOpen) {
+      setSelectedDate(initialDate || format(new Date(), 'yyyy-MM-dd'))
+    }
+  }, [isOpen, initialDate])
 
   // Edit Single Log State
   const [editingLog, setEditingLog] = useState<{
@@ -97,7 +106,7 @@ export function DailyWorklogQuickModal({
       ] = await Promise.all([
         supabase.from('employees').select('employee_id, employee_name, employee_name_short, employee_code').eq('is_active', true).order('employee_name'),
         supabase.from('jobs').select('job_id, job_code, job_name, job_category').neq('job_status', 'CANCELLED').order('job_code'),
-        supabase.from('processing_codes').select('processing_code_id, processing_name').eq('is_active', true).order('processing_code_id')
+        supabase.from('processing_codes').select('processing_code_id, processing_name, department_code').eq('is_active', true).order('processing_code_id')
       ])
 
       if (empData && empData.length > 0) {
@@ -340,6 +349,15 @@ export function DailyWorklogQuickModal({
     return log.jobs.job_code
   }
 
+  // ── Filtered processing codes by department ──────────────────────────────
+  const filteredProcessingCodes = useMemo(() => {
+    if (departmentFilter === 'ALL') return processingCodes
+    return processingCodes.filter(pc => {
+      const raw = rawCodes.find((c: any) => String(c.processing_code_id) === pc.value)
+      return raw?.department_code === departmentFilter
+    })
+  }, [processingCodes, rawCodes, departmentFilter])
+
   const nippoItems: NippoItem[] = useMemo(() => {
     return logs.map(l => {
       const pName = l.processing_codes?.processing_name || ''
@@ -504,6 +522,23 @@ export function DailyWorklogQuickModal({
               <span>{showStamp ? '🔴 押印: ON' : '⚪ 押印: OFF'}</span>
             </button>
 
+            {/* Hours Toggle */}
+            <button
+              type="button"
+              className="btn flex items-center gap-1.5 shadow-sm font-bold"
+              style={{
+                fontSize: 11,
+                padding: '5px 10px',
+                background: showHours ? 'var(--tint-teal-bg, #CCFBF1)' : 'var(--bg-surface)',
+                borderColor: showHours ? 'var(--tint-teal-border, #99F6E4)' : 'var(--border-default)',
+                color: showHours ? 'var(--accent, #0D9488)' : 'var(--text-muted)',
+              }}
+              onClick={() => setShowHours(!showHours)}
+              title={showHours ? '工数を印字中（クリックで非表示）' : '工数非表示（クリックで印字）'}
+            >
+              <span>{showHours ? '⏱️ 工数: ON' : '⏱️ 工数: OFF'}</span>
+            </button>
+
             {/* Print Buttons */}
             <button
               type="button"
@@ -591,6 +626,8 @@ export function DailyWorklogQuickModal({
               workerName={selectedEmployeeName}
               totalHours={totalHours}
               items={nippoItems}
+              showStamp={showStamp}
+              showHours={showHours}
               stampUrl={dynamicStampUrl}
               onEditItem={handleEditRow}
               onDeleteItem={handleDeleteLog}
@@ -703,12 +740,40 @@ export function DailyWorklogQuickModal({
                   <label className="form-label" style={{ fontSize: 11.5, fontWeight: 700 }}>
                     作業内容・加工コード (Nội dung công việc) <span style={{ color: 'red' }}>*</span>
                   </label>
+                  {/* Department filter row */}
+                  <div style={{ display: 'flex', gap: 3, marginBottom: 5, flexWrap: 'wrap' }}>
+                    {[
+                      { value: 'ALL', label: 'すべて' },
+                      { value: 'DESIGN', label: '設計' },
+                      { value: 'MOLD_SHOP', label: '金型' },
+                      { value: 'PRODUCTION', label: '生産' },
+                      { value: 'GENERAL', label: '共通' },
+                    ].map(dept => (
+                      <button
+                        key={dept.value}
+                        type="button"
+                        onClick={() => setDepartmentFilter(dept.value)}
+                        style={{
+                          padding: '2px 8px',
+                          fontSize: 10,
+                          fontWeight: departmentFilter === dept.value ? 700 : 500,
+                          borderRadius: 3,
+                          border: '1px solid var(--border-default)',
+                          background: departmentFilter === dept.value ? 'var(--accent)' : 'var(--bg-surface)',
+                          color: departmentFilter === dept.value ? '#fff' : 'var(--text-secondary)',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        {dept.label}
+                      </button>
+                    ))}
+                  </div>
                   <SearchableSelect
-                    options={processingCodes}
+                    options={filteredProcessingCodes}
                     value={editingLog.processing_code_id}
                     onChange={(val) => setEditingLog({ ...editingLog, processing_code_id: val || '' })}
-                    placeholder="コードまたは作業名で検索（例: 50 5S、11 本型穴あけ、53 金型整理...）"
-                    maxDropdownHeight="240px"
+                    placeholder="コードまたは作業名で検索..."
+                    maxDropdownHeight="320px"
                   />
                 </div>
 

@@ -7,11 +7,12 @@ import {
   X, Loader2, Trash2, Clock,
   Calendar, CheckCircle2, FileText, ChevronDown, ChevronUp,
   Printer, FileDown, Eye, Plus, Layers, User,
-  Edit3, Briefcase, ClipboardList
+  Edit3, Briefcase, ClipboardList, Settings
 } from 'lucide-react'
 import { SearchableSelect } from '@/components/ui/SearchableSelect'
 import { DailyWorklogA4Sheet, PRICE_MAP, NippoItem } from '@/components/worklogs/DailyWorklogA4Sheet'
 import { getEmployeeStampUrl } from '@/lib/utils/stampUtils'
+import { ProcessingCodesManagerModal } from '@/components/worklogs/ProcessingCodesManagerModal'
 
 type StepData = {
   step_id: string
@@ -58,6 +59,10 @@ export function EditStepModal({ step, jobId, nextStepNo = 1, initialLog, mode = 
   const [processingCodes, setProcessingCodes] = useState<{ value: string; label: string }[]>([])
   const [rawCodes, setRawCodes] = useState<any[]>([])
   const [employees, setEmployees] = useState<any[]>([])
+
+  // Department filter for processing codes (Q7/Q8)
+  const [departmentFilter, setDepartmentFilter] = useState<string>('ALL')
+  const [showCodeManagerModal, setShowCodeManagerModal] = useState(false)
 
   const [activeJobId, setActiveJobId] = useState<string>(jobId || '')
   const [activeStep, setActiveStep] = useState<any>(step || null)
@@ -161,7 +166,7 @@ export function EditStepModal({ step, jobId, nextStepNo = 1, initialLog, mode = 
   const [logHours, setLogHours] = useState(
     initialLog?.hours_spent !== undefined && initialLog?.hours_spent !== null
       ? String(initialLog.hours_spent)
-      : '1.0'
+      : '0'
   )
   const [selectedCodeId, setSelectedCodeId] = useState<string>(
     initialLog?.processing_code_id ? String(initialLog.processing_code_id) : ''
@@ -170,6 +175,11 @@ export function EditStepModal({ step, jobId, nextStepNo = 1, initialLog, mode = 
   const [logNotes, setLogNotes] = useState(initialLog?.notes || '')
   const [logIsFinished, setLogIsFinished] = useState(Boolean(initialLog?.is_finished))
   const [addingLog, setAddingLog] = useState(false)
+
+  // Print & Preview Options
+  const [showStamp, setShowStamp] = useState(false)
+  const [showHours, setShowHours] = useState(true)
+  const [showZoomModal, setShowZoomModal] = useState(false)
 
   useEffect(() => {
     if (initialLog) {
@@ -238,6 +248,93 @@ export function EditStepModal({ step, jobId, nextStepNo = 1, initialLog, mode = 
     setStepAssignedTo(st.assigned_to || '')
   }
 
+  // Load / Reload Processing Codes (with department_code)
+  const loadProcessingCodes = async () => {
+    const { data: codesData } = await supabase
+      .from('processing_codes')
+      .select('processing_code_id, processing_name, department_code, category')
+      .eq('is_active', true)
+      .order('processing_code_id')
+    if (codesData) {
+      setRawCodes(codesData)
+      setProcessingCodes(codesData.map(c => ({
+        value: String(c.processing_code_id),
+        label: `[${c.processing_code_id}] ${c.processing_name}`
+      })))
+    }
+  }
+
+  // Auto-filter department when job changes
+  useEffect(() => {
+    if (!jobMeta) return
+    if (jobMeta.job_category === 'DESIGN') {
+      setDepartmentFilter('DESIGN')
+    } else if (['MOLD_NEW', 'MOLD_MODIFY', 'CUTTER_NEW', 'EQUIPMENT_NEW', 'EQUIPMENT_REPAIR'].includes(jobMeta.job_category || '')) {
+      setDepartmentFilter('MOLD_SHOP')
+    } else if (jobMeta.job_category === 'INTERNAL_OPS' || jobMeta.job_category === 'MAINTENANCE') {
+      setDepartmentFilter('GENERAL')
+    } else {
+      setDepartmentFilter('ALL')
+    }
+  }, [jobMeta])
+
+  // Processing codes already recorded in the current step
+  const recordedCodeIds = useMemo(() => {
+    return new Set(logs.map(l => l.processing_code_id).filter(Boolean) as number[])
+  }, [logs])
+
+  // Context flags (Prototype vs Mass)
+  const isPrototypeContext = useMemo(() => {
+    const stepName = (activeStep?.step_name || '').toLowerCase()
+    const jobCode = (jobMeta?.job_code || '').toLowerCase()
+    return stepName.includes('試作') || jobCode.includes('-d') || jobCode.includes('prototype')
+  }, [activeStep?.step_name, jobMeta?.job_code])
+
+  const isMassContext = useMemo(() => {
+    const stepName = (activeStep?.step_name || '').toLowerCase()
+    return stepName.includes('本型') || (!isPrototypeContext && jobMeta?.job_category === 'DESIGN')
+  }, [activeStep?.step_name, isPrototypeContext, jobMeta?.job_category])
+
+  // All applicable processing codes for current department & context (Prototype vs Mass)
+  const applicableProcessingCodes = useMemo(() => {
+    return processingCodes.filter(pc => {
+      const raw = rawCodes.find((c: any) => String(c.processing_code_id) === pc.value)
+      if (!raw) return true
+
+      // 1. Department filter
+      if (departmentFilter !== 'ALL' && raw.department_code !== departmentFilter) {
+        return false
+      }
+
+      // 2. Filter between 試作 and 本型 for Design codes
+      if (raw.department_code === 'DESIGN' || departmentFilter === 'DESIGN') {
+        const name = raw.processing_name || ''
+        if (isPrototypeContext && !isMassContext) {
+          // Prototype step -> exclude strictly mass-only codes
+          if (name.includes('本型') || name === '3D金型図面作成') return false
+        } else if (isMassContext && !isPrototypeContext) {
+          // Mass production step -> exclude strictly prototype-only codes
+          if (name.includes('試作')) return false
+        }
+      }
+
+      return true
+    })
+  }, [processingCodes, rawCodes, departmentFilter, isPrototypeContext, isMassContext])
+
+  // Dropdown options: Only hide recorded codes for DESIGN jobs (checklist mode)
+  // For Mold Shop, Internal Ops & Production: keep all codes selectable for repeatable logging
+  const dropdownProcessingCodes = useMemo(() => {
+    if (jobMeta?.job_category === 'DESIGN') {
+      return applicableProcessingCodes.filter(pc => {
+        const codeId = parseInt(pc.value)
+        if (editingLogId && selectedCodeId === pc.value) return true
+        return !recordedCodeIds.has(codeId)
+      })
+    }
+    return applicableProcessingCodes
+  }, [applicableProcessingCodes, recordedCodeIds, editingLogId, selectedCodeId, jobMeta?.job_category])
+
   useEffect(() => {
     async function loadMeta() {
       const targetJob = activeJobId || jobId
@@ -292,11 +389,9 @@ export function EditStepModal({ step, jobId, nextStepNo = 1, initialLog, mode = 
 
       const [
         { data: itData },
-        { data: codesData },
         { data: empData }
       ] = await Promise.all([
         supabase.from('item_types').select('*').order('item_type_id'),
-        supabase.from('processing_codes').select('processing_code_id, processing_name').eq('is_active', true).order('processing_code_id'),
         supabase.from('employees').select('employee_id, employee_name, employee_name_short, employee_code').eq('is_active', true).order('employee_name')
       ])
 
@@ -312,13 +407,7 @@ export function EditStepModal({ step, jobId, nextStepNo = 1, initialLog, mode = 
         }
       }
 
-      if (codesData) {
-        setRawCodes(codesData)
-        setProcessingCodes(codesData.map(c => ({
-          value: String(c.processing_code_id),
-          label: `[${c.processing_code_id}] ${c.processing_name}`
-        })))
-      }
+      await loadProcessingCodes()
 
       if (empData) {
         setEmployees(empData)
@@ -384,18 +473,27 @@ export function EditStepModal({ step, jobId, nextStepNo = 1, initialLog, mode = 
       return
     }
     setLoadingTodayLogs(true)
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('work_logs')
       .select(`
-        log_id, work_date, hours_spent, description, notes, processing_code_id, job_id, job_step_id,
-        jobs:job_id( job_id, job_code, job_name, products:product_id(product_code, product_name_internal), physical_molds:mold_id(equipment_code) ),
-        processing_codes:processing_code_id(processing_code_id, processing_name)
+        log_id, work_date, hours_spent, description, notes, processing_code_id, job_id, job_step_id, employee_id,
+        processing_codes(processing_code_id, processing_name),
+        jobs(
+          job_id,
+          job_code,
+          job_name,
+          physical_molds:equipment_id(equipment_code),
+          products:product_id(product_code, product_name_internal)
+        )
       `)
       .eq('employee_id', logWorker)
       .eq('work_date', logWorkDate)
       .order('created_at', { ascending: true })
 
-    if (data) setTodayWorkerLogs(data)
+    if (error) {
+      console.error('Error fetching today worker logs:', error)
+    }
+    if (data) setTodayWorkerLogs(data as any)
     setLoadingTodayLogs(false)
   }, [logWorker, logWorkDate, supabase])
 
@@ -458,8 +556,9 @@ export function EditStepModal({ step, jobId, nextStepNo = 1, initialLog, mode = 
 
   const handleSaveLog = async () => {
     if (!logWorker) { alert('作業者を選択してください'); return }
-    const hours = parseFloat(logHours)
-    if (!hours || isNaN(hours) || hours <= 0) { alert('実績時間を入力してください'); return }
+    // Hours are optional: default to 0 if blank or not entered
+    const parsedHours = parseFloat(logHours)
+    const hours = (!isNaN(parsedHours) && parsedHours >= 0) ? parsedHours : 0
 
     let desc = customDescription.trim()
     let codeId: number | null = null
@@ -483,7 +582,7 @@ export function EditStepModal({ step, jobId, nextStepNo = 1, initialLog, mode = 
         processing_code_id: codeId,
         description: desc || null,
         notes: logNotes.trim() || null,
-        is_finished: logIsFinished,
+        is_finished: logIsFinished || true,
       }
 
       if (editingLogId) {
@@ -497,13 +596,40 @@ export function EditStepModal({ step, jobId, nextStepNo = 1, initialLog, mode = 
       if (targetStepId) {
         const { data: allLogs } = await supabase
           .from('work_logs')
-          .select('hours_spent')
+          .select('log_id, hours_spent, processing_code_id')
           .eq('job_step_id', targetStepId)
         
         if (allLogs) {
           const total = Math.round(allLogs.reduce((sum, l) => sum + (l.hours_spent || 0), 0) * 100) / 100
-          await supabase.from('job_steps').update({ actual_hours: total }).eq('step_id', targetStepId)
-          if (activeStep) setActiveStep({ ...activeStep, actual_hours: total })
+          
+          // Check if all applicable codes for this step are now recorded (only for DESIGN checklist)
+          let stepStatusToSet = activeStep?.step_status === 'COMPLETED' ? 'COMPLETED' : 'IN_PROGRESS'
+          if (jobMeta?.job_category === 'DESIGN') {
+            const allRecordedCodes = new Set(allLogs.map(l => l.processing_code_id).filter(Boolean))
+            const hasRemainingCodes = applicableProcessingCodes.some(pc => !allRecordedCodes.has(parseInt(pc.value)))
+            stepStatusToSet = (!hasRemainingCodes && applicableProcessingCodes.length > 0) || activeStep?.step_status === 'COMPLETED' ? 'COMPLETED' : 'IN_PROGRESS'
+          }
+
+          await supabase.from('job_steps').update({
+            actual_hours: total,
+            step_status: stepStatusToSet
+          }).eq('step_id', targetStepId)
+
+          if (activeStep) setActiveStep({ ...activeStep, actual_hours: total, step_status: stepStatusToSet })
+          setJobStepsList(prev => prev.map(s => s.step_id === targetStepId ? { ...s, actual_hours: total, step_status: stepStatusToSet } : s))
+
+          // Auto-complete parent Job if all steps are completed
+          const { data: allJobSteps } = await supabase
+            .from('job_steps')
+            .select('step_id, step_status')
+            .eq('job_id', targetJobId)
+
+          if (allJobSteps && allJobSteps.length > 0) {
+            const allDone = allJobSteps.every(s => (s.step_id === targetStepId ? stepStatusToSet === 'COMPLETED' : s.step_status === 'COMPLETED'))
+            if (allDone) {
+              await supabase.from('jobs').update({ job_status: 'COMPLETED' }).eq('job_id', targetJobId)
+            }
+          }
         }
       }
 
@@ -511,7 +637,7 @@ export function EditStepModal({ step, jobId, nextStepNo = 1, initialLog, mode = 
       setSelectedCodeId('')
       setCustomDescription('')
       setLogNotes('')
-      setLogHours('1.0')
+      setLogHours('0')
       fetchLogs()
       fetchTodayLogs()
       onSaved()
@@ -535,12 +661,58 @@ export function EditStepModal({ step, jobId, nextStepNo = 1, initialLog, mode = 
   const handlePrintSheet = (isPdf = false) => {
     const printContent = document.getElementById('nippo-a4-sheet-container')
     if (!printContent) return
+
     const printWin = window.open('', '_blank', 'width=1050,height=800')
     if (!printWin) return
+
     printWin.document.write(`
+      <!DOCTYPE html>
       <html>
-        <head><style>@page { size: A4 landscape; margin: 0; } .nippo-row-actions { display: none !important; }</style></head>
-        <body>${printContent.innerHTML}<script>window.onload=function(){window.print();window.close();}</script></body>
+        <head>
+          <meta charset="utf-8" />
+          <title>日報記録書_${selectedWorkerName}_${logWorkDate}</title>
+          <style>
+            @page {
+              size: A4 landscape;
+              margin: 0;
+            }
+            html, body {
+              width: 100%;
+              height: 100%;
+              margin: 0;
+              padding: 0;
+              background: #fff;
+              color: #000;
+              font-family: "MS PGothic", "Meiryo", "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif;
+              -webkit-print-color-adjust: exact;
+              print-color-adjust: exact;
+            }
+            .nippo-a4-sheet {
+              transform: none !important;
+              box-shadow: none !important;
+              border: none !important;
+              padding: 22mm 12mm 20mm 12mm !important;
+              width: 100% !important;
+              height: 100% !important;
+              box-sizing: border-box !important;
+              page-break-inside: avoid;
+            }
+            .nippo-row-actions {
+              display: none !important;
+            }
+          </style>
+        </head>
+        <body>
+          ${printContent.innerHTML}
+          <script>
+            window.onload = function() {
+              window.print();
+            }
+            window.onafterprint = function() {
+              window.close();
+            }
+          </script>
+        </body>
       </html>
     `)
     printWin.document.close()
@@ -550,14 +722,28 @@ export function EditStepModal({ step, jobId, nextStepNo = 1, initialLog, mode = 
   const selectedWorkerName = selectedWorker?.employee_name || '担当者'
   const selectedWorkerShort = selectedWorker?.employee_name_short || selectedWorkerName
   const totalTodayHours = Math.round(todayWorkerLogs.reduce((sum, l) => sum + (l.hours_spent || 0), 0) * 100) / 100
-  const nippoItems: NippoItem[] = todayWorkerLogs.map(l => ({
-    log_id: l.log_id,
-    model_code: l.jobs?.physical_molds?.equipment_code || l.jobs?.job_code || '',
-    processing_name: l.processing_codes?.processing_name || l.description || '',
-    notes: l.notes || '',
-    hours_spent: l.hours_spent,
-    price_value: ''
-  }))
+
+  const getModelCode = (l: any) => {
+    if (!l.jobs) return '-'
+    if (l.jobs.job_code === '社内作業') return '社内作業'
+    if (l.jobs.physical_molds?.equipment_code) return l.jobs.physical_molds.equipment_code
+    if (l.jobs.products?.product_code) return l.jobs.products.product_code
+    return l.jobs.job_code || ''
+  }
+
+  const nippoItems: NippoItem[] = useMemo(() => {
+    return todayWorkerLogs.map(l => ({
+      log_id: l.log_id,
+      work_date: l.work_date,
+      job_id: l.job_id || undefined,
+      processing_code_id: l.processing_code_id || undefined,
+      model_code: getModelCode(l),
+      processing_name: l.processing_codes?.processing_name || l.description || '',
+      notes: l.notes || '',
+      hours_spent: l.hours_spent,
+      price_value: ''
+    }))
+  }, [todayWorkerLogs])
 
   const currentItemType = itemTypes.find(i => String(i.item_type_id) === (activeStep?.item_type_id ? String(activeStep.item_type_id) : selectedItemTypeId))
   const currentItemTypeName = currentItemType?.item_type_name_ja || activeStep?.track || '金型'
@@ -856,13 +1042,13 @@ export function EditStepModal({ step, jobId, nextStepNo = 1, initialLog, mode = 
             {/* ▶ RIGHT PANEL: Top (Worklog Entry Form) + Bottom (Live A4 Preview) ▶ */}
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', background: '#F8FAFC' }}>
               
-              {/* ── TOP HALF: WORKLOG ENTRY FORM ── */}
-              <div style={{ background: '#FFFFFF', padding: '12px 16px', borderBottom: '1px solid var(--border-default)', display: 'flex', flexDirection: 'column', gap: 8, flexShrink: 0 }}>
+              {/* ── TOP HALF: WORKLOG ENTRY FORM (Streamlined Workflow 1->2->3->4->5) ── */}
+              <div style={{ background: '#FFFFFF', padding: '10px 16px', borderBottom: '1px solid var(--border-default)', display: 'flex', flexDirection: 'column', gap: 6, flexShrink: 0 }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                     <ClipboardList size={14} style={{ color: 'var(--accent)' }} />
                     <span style={{ fontSize: 12.5, fontWeight: 800, color: 'var(--text-primary)' }}>
-                      {editingLogId ? '✏️ 日報の編集 (Chỉnh sửa nhật ký)' : '📝 新規日報の登録 (Thêm nhật ký mới)'}
+                      {editingLogId ? '✏️ 日報の編集 (Chỉnh sửa nhật ký)' : '📝 日報の登録 (Ghi nhật ký thao tác)'}
                     </span>
                   </div>
                   {editingLogId && (
@@ -870,10 +1056,11 @@ export function EditStepModal({ step, jobId, nextStepNo = 1, initialLog, mode = 
                       type="button"
                       onClick={() => {
                         setEditingLogId(null)
+                        setLogWorkDate(new Date().toISOString().split('T')[0])
                         setSelectedCodeId('')
                         setCustomDescription('')
                         setLogNotes('')
-                        setLogHours('1.0')
+                        setLogHours('0')
                       }}
                       style={{ fontSize: 10.5, color: '#64748B', cursor: 'pointer', background: 'none', border: 'none', textDecoration: 'underline' }}
                     >
@@ -882,86 +1069,203 @@ export function EditStepModal({ step, jobId, nextStepNo = 1, initialLog, mode = 
                   )}
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '130px 170px 1fr', gap: 10, alignItems: 'center' }}>
+                {/* Row 1: 1. 作業日 (Ngày) & 2. 作業者 (Nhân viên) */}
+                <div style={{ display: 'grid', gridTemplateColumns: '150px 1fr', gap: 12, alignItems: 'center' }}>
                   <div>
-                    <label className="form-label" style={{ fontSize: 10.5, fontWeight: 700, margin: 0 }}>作業日 <span style={{ color: 'red' }}>*</span></label>
-                    <input type="date" className="form-input font-mono font-bold" style={{ fontSize: 11.5, height: 32 }} value={logWorkDate} onChange={(e) => setLogWorkDate(e.target.value)} />
-                  </div>
-
-                  <div>
-                    <label className="form-label" style={{ fontSize: 10.5, fontWeight: 700, margin: 0 }}>作業者 <span style={{ color: 'red' }}>*</span></label>
-                    <select className="form-input font-bold" style={{ fontSize: 11.5, height: 32 }} value={logWorker} onChange={(e) => handleWorkerChange(e.target.value)}>
-                      <option value="">— 作業者を選択 —</option>
-                      {employees.map((e) => <option key={e.employee_id} value={e.employee_id}>[{e.employee_code || '—'}] {e.employee_name}</option>)}
-                    </select>
-                  </div>
-
-                  <div>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 2 }}>
-                      <label className="form-label" style={{ fontSize: 10.5, fontWeight: 700, margin: 0 }}>実績工数 (h) <span style={{ color: 'red' }}>*</span></label>
-                      <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>クイック選択:</span>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <input type="number" step="0.25" min="0.25" max="24" className="form-input font-mono text-center font-bold" style={{ fontSize: 13, height: 32, width: 65, color: 'var(--accent)' }} value={logHours} onChange={(e) => setLogHours(e.target.value)} />
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
-                        {QUICK_HOURS.map((h) => {
-                          const isSelected = parseFloat(logHours) === h
-                          return (
-                            <button
-                              key={h}
-                              type="button"
-                              onClick={() => setLogHours(String(h))}
-                              style={{
-                                padding: '2px 5px',
-                                fontSize: 10,
-                                fontWeight: 700,
-                                fontFamily: 'monospace',
-                                borderRadius: 3,
-                                border: `1px solid ${isSelected ? 'var(--accent)' : 'var(--border-default)'}`,
-                                background: isSelected ? 'var(--accent)' : 'var(--bg-muted, #F8FAFC)',
-                                color: isSelected ? '#fff' : 'var(--text-secondary)',
-                                cursor: 'pointer',
-                              }}
-                            >
-                              {h}h
-                            </button>
-                          )
-                        })}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 120px', gap: 10, alignItems: 'center' }}>
-                  <div>
-                    <label className="form-label" style={{ fontSize: 10.5, fontWeight: 700, margin: 0 }}>加工コード・作業内容 <span style={{ color: 'red' }}>*</span></label>
-                    <SearchableSelect
-                      options={processingCodes}
-                      value={selectedCodeId}
-                      onChange={(v) => {
-                        setSelectedCodeId(v || '')
-                        if (v) {
-                          const matched = rawCodes.find(c => c.processing_code_id === parseInt(v))
-                          if (matched) setCustomDescription(matched.processing_name)
-                        }
-                      }}
-                      placeholder="コードまたは作業名で検索（例: 21 穴あけ...）"
-                      maxDropdownHeight="220px"
+                    <label className="form-label" style={{ fontSize: 10.5, fontWeight: 700, margin: 0, display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <Calendar size={11} style={{ color: 'var(--accent)' }} />
+                      1. 作業日 (Ngày) <span style={{ color: 'red' }}>*</span>
+                    </label>
+                    <input
+                      type="date"
+                      className="form-input font-mono font-bold"
+                      style={{ fontSize: 11.5, height: 30 }}
+                      value={logWorkDate}
+                      onChange={(e) => setLogWorkDate(e.target.value)}
                     />
                   </div>
 
                   <div>
-                    <label className="form-label" style={{ fontSize: 10.5, fontWeight: 700, margin: 0 }}>備考・申し送り (Ghi chú)</label>
-                    <input type="text" className="form-input" style={{ fontSize: 11, height: 32 }} placeholder="治具、特記事項など..." value={logNotes} onChange={(e) => setLogNotes(e.target.value)} />
+                    <label className="form-label" style={{ fontSize: 10.5, fontWeight: 700, margin: 0, display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <User size={11} style={{ color: 'var(--accent)' }} />
+                      2. 作業者 (Nhân viên) <span style={{ color: 'red' }}>*</span>
+                    </label>
+                    <select
+                      className="form-input font-bold"
+                      style={{ fontSize: 11.5, height: 30 }}
+                      value={logWorker}
+                      onChange={(e) => handleWorkerChange(e.target.value)}
+                    >
+                      <option value="">— 作業者を選択 —</option>
+                      {employees.map((e) => (
+                        <option key={e.employee_id} value={e.employee_id}>
+                          [{e.employee_code || '—'}] {e.employee_name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                {/* Row 2: 3. 加工コード・作業内容 (Nội dung thao tác) */}
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 2 }}>
+                    <label className="form-label" style={{ fontSize: 10.5, fontWeight: 700, margin: 0, display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <ClipboardList size={11} style={{ color: 'var(--accent)' }} />
+                      3. 加工コード・作業内容 (Mã thao tác) <span style={{ color: 'red' }}>*</span>
+                    </label>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      {jobMeta?.job_category === 'DESIGN' && applicableProcessingCodes.length > 0 && (
+                        <span style={{
+                          fontSize: 9.5,
+                          padding: '1px 6px',
+                          borderRadius: 3,
+                          background: dropdownProcessingCodes.length === 0 ? 'var(--tint-teal-bg)' : '#FEF3C7',
+                          color: dropdownProcessingCodes.length === 0 ? 'var(--accent)' : '#B45309',
+                          border: `1px solid ${dropdownProcessingCodes.length === 0 ? 'var(--tint-teal-border)' : '#FDE68A'}`,
+                          fontWeight: 700
+                        }}>
+                          {dropdownProcessingCodes.length === 0 ? '🎉 全工程記録完了' : `未記録: ${dropdownProcessingCodes.length}/${applicableProcessingCodes.length}件`}
+                        </span>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => setShowCodeManagerModal(true)}
+                        style={{
+                          fontSize: 10,
+                          padding: '1px 6px',
+                          background: 'var(--bg-surface-2)',
+                          border: '1px solid var(--border-default)',
+                          borderRadius: 3,
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 3,
+                          color: 'var(--text-secondary)',
+                          fontWeight: 600,
+                        }}
+                        title="Quản lý / Thêm mới mã công việc"
+                      >
+                        <Settings size={10} /> <span>コード管理</span>
+                      </button>
+                    </div>
                   </div>
 
-                  <div style={{ paddingTop: 14 }}>
+                  {/* Department filter row */}
+                  <div style={{ display: 'flex', gap: 3, marginBottom: 3, flexWrap: 'wrap' }}>
+                    {[
+                      { value: 'ALL', label: 'すべて' },
+                      { value: 'DESIGN', label: '設計' },
+                      { value: 'MOLD_SHOP', label: '金型' },
+                      { value: 'PRODUCTION', label: '生産' },
+                      { value: 'OFFICE', label: '事務' },
+                      { value: 'GENERAL', label: '共通' },
+                    ].map(dept => (
+                      <button
+                        key={dept.value}
+                        type="button"
+                        onClick={() => setDepartmentFilter(dept.value)}
+                        style={{
+                          padding: '1px 6px',
+                          fontSize: 9.5,
+                          fontWeight: departmentFilter === dept.value ? 700 : 500,
+                          borderRadius: 3,
+                          border: '1px solid var(--border-default)',
+                          background: departmentFilter === dept.value ? 'var(--accent)' : 'var(--bg-surface)',
+                          color: departmentFilter === dept.value ? '#fff' : 'var(--text-secondary)',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        {dept.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  <SearchableSelect
+                    options={dropdownProcessingCodes}
+                    value={selectedCodeId}
+                    onChange={(v) => {
+                      setSelectedCodeId(v || '')
+                      if (v) {
+                        const matched = rawCodes.find(c => c.processing_code_id === parseInt(v))
+                        if (matched) setCustomDescription(matched.processing_name)
+                      }
+                    }}
+                    placeholder={dropdownProcessingCodes.length === 0 ? "すべての加工コードが登録済みです" : "コードまたは作業名で検索..."}
+                    maxDropdownHeight="320px"
+                  />
+                </div>
+
+                {/* Row 3: 4. 備考・申し送り (Ghi chú) */}
+                <div>
+                  <label className="form-label" style={{ fontSize: 10.5, fontWeight: 700, margin: 0 }}>
+                    4. 備考・申し送り (Ghi chú / Số shot)
+                  </label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    style={{ fontSize: 11, height: 30 }}
+                    placeholder="治具、特記事項、ショット数など..."
+                    value={logNotes}
+                    onChange={(e) => setLogNotes(e.target.value)}
+                  />
+                </div>
+
+                {/* Row 4: 5. 実績工数 (h) & [ 日報を登録 ] */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 140px', gap: 10, alignItems: 'flex-end' }}>
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 2 }}>
+                      <label className="form-label" style={{ fontSize: 10.5, fontWeight: 700, margin: 0, display: 'flex', alignItems: 'center', gap: 4 }}>
+                        <Clock size={11} style={{ color: 'var(--accent)' }} />
+                        5. 実績工数 (h) (Giờ công - Không bắt buộc)
+                      </label>
+                      <span style={{ fontSize: 9.5, color: 'var(--text-muted)' }}>クイック選択:</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 3, flexWrap: 'wrap' }}>
+                      <input
+                        type="number"
+                        step="0.25"
+                        min="0"
+                        max="24"
+                        placeholder="0"
+                        className="form-input font-mono text-center font-bold"
+                        style={{ fontSize: 12.5, height: 28, width: 55, color: 'var(--accent)' }}
+                        value={logHours}
+                        onChange={(e) => setLogHours(e.target.value)}
+                      />
+                      {[0, 0.5, 1.0, 1.5, 2.0, 3.0, 4.0, 6.0, 8.0].map((h) => {
+                        const isSelected = parseFloat(logHours) === h
+                        return (
+                          <button
+                            key={h}
+                            type="button"
+                            onClick={() => setLogHours(String(h))}
+                            style={{
+                              padding: '1px 5px',
+                              fontSize: 9.5,
+                              fontWeight: 700,
+                              fontFamily: 'monospace',
+                              borderRadius: 3,
+                              border: `1px solid ${isSelected ? 'var(--accent)' : 'var(--border-default)'}`,
+                              background: isSelected ? 'var(--accent)' : 'var(--bg-muted, #F8FAFC)',
+                              color: isSelected ? '#fff' : 'var(--text-secondary)',
+                              cursor: 'pointer',
+                            }}
+                          >
+                            {h}h
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+
+                  <div>
                     <button
                       type="button"
                       className="btn btn-primary"
                       onClick={handleSaveLog}
                       disabled={addingLog}
-                      style={{ fontSize: 11.5, padding: '6px 12px', width: '100%', height: 32, justifyContent: 'center', gap: 4 }}
+                      style={{ fontSize: 11.5, padding: '5px 12px', width: '100%', height: 30, justifyContent: 'center', gap: 4, fontWeight: 700 }}
                     >
                       {addingLog ? <Loader2 size={13} className="animate-spin" /> : <CheckCircle2 size={13} />}
                       <span>{addingLog ? '登録中...' : editingLogId ? '日報を更新' : '日報を登録'}</span>
@@ -970,9 +1274,9 @@ export function EditStepModal({ step, jobId, nextStepNo = 1, initialLog, mode = 
                 </div>
               </div>
 
-              {/* ── BOTTOM HALF: LIVE A4 PREVIEW ── */}
-              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '10px 14px', gap: 8, overflowY: 'auto' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#fff', padding: '6px 12px', borderRadius: 6, border: '1px solid var(--border-default)', flexShrink: 0 }}>
+              {/* ── BOTTOM HALF: LIVE A4 PREVIEW (Auto-fit + Zoom Modal) ── */}
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '8px 12px', gap: 6, minHeight: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#fff', padding: '5px 10px', borderRadius: 6, border: '1px solid var(--border-default)', flexShrink: 0 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <Eye size={13} style={{ color: 'var(--accent)' }} />
                     <span style={{ fontSize: 11.5, fontWeight: 800, color: 'var(--text-primary)' }}>
@@ -983,41 +1287,156 @@ export function EditStepModal({ step, jobId, nextStepNo = 1, initialLog, mode = 
                     </span>
                   </div>
 
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <button type="button" className="btn btn-secondary flex items-center gap-1 shadow-2xs" style={{ fontSize: 10.5, padding: '3px 10px' }} onClick={() => handlePrintSheet(false)}>
-                      <Printer size={12} />
-                      <span>印刷 (Print)</span>
+                  {/* Print Controls + Zoom Toggle */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 10.5, color: 'var(--text-secondary)', cursor: 'pointer', fontWeight: 600 }}>
+                      <input
+                        type="checkbox"
+                        checked={showStamp}
+                        onChange={(e) => setShowStamp(e.target.checked)}
+                        style={{ width: 13, height: 13, accentColor: 'var(--accent)' }}
+                      />
+                      <span>印鑑表示</span>
+                    </label>
+
+                    <label style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 10.5, color: 'var(--text-secondary)', cursor: 'pointer', fontWeight: 600 }}>
+                      <input
+                        type="checkbox"
+                        checked={showHours}
+                        onChange={(e) => setShowHours(e.target.checked)}
+                        style={{ width: 13, height: 13, accentColor: 'var(--accent)' }}
+                      />
+                      <span>工数印字</span>
+                    </label>
+
+                    <button
+                      type="button"
+                      className="btn btn-secondary flex items-center gap-1 shadow-2xs"
+                      style={{ fontSize: 10.5, padding: '2px 8px', height: 26 }}
+                      onClick={() => setShowZoomModal(true)}
+                      title="100%全画面プレビュー"
+                    >
+                      <Eye size={11} />
+                      <span>拡大</span>
                     </button>
-                    <button type="button" className="btn btn-primary flex items-center gap-1 shadow-2xs" style={{ fontSize: 10.5, padding: '3px 10px' }} onClick={() => handlePrintSheet(true)}>
-                      <FileDown size={12} />
-                      <span>PDF出力</span>
+
+                    <button
+                      type="button"
+                      className="btn btn-primary flex items-center gap-1 shadow-2xs"
+                      style={{ fontSize: 10.5, padding: '2px 10px', height: 26 }}
+                      onClick={() => handlePrintSheet(false)}
+                      title="A4横用紙に印刷"
+                    >
+                      <Printer size={11} />
+                      <span>印刷</span>
                     </button>
                   </div>
                 </div>
 
-                <div id="nippo-a4-sheet-container" style={{ background: '#fff', padding: '8px', borderRadius: 6, boxShadow: '0 2px 8px rgba(0,0,0,0.06)', border: '1px solid #CBD5E1', overflowX: 'auto', overflowY: 'auto', flex: 1, display: 'flex', justifyContent: 'center' }}>
-                  <DailyWorklogA4Sheet
-                    workDate={logWorkDate}
-                    workerName={selectedWorkerName}
-                    totalHours={totalTodayHours}
-                    items={nippoItems}
-                    hidePriceTableInPreview={true}
-                    stampUrl={getEmployeeStampUrl(selectedWorker)}
-                    onEditItem={(item) => {
-                      const targetLog = todayWorkerLogs.find(l => l.log_id === item.log_id)
-                      if (targetLog) {
-                        setEditingLogId(targetLog.log_id)
-                        setLogWorkDate(targetLog.work_date || logWorkDate)
-                        setLogHours(targetLog.hours_spent ? String(targetLog.hours_spent) : '')
-                        setSelectedCodeId(targetLog.processing_code_id ? String(targetLog.processing_code_id) : '')
-                        setCustomDescription(targetLog.description || '')
-                        setLogNotes(targetLog.notes || '')
-                      }
+                {/* Standard A4 Preview Sheet Container (Exact standard format, full crispness) */}
+                <div
+                  style={{
+                    flex: 1,
+                    overflowY: 'auto',
+                    overflowX: 'auto',
+                    padding: '8px',
+                    background: 'var(--bg-base, #F1F5F9)',
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'flex-start',
+                    borderRadius: 6,
+                    border: '1px solid #CBD5E1',
+                  }}
+                >
+                  <div
+                    id="nippo-a4-sheet-container"
+                    style={{
+                      background: '#fff',
+                      boxShadow: '0 2px 12px rgba(0, 0, 0, 0.08)',
+                      borderRadius: 4,
+                      display: 'inline-block',
                     }}
-                    onDeleteItem={(logId) => handleDeleteLog(logId)}
-                  />
+                  >
+                    <DailyWorklogA4Sheet
+                      workDate={logWorkDate}
+                      workerName={selectedWorkerName}
+                      totalHours={totalTodayHours}
+                      items={nippoItems}
+                      scale={0.78}
+                      showStamp={showStamp}
+                      showHours={showHours}
+                      hidePriceTableInPreview={false}
+                      stampUrl={getEmployeeStampUrl(selectedWorker)}
+                      onEditItem={(item) => {
+                        const targetLog = todayWorkerLogs.find(l => l.log_id === item.log_id)
+                        if (targetLog) {
+                          setEditingLogId(targetLog.log_id)
+                          setLogWorkDate(targetLog.work_date || logWorkDate)
+                          setLogHours(targetLog.hours_spent ? String(targetLog.hours_spent) : '0')
+                          setSelectedCodeId(targetLog.processing_code_id ? String(targetLog.processing_code_id) : '')
+                          setCustomDescription(targetLog.description || '')
+                          setLogNotes(targetLog.notes || '')
+                        }
+                      }}
+                      onDeleteItem={(logId) => handleDeleteLog(logId)}
+                    />
+                  </div>
                 </div>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── Fullscreen Zoom Preview Modal ── */}
+        {showZoomModal && (
+          <div
+            style={{
+              position: 'fixed',
+              inset: 0,
+              zIndex: 10000,
+              background: 'rgba(0, 0, 0, 0.75)',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: 16
+            }}
+            onClick={() => setShowZoomModal(false)}
+          >
+            <div
+              style={{
+                background: '#fff',
+                borderRadius: 8,
+                boxShadow: '0 20px 40px rgba(0,0,0,0.4)',
+                maxHeight: '92vh',
+                overflow: 'auto',
+                padding: 16,
+                position: 'relative'
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                <span style={{ fontSize: 13, fontWeight: 700 }}>🔍 拡大印刷プレビュー (100% 原寸)</span>
+                <button
+                  type="button"
+                  onClick={() => setShowZoomModal(false)}
+                  className="btn btn-secondary"
+                  style={{ fontSize: 11, padding: '2px 8px' }}
+                >
+                  ✕ 閉じる
+                </button>
+              </div>
+              <DailyWorklogA4Sheet
+                workDate={logWorkDate}
+                workerName={selectedWorkerName}
+                totalHours={totalTodayHours}
+                items={nippoItems}
+                scale={1.0}
+                showStamp={showStamp}
+                showHours={showHours}
+                hidePriceTableInPreview={true}
+                stampUrl={getEmployeeStampUrl(selectedWorker)}
+              />
             </div>
           </div>
         )}
@@ -1025,18 +1444,25 @@ export function EditStepModal({ step, jobId, nextStepNo = 1, initialLog, mode = 
         {/* ── Modal Footer ── */}
         <div
           style={{
-            padding: '10px 20px',
+            padding: '8px 16px',
             borderTop: '1px solid var(--border-default)',
             background: 'var(--bg-surface)',
             display: 'flex',
             justifyContent: 'flex-end',
           }}
         >
-          <button className="btn btn-secondary" onClick={onClose} style={{ fontSize: 12, padding: '5px 18px' }}>
+          <button className="btn btn-secondary" onClick={onClose} style={{ fontSize: 11.5, padding: '4px 16px' }}>
             閉じる (Đóng)
           </button>
         </div>
       </div>
+
+      {/* Processing Codes Manager Modal (Q7) */}
+      <ProcessingCodesManagerModal
+        isOpen={showCodeManagerModal}
+        onClose={() => setShowCodeManagerModal(false)}
+        onUpdated={loadProcessingCodes}
+      />
     </div>
   )
 }

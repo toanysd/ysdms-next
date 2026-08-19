@@ -9,7 +9,7 @@ import {
   Building2, ExternalLink, Layers, ShieldAlert,
   Package, Crop, Pin, FileText, MapPin, Box,
   Scale, Ruler, CircleDot, LayoutGrid, List,
-  GitFork, CornerDownRight, Link2, ArrowRight
+  GitFork, CornerDownRight, Link2, ArrowRight, Plus
 } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -17,7 +17,7 @@ import EquipmentQuickPreviewModal, { type QuickPreviewItem } from './EquipmentQu
 import { EquipmentContextMenu, EquipmentItemContext } from './EquipmentContextMenu'
 import { CenteredQuickJobWizardModal, QuickWizardMode } from './CenteredQuickJobWizardModal'
 import { isPrototypeDesignOrMold, getEffectiveDesignStatus, getDesignStatusBadgeInfo, formatCutterDisplayCode, formatMoldDisplayCode, formatCutterSpecString, formatCutlineSpecString, getCutlineSpecs, formatCornerRDisplay, formatChamferCDisplay, extractBaseMassCode, formatRackLocationDisplay, lookupCavType } from '@/lib/utils/moldNaming'
-import { updateRevisionStatus } from '@/app/actions/engineering'
+import { updateRevisionStatus, approveDesignRevisionAction } from '@/app/actions/engineering'
 
 type JobItem = {
   job_id: string
@@ -278,6 +278,7 @@ export function TabOverview(props: TabOverviewProps) {
   const [allRevs, setAllRevs] = useState<DesignRevItem[]>([])
   const [selectedRevId, setSelectedRevId] = useState<string | null>(null)
   const [updatingStatus, setUpdatingStatus] = useState(false)
+  const [approvalSuccessMessage, setApprovalSuccessMessage] = useState<string | null>(null)
 
   const handleStatusChange = async (newStatus: string) => {
     if (!activeRev) return
@@ -289,6 +290,70 @@ export function TabOverview(props: TabOverviewProps) {
       setAllRevs(prev => prev.map(r => r.revision_id === activeRev.revision_id ? updated : r))
     } catch (err) {
       console.error('Failed to update revision status:', err)
+    } finally {
+      setUpdatingStatus(false)
+    }
+  }
+
+  const handleApproveAction = async (approvalType: 'PROTOTYPE' | 'MASS') => {
+    if (!activeRev) return
+    const isProto = approvalType === 'PROTOTYPE'
+    const confirmMsg = isProto
+      ? `【試作金型製作の承認】\n図面 [${activeRev.design_code || 'R' + activeRev.revision_number}] を承認し、試作金型 [${productNameInternal || productCode} R${activeRev.revision_number}-D] および試作Jobを自動生成しますか？`
+      : `【量産金型製作の承認】\n図面 [${activeRev.design_code || 'R' + activeRev.revision_number}] を承認し、量産金型 [${productNameInternal || productCode}] および量産Jobを自動生成しますか？`
+    
+    if (!window.confirm(confirmMsg)) return
+
+    setUpdatingStatus(true)
+    try {
+      const res = await approveDesignRevisionAction({
+        revisionId: activeRev.revision_id,
+        approvalType
+      })
+      if (res.success && res.data) {
+        const updated = { ...activeRev, status: 'APPROVED' }
+        setActiveRev(updated)
+        setAllRevs(prev => prev.map(r => r.revision_id === activeRev.revision_id ? updated : r))
+        setApprovalSuccessMessage(`🎉 承認完了: 金型 [${res.data.equipment_code}] & Job [${res.data.job_code}] を自動生成し、Lịch trình gia công に登録しました！`)
+        setTimeout(() => setApprovalSuccessMessage(null), 8000)
+      }
+    } catch (err: any) {
+      console.error('Failed to approve revision:', err)
+      alert(`エラー: ${err.message || '承認処理に失敗しました'}`)
+    } finally {
+      setUpdatingStatus(false)
+    }
+  }
+
+  const handleCreateInitialRevision = async () => {
+    try {
+      setUpdatingStatus(true)
+      const cleanInternal = productNameInternal || productCode
+      const initialCode = cleanInternal
+      const { data: rev, error: rErr } = await supabase
+        .from('design_revisions')
+        .insert([{
+          product_id: productId,
+          company_id: companyId,
+          design_code: initialCode,
+          revision_number: 0,
+          status: 'DRAFT',
+          design_category: 'MASS_PRODUCTION',
+          tray_info: productDescription || null,
+          customer_tray_name: customerProductName || null,
+          cavity_count: pocketCount || null
+        }])
+        .select('*')
+        .single()
+
+      if (rErr || !rev) throw new Error(rErr?.message || 'Failed to create initial revision')
+
+      setActiveRev(rev as DesignRevItem)
+      setAllRevs([rev as DesignRevItem])
+      setSelectedRevId(rev.revision_id)
+    } catch (err: any) {
+      console.error('Error creating initial revision:', err)
+      alert(`エラー: ${err.message}`)
     } finally {
       setUpdatingStatus(false)
     }
@@ -847,37 +912,121 @@ export function TabOverview(props: TabOverviewProps) {
                 <PenTool size={14} style={{ color: 'var(--tint-teal-text)' }} />
                 <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--tint-teal-text)' }}>{tPC('boxSpecsDesignTitle')}</span>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                 {activeRev && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                    <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--tint-teal-text)' }}>承認状態:</span>
+                  <>
+                    {/* Fast Approval Action Buttons */}
+                    {activeRev.status !== 'APPROVED' ? (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                        <button
+                          type="button"
+                          onClick={() => handleApproveAction('PROTOTYPE')}
+                          disabled={updatingStatus}
+                          className="btn"
+                          style={{
+                            fontSize: 10.5,
+                            fontWeight: 700,
+                            padding: '3px 8px',
+                            background: '#FFF7ED',
+                            color: '#C2410C',
+                            border: '1px solid #FB923C',
+                            borderRadius: 4,
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 3,
+                            boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+                          }}
+                          title="試作金型 (Duyệt làm khuôn thử & tự động tạo Job trên Lịch)"
+                        >
+                          🧪 <span>試作承認 (Duyệt khuôn thử)</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => handleApproveAction('MASS')}
+                          disabled={updatingStatus}
+                          className="btn"
+                          style={{
+                            fontSize: 10.5,
+                            fontWeight: 700,
+                            padding: '3px 8px',
+                            background: '#F0FDF4',
+                            color: '#15803D',
+                            border: '1px solid #86EFAC',
+                            borderRadius: 4,
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 3,
+                            boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+                          }}
+                          title="量産金型 (Duyệt sản xuất hàng loạt & tự động tạo Job trên Lịch)"
+                        >
+                          🏆 <span>量産承認 (Duyệt hàng loạt)</span>
+                        </button>
+                      </div>
+                    ) : (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                        <span className="badge badge--success" style={{ fontSize: 10.5, fontWeight: 700, padding: '2px 8px' }}>
+                          🟢 承認済 ({activeRev.design_category === 'PROTOTYPE_POCKET' ? '試作金型' : '量産金型'})
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Manual Status Dropdown Override */}
                     <select
                       value={getEffectiveDesignStatus(activeRev, allRevs)}
                       disabled={updatingStatus}
                       onChange={(e) => handleStatusChange(e.target.value)}
                       style={{
-                        padding: '2px 6px', borderRadius: 4, fontSize: 11, fontWeight: 700,
+                        padding: '2px 6px', borderRadius: 4, fontSize: 10, fontWeight: 600,
                         border: '1px solid var(--tint-teal-border)', cursor: 'pointer',
-                        background: 'var(--bg-surface)', color: 'var(--text-primary)'
+                        background: 'var(--bg-surface)', color: 'var(--text-secondary)'
                       }}
+                      title="ステータス手動変更"
                     >
-                      <option value="APPROVED">🟢 承認済 (Đã duyệt)</option>
-                      <option value="PENDING_APPROVAL">🟡 承認待ち (Chờ duyệt)</option>
-                      <option value="SUPERSEDED">⚪ 舊版 (Đã thay thế)</option>
-                      <option value="REJECTED">🔴 不採用 (Không đạt)</option>
+                      <option value="APPROVED">🟢 承認済</option>
+                      <option value="PENDING_APPROVAL">🟡 承認待ち</option>
+                      <option value="SUPERSEDED">⚪ 舊版</option>
+                      <option value="REJECTED">🔴 不採用</option>
                     </select>
-                  </div>
-                )}
-                {activeRev && (
-                  <Link
-                    href={`/engineering/designs/revisions/${activeRev.revision_id}`}
-                    style={{ fontSize: 11, color: 'var(--accent)', fontWeight: 600, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 3 }}
-                  >
-                    {activeRev.design_code || 'Design'} <ExternalLink size={11} />
-                  </Link>
+
+                    <Link
+                      href={`/engineering/designs/revisions/${activeRev.revision_id}`}
+                      style={{ fontSize: 11, color: 'var(--accent)', fontWeight: 600, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 3 }}
+                    >
+                      {activeRev.design_code || 'Design'} <ExternalLink size={11} />
+                    </Link>
+                  </>
                 )}
               </div>
             </div>
+
+            {/* Approval Success Banner */}
+            {approvalSuccessMessage && (
+              <div style={{
+                background: '#F0FDF4',
+                borderBottom: '1px solid #86EFAC',
+                padding: '6px 12px',
+                color: '#15803D',
+                fontSize: 11.5,
+                fontWeight: 700,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                animation: 'fadeIn 0.3s ease-in-out'
+              }}>
+                <span>{approvalSuccessMessage}</span>
+                <button
+                  type="button"
+                  onClick={() => setApprovalSuccessMessage(null)}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#15803D', fontWeight: 'bold' }}
+                >
+                  ✕
+                </button>
+              </div>
+            )}
 
             <div style={{ display: 'flex', gap: 0 }}>
               {/* Left Sub-sidebar: Lịch sử phiên bản thiết kế (160px) */}
@@ -1178,8 +1327,24 @@ export function TabOverview(props: TabOverviewProps) {
                     </div>
                   )
                 })() : (
-                  <div style={{ textAlign: 'center', padding: '20px 0', color: 'var(--text-muted)', fontSize: 12 }}>
-                    {tCommon('noData')}
+                  <div style={{
+                    textAlign: 'center', padding: '36px 16px', color: 'var(--text-muted)',
+                    fontSize: 12, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10
+                  }}>
+                    <Layers size={28} style={{ opacity: 0.35, color: 'var(--accent)' }} />
+                    <span style={{ fontWeight: 600, color: 'var(--text-secondary)' }}>
+                      設計仕様・バージョン情報がまだ登録されていません
+                    </span>
+                    <button
+                      type="button"
+                      onClick={handleCreateInitialRevision}
+                      disabled={updatingStatus}
+                      className="btn btn-primary"
+                      style={{ fontSize: 11.5, padding: '5px 14px', gap: 6, cursor: 'pointer', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}
+                    >
+                      <Plus size={13} />
+                      <span>+ 初版設計 (R0) を作成する / Tạo bản vẽ R0</span>
+                    </button>
                   </div>
                 )}
               </div>
@@ -2121,11 +2286,21 @@ export function TabOverview(props: TabOverviewProps) {
                                 {j.job_status}
                               </span>
                             </div>
-                            {j.mold_deadline && (
-                              <span style={{ fontSize: 10, color: 'var(--text-muted)', fontFamily: 'monospace' }}>
-                                {j.mold_deadline?.slice(0, 10)}
-                              </span>
-                            )}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                              {j.mold_deadline && (
+                                <span style={{ fontSize: 10, color: 'var(--text-muted)', fontFamily: 'monospace' }}>
+                                  {j.mold_deadline?.slice(0, 10)}
+                                </span>
+                              )}
+                              <Link
+                                href={`/equipment/jobs/${j.job_id}`}
+                                className="btn btn-secondary"
+                                style={{ fontSize: 10, padding: '2px 6px', height: 20, gap: 2, textDecoration: 'none', display: 'flex', alignItems: 'center' }}
+                                title="作業ログ・日報を記録"
+                              >
+                                ⏱️ <span>日報</span>
+                              </Link>
+                            </div>
                           </div>
                         ))}
                       </div>

@@ -29,6 +29,7 @@ export interface JobForGantt {
     job_code: string
     job_name: string
     job_type_id: string
+    job_category?: string | null
     job_status: string
     priority: number
     overall_progress: number

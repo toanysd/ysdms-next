@@ -22,6 +22,8 @@ export interface DailyWorklogA4SheetProps {
   items: NippoItem[]
   scale?: number
   stampUrl?: string
+  showStamp?: boolean
+  showHours?: boolean
   hidePriceTableInPreview?: boolean
   onEditItem?: (item: NippoItem) => void
   onDeleteItem?: (logId: string) => void
@@ -36,6 +38,8 @@ export function DailyWorklogA4Sheet({
   items,
   scale = 1.0,
   stampUrl,
+  showStamp = false,
+  showHours = true,
   hidePriceTableInPreview = false,
   onEditItem,
   onDeleteItem,
@@ -70,8 +74,7 @@ export function DailyWorklogA4Sheet({
         boxSizing: 'border-box',
         fontFamily: '"MS PGothic", "Meiryo", "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif',
         color: '#000000',
-        transform: scale !== 1.0 ? `scale(${scale})` : undefined,
-        transformOrigin: 'top left',
+        zoom: scale !== 1.0 ? scale : undefined,
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'flex-start',
@@ -165,7 +168,7 @@ export function DailyWorklogA4Sheet({
               確認印
             </div>
             <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-              {stampUrl && (
+              {showStamp && stampUrl && (
                 <img
                   src={stampUrl}
                   alt="確認印"
@@ -245,7 +248,7 @@ export function DailyWorklogA4Sheet({
                 fontFamily: 'monospace',
               }}
             >
-              {totalHours > 0 ? totalHours : '　'}
+              {showHours && totalHours > 0 ? totalHours : '　'}
             </span>
             <span style={{ marginLeft: '4px', fontWeight: 'normal' }}>H</span>
           </div>
@@ -402,7 +405,7 @@ export function DailyWorklogA4Sheet({
                       fontFamily: 'monospace',
                     }}
                   >
-                    {row.hours_spent ? `${row.hours_spent} H` : ''}
+                    {showHours && row.hours_spent != null && Number(row.hours_spent) > 0 ? `${row.hours_spent} H` : ''}
                   </td>
                   <td
                     style={{
@@ -503,7 +506,7 @@ export function DailyWorklogA4Sheet({
                   fontFamily: 'monospace',
                 }}
               >
-                {totalHours > 0 ? `${totalHours} H` : ''}
+                {showHours && totalHours > 0 ? `${totalHours} H` : ''}
               </td>
               <td
                 style={{

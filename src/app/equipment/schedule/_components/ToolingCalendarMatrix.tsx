@@ -18,7 +18,7 @@ interface ToolingCalendarMatrixProps {
     employees: any[]
     startDateStr: string
     daysCount?: number
-    trackFilter?: 'ALL' | 'MOLD' | 'PLUG' | 'CUTTER'
+    trackFilter?: 'ALL' | 'DESIGN' | 'MOLD' | 'PLUG' | 'CUTTER'
     searchQuery?: string
 }
 
@@ -121,6 +121,7 @@ export default function ToolingCalendarMatrix({
     // Filter jobs
     const filteredJobs = useMemo(() => {
         return jobs.filter(j => {
+            if (trackFilter === 'DESIGN' && j.job_category !== 'DESIGN' && !j.job_code?.startsWith('DES-') && !j.job_steps?.some(s => s.track === 'DESIGN')) return false
             if (trackFilter === 'MOLD' && !j.job_steps?.some(s => s.track === 'MOLD')) return false
             if (trackFilter === 'PLUG' && !j.has_plug && !j.job_steps?.some(s => s.track === 'PLUG')) return false
             if (trackFilter === 'CUTTER' && !j.job_steps?.some(s => s.track === 'CUTTER')) return false

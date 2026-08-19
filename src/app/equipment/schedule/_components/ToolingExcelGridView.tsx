@@ -7,7 +7,7 @@ import { useTranslations } from 'next-intl'
 import { useRouter } from 'next/navigation'
 import { X, Calendar, Layers, CheckCircle2, Clock } from 'lucide-react'
 import ToolingGroupedJobCard from './ToolingGroupedJobCard'
-import ToolingMonthJobPill from './ToolingMonthJobPill'
+import ToolingMonthGroupedJobCard from './ToolingMonthGroupedJobCard'
 import { JobQuickViewDrawer } from '@/components/equipment/JobQuickViewDrawer'
 import { EditStepModal } from '@/app/equipment/jobs/[id]/tabs/EditStepModal'
 import { DailyWorklogQuickModal } from '@/components/worklogs/DailyWorklogQuickModal'
@@ -24,7 +24,7 @@ interface ToolingExcelGridViewProps {
     daysCount?: number
     timeframe?: TimeframeMode
     perspective?: string
-    trackFilter?: 'ALL' | 'MOLD' | 'PLUG' | 'CUTTER'
+    trackFilter?: 'ALL' | 'DESIGN' | 'MOLD' | 'PLUG' | 'CUTTER'
     searchQuery?: string
 }
 
@@ -76,13 +76,18 @@ export default function ToolingExcelGridView({
     const filteredJobs = useMemo(() => {
         return liveJobs.filter(j => {
             if (trackFilter && trackFilter !== 'ALL') {
-                const hasMatchingStep = j.job_steps?.some(s => {
-                    if ((s as any).condition === 'EXISTING' || (s as any).step_status === 'EXISTING' || (s as any).arrangement === 'NOT_REQUIRED') return false
-                    const track = (s.track || 'MOLD').toUpperCase()
-                    if (trackFilter === 'MOLD') return track === 'MOLD' || track === 'ALUMI' || track === 'FINISH'
-                    return track === trackFilter
-                })
-                if (!hasMatchingStep) return false
+                if (trackFilter === 'DESIGN') {
+                    const isDesignJob = j.job_category === 'DESIGN' || j.job_code?.startsWith('DES-') || j.job_steps?.some(s => (s.track || '').toUpperCase() === 'DESIGN')
+                    if (!isDesignJob) return false
+                } else {
+                    const hasMatchingStep = j.job_steps?.some(s => {
+                        if ((s as any).condition === 'EXISTING' || (s as any).step_status === 'EXISTING' || (s as any).arrangement === 'NOT_REQUIRED') return false
+                        const track = (s.track || 'MOLD').toUpperCase()
+                        if (trackFilter === 'MOLD') return track === 'MOLD' || track === 'ALUMI' || track === 'FINISH'
+                        return track === trackFilter
+                    })
+                    if (!hasMatchingStep) return false
+                }
             }
 
             if (searchQuery.trim()) {
@@ -146,6 +151,9 @@ export default function ToolingExcelGridView({
             let matchingSteps = (job.job_steps || []).filter(step => isStepOnDate(step, dateStr, job))
             if (trackFilter && trackFilter !== 'ALL') {
                 matchingSteps = matchingSteps.filter(step => {
+                    if (trackFilter === 'DESIGN') {
+                        return (step.track || '').toUpperCase() === 'DESIGN' || job.job_category === 'DESIGN' || job.job_code?.startsWith('DES-')
+                    }
                     const track = (step.track || 'MOLD').toUpperCase()
                     if (trackFilter === 'MOLD') return track === 'MOLD' || track === 'ALUMI' || track === 'FINISH'
                     return track === trackFilter
@@ -267,57 +275,87 @@ export default function ToolingExcelGridView({
     const renderMonthCell = (dateStr: string) => {
         const parsedDate = parseISO(dateStr)
         const dayIndex = parsedDate.getDay()
-        const isWeekend = dayIndex === 0 || dayIndex === 6
+        const isSaturday = dayIndex === 6
+        const isSunday = dayIndex === 0
+        const isWeekend = isSaturday || isSunday
         const isToday = isSameDay(parsedDate, new Date())
         const groupedJobs = getGroupedJobsForDate(dateStr)
 
         return (
             <div
                 key={dateStr}
-                className={`flex flex-col h-full bg-white border border-slate-200 overflow-hidden transition-all hover:bg-slate-50/60 p-1 ${
-                    isToday ? 'bg-emerald-50/30 border-emerald-400 ring-1 ring-emerald-400/30' : isWeekend ? 'bg-slate-50/40' : ''
+                className={`flex flex-col h-full bg-white border overflow-hidden transition-all p-1.5 shadow-2xs ${
+                    isToday
+                        ? 'bg-[var(--tint-teal-bg)]/35 border-[var(--accent)] ring-2 ring-[var(--accent)]/40 z-10'
+                        : isSunday
+                            ? 'bg-rose-50/30 border-slate-200'
+                            : isSaturday
+                                ? 'bg-blue-50/20 border-slate-200'
+                                : 'border-slate-200 hover:border-slate-300'
                 }`}
             >
-                {/* Cell Header: Date + Badge */}
-                <div className="flex justify-between items-center px-1 pb-1 mb-1 border-b border-slate-100 text-[11px]">
+                {/* Cell Header: Date + Today Pill + Item Count Badge */}
+                <div className={`flex justify-between items-center px-1 pb-1 mb-1 border-b text-[11px] ${
+                    isToday ? 'border-[var(--accent)]/30' : 'border-slate-100'
+                }`}>
                     <div className="flex items-center gap-1">
-                        <span className={`font-mono font-bold ${isToday ? 'text-emerald-700 font-extrabold' : isWeekend ? 'text-red-500' : 'text-slate-700'}`}>
+                        <span className={`font-mono font-bold text-[12px] ${
+                            isToday
+                                ? 'text-[var(--accent)] font-extrabold'
+                                : isSunday
+                                    ? 'text-red-600'
+                                    : isSaturday
+                                        ? 'text-blue-600'
+                                        : 'text-slate-800'
+                        }`}>
                             {format(parsedDate, 'MM/dd')}
                         </span>
-                        <span className={`text-[9.5px] ${isWeekend ? 'text-red-400' : 'text-slate-400'}`}>
+                        <span className={`text-[10px] font-bold ${
+                            isSunday
+                                ? 'text-red-500'
+                                : isSaturday
+                                    ? 'text-blue-500'
+                                    : 'text-slate-500'
+                        }`}>
                             ({DAYS_JA[dayIndex]})
                         </span>
+                        {isToday && (
+                            <span className="px-1 py-0.2 rounded bg-[var(--accent)] text-white text-[8px] font-bold uppercase shadow-2xs">
+                                {t('today')}
+                            </span>
+                        )}
                     </div>
 
                     {groupedJobs.length > 0 && (
                         <button
                             type="button"
                             onClick={() => setSelectedDayForFocusModal(dateStr)}
-                            className="text-[9px] font-bold font-mono px-1 rounded bg-slate-100 text-slate-600 border border-slate-200 hover:border-emerald-500 hover:text-emerald-700 cursor-pointer"
+                            className="text-[9px] font-bold font-mono px-1.5 py-0.5 rounded bg-white text-slate-700 border border-slate-300 shadow-2xs hover:border-[var(--accent)] hover:text-[var(--accent)] cursor-pointer transition-all"
+                            title="クリックでこの日の案件を拡大表示"
                         >
                             {groupedJobs.length} 件
                         </button>
                     )}
                 </div>
 
-                {/* Cell Body: List of compact Month Job Pills */}
-                <div className="flex flex-col gap-1 overflow-y-auto flex-1">
+                {/* Cell Body: List of rich Grouped Month Job Cards with urgency colors */}
+                <div className="flex flex-col gap-1.5 overflow-y-auto flex-1" style={{ scrollbarWidth: 'thin' }}>
                     {groupedJobs.map(({ job, steps }) => (
-                        <React.Fragment key={job.job_id}>
-                            {steps.map(step => (
-                                <ToolingMonthJobPill 
-                                    key={step.step_id}
-                                    job={job}
-                                    step={step}
-                                    onClick={(j, st) => setSelectedStepForEdit({ step: st, job: j })}
-                                    onDoubleClick={(j, st) => setSelectedJobForWorklog({ job: j, step: st, date: dateStr })}
-                                />
-                            ))}
-                        </React.Fragment>
+                        <ToolingMonthGroupedJobCard 
+                            key={job.job_id}
+                            job={job}
+                            steps={steps}
+                            empMap={empMap}
+                            machMap={machMap}
+                            currentColumnDate={dateStr}
+                            onOpenJob={setSelectedJobForDrawer}
+                            onEditStep={(st, j) => setSelectedStepForEdit({ step: st, job: j })}
+                            onQuickLog={(j, st) => setSelectedJobForWorklog({ job: j, step: st, date: dateStr })}
+                        />
                     ))}
 
                     {groupedJobs.length === 0 && (
-                        <div className="h-full flex items-center justify-center text-slate-300 text-[9px] italic">
+                        <div className="h-full flex items-center justify-center text-slate-300 text-[10px] italic">
                             —
                         </div>
                     )}

@@ -94,6 +94,220 @@ export async function updateRevisionStatus(revisionId: string, newStatus: string
     return { success: true }
 }
 
+export interface ApproveDesignRevisionInput {
+  revisionId: string
+  approvalType: 'PROTOTYPE' | 'MASS'
+  targetDeadline?: string | null
+  notes?: string | null
+}
+
+/**
+ * Approves a design revision and automatically:
+ * 1. Sets design_revisions status = 'APPROVED'
+ * 2. Creates the physical equipment (Prototype: e.g. MMT-021 R2-D, Mass: e.g. MMT-021 R2)
+ * 3. Creates the corresponding Manufacturing Job (JOB-MMT021R2-D or JOB-MMT021-M) with standard process steps on schedule
+ */
+export async function approveDesignRevisionAction(input: ApproveDesignRevisionInput) {
+  const supabase = await createClient()
+
+  // 1. Fetch revision & product details
+  const { data: rev, error: revErr } = await supabase
+    .from('design_revisions')
+    .select(`
+      revision_id, design_code, revision_number, design_category,
+      design_length, design_width, design_height, plug_type,
+      products!inner(product_id, product_code, product_name_internal, product_name, company_id, requires_prototype_mold)
+    `)
+    .eq('revision_id', input.revisionId)
+    .single()
+
+  if (revErr || !rev) {
+    throw new Error(revErr?.message || 'Design revision not found')
+  }
+
+  const product = (rev as any).products
+  const prodCode = (product.product_code || 'PRD').toUpperCase().replace(/[^A-Z0-9]/g, '')
+  const prodInternal = product.product_name_internal || product.product_code || 'PRD'
+  const revNum = rev.revision_number != null ? rev.revision_number : 1
+  const isPrototype = input.approvalType === 'PROTOTYPE'
+  const hasPlug = Boolean(rev.plug_type && rev.plug_type !== 'NONE')
+
+  // 2. Naming conventions per YSD Engineering Documentation
+  let equipCode: string
+  let displayName: string
+  let jobCode: string
+  let jobName: string
+  let stepsConfig: Array<{ name: string; track: string; hours: number; codeId: number }>
+
+  if (isPrototype) {
+    const isR0 = revNum <= 0
+    equipCode = isR0 ? `${prodInternal}-D` : `${prodInternal} R${revNum}-D`
+    displayName = isR0 ? `[試作金型] ${prodInternal}` : `[試作金型] ${prodInternal} R${revNum}`
+    jobCode = isR0 ? `JOB-${prodCode}-D` : `JOB-${prodCode}R${revNum}-D`
+    jobName = isR0 ? `試作金型製作: ${prodInternal}` : `試作金型製作: ${prodInternal} R${revNum}`
+    stepsConfig = [
+      { name: '試作金型演算＆加工', track: 'MOLD', hours: 4.0, codeId: 20 },
+      { name: '試作穴あけ', track: 'MOLD', hours: 1.5, codeId: 21 },
+      { name: '試作ミガキ', track: 'MOLD', hours: 1.5, codeId: 22 },
+      { name: '試作ネル貼り', track: 'MOLD', hours: 1.0, codeId: 23 },
+    ]
+    if (hasPlug) {
+      stepsConfig.push({ name: '試作プラグ演算＆加工', track: 'PLUG', hours: 2.0, codeId: 32 })
+    }
+  } else {
+    const isR0 = revNum <= 0
+    equipCode = isR0 ? `${prodInternal}` : `${prodInternal} R${revNum}`
+    displayName = isR0 ? `[本型] ${prodInternal}` : `[本型] ${prodInternal} R${revNum}`
+    jobCode = isR0 ? `JOB-${prodCode}-M` : `JOB-${prodCode}R${revNum}-M`
+    jobName = isR0 ? `新規金型製作: ${prodInternal}` : `金型改造: ${prodInternal} R${revNum}`
+    stepsConfig = [
+      { name: '金型演算＆加工', track: 'MOLD', hours: 6.0, codeId: 10 },
+      { name: '本型穴あけ', track: 'MOLD', hours: 2.0, codeId: 11 },
+      { name: '本型ミガキ', track: 'MOLD', hours: 2.0, codeId: 12 },
+      { name: '本型ネル貼り', track: 'MOLD', hours: 1.5, codeId: 13 },
+    ]
+    if (hasPlug) {
+      stepsConfig.push({ name: 'プラグ演算＆加工', track: 'PLUG', hours: 3.0, codeId: 31 })
+    }
+    stepsConfig.push({ name: '抜型手配・製作', track: 'CUTTER', hours: 1.0, codeId: 43 })
+  }
+
+  // 3. Update design revision status
+  const { error: updateRevErr } = await supabase
+    .from('design_revisions')
+    .update({
+      status: 'APPROVED',
+      design_category: isPrototype ? 'PROTOTYPE_POCKET' : 'MASS_PRODUCTION'
+    })
+    .eq('revision_id', input.revisionId)
+
+  if (updateRevErr) {
+    throw new Error(`Failed to update design revision status: ${updateRevErr.message}`)
+  }
+
+  // 4. Create or update physical equipment
+  let equipmentId: string | null = null
+  const { data: existingEq } = await supabase
+    .from('equipment')
+    .select('equipment_id')
+    .eq('equipment_code', equipCode)
+    .maybeSingle()
+
+  if (existingEq) {
+    equipmentId = existingEq.equipment_id
+    await supabase
+      .from('equipment')
+      .update({
+        design_revision_id: input.revisionId,
+        company_id: product.company_id,
+        actual_length_mm: rev.design_length ? String(rev.design_length) : undefined,
+        actual_width_mm: rev.design_width ? String(rev.design_width) : undefined,
+        device_status: 'NORMAL',
+        usage_status: 'IN_USE'
+      })
+      .eq('equipment_id', equipmentId)
+  } else {
+    const { data: newEq, error: eqErr } = await supabase
+      .from('equipment')
+      .insert([{
+        equipment_code: equipCode,
+        display_name: displayName,
+        equipment_type: 'MOLD',
+        company_id: product.company_id,
+        design_revision_id: input.revisionId,
+        actual_length_mm: rev.design_length ? String(rev.design_length) : null,
+        actual_width_mm: rev.design_width ? String(rev.design_width) : null,
+        actual_height_mm: rev.design_height ? String(rev.design_height) : null,
+        device_status: 'NORMAL',
+        usage_status: 'IN_USE'
+      }])
+      .select('equipment_id')
+      .single()
+
+    if (eqErr || !newEq) {
+      console.warn('Warning: Could not create equipment record:', eqErr?.message)
+    } else {
+      equipmentId = newEq.equipment_id
+    }
+  }
+
+  // 5. Create or update manufacturing Job
+  const deadlineVal = input.targetDeadline || new Date(Date.now() + (isPrototype ? 5 : 10) * 86400000).toISOString().split('T')[0]
+
+  let jobId: string | null = null
+  const { data: existingJob } = await supabase
+    .from('jobs')
+    .select('job_id')
+    .eq('job_code', jobCode)
+    .maybeSingle()
+
+  if (existingJob) {
+    jobId = existingJob.job_id
+    await supabase
+      .from('jobs')
+      .update({
+        job_name: jobName,
+        equipment_id: equipmentId || undefined,
+        deadline: deadlineVal,
+        mold_deadline: deadlineVal,
+        target_completion_date: deadlineVal
+      })
+      .eq('job_id', jobId)
+  } else {
+    const { data: newJob, error: jobErr } = await supabase
+      .from('jobs')
+      .insert([{
+        job_code: jobCode,
+        job_name: jobName,
+        job_type_id: isPrototype ? '6' : '1',
+        job_category: isPrototype ? 'MOLD_NEW' : 'MOLD_NEW',
+        job_status: 'PENDING',
+        priority: isPrototype ? 8 : 5,
+        product_id: product.product_id,
+        design_revision_id: input.revisionId,
+        equipment_id: equipmentId,
+        company_id: product.company_id,
+        start_date: new Date().toISOString().split('T')[0],
+        deadline: deadlineVal,
+        mold_deadline: deadlineVal,
+        target_completion_date: deadlineVal,
+        has_plug: hasPlug
+      }])
+      .select('job_id')
+      .single()
+
+    if (!jobErr && newJob) {
+      jobId = newJob.job_id
+      const stepsToInsert = stepsConfig.map((s, idx) => ({
+        job_id: jobId!,
+        step_no: idx + 1,
+        step_name: s.name,
+        step_status: 'PENDING',
+        track: s.track,
+        planned_hours: s.hours,
+        deadline: deadlineVal
+      }))
+      await supabase.from('job_steps').insert(stepsToInsert)
+    }
+  }
+
+  // 6. Revalidate routes
+  revalidatePath(`/product-center/${product.product_id}`)
+  revalidatePath('/equipment/schedule')
+  revalidatePath('/equipment/jobs')
+  revalidatePath('/engineering')
+
+  return {
+    success: true,
+    data: {
+      equipment_code: equipCode,
+      job_code: jobCode,
+      job_id: jobId,
+      equipment_id: equipmentId
+    }
+  }
+}
+
 export type CreateDesignRevisionInput = {
   product_id: string
   company_id?: string | null
@@ -296,6 +510,91 @@ export async function updateDesignRevisionAction(input: UpdateDesignRevisionInpu
   revalidatePath(`/engineering/designs/revisions/${input.revision_id}`)
 
   return { success: true, data }
+}
+
+/**
+ * Safely deletes a product and its associated draft revisions/jobs,
+ * as long as no actual order lines or recorded work logs exist.
+ */
+export async function deleteProductAction(productId: string): Promise<{ success: boolean; error?: string }> {
+  const supabase = await createClient()
+
+  // 1. Check if product exists
+  const { data: prod, error: prodErr } = await supabase
+    .from('products')
+    .select('product_id, product_code, product_name_internal')
+    .eq('product_id', productId)
+    .single()
+
+  if (prodErr || !prod) {
+    return { success: false, error: '製品が見つかりません (Không tìm thấy sản phẩm)' }
+  }
+
+  // 2. Check if product has active order lines
+  const { count: orderLineCount } = await supabase
+    .from('order_lines')
+    .select('*', { count: 'exact', head: true })
+    .eq('product_id', productId)
+
+  if (orderLineCount && orderLineCount > 0) {
+    return {
+      success: false,
+      error: `この製品は ${orderLineCount} 件の受注履歴が存在するため削除できません。(Không thể xóa sản phẩm đã có ${orderLineCount} đơn hàng)`
+    }
+  }
+
+  // 3. Find and cascade clean up associated jobs, work logs & steps
+  const { data: relatedJobs } = await supabase
+    .from('jobs')
+    .select('job_id')
+    .eq('product_id', productId)
+
+  if (relatedJobs && relatedJobs.length > 0) {
+    const jobIds = relatedJobs.map(j => j.job_id)
+    // Clean up work_logs of these jobs/steps
+    await supabase.from('work_logs').delete().in('job_id', jobIds)
+    // Clean up job_steps and jobs
+    await supabase.from('job_steps').delete().in('job_id', jobIds)
+    await supabase.from('jobs').delete().in('job_id', jobIds)
+  }
+
+  // 4. Find and clean up associated design revisions & equipment
+  const { data: revs } = await supabase
+    .from('design_revisions')
+    .select('revision_id')
+    .eq('product_id', productId)
+
+  const revIds = revs?.map(r => r.revision_id) || []
+
+  if (revIds.length > 0) {
+    const { data: eqs } = await supabase
+      .from('equipment')
+      .select('equipment_id')
+      .in('design_revision_id', revIds)
+
+    if (eqs && eqs.length > 0) {
+      const eqIds = eqs.map(e => e.equipment_id)
+      await supabase.from('equipment_assignments').delete().or(`primary_equipment_id.in.(${eqIds.join(',')}),related_equipment_id.in.(${eqIds.join(',')})`)
+      await supabase.from('equipment').delete().in('equipment_id', eqIds)
+    }
+
+    await supabase.from('design_revisions').delete().in('revision_id', revIds)
+  }
+
+  // 5. Delete product record
+  const { error: delErr } = await supabase
+    .from('products')
+    .delete()
+    .eq('product_id', productId)
+
+  if (delErr) {
+    return { success: false, error: delErr.message }
+  }
+
+  revalidatePath('/product-center')
+  revalidatePath('/master/products')
+  revalidatePath('/equipment/schedule')
+  return { success: true }
 }
 
 

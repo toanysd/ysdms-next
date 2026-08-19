@@ -5164,6 +5164,7 @@ export type Database = {
         Row: {
           category: string | null
           created_at: string | null
+          department_code: string | null
           is_active: boolean | null
           processing_code_id: number
           processing_name: string
@@ -5173,6 +5174,7 @@ export type Database = {
         Insert: {
           category?: string | null
           created_at?: string | null
+          department_code?: string | null
           is_active?: boolean | null
           processing_code_id: number
           processing_name: string
@@ -5182,6 +5184,7 @@ export type Database = {
         Update: {
           category?: string | null
           created_at?: string | null
+          department_code?: string | null
           is_active?: boolean | null
           processing_code_id?: number
           processing_name?: string
@@ -6079,6 +6082,7 @@ export type Database = {
           product_name_internal: string | null
           product_set_type: string | null
           product_status: string | null
+          requires_prototype_mold: boolean | null
           set_component_names: Json | null
           stacking_height_mm: number | null
           stacking_layers: number | null
@@ -6111,6 +6115,7 @@ export type Database = {
           product_name_internal?: string | null
           product_set_type?: string | null
           product_status?: string | null
+          requires_prototype_mold?: boolean | null
           set_component_names?: Json | null
           stacking_height_mm?: number | null
           stacking_layers?: number | null
@@ -6143,6 +6148,7 @@ export type Database = {
           product_name_internal?: string | null
           product_set_type?: string | null
           product_status?: string | null
+          requires_prototype_mold?: boolean | null
           set_component_names?: Json | null
           stacking_height_mm?: number | null
           stacking_layers?: number | null
@@ -7085,6 +7091,7 @@ export type Database = {
           contact_content: string | null
           created_at: string | null
           description: string | null
+          design_revision_context: string | null
           employee_id: string
           hours_spent: number | null
           is_finished: boolean | null
@@ -7105,6 +7112,7 @@ export type Database = {
           contact_content?: string | null
           created_at?: string | null
           description?: string | null
+          design_revision_context?: string | null
           employee_id: string
           hours_spent?: number | null
           is_finished?: boolean | null
@@ -7125,6 +7133,7 @@ export type Database = {
           contact_content?: string | null
           created_at?: string | null
           description?: string | null
+          design_revision_context?: string | null
           employee_id?: string
           hours_spent?: number | null
           is_finished?: boolean | null

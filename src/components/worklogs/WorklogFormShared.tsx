@@ -1,15 +1,16 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useTranslations } from 'next-intl'
 import { createClient } from '@/lib/supabase/client'
 import {
   Calendar, User, Clock, CheckCircle2,
   Layers, FileText, AlertCircle, Loader2,
-  X, Save, Sparkles, Plus, Check, Briefcase
+  X, Save, Sparkles, Plus, Check, Briefcase, Settings
 } from 'lucide-react'
 import { SearchableSelect } from '@/components/ui/SearchableSelect'
 import { createQuickJob } from '@/app/actions/mold-job'
+import { ProcessingCodesManagerModal } from '@/components/worklogs/ProcessingCodesManagerModal'
 
 // ── Types ────────────────────────────────────────────────────────────────────
 export type WorklogFormSharedProps = {
@@ -91,6 +92,10 @@ export function WorklogFormShared({
   const [processingCodes, setProcessingCodes] = useState<{ value: string; label: string }[]>([])
   const [rawCodes, setRawCodes] = useState<any[]>([])
 
+  // Department filter for processing codes
+  const [departmentFilter, setDepartmentFilter] = useState<string>('ALL')
+  const [rawJobs, setRawJobs] = useState<any[]>([])
+
   // Quick Job modal state
   const [showQuickJob, setShowQuickJob] = useState(false)
   const [quickJobName, setQuickJobName] = useState('')
@@ -98,9 +103,28 @@ export function WorklogFormShared({
   const [isFacilityJob, setIsFacilityJob] = useState(false)
   const [quickJobCreating, setQuickJobCreating] = useState(false)
 
+  // Processing Codes Manager Modal state (Q7)
+  const [showCodeManagerModal, setShowCodeManagerModal] = useState(false)
+
   // Status State
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  // Reload processing codes
+  const loadProcessingCodes = async () => {
+    const { data: codes } = await supabase
+      .from('processing_codes')
+      .select('processing_code_id, processing_name, department_code, category')
+      .eq('is_active', true)
+      .order('processing_code_id')
+    if (codes) {
+      setRawCodes(codes)
+      setProcessingCodes(codes.map(c => ({
+        value: String(c.processing_code_id),
+        label: `[${c.processing_code_id}] ${c.processing_name}`
+      })))
+    }
+  }
 
   // ── Load Employees, Jobs, Processing Codes ──────────────────────────────────
   useEffect(() => {
@@ -130,6 +154,7 @@ export function WorklogFormShared({
           .select('job_id, job_code, job_name, job_category')
           .order('job_code')
         if (jobList) {
+          setRawJobs(jobList)
           const sorted = [...jobList].sort((a, b) => {
             const aIsInternal = a.job_code === '社内作業' || a.job_category === 'INTERNAL_OPS'
             const bIsInternal = b.job_code === '社内作業' || b.job_category === 'INTERNAL_OPS'
@@ -152,19 +177,8 @@ export function WorklogFormShared({
         setJobTypes(jTypes)
       }
 
-      // 4. Processing Codes
-      const { data: codes } = await supabase
-        .from('processing_codes')
-        .select('processing_code_id, processing_name')
-        .eq('is_active', true)
-        .order('processing_code_id')
-      if (codes) {
-        setRawCodes(codes)
-        setProcessingCodes(codes.map(c => ({
-          value: String(c.processing_code_id),
-          label: `[${c.processing_code_id}] ${c.processing_name}`
-        })))
-      }
+      // 4. Processing Codes (with department_code for filtering)
+      await loadProcessingCodes()
     }
     loadMeta()
   }, [supabase, isJobLocked, initialData, employeeId])
@@ -208,6 +222,31 @@ export function WorklogFormShared({
     }
     loadSteps()
   }, [selectedJobId, supabase, isJobLocked, preloadedSteps, stepId])
+
+  // ── Auto-filter department when Job changes ──────────────────────────────
+  useEffect(() => {
+    if (!selectedJobId || rawJobs.length === 0) return
+    const job = rawJobs.find((j: any) => j.job_id === selectedJobId)
+    if (!job) return
+    if (job.job_category === 'DESIGN') {
+      setDepartmentFilter('DESIGN')
+    } else if (['MOLD_NEW', 'MOLD_MODIFY', 'CUTTER_NEW', 'EQUIPMENT_NEW', 'EQUIPMENT_REPAIR'].includes(job.job_category)) {
+      setDepartmentFilter('MOLD_SHOP')
+    } else if (job.job_category === 'INTERNAL_OPS' || job.job_category === 'MAINTENANCE') {
+      setDepartmentFilter('GENERAL')
+    } else {
+      setDepartmentFilter('ALL')
+    }
+  }, [selectedJobId, rawJobs])
+
+  // ── Filtered processing codes by department ──────────────────────────────
+  const filteredProcessingCodes = useMemo(() => {
+    if (departmentFilter === 'ALL') return processingCodes
+    return processingCodes.filter(pc => {
+      const raw = rawCodes.find((c: any) => String(c.processing_code_id) === pc.value)
+      return raw?.department_code === departmentFilter
+    })
+  }, [processingCodes, rawCodes, departmentFilter])
 
   // ── Submit ────────────────────────────────────────────────────────────────
   const handleSave = async () => {
@@ -534,13 +573,65 @@ export function WorklogFormShared({
         </div>
 
         <div style={{ padding: 14, display: 'flex', flexDirection: 'column', gap: 12 }}>
-          {/* Processing code searchable select + custom text */}
+          {/* Department filter + Processing code searchable select */}
           <div>
-            <label className="form-label" style={{ fontSize: 11.5, fontWeight: 700 }}>
-              加工コード・作業内容 (Mã công việc / Nội dung gia công) <span style={{ color: 'red' }}>*</span>
-            </label>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+              <label className="form-label" style={{ fontSize: 11.5, fontWeight: 700, margin: 0 }}>
+                加工コード・作業内容 (Mã công việc / Nội dung gia công) <span style={{ color: 'red' }}>*</span>
+              </label>
+              <button
+                type="button"
+                onClick={() => setShowCodeManagerModal(true)}
+                style={{
+                  fontSize: 10.5,
+                  padding: '2px 8px',
+                  background: 'var(--bg-surface-2)',
+                  border: '1px solid var(--border-default)',
+                  borderRadius: 4,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 4,
+                  color: 'var(--text-secondary)',
+                  fontWeight: 600,
+                }}
+                title="Quản lý / Thêm mới mã công việc"
+              >
+                <Settings size={11} /> <span>コード管理</span>
+              </button>
+            </div>
+            {/* Department filter row */}
+            <div style={{ display: 'flex', gap: 4, marginBottom: 6, flexWrap: 'wrap' }}>
+              {[
+                { value: 'ALL', label: 'すべて' },
+                { value: 'DESIGN', label: '設計部' },
+                { value: 'MOLD_SHOP', label: '金型工場' },
+                { value: 'PRODUCTION', label: '生産部' },
+                { value: 'OFFICE', label: '事務' },
+                { value: 'GENERAL', label: '共通' },
+              ].map(dept => (
+                <button
+                  key={dept.value}
+                  type="button"
+                  onClick={() => setDepartmentFilter(dept.value)}
+                  style={{
+                    padding: '3px 10px',
+                    fontSize: 11,
+                    fontWeight: departmentFilter === dept.value ? 700 : 500,
+                    borderRadius: 4,
+                    border: '1px solid var(--border-default)',
+                    background: departmentFilter === dept.value ? 'var(--accent)' : 'var(--bg-surface)',
+                    color: departmentFilter === dept.value ? '#fff' : 'var(--text-secondary)',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s',
+                  }}
+                >
+                  {dept.label}
+                </button>
+              ))}
+            </div>
             <SearchableSelect
-              options={processingCodes}
+              options={filteredProcessingCodes}
               value={selectedCodeId}
               onChange={(v) => {
                 setSelectedCodeId(v || '')
@@ -549,8 +640,8 @@ export function WorklogFormShared({
                   if (matched) setCustomDescription(matched.processing_name)
                 }
               }}
-              placeholder="コードまたは作業名で検索（例: 21 試作穴あけ、12 本型ミガキ、50 5S...）"
-              maxDropdownHeight="320px"
+              placeholder="コードまたは作業名で検索..."
+              maxDropdownHeight="420px"
             />
           </div>
 
@@ -569,6 +660,13 @@ export function WorklogFormShared({
           </div>
         </div>
       </div>
+
+      {/* Processing Codes Manager Modal (Q7) */}
+      <ProcessingCodesManagerModal
+        isOpen={showCodeManagerModal}
+        onClose={() => setShowCodeManagerModal(false)}
+        onUpdated={loadProcessingCodes}
+      />
     </div>
   )
 

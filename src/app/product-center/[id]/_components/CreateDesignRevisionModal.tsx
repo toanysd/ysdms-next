@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useTranslations } from 'next-intl'
 import { X, Plus, PenTool, AlertCircle, Sparkles, Layers } from 'lucide-react'
+import { createDesignJobAction } from '@/app/actions/design-job'
 
 type CreateDesignRevisionModalProps = {
   isOpen: boolean
@@ -31,6 +32,9 @@ export function CreateDesignRevisionModal({
   const [employees, setEmployees] = useState<Array<{ employee_id: string; employee_name: string }>>([])
 
   // Form Fields
+  const [productCode, setProductCode] = useState('')
+  const [isPostProduction, setIsPostProduction] = useState(false)
+  const [modificationNumber, setModificationNumber] = useState(1)
   const [designCode, setDesignCode] = useState('')
   const [revisionNumber, setRevisionNumber] = useState<number>(1)
   const [designCategory, setDesignCategory] = useState<string>('MASS')
@@ -77,6 +81,10 @@ export function CreateDesignRevisionModal({
         .eq('product_id', productId)
         .single()
 
+      if (prod) {
+        setProductCode(prod.product_code || '')
+      }
+
       // 2. Fetch existing revisions count to calculate next revision number
       const { data: revs } = await supabase
         .from('design_revisions')
@@ -99,8 +107,36 @@ export function CreateDesignRevisionModal({
         setDesignCode(`${baseCode}-R${nextNum}`)
       }
 
-      // Copy values from parentRevision if available
+      // 3. Post-Production Auto-Detection (Option C)
       if (parentRevision) {
+        const isParentApproved = parentRevision.status === 'APPROVED'
+
+        // Check if parent revision has physical equipment
+        const { count: equipCount } = await supabase
+          .from('equipment')
+          .select('equipment_id', { count: 'exact', head: true })
+          .eq('design_revision_id', parentRevision.revision_id)
+
+        // Check if product has manufacturing / shop jobs
+        const { count: moldJobCount } = await supabase
+          .from('jobs')
+          .select('job_id', { count: 'exact', head: true })
+          .eq('product_id', productId)
+          .neq('job_category', 'DESIGN')
+
+        const detectedPostProd = isParentApproved && ((equipCount || 0) > 0 || (moldJobCount || 0) > 0)
+        setIsPostProduction(detectedPostProd)
+
+        // Count how many DESIGN jobs exist to compute modification number
+        const { count: designJobsCount } = await supabase
+          .from('jobs')
+          .select('job_id', { count: 'exact', head: true })
+          .eq('product_id', productId)
+          .eq('job_category', 'DESIGN')
+
+        setModificationNumber(Math.max(1, designJobsCount || 1))
+
+        // Copy values from parentRevision
         setPlasticTypeDesigned(parentRevision.plastic_type_designed || '')
         setDesignLength(parentRevision.design_length != null ? parentRevision.design_length.toString() : '')
         setDesignWidth(parentRevision.design_width != null ? parentRevision.design_width.toString() : '')
@@ -115,6 +151,7 @@ export function CreateDesignRevisionModal({
         setChamferC(parentRevision.chamfer_c || '')
         setDraftAngle(parentRevision.draft_angle || '')
       } else {
+        setIsPostProduction(false)
         setPlasticTypeDesigned('')
         setDesignLength('')
         setDesignWidth('')
@@ -146,10 +183,10 @@ export function CreateDesignRevisionModal({
     setLoading(true)
 
     try {
-      // Get product's company_id
+      // Get product's company_id and product_code
       const { data: prod } = await supabase
         .from('products')
-        .select('company_id')
+        .select('company_id, product_code')
         .eq('product_id', productId)
         .single()
 
@@ -189,6 +226,34 @@ export function CreateDesignRevisionModal({
       }
 
       if (data?.revision_id) {
+        // If post-production modification: create a dedicated new Design Job
+        if (isPostProduction) {
+          try {
+            await createDesignJobAction({
+              product_id: productId,
+              product_code: prod?.product_code || productCode,
+              company_id: prod?.company_id || null,
+              design_revision_id: data.revision_id,
+              is_post_production: true,
+              modification_number: modificationNumber,
+            })
+          } catch (djErr) {
+            console.error('[Warning] Failed to auto-create post-production Design Job:', djErr)
+          }
+        } else {
+          // If pre-approval revision: link active initial Design Job to this new revision
+          try {
+            await supabase
+              .from('jobs')
+              .update({ design_revision_id: data.revision_id })
+              .eq('product_id', productId)
+              .eq('job_category', 'DESIGN')
+              .not('notes', 'ilike', '%POST_PRODUCTION%')
+          } catch (linkErr) {
+            console.error('[Warning] Failed to update initial design job revision FK:', linkErr)
+          }
+        }
+
         onSuccess(data.revision_id)
         onClose()
       }
@@ -270,6 +335,49 @@ export function CreateDesignRevisionModal({
               }}>
                 <AlertCircle size={16} />
                 <span>{error}</span>
+              </div>
+            )}
+
+            {/* Post-Production Revision Indicator & Toggle (Option C) */}
+            {parentRevision && (
+              <div style={{
+                padding: '10px 14px',
+                borderRadius: 6,
+                background: isPostProduction ? 'var(--tint-orange-bg, #fff7ed)' : 'var(--tint-teal-bg, #f0fdf4)',
+                border: `1px solid ${isPostProduction ? 'var(--tint-orange-border, #fed7aa)' : 'var(--tint-teal-border, #bbf7d0)'}`,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 6
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 6 }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontWeight: 700, fontSize: 12, color: 'var(--text-primary)' }}>
+                    <input
+                      type="checkbox"
+                      checked={isPostProduction}
+                      onChange={e => setIsPostProduction(e.target.checked)}
+                      style={{ width: 16, height: 16, accentColor: 'var(--accent)' }}
+                    />
+                    <span>{isPostProduction ? '🔴 設計変更 (POST-PRODUCTION — Sửa đổi sau sản xuất)' : '🟢 初回設計 (PRE-APPROVAL — Chỉnh sửa trước duyệt)'}</span>
+                  </label>
+                  {isPostProduction && (
+                    <span style={{
+                      fontSize: 11,
+                      fontWeight: 700,
+                      color: 'var(--accent)',
+                      fontFamily: 'monospace',
+                      padding: '2px 8px',
+                      borderRadius: 4,
+                      background: 'var(--bg-surface)'
+                    }}>
+                      Tạo Job: DES-{productCode.replace(/-/g, '')}-MOD{modificationNumber}
+                    </span>
+                  )}
+                </div>
+                <p style={{ margin: 0, fontSize: 11, color: 'var(--text-secondary)' }}>
+                  {isPostProduction
+                    ? `Kế thừa từ [${parentRevision.design_code || 'Rev.' + parentRevision.revision_number}]. Tự động tạo Design Job mới với 10 công đoạn để tính chi phí nhân công riêng.`
+                    : `Kế thừa từ [${parentRevision.design_code || 'Rev.' + parentRevision.revision_number}]. Tiếp tục sử dụng Design Job ban đầu để ghi nhật ký.`}
+                </p>
               </div>
             )}
 

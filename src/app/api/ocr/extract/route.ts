@@ -210,14 +210,16 @@ function normalizeExtractedData(raw: any): OCRResponseData {
 
   const components = Array.isArray(componentsRaw) ? componentsRaw.map((c: any) => {
     const typeCode = (c.type_code || c.type || 'MOLD').toUpperCase()
-    // Standard YSD business rule:
-    // WATER_BASE, FRAME, PRESSURE_BASE, STACKING are shared assets by CAV standard -> default to EXISTING
-    // MOLD and CUTTER are project-specific -> default to NEW
     const isSharedType = ['WATER_BASE', 'FRAME', 'PRESSURE_BASE', 'STACKING'].includes(typeCode)
     const rawCond = String(c.condition || '').toUpperCase()
     let condition = isSharedType ? 'EXISTING' : 'NEW'
     if (rawCond === 'NEW' || rawCond === '新規' || rawCond === '新') condition = 'NEW'
     else if (rawCond === 'EXISTING' || rawCond === '既存' || rawCond === '有' || rawCond === '流用') condition = 'EXISTING'
+
+    const sharedFrom = c.shared_from_product_code || c.shared_from || c.shared_model || (typeof c.notes === 'string' && c.notes.match(/([A-Z]{2,4}[-\s]?\d{3})/i) ? c.notes.match(/([A-Z]{2,4}[-\s]?\d{3})/i)![1].replace(/\s+/g, '-') : null)
+    if (sharedFrom && condition !== 'NEW') {
+      condition = 'EXISTING'
+    }
 
     return {
       type_code: typeCode,
@@ -227,7 +229,9 @@ function normalizeExtractedData(raw: any): OCRResponseData {
       condition,
       manufacture_location: (c.manufacture_location === 'OUTSOURCED' || c.manufacture_location === '外注') ? 'OUTSOURCED' : 'IN_HOUSE',
       deadline: normalizeComponentDate(c.deadline) || null,
-      estimated_hours: parseNum(c.estimated_hours || c.hours)
+      estimated_hours: parseNum(c.estimated_hours || c.hours),
+      shared_from_product_code: sharedFrom || null,
+      notes: c.notes || c.note || (sharedFrom ? `${sharedFrom}と同じ` : null)
     }
   }) : []
 
@@ -368,7 +372,9 @@ Carefully read handwriting and stamp seals across the document:
    - step_name: Name of the component (e.g. "本型(アルミ材)", "プラグ", "カッター", "フレーム", "水冷盤")
    - material_spec: Material (e.g. "アルミ材", "SKD11", "ベニヤ12mm")
    - arrangement: "REQUIRED" if 要, "NOT_REQUIRED" if 不要
-   - condition: "NEW" if 新規/新, "EXISTING" if 既存/有/流用
+   - condition: "NEW" if 新規/新, "EXISTING" if 既存/有/流用. If marked with a shared mold/product note (e.g. "MMT-014と同じ", "MMT-014と共通", "流用: MMT-014"), set condition to "EXISTING".
+   - shared_from_product_code: If there is a shared equipment note (e.g. "MMT-014と同じ"), extract the referenced model code (e.g. "MMT-014"). Otherwise null.
+   - notes: Any side notes (e.g. "MMT-014と同じ").
    - manufacture_location: "IN_HOUSE" if 内製, "OUTSOURCED" if 外注
    - deadline: Component-specific material/procurement date from the 手配 table (e.g. "YYYY-08-06" for 8/6, NOT the 8/26 mold deadline)
    - estimated_hours: Estimated hours (number or null)

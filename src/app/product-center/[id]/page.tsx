@@ -8,8 +8,9 @@ import { useTranslations } from 'next-intl'
 import {
   ArrowLeft, ArrowUpFromLine, Database, Package,
   Building2, FileText, Wrench, Hammer,
-  Loader2, ExternalLink, Info
+  Loader2, ExternalLink, Info, Trash2
 } from 'lucide-react'
+import { deleteProductAction } from '@/app/actions/engineering'
 
 import { TabOverview } from './_components/TabOverview'
 import { TabOrders } from './_components/TabOrders'
@@ -57,6 +58,28 @@ export default function ProductDataCenterPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<TabType>('overview')
+  const [isDeleting, setIsDeleting] = useState(false)
+
+  const handleDeleteProduct = async () => {
+    if (!product) return
+    const confirmPrompt = `【製品の削除確認】\n製品 [${product.product_code} / ${product.product_name_internal || product.product_name || ''}] および関連する設計Job・下書きデータを完全に削除しますか？\n\n※ すでに受注実績や作業実績(日報)が記録されている場合は安全のため削除できません。`
+    if (!window.confirm(confirmPrompt)) return
+
+    setIsDeleting(true)
+    try {
+      const res = await deleteProductAction(product.product_id)
+      if (!res.success) {
+        alert(res.error || '製品の削除に失敗しました')
+      } else {
+        alert('製品を削除しました。')
+        router.push('/product-center')
+      }
+    } catch (err: any) {
+      alert(`エラー: ${err.message || '削除処理に失敗しました'}`)
+    } finally {
+      setIsDeleting(false)
+    }
+  }
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -178,6 +201,27 @@ export default function ProductDataCenterPage() {
             style={{ height: 26, padding: '0 8px', fontSize: 11, gap: 4, textDecoration: 'none' }}>
             <ExternalLink size={12} /><span>{tCommon('edit')}</span>
           </Link>
+          <button
+            type="button"
+            onClick={handleDeleteProduct}
+            disabled={isDeleting}
+            className="btn cursor-pointer"
+            style={{
+              height: 26,
+              padding: '0 8px',
+              fontSize: 11,
+              gap: 4,
+              color: '#DC2626',
+              background: '#FEF2F2',
+              border: '1px solid #FECACA',
+              borderRadius: 4,
+              display: 'flex',
+              alignItems: 'center'
+            }}
+            title="製品と関連Jobを削除 (Xóa sản phẩm)"
+          >
+            <Trash2 size={12} /><span>{isDeleting ? '削除中...' : '削除'}</span>
+          </button>
         </div>
       </div>
 

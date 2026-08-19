@@ -23,7 +23,7 @@ interface Props {
   machines?: any[]
   initialFromDate?: string
   initialToDate?: string
-  trackFilter?: 'ALL' | 'MOLD' | 'PLUG' | 'CUTTER'
+  trackFilter?: 'ALL' | 'DESIGN' | 'MOLD' | 'PLUG' | 'CUTTER'
 }
 
 export interface ExtendedTask extends Task {

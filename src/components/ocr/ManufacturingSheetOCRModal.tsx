@@ -42,6 +42,8 @@ interface ComponentItem {
   deadline: string | null
   estimated_hours: number | null
   existing_equipment_id?: string
+  shared_from_product_code?: string | null
+  notes?: string | null
 }
 
 export function ManufacturingSheetOCRModal({
@@ -1516,13 +1518,14 @@ export function ManufacturingSheetOCRModal({
                       <table className="data-table" style={{ width: '100%', fontSize: 11 }}>
                         <thead>
                           <tr>
-                            <th style={{ width: 100 }}>{t('compType')}</th>
-                            <th style={{ minWidth: 140 }}>{t('compName')}</th>
-                            <th style={{ minWidth: 130 }}>{t('compMaterial')}</th>
-                            <th style={{ width: 110 }}>{t('compCondition')}</th>
-                            <th style={{ width: 90 }}>{t('compArrangement')}</th>
-                            <th style={{ width: 90 }}>{t('compLocation')}</th>
-                            <th style={{ width: 130 }}>{t('compDeadline')}</th>
+                            <th style={{ width: 90 }}>{t('compType')}</th>
+                            <th style={{ minWidth: 130 }}>{t('compName')}</th>
+                            <th style={{ minWidth: 110 }}>{t('compMaterial')}</th>
+                            <th style={{ width: 105 }}>{t('compCondition')}</th>
+                            <th style={{ minWidth: 120 }}>{t('compSharedFrom')}</th>
+                            <th style={{ width: 85 }}>{t('compArrangement')}</th>
+                            <th style={{ width: 85 }}>{t('compLocation')}</th>
+                            <th style={{ width: 120 }}>{t('compDeadline')}</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -1566,6 +1569,23 @@ export function ManufacturingSheetOCRModal({
                                   <option value="NEW">{t('compConditionNew')}</option>
                                   <option value="EXISTING">{t('compConditionExisting')}</option>
                                 </select>
+                              </td>
+                              <td>
+                                {comp.condition === 'EXISTING' ? (
+                                  <input
+                                    type="text"
+                                    value={comp.shared_from_product_code || comp.notes || ''}
+                                    onChange={(e) => {
+                                      handleComponentChange(idx, 'shared_from_product_code', e.target.value)
+                                      handleComponentChange(idx, 'notes', e.target.value)
+                                    }}
+                                    className="form-input"
+                                    style={{ padding: '4px 6px', fontSize: 11, fontFamily: 'monospace', fontWeight: 600, color: 'var(--accent)' }}
+                                    placeholder={t('compSharedPlaceholder')}
+                                  />
+                                ) : (
+                                  <span style={{ color: 'var(--text-muted)', fontSize: 11, display: 'block', textAlign: 'center' }}>—</span>
+                                )}
                               </td>
                               <td>
                                 <select

@@ -76,6 +76,13 @@ interface JobItem {
 }
 
 const CATEGORY_BADGE: Record<string, { label: string; className: string }> = {
+  DESIGN: { label: '設計', className: 'badge badge--info font-semibold' },
+  MOLD_NEW: { label: '新規金型', className: 'badge badge--success font-semibold' },
+  MOLD_MODIFY: { label: '金型改修', className: 'badge badge--warning font-semibold' },
+  CUTTER_NEW: { label: '新規抜型', className: 'badge badge--success font-semibold' },
+  EQUIPMENT_NEW: { label: '新規治具', className: 'badge badge--success font-semibold' },
+  EQUIPMENT_REPAIR: { label: '治具修理', className: 'badge badge--warning font-semibold' },
+  INTERNAL_OPS: { label: '社内作業', className: 'badge badge--neutral font-semibold' },
   NEW: { label: '新規製作', className: 'badge badge--success font-semibold' },
   REPAIR: { label: '改修・修正', className: 'badge badge--warning font-semibold' },
   MAINTENANCE: { label: '定期保守', className: 'badge badge--info font-semibold' },

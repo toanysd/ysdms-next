@@ -133,6 +133,7 @@ FK:  mold_master_id      UUID → mold_masters(mold_master_id)   ← DEPRECATED,
      date_entry          DATE
      legacy_id           TEXT
      legacy_specs        JSONB
+     requires_prototype_mold BOOLEAN DEFAULT false  ← 試作ポケット: Cần khuôn thử nghiệm?
 ```
 
 > [!CAUTION]
@@ -416,9 +417,11 @@ PK:  item_type_id         INTEGER
 
 ```
 PK:  processing_code_id   INTEGER
-     processing_name      TEXT          ← (VD: '本型演算＆加工', '本型穴あけ'...)
-     category             TEXT          ← Nhóm thao tác (MOLD_MILLING, MOLD_EDM...)
-     is_active            BOOLEAN
+     processing_name      TEXT          ← (VD: 'レイアウト', '3D金型図面作成', '金型演算＆加工'...)
+     category             TEXT          ← Nhóm thao tác (DESIGN, MOLD, PLUG, CUTTER, EQUIPMENT, GENERAL...)
+     department_code      TEXT          ← Bộ phận (DESIGN, MOLD_SHOP, PRODUCTION, QUALITY, OFFICE, GENERAL)
+     sort_note            INTEGER       ← Thứ tự hiển thị
+     is_active            BOOLEAN       ← Có đang sử dụng không
 ```
 
 ---
@@ -486,6 +489,7 @@ FK:  machine_id           UUID → machines(machine_id)
      description          TEXT             ← Mô tả chi tiết công việc
      notes                TEXT
      contact_content      TEXT
+     design_revision_context TEXT  ← Ghi chú revision (VD: "R2", "R3") — informational
 ```
 
 ---

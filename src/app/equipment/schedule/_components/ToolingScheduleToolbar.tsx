@@ -3,16 +3,17 @@
 import React, { useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { format, parseISO, addDays, addMonths, subDays, subMonths } from 'date-fns'
-import { ChevronLeft, ChevronRight, LayoutGrid, BarChart2, Search, ClipboardList, Printer, Sparkles, Briefcase } from 'lucide-react'
+import { ChevronLeft, ChevronRight, LayoutGrid, BarChart2, Search, ClipboardList, Printer, Sparkles, Briefcase, Plus, Compass } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { ManufacturingSheetOCRModal } from '@/components/ocr/ManufacturingSheetOCRModal'
 import { DailyWorklogQuickModal } from '@/components/worklogs/DailyWorklogQuickModal'
 import { EditStepModal } from '@/app/equipment/jobs/[id]/tabs/EditStepModal'
+import CreateProductModal from '@/app/product-center/_components/CreateProductModal'
 
 export type TimeframeMode = 'week1' | 'week2' | 'month' | 'custom'
 export type ViewMode = 'gantt' | 'grid'
 export type PerspectiveMode = 'machine' | 'job'
-export type TrackFilter = 'ALL' | 'MOLD' | 'PLUG' | 'CUTTER'
+export type TrackFilter = 'ALL' | 'DESIGN' | 'MOLD' | 'PLUG' | 'CUTTER'
 
 interface ToolingScheduleToolbarProps {
     currentDate: string
@@ -51,6 +52,7 @@ export default function ToolingScheduleToolbar({
     const [isOCRModalOpen, setIsOCRModalOpen] = useState(false)
     const [isWorklogModalOpen, setIsWorklogModalOpen] = useState(false)
     const [isPrintModalOpen, setIsPrintModalOpen] = useState(false)
+    const [isCreateProductOpen, setIsCreateProductOpen] = useState(false)
     const [worklogJobId, setWorklogJobId] = useState<string | null>(null)
 
     useEffect(() => { setLocalStart(currentDate) }, [currentDate])
@@ -233,6 +235,7 @@ export default function ToolingScheduleToolbar({
                     <div className="flex items-center bg-[var(--bg-surface-2)] rounded p-0.5 border border-[var(--border-default)] h-[26px]">
                         {[
                             { key: 'ALL', label: t('all') },
+                            { key: 'DESIGN', label: '設計のみ' },
                             { key: 'MOLD', label: t('moldOnly') },
                             { key: 'PLUG', label: t('plugOnly') },
                             { key: 'CUTTER', label: t('cutterOnly') }
@@ -264,8 +267,19 @@ export default function ToolingScheduleToolbar({
                     </form>
                 </div>
 
-                {/* Block 4: Common Action Buttons (Worklog, Internal, Print, AI OCR) */}
+                {/* Block 4: Common Action Buttons (New Product/Design, Worklog, Internal, Print, AI OCR) */}
                 <div className="flex items-center gap-1.5 shrink-0">
+                    {/* Quick Create Product & Auto-Design Job */}
+                    <button
+                        type="button"
+                        onClick={() => setIsCreateProductOpen(true)}
+                        className="btn btn-primary text-[10.5px] px-2 h-[26px] flex items-center gap-1 font-bold shadow-2xs cursor-pointer"
+                        title="新規製品の登録＆設計Job（10工程）の自動生成"
+                    >
+                        <Plus size={12} />
+                        <span className="whitespace-nowrap">新規製品・設計</span>
+                    </button>
+
                     {/* Worklog Entry */}
                     <button
                         type="button"
@@ -274,7 +288,7 @@ export default function ToolingScheduleToolbar({
                             setIsWorklogModalOpen(true)
                         }}
                         className="btn text-[10.5px] px-2 h-[26px] flex items-center gap-1 font-bold shadow-2xs border border-[var(--accent)]/40 text-[var(--accent)] bg-[var(--tint-teal-bg)] hover:brightness-95 cursor-pointer"
-                        title="日報・作業ログを記録（ジョブ選択可能）"
+                        title="日報・作業ログを記録（設計・金型・社内作業など）"
                     >
                         <ClipboardList size={12} />
                         <span className="whitespace-nowrap">日報入力</span>
@@ -379,9 +393,19 @@ export default function ToolingScheduleToolbar({
                 <DailyWorklogQuickModal
                     isOpen={isPrintModalOpen}
                     onClose={() => setIsPrintModalOpen(false)}
-                    initialDate={currentDate}
+                    initialDate={format(new Date(), 'yyyy-MM-dd')}
                 />
             )}
+
+            {/* Quick Create Product & Design Modal */}
+            <CreateProductModal
+                isOpen={isCreateProductOpen}
+                onClose={() => setIsCreateProductOpen(false)}
+                onSuccess={() => {
+                    setIsCreateProductOpen(false)
+                    router.refresh()
+                }}
+            />
         </>
     )
 }

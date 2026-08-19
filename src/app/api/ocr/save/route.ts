@@ -47,6 +47,8 @@ interface SaveOCRInput {
     deadline?: string
     estimated_hours?: number
     existing_equipment_id?: string
+    shared_from_product_code?: string
+    notes?: string
   }>
 }
 
@@ -473,6 +475,64 @@ export async function POST(request: NextRequest) {
         cutterEquipmentId = newCutter.equipment_id
         createdEquipmentIds.push({ type: 'CUTTER', id: cutterEquipmentId })
       }
+    } else {
+      // Shared existing cutter! E.g. "MMT-014と同じ"
+      const sharedCode = cutterComponent?.shared_from_product_code || cutterComponent?.notes || null
+      let matchedCutterId: string | null = cutterComponent?.existing_equipment_id || null
+
+      if (!matchedCutterId && sharedCode) {
+        const cleanShared = sharedCode.replace(/[^A-Za-z0-9]/g, '').toUpperCase()
+        const cleanSharedDash = sharedCode.replace(/と同じ|と共通|流用|既存/g, '').trim().toUpperCase()
+
+        // 1. Direct search by equipment_code / display_name
+        const { data: directCutters } = await supabase
+          .from('equipment')
+          .select('equipment_id, equipment_code')
+          .in('equipment_type', ['CUTTER', 'CUTTER_INLINE', 'CUTTER_SEPARATE'])
+          .or(`equipment_code.ilike.%${cleanShared}%,equipment_code.ilike.%${cleanSharedDash}%,display_name.ilike.%${cleanSharedDash}%`)
+          .limit(1)
+
+        if (directCutters && directCutters.length > 0) {
+          matchedCutterId = directCutters[0].equipment_id
+        } else {
+          // 2. Search via product -> design_revisions -> equipment
+          const { data: targetProds } = await supabase
+            .from('products')
+            .select('product_id, design_revisions(revision_id, equipment(equipment_id, equipment_type))')
+            .or(`product_code.ilike.%${cleanShared}%,product_name_internal.ilike.%${cleanSharedDash}%`)
+            .limit(1)
+
+          if (targetProds && targetProds.length > 0) {
+            const revList = (targetProds[0] as any)?.design_revisions || []
+            for (const r of revList) {
+              const eqList = r.equipment || []
+              const cEq = eqList.find((e: any) => ['CUTTER', 'CUTTER_INLINE', 'CUTTER_SEPARATE'].includes(e.equipment_type))
+              if (cEq) {
+                matchedCutterId = cEq.equipment_id
+                break
+              }
+            }
+          }
+        }
+      }
+
+      if (matchedCutterId) {
+        cutterEquipmentId = matchedCutterId
+        // Link to equipment_assignments with relationship_type = 'SHARED'
+        if (moldEquipmentId) {
+          try {
+            await supabase.from('equipment_assignments').upsert({
+              primary_equipment_id: moldEquipmentId,
+              related_equipment_id: matchedCutterId,
+              relationship_type: 'SHARED',
+              is_default: true,
+              notes: sharedCode ? `${sharedCode} (AI OCR 抜型流用設定)` : '抜型流用設定'
+            }, { onConflict: 'primary_equipment_id,related_equipment_id' })
+          } catch (assignErr) {
+            console.warn('Non-blocking cutter assignment link error:', assignErr)
+          }
+        }
+      }
     }
 
     // 5c. Auxiliary Components (WATER_BASE, FRAME, PRESSURE_BASE, STACKING)
@@ -560,9 +620,10 @@ export async function POST(request: NextRequest) {
     let moldJobId: string | null = null
     const { data: existingJob } = await supabase
       .from('jobs')
-      .select('job_id')
+      .select('job_id, job_category')
       .eq('product_id', productId!)
       .eq('design_revision_id', revisionId!)
+      .neq('job_category', 'DESIGN')
       .limit(1)
       .maybeSingle()
 
