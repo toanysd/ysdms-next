@@ -337,8 +337,9 @@ FK:  work_order_id       UUID → work_orders(wo_id)
      job_code            TEXT UNIQUE NOT NULL
      job_name            TEXT NOT NULL
      start_date          TIMESTAMPTZ    ← Ngày bắt đầu
-     ship_date           TIMESTAMPTZ    ← Ngày xuất hàng khay (Tham khảo)
-     mold_deadline       TIMESTAMPTZ    ← Kỳ hạn Khuôn (Thường là ship_date - 2 ngày)
+     ship_date           TIMESTAMPTZ    ← Ngày xuất hàng khay (出荷納期)
+     mold_deadline       TIMESTAMPTZ    ← Kỳ hạn bàn giao chỉ thị (指示納期 / 払出期日)
+     target_completion_date DATE        ← Kỳ hạn mục tiêu hoàn thành khuôn (完成目標日 — Trước 3 ngày làm việc)
      deadline            TIMESTAMPTZ    ← Hạn chung Job (Tự động = MAX(job_steps.deadline))
      completed_date      TIMESTAMPTZ
      estimated_hours     NUMERIC(6,1)
@@ -348,6 +349,20 @@ FK:  work_order_id       UUID → work_orders(wo_id)
      year_period         INTEGER
      month_period        INTEGER
      notes               TEXT
+```
+
+---
+
+## 🔑 Bảng `company_calendar` — Lịch Làm Việc & Ngày Nghỉ Công Ty
+
+```
+PK:  calendar_date       DATE PRIMARY KEY
+     day_type            TEXT NOT NULL DEFAULT 'WORKDAY' ('WORKDAY' | 'HOLIDAY' | 'PUBLIC_HOLIDAY' | 'SPECIAL_WORKDAY' | 'COMPANY_OFF')
+     is_working_day      BOOLEAN NOT NULL DEFAULT true
+     working_hours       NUMERIC(4,1) DEFAULT 8.0
+     notes               TEXT (Tên ngày lễ / Sự kiện / 'お盆休み' / '特別出勤日')
+     created_at          TIMESTAMPTZ DEFAULT now()
+     updated_at          TIMESTAMPTZ DEFAULT now()
 ```
 
 ---

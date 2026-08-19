@@ -25,16 +25,22 @@ function getDelayBadge(deadlineStr: string | null | undefined, isCompleted: bool
     today.setHours(0, 0, 0, 0)
 
     if (isCompleted) {
-        return { label: format(deadline, 'MM/dd'), badgeClass: 'badge badge--success text-[10px]' }
+        return { label: format(deadline, 'MM/dd'), badgeClass: 'bg-[#DCFCE7] text-[#15803D] border border-[#86EFAC] font-mono text-[9px]' }
     }
 
     const diffDays = Math.ceil((deadline.getTime() - today.getTime()) / (1000 * 3600 * 24))
+    const formattedDate = format(deadline, 'MM/dd')
+
     if (diffDays < 0) {
-        return { label: `! ${format(deadline, 'MM/dd')}`, badgeClass: 'badge badge--error font-bold text-[10px] animate-pulse' }
-    } else if (diffDays <= 2) {
-        return { label: format(deadline, 'MM/dd'), badgeClass: 'badge badge--warning font-bold text-[10px]' }
+        return { label: `! ${formattedDate}`, badgeClass: 'bg-[#FEE2E2] text-[#B91C1C] border border-[#F87171] font-bold font-mono text-[9px] animate-pulse' }
+    } else if (diffDays === 0) {
+        return { label: `本日 ${formattedDate}`, badgeClass: 'bg-[#FEE2E2] text-[#DC2626] border border-[#EF4444] font-bold font-mono text-[9px] animate-pulse' }
+    } else if (diffDays === 1) {
+        return { label: `明日 ${formattedDate}`, badgeClass: 'bg-[#FFEDD5] text-[#C2410C] border border-[#FB923C] font-bold font-mono text-[9px]' }
+    } else if (diffDays === 2) {
+        return { label: formattedDate, badgeClass: 'bg-[#FEF9C3] text-[#A16207] border border-[#FDE047] font-bold font-mono text-[9px]' }
     }
-    return { label: format(deadline, 'MM/dd'), badgeClass: 'badge badge--neutral text-[10px]' }
+    return { label: formattedDate, badgeClass: 'bg-[#F1F5F9] text-[#475569] border border-[#CBD5E1] font-mono text-[9px]' }
 }
 
 const TRACK_COLORS: Record<string, { bg: string, text: string, label: string }> = {
@@ -58,6 +64,27 @@ export default function ToolingJobCard({
     
     const deadline = step?.deadline || job.mold_deadline || job.deadline
     const delayBadge = getDelayBadge(deadline, !!isCompleted)
+
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    const dlDate = deadline ? new Date(deadline) : null
+    if (dlDate) dlDate.setHours(0, 0, 0, 0)
+    const diffDays = dlDate && !isNaN(dlDate.getTime()) ? Math.ceil((dlDate.getTime() - today.getTime()) / (1000 * 3600 * 24)) : 999
+
+    let borderLeftClass = 'border-l-3 border-l-slate-400'
+    if (isCompleted) {
+        borderLeftClass = 'border-l-3 border-l-[#16A34A]'
+    } else if (diffDays < 0) {
+        borderLeftClass = 'border-l-3 border-l-[#DC2626]'
+    } else if (diffDays === 0) {
+        borderLeftClass = 'border-l-3 border-l-[#DC2626]'
+    } else if (diffDays === 1) {
+        borderLeftClass = 'border-l-3 border-l-[#EA580C]'
+    } else if (diffDays === 2) {
+        borderLeftClass = 'border-l-3 border-l-[#CA8A04]'
+    } else {
+        borderLeftClass = 'border-l-3 border-l-slate-400'
+    }
     
     const track = step?.track || (job.has_plug ? 'MOLD' : 'MOLD')
     const trackStyle = TRACK_COLORS[track] || TRACK_COLORS.MOLD
@@ -78,11 +105,11 @@ export default function ToolingJobCard({
                 e.stopPropagation()
                 if (onQuickLog) onQuickLog(job, step)
             }}
-            className={`group relative rounded-[4px] p-1.5 border transition-all cursor-pointer shadow-xs hover:shadow-md hover:border-[var(--accent)] flex flex-col gap-1 text-[11px] ${
+            className={`group relative rounded-[4px] p-1.5 border transition-all cursor-pointer shadow-xs hover:shadow-md hover:border-[var(--accent)] flex flex-col gap-1 text-[11px] ${borderLeftClass} ${
                 isCompleted 
-                    ? 'bg-[var(--bg-surface-2)] border-[var(--border-default)] opacity-80' 
+                    ? 'bg-[#F0FDF4] border-[var(--border-default)] opacity-80' 
                     : isInProgress 
-                        ? 'bg-[var(--bg-surface)] border-l-3 border-l-[var(--accent)] border-t-[var(--border-default)] border-r-[var(--border-default)] border-b-[var(--border-default)]' 
+                        ? 'bg-white border-[var(--border-default)]' 
                         : 'bg-[var(--bg-surface)] border-[var(--border-default)] hover:bg-[var(--bg-surface-hover)]'
             }`}
             title={`[${job.job_code}] ${job.job_name} - ${step?.step_name || ''}\nダブルクリックで日報入力`}

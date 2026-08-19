@@ -220,7 +220,7 @@ export async function getWorkOrdersForGantt(params: {
       companies!work_orders_company_id_fkey(company_name, company_code),
       design_revisions!work_orders_design_revision_id_fkey(design_code, revision_number, plastic_type_designed),
       jobs!jobs_work_order_id_fkey(
-        job_id, job_code, job_name, job_status, equipment_id, start_date, deadline, completed_date, estimated_hours,
+        job_id, job_code, job_name, job_status, equipment_id, start_date, deadline, target_completion_date, mold_deadline, ship_date, completed_date, estimated_hours,
         equipment!jobs_equipment_id_fkey(equipment_id, equipment_code, display_name, equipment_type),
         job_steps(
           step_id, job_id, step_no, step_name, step_status,
@@ -243,7 +243,7 @@ export async function getWorkOrdersForGantt(params: {
         .from('jobs')
         .select('work_order_id')
         .not('work_order_id', 'is', null)
-        .or(`and(mold_deadline.gte.${params.fromDate},mold_deadline.lte.${toDateEnd}),and(deadline.gte.${params.fromDate},deadline.lte.${toDateEnd}),and(start_date.gte.${params.fromDate},start_date.lte.${toDateEnd}),and(ship_date.gte.${params.fromDate},ship_date.lte.${toDateEnd})`),
+        .or(`and(target_completion_date.gte.${params.fromDate},target_completion_date.lte.${toDateEnd}),and(mold_deadline.gte.${params.fromDate},mold_deadline.lte.${toDateEnd}),and(deadline.gte.${params.fromDate},deadline.lte.${toDateEnd}),and(start_date.gte.${params.fromDate},start_date.lte.${toDateEnd}),and(ship_date.gte.${params.fromDate},ship_date.lte.${toDateEnd})`),
       supabase
         .from('job_steps')
         .select('job_id')

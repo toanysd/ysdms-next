@@ -236,7 +236,7 @@ export function LogsTab({ job, onRefresh }: { job: any; onRefresh: () => void })
           nextStepNo={(job.job_steps || []).length + 1}
           initialLog={editingLog}
           onClose={() => { setModalOpen(false); setEditingLog(null); setSelectedStep(null) }}
-          onSaved={() => { setModalOpen(false); setEditingLog(null); setSelectedStep(null); fetchLogs(); onRefresh() }}
+          onSaved={() => { fetchLogs(); onRefresh() }}
         />
       )}
     </div>

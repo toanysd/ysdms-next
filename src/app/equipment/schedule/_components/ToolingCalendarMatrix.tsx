@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useMemo, useCallback } from 'react'
+import React, { useState, useMemo, useCallback, useEffect } from 'react'
 import type { JobForGantt, JobStepRow } from '@/app/actions/mold-job'
 import { format, parseISO, addDays, isSameDay } from 'date-fns'
 import { useTranslations } from 'next-intl'
@@ -9,6 +9,7 @@ import { ChevronRight, ChevronDown, Crosshair, Sparkles, CheckCircle2, Clock, Al
 import { JobQuickViewDrawer } from '@/components/equipment/JobQuickViewDrawer'
 import { EditStepModal } from '@/app/equipment/jobs/[id]/tabs/EditStepModal'
 import { DailyWorklogQuickModal } from '@/components/worklogs/DailyWorklogQuickModal'
+import { getCompanyCalendar, CalendarDayRecord } from '@/app/actions/company-calendar'
 
 interface ToolingCalendarMatrixProps {
     jobs: JobForGantt[]
@@ -136,6 +137,9 @@ export default function ToolingCalendarMatrix({
         })
     }, [jobs, trackFilter, searchQuery])
 
+    // Calendar Days Map from DB
+    const [calendarDaysMap, setCalendarDaysMap] = useState<Map<string, CalendarDayRecord>>(new Map())
+
     // Generate Calendar Dates
     const start = parseISO(startDateStr)
     const dateList: string[] = useMemo(() => {
@@ -145,6 +149,25 @@ export default function ToolingCalendarMatrix({
         }
         return list
     }, [start, daysCount])
+
+    useEffect(() => {
+        if (!dateList || dateList.length === 0) return
+        const sYear = parseInt(dateList[0].slice(0, 4), 10)
+        const eYear = parseInt(dateList[dateList.length - 1].slice(0, 4), 10)
+        
+        async function loadCal() {
+            const years = Array.from(new Set([sYear, eYear]))
+            const map = new Map<string, CalendarDayRecord>()
+            for (const y of years) {
+                const res = await getCompanyCalendar(y)
+                if (res.success && res.data) {
+                    res.data.forEach(d => map.set(d.calendar_date, d))
+                }
+            }
+            setCalendarDaysMap(map)
+        }
+        loadCal()
+    }, [dateList])
 
     // Expand / Collapse Handlers
     const toggleJobExpand = useCallback((jobId: string) => {
@@ -258,8 +281,8 @@ export default function ToolingCalendarMatrix({
                         HEADER ROW (Sticky Top)
                     ───────────────────────────────────────────────────────────── */}
                     <div className="flex border-b border-[var(--border-default)] bg-[var(--bg-surface)] sticky top-0 z-30 shadow-xs">
-                        {/* LEFT HEADER (Width: 480px, Sticky Left) */}
-                        <div className="w-[500px] shrink-0 border-r border-[var(--border-default)] px-3 py-2 sticky left-0 bg-[var(--bg-surface)] z-40 flex items-center justify-between shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)]">
+                        {/* LEFT HEADER (Width: 560px, Sticky Left) */}
+                        <div className="w-[560px] shrink-0 border-r border-[var(--border-default)] px-3 py-2 sticky left-0 bg-[var(--bg-surface)] z-40 flex items-center justify-between shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)]">
                             <div className="flex items-center gap-2">
                                 <div className="flex items-center bg-[var(--bg-surface-2)] border border-[var(--border-default)] rounded p-0.5 shadow-xs">
                                     <button onClick={handleCollapseAll} className="px-1.5 py-0.5 hover:bg-[var(--bg-surface-hover)] rounded text-[10px] font-bold" title="すべて折りたたむ">－</button>
@@ -268,12 +291,13 @@ export default function ToolingCalendarMatrix({
                                 </div>
                                 <span className="font-bold text-[12px] text-[var(--text-primary)]">ジョブ / 工程 (Job & Steps)</span>
                             </div>
-                            <div className="grid grid-cols-[85px_65px_60px_65px_65px] gap-1 text-[10px] font-bold text-[var(--text-muted)] text-center tracking-tight">
+                            <div className="grid grid-cols-[75px_50px_45px_60px_60px_60px] gap-1 text-[10px] font-bold text-[var(--text-muted)] text-center tracking-tight">
                                 <div>設備</div>
-                                <div>予定/実績</div>
+                                <div>工数</div>
                                 <div>状態</div>
-                                <div>完成期日</div>
-                                <div className="text-[var(--accent)]">出荷日</div>
+                                <div className="text-[#166534] font-extrabold" title="完成目標日 (出荷前3稼働日)">完成目標</div>
+                                <div title="指示納期 / 払出期日">指示納期</div>
+                                <div className="text-[var(--accent)]" title="出荷予定日">出荷日</div>
                             </div>
                         </div>
 
@@ -283,6 +307,9 @@ export default function ToolingCalendarMatrix({
                             const isToday = isSameDay(parsedDate, new Date())
                             const dayIndex = parsedDate.getDay().toString() as '0'|'1'|'2'|'3'|'4'|'5'|'6'
                             const isWeekend = dayIndex === '0' || dayIndex === '6'
+                            const calDay = calendarDaysMap.get(dateStr)
+                            const isNonWorking = calDay ? !calDay.is_working_day : isWeekend
+                            const isSpecialWork = calDay?.day_type === 'SPECIAL_WORKDAY'
 
                             return (
                                 <div 
@@ -290,16 +317,24 @@ export default function ToolingCalendarMatrix({
                                     className={`w-[140px] shrink-0 border-r border-[var(--border-default)] py-1.5 px-1 flex flex-col items-center justify-center transition-colors ${
                                         isToday 
                                             ? 'bg-[var(--tint-teal-bg)] border-b-2 border-b-[var(--accent)]' 
-                                            : isWeekend 
-                                                ? 'bg-[var(--bg-surface-2)]' 
-                                                : 'bg-[var(--bg-surface-hover)]'
+                                            : isSpecialWork
+                                                ? 'bg-[#EFF6FF]'
+                                                : isNonWorking 
+                                                    ? 'bg-[var(--bg-surface-2)]/80' 
+                                                    : 'bg-[var(--bg-surface-hover)]'
                                     }`}
                                 >
-                                    <div className={`font-mono font-bold text-[13px] leading-tight ${isToday ? 'text-[var(--accent)] font-extrabold' : 'text-[var(--text-primary)]'}`}>
+                                    <div className={`font-mono font-bold text-[13px] leading-tight ${isToday ? 'text-[var(--accent)] font-extrabold' : isSpecialWork ? 'text-[#1E40AF]' : 'text-[var(--text-primary)]'}`}>
                                         {format(parsedDate, 'MM/dd')}
                                     </div>
-                                    <div className={`text-[10px] font-bold ${isWeekend ? 'text-red-500' : 'text-[var(--text-muted)]'}`}>
-                                        ({tDays(dayIndex)})
+                                    <div className={`text-[10px] font-bold flex items-center gap-1 ${isSpecialWork ? 'text-[#1E40AF]' : isNonWorking ? 'text-red-500' : 'text-[var(--text-muted)]'}`}>
+                                        <span>({tDays(dayIndex)})</span>
+                                        {isSpecialWork && <span>⭐</span>}
+                                        {calDay?.notes && calDay.day_type !== 'HOLIDAY' && (
+                                            <span className="truncate max-w-[70px] text-[9px] font-normal" title={calDay.notes}>
+                                                {calDay.notes}
+                                            </span>
+                                        )}
                                     </div>
                                     {isToday && (
                                         <span className="mt-0.5 px-1 rounded bg-[var(--accent)] text-white text-[8px] font-bold uppercase tracking-tighter">
@@ -323,6 +358,7 @@ export default function ToolingCalendarMatrix({
                         const isJobExpanded = expandedJobs.has(job.job_id)
                         const isTrackExpanded = isTrackRow && expandedTracks.has(row.id)
 
+                        const targetCompletionInfo = getDelayInfo(job.target_completion_date, job.job_status === 'COMPLETED')
                         const moldDeadlineInfo = getDelayInfo(job.mold_deadline, job.job_status === 'COMPLETED')
                         const shipDateInfo = getDelayInfo(job.ship_date, job.job_status === 'COMPLETED')
 
@@ -337,9 +373,9 @@ export default function ToolingCalendarMatrix({
                                             : 'bg-[var(--bg-surface)] hover:bg-[var(--tint-teal-bg)]/20 min-h-[36px]'
                                 }`}
                             >
-                                {/* ─── LEFT PANEL ROW (Sticky Left, Width: 500px) ─── */}
+                                {/* ─── LEFT PANEL ROW (Sticky Left, Width: 560px) ─── */}
                                 <div 
-                                    className={`w-[500px] shrink-0 border-r border-[var(--border-default)] px-2 py-1 sticky left-0 z-20 flex items-center justify-between shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] bg-inherit ${
+                                    className={`w-[560px] shrink-0 border-r border-[var(--border-default)] px-2 py-1 sticky left-0 z-20 flex items-center justify-between shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] bg-inherit ${
                                         isJobRow ? 'font-bold' : ''
                                     }`}
                                 >
@@ -401,7 +437,7 @@ export default function ToolingCalendarMatrix({
                                     </div>
 
                                     {/* Right Specs in Left Panel */}
-                                    <div className="grid grid-cols-[85px_65px_60px_65px_65px] gap-1 text-[11px] text-center items-center shrink-0 font-mono">
+                                    <div className="grid grid-cols-[75px_50px_45px_60px_60px_60px] gap-1 text-[11px] text-center items-center shrink-0 font-mono">
                                         {/* Machine */}
                                         <div className="truncate text-[10px] text-[var(--text-muted)] px-1">
                                             {isStepRow ? (machMap.get(step?.machine_id || '') || step?.machining_location || '—') : ''}
@@ -437,19 +473,30 @@ export default function ToolingCalendarMatrix({
                                             ) : ''}
                                         </div>
 
-                                        {/* Mold Deadline */}
+                                        {/* 1. Target Completion Date (完成目標日 - 3稼働日前) */}
+                                        <div>
+                                            {isJobRow && targetCompletionInfo ? (
+                                                <span className="px-1 py-0.5 rounded bg-[#DCFCE7] text-[#166534] border border-[#86EFAC] font-bold text-[10px]" title="金型完成目標日 (3稼働日前)">
+                                                    {targetCompletionInfo.label}
+                                                </span>
+                                            ) : isStepRow && step?.target_completion_date ? (
+                                                <span className="text-[10px] text-[#166534] font-bold">{formatShortDateWithDay(step.target_completion_date)}</span>
+                                            ) : '—'}
+                                        </div>
+
+                                        {/* 2. Mold Deadline (指示納期 / 払出期日) */}
                                         <div>
                                             {isJobRow && moldDeadlineInfo ? (
-                                                <span className={moldDeadlineInfo.badgeClass}>{moldDeadlineInfo.label}</span>
+                                                <span className={moldDeadlineInfo.badgeClass} title="指示納期 / 払出期日">{moldDeadlineInfo.label}</span>
                                             ) : isStepRow && step?.deadline ? (
                                                 <span className="text-[10px] text-[var(--text-muted)]">{formatShortDateWithDay(step.deadline)}</span>
                                             ) : '—'}
                                         </div>
 
-                                        {/* Ship Date */}
+                                        {/* 3. Ship Date (出荷予定日) */}
                                         <div>
                                             {isJobRow && shipDateInfo ? (
-                                                <span className="font-bold text-[var(--accent)] text-[10px]">{shipDateInfo.label}</span>
+                                                <span className="font-bold text-[var(--accent)] text-[10px]" title="出荷予定日">{shipDateInfo.label}</span>
                                             ) : '—'}
                                         </div>
                                     </div>
@@ -459,6 +506,8 @@ export default function ToolingCalendarMatrix({
                                 {dateList.map((dateStr) => {
                                     const parsedDate = parseISO(dateStr)
                                     const isToday = isSameDay(parsedDate, new Date())
+                                    const calDay = calendarDaysMap.get(dateStr)
+                                    const isNonWorking = calDay ? !calDay.is_working_day : (parsedDate.getDay() === 0 || parsedDate.getDay() === 6)
 
                                     // 1. Step Row Cell
                                     if (isStepRow && step) {
@@ -475,7 +524,7 @@ export default function ToolingCalendarMatrix({
                                                 key={dateStr} 
                                                 onDoubleClick={() => setSelectedJobForWorklog({ job, step, date: dateStr })}
                                                 className={`w-[140px] shrink-0 border-r border-[var(--border-default)] p-1 flex flex-col justify-center items-center relative transition-colors ${
-                                                    isToday ? 'bg-[var(--tint-teal-bg)]/20' : ''
+                                                    isToday ? 'bg-[var(--tint-teal-bg)]/20' : isNonWorking ? 'bg-slate-50/50' : ''
                                                 }`}
                                             >
                                                 {/* Actual Log (Green Pill) */}
@@ -520,20 +569,21 @@ export default function ToolingCalendarMatrix({
                                             <div 
                                                 key={dateStr} 
                                                 className={`w-[140px] shrink-0 border-r border-[var(--border-default)] p-1 flex items-center justify-center ${
-                                                    isToday ? 'bg-[var(--tint-teal-bg)]/20' : ''
+                                                    isToday ? 'bg-[var(--tint-teal-bg)]/20' : isNonWorking ? 'bg-slate-50/50' : ''
                                                 }`}
                                             >
                                                 {/* Track Deadline Flag */}
                                                 {job.mold_deadline && job.mold_deadline.split('T')[0] === dateStr && (
                                                     <span className="text-[9px] font-bold text-[var(--accent)] bg-[var(--tint-teal-bg)] px-1 rounded border border-[var(--accent)]/30">
-                                                        🏁 {TRACK_META[trackCode || 'MOLD']?.label}
+                                                        🛠️ {TRACK_META[trackCode || 'MOLD']?.label}
                                                     </span>
                                                 )}
                                             </div>
                                         )
                                     }
 
-                                    // 3. Job Row Cell
+                                    // 3. Job Row Cell - 3 Distinct Milestones
+                                    const isTargetCompletion = job.target_completion_date && job.target_completion_date.split('T')[0] === dateStr
                                     const isMoldDeadline = job.mold_deadline && job.mold_deadline.split('T')[0] === dateStr
                                     const isShipDate = job.ship_date && job.ship_date.split('T')[0] === dateStr
 
@@ -541,23 +591,31 @@ export default function ToolingCalendarMatrix({
                                         <div 
                                             key={dateStr} 
                                             className={`w-[140px] shrink-0 border-r border-[var(--border-default)] p-1 flex flex-col gap-0.5 items-center justify-center ${
-                                                isToday ? 'bg-[var(--tint-teal-bg)]/30' : ''
+                                                isToday ? 'bg-[var(--tint-teal-bg)]/30' : isNonWorking ? 'bg-slate-50/50' : ''
                                             }`}
                                         >
+                                            {isTargetCompletion && (
+                                                <div 
+                                                    className="w-full text-center py-0.5 px-1 rounded bg-[#DCFCE7] text-[#166534] border border-[#86EFAC] font-bold text-[9.5px] shadow-xs truncate"
+                                                    title={`完成目標日 (3稼働日前): ${formatShortDateWithDay(job.target_completion_date)}`}
+                                                >
+                                                    🏁 完成目標
+                                                </div>
+                                            )}
                                             {isMoldDeadline && (
                                                 <div 
-                                                    className="w-full text-center py-0.5 px-1 rounded bg-[var(--tint-teal-bg)] text-[var(--accent)] border border-[var(--accent)] font-bold text-[10px] shadow-xs"
-                                                    title={`完成目標日: ${formatShortDateWithDay(job.mold_deadline)}`}
+                                                    className="w-full text-center py-0.5 px-1 rounded bg-[var(--tint-teal-bg)] text-[var(--accent)] border border-[var(--accent)] font-bold text-[9.5px] shadow-xs truncate"
+                                                    title={`指示納期/払出期日: ${formatShortDateWithDay(job.mold_deadline)}`}
                                                 >
-                                                    🏁 完成
+                                                    🛠️ 払出期日
                                                 </div>
                                             )}
                                             {isShipDate && (
                                                 <div 
-                                                    className="w-full text-center py-0.5 px-1 rounded bg-[var(--tint-amber-bg)] text-[var(--status-warning)] border border-[var(--status-warning)] font-bold text-[10px] shadow-xs"
+                                                    className="w-full text-center py-0.5 px-1 rounded bg-[var(--tint-amber-bg)] text-[var(--status-warning)] border border-[var(--status-warning)] font-bold text-[9.5px] shadow-xs truncate"
                                                     title={`出荷予定日: ${formatShortDateWithDay(job.ship_date)}`}
                                                 >
-                                                    📦 出荷
+                                                    📦 出荷予定
                                                 </div>
                                             )}
                                         </div>

@@ -88,7 +88,6 @@ export function StepsTab({ job, onRefresh }: { job: any; onRefresh?: () => void 
   }
 
   const handleStepSaved = () => {
-    setIsModalOpen(false)
     onRefresh?.()
   }
 
@@ -123,13 +122,14 @@ export function StepsTab({ job, onRefresh }: { job: any; onRefresh?: () => void 
                 <SortTh col="planned_hours" label={t('Equipment.gioDuKien')} style={{ width: 80 }} />
                 <SortTh col="actual_hours" label={t('Equipment.gioThucTe')} style={{ width: 80 }} />
                 <SortTh col="deadline" label={t('Equipment.hanChot')} style={{ width: 100 }} />
+                <th style={{ width: 140 }}>備考 (Ghi chú)</th>
                 <th style={{ width: 70 }}></th>
               </tr>
             </thead>
             <tbody>
               {sortedSteps.length === 0 ? (
                 <tr>
-                  <td colSpan={10} style={{ padding: 40, textAlign: 'center', color: 'var(--text-muted)' }}>
+                  <td colSpan={11} style={{ padding: 40, textAlign: 'center', color: 'var(--text-muted)' }}>
                     {t('Equipment.noSteps')}
                   </td>
                 </tr>
@@ -178,6 +178,9 @@ export function StepsTab({ job, onRefresh }: { job: any; onRefresh?: () => void 
                       </td>
                       <td style={{ fontFamily: 'monospace', fontSize: 12 }}>
                         {step.deadline ? new Date(step.deadline).toLocaleDateString('ja-JP') : '—'}
+                      </td>
+                      <td style={{ fontSize: 11, color: 'var(--text-secondary)', maxWidth: 140 }} className="truncate" title={step.notes || ''}>
+                        {step.notes || '—'}
                       </td>
                       <td>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 4, justifyContent: 'flex-end' }}>

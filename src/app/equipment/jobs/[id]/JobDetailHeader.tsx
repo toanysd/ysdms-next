@@ -44,19 +44,40 @@ export function JobDetailHeader({ job }: { job: any }) {
         {/* Meta info inline */}
         {job.job_types && (
           <span style={{
-            fontSize: 12, color: 'var(--text-muted)', fontWeight: 600,
+            fontSize: 11, fontWeight: 700,
             display: 'inline-flex', alignItems: 'center', gap: 4,
+            padding: '2px 8px', borderRadius: 4,
+            backgroundColor: 'var(--tint-teal-bg)', color: 'var(--tint-teal-text)',
+            border: '1px solid var(--tint-teal-border)'
           }}>
             <span>{job.job_types.job_type_name_ja}</span>
           </span>
         )}
+        {job.target_completion_date && (
+          <span style={{
+            fontSize: 11, fontFamily: 'monospace', fontWeight: 700,
+            display: 'inline-flex', alignItems: 'center', gap: 4,
+            padding: '2px 8px', borderRadius: 4, background: '#DCFCE7', color: '#166534', border: '1px solid #86EFAC'
+          }} title="金型完成目標日 (出荷前3稼働日)">
+            <span>🏁 完成: {job.target_completion_date.slice(5)}</span>
+          </span>
+        )}
         {job.mold_deadline && (
           <span style={{
-            fontSize: 12, color: 'var(--text-muted)', fontFamily: 'monospace', fontWeight: 700,
+            fontSize: 11, fontFamily: 'monospace', fontWeight: 700,
             display: 'inline-flex', alignItems: 'center', gap: 4,
-          }}>
-            <Calendar size={12} />
-            {new Date(job.mold_deadline).toLocaleDateString('ja-JP')}
+            padding: '2px 8px', borderRadius: 4, background: 'var(--bg-surface-2)', color: 'var(--text-primary)', border: '1px solid var(--border-default)'
+          }} title="指示納期 / 払出期日">
+            <span>🛠️ 払出: {job.mold_deadline.slice(5, 10)}</span>
+          </span>
+        )}
+        {job.ship_date && (
+          <span style={{
+            fontSize: 11, fontFamily: 'monospace', fontWeight: 700,
+            display: 'inline-flex', alignItems: 'center', gap: 4,
+            padding: '2px 8px', borderRadius: 4, background: '#FEF3C7', color: '#92400E', border: '1px solid #FDE68A'
+          }} title="製品出荷予定日">
+            <span>📦 出荷: {job.ship_date.slice(5, 10)}</span>
           </span>
         )}
       </div>

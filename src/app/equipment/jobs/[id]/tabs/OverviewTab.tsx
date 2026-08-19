@@ -2,11 +2,13 @@
 
 import { useTranslations } from 'next-intl'
 import { Clock, Info, Pencil, X, Save, Loader2, Ruler, Box, Trash2 } from 'lucide-react'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { deleteMoldJobAction } from '@/app/actions/mold-job'
+
+import { calculateTargetCompletionDate } from '@/lib/utils/companyCalendar'
 
 function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
   return (
@@ -27,21 +29,52 @@ function EditJobModal({ job, onClose, onSaved }: { job: any; onClose: () => void
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  const [jobTypes, setJobTypes] = useState<any[]>([])
+  const [jobTypeId, setJobTypeId] = useState<string>(job.job_type_id ? String(job.job_type_id) : '1')
   const [jobName, setJobName] = useState(job.job_name || '')
   const [priority, setPriority] = useState<string>(job.priority?.toString() || '5')
+  const [targetCompletionDate, setTargetCompletionDate] = useState(job.target_completion_date?.slice(0, 10) || '')
   const [moldDeadline, setMoldDeadline] = useState(job.mold_deadline?.slice(0, 10) || '')
   const [shipDate, setShipDate] = useState(job.ship_date?.slice(0, 10) || '')
   const [notes, setNotes] = useState(job.notes || '')
+
+  useEffect(() => {
+    async function loadTypes() {
+      const { data } = await supabase.from('job_types').select('*').order('sort_order', { ascending: true })
+      if (data) setJobTypes(data)
+    }
+    loadTypes()
+  }, [supabase])
+
+  const handleMoldDeadlineChange = (val: string) => {
+    setMoldDeadline(val)
+    if (!targetCompletionDate || targetCompletionDate === calculateTargetCompletionDate(shipDate, moldDeadline)) {
+      const autoTarget = calculateTargetCompletionDate(shipDate, val)
+      if (autoTarget) setTargetCompletionDate(autoTarget)
+    }
+  }
+
+  const handleShipDateChange = (val: string) => {
+    setShipDate(val)
+    if (!targetCompletionDate || targetCompletionDate === calculateTargetCompletionDate(shipDate, moldDeadline)) {
+      const autoTarget = calculateTargetCompletionDate(val, moldDeadline)
+      if (autoTarget) setTargetCompletionDate(autoTarget)
+    }
+  }
 
   const handleSave = async () => {
     setSaving(true)
     setError(null)
     try {
+      const matchedType = jobTypes.find(jt => String(jt.job_type_id) === String(jobTypeId))
       const { error: err } = await supabase
         .from('jobs')
         .update({
           job_name: jobName,
+          job_type_id: jobTypeId || null,
+          job_category: matchedType?.category || undefined,
           priority: parseInt(priority) || 5,
+          target_completion_date: targetCompletionDate || null,
           mold_deadline: moldDeadline || null,
           ship_date: shipDate || null,
           notes: notes || null,
@@ -81,11 +114,29 @@ function EditJobModal({ job, onClose, onSaved }: { job: any; onClose: () => void
             <div style={{ padding: '8px 12px', background: 'var(--status-error)', color: '#fff', borderRadius: 'var(--radius-sm)', fontSize: 12 }}>{error}</div>
           )}
 
-          <div>
-            <label className="form-label">
-              {t('Equipment.tenJob')}
-            </label>
-            <input className="form-input" value={jobName} onChange={e => setJobName(e.target.value)} />
+          <div style={{ display: 'grid', gridTemplateColumns: '150px 1fr', gap: 12 }}>
+            <div>
+              <label className="form-label font-bold">
+                Job種別 (Loại Job)
+              </label>
+              <select
+                className="form-input font-bold"
+                value={jobTypeId}
+                onChange={e => setJobTypeId(e.target.value)}
+              >
+                {jobTypes.map(jt => (
+                  <option key={jt.job_type_id} value={String(jt.job_type_id)}>
+                    {jt.job_type_name_ja}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="form-label">
+                {t('Equipment.tenJob')}
+              </label>
+              <input className="form-input font-bold" value={jobName} onChange={e => setJobName(e.target.value)} />
+            </div>
           </div>
 
           <div className="form-grid-2">
@@ -96,18 +147,26 @@ function EditJobModal({ job, onClose, onSaved }: { job: any; onClose: () => void
               <input type="number" min="1" max="10" className="form-input font-mono" value={priority} onChange={e => setPriority(e.target.value)} />
             </div>
             <div>
-              <label className="form-label">
-                {t('Equipment.hanChotKhuon')}
+              <label className="form-label font-bold text-[#166534]">
+                🏁 完成目標日 (3稼働日前)
               </label>
-              <input type="date" className="form-input font-mono" value={moldDeadline} onChange={e => setMoldDeadline(e.target.value)} />
+              <input type="date" className="form-input font-mono font-bold" value={targetCompletionDate} onChange={e => setTargetCompletionDate(e.target.value)} />
             </div>
           </div>
 
-          <div>
-            <label className="form-label">
-              {t('Equipment.ngayXuatHang')}
-            </label>
-            <input type="date" className="form-input font-mono" value={shipDate} onChange={e => setShipDate(e.target.value)} />
+          <div className="form-grid-2">
+            <div>
+              <label className="form-label">
+                🛠️ 指示納期 / 払出期日
+              </label>
+              <input type="date" className="form-input font-mono" value={moldDeadline} onChange={e => handleMoldDeadlineChange(e.target.value)} />
+            </div>
+            <div>
+              <label className="form-label">
+                📦 {t('Equipment.ngayXuatHang')}
+              </label>
+              <input type="date" className="form-input font-mono" value={shipDate} onChange={e => handleShipDateChange(e.target.value)} />
+            </div>
           </div>
 
           <div>
@@ -193,8 +252,34 @@ export function OverviewTab({ job, onRefresh }: { job: any; onRefresh?: () => vo
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <InfoRow label={t('Equipment.tenJob')} value={job.job_name} />
+          <InfoRow label="Job種別 (Loại Job)" value={
+            <span className="badge" style={{ backgroundColor: 'var(--tint-teal-bg)', color: 'var(--tint-teal-text)', border: '1px solid var(--tint-teal-border)' }}>
+              {job.job_types?.job_type_name_ja || job.job_category || '新規金型'}
+            </span>
+          } />
           <InfoRow label={t('Equipment.jobCode')} value={
             <span style={{ fontFamily: 'monospace', fontWeight: 700, color: 'var(--accent)' }}>{job.job_code}</span>
+          } />
+          <InfoRow label="完成目標日" value={
+            job.target_completion_date ? (
+              <span style={{ fontFamily: 'monospace', fontWeight: 700, color: '#166534', background: '#DCFCE7', padding: '2px 8px', borderRadius: 4, border: '1px solid #86EFAC' }}>
+                🏁 {new Date(job.target_completion_date).toLocaleDateString('ja-JP')} (出荷前3稼働日)
+              </span>
+            ) : '—'
+          } />
+          <InfoRow label="指示納期 / 払出" value={
+            job.mold_deadline ? (
+              <span style={{ fontFamily: 'monospace', fontWeight: 700 }}>
+                🛠️ {new Date(job.mold_deadline).toLocaleDateString('ja-JP')}
+              </span>
+            ) : '—'
+          } />
+          <InfoRow label={t('Equipment.ngayXuatHang')} value={
+            job.ship_date ? (
+              <span style={{ fontFamily: 'monospace', fontWeight: 700, color: 'var(--accent)' }}>
+                📦 {new Date(job.ship_date).toLocaleDateString('ja-JP')}
+              </span>
+            ) : '—'
           } />
           {job.physical_molds && (
             <InfoRow label={t('Equipment.khuonVatLy')} value={

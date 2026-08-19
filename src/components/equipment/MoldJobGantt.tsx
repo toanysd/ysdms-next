@@ -280,7 +280,7 @@ const TaskRow = React.memo(function TaskRow({
           ? t.trackDeadline 
           : currentStepData?.deadline),
     t.type === 'project'
-      ? (t.originalJob?.job_status === 'COMPLETED' ? (t.originalJob?.ship_date || t.end) : null)
+      ? (t.originalJob?.job_status === 'COMPLETED' ? t.end : null)
       : (isTrack
           ? (isTrackCompleted ? t.end : null)
           : ((currentStepData?.step_status === 'COMPLETED' || currentStepData?.processing_statuses?.status_code?.includes('完了')) ? (currentStepData?.actual_end || t.end) : null)),
@@ -2872,9 +2872,6 @@ export default function MoldJobGantt({ workOrders = [], jobs, employees = [], ma
             setEditingWorklog(null)
           }}
           onSaved={() => {
-            setEditingJobId(null)
-            setEditingStep(null)
-            setEditingWorklog(null)
             router.refresh()
           }}
         />

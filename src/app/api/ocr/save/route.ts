@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { lookupCavType } from '@/lib/utils/moldNaming'
+import { calculateTargetCompletionDate } from '@/lib/utils/companyCalendar'
 
 interface SaveOCRInput {
   product_code: string
@@ -554,6 +555,7 @@ export async function POST(request: NextRequest) {
     const moldCategory = isJobModification ? 'MOLD_MODIFY' : 'MOLD_NEW'
     const moldTypeId = isJobModification ? '2' : '1'
     const moldDeadline = body.mold_deadline || maxDeadline || undefined
+    const targetCompletionDate = (body as any).target_completion_date || calculateTargetCompletionDate(body.shipping_deadline, moldDeadline)
 
     let moldJobId: string | null = null
     const { data: existingJob } = await supabase
@@ -578,6 +580,7 @@ export async function POST(request: NextRequest) {
           deadline: moldDeadline,
           ship_date: body.shipping_deadline || undefined,
           mold_deadline: body.mold_deadline || undefined,
+          target_completion_date: targetCompletionDate || undefined,
           unit_price: body.cost_amount ? parseFloat(String(body.cost_amount)) : (body.quotation_amount ? parseFloat(String(body.quotation_amount)) : undefined),
           price_quote_required: body.price_quote_required ?? (body.quotation_attached ? ['有', '要', '✓', 'true', '添付済'].includes(String(body.quotation_attached).trim()) : undefined)
         })
@@ -612,6 +615,7 @@ export async function POST(request: NextRequest) {
           deadline: moldDeadline,
           ship_date: body.shipping_deadline || undefined,
           mold_deadline: body.mold_deadline || undefined,
+          target_completion_date: targetCompletionDate || undefined,
           unit_price: body.cost_amount ? parseFloat(String(body.cost_amount)) : (body.quotation_amount ? parseFloat(String(body.quotation_amount)) : undefined),
           price_quote_required: body.price_quote_required ?? (body.quotation_attached ? ['有', '要', '✓', 'true', '添付済'].includes(String(body.quotation_attached).trim()) : undefined)
         }])
@@ -628,8 +632,6 @@ export async function POST(request: NextRequest) {
     const moldComp = body.components?.find(c => c.type_code === 'MOLD')
     const plugComp = body.components?.find(c => c.type_code === 'PLUG')
     const cutterComp = body.components?.find(c => c.type_code === 'CUTTER')
-    const hasPlugRequirement = plugComp?.arrangement === 'REQUIRED' || Boolean(body.plug_type && body.plug_type !== 'なし')
-    const hasCutterRequirement = cutterComp?.arrangement === 'REQUIRED' || !cutterComp || cutterComp.condition === 'NEW'
 
     const targetYear = (moldDeadline ? new Date(moldDeadline).getFullYear() : (body.shipping_deadline ? new Date(body.shipping_deadline).getFullYear() : new Date().getFullYear())) || new Date().getFullYear()
 
@@ -666,6 +668,8 @@ export async function POST(request: NextRequest) {
         estimated_hours: null
       })
     }
+    const primaryFabDl = targetCompletionDate || moldDeadline || null
+
     jobStepsToInsert.push({
       job_id: moldJobId,
       step_no: stepNo++,
@@ -677,13 +681,18 @@ export async function POST(request: NextRequest) {
       condition: 'NEW',
       step_status: 'PENDING',
       manufacture_location: moldComp?.manufacture_location || 'IN_HOUSE',
-      deadline: moldDeadline || null,
+      deadline: primaryFabDl,
+      target_completion_date: targetCompletionDate,
       estimated_hours: null
     })
 
     // 2. Track [P] プラグ
+    const hasPlugRequirement = plugComp 
+      ? (plugComp.arrangement === 'REQUIRED' && plugComp.condition !== 'EXISTING') 
+      : Boolean(body.plug_type && body.plug_type !== 'なし' && body.plug_type !== 'NONE')
+
     if (hasPlugRequirement) {
-      const plugDl = normalizedPlugCompDl || moldDeadline || null
+      const plugDl = (normalizedPlugCompDl && normalizedPlugCompDl !== moldDeadline) ? normalizedPlugCompDl : primaryFabDl
       jobStepsToInsert.push({
         job_id: moldJobId,
         step_no: stepNo++,
@@ -696,13 +705,18 @@ export async function POST(request: NextRequest) {
         step_status: 'PENDING',
         manufacture_location: plugComp?.manufacture_location || 'IN_HOUSE',
         deadline: plugDl,
+        target_completion_date: targetCompletionDate,
         estimated_hours: null
       })
     }
 
     // 3. Track [C] 抜型
+    const hasCutterRequirement = cutterComp 
+      ? (cutterComp.arrangement === 'REQUIRED' && cutterComp.condition !== 'EXISTING') 
+      : true
+
     if (hasCutterRequirement) {
-      const cutterDl = normalizedCutterCompDl || moldDeadline || null
+      const cutterDl = (normalizedCutterCompDl && normalizedCutterCompDl !== moldDeadline) ? normalizedCutterCompDl : primaryFabDl
       jobStepsToInsert.push({
         job_id: moldJobId,
         step_no: stepNo++,
@@ -713,15 +727,22 @@ export async function POST(request: NextRequest) {
         arrangement: 'REQUIRED',
         condition: 'NEW',
         step_status: 'PENDING',
-        manufacture_location: cutterComp?.manufacture_location || 'IN_HOUSE',
+        manufacture_location: cutterComp?.manufacture_location || 'OUTSOURCE',
         deadline: cutterDl,
+        target_completion_date: targetCompletionDate,
         estimated_hours: null
       })
     }
 
-    // 4. Other auxiliary components (Water base, Frame...)
+    // 4. Other auxiliary components (Water base, Frame, Stacking...)
+    // ONLY insert into job_steps if explicitly REQUIRED to manufacture (arrangement === 'REQUIRED' and condition !== 'EXISTING')
     const otherComps = body.components?.filter(c => !['MOLD', 'PLUG', 'CUTTER'].includes(c.type_code)) || []
     for (const oc of otherComps) {
+      const isReq = oc.arrangement === 'REQUIRED' && oc.condition !== 'EXISTING'
+      if (!isReq) continue // Skip creating job step if existing or not required
+
+      const ocDl = oc.deadline ? normalizeDl(oc.deadline) : primaryFabDl
+      const isOutsource = oc.type_code === 'FRAME' || oc.type_code === 'CUTTER' || (oc.step_name && (oc.step_name.includes('枠') || oc.step_name.includes('抜型')))
       jobStepsToInsert.push({
         job_id: moldJobId,
         step_no: stepNo++,
@@ -729,11 +750,12 @@ export async function POST(request: NextRequest) {
         track: oc.type_code,
         type_code: oc.type_code,
         material_spec: oc.material_spec || null,
-        arrangement: oc.arrangement || 'NOT_REQUIRED',
-        condition: oc.condition || 'EXISTING',
+        arrangement: 'REQUIRED',
+        condition: 'NEW',
         step_status: 'PENDING',
-        manufacture_location: oc.manufacture_location || 'IN_HOUSE',
-        deadline: normalizeDl(oc.deadline) || null,
+        manufacture_location: oc.manufacture_location || (isOutsource ? 'OUTSOURCE' : 'IN_HOUSE'),
+        deadline: ocDl,
+        target_completion_date: targetCompletionDate,
         estimated_hours: oc.estimated_hours || null
       })
     }

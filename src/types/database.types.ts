@@ -613,6 +613,36 @@ export type Database = {
           },
         ]
       }
+      company_calendar: {
+        Row: {
+          calendar_date: string
+          day_type: string
+          is_working_day: boolean
+          working_hours: number | null
+          notes: string | null
+          created_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          calendar_date: string
+          day_type?: string
+          is_working_day?: boolean
+          working_hours?: number | null
+          notes?: string | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          calendar_date?: string
+          day_type?: string
+          is_working_day?: boolean
+          working_hours?: number | null
+          notes?: string | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       companies: {
         Row: {
           address: string | null
@@ -2383,6 +2413,7 @@ export type Database = {
           step_no: number
           step_status: string | null
           tehai_info: string | null
+          target_completion_date: string | null
           track: string | null
           type_code: string | null
           updated_at: string | null
@@ -2420,6 +2451,7 @@ export type Database = {
           step_no: number
           step_status?: string | null
           tehai_info?: string | null
+          target_completion_date?: string | null
           track?: string | null
           type_code?: string | null
           updated_at?: string | null
@@ -2457,6 +2489,7 @@ export type Database = {
           step_no?: number
           step_status?: string | null
           tehai_info?: string | null
+          target_completion_date?: string | null
           track?: string | null
           type_code?: string | null
           updated_at?: string | null
@@ -2582,6 +2615,7 @@ export type Database = {
           separate_cutter: boolean | null
           ship_date: string | null
           start_date: string | null
+          target_completion_date: string | null
           unit_price: number | null
           updated_at: string | null
           updated_by: string | null
@@ -2629,6 +2663,7 @@ export type Database = {
           separate_cutter?: boolean | null
           ship_date?: string | null
           start_date?: string | null
+          target_completion_date?: string | null
           unit_price?: number | null
           updated_at?: string | null
           updated_by?: string | null
@@ -2676,6 +2711,7 @@ export type Database = {
           separate_cutter?: boolean | null
           ship_date?: string | null
           start_date?: string | null
+          target_completion_date?: string | null
           unit_price?: number | null
           updated_at?: string | null
           updated_by?: string | null

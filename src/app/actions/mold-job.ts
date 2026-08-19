@@ -32,6 +32,7 @@ export interface JobForGantt {
     job_status: string
     priority: number
     overall_progress: number
+    target_completion_date?: string | null
     mold_deadline: string | null
     ship_date: string | null
     has_plug: boolean
@@ -125,6 +126,7 @@ export interface JobStepRow {
     assigned_to: string | null
     machining_location: string | null
     deadline: string | null
+    target_completion_date?: string | null
     notes: string | null
     processing_status_id?: number | null
     processing_statuses?: {

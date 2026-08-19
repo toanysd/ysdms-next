@@ -58,11 +58,13 @@ export function EditStepModal({ step, jobId, nextStepNo, initialLog, onClose, on
   const [rawCodes, setRawCodes] = useState<any[]>([])
   const [employees, setEmployees] = useState<any[]>([])
 
-  // Step Configuration State (For New Step or Editing Step metadata)
   const [isEditingStepConfig, setIsEditingStepConfig] = useState(isNew)
   const [stepName, setStepName] = useState(step?.step_name || '')
   const [selectedItemTypeId, setSelectedItemTypeId] = useState<string>(step?.item_type_id ? String(step.item_type_id) : '7')
   const [stepTrack, setStepTrack] = useState(step?.track || 'STACKING')
+  const [manufactureLocation, setManufactureLocation] = useState<'IN_HOUSE' | 'OUTSOURCE'>(
+    (step as any)?.manufacture_location === 'OUTSOURCE' ? 'OUTSOURCE' : 'IN_HOUSE'
+  )
   const [stepNo, setStepNo] = useState(step?.step_no || nextStepNo || 1)
   const [stepStatus, setStepStatus] = useState<string>(step?.step_status || 'PENDING')
   const [plannedHours, setPlannedHours] = useState(step?.planned_hours ? String(step.planned_hours) : '2.0')
@@ -70,6 +72,22 @@ export function EditStepModal({ step, jobId, nextStepNo, initialLog, onClose, on
   const [stepAssignedTo, setStepAssignedTo] = useState(step?.assigned_to || '')
   const [stepNotes, setStepNotes] = useState(step?.notes || '')
   const [savingStep, setSavingStep] = useState(false)
+
+  // Sync state when step changes
+  useEffect(() => {
+    if (step) {
+      setStepName(step.step_name || '')
+      setSelectedItemTypeId(step.item_type_id ? String(step.item_type_id) : '7')
+      setStepTrack(step.track || 'STACKING')
+      setManufactureLocation((step as any)?.manufacture_location === 'OUTSOURCE' ? 'OUTSOURCE' : 'IN_HOUSE')
+      setStepNo(step.step_no || nextStepNo || 1)
+      setStepStatus(step.step_status || 'PENDING')
+      setPlannedHours(step.planned_hours ? String(step.planned_hours) : '2.0')
+      setStepDeadline(step.deadline ? step.deadline.split('T')[0] : '')
+      setStepAssignedTo(step.assigned_to || '')
+      setStepNotes(step.notes || '')
+    }
+  }, [step, nextStepNo])
 
   // Status options for Step/Component
   const STEP_STATUS_OPTIONS = [
@@ -275,6 +293,9 @@ export function EditStepModal({ step, jobId, nextStepNo, initialLog, onClose, on
     const it = itemTypes.find(i => String(i.item_type_id) === itId)
     if (it) {
       const code = it.item_type_code?.toUpperCase() || 'MOLD'
+      const isOutsource = code.includes('CUTTER') || code.includes('FRAME') || it.item_type_name_ja.includes('抜型') || it.item_type_name_ja.includes('枠')
+      setManufactureLocation(isOutsource ? 'OUTSOURCE' : 'IN_HOUSE')
+
       if (code.includes('PLUG')) setStepTrack('PLUG')
       else if (code.includes('CUTTER')) setStepTrack('CUTTER')
       else if (code.includes('STAKING') || code.includes('STACKING')) setStepTrack('STACKING')
@@ -361,7 +382,9 @@ export function EditStepModal({ step, jobId, nextStepNo, initialLog, onClose, on
         item_type_id: itIdNum,
         track: stepTrack || 'STACKING',
         planned_hours: plannedHours ? parseFloat(plannedHours) : null,
-        deadline: stepDeadline || null,
+        deadline: stepDeadline ? `${stepDeadline}T00:00:00+00:00` : null,
+        target_completion_date: stepDeadline || null,
+        manufacture_location: manufactureLocation,
         assigned_to: stepAssignedTo || null,
         notes: stepNotes.trim() || null,
         step_status: step?.step_status || 'PENDING',
@@ -768,6 +791,51 @@ export function EditStepModal({ step, jobId, nextStepNo, initialLog, onClose, on
               </div>
             </div>
 
+            {/* Field 2b: 加工区分 (社内 vs 外注) */}
+            <div>
+              <label className="form-label" style={{ fontSize: 11.5, fontWeight: 700 }}>
+                加工区分 (Nơi gia công)
+              </label>
+              <div style={{ display: 'flex', gap: 6, height: 36, alignItems: 'center' }}>
+                <button
+                  type="button"
+                  onClick={() => setManufactureLocation('IN_HOUSE')}
+                  style={{
+                    flex: 1,
+                    height: '100%',
+                    borderRadius: 4,
+                    fontSize: 12,
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    border: manufactureLocation === 'IN_HOUSE' ? '1.5px solid var(--accent)' : '1px solid var(--border-default)',
+                    background: manufactureLocation === 'IN_HOUSE' ? 'var(--tint-teal-bg)' : '#fff',
+                    color: manufactureLocation === 'IN_HOUSE' ? 'var(--accent)' : 'var(--text-muted)',
+                    transition: 'all 150ms ease',
+                  }}
+                >
+                  🏢 社内加工 (Nội bộ YSD)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setManufactureLocation('OUTSOURCE')}
+                  style={{
+                    flex: 1,
+                    height: '100%',
+                    borderRadius: 4,
+                    fontSize: 12,
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    border: manufactureLocation === 'OUTSOURCE' ? '1.5px solid #F59E0B' : '1px solid var(--border-default)',
+                    background: manufactureLocation === 'OUTSOURCE' ? '#FEF3C7' : '#fff',
+                    color: manufactureLocation === 'OUTSOURCE' ? '#92400E' : 'var(--text-muted)',
+                    transition: 'all 150ms ease',
+                  }}
+                >
+                  🏭 外注加工 (Thuê ngoài)
+                </button>
+              </div>
+            </div>
+
             {/* Field 3: 担当者 & 備考 */}
             <div style={{ display: 'grid', gridTemplateColumns: '180px 1fr', gap: 12 }}>
               <div>
@@ -948,6 +1016,60 @@ export function EditStepModal({ step, jobId, nextStepNo, initialLog, onClose, on
                       </div>
                     </div>
 
+                    <div>
+                      <label className="form-label" style={{ fontSize: 10.5, fontWeight: 700 }}>加工区分 (Nơi gia công)</label>
+                      <div style={{ display: 'flex', gap: 6, height: 30, alignItems: 'center' }}>
+                        <button
+                          type="button"
+                          onClick={() => setManufactureLocation('IN_HOUSE')}
+                          style={{
+                            flex: 1,
+                            height: '100%',
+                            borderRadius: 4,
+                            fontSize: 11,
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                            border: manufactureLocation === 'IN_HOUSE' ? '1.5px solid var(--accent)' : '1px solid var(--border-default)',
+                            background: manufactureLocation === 'IN_HOUSE' ? 'var(--tint-teal-bg)' : '#fff',
+                            color: manufactureLocation === 'IN_HOUSE' ? 'var(--accent)' : 'var(--text-muted)',
+                          }}
+                        >
+                          🏢 社内加工
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setManufactureLocation('OUTSOURCE')}
+                          style={{
+                            flex: 1,
+                            height: '100%',
+                            borderRadius: 4,
+                            fontSize: 11,
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                            border: manufactureLocation === 'OUTSOURCE' ? '1.5px solid #F59E0B' : '1px solid var(--border-default)',
+                            background: manufactureLocation === 'OUTSOURCE' ? '#FEF3C7' : '#fff',
+                            color: manufactureLocation === 'OUTSOURCE' ? '#92400E' : 'var(--text-muted)',
+                          }}
+                        >
+                          🏭 外注加工
+                        </button>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="form-label" style={{ fontSize: 10.5, fontWeight: 700 }}>
+                        備考・申し送り (Ghi chú công đoạn / Hạng mục)
+                      </label>
+                      <input
+                        type="text"
+                        className="form-input font-medium"
+                        style={{ fontSize: 11.5, height: 32 }}
+                        placeholder="例: プラグ流用 (KSP-200), 特記事項..."
+                        value={stepNotes}
+                        onChange={(e) => setStepNotes(e.target.value)}
+                      />
+                    </div>
+
                     <button
                       type="button"
                       className="btn btn-primary"
@@ -1031,8 +1153,19 @@ export function EditStepModal({ step, jobId, nextStepNo, initialLog, onClose, on
                         完了期日: <strong className="font-mono" style={{ color: (stepDeadline || step?.deadline) ? '#DC2626' : '#0F172A' }}>{(stepDeadline || step?.deadline) ? (stepDeadline || step?.deadline?.split('T')[0]) : '—'}</strong>
                       </div>
                       <div>
+                        加工区分: <strong style={{ color: (step as any)?.manufacture_location === 'OUTSOURCE' || manufactureLocation === 'OUTSOURCE' ? '#D97706' : 'var(--accent)' }}>
+                          {(step as any)?.manufacture_location === 'OUTSOURCE' || manufactureLocation === 'OUTSOURCE' ? '🏭 外注加工' : '🏢 社内加工'}
+                        </strong>
+                      </div>
+                      <div style={{ gridColumn: '1 / -1' }}>
                         担当: <strong style={{ color: '#0F172A' }}>{assignedWorkerName || '—'}</strong>
                       </div>
+                      {stepNotes && (
+                        <div style={{ gridColumn: '1 / -1', background: '#fff', padding: '4px 8px', borderRadius: 4, border: '1px solid #DDD6FE', display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
+                          <span style={{ fontSize: 10.5, fontWeight: 700, color: '#6D28D9', flexShrink: 0 }}>📝 備考:</span>
+                          <span style={{ fontSize: 11, fontWeight: 600, color: '#1E1B4B' }}>{stepNotes}</span>
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}

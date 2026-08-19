@@ -59,37 +59,158 @@ function resolveStepStatus(step: JobStepRow): { label: string, badgeClass: strin
     return { label: '未着手', badgeClass: 'bg-[var(--bg-surface-2)] text-[var(--text-muted)] border border-[var(--border-default)]' }
 }
 
-function getDeadlineBadge(deadlineStr: string | null | undefined, isCompleted: boolean, currentColumnDate?: string) {
-    if (!deadlineStr) return null
+export type UrgencyLevel = 'COMPLETED' | 'OVERDUE' | 'DUE_TODAY' | 'DUE_1_DAY' | 'DUE_2_DAYS' | 'ON_TRACK'
+
+export interface UrgencyMeta {
+    level: UrgencyLevel
+    badgeLabel: string
+    badgeClass: string
+    cardBorderLeft: string
+    headerBg: string
+    headerBorder: string
+}
+
+function resolveUrgency(deadlineStr: string | null | undefined, isCompleted: boolean): UrgencyMeta {
+    if (isCompleted) {
+        const d = deadlineStr ? new Date(deadlineStr) : null
+        const dateLabel = d && !isNaN(d.getTime()) ? format(d, 'MM/dd') : '完了'
+        return {
+            level: 'COMPLETED',
+            badgeLabel: dateLabel,
+            badgeClass: 'bg-[#DCFCE7] text-[#15803D] border border-[#86EFAC] font-mono text-[8.5px]',
+            cardBorderLeft: 'border-l-[4px] border-l-[#16A34A]',
+            headerBg: 'bg-[#F0FDF4]',
+            headerBorder: 'border-[#BBF7D0]'
+        }
+    }
+
+    if (!deadlineStr) {
+        return {
+            level: 'ON_TRACK',
+            badgeLabel: '—',
+            badgeClass: 'bg-slate-100 text-slate-600 border border-slate-300 font-mono text-[8.5px]',
+            cardBorderLeft: 'border-l-[4px] border-l-slate-400',
+            headerBg: 'bg-[#F8FAFC]',
+            headerBorder: 'border-[#E2E8F0]'
+        }
+    }
+
     const deadline = new Date(deadlineStr)
     deadline.setHours(0, 0, 0, 0)
-    if (isNaN(deadline.getTime())) return null
+    if (isNaN(deadline.getTime())) {
+        return {
+            level: 'ON_TRACK',
+            badgeLabel: '—',
+            badgeClass: 'bg-slate-100 text-slate-600 border border-slate-300 font-mono text-[8.5px]',
+            cardBorderLeft: 'border-l-[4px] border-l-slate-400',
+            headerBg: 'bg-[#F8FAFC]',
+            headerBorder: 'border-[#E2E8F0]'
+        }
+    }
 
     const today = new Date()
     today.setHours(0, 0, 0, 0)
 
     const diffDays = Math.ceil((deadline.getTime() - today.getTime()) / (1000 * 3600 * 24))
-    const isOverdue = !isCompleted && diffDays < 0
+    const formattedDate = format(deadline, 'MM/dd')
 
-    // If deadline matches current column date and NOT overdue, suppress badge to save horizontal space
-    if (currentColumnDate) {
-        const colDate = new Date(currentColumnDate)
-        colDate.setHours(0, 0, 0, 0)
-        if (colDate.getTime() === deadline.getTime() && !isOverdue) {
-            return null
+    // 1. Overdue (< 0 days) -> RED (Đỏ cảnh báo)
+    if (diffDays < 0) {
+        return {
+            level: 'OVERDUE',
+            badgeLabel: `! ${formattedDate}`,
+            badgeClass: 'bg-[#FEE2E2] text-[#B91C1C] border border-[#F87171] font-bold font-mono text-[8.5px] animate-pulse',
+            cardBorderLeft: 'border-l-[4px] border-l-[#DC2626]',
+            headerBg: 'bg-[#FEF2F2]',
+            headerBorder: 'border-[#FECACA]'
         }
     }
 
-    if (isCompleted) {
-        return { label: format(deadline, 'MM/dd'), badgeClass: 'badge badge--success text-[8.5px]' }
+    // 2. Due Today (0 days) -> RED / CRITICAL (Đỏ khẩn cấp trong ngày hôm nay)
+    if (diffDays === 0) {
+        return {
+            level: 'DUE_TODAY',
+            badgeLabel: `本日 ${formattedDate}`,
+            badgeClass: 'bg-[#FEE2E2] text-[#DC2626] border border-[#EF4444] font-extrabold font-mono text-[8.5px] animate-pulse',
+            cardBorderLeft: 'border-l-[4px] border-l-[#DC2626]',
+            headerBg: 'bg-[#FFF1F2]',
+            headerBorder: 'border-[#FECDD3]'
+        }
     }
 
-    if (isOverdue) {
-        return { label: `! ${format(deadline, 'MM/dd')}`, badgeClass: 'badge badge--error font-bold text-[8.5px] animate-pulse' }
-    } else if (diffDays <= 2) {
-        return { label: format(deadline, 'MM/dd'), badgeClass: 'badge badge--warning font-bold text-[8.5px]' }
+    // 3. Due in 1 Day (Trước 1 ngày - ngày mai đến hạn) -> ORANGE (Màu Cam)
+    if (diffDays === 1) {
+        return {
+            level: 'DUE_1_DAY',
+            badgeLabel: `明日 ${formattedDate}`,
+            badgeClass: 'bg-[#FFEDD5] text-[#C2410C] border border-[#FB923C] font-bold font-mono text-[8.5px]',
+            cardBorderLeft: 'border-l-[4px] border-l-[#EA580C]',
+            headerBg: 'bg-[#FFF7ED]',
+            headerBorder: 'border-[#FED7AA]'
+        }
     }
-    return { label: format(deadline, 'MM/dd'), badgeClass: 'badge badge--neutral text-[8.5px]' }
+
+    // 4. Due in 2 Days (Trước 2 ngày) -> YELLOW (Màu Vàng)
+    if (diffDays === 2) {
+        return {
+            level: 'DUE_2_DAYS',
+            badgeLabel: formattedDate,
+            badgeClass: 'bg-[#FEF9C3] text-[#A16207] border border-[#FDE047] font-bold font-mono text-[8.5px]',
+            cardBorderLeft: 'border-l-[4px] border-l-[#CA8A04]',
+            headerBg: 'bg-[#FEFCE8]',
+            headerBorder: 'border-[#FEF08A]'
+        }
+    }
+
+    // 5. On Track (> 2 days / 3 ngày trở lên) -> NEUTRAL SLATE (Màu xám trung tính, không nhầm lẫn với hoàn thành)
+    return {
+        level: 'ON_TRACK',
+        badgeLabel: formattedDate,
+        badgeClass: 'bg-[#F1F5F9] text-[#475569] border border-[#CBD5E1] font-mono text-[8.5px]',
+        cardBorderLeft: 'border-l-[4px] border-l-slate-400',
+        headerBg: 'bg-[#F8FAFC]',
+        headerBorder: 'border-[#E2E8F0]'
+    }
+}
+
+const URGENCY_RANK: Record<UrgencyLevel, number> = {
+    OVERDUE: 5,
+    DUE_TODAY: 4,
+    DUE_1_DAY: 3,
+    DUE_2_DAYS: 2,
+    ON_TRACK: 1,
+    COMPLETED: 0
+}
+
+function resolveJobOverallUrgency(job: JobForGantt, steps: JobStepRow[]): UrgencyMeta {
+    const isJobCompleted = job.job_status === 'COMPLETED'
+    const jobDeadline = job.target_completion_date || job.mold_deadline || job.deadline
+
+    if (isJobCompleted) {
+        return resolveUrgency(jobDeadline, true)
+    }
+
+    // Evaluate job level milestone
+    let highestUrgency = resolveUrgency(jobDeadline, false)
+
+    // Evaluate each step to reflect the highest severity on the Job card
+    for (const st of steps) {
+        const isStDone = st.step_status === 'COMPLETED' || st.processing_statuses?.status_code?.includes('完了')
+        if (isStDone) continue
+
+        const stDl = st.deadline || job.mold_deadline
+        const stUrgency = resolveUrgency(stDl, false)
+        if (URGENCY_RANK[stUrgency.level] > URGENCY_RANK[highestUrgency.level]) {
+            highestUrgency = stUrgency
+        }
+    }
+
+    // If all steps exist and are completed -> Completed
+    if (steps.length > 0 && steps.every(st => st.step_status === 'COMPLETED' || st.processing_statuses?.status_code?.includes('完了'))) {
+        return resolveUrgency(jobDeadline, true)
+    }
+
+    return highestUrgency
 }
 
 export default function ToolingGroupedJobCard({
@@ -119,39 +240,21 @@ export default function ToolingGroupedJobCard({
     const isJobCompleted = job.job_status === 'COMPLETED'
     const isJobInProgress = job.job_status === 'IN_PROGRESS'
 
-    const jobDeadline = job.mold_deadline || job.deadline
-    const jobDelayBadge = getDeadlineBadge(jobDeadline, isJobCompleted, currentColumnDate)
-
+    const overallUrgency = resolveJobOverallUrgency(job, steps)
     const productCode = job.products?.product_code || job.job_code || 'JOB'
-
-    // Total Actual Machining Hours (from work logs) ONLY
-    const totalActualHours = steps.reduce((sum, s) => {
-        const logSum = (s.work_logs || []).reduce((wSum, w) => wSum + (Number(w.hours_spent) || 0), 0)
-        return sum + (s.actual_hours || logSum || 0)
-    }, 0)
 
     return (
         <div 
-            className={`rounded-lg border transition-all shadow-xs hover:shadow-md bg-white overflow-hidden mb-1.5 ${
-                isJobCompleted 
-                    ? 'border-[var(--border-default)] border-l-[4px] border-l-[var(--status-success)] opacity-90' 
-                    : isJobInProgress 
-                        ? 'border-[var(--border-default)] border-l-[4px] border-l-[var(--accent)]' 
-                        : 'border-[var(--border-default)] border-l-[4px] border-l-slate-400'
+            className={`rounded-lg border transition-all shadow-xs hover:shadow-md bg-white overflow-hidden mb-1.5 border-[var(--border-default)] ${overallUrgency.cardBorderLeft} ${
+                isJobCompleted ? 'opacity-90' : ''
             }`}
         >
-            {/* ─── PARENT JOB HEADER (VISUAL ANCHOR - DEEPER TINT) ─── */}
+            {/* ─── PARENT JOB HEADER (DYNAMIC CONDITIONAL COLOR BY URGENCY) ─── */}
             <div 
                 onClick={() => onOpenJob && onOpenJob(job)}
-                className={`p-2 cursor-pointer hover:brightness-95 transition-all flex flex-col gap-1 border-b ${
-                    isJobInProgress 
-                        ? 'bg-[#E6F4EA] border-[#B7E1CD]' 
-                        : isJobCompleted 
-                            ? 'bg-[#E2E8F0] border-[#CBD5E1]' 
-                            : 'bg-[#E9EEF4] border-[#CBD5E1]'
-                }`}
+                className={`p-2 cursor-pointer hover:brightness-95 transition-all flex flex-col gap-1 border-b ${overallUrgency.headerBg} ${overallUrgency.headerBorder}`}
             >
-                {/* Row 1: Code + Badge + Expand toggle */}
+                {/* Row 1: Code + Items count badge + Expand toggle (Left) & Overall Target Completion (Right) */}
                 <div className="flex justify-between items-center gap-1">
                     <div className="flex items-center gap-1 min-w-0">
                         <button
@@ -175,11 +278,10 @@ export default function ToolingGroupedJobCard({
                         )}
                     </div>
 
-                    {jobDelayBadge && (
-                        <span className={`shrink-0 ${jobDelayBadge.badgeClass}`} title="金型期日">
-                            {jobDelayBadge.label}
-                        </span>
-                    )}
+                    {/* Header Milestone Badge with Urgency Formatting */}
+                    <span className={`shrink-0 ${overallUrgency.badgeClass}`} title="完成目標日 / 状態">
+                        🏁 {overallUrgency.badgeLabel}
+                    </span>
                 </div>
 
                 {/* Row 2: Job Name / Customer */}
@@ -194,24 +296,50 @@ export default function ToolingGroupedJobCard({
                     )}
                 </div>
 
-                {/* Row 3: Status + Total Actual Machining Hours */}
-                <div className="flex justify-between items-center text-[10px] font-mono pl-4 pt-0.5 border-t border-[var(--border-default)]/60">
-                    <span className="text-[var(--text-secondary)]">
-                        状態: <strong className="font-bold text-[var(--text-primary)]">{isJobCompleted ? '完了' : isJobInProgress ? '進行中' : '新規'}</strong>
-                    </span>
-                    {totalActualHours > 0 ? (
-                        <span className="font-bold text-[var(--status-success)] bg-white px-1.5 py-0.2 rounded border border-[var(--status-success)]/30 shadow-2xs">
-                            実績: {totalActualHours.toFixed(1)}h
+                {/* Row 3: 3 Milestones (Left) + Status Badge ONLY (Right) - Clean, Full Display without truncation */}
+                <div className="flex items-center justify-between gap-1 text-[9.5px] font-mono pl-4 pt-0.5">
+                    {/* Left: 3 Milestones */}
+                    <div className="flex items-center gap-1 min-w-0 flex-1 overflow-hidden">
+                        {job.target_completion_date && (
+                            <span className="text-[#166534] font-bold bg-[#DCFCE7] border border-[#86EFAC]/50 px-1 py-0.2 rounded whitespace-nowrap" title="完成目標日 (出荷前3稼働日)">
+                                🏁{job.target_completion_date.slice(5)}
+                            </span>
+                        )}
+                        {job.mold_deadline && (
+                            <span className="text-[var(--accent)] bg-white border border-[var(--border-default)] px-1 py-0.2 rounded whitespace-nowrap" title="指示納期 / 払出期日">
+                                🛠️{job.mold_deadline.slice(5, 10)}
+                            </span>
+                        )}
+                        {job.ship_date && (
+                            <span className="text-[var(--status-warning)] bg-[#FEF3C7] border border-[#FDE68A]/60 px-1 py-0.2 rounded whitespace-nowrap" title="出荷予定日">
+                                📦{job.ship_date.slice(5, 10)}
+                            </span>
+                        )}
+                    </div>
+
+                    {/* Right: Status Badge ONLY */}
+                    <div className="flex items-center shrink-0">
+                        <span className={`px-1.5 py-0.2 rounded text-[8.5px] font-bold ${
+                            isJobCompleted 
+                                ? 'bg-[#DCFCE7] text-[#15803D] border border-[#86EFAC]' 
+                                : isJobInProgress 
+                                    ? 'bg-[#FEF3C7] text-[#B45309] border border-[#FCD34D]' 
+                                    : 'bg-[#F1F5F9] text-[#475569] border border-[#CBD5E1]'
+                        }`}>
+                            {isJobCompleted ? '完了' : isJobInProgress ? '進行中' : '新規'}
                         </span>
-                    ) : (
-                        <span className="text-[var(--text-muted)] opacity-50">—</span>
-                    )}
+                    </div>
                 </div>
             </div>
 
-            {/* ─── TREE / SUB-ITEMS (SINGLE ROW COMPACT & CLEAN - 100% VISIBLE NAME) ─── */}
+            {/* ─── TREE / SUB-ITEMS (SCROLLABLE CONTAINER WITH MAX HEIGHT & CONDITIONAL COLOR) ─── */}
             {isExpanded && (
-                <div className="p-1 flex flex-col gap-1 bg-[#F8FAFC] rounded-b-lg">
+                <div 
+                    className="p-1 flex flex-col gap-1 bg-[#F8FAFC] rounded-b-lg overflow-y-auto max-h-[165px]"
+                    style={{
+                        scrollbarWidth: 'thin'
+                    }}
+                >
                     {steps.map((step) => {
                         const track = resolveTrack(step)
                         const trackMeta = TRACK_CONFIG[track] || TRACK_CONFIG.MOLD
@@ -223,7 +351,7 @@ export default function ToolingGroupedJobCard({
                         const isStepDone = statusMeta.label === '完了'
 
                         const stepDeadline = step.deadline || job.mold_deadline
-                        const stepDeadlineBadge = getDeadlineBadge(stepDeadline, isStepDone, currentColumnDate)
+                        const stepUrgency = resolveUrgency(stepDeadline, isStepDone)
 
                         return (
                             <div
@@ -241,7 +369,7 @@ export default function ToolingGroupedJobCard({
                                 }`}
                                 title={`[${step.step_name}]\nダブルクリックで日報入力`}
                             >
-                                {/* Left: Track Badge + Full Step Name (No truncation) */}
+                                {/* Left: Track Badge + Full Step Name */}
                                 <div className="flex items-center gap-1.5 min-w-0 flex-1">
                                     <span 
                                         className="px-1 py-0.2 rounded font-bold text-[8.5px] uppercase shrink-0 shadow-2xs"
@@ -254,21 +382,19 @@ export default function ToolingGroupedJobCard({
                                     </span>
                                 </div>
 
-                                {/* Right: Status + Warning Deadline (if different/overdue) + Actual Machining Hours */}
+                                {/* Right: Status + Conditional Urgency Deadline Badge + Actual Machining Hours */}
                                 <div className="flex items-center gap-1 shrink-0">
                                     {/* Status Badge */}
                                     <span className={`px-1 py-0.2 rounded text-[8px] font-bold ${statusMeta.badgeClass}`}>
                                         {statusMeta.label}
                                     </span>
 
-                                    {/* Step Deadline Badge (Only when overdue or different from column date) */}
-                                    {stepDeadlineBadge && (
-                                        <span className={`px-1 py-0.2 rounded font-mono font-bold text-[8.5px] ${stepDeadlineBadge.badgeClass}`} title="期日">
-                                            {stepDeadlineBadge.label}
-                                        </span>
-                                    )}
+                                    {/* Conditional Urgency Deadline Badge */}
+                                    <span className={`px-1 py-0.2 rounded font-mono font-bold text-[8.5px] ${stepUrgency.badgeClass}`} title="期日 / 完了日">
+                                        {stepUrgency.badgeLabel}
+                                    </span>
 
-                                    {/* Actual Logged Machining Hours */}
+                                    {/* Actual Logged Machining Hours (Inside Step) */}
                                     {stepActualHours > 0 && (
                                         <span className="font-mono font-bold text-[9px] text-[var(--status-success)] bg-[var(--tint-teal-bg)] px-1 py-0.2 rounded border border-[var(--status-success)]/30 shrink-0" title="実績工数">
                                             {stepActualHours.toFixed(1)}h

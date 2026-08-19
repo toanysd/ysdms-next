@@ -7,6 +7,7 @@ import Link from 'next/link'
 import type { JobForGantt, JobStepRow } from '@/app/actions/mold-job'
 import { createClient } from '@/lib/supabase/client'
 import { useTranslations } from 'next-intl'
+import { calculateTargetCompletionDate } from '@/lib/utils/companyCalendar'
 
 interface JobQuickViewDrawerProps {
   job: JobForGantt | null
@@ -48,19 +49,36 @@ export function JobQuickViewDrawer({ job, onClose, onOpenStepEdit, onJobUpdated 
   const [isEditing, setIsEditing] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   
+  // Job Types Master list from DB
+  const [jobTypes, setJobTypes] = useState<any[]>([])
+
   // Editable fields
   const [jobName, setJobName] = useState('')
+  const [jobTypeId, setJobTypeId] = useState('1')
   const [priority, setPriority] = useState(5)
+  const [targetCompletionDate, setTargetCompletionDate] = useState('')
   const [moldDeadline, setMoldDeadline] = useState('')
   const [shipDate, setShipDate] = useState('')
   const [jobStatus, setJobStatus] = useState('NEW')
   const [notes, setNotes] = useState('')
 
+  // Load Job Types from DB
+  useEffect(() => {
+    async function loadJobTypes() {
+      const supabase = createClient()
+      const { data } = await supabase.from('job_types').select('*').order('sort_order', { ascending: true })
+      if (data) setJobTypes(data)
+    }
+    loadJobTypes()
+  }, [])
+
   // Sync state when job changes
   useEffect(() => {
     if (job) {
       setJobName(job.job_name || '')
+      setJobTypeId(job.job_type_id ? String(job.job_type_id) : '1')
       setPriority(job.priority || 5)
+      setTargetCompletionDate(job.target_completion_date?.split('T')[0] || '')
       setMoldDeadline(job.mold_deadline?.split('T')[0] || '')
       setShipDate(job.ship_date?.split('T')[0] || '')
       setJobStatus(job.job_status || 'NEW')
@@ -70,24 +88,88 @@ export function JobQuickViewDrawer({ job, onClose, onOpenStepEdit, onJobUpdated 
     }
   }, [job])
 
+  const handleMoldDeadlineChange = (val: string) => {
+    setMoldDeadline(val)
+    const autoTarget = calculateTargetCompletionDate(shipDate, val)
+    if (autoTarget) setTargetCompletionDate(autoTarget)
+  }
+
+  const handleShipDateChange = (val: string) => {
+    setShipDate(val)
+    const autoTarget = calculateTargetCompletionDate(val, moldDeadline)
+    if (autoTarget) setTargetCompletionDate(autoTarget)
+  }
+
+  const handleJobTypeChange = (newTypeId: string) => {
+    setJobTypeId(newTypeId)
+    const matched = jobTypes.find(jt => String(jt.job_type_id) === String(newTypeId))
+    if (matched) {
+      if (jobName.includes(':')) {
+        const parts = jobName.split(':')
+        const suffix = parts.slice(1).join(':').trim()
+        setJobName(`${matched.job_type_name_ja}: ${suffix}`)
+      }
+    }
+  }
+
   const handleSave = useCallback(async () => {
     if (!job) return
     setIsSaving(true)
     try {
       const supabase = createClient()
+      const finalTarget = targetCompletionDate || calculateTargetCompletionDate(shipDate, moldDeadline) || null
+      const matchedType = jobTypes.find(jt => String(jt.job_type_id) === String(jobTypeId))
+
+      // 1. Update job
       const { error } = await supabase
         .from('jobs')
         .update({
           job_name: jobName,
+          job_type_id: jobTypeId || null,
+          job_category: matchedType?.category || undefined,
           priority,
+          target_completion_date: finalTarget,
           mold_deadline: moldDeadline || null,
           ship_date: shipDate || null,
           job_status: jobStatus,
           notes: notes || null,
+          updated_at: new Date().toISOString()
         })
         .eq('job_id', job.job_id)
 
       if (error) throw error
+
+      // Update local job in memory so view mode immediately updates
+      job.job_name = jobName
+      job.job_type_id = jobTypeId
+      ;(job as any).job_types = matchedType
+      ;(job as any).job_category = matchedType?.category
+      job.priority = priority
+      job.target_completion_date = finalTarget
+      job.mold_deadline = moldDeadline
+      job.ship_date = shipDate
+      job.job_status = jobStatus
+      ;(job as any).notes = notes
+
+      // 2. Sync main tooling steps if they were aligned with previous mold_deadline
+      const oldMoldDl = job.mold_deadline?.split('T')[0]
+      const oldTargetDl = job.target_completion_date?.split('T')[0]
+      if (job.job_steps && job.job_steps.length > 0) {
+        for (const st of job.job_steps) {
+          const stDl = st.deadline?.split('T')[0]
+          if (!stDl || stDl === oldMoldDl || stDl === oldTargetDl) {
+            await supabase
+              .from('job_steps')
+              .update({
+                deadline: finalTarget ? `${finalTarget}T00:00:00+00:00` : (moldDeadline ? `${moldDeadline}T00:00:00+00:00` : null),
+                target_completion_date: finalTarget,
+                updated_at: new Date().toISOString()
+              })
+              .eq('step_id', st.step_id)
+          }
+        }
+      }
+
       setIsEditing(false)
       onJobUpdated()
     } catch (err) {
@@ -95,7 +177,7 @@ export function JobQuickViewDrawer({ job, onClose, onOpenStepEdit, onJobUpdated 
     } finally {
       setIsSaving(false)
     }
-  }, [job, jobName, priority, moldDeadline, shipDate, jobStatus, notes, onJobUpdated])
+  }, [job, jobName, jobTypeId, jobTypes, priority, targetCompletionDate, moldDeadline, shipDate, jobStatus, notes, onJobUpdated])
 
   // Handle ESC key
   useEffect(() => {
@@ -261,25 +343,62 @@ export function JobQuickViewDrawer({ job, onClose, onOpenStepEdit, onJobUpdated 
             </div>
           </div>
 
-          {/* Row 2: Job Name */}
+          {/* Row 2: Job Name & Job Type */}
           {isEditing ? (
-            <input
-              className="form-input"
-              value={jobName}
-              onChange={e => setJobName(e.target.value)}
-              style={{ fontSize: 14, padding: '6px 10px', width: '100%', marginTop: 8 }}
-            />
+            <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '150px 1fr', gap: 8 }}>
+                <div>
+                  <label style={{ fontSize: 10.5, fontWeight: 700, color: 'var(--text-muted)', display: 'block', marginBottom: 2 }}>
+                    Job種別 (Loại Job)
+                  </label>
+                  <select
+                    className="form-input font-bold"
+                    value={jobTypeId}
+                    onChange={e => handleJobTypeChange(e.target.value)}
+                    style={{ fontSize: 12, padding: '4px 8px', height: 34, width: '100%' }}
+                  >
+                    {jobTypes.map(jt => (
+                      <option key={jt.job_type_id} value={String(jt.job_type_id)}>
+                        {jt.job_type_name_ja}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label style={{ fontSize: 10.5, fontWeight: 700, color: 'var(--text-muted)', display: 'block', marginBottom: 2 }}>
+                    指示名 (Tên chỉ thị)
+                  </label>
+                  <input
+                    className="form-input font-bold"
+                    value={jobName}
+                    onChange={e => setJobName(e.target.value)}
+                    style={{ fontSize: 13, padding: '4px 8px', height: 34, width: '100%' }}
+                  />
+                </div>
+              </div>
+            </div>
           ) : (
-            <div style={{ fontSize: 14, color: 'var(--text-primary)', fontWeight: 500, lineHeight: 1.4, marginTop: 4 }}>
-              {jobName || job.job_code}
+            <div style={{ marginTop: 4, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+              <span style={{ fontSize: 15, color: 'var(--text-primary)', fontWeight: 700, lineHeight: 1.4 }}>
+                {jobName || job.job_code}
+              </span>
+              <span style={{
+                fontSize: 11,
+                fontWeight: 700,
+                padding: '2px 8px',
+                borderRadius: 4,
+                backgroundColor: 'var(--tint-teal-bg)',
+                color: 'var(--tint-teal-text)',
+                border: '1px solid var(--tint-teal-border)'
+              }}>
+                {jobTypes.find(jt => String(jt.job_type_id) === String(jobTypeId || job.job_type_id))?.job_type_name_ja || jobTypeName || '新規金型'}
+              </span>
             </div>
           )}
 
-          {/* Row 3: Product + Type */}
+          {/* Row 3: Product */}
           <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4, display: 'flex', gap: 12, flexWrap: 'wrap' }}>
             <span>{productName}</span>
-            <span style={{ opacity: 0.6 }}>|</span>
-            <span>{jobTypeName}</span>
           </div>
         </div>
 
@@ -294,50 +413,91 @@ export function JobQuickViewDrawer({ job, onClose, onOpenStepEdit, onJobUpdated 
         }}>
           <InfoCard icon={<Building2 size={14} />} label="取引先" value={companyName} />
           <InfoCard icon={<Wrench size={14} />} label="金型" value={moldCode} />
-          <InfoCard
-            icon={<Calendar size={14} />}
-            label="期限"
-            value={
-              isEditing ? (
-                <input
-                  type="date"
-                  className="form-input"
-                  value={moldDeadline}
-                  onChange={e => setMoldDeadline(e.target.value)}
-                  style={{ fontSize: 13, padding: '3px 6px', height: 30, width: '100%' }}
-                />
-              ) : (
-                <span style={{ color: deadlineOverdue ? 'var(--status-error)' : 'var(--text-primary)', fontWeight: deadlineOverdue ? 600 : 400 }}>
-                  {deadlineOverdue && <AlertTriangle size={13} style={{ marginRight: 3, verticalAlign: -2 }} />}
-                  {formatDate(job.mold_deadline)}
-                </span>
-              )
-            }
-          />
-          <InfoCard
-            icon={<Clock size={14} />}
-            label="進捗"
-            value={
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <div style={{ flex: 1, height: 7, backgroundColor: 'var(--bg-surface-3)', borderRadius: 4, overflow: 'hidden' }}>
-                  <div style={{ width: `${job.overall_progress || 0}%`, height: '100%', backgroundColor: 'var(--accent)', borderRadius: 4, transition: 'width 300ms ease' }} />
+
+          {/* 3 Milestones: View Mode */}
+          {!isEditing && (
+            <>
+              <div style={{ gridColumn: '1 / -1', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6, padding: '6px 8px', background: 'var(--bg-surface-2)', borderRadius: 6, border: '1px solid var(--border-default)' }}>
+                {/* 1. Target Completion Date */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                  <span style={{ fontSize: 10, fontWeight: 700, color: '#166534' }}>🏁 完成目標 (3稼働日前)</span>
+                  <span style={{ fontSize: 12, fontFamily: 'monospace', fontWeight: 800, color: '#166534', background: '#DCFCE7', padding: '2px 4px', borderRadius: 4, textAlign: 'center', border: '1px solid #86EFAC' }}>
+                    {job.target_completion_date ? formatDate(job.target_completion_date) : '—'}
+                  </span>
                 </div>
-                <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--accent)', minWidth: 36, textAlign: 'right' }}>{job.overall_progress || 0}%</span>
+
+                {/* 2. Mold Handover Deadline */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                  <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-muted)' }}>🛠️ 指示納期 / 払出</span>
+                  <span style={{ fontSize: 12, fontFamily: 'monospace', fontWeight: 700, color: deadlineOverdue ? 'var(--status-error)' : 'var(--text-primary)', background: '#fff', padding: '2px 4px', borderRadius: 4, textAlign: 'center', border: '1px solid var(--border-default)' }}>
+                    {job.mold_deadline ? formatDate(job.mold_deadline) : '—'}
+                  </span>
+                </div>
+
+                {/* 3. Product Ship Date */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                  <span style={{ fontSize: 10, fontWeight: 700, color: '#92400E' }}>📦 製品出荷納期</span>
+                  <span style={{ fontSize: 12, fontFamily: 'monospace', fontWeight: 700, color: '#92400E', background: '#FEF3C7', padding: '2px 4px', borderRadius: 4, textAlign: 'center', border: '1px solid #FDE68A' }}>
+                    {job.ship_date ? formatDate(job.ship_date) : '—'}
+                  </span>
+                </div>
               </div>
-            }
-          />
+
+              <InfoCard
+                icon={<Clock size={14} />}
+                label="進捗"
+                value={
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <div style={{ flex: 1, height: 7, backgroundColor: 'var(--bg-surface-3)', borderRadius: 4, overflow: 'hidden' }}>
+                      <div style={{ width: `${job.overall_progress || 0}%`, height: '100%', backgroundColor: 'var(--accent)', borderRadius: 4, transition: 'width 300ms ease' }} />
+                    </div>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--accent)', minWidth: 36, textAlign: 'right' }}>{job.overall_progress || 0}%</span>
+                  </div>
+                }
+              />
+              <InfoCard icon={<FileText size={14} />} label="状態" value={statusOption.label} />
+            </>
+          )}
+
+          {/* 3 Milestones: Edit Mode */}
           {isEditing && (
             <>
               <InfoCard
-                icon={<Calendar size={14} />}
-                label="出荷日"
+                icon={<Calendar size={14} className="text-[#166534]" />}
+                label="🏁 完成目標日 (3稼働日前)"
                 value={
                   <input
                     type="date"
-                    className="form-input"
+                    className="form-input font-mono font-bold"
+                    value={targetCompletionDate}
+                    onChange={e => setTargetCompletionDate(e.target.value)}
+                    style={{ fontSize: 12, padding: '3px 6px', height: 30, width: '100%', borderColor: '#86EFAC', background: '#F0FDF4', color: '#166534' }}
+                  />
+                }
+              />
+              <InfoCard
+                icon={<Calendar size={14} />}
+                label="🛠️ 指示納期 / 払出期日"
+                value={
+                  <input
+                    type="date"
+                    className="form-input font-mono"
+                    value={moldDeadline}
+                    onChange={e => handleMoldDeadlineChange(e.target.value)}
+                    style={{ fontSize: 12, padding: '3px 6px', height: 30, width: '100%' }}
+                  />
+                }
+              />
+              <InfoCard
+                icon={<Calendar size={14} className="text-[#92400E]" />}
+                label="📦 製品出荷納期"
+                value={
+                  <input
+                    type="date"
+                    className="form-input font-mono font-bold"
                     value={shipDate}
-                    onChange={e => setShipDate(e.target.value)}
-                    style={{ fontSize: 13, padding: '3px 6px', height: 30, width: '100%' }}
+                    onChange={e => handleShipDateChange(e.target.value)}
+                    style={{ fontSize: 12, padding: '3px 6px', height: 30, width: '100%', borderColor: '#FDE68A', background: '#FFFBEB', color: '#92400E' }}
                   />
                 }
               />

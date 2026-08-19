@@ -103,22 +103,28 @@ export default function ToolingExcelGridView({
         return list
     }, [start, activeDaysCount])
 
-    // Check if step falls on date: STRICT DEADLINE MATCH & ONLY INSTRUCTED/ACTIVE STEPS
+    // Check if step falls on date: SMART DEADLINE MATCH
+    // - Ad-hoc / custom steps (e.g. スタッキング on 8/17, 材料手配 on 8/18) match their explicit step.deadline
+    // - Main mold manufacturing steps (金型製作, プラグ, 抜型, etc.) match job.target_completion_date (完成目標日 - 3稼働日前)
     const isStepOnDate = (step: JobStepRow, dateStr: string, job: JobForGantt) => {
         const hasLogs = step.work_logs && step.work_logs.length > 0
         const hasHours = Number(step.planned_hours) > 0 || Number(step.estimated_hours) > 0 || (step.actual_hours && step.actual_hours > 0)
         const isCompletedOrActive = step.step_status === 'COMPLETED' || step.step_status === 'IN_PROGRESS' || (step.processing_statuses?.status_code && !step.processing_statuses.status_code.includes('未'))
 
-        // 1. Step explicit deadline matches this date
-        if (step.deadline) {
-            const stepDl = step.deadline.split('T')[0]
+        const stepDl = step.deadline ? step.deadline.split('T')[0] : null
+        const jobMoldDl = job.mold_deadline ? job.mold_deadline.split('T')[0] : null
+        const jobTargetDl = job.target_completion_date ? job.target_completion_date.split('T')[0] : (jobMoldDl || null)
+
+        // 1. If step has an explicit custom deadline DIFFERENT from job.mold_deadline (e.g. スタッキング on 8/17)
+        if (stepDl && jobMoldDl && stepDl !== jobMoldDl) {
             if (stepDl === dateStr) return true
+            return false
         }
 
-        // 2. If step has no explicit deadline, only match if job mold_deadline matches AND step is actually instructed/active
-        if (!step.deadline) {
-            const moldDl = job.mold_deadline ? job.mold_deadline.split('T')[0] : null
-            if (moldDl === dateStr && (hasLogs || hasHours || isCompletedOrActive)) {
+        // 2. If step is a main manufacturing step (step.deadline equals mold_deadline or target_completion_date or is null)
+        // Match against job.target_completion_date (the fabrication target for the mold department)
+        if (!stepDl || stepDl === jobMoldDl || stepDl === jobTargetDl) {
+            if (jobTargetDl === dateStr && (hasLogs || hasHours || isCompletedOrActive)) {
                 return true
             }
         }
@@ -169,7 +175,7 @@ export default function ToolingExcelGridView({
         return (
             <div 
                 key={dateStr}
-                className={`flex flex-col h-full rounded-lg border transition-all overflow-hidden bg-white ${
+                className={`flex flex-col h-full rounded-lg border transition-all overflow-hidden bg-white min-h-0 ${
                     isToday 
                         ? 'border-[var(--accent)] shadow-md ring-2 ring-[var(--accent)]/20' 
                         : isWeekend 
@@ -208,8 +214,8 @@ export default function ToolingExcelGridView({
                     )}
                 </div>
 
-                {/* Column Content: Stack of Grouped Job Cards with Smart Accordion */}
-                <div className={`p-1.5 flex flex-col gap-2 overflow-y-auto flex-1 bg-slate-50/60 ${isCompact ? 'max-h-full' : ''}`}>
+                {/* Column Content: Stack of Grouped Job Cards with Smooth Independent Scrolling */}
+                <div className="p-1.5 flex flex-col gap-2 overflow-y-auto flex-1 min-h-0 bg-slate-50/60" style={{ scrollbarWidth: 'thin' }}>
                     {groupedJobs.map(({ job, steps }) => {
                         // In 2-week view when multiple jobs exist, smart accordion controls which job is expanded
                         const activeJobId = activeAccordionMap[dateStr]

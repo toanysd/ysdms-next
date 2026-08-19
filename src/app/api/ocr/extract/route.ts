@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { calculateTargetCompletionDate } from '@/lib/utils/companyCalendar'
 
 interface OCRResponseData {
   product_code: string | null
@@ -30,6 +31,7 @@ interface OCRResponseData {
   quotation_amount: number | null
   cost_amount: number | null
   price_quote_required: boolean | null
+  target_completion_date: string | null
   shipping_deadline: string | null
   mold_deadline: string | null
   components: Array<{
@@ -261,6 +263,7 @@ function normalizeExtractedData(raw: any): OCRResponseData {
     price_quote_required: quotation_attached ? ['有', '要', '✓', 'true', '添付済'].includes(String(quotation_attached).trim()) : null,
     shipping_deadline: shipping_deadline || null,
     mold_deadline: mold_deadline_val || null,
+    target_completion_date: calculateTargetCompletionDate(shipping_deadline, mold_deadline_val),
     components
   }
 }
