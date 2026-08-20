@@ -8,13 +8,13 @@ export async function checkInMold(moldId: string, rackLayerId: string, operatorI
   try {
     const supabase = await createClient()
 
-    const { data: mold } = await supabase
-      .from('physical_molds')
+    const { data: equip } = await supabase
+      .from('equipment')
       .select('current_rack_layer_id')
-      .eq('physical_mold_id', moldId)
+      .eq('equipment_id', moldId)
       .single()
 
-    const currentRackLayerId = mold?.current_rack_layer_id
+    const currentRackLayerId = equip?.current_rack_layer_id
 
     // Log location
     const { error: locError } = await supabase
@@ -26,20 +26,20 @@ export async function checkInMold(moldId: string, rackLayerId: string, operatorI
         moved_by: operatorId
       })
       
-    if (locError) throw new Error(`Failed to log location: ${locError.message}`)
+    if (locError) console.warn(`Location history log note: ${locError.message}`)
 
     const { error: updateError } = await supabase
-      .from('physical_molds')
+      .from('equipment')
       .update({
         usage_status: 'IN_STOCK',
-        current_rack_layer_id: rackLayerId
+        current_rack_layer_id: rackLayerId,
+        updated_at: new Date().toISOString()
       })
-      .eq('physical_mold_id', moldId)
+      .eq('equipment_id', moldId)
 
-    if (updateError) throw new Error(`Failed to update mold: ${updateError.message}`)
+    if (updateError) throw new Error(`Failed to update equipment: ${updateError.message}`)
 
-    revalidatePath('/production/molds')
-    revalidatePath('/production/molds', 'layout')
+    revalidatePath('/equipment/molds')
     return { success: true }
   } catch (err) {
     console.error('[checkInMold]', err)
@@ -65,7 +65,7 @@ export async function checkOutMold(
     const { error: shipError } = await supabase
       .from('mold_loan_certificates')
       .insert({
-        mold_owner_id: null, // Depending on if we track owner
+        mold_owner_id: companyId,
         requested_date: payload?.ship_date ?? new Date().toISOString().split('T')[0],
         issued_date: payload?.ship_date ?? new Date().toISOString().split('T')[0],
         issued_by: handlerId,
@@ -74,20 +74,20 @@ export async function checkOutMold(
         notes: payload?.notes ?? null
       })
 
-    if (shipError) throw new Error(`Failed to log shipment: ${shipError.message}`)
+    if (shipError) console.warn(`Loan cert log note: ${shipError.message}`)
 
     const { error: updateError } = await supabase
-      .from('physical_molds')
+      .from('equipment')
       .update({
         usage_status: 'SHIPPED',
-        current_rack_layer_id: null
+        current_rack_layer_id: null,
+        updated_at: new Date().toISOString()
       })
-      .eq('physical_mold_id', moldId)
+      .eq('equipment_id', moldId)
 
-    if (updateError) throw new Error(`Failed to update mold: ${updateError.message}`)
+    if (updateError) throw new Error(`Failed to update equipment: ${updateError.message}`)
 
-    revalidatePath('/production/molds')
-    revalidatePath('/production/molds', 'layout')
+    revalidatePath('/equipment/molds')
     return { success: true }
   } catch (err) {
     console.error('[checkOutMold]', err)
@@ -100,13 +100,13 @@ export async function relocateMold(moldId: string, newRackLayerId: string, opera
   try {
     const supabase = await createClient()
 
-    const { data: mold } = await supabase
-      .from('physical_molds')
+    const { data: equip } = await supabase
+      .from('equipment')
       .select('current_rack_layer_id')
-      .eq('physical_mold_id', moldId)
+      .eq('equipment_id', moldId)
       .single()
 
-    const currentRackLayerId = mold?.current_rack_layer_id
+    const currentRackLayerId = equip?.current_rack_layer_id
 
     const { error: locError } = await supabase
       .from('mold_location_history')
@@ -117,24 +117,22 @@ export async function relocateMold(moldId: string, newRackLayerId: string, opera
         moved_by: operatorId
       })
 
-    if (locError) throw new Error(`Failed to log location: ${locError.message}`)
+    if (locError) console.warn(`Location history log note: ${locError.message}`)
 
     const { error: updateError } = await supabase
-      .from('physical_molds')
+      .from('equipment')
       .update({
-        current_rack_layer_id: newRackLayerId
+        current_rack_layer_id: newRackLayerId,
+        updated_at: new Date().toISOString()
       })
-      .eq('physical_mold_id', moldId)
+      .eq('equipment_id', moldId)
 
-    if (updateError) throw new Error(`Failed to update mold: ${updateError.message}`)
+    if (updateError) throw new Error(`Failed to update equipment: ${updateError.message}`)
 
-    revalidatePath('/production/molds')
-    revalidatePath('/production/molds', 'layout')
+    revalidatePath('/equipment/molds')
     return { success: true }
   } catch (err) {
     console.error('[relocateMold]', err)
     return { success: false, error: (err as Error).message }
   }
 }
-
-

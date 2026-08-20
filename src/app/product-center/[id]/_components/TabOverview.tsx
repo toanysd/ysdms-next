@@ -15,7 +15,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import EquipmentQuickPreviewModal, { type QuickPreviewItem } from './EquipmentQuickPreviewModal'
 import { EquipmentContextMenu, EquipmentItemContext } from './EquipmentContextMenu'
-import { CenteredQuickJobWizardModal, QuickWizardMode } from './CenteredQuickJobWizardModal'
+import { CenteredQuickJobWizardModal, QuickWizardMode, DesignRevisionData } from './CenteredQuickJobWizardModal'
 import { isPrototypeDesignOrMold, getEffectiveDesignStatus, getDesignStatusBadgeInfo, formatCutterDisplayCode, formatMoldDisplayCode, formatCutterSpecString, formatCutlineSpecString, getCutlineSpecs, formatCornerRDisplay, formatChamferCDisplay, extractBaseMassCode, formatRackLocationDisplay, lookupCavType } from '@/lib/utils/moldNaming'
 import { updateRevisionStatus, approveDesignRevisionAction } from '@/app/actions/engineering'
 import { EditProductModal, ProductEditData } from './EditProductModal'
@@ -128,6 +128,8 @@ type MoldDetail = {
   rack_layers: { layer_code: string | null; racks: { rack_code: string | null } | null } | null
   keeper_company: { company_code: string | null; company_name: string | null } | null
   mold_revisions: { design_revision_id: string | null } | null
+  design_revision_id?: string | null
+  mold_revision_id?: string | null
 }
 
 type EquipDetail = {
@@ -1216,7 +1218,7 @@ export function TabOverview(props: TabOverviewProps) {
                       {/* Lineage & Link Bar */}
                       {(() => {
                         const isProto = isPrototypeDesignOrMold(activeRev)
-                        const linkedItems: Array<{ item: DesignRevItem; label: string; badgeClass: string }> = []
+                        const linkedItems: Array<{ item: DesignRevItem | null; label: string; badgeClass: string }> = []
                         
                         if (isProto) {
                           // Check if any Mass Production revision derives from this prototype
@@ -1229,7 +1231,7 @@ export function TabOverview(props: TabOverviewProps) {
                             })
                           } else {
                             linkedItems.push({
-                              item: null as any,
+                              item: null,
                               label: '⚠️ 試作のみ (Chưa tạo bản hàng loạt)',
                               badgeClass: 'badge badge--neutral'
                             })
@@ -1263,8 +1265,10 @@ export function TabOverview(props: TabOverviewProps) {
                                   <button
                                     type="button"
                                     onClick={() => {
-                                      setSelectedRevId(lk.item.revision_id)
-                                      setActiveRev(lk.item)
+                                      if (lk.item) {
+                                        setSelectedRevId(lk.item.revision_id)
+                                        setActiveRev(lk.item)
+                                      }
                                     }}
                                     className={lk.badgeClass}
                                     style={{
@@ -1505,7 +1509,7 @@ export function TabOverview(props: TabOverviewProps) {
           {/* TOP BLOCK: Các thiết bị liên quan */}
           {(() => {
             const getMoldRevId = (m: MoldDetail) => {
-              return (m as any).design_revision_id || m.mold_revisions?.design_revision_id || (m as any).mold_revision_id || null
+              return m.design_revision_id || m.mold_revisions?.design_revision_id || m.mold_revision_id || null
             }
 
             const activeDesignCode = activeRev?.design_code ? activeRev.design_code.replace(/[\s\-_]/g, '').toUpperCase() : ''
@@ -2408,7 +2412,7 @@ export function TabOverview(props: TabOverviewProps) {
         mode={centeredWizardModal.mode}
         subMode={centeredWizardModal.subMode}
         productId={productId}
-        selectedRev={(activeRev as any) || null}
+        selectedRev={(activeRev as unknown as DesignRevisionData) || null}
         targetEquipment={centeredWizardModal.targetEquipment || null}
         onClose={() => setCenteredWizardModal({ isOpen: false, mode: 'CREATE_JOB' })}
         onSuccess={() => {

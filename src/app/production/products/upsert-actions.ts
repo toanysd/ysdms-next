@@ -7,6 +7,7 @@ export interface UnifiedTrayPayload {
   // Section 1: Tray / Product Info
   tray_code: string
   tray_name: string
+  company_id?: string
   customer_id?: string
   plastic_id?: string
   
@@ -28,8 +29,9 @@ export async function upsertUnifiedTray(payload: UnifiedTrayPayload): Promise<{ 
   try {
     const supabase = await createClient()
 
-    if (!payload.customer_id) {
-      throw new Error("customer_id is required to upsert products/mold")
+    const companyId = payload.company_id || payload.customer_id
+    if (!companyId) {
+      throw new Error("company_id is required to upsert products/mold")
     }
 
     // ── Step 1: Upsert products ──
@@ -38,7 +40,7 @@ export async function upsertUnifiedTray(payload: UnifiedTrayPayload): Promise<{ 
     const productData = {
       product_code: payload.tray_code,
       product_name: payload.tray_name,
-      company_id: payload.customer_id,
+      company_id: companyId,
     }
 
     if (productId) {

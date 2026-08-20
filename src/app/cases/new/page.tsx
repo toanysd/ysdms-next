@@ -26,7 +26,7 @@ export default function NewCasePage() {
   const [form, setForm] = useState({
     title: '',
     case_type: 'new_tray',
-    customer_id: '',
+    company_id: '',
     sales_owner_id: '',
     requested_due_date: '',
     instruction_notes: '',
@@ -61,7 +61,7 @@ export default function NewCasePage() {
         title: form.title.trim(),
         case_type: form.case_type,
         status: 'open',
-        customer_id: form.customer_id || null,
+        customer_id: form.company_id || null,
         sales_owner_id: form.sales_owner_id || null,
         requested_due_date: form.requested_due_date || null,
         raw_text_snapshot: form.instruction_notes || null,
@@ -143,8 +143,8 @@ export default function NewCasePage() {
                   <span>{t('Cases.customerRequired')}</span>
                 </label>
                 <select className="form-select" required
-                  value={form.customer_id}
-                  onChange={e => setForm(f => ({ ...f, customer_id: e.target.value }))}>
+                  value={form.company_id}
+                  onChange={e => setForm(f => ({ ...f, company_id: e.target.value }))}>
                   <option value="">{t('Cases.selectPlaceholder')}</option>
                   {companies.map(c => (
                     <option key={c.company_id} value={c.company_id}>{c.company_name}</option>

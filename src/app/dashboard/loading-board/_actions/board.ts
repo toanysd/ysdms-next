@@ -17,10 +17,6 @@ export async function getLoadingBoardData(startDate: string, endDate: string) {
   if (mErr) console.error(mErr)
 
   // 2. Fetch Pending Orders (Order items that are NOT in production_plans yet, or quantity < ordered)
-  // For simplicity, we just fetch items that don't have a plan. 
-  // We can do this by fetching all order items and filtering, or using a view.
-  // We'll fetch order items where status is draft/confirmed/sent (from orders).
-  // Note: This query might need optimization for production.
   const { data: itemsData, error: iErr } = await supabase
     .from('order_items')
     .select(`
@@ -59,19 +55,22 @@ export async function getLoadingBoardData(startDate: string, endDate: string) {
         slip_no: item.orders.slip_no,
         product_pn_raw: item.product_pn_raw,
         quantity: item.quantity,
-        delivery_date: dDate,
+        delivery_date: item.orders.delivery_date,
         urgency
       })
     }
   }
 
-  // 3. Fetch Plans in the date range
+  // 3. Fetch Production Plans for date range
   const { data: plansData, error: pErr } = await supabase
     .from('production_plans')
     .select(`
-      id, order_item_id, machine_instance_id, mold_physical_id, 
-      planned_date, shift, planned_quantity, estimated_shots, operator_name, status,
-      order_items(product_pn_raw, orders(slip_no))
+      id, order_item_id, machine_instance_id, mold_physical_id, planned_date, shift,
+      planned_quantity, estimated_shots, operator_name, status,
+      order_items(
+        product_pn_raw,
+        orders(slip_no)
+      )
     `)
     .gte('planned_date', startDate)
     .lte('planned_date', endDate)
@@ -96,7 +95,6 @@ export async function getLoadingBoardData(startDate: string, endDate: string) {
   return {
     machines: (machinesData || []) as MachineInstance[],
     pendingOrders: pendingOrders.sort((a, b) => {
-      // Sort CRITICAL first, then WARNING, then NORMAL
       const uMap = { CRITICAL: 0, WARNING: 1, NORMAL: 2, UNKNOWN: 3 }
       return uMap[a.urgency] - uMap[b.urgency]
     }),
@@ -107,14 +105,16 @@ export async function getLoadingBoardData(startDate: string, endDate: string) {
 export async function getCompatibleMolds(machineId: string, orderItemId: string) {
   const supabase = await createClient()
   
-  // Actually, we need to join machine_tray_compatibility -> product_master -> product_mold_map -> mold_design_revision -> mold_physical
-  // Or simply fetch all mold_physical for now and we will implement rigorous filtering later.
   const { data } = await supabase
-    .from('physical_molds')
-    .select('id, physical_code, cavity')
-    .eq('status', 'ACTIVE')
+    .from('equipment')
+    .select('equipment_id, equipment_code, cavity_count')
+    .eq('equipment_type', 'MOLD')
 
-  return (data || []) as MoldPhysical[]
+  return (data || []).map((d: any) => ({
+    id: d.equipment_id,
+    physical_code: d.equipment_code,
+    cavity: d.cavity_count,
+  })) as MoldPhysical[]
 }
 
 export async function createProductionPlan(payload: {

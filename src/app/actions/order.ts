@@ -159,7 +159,7 @@ export async function upsertOrderAction(data: OrderFormValues): Promise<{ succes
     const orderPayload = {
       slip_no: data.slip_no,
       order_date: data.order_date,
-      customer_id: data.customer_id,
+      company_id: (data as any).company_id || (data as any).customer_id,
       order_type: data.order_type as string,
       status: data.status as string,
       approval_status: data.approval_status as string,

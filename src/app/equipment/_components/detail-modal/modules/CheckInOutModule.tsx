@@ -222,23 +222,7 @@ export default function CheckInOutModule({ data, onClose, onSuccess }: Props) {
         if (eqErr) console.warn('Equipment update note:', eqErr)
       }
 
-      // Also sync legacy physical_molds table if applicable
-      const pmId = (data as any)?.physical_mold_id || (data as any)?.legacy_physical_mold_id
-      if (pmId) {
-        await supabase
-          .from('physical_molds')
-          .update({ usage_status: updatedDeviceStatus } as any)
-          .eq('physical_mold_id', pmId)
-      }
 
-      // Also sync legacy cutters table if applicable
-      const cutterId = (data as any)?.cutter_id || (data as any)?.legacy_cutter_id
-      if (cutterId) {
-        await supabase
-          .from('cutters')
-          .update({ usage_status: updatedDeviceStatus } as any)
-          .eq('cutter_id', cutterId)
-      }
 
       // Update local data prop in memory
       if (data) {

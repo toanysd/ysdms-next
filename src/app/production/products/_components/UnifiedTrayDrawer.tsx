@@ -26,7 +26,7 @@ export default function UnifiedTrayDrawer({ isOpen, onClose, customers = [], pla
   const [form, setForm] = useState<UnifiedTrayPayload>({
     tray_code: '',
     tray_name: '',
-    customer_id: '',
+    company_id: '',
     plastic_id: '',
     mold_code: '',
     cutline_x: null,
@@ -43,7 +43,7 @@ export default function UnifiedTrayDrawer({ isOpen, onClose, customers = [], pla
       setError(null)
       setSuccess(false)
       setForm({
-        tray_code: '', tray_name: '', customer_id: '', plastic_id: '', mold_code: '',
+        tray_code: '', tray_name: '', company_id: '', plastic_id: '', mold_code: '',
         cutline_x: null, cutline_y: null, cavity: 1, piece_count: null, pocket_numbers: null, pitch: null,
       })
     }
@@ -126,7 +126,7 @@ export default function UnifiedTrayDrawer({ isOpen, onClose, customers = [], pla
               </div>
               <div className="flex flex-col">
                 <label className={labelCls}><span>{t('customer')}</span></label>
-                <select value={form.customer_id || ''} onChange={e => setForm({...form, customer_id: e.target.value})} className={inputCls} disabled={isSubmitting}>
+                <select value={form.company_id || ''} onChange={e => setForm({...form, company_id: e.target.value})} className={inputCls} disabled={isSubmitting}>
                   <option value="">{t('select')}</option>
                   {customers.map(c => <option key={c.company_id} value={c.company_id}>{c.company_name} ({c.company_code})</option>)}
                 </select>

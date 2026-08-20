@@ -602,17 +602,17 @@ export async function getAllPhysicalMolds() {
     }
 
     const { data: allMolds } = await supabase
-        .from('physical_molds')
-        .select('physical_mold_id, system_code, device_status')
-        .eq('device_status', 'ACTIVE')
+        .from('equipment')
+        .select('equipment_id, equipment_code, usage_status')
+        .eq('equipment_type', 'MOLD')
 
     return (allMolds || []).map(m => ({
-        id: m.physical_mold_id,
-        physical_mold_id: m.physical_mold_id,
-        system_code: m.system_code,
-        physical_code: m.system_code,
-        device_status: m.device_status,
-        status: m.device_status
+        id: m.equipment_id,
+        physical_mold_id: m.equipment_id,
+        system_code: m.equipment_code,
+        physical_code: m.equipment_code,
+        device_status: m.usage_status,
+        status: m.usage_status
     }))
 }
 

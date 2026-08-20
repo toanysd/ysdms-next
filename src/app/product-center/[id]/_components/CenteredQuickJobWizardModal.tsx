@@ -10,7 +10,7 @@ import {
 
 export type QuickWizardMode = 'CREATE_DESIGN' | 'CREATE_MOLD' | 'CREATE_JOB' | 'UPDATE_EQUIPMENT'
 
-interface DesignRevisionData {
+export interface DesignRevisionData {
   revision_id: string
   design_code: string | null
   revision_number: number | null

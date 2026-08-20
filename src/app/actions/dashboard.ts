@@ -66,7 +66,7 @@ export async function getDashboardData(): Promise<RealDashboardData> {
     ] = await Promise.all([
       supabase.from('products').select('*', { count: 'exact', head: true }),
       supabase.from('design_revisions').select('*', { count: 'exact', head: true }),
-      supabase.from('physical_molds').select('*', { count: 'exact', head: true }),
+      supabase.from('equipment').select('*', { count: 'exact', head: true }).eq('equipment_type', 'MOLD'),
       supabase.from('equipment').select('*', { count: 'exact', head: true }).in('equipment_type', ['CUTTER_SEPARATE', 'CUTTER_INLINE']),
       supabase.from('jobs').select('*', { count: 'exact', head: true }),
       supabase.from('work_logs').select('*', { count: 'exact', head: true }),
@@ -91,13 +91,14 @@ export async function getDashboardData(): Promise<RealDashboardData> {
     }))
 
     const { data: moldStatusData } = await supabase
-      .from('physical_molds')
-      .select('device_status')
+      .from('equipment')
+      .select('usage_status')
+      .eq('equipment_type', 'MOLD')
 
     const moldStatusMap: Record<string, number> = {}
     if (moldStatusData) {
       moldStatusData.forEach(row => {
-        const st = row.device_status || '保管中'
+        const st = row.usage_status || 'IN_STOCK'
         moldStatusMap[st] = (moldStatusMap[st] || 0) + 1
       })
     }
@@ -124,7 +125,7 @@ export async function getDashboardData(): Promise<RealDashboardData> {
       .from('jobs')
       .select(`
         job_id, job_code, job_name, job_status, overall_progress, deadline, created_at,
-        physical_molds(system_code, display_name)
+        equipment:equipment!jobs_equipment_id_fkey(equipment_code, equipment_name)
       `)
       .order('created_at', { ascending: false })
       .limit(10)
@@ -137,8 +138,8 @@ export async function getDashboardData(): Promise<RealDashboardData> {
       overall_progress: j.overall_progress,
       deadline: j.deadline,
       created_at: j.created_at,
-      system_code: j.physical_molds?.system_code || null,
-      display_name: j.physical_molds?.display_name || null,
+      system_code: j.equipment?.equipment_code || null,
+      display_name: j.equipment?.equipment_name || null,
     }))
 
     return {
@@ -198,7 +199,7 @@ export async function getEquipmentDashboardData(filterMode: 'TODAY_WEEK' | 'IN_P
     ] = await Promise.all([
       supabase.from('jobs').select('*', { count: 'exact', head: true }).in('job_status', ['IN_PROGRESS', 'NEW']),
       supabase.from('jobs').select('*', { count: 'exact', head: true }).lt('deadline', todayStr).neq('job_status', 'COMPLETED'),
-      supabase.from('jobs').select('*', { count: 'exact', head: true }).is('physical_mold_id', null),
+      supabase.from('jobs').select('*', { count: 'exact', head: true }).is('equipment_id', null),
       supabase.from('equipment').select('*', { count: 'exact', head: true }).in('equipment_type', ['CUTTER_SEPARATE', 'CUTTER_INLINE']),
     ])
 
@@ -207,7 +208,7 @@ export async function getEquipmentDashboardData(filterMode: 'TODAY_WEEK' | 'IN_P
       .from('jobs')
       .select(`
         job_id, job_code, job_name, job_status, overall_progress, deadline,
-        physical_molds(display_name)
+        equipment:equipment!jobs_equipment_id_fkey(equipment_name)
       `)
 
     if (filterMode === 'IN_PROGRESS') {
@@ -237,14 +238,14 @@ export async function getEquipmentDashboardData(filterMode: 'TODAY_WEEK' | 'IN_P
       job_status: j.job_status,
       overall_progress: j.overall_progress,
       deadline: j.deadline,
-      mold_name: j.physical_molds?.display_name || null,
+      mold_name: j.equipment?.equipment_name || null,
     }))
 
     // 3. Unlinked Jobs List
     const { data: unlinkedJobsData } = await supabase
       .from('jobs')
       .select(`job_id, job_code, job_name, job_status, deadline`)
-      .is('physical_mold_id', null)
+      .is('equipment_id', null)
       .not('job_name', 'ilike', '%社内作業%')
       .order('created_at', { ascending: false })
       .limit(5)
