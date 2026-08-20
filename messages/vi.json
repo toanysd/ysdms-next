@@ -1108,6 +1108,45 @@
     "edit": "Chỉnh sửa",
     "delete": "Xóa"
   },
+  "Quotations": {
+    "title": "Quản lý Báo giá",
+    "quotationTitle": "Báo Giá",
+    "quotationList": "Danh sách Báo giá",
+    "newQuotation": "Tạo báo giá mới",
+    "quotationStatus": "Trạng thái",
+    "moldPriceCalc": "Tính giá khuôn & dao cắt",
+    "trayUnitPrice": "Tính đơn giá khay nhựa",
+    "exportPdf": "Xuất file PDF Báo Giá",
+    "validUntil": "Hạn hiệu lực",
+    "quotationNo": "Số báo giá",
+    "quoteDate": "Ngày lập báo giá",
+    "customerName": "Khách hàng",
+    "quotationType": "Loại báo giá",
+    "totalAmount": "Tổng giá trị báo giá",
+    "draft": "Bản nháp",
+    "sent": "Đã gửi khách",
+    "accepted": "Đã chốt / Đặt hàng",
+    "rejected": "Từ chối",
+    "moldQuotation": "Khuôn & Dao cắt",
+    "trayQuotation": "Khay sản phẩm",
+    "setQuotation": "Khuôn + Khay trọn gói",
+    "subtotal": "Tổng tiền trước thuế",
+    "taxAmount": "Thuế GTGT / Tiêu thụ (10%)",
+    "grandTotal": "Tổng cộng báo giá (sau thuế)",
+    "autoCalculate": "Tính tự động theo bản vẽ CAD",
+    "lineItems": "Chi tiết các hạng mục",
+    "addItem": "Thêm dòng",
+    "selectCustomer": "Chọn khách hàng",
+    "selectProduct": "Chọn sản phẩm / bản vẽ",
+    "noQuotationsFound": "Không tìm thấy báo giá nào phù hợp",
+    "preparedBy": "Người lập báo giá",
+    "notesAndTerms": "Ghi chú & Điều khoản thương mại",
+    "saveQuotation": "Lưu báo giá",
+    "updateStatus": "Cập nhật trạng thái",
+    "backToList": "Quay lại danh sách báo giá",
+    "printPreview": "Xem trước bản in",
+    "downloadPdf": "Tải xuống file PDF"
+  },
   "Planning": {
     "Toolbar": {
       "title": "Kế hoạch sản xuất",
@@ -1247,11 +1286,6 @@
     "statusPending": "Chờ xuất",
     "statusCancelled": "Hủy",
     "noLotsAssigned": "Chưa có lô nào được gán"
-  },
-  "Quotations": {
-    "title": "Báo giá",
-    "quotationTitle": "Báo giá (Quotation)",
-    "underDevelopment": "🚧 Module này đang phát triển"
   },
   "Jobs": {},
   "Inventory": {

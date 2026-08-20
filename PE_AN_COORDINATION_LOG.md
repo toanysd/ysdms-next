@@ -7,12 +7,12 @@
 - **Phase R2 (Approval/Sample lifecycle, Atomic RPC + Session Guard):** ĐÃ ĐÓNG
 - **Phase R3 (Product 360° View + Dashboard Lệnh SX):** ĐÃ ĐÓNG HOÀN TOÀN ✅
 - **Phase R4 (Báo Giá Quotations + Giao Hàng Shipments + Tech Debt Cleanup):** ĐANG MỞ
-  - Sprint R4-S1 (Phân hệ Báo Giá 見積書): ĐÃ HOÀN TẤT KHẢO SÁT SCHEMA (R4-S1-A), chờ PE phê duyệt kiến trúc từ `R4_S1_schema_check.md`.
+  - Sprint R4-S1 (Phân hệ Báo Giá 見積書 + Engine Tính Giá + Xuất PDF): ✅ ĐÃ HOÀN THÀNH (chờ PE review)
   - Sprint R4-S2 (Phân hệ Giao Hàng 納品書): CHỜ KÍCH HOẠT
   - Sprint R4-S3 (Clean Tech Debt): CHỜ KÍCH HOẠT
 
 ## Chỉ thị đang mở
-- **#013:** Sprint R4-S1 Khảo sát Schema Báo Giá (Đã hoàn tất báo cáo `R4_S1_schema_check.md`).
+- **#014:** Triển khai Sprint R4-S1 Phân hệ Báo Giá (Đã hoàn tất, chờ PE review qua báo cáo `R4_S1_review.md`).
 
 ## Kiến trúc cốt lõi đã xác lập
 - **ADR-001:** Unified SSOT `equipment` (8 loại thiết bị, quan hệ N:N `equipment_assignments` cho bộ SET gá lắp & dùng chung SHARED)
