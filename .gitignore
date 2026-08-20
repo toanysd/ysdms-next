@@ -47,7 +47,9 @@ add_col.js
 
 # Scratch / Debug / Legacy (dọn dẹp 2026-07-15)
 /scratch/
-/temp_ai/
+temp_ai/*.json
+temp_ai/backup_*/
+temp_ai/inbox/
 
 # Data and backups
 /backups/

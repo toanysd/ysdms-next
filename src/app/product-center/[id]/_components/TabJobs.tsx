@@ -11,6 +11,7 @@ import {
 import Link from 'next/link'
 import { QuickAddRepairJobModal } from './QuickAddRepairJobModal'
 import { WorklogFormShared } from '@/components/worklogs/WorklogFormShared'
+import { EditJobModal, JobEditData } from '@/app/equipment/jobs/_components/EditJobModal'
 
 interface TabJobsProps {
   productId: string
@@ -113,6 +114,7 @@ export function TabJobs({ productId }: TabJobsProps) {
   const [repairModalEquip, setRepairModalEquip] = useState<EquipmentItem | null>(null)
   const [isLogModalOpen, setIsLogModalOpen] = useState(false)
   const [targetLogJobId, setTargetLogJobId] = useState<string | undefined>(undefined)
+  const [editingJob, setEditingJob] = useState<JobEditData | null>(null)
 
   const loadData = useCallback(async () => {
     if (!productId) return
@@ -642,6 +644,16 @@ export function TabJobs({ productId }: TabJobsProps) {
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <button
                     type="button"
+                    className="btn btn-secondary cursor-pointer"
+                    onClick={() => setEditingJob(selectedJob as JobEditData)}
+                    style={{ fontSize: 11, padding: '4px 10px', height: 28, gap: 4 }}
+                    title="Job情報を編集 (Sửa Job)"
+                  >
+                    <span>✏️ Job編集</span>
+                  </button>
+
+                  <button
+                    type="button"
                     className="btn btn-primary cursor-pointer"
                     onClick={() => {
                       setTargetLogJobId(selectedJob.job_id)
@@ -876,6 +888,14 @@ export function TabJobs({ productId }: TabJobsProps) {
           </div>
         </div>
       )}
+
+      {/* Edit Job Details Modal */}
+      <EditJobModal
+        isOpen={!!editingJob}
+        job={editingJob}
+        onClose={() => setEditingJob(null)}
+        onSuccess={() => loadData()}
+      />
     </div>
   )
 }

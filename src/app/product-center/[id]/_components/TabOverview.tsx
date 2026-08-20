@@ -18,6 +18,10 @@ import { EquipmentContextMenu, EquipmentItemContext } from './EquipmentContextMe
 import { CenteredQuickJobWizardModal, QuickWizardMode } from './CenteredQuickJobWizardModal'
 import { isPrototypeDesignOrMold, getEffectiveDesignStatus, getDesignStatusBadgeInfo, formatCutterDisplayCode, formatMoldDisplayCode, formatCutterSpecString, formatCutlineSpecString, getCutlineSpecs, formatCornerRDisplay, formatChamferCDisplay, extractBaseMassCode, formatRackLocationDisplay, lookupCavType } from '@/lib/utils/moldNaming'
 import { updateRevisionStatus, approveDesignRevisionAction } from '@/app/actions/engineering'
+import { EditProductModal, ProductEditData } from './EditProductModal'
+import { EditDesignRevisionModal, EditDesignRevisionData } from '@/components/engineering/EditDesignRevisionModal'
+import { EditEquipmentModal, EquipmentEditData } from '@/app/equipment/_components/detail-modal/EditEquipmentModal'
+import { EditJobModal, JobEditData } from '@/app/equipment/jobs/_components/EditJobModal'
 
 type JobItem = {
   job_id: string
@@ -380,6 +384,12 @@ export function TabOverview(props: TabOverviewProps) {
     targetEquipment?: any
   }>({ isOpen: false, mode: 'CREATE_JOB' })
 
+  // Edit Modal States for Product, Design Revision, Equipment, Job
+  const [editingProduct, setEditingProduct] = useState<ProductEditData | null>(null)
+  const [editingRevision, setEditingRevision] = useState<EditDesignRevisionData | null>(null)
+  const [editingEquipment, setEditingEquipment] = useState<EquipmentEditData | null>(null)
+  const [editingJob, setEditingJob] = useState<JobEditData | null>(null)
+
   const handleOverviewContextMenuAction = async (actionKey: string, item: EquipmentItemContext) => {
     if (actionKey === 'CREATE_JOB') {
       setCenteredWizardModal({
@@ -391,11 +401,20 @@ export function TabOverview(props: TabOverviewProps) {
     } else if (actionKey === 'CHECK_IN') {
       await supabase.from('equipment').update({ usage_status: 'IN_STOCK' }).eq('equipment_id', item.id)
       router.refresh()
-    } else if (actionKey === 'TRANSFER' || actionKey === 'UPDATE_SPECS') {
+    } else if (actionKey === 'TRANSFER') {
       setCenteredWizardModal({
         isOpen: true,
         mode: 'UPDATE_EQUIPMENT',
         targetEquipment: { id: item.id, code: item.code, name: item.name, type: item.type, status: item.status, rack: item.rack },
+      })
+    } else if (actionKey === 'UPDATE_SPECS') {
+      setEditingEquipment({
+        equipment_id: item.id,
+        equipment_code: item.code,
+        display_name: item.name,
+        equipment_type: item.type,
+        device_status: item.status,
+        usage_status: item.status
       })
     } else if (actionKey === 'SCRAP') {
       if (confirm(`Scrap equipment ${item.code}?`)) {
@@ -875,9 +894,32 @@ export function TabOverview(props: TabOverviewProps) {
           <div className="card-flat" style={{ padding: 0, overflow: 'hidden', border: '1px solid var(--tint-teal-border)' }}>
             <div style={{
               background: 'var(--tint-teal-bg)', borderBottom: '1px solid var(--tint-teal-border)',
-              padding: '6px 10px', fontSize: 12, fontWeight: 700, color: 'var(--tint-teal-text)'
+              padding: '6px 10px', fontSize: 12, fontWeight: 700, color: 'var(--tint-teal-text)',
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between'
             }}>
-              {tPC('boxProductDetailsTitle')}
+              <span>{tPC('boxProductDetailsTitle')}</span>
+              <button
+                type="button"
+                onClick={() => setEditingProduct({
+                  product_id: productId,
+                  product_code: productCode,
+                  product_name: productName,
+                  product_name_internal: productNameInternal,
+                  customer_product_name: customerProductName,
+                  product_description: productDescription,
+                  product_status: productStatus,
+                  pocket_count: pocketCount,
+                  pieces_per_box: piecesPerBox,
+                  company_id: companyId,
+                  notes: notes,
+                  first_shipment_date: firstShipmentDate
+                })}
+                className="btn btn-secondary cursor-pointer"
+                style={{ height: 20, padding: '0 6px', fontSize: 10, gap: 2, display: 'inline-flex', alignItems: 'center' }}
+                title="製品基本情報を編集 (Sửa sản phẩm)"
+              >
+                <span>編集 (Sửa)</span>
+              </button>
             </div>
             <div style={{ padding: '8px 10px', display: 'flex', flexDirection: 'column', gap: 2 }}>
               <InfoRow label={tProd('productCode')} value={productCode} mono accent />
@@ -902,7 +944,7 @@ export function TabOverview(props: TabOverviewProps) {
         {/* 👆 COLUMN 2 (Center flex 1.25): Specs & Revisions (Top) -> Order History (Middle) -> Delivery Site (Bottom) */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
 
-          {/* TOP BLOCK: Thông số kỹ thuật, chi tiết thiết kế */}
+          {/* TOP BLOCK: Thông số kỹ thuật, chi tiết設計 */}
           <div className="card-flat" style={{ padding: 0, overflow: 'hidden', border: '1px solid var(--tint-teal-border)' }}>
             <div style={{
               background: 'var(--tint-teal-bg)', borderBottom: '1px solid var(--tint-teal-border)',
@@ -911,6 +953,17 @@ export function TabOverview(props: TabOverviewProps) {
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                 <PenTool size={14} style={{ color: 'var(--tint-teal-text)' }} />
                 <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--tint-teal-text)' }}>{tPC('boxSpecsDesignTitle')}</span>
+                {activeRev && (
+                  <button
+                    type="button"
+                    onClick={() => setEditingRevision(activeRev as EditDesignRevisionData)}
+                    className="btn btn-secondary cursor-pointer"
+                    style={{ height: 20, padding: '0 6px', fontSize: 10, display: 'inline-flex', alignItems: 'center', gap: 3, marginLeft: 6 }}
+                    title="設計リビジョンを編集 (Sửa thiết kế)"
+                  >
+                    <span>図面編集 (Sửa)</span>
+                  </button>
+                )}
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                 {activeRev && (
@@ -2292,6 +2345,21 @@ export function TabOverview(props: TabOverviewProps) {
                                   {j.mold_deadline?.slice(0, 10)}
                                 </span>
                               )}
+                              <button
+                                type="button"
+                                onClick={() => setEditingJob({
+                                  job_id: j.job_id,
+                                  job_code: j.job_code,
+                                  job_name: j.job_name,
+                                  job_status: j.job_status,
+                                  mold_deadline: j.mold_deadline,
+                                })}
+                                className="btn btn-secondary cursor-pointer"
+                                style={{ fontSize: 10, padding: '2px 6px', height: 20, gap: 2, display: 'flex', alignItems: 'center' }}
+                                title="Job情報を編集 (Sửa Job)"
+                              >
+                                ✏️ <span>編集</span>
+                              </button>
                               <Link
                                 href={`/equipment/jobs/${j.job_id}`}
                                 className="btn btn-secondary"
@@ -2346,6 +2414,38 @@ export function TabOverview(props: TabOverviewProps) {
         onSuccess={() => {
           router.refresh()
         }}
+      />
+
+      {/* 1. Edit Product Modal */}
+      <EditProductModal
+        isOpen={!!editingProduct}
+        product={editingProduct}
+        onClose={() => setEditingProduct(null)}
+        onSuccess={() => router.refresh()}
+      />
+
+      {/* 2. Edit Design Revision Modal */}
+      <EditDesignRevisionModal
+        isOpen={!!editingRevision}
+        revision={editingRevision}
+        onClose={() => setEditingRevision(null)}
+        onSuccess={() => router.refresh()}
+      />
+
+      {/* 3. Edit Equipment Specs Modal */}
+      <EditEquipmentModal
+        isOpen={!!editingEquipment}
+        equipment={editingEquipment}
+        onClose={() => setEditingEquipment(null)}
+        onSuccess={() => router.refresh()}
+      />
+
+      {/* 4. Edit Job Details Modal */}
+      <EditJobModal
+        isOpen={!!editingJob}
+        job={editingJob}
+        onClose={() => setEditingJob(null)}
+        onSuccess={() => router.refresh()}
       />
 
     </div>

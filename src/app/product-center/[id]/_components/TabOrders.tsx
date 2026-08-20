@@ -1,9 +1,12 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useTranslations } from 'next-intl'
 import { createClient } from '@/lib/supabase/client'
-import { FileText, Plus, ExternalLink, Truck, DollarSign, ShoppingBag, Package } from 'lucide-react'
+import {
+  FileText, Plus, ExternalLink, Truck, DollarSign,
+  ShoppingBag, Package, CheckCircle2, Clock, AlertCircle
+} from 'lucide-react'
 import Link from 'next/link'
 
 interface TabOrdersProps {
@@ -30,11 +33,11 @@ interface OrderLineItem {
 }
 
 const STATUS_BADGE: Record<string, string> = {
-  NEW: 'badge badge--info',
-  CONFIRMED: 'badge badge--warning',
-  IN_PRODUCTION: 'badge badge--info',
-  SHIPPED: 'badge badge--success',
-  CANCELLED: 'badge badge--error',
+  NEW: 'badge badge--info font-bold',
+  CONFIRMED: 'badge badge--warning font-bold',
+  IN_PRODUCTION: 'badge badge--info font-bold',
+  SHIPPED: 'badge badge--success font-bold',
+  CANCELLED: 'badge badge--error font-bold',
 }
 
 export function TabOrders({ productId }: TabOrdersProps) {
@@ -73,30 +76,137 @@ export function TabOrders({ productId }: TabOrdersProps) {
     if (productId) fetchOrders()
   }, [productId])
 
-  const selectedLine = orderLines.find(l => l.line_id === selectedLineId)
-  const selectedOrder = selectedLine?.orders ? (Array.isArray(selectedLine.orders) ? selectedLine.orders[0] : selectedLine.orders) : null
+  // Aggregate KPI Calculations
+  const { totalOrderedQty, totalShippedQty, backlogQty, activeOrdersCount } = useMemo(() => {
+    let totalOrdered = 0
+    let totalShipped = 0
+    const activeOrderIds = new Set<string>()
+
+    orderLines.forEach((line) => {
+      const order = Array.isArray(line.orders) ? line.orders[0] : line.orders
+      const qty = Number(line.quantity) || 0
+      totalOrdered += qty
+
+      const isShipped = order?.order_status === 'SHIPPED' || line.line_status === 'SHIPPED'
+      if (isShipped) {
+        totalShipped += qty
+      }
+
+      if (order && ['NEW', 'CONFIRMED', 'IN_PRODUCTION'].includes(order.order_status)) {
+        activeOrderIds.add(order.order_id)
+      }
+    })
+
+    const backlog = Math.max(0, totalOrdered - totalShipped)
+
+    return {
+      totalOrderedQty: totalOrdered,
+      totalShippedQty: totalShipped,
+      backlogQty: backlog,
+      activeOrdersCount: activeOrderIds.size,
+    }
+  }, [orderLines])
+
+  const selectedLine = orderLines.find((l) => l.line_id === selectedLineId)
+  const selectedOrder = selectedLine?.orders
+    ? Array.isArray(selectedLine.orders)
+      ? selectedLine.orders[0]
+      : selectedLine.orders
+    : null
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
 
-      {/* Action Bar */}
+      {/* ── 1. Top 4 KPI Summary Cards ── */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(4, 1fr)',
+        gap: 10,
+      }}>
+        {/* Card 1: Total Ordered Qty */}
+        <div className="card-flat" style={{ padding: '12px 14px', borderLeft: '4px solid var(--accent, #0D9488)', background: 'var(--tint-teal-bg, #f0fdfa)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+            <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)' }}>
+              {t('kpiTotalOrders')} (Tổng Đặt)
+            </span>
+            <Package size={15} style={{ color: 'var(--accent)' }} />
+          </div>
+          <div style={{ fontSize: 18, fontWeight: 800, fontFamily: 'monospace', color: 'var(--text-primary)' }}>
+            {loading ? '...' : `${totalOrderedQty.toLocaleString()} pcs`}
+          </div>
+          <div style={{ fontSize: 10, color: 'var(--text-muted)', marginTop: 2 }}>
+            全 {orderLines.length} 受注行 (Total lines)
+          </div>
+        </div>
+
+        {/* Card 2: Total Shipped Qty */}
+        <div className="card-flat" style={{ padding: '12px 14px', borderLeft: '4px solid #059669', background: '#ECFDF5' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+            <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)' }}>
+              {t('kpiDelivered')} (Đã Xuất)
+            </span>
+            <CheckCircle2 size={15} style={{ color: '#059669' }} />
+          </div>
+          <div style={{ fontSize: 18, fontWeight: 800, fontFamily: 'monospace', color: '#059669' }}>
+            {loading ? '...' : `${totalShippedQty.toLocaleString()} pcs`}
+          </div>
+          <div style={{ fontSize: 10, color: 'var(--text-muted)', marginTop: 2 }}>
+            出荷完了済 (Delivered)
+          </div>
+        </div>
+
+        {/* Card 3: Backlog Qty */}
+        <div className="card-flat" style={{ padding: '12px 14px', borderLeft: '4px solid #D97706', background: '#FFFBEB' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+            <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)' }}>
+              {t('kpiBacklogOrders')} (Tồn Đọng)
+            </span>
+            <Clock size={15} style={{ color: '#D97706' }} />
+          </div>
+          <div style={{ fontSize: 18, fontWeight: 800, fontFamily: 'monospace', color: backlogQty > 0 ? '#D97706' : 'var(--text-primary)' }}>
+            {loading ? '...' : `${backlogQty.toLocaleString()} pcs`}
+          </div>
+          <div style={{ fontSize: 10, color: 'var(--text-muted)', marginTop: 2 }}>
+            {backlogQty > 0 ? '⚠️ 未出荷残あり (Pending)' : '✓ 残なし (All shipped)'}
+          </div>
+        </div>
+
+        {/* Card 4: Active Open Orders */}
+        <div className="card-flat" style={{ padding: '12px 14px', borderLeft: '4px solid var(--tint-purple-text, #8B5CF6)', background: 'var(--tint-purple-bg, #faf5ff)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+            <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)' }}>
+              {t('kpiOpenOrdersCount')} (Đang Mở)
+            </span>
+            <ShoppingBag size={15} style={{ color: 'var(--tint-purple-text)' }} />
+          </div>
+          <div style={{ fontSize: 18, fontWeight: 800, fontFamily: 'monospace', color: 'var(--tint-purple-text)' }}>
+            {loading ? '...' : `${activeOrdersCount} 件 (Orders)`}
+          </div>
+          <div style={{ fontSize: 10, color: 'var(--text-muted)', marginTop: 2 }}>
+            製作・手配進行中
+          </div>
+        </div>
+      </div>
+
+      {/* ── 2. Action Bar ── */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <ShoppingBag size={16} style={{ color: 'var(--tint-purple-text)' }} />
-          <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)' }}>
+          <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>
             {t('orderHistoryAndShipments', { count: orderLines.length })}
           </span>
         </div>
         <Link
           href={`/orders?product_id=${productId}`}
-          className="btn btn-secondary"
-          style={{ height: 28, padding: '0 10px', fontSize: 11, gap: 4, textDecoration: 'none' }}
+          className="btn btn-primary"
+          style={{ height: 28, padding: '0 12px', fontSize: 11, gap: 4, textDecoration: 'none' }}
         >
           <Plus size={12} />
           <span>{t('newOrder')}</span>
         </Link>
       </div>
 
+      {/* ── 3. Main Data Content ── */}
       {orderLines.length === 0 ? (
         <div className="card-flat" style={{ padding: 24, textAlign: 'center', color: 'var(--text-muted)', fontSize: 13 }}>
           {t('noOrdersForProduct')}
@@ -104,7 +214,7 @@ export function TabOrders({ productId }: TabOrdersProps) {
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'minmax(240px, 34%) minmax(280px, 42%) 1fr', gap: 12 }}>
 
-          {/* Left Column: Order Lines List (Tinted Purple Header) */}
+          {/* Left Column: Order Lines List */}
           <div className="card-flat" style={{ padding: 0, overflow: 'hidden', border: '1px solid var(--tint-purple-border)' }}>
             <div style={{
               background: 'var(--tint-purple-bg)', borderBottom: '1px solid var(--tint-purple-border)',
@@ -112,11 +222,13 @@ export function TabOrders({ productId }: TabOrdersProps) {
               display: 'flex', alignItems: 'center', justifyContent: 'space-between'
             }}>
               <span>{t('orderListTitle')}</span>
-              <span style={{ fontSize: 10, background: 'var(--bg-surface)', padding: '1px 6px', borderRadius: 10 }}>{orderLines.length}</span>
+              <span style={{ fontSize: 10, background: 'var(--bg-surface)', padding: '1px 6px', borderRadius: 10, fontWeight: 700 }}>
+                {orderLines.length}
+              </span>
             </div>
 
             <div style={{ padding: 8, display: 'flex', flexDirection: 'column', gap: 6 }}>
-              {orderLines.map(line => {
+              {orderLines.map((line) => {
                 const order = Array.isArray(line.orders) ? line.orders[0] : line.orders
                 const isSelected = line.line_id === selectedLineId
                 return (
@@ -131,7 +243,7 @@ export function TabOrders({ productId }: TabOrdersProps) {
                     }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <span style={{ fontFamily: 'monospace', fontWeight: 800, fontSize: 14, color: 'var(--accent)' }}>
+                      <span style={{ fontFamily: 'monospace', fontWeight: 800, fontSize: 13, color: 'var(--accent)' }}>
                         {order?.order_no || '—'}
                       </span>
                       <span className={STATUS_BADGE[order?.order_status || ''] || 'badge badge--neutral'} style={{ fontSize: 9 }}>
@@ -150,7 +262,7 @@ export function TabOrders({ productId }: TabOrdersProps) {
             </div>
           </div>
 
-          {/* Middle Column: Selected Order Detail (Tinted Blue Header) */}
+          {/* Middle Column: Selected Order Detail */}
           <div className="card-flat" style={{ padding: 0, overflow: 'hidden', border: '1px solid var(--tint-blue-border)' }}>
             <div style={{
               background: 'var(--tint-blue-bg)', borderBottom: '1px solid var(--tint-blue-border)',
@@ -213,7 +325,7 @@ export function TabOrders({ productId }: TabOrdersProps) {
 
           {/* Right Column: Quotation Card & Shipments */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            {/* Quotation Status Card (Tinted Purple Header) */}
+            {/* Quotation Status Card */}
             <div className="card-flat" style={{ padding: 0, overflow: 'hidden', border: '1px solid var(--tint-purple-border)' }}>
               <div style={{
                 background: 'var(--tint-purple-bg)', borderBottom: '1px solid var(--tint-purple-border)',
@@ -232,7 +344,7 @@ export function TabOrders({ productId }: TabOrdersProps) {
               </div>
             </div>
 
-            {/* Shipment History (Tinted Green Header) */}
+            {/* Shipment History */}
             <div className="card-flat" style={{ padding: 0, overflow: 'hidden', border: '1px solid var(--tint-green-border)' }}>
               <div style={{
                 background: 'var(--tint-green-bg)', borderBottom: '1px solid var(--tint-green-border)',

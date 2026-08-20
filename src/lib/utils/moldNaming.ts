@@ -34,25 +34,48 @@ export function extractBaseMassCode(code: string | null | undefined): string {
 export function isPrototypeDesignOrMold(item: MoldOrDesignCategoryInput): boolean {
   if (!item) return false
 
-  // 1. Explicit DB classification check (Highest Priority)
+  const code = String(item.design_code || item.equipment_code || item.display_name || '').trim().toUpperCase()
+  const name = String(item.display_name || '').trim().toUpperCase()
   const category = String(item.design_category || item.sub_type || item.mold_type || '').toUpperCase().trim()
-  if (['PROTOTYPE_POCKET', 'PROTOTYPE', '試作ポケット', 'D'].includes(category)) {
+
+  // 1. Code-based check (Highest Priority for Legacy Access Data)
+  // Detect prototype D suffix: PNS-012D, MTM195DR1, MMT-021-D, R0-D, ADY071-D
+  if (code) {
+    // Use extractBaseMassCode: if stripping D changes the code, it has a prototype D suffix
+    const normalized = code.replace(/[\s\-_]/g, '')
+    const stripped = extractBaseMassCode(code)
+    if (stripped && stripped !== normalized) {
+      return true
+    }
+    // Explicit suffix patterns
+    if (
+      code.endsWith('-D') ||
+      code.endsWith('_D') ||
+      code.includes('-D-') ||
+      code.includes('_D_') ||
+      code.includes(' R0-D') ||
+      code.includes('-D ')
+    ) {
+      return true
+    }
+  }
+
+  // 2. Name-based check (Japanese keywords)
+  if (name.includes('試作') || name.includes('PROTOTYPE')) {
     return true
   }
-  if (['MASS_PRODUCTION', 'REGULAR', '正規', 'M'].includes(category)) {
-    return false
+
+  // 3. Explicit DB classification check
+  if (['PROTOTYPE_POCKET', 'PROTOTYPE', '試作ポケット'].includes(category)) {
+    // Double-check: if code is standard (e.g. MMT-021 R0 without -D suffix and without 試作 in name),
+    // it was wrongfully assigned PROTOTYPE_POCKET by the previous bug!
+    if (code && !code.includes('D') && !name.includes('試作')) {
+      return false
+    }
+    return true
   }
 
-  // 2. Legacy Naming Convention Parsing
-  const code = String(item.design_code || item.equipment_code || item.display_name || '').trim()
-  if (!code) return false
-
-  const suffix = code.replace(/^[A-Za-z]+[-_]?\d+/, '')
-  if (suffix && suffix !== code) {
-    return /\bD\b|(?<=[R\d])D|D(?=[R\s\-_]|$)/i.test(suffix)
-  }
-
-  return /(?:-D|-00D|D\s*R\d+|R\d+D|\b試作\b)/i.test(code)
+  return false
 }
 
 /**

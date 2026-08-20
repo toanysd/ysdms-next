@@ -15,6 +15,7 @@ import { JobQuickViewDrawer } from '@/components/equipment/JobQuickViewDrawer'
 import { ManufacturingSheetOCRModal } from '@/components/ocr/ManufacturingSheetOCRModal'
 import { DailyWorklogQuickModal } from '@/components/worklogs/DailyWorklogQuickModal'
 import { calculateAutoSchedule } from '@/lib/scheduling/autoScheduler'
+import { extractBaseMassCode, isPrototypeDesignOrMold } from '@/lib/utils/moldNaming'
 
 interface Props {
   workOrders?: any[]
@@ -357,19 +358,21 @@ const TaskRow = React.memo(function TaskRow({
       : 'transparent'
 
   const TRACK_META: Record<string, { badge: string; color: string; bg: string; label: string }> = {
-    DESIGN:             { badge: 'D', color: '#7c3aed', bg: '#f3e8ff', label: '設計' },
-    ALUMI:              { badge: 'A', color: '#6d4c41', bg: '#efebe9', label: 'アルミ材' },
-    MOLD:               { badge: 'M', color: '#1565c0', bg: '#e3f2fd', label: '金型' },
-    PLUG:               { badge: 'P', color: '#e65100', bg: '#fff3e0', label: 'プラグ' },
-    CUTTER:             { badge: 'C', color: '#b71c1c', bg: '#ffebee', label: '抜型' },
+    DESIGN:             { badge: '📐', color: '#7c3aed', bg: '#f3e8ff', label: '設計' },
+    PROTOTYPE_MOLD:     { badge: '🧪', color: '#c2410c', bg: '#fff7ed', label: '試作金型' },
+    PROTOTYPE_PLUG:     { badge: '🧪', color: '#ea580c', bg: '#fff7ed', label: '試作プラグ' },
+    ALUMI:              { badge: 'A',  color: '#6d4c41', bg: '#efebe9', label: 'アルミ材' },
+    MOLD:               { badge: '🏭', color: '#1565c0', bg: '#e3f2fd', label: '本型・量産金型' },
+    PLUG:               { badge: 'P',  color: '#e65100', bg: '#fff3e0', label: 'プラグ' },
+    CUTTER:             { badge: 'C',  color: '#b71c1c', bg: '#ffebee', label: '抜型' },
     'WATER COOLING BASE': { badge: 'W', color: '#0277bd', bg: '#e1f5fe', label: '水冷盤' },
-    'PRESSIER BASE':    { badge: 'B', color: '#4527a0', bg: '#ede7f6', label: '圧空ベース' },
-    STAKING:            { badge: 'S', color: '#00695c', bg: '#e0f2f1', label: 'スタッキング' },
-    FRAME:              { badge: 'R', color: '#37474f', bg: '#eceff1', label: 'フレーム' },
-    MACHINE:            { badge: 'N', color: '#455a64', bg: '#eceff1', label: '機械など' },
-    OTHER:              { badge: 'O', color: '#616161', bg: '#f5f5f5', label: '成形・プレス・出荷など' },
-    'TEST MOLD':        { badge: 'T', color: '#1565c0', bg: '#e3f2fd', label: '試作金型' },
-    FINISH:             { badge: 'F', color: '#1b5e20', bg: '#e8f5e9', label: '仕上げ' },
+    'PRESSIER BASE':    { badge: 'B',  color: '#4527a0', bg: '#ede7f6', label: '圧空ベース' },
+    STAKING:            { badge: 'S',  color: '#00695c', bg: '#e0f2f1', label: 'スタッキング' },
+    FRAME:              { badge: 'R',  color: '#37474f', bg: '#eceff1', label: 'フレーム' },
+    MACHINE:            { badge: 'N',  color: '#455a64', bg: '#eceff1', label: '機械など' },
+    OTHER:              { badge: 'O',  color: '#616161', bg: '#f5f5f5', label: '成形・プレス・出荷など' },
+    'TEST MOLD':        { badge: '🧪', color: '#c2410c', bg: '#fff7ed', label: '試作金型' },
+    FINISH:             { badge: 'F',  color: '#1b5e20', bg: '#e8f5e9', label: '仕上げ' },
   }
 
   const trackMeta = isTrack
@@ -1249,7 +1252,9 @@ export default function MoldJobGantt({ workOrders = [], jobs, employees = [], ma
     }>()
 
     sortedJobs.forEach(job => {
-      const groupKey = (job as any).product_id || job.products?.product_id || (job as any).work_order_id || job.job_id
+      const rawProdCode = (job as any).products?.product_name_internal || (job as any).products?.product_code || job.job_code || ''
+      const baseProdCode = extractBaseMassCode(rawProdCode) || rawProdCode
+      const groupKey = baseProdCode.toUpperCase().trim() || (job as any).product_id || (job as any).work_order_id || job.job_id
       if (!productGroups.has(groupKey)) {
         productGroups.set(groupKey, {
           groupKey,
@@ -1268,7 +1273,7 @@ export default function MoldJobGantt({ workOrders = [], jobs, employees = [], ma
       }
     })
 
-    const TRACK_ORDER = ['DESIGN', 'TEST MOLD', 'ALUMI', 'MOLD', 'PLUG', 'CUTTER', 'WATER COOLING BASE', 'PRESSIER BASE', 'STAKING', 'FRAME', 'MACHINE', 'OTHER', 'FINISH']
+    const TRACK_ORDER = ['DESIGN', 'PROTOTYPE_MOLD', 'PROTOTYPE_PLUG', 'TEST MOLD', 'ALUMI', 'MOLD', 'PLUG', 'CUTTER', 'WATER COOLING BASE', 'PRESSIER BASE', 'STAKING', 'FRAME', 'MACHINE', 'OTHER', 'FINISH']
 
     // 2. Process all product groups uniformly with full 3-level breakdown (Product -> Tracks -> Steps -> Add Step row)
     productGroups.forEach(group => {
@@ -1276,21 +1281,33 @@ export default function MoldJobGantt({ workOrders = [], jobs, employees = [], ma
 
       // Tag all steps properly
       allSteps.forEach(s => {
-        const itemTypes = (s as any).item_types
-        if (itemTypes?.item_type_code) {
-          s.track = itemTypes.item_type_code
-        } else if (!s.track && s.step_name) {
-          const upperName = s.step_name.toUpperCase()
-          if (upperName.includes('PLUG') || upperName.includes('プラグ')) s.track = 'PLUG'
-          else if (upperName.includes('CUTTER') || upperName.includes('抜型')) s.track = 'CUTTER'
-          else if (upperName.includes('FINISH') || upperName.includes('仕上げ')) s.track = 'FINISH'
-          else if (upperName.includes('DESIGN') || upperName.includes('設計')) s.track = 'DESIGN'
-          else s.track = 'MOLD'
-        }
-        // If the step belongs to a DESIGN job, ensure its track is DESIGN
         const parentJob = groupJobs.find(j => j.job_id === s.job_id)
+        // Get the product code from the joined products table — this is the KEY field for prototype detection
+        // because legacy data uses product_name_internal like "PNS-012D" with -D suffix for prototypes
+        const prodNameInternal = (parentJob as any)?.products?.product_name_internal || (parentJob as any)?.products?.product_code || ''
+        const isProtoJobOrStep = isPrototypeDesignOrMold({
+          design_code: (parentJob as any)?.design_revisions?.design_code || prodNameInternal,
+          equipment_code: (parentJob as any)?.equipment?.equipment_code || parentJob?.job_code,
+          display_name: (parentJob as any)?.equipment?.display_name || parentJob?.job_name || s.step_name,
+          design_category: ((parentJob as any)?.design_revisions as any)?.design_category || parentJob?.job_category,
+          sub_type: ((parentJob as any)?.equipment as any)?.sub_type
+        }) || s.step_name?.includes('試作') || (prodNameInternal && extractBaseMassCode(prodNameInternal) !== prodNameInternal.trim().toUpperCase().replace(/[\s\-_]/g, ''))
+
         if (parentJob?.job_category === 'DESIGN' || parentJob?.job_code?.startsWith('DES-')) {
           s.track = 'DESIGN'
+        } else {
+          const upperName = (s.step_name || '').toUpperCase()
+          if (upperName.includes('PLUG') || upperName.includes('プラグ')) {
+            s.track = isProtoJobOrStep ? 'PROTOTYPE_PLUG' : 'PLUG'
+          } else if (upperName.includes('CUTTER') || upperName.includes('抜型')) {
+            s.track = 'CUTTER'
+          } else if (upperName.includes('FINISH') || upperName.includes('仕上げ')) {
+            s.track = 'FINISH'
+          } else if (upperName.includes('DESIGN') || upperName.includes('設計')) {
+            s.track = 'DESIGN'
+          } else {
+            s.track = isProtoJobOrStep ? 'PROTOTYPE_MOLD' : 'MOLD'
+          }
         }
       })
 
@@ -1312,6 +1329,37 @@ export default function MoldJobGantt({ workOrders = [], jobs, employees = [], ma
         if (!stepsByTrack.has(track)) stepsByTrack.set(track, [])
         stepsByTrack.get(track)!.push(step)
       })
+      // Inject synthetic DESIGN track if product has design_revisions but no DESIGN steps/jobs
+      // This handles legacy data where design info exists in design_revisions table but no separate DESIGN job was created
+      if (!stepsByTrack.has('DESIGN')) {
+        const hasDesignRevisions = groupJobs.some(j => (j as any).design_revisions?.design_code)
+        if (hasDesignRevisions) {
+          // Create a virtual step representing the design revision status
+          const designJob = groupJobs.find(j => (j as any).design_revisions?.design_code)
+          const designRev = (designJob as any)?.design_revisions
+          const designStatus = designRev?.status || 'PENDING_APPROVAL'
+          const designCode = designRev?.design_code || ''
+          const syntheticStep: JobStepRow = {
+            step_id: `synthetic-design-${primaryJob.job_id}`,
+            job_id: designJob?.job_id || primaryJob.job_id,
+            step_no: 0,
+            step_name: `${designCode} ${designStatus === 'APPROVED' ? '承認済' : designStatus === 'PENDING_APPROVAL' ? '承認待ち' : designStatus}`,
+            step_status: designStatus === 'APPROVED' ? 'COMPLETED' : 'PENDING',
+            track: 'DESIGN',
+            planned_start: (designJob as any)?.created_at || null,
+            planned_end: (designJob as any)?.mold_deadline || (designJob as any)?.deadline || null,
+            planned_hours: null,
+            actual_hours: null,
+            estimated_hours: null,
+            machine_id: null,
+            assigned_to: null,
+            machining_location: null,
+            deadline: (designJob as any)?.mold_deadline || (designJob as any)?.deadline || null,
+            notes: null,
+          }
+          stepsByTrack.set('DESIGN', [syntheticStep])
+        }
+      }
 
       let presentTracks = TRACK_ORDER.filter(t => stepsByTrack.has(t))
       stepsByTrack.forEach((_, k) => { if (!TRACK_ORDER.includes(k)) presentTracks.push(k) })
@@ -1319,7 +1367,8 @@ export default function MoldJobGantt({ workOrders = [], jobs, employees = [], ma
       if (trackFilter && trackFilter !== 'ALL') {
         presentTracks = presentTracks.filter(t => {
           if (trackFilter === 'DESIGN') return t === 'DESIGN' || t === 'TEST MOLD'
-          if (trackFilter === 'MOLD') return t === 'MOLD' || t === 'ALUMI' || t === 'FINISH'
+          if (trackFilter === 'MOLD') return t === 'MOLD' || t === 'PROTOTYPE_MOLD' || t === 'ALUMI' || t === 'FINISH'
+          if (trackFilter === 'PLUG') return t === 'PLUG' || t === 'PROTOTYPE_PLUG'
           return t === trackFilter
         })
       }
@@ -1376,7 +1425,8 @@ export default function MoldJobGantt({ workOrders = [], jobs, employees = [], ma
       if (cProjStart.getTime() === cProjEnd.getTime()) cProjEnd.setHours(cProjEnd.getHours() + 1)
 
       // Extract Product Code, Job Type, and WO Code from DB relations
-      const prodCode = (primaryJob as any).products?.product_name_internal || (primaryJob as any).products?.product_code || (primaryJob as any).mold_masters?.products?.product_name_internal || ''
+      const rawCode = (primaryJob as any).products?.product_name_internal || (primaryJob as any).products?.product_code || (primaryJob as any).mold_masters?.products?.product_name_internal || ''
+      const prodCode = extractBaseMassCode(rawCode) || rawCode
       const typeName = (primaryJob as any).job_types?.job_type_name_ja || ((primaryJob as any).job_name?.includes(':') ? (primaryJob as any).job_name.split(':')[0].trim() : '')
       const woCode = (primaryJob as any).work_orders?.wo_code
 

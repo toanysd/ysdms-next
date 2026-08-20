@@ -5,11 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useTranslations } from 'next-intl'
-import {
-  ArrowLeft, ArrowUpFromLine, Database, Package,
-  Building2, FileText, Wrench, Hammer,
-  Loader2, ExternalLink, Info, Trash2
-} from 'lucide-react'
+import { ArrowLeft, ArrowUpFromLine, Database, Package, Building2, FileText, Wrench, Hammer, Loader2, ExternalLink, Info, Trash2, Sparkles } from 'lucide-react'
 import { deleteProductAction } from '@/app/actions/engineering'
 
 import { TabOverview } from './_components/TabOverview'
@@ -17,6 +13,9 @@ import { TabOrders } from './_components/TabOrders'
 import { TabDesignsEquipment } from './_components/TabDesignsEquipment'
 import { TabJobs } from './_components/TabJobs'
 import { TabRelatedInfo } from './_components/TabRelatedInfo'
+import { TabApprovalLifecycle } from './_components/TabApprovalLifecycle'
+import { ProductKPIBar } from './_components/ProductKPIBar'
+import { EditProductModal } from './_components/EditProductModal'
 
 type ProductData = {
   product_id: string
@@ -28,6 +27,8 @@ type ProductData = {
   product_description: string | null
   first_shipment_date: string | null
   product_status: string
+  product_lifecycle_status?: string | null
+  requires_prototype_mold?: boolean | null
   pocket_count: number | null
   pieces_per_box: number | null
   company_id: string
@@ -38,9 +39,14 @@ type ProductData = {
     company_name: string
     company_code: string
   } | null
+  design_revisions?: Array<{
+    revision_id: string
+    design_code: string | null
+    status: string | null
+  }> | null
 }
 
-type TabType = 'overview' | 'orders' | 'designs_equipment' | 'jobs' | 'related'
+type TabType = 'overview' | 'orders' | 'designs_equipment' | 'jobs' | 'related' | 'approvals'
 
 export default function ProductDataCenterPage() {
   const tPC = useTranslations('ProductCenter')
@@ -59,6 +65,30 @@ export default function ProductDataCenterPage() {
   const [error, setError] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<TabType>('overview')
   const [isDeleting, setIsDeleting] = useState(false)
+  const [isEditProductModalOpen, setIsEditProductModalOpen] = useState(false)
+
+  const fetchProduct = async () => {
+    setLoading(true)
+    const { data, error: err } = await supabase
+      .from('products')
+      .select(`
+        product_id, product_code, product_name, product_name_internal, product_name_en,
+        customer_product_name, product_description, first_shipment_date, product_status,
+        product_lifecycle_status, requires_prototype_mold, pocket_count, pieces_per_box,
+        company_id, end_user_company_id, notes,
+        companies:companies!products_company_id_fkey(company_id, company_name, company_code),
+        design_revisions(revision_id, design_code, status)
+      `)
+      .eq('product_id', productId)
+      .single()
+
+    if (err || !data) {
+      setError(err?.message || 'Product not found')
+    } else {
+      setProduct((data as unknown) as ProductData)
+    }
+    setLoading(false)
+  }
 
   const handleDeleteProduct = async () => {
     if (!product) return
@@ -82,26 +112,6 @@ export default function ProductDataCenterPage() {
   }
 
   useEffect(() => {
-    const fetchProduct = async () => {
-      setLoading(true)
-      const { data, error: err } = await supabase
-        .from('products')
-        .select(`
-          product_id, product_code, product_name, product_name_internal, product_name_en,
-          customer_product_name, product_description, first_shipment_date, product_status, pocket_count, pieces_per_box,
-          company_id, end_user_company_id, notes,
-          companies:companies!products_company_id_fkey(company_id, company_name, company_code)
-        `)
-        .eq('product_id', productId)
-        .single()
-
-      if (err || !data) {
-        setError(err?.message || 'Product not found')
-      } else {
-        setProduct((data as unknown) as ProductData)
-      }
-      setLoading(false)
-    }
     if (productId) fetchProduct()
   }, [productId, supabase])
 
@@ -176,6 +186,24 @@ export default function ProductDataCenterPage() {
               {statusText}
             </span>
 
+            {product.product_lifecycle_status && (
+              <span style={{
+                fontSize: 9, fontWeight: 800, flexShrink: 0,
+                padding: '1px 6px', borderRadius: 4,
+                background: product.product_lifecycle_status === 'APPROVED' ? '#ECFDF5' :
+                            product.product_lifecycle_status === 'PROTOTYPE' ? '#FFFBEB' :
+                            product.product_lifecycle_status === 'MASS_PRODUCTION' ? '#F0FDFA' :
+                            product.product_lifecycle_status === 'DISCONTINUED' ? '#FEF2F2' : '#F1F5F9',
+                color: product.product_lifecycle_status === 'APPROVED' ? '#059669' :
+                       product.product_lifecycle_status === 'PROTOTYPE' ? '#D97706' :
+                       product.product_lifecycle_status === 'MASS_PRODUCTION' ? '#0D9488' :
+                       product.product_lifecycle_status === 'DISCONTINUED' ? '#DC2626' : '#64748B',
+                border: '1px solid currentColor'
+              }}>
+                ● {product.product_lifecycle_status}
+              </span>
+            )}
+
             <span style={{ fontSize: 14, color: 'var(--text-primary)', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {product.product_description || product.product_name_internal || product.product_name || '—'}
             </span>
@@ -197,10 +225,14 @@ export default function ProductDataCenterPage() {
             style={{ height: 26, padding: '0 10px', fontSize: 11, gap: 4, textDecoration: 'none' }}>
             <Hammer size={12} /><span>+ {tCommon('addNew')}</span>
           </Link>
-          <Link href={`/master/products/${product.product_id}`} className="btn btn-secondary cursor-pointer"
-            style={{ height: 26, padding: '0 8px', fontSize: 11, gap: 4, textDecoration: 'none' }}>
+          <button
+            type="button"
+            onClick={() => setIsEditProductModalOpen(true)}
+            className="btn btn-secondary cursor-pointer"
+            style={{ height: 26, padding: '0 8px', fontSize: 11, gap: 4 }}
+          >
             <ExternalLink size={12} /><span>{tCommon('edit')}</span>
-          </Link>
+          </button>
           <button
             type="button"
             onClick={handleDeleteProduct}
@@ -225,7 +257,18 @@ export default function ProductDataCenterPage() {
         </div>
       </div>
 
-      {/* 5 Main Application Tabs */}
+      {/* Edit Product Modal */}
+      <EditProductModal
+        isOpen={isEditProductModalOpen}
+        product={product}
+        onClose={() => setIsEditProductModalOpen(false)}
+        onSuccess={() => fetchProduct()}
+      />
+
+      {/* Quick 360° KPI Summary Bar */}
+      <ProductKPIBar productId={productId} />
+
+      {/* 6 Main Application Tabs */}
       <div style={{
         flexShrink: 0,
         borderBottom: '1px solid var(--border-default)',
@@ -293,6 +336,21 @@ export default function ProductDataCenterPage() {
         </button>
 
         <button
+          onClick={() => setActiveTab('approvals')}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 6,
+            padding: '8px 14px', border: 'none', cursor: 'pointer',
+            background: 'none', fontSize: 12, whiteSpace: 'nowrap',
+            color: activeTab === 'approvals' ? 'var(--accent)' : 'var(--text-secondary)',
+            fontWeight: activeTab === 'approvals' ? 700 : 500,
+            borderBottom: `2px solid ${activeTab === 'approvals' ? 'var(--accent)' : 'transparent'}`,
+          }}
+        >
+          <Sparkles size={13} style={{ color: activeTab === 'approvals' ? 'var(--accent)' : 'var(--text-muted)' }} />
+          <span>{tPC('tabApprovalLifecycleLabel')}</span>
+        </button>
+
+        <button
           onClick={() => setActiveTab('related')}
           style={{
             display: 'flex', alignItems: 'center', gap: 6,
@@ -334,6 +392,15 @@ export default function ProductDataCenterPage() {
         )}
         {activeTab === 'jobs' && (
           <TabJobs productId={product.product_id} />
+        )}
+        {activeTab === 'approvals' && (
+          <TabApprovalLifecycle
+            productId={product.product_id}
+            productLifecycleStatus={product.product_lifecycle_status}
+            requiresPrototypeMold={product.requires_prototype_mold}
+            designRevisions={product.design_revisions || []}
+            onProductUpdated={() => fetchProduct()}
+          />
         )}
         {activeTab === 'related' && (
           <TabRelatedInfo

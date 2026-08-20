@@ -16,6 +16,8 @@ import { EquipmentContextMenu, EquipmentItemContext } from './EquipmentContextMe
 import { CenteredQuickJobWizardModal, QuickWizardMode } from './CenteredQuickJobWizardModal'
 import { EquipmentJobDrawer } from './EquipmentJobDrawer'
 import { CreateDesignRevisionModal } from './CreateDesignRevisionModal'
+import { EditDesignRevisionModal, EditDesignRevisionData } from '@/components/engineering/EditDesignRevisionModal'
+import { EditEquipmentModal, EquipmentEditData } from '@/app/equipment/_components/detail-modal/EditEquipmentModal'
 
 interface TabDesignsEquipmentProps {
   productId: string
@@ -129,6 +131,10 @@ export function TabDesignsEquipment({ productId }: TabDesignsEquipmentProps) {
   // SIDE-OVER DRAWER STATE
   const [drawerEquipment, setDrawerEquipment] = useState<EquipmentItem | null>(null)
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
+
+  // Edit Modal States
+  const [editingRevision, setEditingRevision] = useState<EditDesignRevisionData | null>(null)
+  const [editingEquipment, setEditingEquipment] = useState<EquipmentEditData | null>(null)
 
   // 1. Load Design Revisions for product
   const loadRevisions = async () => {
@@ -596,12 +602,23 @@ export function TabDesignsEquipment({ productId }: TabDesignsEquipmentProps) {
                   <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 4 }}>
                     <PenTool size={12} style={{ color: 'var(--accent)' }} /> {t('revisionTechSpecs')} ({selectedRev.design_code || `Rev.${selectedRev.revision_number}`})
                   </span>
-                  <Link
-                    href={`/engineering/designs/revisions/${selectedRev.revision_id}`}
-                    style={{ fontSize: 10, color: 'var(--accent)', textDecoration: 'none', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 2 }}
-                  >
-                    {t('viewDesignDetails')} <ExternalLink size={10} />
-                  </Link>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <button
+                      type="button"
+                      onClick={() => setEditingRevision(selectedRev as EditDesignRevisionData)}
+                      className="btn btn-secondary cursor-pointer"
+                      style={{ fontSize: 10, padding: '2px 6px', height: 20, gap: 2, display: 'inline-flex', alignItems: 'center' }}
+                      title="図面情報を編集 (Sửa thiết kế)"
+                    >
+                      <span>図面編集 (Sửa)</span>
+                    </button>
+                    <Link
+                      href={`/engineering/designs/revisions/${selectedRev.revision_id}`}
+                      style={{ fontSize: 10, color: 'var(--accent)', textDecoration: 'none', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 2 }}
+                    >
+                      {t('viewDesignDetails')} <ExternalLink size={10} />
+                    </Link>
+                  </div>
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '6px 12px', fontSize: 11 }}>
@@ -1023,6 +1040,28 @@ export function TabDesignsEquipment({ productId }: TabDesignsEquipmentProps) {
           setIsCreateDesignModalOpen(false)
           loadRevisions()
           setSelectedRevId(newRevId)
+        }}
+      />
+
+      {/* Edit Design Revision Modal */}
+      <EditDesignRevisionModal
+        isOpen={!!editingRevision}
+        revision={editingRevision}
+        onClose={() => setEditingRevision(null)}
+        onSuccess={() => {
+          loadRevisions()
+          router.refresh()
+        }}
+      />
+
+      {/* Edit Equipment Specs Modal */}
+      <EditEquipmentModal
+        isOpen={!!editingEquipment}
+        equipment={editingEquipment}
+        onClose={() => setEditingEquipment(null)}
+        onSuccess={() => {
+          fetchEquipmentSet()
+          router.refresh()
         }}
       />
 

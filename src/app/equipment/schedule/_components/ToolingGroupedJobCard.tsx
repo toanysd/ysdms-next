@@ -4,6 +4,7 @@ import React, { useState } from 'react'
 import type { JobForGantt, JobStepRow } from '@/app/actions/mold-job'
 import { format } from 'date-fns'
 import { ChevronDown, ChevronRight } from 'lucide-react'
+import { isPrototypeDesignOrMold } from '@/lib/utils/moldNaming'
 
 interface ToolingGroupedJobCardProps {
     job: JobForGantt
@@ -243,6 +244,14 @@ export default function ToolingGroupedJobCard({
     const overallUrgency = resolveJobOverallUrgency(job, steps)
     const productCode = job.products?.product_code || job.job_code || 'JOB'
 
+    const isProto = isPrototypeDesignOrMold({
+        design_code: job.design_revisions?.design_code,
+        equipment_code: job.equipment?.equipment_code || job.job_code,
+        display_name: job.equipment?.display_name || job.job_name,
+        design_category: (job.design_revisions as any)?.design_category || job.job_category,
+        sub_type: (job.equipment as any)?.sub_type || (job.equipment as any)?.equipment_type
+    })
+
     return (
         <div 
             className={`rounded-lg border transition-all shadow-xs hover:shadow-md bg-white overflow-hidden mb-1.5 border-[var(--border-default)] ${overallUrgency.cardBorderLeft} ${
@@ -254,7 +263,7 @@ export default function ToolingGroupedJobCard({
                 onClick={() => onOpenJob && onOpenJob(job)}
                 className={`p-2 cursor-pointer hover:brightness-95 transition-all flex flex-col gap-1 border-b ${overallUrgency.headerBg} ${overallUrgency.headerBorder}`}
             >
-                {/* Row 1: Code + Items count badge + Expand toggle (Left) & Overall Target Completion (Right) */}
+                {/* Row 1: Code + Prototype/Mass Badge + Items count badge + Expand toggle (Left) & Overall Target Completion (Right) */}
                 <div className="flex justify-between items-center gap-1">
                     <div className="flex items-center gap-1 min-w-0">
                         <button
@@ -268,6 +277,18 @@ export default function ToolingGroupedJobCard({
                         <span className="font-bold text-[13px] font-mono text-[var(--accent)] tracking-tight truncate">
                             {productCode}
                         </span>
+
+                        {/* Prototype vs Mass Production Badge */}
+                        {isProto ? (
+                            <span className="px-1.5 py-0.2 rounded text-[9px] font-extrabold bg-[#FFF7ED] text-[#C2410C] border border-[#FB923C] shadow-2xs shrink-0 flex items-center gap-0.5" title="試作金型・試作ポケット">
+                                🧪 試作
+                            </span>
+                        ) : (
+                            <span className="px-1.5 py-0.2 rounded text-[9px] font-extrabold bg-[#F0FDF4] text-[#15803D] border border-[#86EFAC] shadow-2xs shrink-0 flex items-center gap-0.5" title="量産金型・本型">
+                                🏭 量産
+                            </span>
+                        )}
+
                         {steps.length > 0 && (
                             <span 
                                 onClick={handleToggle}

@@ -1483,6 +1483,60 @@ export type Database = {
           },
         ]
       }
+      design_approval_logs: {
+        Row: {
+          approval_round: number
+          approval_stage: string
+          approved_date: string | null
+          approver_id: string | null
+          created_at: string
+          customer_feedback: string | null
+          design_revision_id: string
+          log_id: string
+          notes: string | null
+          status: string
+        }
+        Insert: {
+          approval_round?: number
+          approval_stage: string
+          approved_date?: string | null
+          approver_id?: string | null
+          created_at?: string
+          customer_feedback?: string | null
+          design_revision_id: string
+          log_id?: string
+          notes?: string | null
+          status: string
+        }
+        Update: {
+          approval_round?: number
+          approval_stage?: string
+          approved_date?: string | null
+          approver_id?: string | null
+          created_at?: string
+          customer_feedback?: string | null
+          design_revision_id?: string
+          log_id?: string
+          notes?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "design_approval_logs_approver_id_fkey"
+            columns: ["approver_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["employee_id"]
+          },
+          {
+            foreignKeyName: "design_approval_logs_design_revision_id_fkey"
+            columns: ["design_revision_id"]
+            isOneToOne: false
+            referencedRelation: "design_revisions"
+            referencedColumns: ["revision_id"]
+          },
+        ]
+      }
       destinations: {
         Row: {
           destination_id: string
@@ -6082,6 +6136,7 @@ export type Database = {
           product_name_internal: string | null
           product_set_type: string | null
           product_status: string | null
+          product_lifecycle_status: string | null
           requires_prototype_mold: boolean | null
           set_component_names: Json | null
           stacking_height_mm: number | null
@@ -6115,6 +6170,7 @@ export type Database = {
           product_name_internal?: string | null
           product_set_type?: string | null
           product_status?: string | null
+          product_lifecycle_status?: string | null
           requires_prototype_mold?: boolean | null
           set_component_names?: Json | null
           stacking_height_mm?: number | null
@@ -6148,6 +6204,7 @@ export type Database = {
           product_name_internal?: string | null
           product_set_type?: string | null
           product_status?: string | null
+          product_lifecycle_status?: string | null
           requires_prototype_mold?: boolean | null
           set_component_names?: Json | null
           stacking_height_mm?: number | null
@@ -6170,6 +6227,63 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "companies"
             referencedColumns: ["company_id"]
+          },
+        ]
+      }
+      product_lifecycle_logs: {
+        Row: {
+          changed_by: string | null
+          created_at: string
+          from_status: string | null
+          log_id: string
+          metadata: Json | null
+          product_id: string
+          reason: string | null
+          reference_id: string | null
+          reference_table: string | null
+          to_status: string
+          trigger_event: string
+        }
+        Insert: {
+          changed_by?: string | null
+          created_at?: string
+          from_status?: string | null
+          log_id?: string
+          metadata?: Json | null
+          product_id: string
+          reason?: string | null
+          reference_id?: string | null
+          reference_table?: string | null
+          to_status: string
+          trigger_event: string
+        }
+        Update: {
+          changed_by?: string | null
+          created_at?: string
+          from_status?: string | null
+          log_id?: string
+          metadata?: Json | null
+          product_id?: string
+          reason?: string | null
+          reference_id?: string | null
+          reference_table?: string | null
+          to_status?: string
+          trigger_event?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_lifecycle_logs_changed_by_fkey"
+            columns: ["changed_by"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["employee_id"]
+          },
+          {
+            foreignKeyName: "product_lifecycle_logs_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["product_id"]
           },
         ]
       }
@@ -6381,6 +6495,60 @@ export type Database = {
           rack_name?: string | null
         }
         Relationships: []
+      }
+      sample_requests: {
+        Row: {
+          created_at: string
+          design_revision_id: string | null
+          ng_reason: string | null
+          notes: string | null
+          product_id: string
+          request_id: string
+          requested_qty: number
+          result_status: string
+          sample_type: string
+          target_date: string | null
+        }
+        Insert: {
+          created_at?: string
+          design_revision_id?: string | null
+          ng_reason?: string | null
+          notes?: string | null
+          product_id: string
+          request_id?: string
+          requested_qty?: number
+          result_status?: string
+          sample_type: string
+          target_date?: string | null
+        }
+        Update: {
+          created_at?: string
+          design_revision_id?: string | null
+          ng_reason?: string | null
+          notes?: string | null
+          product_id?: string
+          request_id?: string
+          requested_qty?: number
+          result_status?: string
+          sample_type?: string
+          target_date?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sample_requests_design_revision_id_fkey"
+            columns: ["design_revision_id"]
+            isOneToOne: false
+            referencedRelation: "design_revisions"
+            referencedColumns: ["revision_id"]
+          },
+          {
+            foreignKeyName: "sample_requests_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["product_id"]
+          },
+        ]
       }
       sample_submissions: {
         Row: {

@@ -1,72 +1,83 @@
 # YSDMS NextGen — Database Schema Reference
 > **AI AGENT: Đọc file này TRƯỚC KHI viết bất kỳ Supabase query nào.**
 > Đây là nguồn duy nhất (single source of truth) về cấu trúc DB.
-> **Cập nhật lần cuối: 2026-08-10** — Phase C Schema Cleanup: DROP `products.primary_plastic_code/primary_plastic_spec` (SSOT = `design_revisions.plastic_type_designed`). DROP `design_revisions.version_note` (consolidated → `change_summary`). ADD `mold_design_cutters.equipment_id` FK → `equipment(equipment_id)`.
+> **Cập nhật lần cuối: 2026-08-20** — Phase R1-B0: Đồng bộ Schema Sự Thật (Schema Truth Alignment). Khẳng định kiến trúc SSOT: `products` (Sản phẩm), `design_revisions` (Bản vẽ CAD), `equipment` + `equipment_assignments` (Thiết bị hợp nhất & SET), `work_orders` $\rightarrow$ `jobs` $\rightarrow$ `job_steps` $\rightarrow$ `work_logs` (Luồng sản xuất 4 tầng).
 
 ---
 
 ## ⚠️ Lưu ý Quan trọng
 
-1. Migration `067_schema_v2_to_v3.sql` đã **DROP và tái tạo** nhiều bảng.
+1. Migration `067_schema_v2_to_v3.sql` và các migration tháng 7-8/2026 đã **DROP và tái tạo** nhiều bảng (loại bỏ `mold_masters`, `mold_revisions`, `company_pn`).
 2. Thư mục `migrations/archived/` chứa file cũ **KHÔNG CÒN HIỆU LỰC** — KHÔNG ĐỌC.
 3. Nguồn xác minh duy nhất: `src/types/database.types.ts` (tự sinh từ Supabase).
 4. **KHÔNG tự sáng tạo cột** — nếu không thấy cột trong file này, cột đó KHÔNG TỒN TẠI.
-5. **Bảng User là `employees`**: Bảng chứa thông tin user trong project này là `employees` (KHÔNG phải `profiles` hay `users`). Bắt buộc dùng `REFERENCES employees(employee_id)` ở tất cả các migration tương lai.
+5. **Bảng User là `employees`**: Bảng chứa thông tin nhân sự/user trong project này là `employees` (KHÔNG phải `profiles` hay `users`). Bắt buộc dùng `REFERENCES employees(employee_id)` ở tất cả các migration.
 
 ## ⚠️ CONVENTION CẢNH BÁO: Tên Primary Key
 
-DB này KHÔNG dùng `id` làm PK. Quy tắc: PK = `{tên_bảng_số_ít}_id`
+DB này KHÔNG dùng `id` làm PK chung. Quy tắc: PK = `{tên_bảng_số_ít}_id` (trừ một số ngoại lệ lịch sử):
 
-| Bảng | Primary Key |
-|---|---|
-| `order_lines` | `line_id` |  ← ngoại lệ, KHÔNG phải order_line_id
-| `employees` | `employee_id` |
-| `physical_molds` | `physical_mold_id` |
-| `orders` | `order_id` |
-| `products` | `product_id` |
-
-Khi viết FK mới: LUÔN kiểm tra bằng câu query:
-```sql
-SELECT column_name FROM information_schema.columns
-WHERE table_name = '{tên_bảng}' AND ordinal_position = 1;
-```
+| Bảng | Primary Key | Ghi chú |
+|---|---|---|
+| `products` | `product_id` | UUID |
+| `design_revisions` | `revision_id` | UUID |
+| `equipment` | `equipment_id` | UUID |
+| `equipment_assignments`| `assignment_id` | UUID |
+| `work_orders` | `wo_id` | UUID |
+| `jobs` | `job_id` | UUID |
+| `job_steps` | `step_id` | UUID |
+| `work_logs` | `log_id` | UUID |
+| `orders` | `order_id` | UUID |
+| `order_lines` | `line_id` | UUID (ngoại lệ, KHÔNG phải order_line_id) |
+| `employees` | `employee_id` | UUID |
+| `companies` | `company_id` | UUID |
 
 ---
 
-## 📐 Sơ đồ Quan hệ Chính
+## 📐 Sơ đồ Quan hệ Kiến trúc Chính (SSOT 2026-08-20)
 
 ```
 companies ──┬── company_contacts (1:N)
             ├── delivery_sites (1:N)
-            ├── orders (company_id FK) ──┬── order_lines (order_id FK) → products
+            ├── orders (company_id FK) ──┬── order_lines (order_id FK) ──→ products
             │                            └── shipments (order_id FK)
             └── products (company_id FK, NOT NULL)
-                    └── mold_masters (via products.mold_master_id FK)
-
-mold_masters ── mold_revisions ──┬── design_revisions (via design_revision_id FK)
-                                 └── physical_molds (via mold_revision_id FK)
-
-cutter_masters ── cutters (cutter_master_id FK)
-
-equipment ──┬── equipment_history (equipment_id FK)
-            └── equipment_assignments (primary/related equipment_id FK, N:N)
-
-jobs ──── equipment (equipment_id FK, optional)
-     ──── business_cases (case_id FK, optional)
+                    │
+                    ▼ (1:N)
+            design_revisions (product_id FK)
+                    │
+                    ▼ (1:N)
+            equipment (design_revision_id FK) ──┬── equipment_history (equipment_id FK)
+                    ▲                           ├── equipment_photos (equipment_id FK)
+                    │                           └── equipment_assignments (N:N SET & Shared)
+                    │
+            work_orders (product_id, design_revision_id, order_id FK)
+                    │
+                    ▼ (1:N)
+            jobs (equipment_id FK 1:1, work_order_id FK)
+                    │
+                    ▼ (1:N)
+            job_steps (job_id FK) ──┬── [M] 金型 (Mold)
+                    │               ├── [P] プラグ (Plug)
+                    │               ├── [C] 抜型 (Cutter)
+                    │               ├── [W] 水冷盤 (Water Base)
+                    │               └── [S] スタッキング (Stacking)
+                    ▼ (1:N)
+            work_logs (job_id FK, job_step_id FK, employee_id FK)
 ```
 
 ---
 
-## 🔑 Bảng `companies` — Khách hàng / Đối tác
+## 🔑 Bảng `companies` — Khách hàng / Đối tác / Nhà gia công
 
 ```
 PK:  company_id        UUID
-     company_code      TEXT UNIQUE
-     company_name      TEXT
+     company_code      TEXT UNIQUE NOT NULL
+     company_name      TEXT NOT NULL
      company_name_romaji TEXT
      company_type      TEXT[]         ← ['CUSTOMER', 'SUPPLIER', 'OUTSOURCE', 'MANUFACTURER', 'DELIVERY_LOCATION']
      parent_company_id UUID → companies(company_id)
-     is_active         BOOLEAN
+     is_active         BOOLEAN DEFAULT true
      tel               TEXT
      fax               TEXT
      address           TEXT
@@ -77,7 +88,7 @@ PK:  company_id        UUID
 
 ---
 
-## 🔑 Bảng `company_contacts` — Người liên hệ
+## 🔑 Bảng `company_contacts` — Người liên hệ khách hàng
 
 ```
 PK:  contact_id     UUID
@@ -86,7 +97,7 @@ FK:  company_id     UUID → companies(company_id) NOT NULL
      contact_role   TEXT           ← Chức vụ
      contact_tel    TEXT
      contact_email  TEXT
-     is_primary     BOOLEAN        ← Liên hệ chính?
+     is_primary     BOOLEAN DEFAULT false
 ```
 
 ---
@@ -104,252 +115,307 @@ FK:  company_id     UUID → companies(company_id) NOT NULL
      contact_person TEXT
      contact_email  TEXT
      delivery_notes TEXT
-     is_active      BOOLEAN
+     is_active      BOOLEAN DEFAULT true
 ```
 
 ---
 
-## 🔑 Bảng `products` — Sản phẩm / Khay (= MoldMaster)
+## 🔑 Bảng `products` — Sản phẩm / Khay (Single Source of Truth)
 
-> **Tray = MoldMaster = Products** — là MỘT thực thể. Bảng `mold_masters` đã DEPRECATED.
+> **Tray = Products** — Thực thể trung tâm quản lý mã sản phẩm, khách hàng, quy cách và vòng đời.
 
 ```
 PK:  product_id          UUID
 FK:  company_id          UUID → companies(company_id) NOT NULL  ← BẮT BUỘC
-FK:  mold_master_id      UUID → mold_masters(mold_master_id)   ← DEPRECATED, giữ tạm
-     product_code        TEXT UNIQUE   ← Mã nội bộ YSD (compact, bỏ gạch ngang: ADY071)
-     product_name        TEXT          ← Tên SP chính thức từ KH (NULL nếu chưa có chứng từ, dùng xuất hóa đơn)
-     product_name_en     TEXT          ← Tên SP tiếng Anh
-     product_name_internal TEXT        ← Tên nội bộ YSD (hiển thị có gạch ngang: ADY-071)
-     customer_product_name TEXT        ← Tên hoặc mã part khách hàng gọi (VD: PART-8802-A)
-     product_description TEXT          ← Mô tả SP cho KD/SX / Tên ban đầu (nguồn: 品名 trên 工程票). Luôn có dữ liệu.
-     company_pn          TEXT          ← ⚠️ DEPRECATED — Phase 2 sẽ xóa/rename
-     product_status      TEXT          ← (KHÔNG phải 'status')
-     pocket_count        INTEGER
-     pieces_per_box      INTEGER
-     box_spec            TEXT
-     notes               TEXT          ← Ghi chú tự do (KHÔNG dùng cho mô tả SP)
-     first_shipment_date DATE          ← 初回出荷日 (denormalized từ jobs.ship_date). Added 2026-08-03
-     date_entry          DATE
-     legacy_id           TEXT
-     legacy_specs        JSONB
-     requires_prototype_mold BOOLEAN DEFAULT false  ← 試作ポケット: Cần khuôn thử nghiệm?
-```
-
-> [!CAUTION]
-> - `product_code` = **mã nội bộ YSD compact** (ADY071, bỏ gạch ngang). KHÔNG phải tên sản phẩm.
-> - `product_name_internal` = **tên nội bộ YSD hiển thị** (ADY-071, giữ gạch ngang)
-> - `product_description` = **mô tả sản phẩm / tên làm việc** do KD nhập (luôn có ngay từ đầu).
-> - `product_name` = **tên chính thức từ khách hàng trên hóa đơn/hợp đồng** (ban đầu có thể NULL).
-> - `customer_product_name` = **mã part hoặc tên sản phẩm phía khách hàng gọi**.
-> - `company_pn` = **DEPRECATED** — không dùng trong code mới
-> - `company_id` là **NOT NULL** — bắt buộc có khách hàng
-> - **KHÔNG CÓ**: `material_id`, `thickness_mm`, `sact_qr_code`, `derived_from_product_id`
-
----
-
-## ⛔ Bảng `mold_masters` — DEPRECATED
-
-> **KHÔNG SỬ DỤNG** bảng này trong code mới.  
-> Tray = MoldMaster = Products. Mọi thông tin khuôn master đã gộp vào `products`.  
-> Bảng giữ lại cho backward compat với UI hiện tại (32 files). Sẽ refactor trong Phase 2.
-> 
-> ❌ KHÔNG: `supabase.from('mold_masters')`  
-> ✅ ĐÚNG: `supabase.from('products')`
-
----
-
-## 🔑 Bảng `orders` — Đơn hàng
-
-```
-PK:  order_id           UUID
-FK:  company_id         UUID → companies(company_id)   ← ĐÚNG, KHÔNG phải customer_id
-     order_no           TEXT UNIQUE
-     order_date         DATE
-     requested_delivery DATE
-     order_status       TEXT  ('NEW' | 'CONFIRMED' | 'IN_PRODUCTION' | 'SHIPPED' | 'CANCELLED')
-     order_type         TEXT
-     customer_order_no  TEXT    ← Số PO / 要求No. phía khách hàng (VD: IP0000153229)
-     lot_no             TEXT    ← 伝票/LOT No. — Mã phiếu xuất hàng
-     notes              TEXT
-```
-
-> [!CAUTION]
-> `orders` **KHÔNG CÓ** cột `customer_id`. FK duy nhất là `company_id → companies`.
-
----
-
-## 🔑 Bảng `order_lines` — Chi tiết đơn hàng
-
-```
-PK:  line_id          UUID
-FK:  order_id         UUID → orders(order_id) ON DELETE CASCADE
-FK:  product_id       UUID → products(product_id)
-FK:  design_revision_id UUID → design_revisions(revision_id) ← NULLABLE, chỉ định khi cần
-FK:  delivery_site_id UUID → delivery_sites(site_id)
-     line_no          INTEGER
-     quantity         INTEGER
-     unit             TEXT  (default 'PCS')
-     due_date         DATE       ← Ngày nhận hàng (dòng 2 trong ô 納期)
-     ship_date        DATE       ← 出荷日 — Ngày xuất hàng (dòng 1 trong ô 納期)
-     is_free_sample   BOOLEAN    ← Miễn phí? (無償)
-     charge_type      TEXT       ← Loại phí (FREE/PAID/OFFICE_SAMPLE)
-     packing_style    TEXT       ← 荷姿 — Quy cách đóng gói
-     shipping_notes   TEXT       ← Ghi chú đóng gói đặc biệt
-     line_status      TEXT
+     product_code        TEXT UNIQUE NOT NULL  ← Mã nội bộ YSD compact (bỏ gạch ngang: ADY071, TOW004)
+     product_name_internal TEXT               ← Tên hiển thị nội bộ YSD (có gạch ngang: ADY-071, TOW-004)
+     product_name        TEXT                  ← Tên SP chính thức từ KH trên hợp đồng/hóa đơn (ban đầu có thể NULL)
+     product_name_en     TEXT                  ← Tên SP tiếng Anh
+     customer_product_name TEXT                ← Mã part hoặc tên sản phẩm phía KH gọi (VD: PART-8802-A)
+     product_description TEXT                  ← Mô tả SP / Tên làm việc do KD nhập từ đầu (品名 trên 工程票)
+     product_status      TEXT                  ← Trạng thái nghiệp vụ: 'ACTIVE' | 'MAINTENANCE' | 'DISPOSED' | 'MERGED'
+     product_lifecycle_status TEXT             ← Vòng đời SP: 'DRAFT' | 'DESIGN' | 'PROTOTYPE' | 'APPROVED' | 'MASS_PRODUCTION' | 'DISCONTINUED'
+     requires_prototype_mold BOOLEAN DEFAULT false ← 試作ポケット: Cần làm khuôn thử nghiệm?
+     first_shipment_date DATE                  ← 初回出荷日 (Ngày xuất hàng đầu tiên)
+     pocket_count        INTEGER               ← Số pocket trên 1 khay (Pockets per tray)
+     pieces_per_box      INTEGER               ← Số khay đóng trong 1 thùng
+     box_spec            TEXT                  ← Quy cách thùng
+     notes               TEXT                  ← Ghi chú tự do
+     legacy_id           TEXT                  ← Mã đối soát hệ thống Access cũ
+     legacy_specs        JSONB                 ← Thông số thô Access
 ```
 
 > [!IMPORTANT]
-> `design_revision_id` **NULLABLE** — Mặc định NULL = tự lấy revision mới nhất từ product.
-> Chỉ chỉ định khi có nhiều revision cùng active (VD: 2 phiên bản cho 2 loại nhựa khác nhau).
-
-> [!CAUTION]
-> Bảng `order_lines` có Primary Key là `line_id` (KHÔNG PHẢI `order_line_id`). Bắt buộc dùng `REFERENCES order_lines(line_id)` khi thiết lập khóa ngoại từ các bảng khác.
+> - `product_code` = **Mã nội bộ YSD compact** (bỏ gạch ngang, VD: `ADY071`).
+> - `product_name_internal` = **Tên hiển thị nội bộ YSD** (có gạch ngang, VD: `ADY-071`).
+> - `customer_product_name` = **Mã part/tên khách hàng gọi** (thay thế hoàn toàn `company_pn`).
+> - `product_description` = **Tên làm việc / mô tả sơ bộ** do KD nhập từ đầu.
+> - `company_pn`, `mold_masters` = **DEPRECATED / DROPPED** — Không sử dụng trong code mới.
 
 ---
 
-## 🔑 Bảng `shipments` — Giao hàng
+## 🔑 Bảng `design_revisions` — Bản Vẽ Kỹ Thuật CAD & Thông Số Thiết Kế
 
 ```
-PK:  shipment_id      UUID
-FK:  order_id         UUID → orders(order_id)
+PK:  revision_id       UUID
+FK:  product_id        UUID → products(product_id) NOT NULL
+FK:  company_id        UUID → companies(company_id)
+FK:  designer_id       UUID → employees(employee_id)
+FK:  plastic_id        UUID → plastic_master(plastic_id)
+FK:  cav_type_id       UUID → cav_types(cav_type_id)
+FK:  shared_plug_from_design_id UUID → design_revisions(revision_id)
+     design_code       TEXT          ← Mã bản vẽ (VD: 'MMT-021 R1', 'TOW-004 R2')
+     design_category   TEXT          ← 'MASS_PRODUCTION' | 'PROTOTYPE_POCKET'
+     plastic_type_designed TEXT      ← SSOT Nhựa thiết kế (VD: 'PET 透明 1.0t [640] 帯電防止付')
+     cutline_length    NUMERIC       ← SSOT Chiều dài đường cắt (mm)
+     cutline_width     NUMERIC       ← SSOT Chiều rộng đường cắt (mm)
+     cavity_count      INTEGER       ← 取数: Số khay dập trên 1 chu kỳ khuôn (Pieces per mold cycle)
+     cavity_pitch_mm   NUMERIC       ← Bước khuôn giữa các cavity (mm)
+     machine_feed_pitch_mm NUMERIC   ← Bước tiến nhựa máy định hình (送り mm)
+     tolerance_pitch   TEXT          ← Dung sai bước
+     corner_r          TEXT          ← Bo góc R (VD: 'R1.5')
+     chamfer_c         TEXT          ← Vát cạnh C (VD: 'C1.0')
+     draft_angle       TEXT          ← Góc thoát khuôn (Góc rút)
+     plug_type         TEXT          ← Loại chày ép: 'NONE' | 'OWNED' | 'SHARED'
+     has_separate_cutter BOOLEAN     ← Có dao dập rời (別抜き) không?
+     customer_tray_name TEXT         ← Tên khay phía khách hàng
+     customer_drawing_no TEXT        ← Số bản vẽ của khách hàng
+     customer_equipment_no TEXT      ← Số hiệu thiết bị khách hàng gán
+     designer          TEXT          ← Tên người thiết kế (text)
+     design_date       DATE          ← Ngày hoàn thành thiết kế
+     approved_date     DATE          ← Ngày duyệt thiết kế
+     status            TEXT          ← 'DRAFT' | 'APPROVED' | 'REVISED' | 'DISCONTINUED'
+     change_summary    TEXT          ← Tóm tắt điểm thay đổi so với phiên bản trước
+     cad_folder_path   TEXT          ← Thư mục CAD / DXF
+     drawing_pdf_path  TEXT          ← Đường dẫn file PDF bản vẽ
+     step_3d_path      TEXT          ← Đường dẫn file 3D STEP
+```
+
+---
+
+## 🔑 Bảng `equipment` — Thiết Bị Sản Xuất Thống Nhất (Single Source of Truth)
+
+> ✅ **Kiến trúc Unified Equipment (ADR-001)**: Bảng `equipment` quản lý TOÀN BỘ thiết bị sản xuất
+> (Khuôn, Dao cắt, Đế làm mát, Đế khí nén, Khung, Stacking, Plug) trên cùng một bảng chuẩn hóa.
+> Thay thế hoàn toàn `physical_molds` và `cutters`.
+
+```
+PK:  equipment_id          UUID
+     equipment_code        TEXT UNIQUE NOT NULL    ← Mã hệ thống duy nhất (VD: M-TOW004R1, C-TOW004-R1, WB-ZD-01, 1042)
+     display_name          TEXT NOT NULL           ← Tên hiển thị (VD: TOW-004 R1, 1042)
+     equipment_type        TEXT NOT NULL           ← 'MOLD' | 'CUTTER_INLINE' | 'CUTTER_SEPARATE' | 'WATER_BASE' | 'PRESSURE_BASE' | 'FRAME' | 'STACKING' | 'PLUG'
+     sub_type              TEXT                    ← 'PROTOTYPE_POCKET' | 'MASS_PRODUCTION' | ...
+     physical_stamp        TEXT                    ← Ký hiệu đóng dấu trên thiết bị
+     dimensions            TEXT                    ← Kích thước tổng quát (dài x rộng x cao)
+     actual_length_mm      TEXT                    ← Chiều dài thực tế
+     actual_width_mm       TEXT                    ← Chiều rộng thực tế
+     actual_height_mm      TEXT                    ← Chiều cao thực tế
+     actual_weight         TEXT                    ← Trọng lượng thực tế
+     material_spec         TEXT                    ← Vật liệu (A5052, SKD11, SS400, ベニヤ木板...)
+     piece_count           INTEGER                 ← Số mảnh cấu thành
+     copy_number           INTEGER                 ← Số bản sao (bản 1, bản 2...)
+FK:  company_id            UUID → companies(company_id)        ← Khách hàng sở hữu
+FK:  keeper_company_id     UUID → companies(company_id)        ← Nơi đang bảo quản
+FK:  design_revision_id    UUID → design_revisions(revision_id)← Bản vẽ thiết kế tương ứng
+FK:  cav_type_id           UUID → cav_types(cav_type_id)       ← Khổ khuôn chuẩn YSD
+FK:  current_rack_layer_id UUID → rack_layers(id)              ← Vị trí giá-tầng kho
+     device_status         TEXT DEFAULT 'NORMAL'   ← 'NORMAL' | 'REPAIRING' | 'DAMAGED' | 'MAINTENANCE'
+     usage_status          TEXT DEFAULT 'STORAGE'  ← 'STORAGE' | 'IN_USE' | 'LOAN' | 'DISPOSED'
+     on_checklist          BOOLEAN DEFAULT false
+     mold_type             TEXT
+     manufacturing_date    DATE                    ← Ngày chế tạo hoàn thành
+     entry_date            DATE                    ← Ngày nhập kho
+     returned_date         DATE                    ← Ngày trả khách hàng
+     disposed_date         DATE                    ← Ngày thanh lý
+     qr_uuid               UUID DEFAULT gen_random_uuid()
+     legacy_id             TEXT
+     legacy_specs          JSONB
+     notes                 TEXT
+```
+
+---
+
+## 🔑 Bảng `equipment_assignments` — Quan Hệ N:N Thiết Bị (SET Gá Lắp & Dùng Chung)
+
+```
+PK:  assignment_id         UUID
+FK:  primary_equipment_id  UUID → equipment(equipment_id) ON DELETE CASCADE
+FK:  related_equipment_id  UUID → equipment(equipment_id) ON DELETE CASCADE
+     relationship_type     TEXT DEFAULT 'SET_MEMBER'   ← 'SET_MEMBER' (trong cùng 1 SET máy) | 'SHARED' (dùng chung) | 'COMPATIBLE'
+     is_default            BOOLEAN DEFAULT true        ← Cấu hình mặc định khi lên máy
+     notes                 TEXT
+UNIQUE: (primary_equipment_id, related_equipment_id)
+CHECK:  primary_equipment_id <> related_equipment_id
+```
+
+---
+
+## 🔑 Bảng `equipment_photos` — Quản Lý Ảnh Chụp Thiết Bị & Khuôn
+
+```
+PK:  photo_id          UUID
+FK:  equipment_id      UUID → equipment(equipment_id) ON DELETE CASCADE NOT NULL
+     storage_path      TEXT NOT NULL   ← Đường dẫn trong Bucket 'equipment-photos'
+     file_name         TEXT
+     file_size_bytes   BIGINT
+     mime_type         TEXT DEFAULT 'image/jpeg'
+     photo_type        TEXT DEFAULT 'OVERVIEW'  ← 'OVERVIEW' | 'DETAIL' | 'DAMAGE' | 'MAINTENANCE' | 'DOCUMENT'
+     caption           TEXT
+     taken_at          TIMESTAMPTZ DEFAULT now()
+FK:  taken_by          UUID → employees(employee_id)
+     sort_order        INTEGER DEFAULT 0
+```
+
+---
+
+## 🔑 Bảng `work_orders` — Lệnh Sản Xuất / Chế Tạo Khuôn Tổng Thể (Tầng 1 - ADR-002)
+
+```
+PK:  wo_id              UUID
+     wo_code            TEXT UNIQUE NOT NULL   ← (VD: 'WO-2026-000001')
+     wo_name            TEXT NOT NULL          ← (VD: '新規金型製作: TOW-004')
+FK:  product_id         UUID → products(product_id)
+FK:  design_revision_id UUID → design_revisions(revision_id)
+FK:  order_id           UUID → orders(order_id)
+FK:  company_id         UUID → companies(company_id)
+FK:  case_id            UUID → business_cases(id)
+     wo_type            TEXT NOT NULL DEFAULT 'NEW_SET'  ← 'NEW_SET' | 'REPAIR' | 'REMAKE' | 'MODIFICATION' | 'OTHER'
+     wo_status          TEXT NOT NULL DEFAULT 'PLANNED'  ← 'PLANNED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED'
+     start_date         TIMESTAMPTZ
+     deadline           TIMESTAMPTZ
+     completed_at       TIMESTAMPTZ
+FK:  responsible_id     UUID → employees(employee_id)
+     priority           INTEGER DEFAULT 5
+     notes              TEXT
+```
+
+---
+
+## 🔑 Bảng `jobs` — Chỉ Thị Gia Công Từng Thiết Bị (Tầng 2 - ADR-002)
+
+```
+PK:  job_id              UUID
+FK:  work_order_id       UUID → work_orders(wo_id)
+FK:  equipment_id        UUID → equipment(equipment_id)      ← 1:1 với Thiết bị gia công
+FK:  product_id          UUID → products(product_id)
+FK:  design_revision_id  UUID → design_revisions(revision_id)
+FK:  job_type_id         TEXT → job_types(job_type_id)
+FK:  company_id          UUID → companies(company_id)
+FK:  responsible_id      UUID → employees(employee_id)
+FK:  outsource_company   UUID → companies(company_id)
+FK:  case_id             UUID → business_cases(id)
+     job_code            TEXT UNIQUE NOT NULL   ← (VD: 'JOB-TOW004-8981', 'DES-TOW004-01')
+     job_name            TEXT NOT NULL          ← (VD: 'TOW-004: 新規金型製作')
+     job_category        TEXT                   ← 'MOLD_NEW' | 'MOLD_MODIFY' | 'CUTTER_NEW' | 'EQUIPMENT_NEW' | 'EQUIPMENT_REPAIR' | 'MAINTENANCE' | 'DESIGN' | 'INTERNAL_OPS' | 'OTHER'
+     start_date          TIMESTAMPTZ            ← Ngày bắt đầu
+     target_completion_date DATE                ← 🏁 完成目標日 (3 ngày làm việc trước ngày xuất hàng khay)
+     mold_deadline       TIMESTAMPTZ            ← 🚚 指示納期 / 払出期日 (Bàn giao cho xưởng định hình)
+     deadline            TIMESTAMPTZ            ← Kỳ hạn chung Job (= MAX(job_steps.deadline))
+     ship_date           TIMESTAMPTZ            ← 📦 出荷予定日 (Ngày xuất hàng khay cho KH)
+     completed_date      TIMESTAMPTZ
+     estimated_hours     NUMERIC(6,1)
+     job_status          TEXT                   ← 'PLANNED' | 'IN_PROGRESS' | 'COMPLETED' | 'ON_HOLD' | 'CANCELLED'
+     priority            INTEGER DEFAULT 5
+     notes               TEXT
+```
+
+---
+
+## 🔑 Bảng `job_steps` — Thành Phần Song Song Cấu Thành Job (Tầng 3)
+
+```
+PK:  step_id              UUID
+FK:  job_id               UUID → jobs(job_id) NOT NULL
+FK:  item_type_id         INTEGER → item_types(item_type_id)   ← Loại hạng mục (MOLD, PLUG, CUTTER, WATER_BASE, STACKING...)
+FK:  processing_status_id INTEGER → processing_statuses(status_id)
+FK:  assigned_to          UUID → employees(employee_id)
+FK:  machine_id           UUID → machines(machine_id)
+FK:  outsource_company    UUID → companies(company_id)
+     step_no              INTEGER NOT NULL
+     step_name            TEXT NOT NULL          ← Tên component (VD: '金型製作', 'プラグ製作', '抜型製作')
+     track                TEXT                   ← Component Track: 'MOLD' | 'PLUG' | 'CUTTER' | 'WATER_BASE' | 'STACKING' | 'FRAME' | 'DESIGN'
+     type_code            TEXT                   ← Mã viết tắt ('M', 'P', 'C', 'W', 'S', 'F', 'D')
+     material_spec        TEXT                   ← Vật liệu (A5052, SKD11, ベニヤ木板...)
+     quantity             INTEGER DEFAULT 1
+     arrangement          TEXT                   ← 手配: 'REQUIRED' | 'NOT_REQUIRED'
+     condition            TEXT                   ← 新規/既存: 'NEW' | 'EXISTING'
+     manufacture_location TEXT                   ← 内製/外注: 'IN_HOUSE' | 'OUTSOURCED'
+     deadline             TIMESTAMPTZ            ← Kỳ hạn riêng của từng component
+     target_completion_date DATE
+     estimated_hours      NUMERIC(6,1)
+     planned_hours        NUMERIC(6,1)
+     actual_hours         NUMERIC(6,1)           ← Tự động tính từ SUM(work_logs.hours_spent)
+     progress_percent     INTEGER DEFAULT 0
+     step_status          TEXT                   ← 'PENDING' | 'IN_PROGRESS' | 'COMPLETED'
+     notes                TEXT
+```
+
+---
+
+## 🔑 Bảng `work_logs` — Nhật Ký Thao Tác & Giờ Công Thực Tế (Tầng 4)
+
+```
+PK:  log_id               UUID
+FK:  job_id               UUID → jobs(job_id) NOT NULL
+FK:  job_step_id          UUID → job_steps(step_id)
+FK:  employee_id          UUID → employees(employee_id) NOT NULL
+FK:  processing_code_id   INTEGER → processing_codes(processing_code_id)
+FK:  processing_status_id INTEGER → processing_statuses(status_id)
+FK:  machine_id           UUID → machines(machine_id)
+     work_date            DATE NOT NULL          ← Ngày làm việc thực tế
+     hours_spent          NUMERIC(6,2) NOT NULL  ← Số giờ thực tế (hỗ trợ in phiếu A4 và đóng dấu Hanko)
+     planned_hours        NUMERIC(6,2)
+     is_finished          BOOLEAN DEFAULT false  ← Đã hoàn thành công đoạn chưa?
+     description          TEXT                   ← Chi tiết công việc
+     notes                TEXT
+```
+
+---
+
+## 🔑 Bảng `orders`, `order_lines`, `shipments` — Đơn Hàng & Giao Hàng
+
+**`orders`**
+```
+PK:  order_id           UUID
+FK:  company_id         UUID → companies(company_id) NOT NULL  ← KHÔNG CÓ customer_id
+     order_no           TEXT UNIQUE NOT NULL
+     order_date         DATE
+     requested_delivery DATE
+     order_status       TEXT  ('NEW' | 'CONFIRMED' | 'IN_PRODUCTION' | 'SHIPPED' | 'CANCELLED')
+     customer_order_no  TEXT    ← Số PO khách hàng (要求No.)
+     lot_no             TEXT    ← Mã Lot / 伝票No.
+     notes              TEXT
+```
+
+**`order_lines`**
+```
+PK:  line_id          UUID
+FK:  order_id         UUID → orders(order_id) ON DELETE CASCADE NOT NULL
+FK:  product_id       UUID → products(product_id) NOT NULL
+FK:  design_revision_id UUID → design_revisions(revision_id)  ← NULLABLE (tự lấy bản mới nhất nếu NULL)
 FK:  delivery_site_id UUID → delivery_sites(site_id)
-     ship_date        DATE
+     line_no          INTEGER
+     quantity         INTEGER NOT NULL
+     unit             TEXT DEFAULT 'PCS'
+     ship_date        DATE       ← 出荷日 — Ngày xuất hàng (dòng 1 trên phiếu)
+     due_date         DATE       ← 納期 — Hạn nhận hàng phía khách (dòng 2 trên phiếu)
+     is_free_sample   BOOLEAN DEFAULT false
+     charge_type      TEXT       ← 'FREE' | 'PAID' | 'OFFICE_SAMPLE'
+     packing_style    TEXT       ← 荷姿 — Quy cách đóng gói
+     line_status      TEXT
+```
+
+**`shipments`**
+```
+PK:  shipment_id      UUID
+FK:  order_id         UUID → orders(order_id) NOT NULL
+FK:  delivery_site_id UUID → delivery_sites(site_id)
+     ship_date        DATE NOT NULL
      delivery_date    DATE
      delivery_note_no TEXT
      carrier          TEXT
      tracking_no      TEXT
      status           TEXT  ('SHIPPED' | 'IN_TRANSIT' | 'DELIVERED' | 'RETURNED')
-```
-
----
-
-## 🔑 Bảng `mold_masters` — Master Khuôn
-
-```
-PK:  mold_master_id    UUID
-FK:  company_id        UUID → companies(company_id)
-     mold_master_code  TEXT UNIQUE
-     mold_master_name  TEXT
-     mold_class        TEXT
-     notes             TEXT
-```
-
----
-
-## 🔑 Bảng `design_revisions` — Thiết kế Khuôn
-
-```
-PK:  revision_id       UUID
-FK:  mold_master_id    UUID → mold_masters(mold_master_id)
-FK:  company_id        UUID → companies(company_id)
-FK:  product_id        UUID → products(product_id)
-FK:  shared_plug_from_design_id UUID → design_revisions(revision_id)
-     design_code       TEXT
-     design_length     NUMERIC
-     design_width      NUMERIC
-     design_height     NUMERIC
-     design_depth      NUMERIC
-     design_weight     TEXT
-     cutline_length    NUMERIC
-     cutline_width     NUMERIC
-     cavity_count      INTEGER       ← 取数 = Pieces per mold cycle (1サイクルで何枚のトレイを成形するか). ※ Pocket数ではない → products.pocket_count
-     corner_r          TEXT
-     chamfer_c         TEXT
-     draft_angle       TEXT
-     cavity_pitch_mm   NUMERIC       ← Bước khuôn (Khoảng cách tâm giữa các cavity trên khuôn)
-     machine_feed_pitch_mm NUMERIC   ← Bước tiến nhựa (送り) - Dùng tính hao phí vật liệu
-     orientation       TEXT
-     setup_type        TEXT
-     plug_type         TEXT          ← ['NONE', 'OWNED', 'SHARED']
-     has_separate_cutter BOOLEAN
-     customer_tray_name TEXT        ← Tên khay từ khách hàng (CustomerTrayName)
-     plastic_type_designed TEXT     ← Loại nhựa thiết kế (DesignForPlasticType)
-     tray_info         TEXT          ← Thông tin khay cho chỉ thị (TrayInfoForMoldDesign)
-     change_summary    TEXT          ← Tóm tắt điểm thay đổi so với phiên bản trước (Added 2026-08-04)
-     customer_equipment_no TEXT
-     customer_drawing_no TEXT
-     designer          TEXT
-     design_date       DATE
-     approved_date     DATE
-     cad_folder_path   TEXT
-     drawing_pdf_path  TEXT
-     status            TEXT          ← ('DRAFT' | 'APPROVED' | ...)
-     legacy_id         TEXT
-     legacy_specs      JSONB
-```
-
----
-
-## ❌ Bảng `mold_revisions` — DELETED / DROPPED (2026-08-05)
-
-> ⚠️ **ĐÃ XÓA KHỎI SYSTEM** — Bảng trung gian dư thừa đã bị DROP CASCADE.
-> `equipment` và `physical_molds` liên kết trực tiếp tới `design_revisions` qua `design_revision_id`.
-
----
-
-## 🔑 Bảng `physical_molds` — Khuôn Vật lý
-
-```
-PK:  physical_mold_id    UUID
-FK:  mold_revision_id    UUID → mold_revisions(mold_revision_id)  ← NULLABLE (DEC-008: Quick Entry cho phép NULL)
-FK:  keeper_company_id   UUID → companies(company_id)
-FK:  current_rack_layer_id UUID → rack_layers(rack_layer_id)
-FK:  cav_type_id         UUID → cav_types(cav_type_id)
-     system_code         TEXT UNIQUE     ← Mã hệ thống (ví dụ: "K-0123")
-     display_name        TEXT NOT NULL   ← Tên hiển thị
-     physical_stamp      TEXT            ← Ký hiệu đóng dấu trên khuôn thực
-     mold_type           TEXT            ← Loại khuôn
-     copy_number         INTEGER         ← Số bản sao (nếu có)
-     piece_count         INTEGER         ← Số mảnh
-     device_status       TEXT            ← Tình trạng thiết bị (Default 'NORMAL')
-     usage_status        TEXT            ← Trạng thái sử dụng ('ACTIVE' | 'LOAN' | 'DISPOSED' | ...)
-     on_checklist        BOOLEAN         ← Có nằm trong DS kiểm tra? (Default False)
-     manufacturing_date  DATE            ← Ngày sản xuất khuôn (import từ jobs.DeliveryDeadline)
-     mold_entry_date     DATE            ← Ngày nhập kho
-     actual_length_mm    TEXT            ← Kích thước thực (dài)
-     actual_width_mm     TEXT            ← Kích thước thực (rộng)
-     actual_height_mm    TEXT            ← Kích thước thực (cao)
-     actual_weight       TEXT            ← Trọng lượng thực
-     returned_date       DATE            ← Ngày trả khuôn
-     disposed_date       DATE            ← Ngày thanh lý
-     qr_uuid             UUID            ← UUID cho QR code
-     notes               TEXT
-     legacy_id           TEXT
-     legacy_specs        JSONB
-```
-
----
-
-## 🔑 Bảng `jobs` — Lịch trình & Công việc
-
-```
-PK:  job_id              UUID
-FK:  job_type_id         TEXT → job_types(job_type_id) NOT NULL
-FK:  mold_master_id      UUID → mold_masters(mold_master_id)
-FK:  physical_mold_id    UUID → physical_molds(physical_mold_id)
-FK:  design_revision_id  UUID → design_revisions(revision_id)
-FK:  mold_work_order_id  UUID → mold_work_orders(mwo_id)
-FK:  company_id          UUID → companies(company_id)
-FK:  responsible_id      UUID → employees(employee_id)
-FK:  outsource_company   UUID → companies(company_id)
-FK:  equipment_id        UUID → equipment(equipment_id)
-FK:  work_order_id       UUID → work_orders(wo_id)
-     job_code            TEXT UNIQUE NOT NULL
-     job_name            TEXT NOT NULL
-     start_date          TIMESTAMPTZ    ← Ngày bắt đầu
-     ship_date           TIMESTAMPTZ    ← Ngày xuất hàng khay (出荷納期)
-     mold_deadline       TIMESTAMPTZ    ← Kỳ hạn bàn giao chỉ thị (指示納期 / 払出期日)
-     target_completion_date DATE        ← Kỳ hạn mục tiêu hoàn thành khuôn (完成目標日 — Trước 3 ngày làm việc)
-     deadline            TIMESTAMPTZ    ← Hạn chung Job (Tự động = MAX(job_steps.deadline))
-     completed_date      TIMESTAMPTZ
-     estimated_hours     NUMERIC(6,1)
-     job_status          TEXT
-     approved            BOOLEAN
-     priority            INTEGER
-     year_period         INTEGER
-     month_period        INTEGER
-     notes               TEXT
 ```
 
 ---
@@ -368,381 +434,64 @@ PK:  calendar_date       DATE PRIMARY KEY
 
 ---
 
-## 🔑 Bảng `work_orders` — Lệnh Sản Xuất / Gia Công Khuôn (Option C)
-
-```
-PK:  wo_id              UUID
-     wo_code            TEXT UNIQUE NOT NULL   ← (VD: 'WO-2026-000001')
-     wo_name            TEXT NOT NULL          ← (VD: 'Chế tạo bộ khuôn ABY-123')
-FK:  product_id         UUID → products(product_id)
-FK:  design_revision_id UUID → design_revisions(revision_id)
-FK:  order_id           UUID → orders(order_id)
-FK:  company_id         UUID → companies(company_id)
-FK:  case_id            UUID → business_cases(id)
-     wo_type            TEXT NOT NULL DEFAULT 'NEW_SET' -- 'NEW_SET'|'REPAIR'|'REMAKE'|'MODIFICATION'|'OTHER'
-     wo_status          TEXT NOT NULL DEFAULT 'PLANNED' -- 'PLANNED'|'IN_PROGRESS'|'COMPLETED'|'CANCELLED'
-     start_date         TIMESTAMPTZ
-     deadline           TIMESTAMPTZ
-     completed_at       TIMESTAMPTZ
-FK:  responsible_id     UUID → employees(employee_id)
-     priority           INTEGER DEFAULT 5
-     notes              TEXT
-     created_at         TIMESTAMPTZ DEFAULT now()
-     updated_at         TIMESTAMPTZ DEFAULT now()
-FK:  created_by         UUID → employees(employee_id)
-```
-
----
-
-## 🔑 Bảng `job_steps` — Thành phần (Components) của Job
-> ⚠️ **Kiến trúc:** `job_steps` = **Components/Thành phần** của Job, KHÔNG phải công đoạn tuần tự.
-> - Với Job khuôn: MOLD, PLUG, CUTTER, WATER_BASE... (thiết bị phụ kiện)
-> - Các components thực hiện **SONG SONG**, chỉ cần đúng kỳ hạn.
-> - Tên bảng giữ nguyên `job_steps` để tránh phá vỡ triggers/RLS hiện tại.
-> - UI gọi là "Components" hoặc "Cấu thành Bộ khuôn" (Section 5 trong quick-create).
-
-## 🔑 Bảng `item_types` — Loại Hạng mục (Level 2)
-
-```
-PK:  item_type_id         INTEGER
-     item_type_code       TEXT          ← (VD: 'MOLD', 'PLUG', 'CUTTER'...)
-     item_type_name_ja    TEXT          ← Tên tiếng Nhật (VD: '金型', 'プラグ'...)
-     item_type_name_vi    TEXT          ← Tên tiếng Việt
-     description          TEXT
-```
-
----
-
-## 🔑 Bảng `processing_codes` — Mã Thao tác (Level 3)
-
-```
-PK:  processing_code_id   INTEGER
-     processing_name      TEXT          ← (VD: 'レイアウト', '3D金型図面作成', '金型演算＆加工'...)
-     category             TEXT          ← Nhóm thao tác (DESIGN, MOLD, PLUG, CUTTER, EQUIPMENT, GENERAL...)
-     department_code      TEXT          ← Bộ phận (DESIGN, MOLD_SHOP, PRODUCTION, QUALITY, OFFICE, GENERAL)
-     sort_note            INTEGER       ← Thứ tự hiển thị
-     is_active            BOOLEAN       ← Có đang sử dụng không
-```
-
----
-
-## 🔑 Bảng `job_steps` — Thành phần (Level 2) của Job
-
-```
-PK:  step_id              UUID
-FK:  job_id               UUID → jobs(job_id) NOT NULL
-FK:  item_type_id         INTEGER → item_types(item_type_id)   ← Loại hạng mục (MOLD, PLUG...)
-FK:  processing_status_id INTEGER → processing_statuses(status_id)
-FK:  outsource_company    UUID → companies(company_id)
-FK:  assigned_to          UUID → employees(employee_id)
-FK:  machine_id           UUID → machines(machine_id)
-     step_no              INTEGER NOT NULL
-     step_name            TEXT NOT NULL
-     step_status          TEXT
-     track                TEXT          ← (MOLD, PLUG, CUTTER...) — component track
-     type_code            TEXT          ← (MOLD, PLUG, CUTTER...) — component type code
-     material_spec        TEXT          ← Vật liệu/quy cách (A5052, SKD11, ベニヤ木板...)
-     quantity             INTEGER       ← Số lượng (default 1)
-     arrangement          TEXT          ← 手配 ('REQUIRED' / 'NOT_REQUIRED')
-     condition            TEXT          ← 新規/既存 ('NEW' / 'EXISTING')
-     manufacture_location TEXT          ← 内製/外注 ('IN_HOUSE' / 'OUTSOURCED')
-     deadline             TIMESTAMPTZ   ← Kỳ hạn riêng của từng component
-     drawing_receipt_date TIMESTAMPTZ   ← Ngày nhận bản vẽ
-     estimated_hours      NUMERIC(6,1)
-     planned_hours        NUMERIC(6,1)
-     actual_hours         NUMERIC(6,1)  ← Tự động tính từ SUM(work_logs.hours_spent)
-     planned_start        TIMESTAMPTZ
-     planned_end          TIMESTAMPTZ
-     baseline_start       TIMESTAMPTZ
-     baseline_end         TIMESTAMPTZ
-     progress_percent     INTEGER
-     machining_location   TEXT
-     set_info             TEXT
-     tehai_info           TEXT
-     notes                TEXT
-```
-
-### Quan hệ job_steps ↔ work_logs
-```
-work_logs.job_step_id → job_steps.step_id   (FK — liên kết chính)
-work_logs KHÔNG CÓ trường track/step_no — phải JOIN qua job_step_id
-```
-
----
-
-## 🔑 Bảng `work_logs` — Nhật ký Thao tác (Level 3)
-
-```
-PK:  log_id               UUID
-FK:  job_id               UUID → jobs(job_id) NOT NULL
-FK:  job_step_id          UUID → job_steps(step_id)              ← NULLABLE (DB thực tế)
-FK:  employee_id          UUID → employees(employee_id) NOT NULL
-FK:  processing_code_id   INTEGER → processing_codes(processing_code_id)
-FK:  processing_status_id INTEGER → processing_statuses(status_id)
-FK:  machine_id           UUID → machines(machine_id)
-     work_date            DATE NOT NULL
-     hours_spent          NUMERIC(6,2)
-     planned_hours        NUMERIC(6,2)
-     planned_date         DATE
-     quantity_done        INTEGER
-     is_finished          BOOLEAN
-     description          TEXT             ← Mô tả chi tiết công việc
-     notes                TEXT
-     contact_content      TEXT
-     design_revision_context TEXT  ← Ghi chú revision (VD: "R2", "R3") — informational
-```
-
----
-
-## ✅ Query mẫu ĐÚNG
-
-```typescript
-// Danh sách đơn hàng với tên công ty
-supabase.from('orders').select('*, companies(company_name, company_code)')
-
-// Sản phẩm với tên công ty
-supabase.from('products').select('*, companies(company_name, company_code)')
-
-// Giao hàng (join 2 cấp)
-supabase.from('shipments').select('*, orders(order_no, companies(company_name))')
-
-// Lọc đơn hàng theo công ty
-supabase.from('orders').select('*').eq('company_id', companyId)
-
-// Người liên hệ của công ty
-supabase.from('company_contacts').select('*').eq('company_id', companyId)
-
-// Địa điểm giao hàng
-supabase.from('delivery_sites').select('*').eq('company_id', companyId)
-```
-
----
-
-## ❌ Sai thường gặp — BẮT BUỘC TRÁNH
-
-| Sai | Đúng | Lý do |
-|-----|------|-------|
-| `products(product_name_ja)` | `products(product_name)` | Cột đã đổi tên trong V3 |
-| `products.status` | `products.product_status` | Tên cột thực tế |
-| `products.material_id` | ❌ Không tồn tại | Không có cột này |
-| `products.thickness_mm` | ❌ Không tồn tại | Không có cột này |
-| `products.sact_qr_code` | ❌ Không tồn tại | Không có cột này |
-| `products.derived_from_product_id` | ❌ Không tồn tại | Không có cột này |
-| `orders.customer_id` | `orders.company_id` | Cột đúng là company_id |
-| `.eq('customer_id', id)` trên orders | `.eq('company_id', id)` | FK là company_id |
-| `design_masters` | ❌ Bảng đã bị DROP | Dùng `mold_masters` |
-| `design_projects` | ❌ Bảng đã bị DROP | Dùng `design_revisions` |
-| `mold_designs` | ❌ Bảng đã bị DROP | Dùng `design_revisions` |
-| `cutter_master` | `cutter_masters` (có s) | Tên bảng số nhiều |
-| `physical_molds.id` | `physical_molds.physical_mold_id` | PK đúng |
-| `cutters.id` | `cutters.cutter_id` | PK đúng |
-
----
-
-## 🔑 Bảng `departments` — Phòng ban (Phase 2 WMS)
-
-```
-PK:  id             UUID
-     code           TEXT UNIQUE    ← MOLDING, CUTTING, RECYCLING, OFFICE...
-     name           TEXT           ← Tên hiển thị
-     description    TEXT
-     is_active      BOOLEAN
-```
-
-*(Note: `department_id` được thêm vào `jobs` và `job_steps`)*
-
----
-
 ## 🔑 Bảng Kho Nhựa (Plastic WMS Phase 2)
 
-**`plastic_master`** — Cấu hình vật tư nhựa
+**`plastic_master`** — Master danh mục quy cách nhựa
 ```
 PK:  plastic_id       UUID
-     plastic_code     TEXT UNIQUE
-     plastic_family   TEXT
-     plastic_subtype  TEXT
+     plastic_code     TEXT UNIQUE NOT NULL
+     plastic_family   TEXT   ← PET, PP, PS, PVC, ABS...
+     plastic_subtype  TEXT   ← A-PET, G-PET, Conductive, Silicone-free...
      thickness_mm     NUMERIC
      width_mm         INTEGER
-     ...
 ```
 
-**`plastic_receipt`** — Phiếu nhập kho nhựa
-```
-PK:  id             UUID
-FK:  supplier_id    UUID → suppliers(supplier_id)
-     receipt_no     TEXT UNIQUE
-     receipt_date   DATE
-     note           TEXT
-```
-
-**`plastic_receipt_roll`** — Cuộn nhựa (Roll)
+**`plastic_receipt_roll`** — Quản lý cuộn nhựa thực tế
 ```
 PK:  id                UUID
-     roll_barcode      TEXT UNIQUE
+     roll_barcode      TEXT UNIQUE NOT NULL
 FK:  receipt_id        UUID → plastic_receipt(id)
-FK:  plastic_id        UUID → plastic_master(plastic_id)
-FK:  branch_id         UUID → companies(company_id)   ← Nơi đang lưu trữ (Aomori, Honsha...)
+FK:  plastic_id        UUID → plastic_master(plastic_id) NOT NULL
+FK:  branch_id         UUID → companies(company_id)   ← Nhà máy lưu trữ (Honsha, Aomori...)
      nominal_length_m  NUMERIC
-     received_length_m NUMERIC
      current_length_m  NUMERIC
-     status            TEXT   ← 'in_stock', 'in_use', 'empty', 'returned'
+     status            TEXT   ← 'in_stock' | 'in_use' | 'empty' | 'returned'
      location          TEXT
 ```
 
 **`plastic_adjustment_log`** — Lịch sử xuất/nhập/hao hụt cuộn nhựa
 ```
 PK:  id                UUID
-FK:  roll_id           UUID → plastic_receipt_roll(id)
-     change_length_m   NUMERIC
-     action_type       TEXT   ← 'PRODUCTION', 'ADJUSTMENT', 'RETURN'
-FK:  work_log_id       UUID → work_logs(id)
+FK:  roll_id           UUID → plastic_receipt_roll(id) NOT NULL
+     change_length_m   NUMERIC NOT NULL
+     action_type       TEXT   ← 'PRODUCTION' | 'ADJUSTMENT' | 'RETURN'
+FK:  work_log_id       UUID → work_logs(log_id)
      operator_name     TEXT
      note              TEXT
 ```
 
 ---
 
-## 🔑 Bảng `equipment` — Thiết Bị Sản Xuất Thống Nhất (Single Source of Truth)
+## 🔑 Bảng Tra Cứu & Danh Mục Phụ Trợ
 
-> ✅ **Kiến trúc V3 (Đã hoàn thành 2026-08-05)**: Bảng `equipment` quản lý TOÀN BỘ thiết bị sản xuất
-> (khuôn, dao cắt, đế làm mát, đế khí nén, khung, stacking, plug) ngang hàng.
-> Bảng `equipment` là nguồn dữ liệu sự thật duy nhất (Single Source of Truth).
-> Các bảng legacy `physical_molds` và `cutters` được giữ lại duy nhất cho backward compatibility.
->
-> 📌 **QUY TẮC CAV & DÙNG CHUNG THIẾT BỊ (BẮT BUỘC):**
-> 1. **`CAV` = Mã khổ Kích thước ngoài của Khuôn** (`actual_length_mm` × `actual_width_mm`) theo tiêu chuẩn YSD (Khổ A: 470x300, Khổ ZD: 470x347...). **KHÔNG PHẢI Pocket Count / Cavity nhỏ!**
-> 2. **Dùng chung theo Kích thước ngoài Sản phẩm (Dao cắt & Stacking):** Dao cắt (`CUTTER_SEPARATE`/`CUTTER_INLINE`) gợi ý theo kích thước bao ngoài sản phẩm, nhưng **KHÔNG TỰ ĐỘNG GÁN HOÀN TOÀN** do biên dạng thực tế có thể có góc uốn cong hoặc lỗ khoét phụ. Hệ thống đưa ra GỢI Ý KÈM CẢNH BÁO để KTV xác nhận.
-> 3. **Dùng chung theo Mã CAV Khuôn:** Đế làm mát (`WATER_BASE`), Đế khí nén (`PRESSURE_BASE`), Khung (`FRAME`).
-> 4. **Mã CutterNo:** Dãy số tự nhiên (VD: `1042`), không ghép `CT-` vào tên hiển thị để tránh nhầm với mã khuôn `CT-1042`.
-
-```
-PK:  equipment_id          UUID
-     equipment_code        TEXT UNIQUE NOT NULL    ← Mã hệ thống duy nhất (VD: MOLD-0123, WB-ZD-01, 1042)
-     display_name          TEXT NOT NULL           ← Tên hiển thị (VD: TDW-001 R3, 1042)
-     equipment_type        TEXT NOT NULL           ← 'MOLD','CUTTER_INLINE','CUTTER_SEPARATE','WATER_BASE','PRESSURE_BASE','FRAME','STACKING','PLUG'
-     sub_type              TEXT                    ← Phân loại phụ ('PROTOTYPE_POCKET', 'MASS_PRODUCTION'...)
-     physical_stamp        TEXT                    ← Ký hiệu đóng dấu trên thiết bị
-     dimensions            TEXT                    ← Kích thước tổng quát
-     actual_length_mm      TEXT
-     actual_width_mm       TEXT
-     actual_height_mm      TEXT
-     actual_weight         TEXT
-     material_spec         TEXT                    ← Vật liệu (A5052, SKD11...)
-     piece_count           INTEGER
-     copy_number           INTEGER
-FK:  company_id            UUID → companies(company_id)
-FK:  keeper_company_id     UUID → companies(company_id)
-FK:  design_revision_id    UUID → design_revisions(revision_id)
-FK:  cav_type_id           UUID → cav_types(cav_type_id)
-     mold_master_id        UUID                   ← Backward compat (no FK, mold_masters DROPped)
-FK:  current_rack_layer_id UUID → rack_layers(id)
-     device_status         TEXT DEFAULT 'NORMAL'
-     usage_status          TEXT DEFAULT 'STORAGE'
-     on_checklist          BOOLEAN DEFAULT FALSE
-     mold_type             TEXT
-     manufacturing_date    DATE
-     entry_date            DATE
-     returned_date         DATE
-     disposed_date         DATE
-     qr_uuid               UUID
-     legacy_physical_mold_id UUID
-     legacy_cutter_id      UUID
-     legacy_id             TEXT
-     legacy_specs          JSONB
-     notes                 TEXT
-```
+- **`cav_types`**: Khổ kích thước bao ngoài khuôn chuẩn YSD (`cav_type_id`, `cav_code`, `length_mm`, `width_mm`).
+- **`processing_codes`**: Mã thao tác kỹ thuật (`processing_code_id`, `processing_name`, `category`, `department_code`).
+- **`processing_statuses`**: Trạng thái công đoạn (`status_id`, `status_name_ja`, `status_name_vi`).
+- **`item_types`**: Loại hạng mục component (`item_type_id`, `item_type_code`, `item_type_name_ja`).
+- **`machines`**: Danh mục máy CNC, Máy định hình, Máy dập (`machine_id`, `machine_code`, `machine_name`, `department`).
+- **`racks` & `rack_layers`**: Quản lý Kệ-Tầng kho lưu trữ thiết bị (`rack_id`, `rack_code`, `zone_code`, `layer_no`).
+- **`business_cases`**: Quản lý sự việc / Case thương mại (`id`, `case_code`, `title`, `company_id`, `status`).
 
 ---
 
-## 🔑 Bảng `equipment_history` — Lịch Sử IN/OUT & Sửa Chữa
+## ⛔ BẢNG & CỘT ĐÃ DEPRECATED / DROPPED (TUYỆT ĐỐI KHÔNG DÙNG)
 
-```
-PK:  history_id            UUID
-FK:  equipment_id          UUID → equipment(equipment_id) ON DELETE CASCADE
-     action_type           TEXT NOT NULL    ← 'IN','OUT','LOAN','RETURN','REPAIR','MAINTENANCE','DISPOSE','TRANSFER'
-     action_date           DATE NOT NULL
-     from_location         TEXT
-     to_location           TEXT
-FK:  from_company_id       UUID → companies(company_id)
-FK:  to_company_id         UUID → companies(company_id)
-FK:  job_id                UUID → jobs(job_id)
-     description           TEXT
-FK:  performed_by          UUID → employees(employee_id)
-```
-
----
-
-## 🔑 Bảng `equipment_assignments` — Quan Hệ N:N Thiết Bị
-
-> Set lắp máy & Dùng chung: Khuôn A đi kèm Dao X + Đế Y; Đế Y dùng cho nhiều khuôn.
-
-```
-PK:  assignment_id         UUID
-FK:  primary_equipment_id  UUID → equipment(equipment_id) ON DELETE CASCADE
-FK:  related_equipment_id  UUID → equipment(equipment_id) ON DELETE CASCADE
-     relationship_type     TEXT DEFAULT 'SET_MEMBER'   ← 'SET_MEMBER' | 'COMPATIBLE'
-     is_default            BOOLEAN DEFAULT TRUE
-     notes                 TEXT
-UNIQUE: (primary_equipment_id, related_equipment_id)
-CHECK:  primary_equipment_id <> related_equipment_id
-```
-
----
-
-## 🔑 Bảng `equipment_photos` — Quản Lý Ảnh Thiết Bị & Khuôn (Supabase Storage)
-
-> Quản lý ảnh chụp thực tế của thiết bị, khuôn, dao cắt lưu trên Bucket `equipment-photos`.
-> Hỗ trợ chụp trực tiếp từ camera di động (nén canvas tự động) và phân loại ảnh.
-
-```
-PK:  photo_id          UUID
-FK:  equipment_id      UUID → equipment(equipment_id) ON DELETE CASCADE NOT NULL
-     storage_path      TEXT NOT NULL   ← Đường dẫn trong Bucket 'equipment-photos' (VD: 'uuid/timestamp_name.jpg')
-     file_name         TEXT
-     file_size_bytes   BIGINT
-     mime_type         TEXT DEFAULT 'image/jpeg'
-     photo_type        TEXT DEFAULT 'OVERVIEW'  ← 'OVERVIEW'|'DETAIL'|'DAMAGE'|'MAINTENANCE'|'DOCUMENT'|'OTHER'
-     caption           TEXT
-     taken_at          TIMESTAMPTZ DEFAULT now()
-FK:  taken_by          UUID → employees(employee_id)
-     sort_order        INTEGER DEFAULT 0
-     created_at        TIMESTAMPTZ DEFAULT now()
-     updated_at        TIMESTAMPTZ DEFAULT now()
-```
-
----
-
-## 🔑 Cột mới trên bảng `jobs` (2026-07-31)
-
-```
-     job_category          TEXT    ← 'MOLD_NEW','MOLD_MODIFY','CUTTER_NEW','EQUIPMENT_NEW','EQUIPMENT_REPAIR','MAINTENANCE','INTERNAL_OPS','OTHER'
-FK:  equipment_id          UUID → equipment(equipment_id)
-FK:  case_id               UUID → business_cases(id)
-```
-
----
-
-## 🏷️ QUY TẮC MÃ HÓA VỊ TRÍ GIÁ-TẦNG (棚・段位置) & KHU VỰC XƯỞNG (2026-08-06)
-
-### 1. Nguyên Tắc Thiết Kế Mã Vị Trí Địa Lý & Chức Năng (Zone & Area Naming)
-- **KHÔNG cố định ký tự theo loại thiết bị** (không dùng M=Mold, C=Cutter): Một giá/kệ có thể chứa linh hoạt nhiều loại thiết bị (Khuôn, Dao cắt, Đế khí, Đế nước, Stacking).
-- **Mã tiền tố đại diện cho Vị Trí Địa Lý Thực Tế trong Xưởng hoặc Khu Vực Chức Năng**:
-  - **Mã vị trí địa lý xưởng**:
-    - **`OFF`** / **`A`**: Trước Văn phòng (Office / 前事務所)
-    - **`ENT`** / **`E`**: Cửa ra vào (Entrance / 出入口)
-    - **`WH`** / **`W`**: Kho tổng / Nhà kho (Warehouse / 倉庫)
-    - **`2F`**: Tầng 2 xưởng (2nd Floor / 2階)
-    - **`PAC`**: Kệ khuôn đóng gói cất đi - ít dùng (Packed Storage / 梱包保管)
-    - **`M06`**, **`M08`**: Gần Máy định hình số 6 / số 8 (Forming Machine #6/#8)
-    - **`TW`**: Gần Máy định hình Đài Loan (Taiwan Machine)
-    - **`PRS`**: Phía trên các Máy dập (Press area / プレス機上部)
-  - **Mã khu vực chức năng**:
-    - **`TEF`**: Khu vực Chờ / Mạ Teflon (Teflon Staging)
-    - **`REP`**: Khu vực Bảo trì / Sửa chữa khuôn (Repair & Maintenance)
-    - **`NEW`**: Khu vực Tiếp nhận khuôn mới (New Tooling Receiving)
-
-### 2. Định Dạng Mã Hiển Thị (`RackLocation`)
-- **Tương thích ngược 100% mã cũ**: `71-1`, `70-0` (Kệ 71 - Tầng 1).
-- **Cấu trúc linh hoạt mới**: `[MãKhuVực]-[SốGiá]-[SốTầng]` (VD: `OFF-01-2`, `M08-01-1`, `TW-02-1`, `2F-03-1`, `TEF-01`).
-
-
+| Tên Bảng / Cột | Trạng Thái | Thay Thế Bằng | Lý Do |
+|---|---|---|---|
+| `mold_masters` | **DROPPED** | `products` | Tray = Products (Đã gộp hoàn toàn) |
+| `mold_revisions` | **DROPPED** | `design_revisions` | Bảng trung gian dư thừa đã xóa |
+| `products.company_pn` | **DROPPED** | `customer_product_name` | Chuẩn hóa tên trường |
+| `products.material_id` / `thickness_mm` | **DROPPED** | `design_revisions.plastic_type_designed` | SSOT thuộc về bản vẽ thiết kế CAD |
+| `physical_molds` & `cutters` | **DEPRECATED** (Read-only compat) | `equipment` | Unified Equipment SSOT (ADR-001) |
+| `auxiliary_equipments` | **DEPRECATED** | `equipment` (`WATER_BASE`, `PRESSURE_BASE`...) | Gộp vào `equipment` |
+| `orders.customer_id` | **KHÔNG TỒN TẠI** | `orders.company_id` | FK chuẩn duy nhất là `company_id` |

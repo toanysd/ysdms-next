@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
+import { isPrototypeDesignOrMold } from '@/lib/utils/moldNaming'
 
 // ── Unified Type: Job Component (= job_steps row) ──
 // job_steps = Components/Thành phần của Job (KHÔNG phải công đoạn tuần tự)
@@ -154,6 +155,7 @@ export async function createQuickMoldJobWorkflow(input: QuickMoldJobInput) {
     }
 
     // Step 2: Design Revision
+    const isProtoRev = isPrototypeDesignOrMold({ design_code: input.design_code })
     const { data: newRev, error: revErr } = await supabase
       .from('design_revisions')
       .insert({
@@ -161,6 +163,7 @@ export async function createQuickMoldJobWorkflow(input: QuickMoldJobInput) {
         design_code: input.design_code.trim(),
         revision_number: 1,
         status: 'APPROVED',
+        design_category: isProtoRev ? 'PROTOTYPE_POCKET' : 'MASS_PRODUCTION',
         company_id: companyId,
         design_length: input.design_length || null,
         design_width: input.design_width || null,
