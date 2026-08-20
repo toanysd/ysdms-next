@@ -6,11 +6,12 @@
 - **Phase R1 (Schema cleanup):** ĐÃ ĐÓNG
 - **Phase R2 (Approval/Sample lifecycle, Atomic RPC + Session Guard):** ĐÃ ĐÓNG hoàn toàn, đã verify trên Live DB, không còn nợ kỹ thuật
 - **Phase R3 (Product 360° View + Dashboard Lệnh SX):** ĐANG MỞ
-  - Sprint R3-S1 (Quick KPI Bar + Tab 5 Orders/Shipments 4 thẻ KPI): ĐÃ HOÀN THÀNH (chờ PE review)
-  - Sprint R3-S2 (Tab 3 SET Matrix + Tab 6 Matching Material Stock): CHỜ KÍCH HOẠT
+  - Sprint R3-S1 (Quick KPI Bar + Tab 5 Orders/Shipments 4 thẻ KPI): ✅ ĐÃ NGHIỆM THU
+  - Sprint R3-S2 (Tab 3 SET Matrix + Tab 6 Matching Material Stock): ✅ ĐÃ HOÀN THÀNH (chờ PE review)
+  - Sprint R3-S3 (Tab 4 Manufacturing 4-level Dashboard): CHỜ KÍCH HOẠT
 
 ## Chỉ thị đang mở
-- **#009:** Triển khai UI Phase R3 (Sprint R3-S1 hoàn tất, chờ PE review báo cáo `R3_S1_review.md`).
+- **#010:** Triển khai Sprint R3-S2 (Đã hoàn tất, chờ PE review báo cáo `R3_S2_review.md`).
 
 ## Kiến trúc cốt lõi đã xác lập
 - **ADR-001:** Unified SSOT `equipment` (8 loại thiết bị, quan hệ N:N `equipment_assignments` cho bộ SET gá lắp & dùng chung SHARED)

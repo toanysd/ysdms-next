@@ -18,6 +18,7 @@ import { EquipmentJobDrawer } from './EquipmentJobDrawer'
 import { CreateDesignRevisionModal } from './CreateDesignRevisionModal'
 import { EditDesignRevisionModal, EditDesignRevisionData } from '@/components/engineering/EditDesignRevisionModal'
 import { EditEquipmentModal, EquipmentEditData } from '@/app/equipment/_components/detail-modal/EditEquipmentModal'
+import { EquipmentSetMatrix } from './EquipmentSetMatrix'
 
 interface TabDesignsEquipmentProps {
   productId: string
@@ -956,6 +957,9 @@ export function TabDesignsEquipment({ productId }: TabDesignsEquipmentProps) {
           </div>
         </div>
       )}
+
+      {/* Equipment SET Matrix (ADR-001) */}
+      <EquipmentSetMatrix productId={productId} />
 
       {/* Right Click Context Menu */}
       {contextMenu && (
