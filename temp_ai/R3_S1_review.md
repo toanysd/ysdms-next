@@ -41,9 +41,51 @@
 | **TypeScript Compilation** | `npx tsc --noEmit` | ✅ **0 errors** | Tuân thủ 100% schema types từ `database.types.ts` |
 | **Đa ngôn ngữ (i18n)** | `node scripts/check_translations.mjs` | ✅ **0 missing keys** | Đã khai báo đầy đủ keys `kpiTotalOrders`, `kpiDelivered`, `kpiBacklogOrders`, `kpiOpenOrdersCount`, `kpiSetCompleteness`, `kpiSampleVerdict` trong cả `ja.json` và `vi.json` |
 
+### 📸 Kết quả Terminal Thực Tế:
+```
+$ node ".\node_modules\typescript\bin\tsc" --noEmit
+(Exit code: 0 - 0 errors)
+
+$ node scripts/check_translations.mjs
+🔍 Scanning files for missing translation keys...
+✅ All translation keys are properly defined in both ja.json and vi.json
+```
+
 ---
 
-## 4. BƯỚC TIẾP THEO (CHỜ PE REVIEW)
+## 4. XÁC MINH SCHEMA LIVE DB TRƯỚC SPRINT R3-S2 (EQUIPMENT_ASSIGNMENTS)
+
+AN đã chạy script kiểm tra thực tế cấu trúc cột của bảng `equipment_assignments` trên Supabase Live DB:
+
+### 📋 Danh sách cột thực tế từ Live DB:
+```sql
+SELECT column_name, data_type, is_nullable 
+FROM information_schema.columns 
+WHERE table_name = 'equipment_assignments';
+```
+
+**Kết quả trả về:**
+| # | Tên Cột (`column_name`) | Kiểu Dữ Liệu (`data_type`) | Khóa Ngoại / Ghi Chú |
+|---|---|---|---|
+| 1 | `assignment_id` | `uuid` (PK) | Khóa chính |
+| 2 | `primary_equipment_id` | `uuid` (FK) | Trỏ đến `equipment.equipment_id` (Khuôn chính) |
+| 3 | `related_equipment_id` | `uuid` (FK) | Trỏ đến `equipment.equipment_id` (Thiết bị con / Phụ kiện) |
+| 4 | `relationship_type` | `text` | `'SET_MEMBER'` \| `'SHARED'` \| `'COMPATIBLE'` |
+| 5 | `is_default` | `boolean` | `true` nếu là cấu hình mặc định |
+| 6 | `notes` | `text` | Ghi chú gá lắp |
+| 7 | `created_at` | `timestamp with time zone` | Ngày tạo |
+
+### 🔑 Kết Luận Kỹ Thuật Cho Sprint R3-S2:
+1. Bảng `equipment_assignments` **KHÔNG CÓ cột `product_id` trực tiếp**.
+2. Để lấy toàn bộ SET thiết bị gá lắp của một sản phẩm:
+   - Bước 1: Lấy `revision_ids` từ `design_revisions` theo `product_id`.
+   - Bước 2: Lấy `equipment_id` của khuôn chính (`equipment_type = 'MOLD'`) từ bảng `equipment` theo `design_revision_id`.
+   - Bước 3: Query `equipment_assignments` theo `primary_equipment_id` và join với `equipment` (thông qua `related_equipment_id`) để lấy đầy đủ 8 món thiết bị và xác định quan hệ riêng (`SET_MEMBER`) hay dùng chung (`SHARED`).
+3. AN đã áp dụng đúng 100% cơ chế này ngay từ `ProductKPIBar.tsx` và sẽ tiếp tục áp dụng cho Tab 3 `EquipmentSetMatrix` ở Sprint R3-S2.
+
+---
+
+## 5. BƯỚC TIẾP THEO (CHỜ PE REVIEW)
 
 Sau khi PE xác nhận nghiệm thu Sprint R3-S1, AN sẵn sàng chuyển sang:
 - **Sprint R3-S2 (🟠 Cao):**
