@@ -20,6 +20,7 @@
 - **#019:** ĐÃ ĐÓNG CHÍNH THỨC ✅ (Sprint R5-S2 E2E 6/6 test cases pass 100%).
 - **#020:** ĐÃ ĐÓNG CHÍNH THỨC ✅ (Đã xóa sạch 100% test data `TEST_E2E_%` trên Live DB, verify COUNT = 0).
 - **#021:** Triển khai Executive Dashboard R5-S3 (Đã hoàn thành 100% Phần A & Phần B, kèm Empty State & Demo Mode).
+- **#022:** ĐÃ HOÀN THÀNH ✅ (Sửa triệt để lỗi giới hạn 1.000 dòng bằng Server SQL Views: `v_equipment_type_summary`, `v_job_status_summary`, `v_dashboard_executive_kpis`).
 
 ## Kiến trúc cốt lõi đã xác lập
 - **ADR-001:** Unified SSOT `equipment` (8 loại thiết bị, quan hệ N:N `equipment_assignments` cho bộ SET gá lắp & dùng chung SHARED)

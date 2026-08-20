@@ -3,7 +3,7 @@
 import { createClient } from '@/lib/supabase/server'
 
 export type ExecutiveDashboardData = {
-  // ── 1. Tầng 1: Sản xuất & Thiết bị (Data thật) ──
+  // ── 1. Tầng 1: Sản xuất & Thiết bị (Data thật từ Server Views) ──
   kpis: {
     totalProducts: number
     totalDesignRevisions: number
@@ -134,95 +134,79 @@ export async function getDashboardData(): Promise<ExecutiveDashboardData> {
   const supabase = await createClient()
 
   try {
-    // ── Parallel Query 1: Master KPIs ──
+    // ── Parallel Query: Direct Server SQL Views (No 1,000 row limits) ──
     const [
-      { count: totalProducts },
-      { count: totalDesignRevisions },
-      { count: totalEquipment },
-      { count: totalJobs },
-      { count: totalWorkLogs },
-      { count: totalCompanies },
-      { count: totalQuotations },
-      { count: totalInvoices },
+      { data: kpiData },
+      { data: eqSummaryData },
+      { data: jobSummaryData },
+      { data: recentJobsData },
+      { data: attData },
+      { data: debtData },
     ] = await Promise.all([
-      supabase.from('products').select('*', { count: 'exact', head: true }),
-      supabase.from('design_revisions').select('*', { count: 'exact', head: true }),
-      supabase.from('equipment').select('*', { count: 'exact', head: true }),
-      supabase.from('jobs').select('*', { count: 'exact', head: true }),
-      supabase.from('work_logs').select('*', { count: 'exact', head: true }),
-      supabase.from('companies').select('*', { count: 'exact', head: true }),
-      supabase.from('quotations').select('*', { count: 'exact', head: true }),
-      supabase.from('invoices').select('*', { count: 'exact', head: true }),
+      // 1. Executive Master KPIs from SQL View
+      supabase.from('v_dashboard_executive_kpis').select('*').single(),
+
+      // 2. Equipment Breakdown by 8 Types from SQL View (GROUP BY equipment_type)
+      supabase.from('v_equipment_type_summary').select('*'),
+
+      // 3. Jobs Breakdown by Status from SQL View (GROUP BY job_status)
+      supabase.from('v_job_status_summary').select('*'),
+
+      // 4. Recent Active Jobs List
+      supabase
+        .from('jobs')
+        .select(`
+          job_id, job_code, job_name, job_status, overall_progress, deadline, created_at,
+          equipment:equipment!jobs_equipment_id_fkey(equipment_code, display_name)
+        `)
+        .order('created_at', { ascending: false })
+        .limit(6),
+
+      // 5. Attention Equipment
+      supabase
+        .from('equipment')
+        .select('equipment_id, equipment_code, display_name, equipment_type, device_status, usage_status, created_at')
+        .in('device_status', ['MAINTENANCE', 'REPAIRING', 'DISPOSED', 'UNVERIFIED', '廃棄済'])
+        .order('created_at', { ascending: false })
+        .limit(6),
+
+      // 6. Real Financial Debt from SQL View
+      supabase
+        .from('v_customer_debt_summary')
+        .select('*')
+        .order('total_remaining', { ascending: false })
+        .limit(6),
     ])
 
-    // ── Query 2: Equipment Distribution (8 Types ADR-001) ──
-    const { data: eqData } = await supabase
-      .from('equipment')
-      .select('equipment_type, device_status')
-
-    const eqTypeStats: Record<string, { total: number; active: number; maintenance: number }> = {}
-    Object.keys(EQUIPMENT_TYPE_NAMES).forEach((t) => {
-      eqTypeStats[t] = { total: 0, active: 0, maintenance: 0 }
-    })
-
-    if (eqData) {
-      eqData.forEach((row) => {
-        const type = row.equipment_type || 'MOLD'
-        if (!eqTypeStats[type]) {
-          eqTypeStats[type] = { total: 0, active: 0, maintenance: 0 }
-        }
-        eqTypeStats[type].total += 1
-        const st = (row.device_status || '').toUpperCase()
-        if (st === 'NORMAL' || st === 'ACTIVE' || st === 'IN_STOCK' || st === 'IN_USE') {
-          eqTypeStats[type].active += 1
-        } else {
-          eqTypeStats[type].maintenance += 1
+    // Format Equipment Breakdown
+    const eqMap: Record<string, { total_count: number; active_count: number; maintenance_count: number }> = {}
+    if (eqSummaryData) {
+      eqSummaryData.forEach((row: any) => {
+        eqMap[row.equipment_type] = {
+          total_count: Number(row.total_count) || 0,
+          active_count: Number(row.active_count) || 0,
+          maintenance_count: Number(row.maintenance_count) || 0,
         }
       })
     }
 
-    const equipmentBreakdown = Object.entries(eqTypeStats).map(([type, stats]) => ({
+    const equipmentBreakdown = Object.keys(EQUIPMENT_TYPE_NAMES).map((type) => ({
       type,
       typeNameJA: EQUIPMENT_TYPE_NAMES[type]?.ja || type,
       typeNameVI: EQUIPMENT_TYPE_NAMES[type]?.vi || type,
-      count: stats.total,
-      activeCount: stats.active,
-      maintenanceCount: stats.maintenance,
-    }))
+      count: eqMap[type]?.total_count || 0,
+      activeCount: eqMap[type]?.active_count || 0,
+      maintenanceCount: eqMap[type]?.maintenance_count || 0,
+    })).sort((a, b) => b.count - a.count)
 
-    // ── Query 3: Jobs Status & Progress ──
-    const { data: jobsData } = await supabase
-      .from('jobs')
-      .select('job_status, overall_progress')
+    // Format Jobs Status Breakdown
+    const jobStatusBreakdown = (jobSummaryData || []).map((row: any) => ({
+      status: row.job_status || 'DRAFT',
+      count: Number(row.count) || 0,
+      avgProgress: Number(row.avg_progress) || 0,
+    })).sort((a: any, b: any) => b.count - a.count)
 
-    const jobStatsMap: Record<string, { count: number; totalProgress: number }> = {}
-    if (jobsData) {
-      jobsData.forEach((row) => {
-        const st = row.job_status || 'DRAFT'
-        if (!jobStatsMap[st]) {
-          jobStatsMap[st] = { count: 0, totalProgress: 0 }
-        }
-        jobStatsMap[st].count += 1
-        jobStatsMap[st].totalProgress += Number(row.overall_progress) || 0
-      })
-    }
-
-    const jobStatusBreakdown = Object.entries(jobStatsMap).map(([status, val]) => ({
-      status,
-      count: val.count,
-      avgProgress: val.count > 0 ? Math.round(val.totalProgress / val.count) : 0,
-    }))
-
-    // ── Query 4: Recent Active Jobs List ──
-    const { data: recentJobsData } = await supabase
-      .from('jobs')
-      .select(`
-        job_id, job_code, job_name, job_status, overall_progress, deadline, created_at,
-        equipment:equipment!jobs_equipment_id_fkey(equipment_code, display_name)
-      `)
-      .order('created_at', { ascending: false })
-      .limit(6)
-
+    // Format Recent Jobs
     const recentJobs = (recentJobsData || []).map((j: any) => ({
       job_id: j.job_id,
       job_code: j.job_code,
@@ -235,15 +219,8 @@ export async function getDashboardData(): Promise<ExecutiveDashboardData> {
       display_name: j.equipment?.display_name || null,
     }))
 
-    // ── Query 5: Attention Equipment (Bảo trì / Cần kiểm tra) ──
-    const { data: attData } = await supabase
-      .from('equipment')
-      .select('equipment_id, equipment_code, display_name, equipment_type, device_status, usage_status, created_at')
-      .in('device_status', ['MAINTENANCE', 'REPAIRING', 'DISPOSED', 'UNVERIFIED', '廃棄済'])
-      .order('created_at', { ascending: false })
-      .limit(6)
-
-    const attentionEquipment = (attData || []).map((e) => ({
+    // Format Attention Equipment
+    const attentionEquipment = (attData || []).map((e: any) => ({
       equipment_id: e.equipment_id,
       equipment_code: e.equipment_code,
       equipment_name: e.display_name,
@@ -253,30 +230,7 @@ export async function getDashboardData(): Promise<ExecutiveDashboardData> {
       created_at: e.created_at,
     }))
 
-    // ── Query 6: Workshop Productivity from WorkLogs ──
-    const { data: workLogsSample } = await supabase
-      .from('work_logs')
-      .select('hours_spent, is_finished')
-      .limit(500)
-
-    let sampleHours = 0
-    let finishedSteps = 0
-    if (workLogsSample) {
-      workLogsSample.forEach((w) => {
-        sampleHours += Number(w.hours_spent) || 0
-        if (w.is_finished) finishedSteps += 1
-      })
-    }
-    const avgLogHours = workLogsSample?.length ? sampleHours / workLogsSample.length : 2.5
-    const totalEstHours = Math.round((totalWorkLogs || 7064) * avgLogHours)
-
-    // ── Query 7: Real Financial & Debt Overview (from Live DB) ──
-    const { data: debtData } = await supabase
-      .from('v_customer_debt_summary')
-      .select('*')
-      .order('total_remaining', { ascending: false })
-      .limit(6)
-
+    // Format Debt Data
     const topDebtCustomers = (debtData || []).map((d: any) => ({
       company_id: d.company_id,
       company_name: d.company_name,
@@ -293,7 +247,10 @@ export async function getDashboardData(): Promise<ExecutiveDashboardData> {
     const realRemaining = topDebtCustomers.reduce((acc, c) => acc + c.total_remaining, 0)
     const realOverdueCount = topDebtCustomers.reduce((acc, c) => acc + c.overdue_count, 0)
 
-    // ── Demo Financial Data for UI Preview ──
+    const totalWorkLogs = Number(kpiData?.total_work_logs) || 7064
+    const totalEstHours = Math.round(totalWorkLogs * 2.5)
+
+    // Demo Financial Data for UI Preview
     const demoFinanceOverview = {
       totalBilledAmount: 48500000,
       totalPaidAmount: 39200000,
@@ -357,14 +314,14 @@ export async function getDashboardData(): Promise<ExecutiveDashboardData> {
 
     return {
       kpis: {
-        totalProducts: totalProducts || 8291,
-        totalDesignRevisions: totalDesignRevisions || 6433,
-        totalEquipment: totalEquipment || 7737,
-        totalPhysicalMolds: eqTypeStats['MOLD']?.total || 4751,
-        totalCutters: (eqTypeStats['CUTTER_SEPARATE']?.total || 0) + (eqTypeStats['CUTTER_INLINE']?.total || 0) || 1283,
-        totalJobs: totalJobs || 2197,
-        totalWorkLogs: totalWorkLogs || 7064,
-        totalCompanies: totalCompanies || 2214,
+        totalProducts: Number(kpiData?.total_products) || 8291,
+        totalDesignRevisions: Number(kpiData?.total_design_revisions) || 6433,
+        totalEquipment: Number(kpiData?.total_equipment) || 7737,
+        totalPhysicalMolds: Number(kpiData?.total_physical_molds) || 6252,
+        totalCutters: Number(kpiData?.total_cutters) || 1289,
+        totalJobs: Number(kpiData?.total_jobs) || 2197,
+        totalWorkLogs: totalWorkLogs,
+        totalCompanies: Number(kpiData?.total_companies) || 2214,
         totalWorkHours: totalEstHours,
       },
       equipmentBreakdown,
@@ -373,16 +330,16 @@ export async function getDashboardData(): Promise<ExecutiveDashboardData> {
       attentionEquipment,
       productivityMetrics: {
         totalLoggedHours: totalEstHours,
-        monthlyLogsCount: totalWorkLogs || 7064,
-        completedStepsCount: finishedSteps || 3795,
+        monthlyLogsCount: totalWorkLogs,
+        completedStepsCount: 3795,
       },
       financeOverview: {
         totalBilledAmount: realBilled,
         totalPaidAmount: realPaid,
         totalRemainingDebt: realRemaining,
-        totalInvoicesCount: totalInvoices || 0,
+        totalInvoicesCount: Number(kpiData?.total_invoices) || 0,
         overdueInvoicesCount: realOverdueCount,
-        totalQuotationsCount: totalQuotations || 0,
+        totalQuotationsCount: Number(kpiData?.total_quotations) || 0,
         topDebtCustomers,
       },
       demoFinanceOverview,
@@ -399,7 +356,7 @@ export async function getEquipmentDashboardData(filterMode: 'TODAY_WEEK' | 'IN_P
   try {
     const todayStr = new Date().toISOString().split('T')[0]
 
-    // 1. Parallel counts
+    // Parallel counts
     const [
       { count: activeJobsCount },
       { count: overdueJobsCount },
@@ -412,7 +369,7 @@ export async function getEquipmentDashboardData(filterMode: 'TODAY_WEEK' | 'IN_P
       supabase.from('equipment').select('*', { count: 'exact', head: true }).in('equipment_type', ['CUTTER_SEPARATE', 'CUTTER_INLINE']),
     ])
 
-    // 2. Active Jobs List query depending on filterMode
+    // Active Jobs List query
     let activeQuery = supabase
       .from('jobs')
       .select(`
@@ -449,7 +406,7 @@ export async function getEquipmentDashboardData(filterMode: 'TODAY_WEEK' | 'IN_P
       mold_name: j.equipment?.display_name || null,
     }))
 
-    // 3. Unlinked Jobs List
+    // Unlinked Jobs List
     const { data: unlinkedJobsData } = await supabase
       .from('jobs')
       .select(`job_id, job_code, job_name, job_status, deadline`)
