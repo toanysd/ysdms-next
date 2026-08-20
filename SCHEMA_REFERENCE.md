@@ -484,6 +484,66 @@ FK:  work_log_id       UUID → work_logs(log_id)
 
 ---
 
+## 💰 PHÂN HỆ CÔNG NỢ & THANH TOÁN (Phase R5)
+
+**`invoices`** — Hóa đơn bán hàng / Yêu cầu thanh toán (SSOT)
+```
+PK:  invoice_id        UUID DEFAULT gen_random_uuid()
+UK:  invoice_number    TEXT NOT NULL UNIQUE (Format: INV-YYYYMM-NNN)
+FK:  order_id          UUID → orders(order_id)
+FK:  shipment_id       UUID → shipments(shipment_id)
+FK:  company_id        UUID → companies(company_id) NOT NULL
+     invoice_date      DATE NOT NULL DEFAULT CURRENT_DATE
+     due_date          DATE NOT NULL
+     total_amount      NUMERIC(12,2) NOT NULL DEFAULT 0
+     tax_amount        NUMERIC(12,2) NOT NULL DEFAULT 0
+     net_amount        NUMERIC(12,2) GENERATED (total_amount + tax_amount)
+     paid_amount       NUMERIC(12,2) NOT NULL DEFAULT 0 (Auto-synced via trigger)
+     remaining_amount  NUMERIC(12,2) GENERATED (total_amount + tax_amount - paid_amount)
+     status            TEXT NOT NULL DEFAULT 'DRAFT' ('DRAFT' | 'ISSUED' | 'PARTIALLY_PAID' | 'PAID' | 'CANCELLED')
+     currency          TEXT NOT NULL DEFAULT 'JPY'
+     notes             TEXT
+FK:  created_by        UUID → auth.users(id)
+```
+
+**`invoice_lines`** — Chi tiết dòng sản phẩm / dịch vụ trong hóa đơn
+```
+PK:  line_id           UUID DEFAULT gen_random_uuid()
+FK:  invoice_id        UUID → invoices(invoice_id) ON DELETE CASCADE
+FK:  order_line_id     UUID → order_lines(line_id)
+     description       TEXT NOT NULL
+     quantity          NUMERIC(10,2) NOT NULL DEFAULT 1
+     unit_price        NUMERIC(12,2) NOT NULL DEFAULT 0
+     line_amount       NUMERIC(12,2) GENERATED (quantity * unit_price)
+     sort_order        INT DEFAULT 0
+```
+
+**`invoice_payments`** — Lịch sử thanh toán cho hóa đơn
+```
+PK:  payment_id        UUID DEFAULT gen_random_uuid()
+FK:  invoice_id        UUID → invoices(invoice_id) ON DELETE CASCADE
+     payment_date      DATE NOT NULL DEFAULT CURRENT_DATE
+     amount            NUMERIC(12,2) NOT NULL
+     payment_method    TEXT DEFAULT 'BANK_TRANSFER' ('BANK_TRANSFER' | 'CASH' | 'CHECK' | 'OTHER')
+     reference_no      TEXT
+     notes             TEXT
+FK:  created_by        UUID → auth.users(id)
+```
+
+**`v_customer_debt_summary`** — View tổng hợp công nợ theo khách hàng
+```
+     company_id        UUID
+     company_name      TEXT
+     company_code      TEXT
+     total_invoices    INT
+     total_billed      NUMERIC
+     total_paid        NUMERIC
+     total_remaining   NUMERIC (Công nợ hiện tại)
+     overdue_count     INT (Số hóa đơn quá hạn chưa thanh toán)
+```
+
+---
+
 ## ⛔ BẢNG & CỘT ĐÃ DEPRECATED / DROPPED (TUYỆT ĐỐI KHÔNG DÙNG)
 
 | Tên Bảng / Cột | Trạng Thái | Thay Thế Bằng | Lý Do |

@@ -11,7 +11,7 @@ import {
   Building2, Users, Server, Grid3X3,
   BarChart3, Settings, ChevronRight,
   Search, GanttChart, ExternalLink, Box, Columns3, Menu, X, Pin, DatabaseZap,
-  Briefcase, ClipboardList, ScanLine, HardDriveDownload
+  Briefcase, ClipboardList, ScanLine, HardDriveDownload, Receipt, CreditCard
 } from 'lucide-react'
 
 type NavItem = {
@@ -47,6 +47,8 @@ const NAV_SECTIONS: NavSection[] = [
       { href: '/orders/quotations', icon: FileSpreadsheet, tKey: 'items.quotations' },
       { href: '/orders', icon: FileText, tKey: 'items.orders' },
       { href: '/orders/shipments', icon: Truck, tKey: 'items.shipments' },
+      { href: '/orders/invoices', icon: Receipt, tKey: 'items.invoices' },
+      { href: '/orders/debt', icon: CreditCard, tKey: 'items.debt' },
       { href: '/master/calendar', icon: Calendar, tKey: 'items.companyCalendar' },
       { href: '/mrp', icon: Calculator, tKey: 'items.mrp' },
       { href: '/production-instructions', icon: ClipboardList, tKey: 'items.productionInstructions' },
