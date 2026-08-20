@@ -1,505 +1,369 @@
 'use client'
 
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import { useTranslations } from 'next-intl'
-
-import { useEffect, useState, useCallback, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { Plus, Edit2, Trash2, X, Truck, Filter, Package, Search, Loader2 } from 'lucide-react'
-import { AsyncSearchableSelect } from '@/components/ui/AsyncSearchableSelect'
-import { Pagination } from '@/components/ui/Pagination'
+import {
+  Truck, Plus, Search, Download, ExternalLink, RefreshCw,
+  Building2, MapPin, CheckCircle2, Clock, Calendar, Package
+} from 'lucide-react'
 import Link from 'next/link'
-import { useRouter, useSearchParams } from 'next/navigation'
-import { useSearchHistory } from '@/hooks/useSearchHistory'
-import { SearchSuggestions } from '@/components/ui/SearchSuggestions'
+import { CreateShipmentModal } from './_components/CreateShipmentModal'
 
-/* ─── Types ──────────────────────────────────────────────────── */
-type Shipment = {
+interface ShipmentItem {
   shipment_id: string
-  order_id: string | null
+  delivery_note_no: string
   ship_date: string
-  delivery_date: string | null
-  delivery_note_no: string | null
-  shipped_by: string | null
-  carrier: string | null
-  tracking_no: string | null
   status: string
-  notes: string | null
-  created_at: string
-  updated_at: string
+  delivery_method?: string | null
+  tracking_no?: string | null
+  shipment_type?: string | null
+  notes?: string | null
   orders?: {
+    order_id: string
     order_no: string
-    companies?: { company_name: string } | null
+    companies?: {
+      company_name: string
+      company_code: string
+    } | null
+  } | null
+  delivery_sites?: {
+    site_id: string
+    site_name: string
+    site_address?: string | null
+  } | null
+  employees?: {
+    employee_name: string
   } | null
 }
 
-type ShipmentForm = {
-  order_id: string
-  ship_date: string
-  delivery_date: string
-  delivery_note_no: string
-  carrier: string
-  tracking_no: string
-  status: string
-  notes: string
+const STATUS_BADGE: Record<string, { labelJA: string; badgeClass: string; bg: string; color: string }> = {
+  PREPARING: { labelJA: '準備中 (Preparing)', badgeClass: 'badge badge--neutral', bg: '#F1F5F9', color: '#475569' },
+  SHIPPED: { labelJA: '出荷済 (Shipped)', badgeClass: 'badge badge--info', bg: '#EFF6FF', color: '#2563EB' },
+  DELIVERED: { labelJA: '納品受領済 (Delivered)', badgeClass: 'badge badge--success', bg: '#ECFDF5', color: '#059669' },
+  CANCELLED: { labelJA: 'キャンセル', badgeClass: 'badge badge--error', bg: '#FEF2F2', color: '#DC2626' },
 }
 
-const STATUS_OPTIONS = [
-  { value: 'SHIPPED', labelKey: 'statusShipped', color: 'var(--status-info)' },
-  { value: 'IN_TRANSIT', labelKey: 'statusInTransit', color: 'var(--status-warning)' },
-  { value: 'DELIVERED', labelKey: 'statusDelivered', color: 'var(--status-success)' },
-  { value: 'RETURNED', labelKey: 'statusReturned', color: 'var(--status-error)' },
-]
-
-const emptyForm: ShipmentForm = {
-  order_id: '',
-  ship_date: new Date().toISOString().slice(0, 10),
-  delivery_date: '',
-  delivery_note_no: '',
-  carrier: '',
-  tracking_no: '',
-  status: 'SHIPPED',
-  notes: '',
-}
-
-/* ─── Helpers ────────────────────────────────────────────────── */
-function fmtDate(d: string | null | undefined): string {
-  if (!d) return '-'
-  return d.slice(0, 10).replace(/-/g, '/')
-}
-
-function getStatusDef(status: string) {
-  return STATUS_OPTIONS.find(s => s.value === status) || STATUS_OPTIONS[0]
-}
-
-/* ─── Main Page ──────────────────────────────────────────────── */
 export default function ShipmentsPage() {
-  const t = useTranslations()
+  const t = useTranslations('Shipments')
   const supabase = createClient()
 
-  const [shipments, setShipments] = useState<Shipment[]>([])
+  const [shipments, setShipments] = useState<ShipmentItem[]>([])
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
 
-  // Filter
-  const [dateFrom, setDateFrom] = useState('')
-  const [dateTo, setDateTo] = useState('')
-  
-  const searchParams = useSearchParams()
-  const urlSearch = searchParams.get('search') || ''
-  const [searchText, setSearchText] = useState(urlSearch)
-  const [showSuggestions, setShowSuggestions] = useState(false)
-  const { history, addToHistory, removeFromHistory, clearHistory } = useSearchHistory('shipments_search')
-  const router = useRouter()
-  
-  // Pagination
-  const [page, setPage] = useState(1)
-  const [totalCount, setTotalCount] = useState(0)
-  const PAGE_SIZE = 50
+  // Filters
+  const [searchQuery, setSearchQuery] = useState('')
+  const [statusFilter, setStatusFilter] = useState('ALL')
 
-  // Modal (Create Only)
-  const [modalOpen, setModalOpen] = useState(false)
-  const [form, setForm] = useState<ShipmentForm>({ ...emptyForm })
-  const [saving, setSaving] = useState(false)
-
-  // Delete
-  const [deleteId, setDeleteId] = useState<string | null>(null)
-
-  // Filter resets page
-  useEffect(() => {
-    setPage(1)
-  }, [dateFrom, dateTo, searchText])
-
-  /* ─── Fetch ─────────────────────────────────────────────────── */
   const fetchShipments = useCallback(async () => {
     setLoading(true)
-    let q = supabase
-      .from('shipments')
-      .select('*, orders(order_no, companies(company_name))', { count: 'exact' })
-    
-    if (dateFrom) q = q.gte('ship_date', dateFrom)
-    if (dateTo) q = q.lte('ship_date', dateTo)
-    if (searchText) {
-      q = q.or(`delivery_note_no.ilike.%${searchText}%,tracking_no.ilike.%${searchText}%`)
-    }
+    try {
+      const { data, error } = await supabase
+        .from('shipments')
+        .select(`
+          shipment_id, delivery_note_no, ship_date, status,
+          delivery_method, tracking_no, shipment_type, notes,
+          orders:orders!shipments_order_id_fkey (
+            order_id, order_no,
+            companies:companies!orders_company_id_fkey ( company_name, company_code )
+          ),
+          delivery_sites:delivery_sites!shipments_delivery_site_id_fkey ( site_id, site_name, site_address ),
+          employees:employees!shipments_shipped_by_fkey ( employee_name )
+        `)
+        .order('ship_date', { ascending: false })
 
-    q = q.order('ship_date', { ascending: false })
-         .range((page - 1) * PAGE_SIZE, page * PAGE_SIZE - 1)
-
-    const { data, count, error } = await q
-    if (error) {
-      console.error(error)
-      setError(error.message)
-    } else {
-      setShipments((data as any) || [])
-      setTotalCount(count || 0)
+      if (error) throw error
+      if (data) setShipments(data as any)
+    } catch (err: any) {
+      console.error('Error fetching shipments:', err)
+    } finally {
+      setLoading(false)
     }
-    setLoading(false)
-  }, [dateFrom, dateTo, searchText, page, supabase])
+  }, [])
 
   useEffect(() => {
     fetchShipments()
   }, [fetchShipments])
 
-  /* ─── Modal handlers ────────────────────────────────────────── */
-  const openAdd = () => {
-    setForm({ ...emptyForm })
-    setModalOpen(true)
-  }
+  // Filtered List
+  const filteredShipments = useMemo(() => {
+    return shipments.filter((s) => {
+      const matchSearch =
+        searchQuery === '' ||
+        (s.delivery_note_no || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (s.orders?.order_no || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (s.orders?.companies?.company_name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (s.delivery_sites?.site_name || '').toLowerCase().includes(searchQuery.toLowerCase())
 
-  const handleSave = async () => {
-    setSaving(true)
-    const payload: Record<string, unknown> = {
-      ship_date: form.ship_date,
-      delivery_date: form.delivery_date || null,
-      delivery_note_no: form.delivery_note_no || null,
-      carrier: form.carrier || null,
-      tracking_no: form.tracking_no || null,
-      status: form.status,
-      notes: form.notes || null,
-      order_id: form.order_id || null,
+      const matchStatus = statusFilter === 'ALL' || s.status === statusFilter
+
+      return matchSearch && matchStatus
+    })
+  }, [shipments, searchQuery, statusFilter])
+
+  // Summary Metrics
+  const { totalShipmentsCount, preparingCount, deliveredCount } = useMemo(() => {
+    let prep = 0
+    let deliv = 0
+
+    shipments.forEach((s) => {
+      if (s.status === 'PREPARING') prep++
+      if (s.status === 'DELIVERED' || s.status === 'SHIPPED') deliv++
+    })
+
+    return {
+      totalShipmentsCount: shipments.length,
+      preparingCount: prep,
+      deliveredCount: deliv,
     }
+  }, [shipments])
 
-    const { data, error: err } = await supabase.from('shipments').insert(payload as any).select().single()
-    if (err) { alert(`${t('Shipments.registerError')}${err.message}`); setSaving(false); return }
-    
-    setSaving(false)
-    setModalOpen(false)
-    router.push(`/orders/shipments/${data.shipment_id}`)
-  }
-
-  const handleDelete = async () => {
-    if (!deleteId) return
-    const { error: err } = await supabase.from('shipments').delete().eq('shipment_id', deleteId)
-    if (err) alert(`${t('Shipments.deleteError')}${err.message}`)
-    setDeleteId(null)
-    fetchShipments()
-  }
-
-  /* ─── Render ────────────────────────────────────────────────── */
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', gap: 12 }}>
-      {/* ── Header ── */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexShrink: 0 }}>
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <div style={{ width: 32, height: 32, borderRadius: 'var(--radius-md)', background: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
-              <Truck size={18} />
-            </div>
-            <div>
-              <h1 style={{ fontSize: 18, fontWeight: 700, margin: 0, color: 'var(--text-primary)' }}>
-                {t('Orders.quanLyGiaoHang')}
-              </h1>
-            </div>
+
+      {/* ── 1. Page Header ── */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0, flexWrap: 'wrap', gap: 8 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <Truck size={22} style={{ color: 'var(--accent, #0D9488)' }} />
+          <div>
+            <h1 style={{ fontSize: 16, fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
+              {t('title')} (Shipment & Delivery Management)
+            </h1>
+            <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
+              出荷実績記録・納品書/受領書PDF発行・受注残数(Backlog)自動連動
+            </span>
           </div>
         </div>
-        <button className="btn btn-primary" onClick={openAdd}>
-          <Plus size={16} />
-          {t('Shipments.newShipment')}
-        </button>
-      </div>
 
-      {/* ── Filters ── */}
-      <div className="card-flat" style={{ padding: '12px 16px', flexShrink: 0, display: 'flex', flexWrap: 'wrap', gap: 16, alignItems: 'center' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <Filter size={14} style={{ color: 'var(--text-muted)' }} />
-          <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)' }}>
-            {t('Orders.loc')}
-          </span>
+          <button
+            onClick={() => setIsCreateModalOpen(true)}
+            className="btn btn-primary"
+            style={{ height: 32, padding: '0 14px', fontSize: 12, gap: 5 }}
+          >
+            <Plus size={14} />
+            <span>{t('newShipment')}</span>
+          </button>
+          <button
+            onClick={fetchShipments}
+            className="btn btn-secondary"
+            style={{ height: 32, width: 32, padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+            title="再読込 (Làm mới)"
+          >
+            <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
+          </button>
         </div>
-        
-        <div style={{ display: 'flex', gap: 12, flex: 1 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} className="form-input" style={{ width: 130 }} />
-            <span style={{ color: 'var(--text-muted)' }}>~</span>
-            <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} className="form-input" style={{ width: 130 }} />
-          </div>
+      </div>
 
-          <div style={{ flex: 1, maxWidth: 300 }}>
-            <div className="form-group" style={{ marginBottom: 0 }}>
-              <div style={{ position: 'relative' }}>
-                <Search size={14} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-                <input
-                  type="text"
-                  placeholder={t('Shipments.searchPlaceholder')}
-                  value={searchText}
-                  onChange={e => setSearchText(e.target.value)}
-                  onFocus={() => setShowSuggestions(true)}
-                  onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
-                  onKeyDown={e => {
-                    if (e.key === 'Enter' && searchText.trim()) {
-                      addToHistory(searchText.trim())
-                      router.push(`?search=${encodeURIComponent(searchText.trim())}`)
-                    }
-                  }}
-                  className="form-input form-input-search"
-                  style={{ paddingLeft: 30 }}
-                />
-                {showSuggestions && (
-                  <SearchSuggestions
-                    history={history}
-                    onSelect={(v) => {
-                      setSearchText(v)
-                      addToHistory(v)
-                      router.push(`?search=${encodeURIComponent(v)}`)
-                    }}
-                    onClear={clearHistory}
-                    onRemove={removeFromHistory}
-                    visible={showSuggestions}
-                    onClose={() => setShowSuggestions(false)}
-                  />
-                )}
-              </div>
-            </div>
+      {/* ── 2. Summary KPI Ribbon ── */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(3, 1fr)',
+        gap: 10,
+        flexShrink: 0,
+      }}>
+        <div className="card-flat" style={{ padding: '10px 14px', borderLeft: '4px solid var(--accent, #0D9488)', background: 'var(--tint-teal-bg, #f0fdfa)' }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', marginBottom: 2 }}>
+            📦 {t('totalShipments')} (Tổng Đợt Xuất)
+          </div>
+          <div style={{ fontSize: 18, fontWeight: 800, fontFamily: 'monospace', color: 'var(--text-primary)' }}>
+            {loading ? '...' : `${totalShipmentsCount} 回`}
+          </div>
+        </div>
+
+        <div className="card-flat" style={{ padding: '10px 14px', borderLeft: '4px solid #F59E0B', background: '#FFFBEB' }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', marginBottom: 2 }}>
+            ⏳ {t('preparing')} (Đang Chuẩn Bị)
+          </div>
+          <div style={{ fontSize: 18, fontWeight: 800, fontFamily: 'monospace', color: '#D97706' }}>
+            {loading ? '...' : `${preparingCount} 回`}
+          </div>
+        </div>
+
+        <div className="card-flat" style={{ padding: '10px 14px', borderLeft: '4px solid #059669', background: '#ECFDF5' }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', marginBottom: 2 }}>
+            🚚 {t('delivered')} / {t('shipped')} (Đã Xuất / Đã Giao)
+          </div>
+          <div style={{ fontSize: 18, fontWeight: 800, fontFamily: 'monospace', color: '#059669' }}>
+            {loading ? '...' : `${deliveredCount} 回`}
           </div>
         </div>
       </div>
 
-      {/* ── Data Table ────────────────────────────────────────── */}
-      <div className="card-flat" style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}>
+      {/* ── 3. Filter Bar ── */}
+      <div className="card-flat" style={{ padding: '8px 12px', display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', flexShrink: 0 }}>
+        {/* Search */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1, minWidth: 220 }}>
+          <Search size={14} style={{ color: 'var(--text-muted)' }} />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder={t('searchPlaceholder')}
+            className="form-input"
+            style={{ height: 28, fontSize: 12 }}
+          />
+        </div>
+
+        {/* Status Filter */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)' }}>{t('shipmentStatus')}:</span>
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="form-input"
+            style={{ height: 28, fontSize: 11 }}
+          >
+            <option value="ALL">すべて (All Status)</option>
+            <option value="PREPARING">準備中 (Preparing)</option>
+            <option value="SHIPPED">出荷済 (Shipped)</option>
+            <option value="DELIVERED">納品完了 (Delivered)</option>
+            <option value="CANCELLED">キャンセル</option>
+          </select>
+        </div>
+      </div>
+
+      {/* ── 4. Main Data Table ── */}
+      <div className="card-flat" style={{ flex: 1, overflow: 'auto', padding: 0 }}>
         {loading ? (
-          <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)', fontSize: 12 }}>
-            {t('Orders.loading')}
+          <div style={{ padding: 32, textAlign: 'center', color: 'var(--text-muted)', fontSize: 12 }}>
+            <RefreshCw size={18} className="animate-spin" style={{ margin: '0 auto 8px' }} />
+            出荷データを読込中...
           </div>
-        ) : error ? (
-          <div style={{ padding: 16, color: 'var(--status-error)', fontSize: 12 }}>
-            {t('Common.error')}: {error}
+        ) : filteredShipments.length === 0 ? (
+          <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-muted)', fontSize: 13 }}>
+            <Truck size={28} style={{ margin: '0 auto 8px', color: 'var(--text-muted)' }} />
+            <div>{t('noShipmentsFound')}</div>
           </div>
         ) : (
-          <>
-            <div className="custom-scrollbar" style={{ flex: 1, overflowY: 'auto' }}>
-              <table className="data-table">
-                <thead>
-                  <tr>
-                    <th style={{ width: 120 }}>
-                      {t('Orders.soPg')}
-                    </th>
-                    <th style={{ width: 120 }}>
-                      {t('Orders.maH')}
-                    </th>
-                    <th style={{ width: 180 }}>
-                      {t('Orders.khachHang')}
-                    </th>
-                    <th style={{ width: 100 }}>
-                      {t('Orders.ngayXuat')}
-                    </th>
-                    <th style={{ width: 100 }}>
-                      {t('Orders.ngayGiao')}
-                    </th>
-                    <th style={{ width: 110 }}>
-                      {t('Orders.vanChuyen')}
-                    </th>
-                    <th style={{ width: 120 }}>
-                      {t('Orders.tracking')}
-                    </th>
-                    <th style={{ width: 90, textAlign: 'center' }}>
-                      {t('Orders.trangThai')}
-                    </th>
-                    <th style={{ width: 80, textAlign: 'right' }}>{t('Shipments.action')}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {shipments.length === 0 ? (
-                    <tr>
-                      <td colSpan={9} style={{ textAlign: 'center', padding: '32px 0', color: 'var(--text-muted)' }}>
-                        {t('Shipments.noData')}
-                      </td>
-                    </tr>
-                  ) : (
-                    shipments.map((s: any) => {
-                      const st = getStatusDef(s.status)
-                      return (
-                        <tr key={s.shipment_id}>
-                          <td style={{ fontFamily: 'monospace', fontWeight: 600 }}>
-                            {s.delivery_note_no ? (
-                              <Link href={`/orders/shipments/${s.shipment_id}`} style={{ color: 'var(--accent)', textDecoration: 'none' }}>
-                                {s.delivery_note_no}
-                              </Link>
-                            ) : (
-                              <Link href={`/orders/shipments/${s.shipment_id}`} style={{ color: 'var(--text-muted)', textDecoration: 'none', fontStyle: 'italic' }}>
-                                {t('Shipments.notSet')}
-                              </Link>
-                            )}
-                          </td>
-                          <td style={{ fontFamily: 'monospace', color: 'var(--accent)', fontWeight: 600 }}>
-                            {s.orders?.order_no || <span style={{ color: 'var(--text-muted)' }}>-</span>}
-                          </td>
-                          <td style={{ fontWeight: 500 }}>
-                            {s.orders?.companies?.company_name || <span style={{ color: 'var(--text-muted)' }}>-</span>}
-                          </td>
-                          <td style={{ fontFamily: 'monospace', color: 'var(--text-secondary)' }}>
-                            {fmtDate(s.ship_date)}
-                          </td>
-                          <td style={{ fontFamily: 'monospace', color: 'var(--text-secondary)' }}>
-                            {fmtDate(s.delivery_date)}
-                          </td>
-                          <td style={{ color: 'var(--text-secondary)' }}>
-                            {s.carrier || '-'}
-                          </td>
-                          <td style={{ fontFamily: 'monospace', color: 'var(--text-secondary)' }}>
-                            {s.tracking_no || '-'}
-                          </td>
-                          <td style={{ textAlign: 'center' }}>
-                            <span
-                              style={{
-                                display: 'inline-block',
-                                fontSize: 10,
-                                fontWeight: 700,
-                                padding: '2px 8px',
-                                borderRadius: 9999,
-                                color: '#fff',
-                                background: st.color,
-                                whiteSpace: 'nowrap',
-                              }}
-                            >
-                              {t(`Shipments.${st.labelKey}`)}
-                            </span>
-                          </td>
-                          <td style={{ textAlign: 'right' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 4 }}>
-                              <Link
-                                href={`/orders/shipments/${s.shipment_id}`}
-                                style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', padding: 4 }}
-                                title={t('Shipments.details')}
-                              >
-                                <Edit2 size={14} />
-                              </Link>
-                              <button
-                                onClick={() => setDeleteId(s.shipment_id)}
-                                style={{ background: 'none', border: 'none', color: 'var(--status-error)', cursor: 'pointer', padding: 4 }}
-                                title={t('Shipments.delete')}
-                              >
-                                <Trash2 size={14} />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      )
-                    })
-                  )}
-                </tbody>
-              </table>
-            </div>
+          <table className="data-table" style={{ width: '100%', fontSize: 12 }}>
+            <thead>
+              <tr>
+                <th style={{ width: 140 }}>{t('deliveryNoteNo')}</th>
+                <th style={{ width: 120 }}>{t('orderNo')}</th>
+                <th>{t('customerName')}</th>
+                <th>{t('deliverySite')}</th>
+                <th style={{ width: 100 }}>{t('shipDate')}</th>
+                <th style={{ width: 130 }}>{t('deliveryMethod')}</th>
+                <th style={{ width: 120, textAlign: 'center' }}>{t('shipmentStatus')}</th>
+                <th style={{ width: 100, textAlign: 'center' }}>操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredShipments.map((s) => {
+                const statusConf = STATUS_BADGE[s.status] || STATUS_BADGE.PREPARING
+                return (
+                  <tr key={s.shipment_id}>
+                    {/* Delivery Note No (Link) */}
+                    <td>
+                      <Link
+                        href={`/orders/shipments/${s.shipment_id}`}
+                        style={{
+                          fontFamily: 'monospace',
+                          fontWeight: 800,
+                          fontSize: 13,
+                          color: 'var(--accent, #0D9488)',
+                          textDecoration: 'none',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 4,
+                        }}
+                      >
+                        {s.delivery_note_no || 'DN-未採番'}
+                        <ExternalLink size={11} />
+                      </Link>
+                    </td>
 
-            <div style={{ padding: '8px 16px', borderTop: '1px solid var(--border-default)', background: 'var(--bg-surface)' }}>
-              <Pagination
-                currentPage={page}
-                totalRecords={totalCount}
-                pageSize={PAGE_SIZE}
-                onPageChange={setPage}
-              />
-            </div>
-          </>
+                    {/* Order No */}
+                    <td>
+                      {s.orders?.order_id ? (
+                        <Link
+                          href={`/orders/${s.orders.order_id}`}
+                          style={{ fontFamily: 'monospace', fontWeight: 700, color: 'var(--text-primary)', textDecoration: 'none' }}
+                        >
+                          {s.orders.order_no}
+                        </Link>
+                      ) : (
+                        <span style={{ color: 'var(--text-muted)' }}>—</span>
+                      )}
+                    </td>
+
+                    {/* Customer */}
+                    <td>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <Building2 size={13} style={{ color: 'var(--text-muted)' }} />
+                        <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>
+                          {s.orders?.companies?.company_name || '得意先未設定'}
+                        </span>
+                      </div>
+                    </td>
+
+                    {/* Delivery Site */}
+                    <td>
+                      {s.delivery_sites?.site_name ? (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                          <MapPin size={12} style={{ color: 'var(--accent)' }} />
+                          <span style={{ fontWeight: 600 }}>{s.delivery_sites.site_name}</span>
+                        </div>
+                      ) : (
+                        <span style={{ color: 'var(--text-muted)', fontSize: 11 }}>自社引取 / 指定なし</span>
+                      )}
+                    </td>
+
+                    {/* Ship Date */}
+                    <td style={{ fontFamily: 'monospace', color: 'var(--text-muted)' }}>
+                      {s.ship_date}
+                    </td>
+
+                    {/* Delivery Method */}
+                    <td>
+                      <span style={{ fontSize: 11, color: 'var(--text-secondary)' }}>
+                        {s.delivery_method === 'TRUCK' ? '自社トラック便' : s.delivery_method === 'COURIER' ? '路線便' : s.delivery_method === 'SELF_PICKUP' ? '客先引取' : s.delivery_method || '—'}
+                      </span>
+                    </td>
+
+                    {/* Status */}
+                    <td style={{ textAlign: 'center' }}>
+                      <span style={{
+                        fontSize: 9, fontWeight: 700, padding: '2px 8px', borderRadius: 4,
+                        background: statusConf.bg, color: statusConf.color,
+                      }}>
+                        {statusConf.labelJA}
+                      </span>
+                    </td>
+
+                    {/* Actions: PDF Download */}
+                    <td style={{ textAlign: 'center' }}>
+                      <a
+                        href={`/api/shipments/${s.shipment_id}/pdf`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="btn btn-secondary"
+                        style={{ height: 24, padding: '0 8px', fontSize: 10, gap: 3, textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }}
+                        title="納品書・受領書PDF出力"
+                      >
+                        <Download size={11} />
+                        <span>納品書</span>
+                      </a>
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
         )}
       </div>
 
-      {/* ═══════════ ADD/EDIT MODAL ═══════════ */}
-      {modalOpen && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.5)' }}>
-          <div className="card" style={{ width: 480, display: 'flex', flexDirection: 'column', maxHeight: '90vh' }}>
-            <div className="form-section-header" style={{ justifyContent: 'space-between', padding: '12px 16px' }}>
-              <div>
-                {t('Orders.taoPhieuXuatMoi')}
-              </div>
-              <button onClick={() => setModalOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}>
-                <X size={16} />
-              </button>
-            </div>
-            
-            <div className="custom-scrollbar" style={{ padding: 16, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 12 }}>
-              <div className="form-field">
-                <label className="form-label">{t('Orders.maOnHang')}</label>
-                <AsyncSearchableSelect
-                  value={form.order_id}
-                  onChange={(v) => setForm(f => ({ ...f, order_id: v || '' }))}
-                  placeholder={t('Shipments.searchOrderPlaceholder')}
-                  fetchOptions={async (q) => {
-                    const { data } = await supabase
-                      .from('orders')
-                      .select('order_id, order_no')
-                      .ilike('order_no', `%${q}%`)
-                      .limit(20)
-                    return (data || []).map((o: any) => ({
-                      value: o.order_id,
-                      label: o.order_no,
-                      sublabel: 'Order'
-                    }))
-                  }}
-                />
-              </div>
+      {/* ── Create Shipment Modal ── */}
+      <CreateShipmentModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onSuccess={() => {
+          fetchShipments()
+        }}
+      />
 
-              <div className="form-grid-2">
-                <div className="form-field">
-                  <label className="form-label">{t('Orders.ngayXuat')}</label>
-                  <input type="date" required className="form-input" value={form.ship_date} onChange={e => setForm(f => ({ ...f, ship_date: e.target.value }))} />
-                </div>
-                <div className="form-field">
-                  <label className="form-label">{t('Orders.ngayGiao')}</label>
-                  <input type="date" className="form-input" value={form.delivery_date} onChange={e => setForm(f => ({ ...f, delivery_date: e.target.value }))} />
-                </div>
-              </div>
-
-              <div className="form-field">
-                <label className="form-label">{t('Orders.soPhieuGiao')}</label>
-                <input type="text" className="form-input mono" value={form.delivery_note_no} onChange={e => setForm(f => ({ ...f, delivery_note_no: e.target.value }))} placeholder="DN-2026-001" />
-              </div>
-
-              <div className="form-grid-2">
-                <div className="form-field">
-                  <label className="form-label">{t('Orders.hangVanChuyen')}</label>
-                  <input type="text" className="form-input" value={form.carrier} onChange={e => setForm(f => ({ ...f, carrier: e.target.value }))} placeholder="ヤマト運輸" />
-                </div>
-                <div className="form-field">
-                  <label className="form-label">{t('Orders.maTracking')}</label>
-                  <input type="text" className="form-input mono" value={form.tracking_no} onChange={e => setForm(f => ({ ...f, tracking_no: e.target.value }))} />
-                </div>
-              </div>
-
-              <div className="form-field">
-                <label className="form-label">{t('Orders.trangThai')}</label>
-                <select className="form-input" value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value }))}>
-                  {STATUS_OPTIONS.map(s => (
-                    <option key={s.value} value={s.value}>{t(`Shipments.${s.labelKey}`)}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="form-field">
-                <label className="form-label">{t('Orders.ghiChu')}</label>
-                <textarea className="form-textarea" value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} rows={2} />
-              </div>
-            </div>
-
-            <div className="form-actions" style={{ padding: '12px 16px', background: 'var(--bg-surface-2)', marginTop: 0 }}>
-              <button type="button" className="btn btn-secondary" onClick={() => setModalOpen(false)} disabled={saving}>{t('Shipments.cancel')}</button>
-              <button type="button" className="btn btn-primary" onClick={handleSave} disabled={saving || !form.ship_date}>
-                {saving && <Loader2 size={12} className="animate-spin" style={{ marginRight: 4 }} />}
-                {t('Shipments.register')}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ═══════════ DELETE CONFIRM ═══════════ */}
-      {deleteId && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.5)' }}>
-          <div className="card" style={{ width: 380, padding: 24, textAlign: 'center' }}>
-            <Trash2 size={32} style={{ color: 'var(--status-error)', margin: '0 auto 12px' }} />
-            <h3 style={{ fontSize: 15, marginBottom: 8, fontWeight: 'bold' }}>{t('Orders.confirmDelete')}</h3>
-            <p style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 20 }}>
-              {t('Orders.deleteQuestion')}
-            </p>
-            <div style={{ display: 'flex', justifyContent: 'center', gap: 8 }}>
-              <button className="btn btn-secondary" onClick={() => setDeleteId(null)}>
-                {t('Orders.cancel')}
-              </button>
-              <button className="btn" style={{ background: 'var(--status-error)', color: '#fff', border: 'none' }} onClick={handleDelete}>
-                {t('Orders.delete')}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }
