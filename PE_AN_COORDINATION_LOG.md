@@ -36,5 +36,7 @@
 - **Thoan (Product Owner):** Cầu nối điều phối, copy nguyên khung chỉ thị cho AN
 - **Schema thực tế (SSOT):** `SCHEMA_REFERENCE.md` (cập nhật lần cuối 2026-08-20)
 - **Coding rules:** `CLAUDE.md`, `AGENTS.md`, `AI_SYSTEM_RULES.md`
+- **Context Khởi đầu Phiên Mới:** `SESSION_STARTER.md` (Bắt buộc paste vào đầu mỗi thread mới)
+- **Quy tắc 4e (Giới hạn thảo luận):** Khi thảo luận đạt ~20 lượt, PE tự động nhắc nhở và tạo ngữ cảnh chuyển tiếp chuẩn để copy sang thảo luận mới.
 
 ---
