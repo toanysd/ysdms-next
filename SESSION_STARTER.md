@@ -23,7 +23,8 @@ CONTEXT KHỞI ĐẦU THẢO LUẬN — DỰ ÁN ysdms-next
 - Phase R5  : 🚀 ĐANG MỞ
   Sprint R5-S1: ✅ ĐÃ NGHIỆM THU (Phân hệ Công Nợ & Thanh Toán)
   Sprint R5-S2: ✅ ĐÃ NGHIỆM THU (E2E Testing & Khép Kín Vòng Đời Order-to-Cash, 6/6 test cases PASS)
-  Chỉ thị #018, #019, #020: ✅ ĐÃ ĐÓNG (Sẵn sàng mở Chỉ thị #021 Sprint R5-S3: Executive Dashboard)
+  Sprint R5-S3: 🚀 HOÀN THÀNH (Executive Dashboard 2 Tầng: Sản Xuất Live DB & Thương Mại/Công Nợ + Demo Mode)
+  Chỉ thị #021: Đã hoàn thành (Chờ PE review & nghiệm thu)
 
 ## 4. QUY TẮC PHỐI HỢP BẮT BUỘC
 

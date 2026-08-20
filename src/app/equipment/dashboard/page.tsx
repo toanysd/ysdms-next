@@ -276,7 +276,7 @@ export default function ToolingDashboard() {
                 {t('priorityJobs.noActive')}
               </div>
             ) : (
-              data?.activeJobs.map(job => {
+              (data?.activeJobs || []).map((job: any) => {
                 const deadlineBadge = getDeadlineBadgeStyle(job.deadline, job.job_status)
                 return (
                   <div
@@ -371,7 +371,7 @@ export default function ToolingDashboard() {
                   {t('unlinkedJobs.allLinked')}
                 </div>
               ) : (
-                data?.unlinkedJobs.map(j => (
+                (data?.unlinkedJobs || []).map((j: any) => (
                   <div
                     key={j.job_id}
                     style={{

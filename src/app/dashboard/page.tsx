@@ -5,22 +5,29 @@ import { useTranslations } from 'next-intl'
 import Link from 'next/link'
 import {
   Package, Wrench, Hammer, FileText, Building2, Plus,
-  ExternalLink, RefreshCw
+  ExternalLink, RefreshCw, BarChart3, TrendingUp,
+  AlertTriangle, CheckCircle2, Clock, DollarSign,
+  CreditCard, ShieldAlert, Sparkles, Layers, ArrowRight,
+  Factory, Eye
 } from 'lucide-react'
-import { getDashboardData, RealDashboardData } from '@/app/actions/dashboard'
-import { QuickActionsHub } from './_components/QuickActionsHub'
+import { getDashboardData, ExecutiveDashboardData } from '@/app/actions/dashboard'
 
-export default function DashboardPage() {
+export default function ExecutiveDashboardPage() {
   const t = useTranslations('Dashboard')
-
-  const [data, setData] = useState<RealDashboardData | null>(null)
+  const [data, setData] = useState<ExecutiveDashboardData | null>(null)
   const [loading, setLoading] = useState(true)
+  const [demoMode, setDemoMode] = useState(false)
 
   const loadData = useCallback(async () => {
     setLoading(true)
-    const res = await getDashboardData()
-    setData(res)
-    setLoading(false)
+    try {
+      const res = await getDashboardData()
+      setData(res)
+    } catch (err) {
+      console.error('Failed to load dashboard:', err)
+    } finally {
+      setLoading(false)
+    }
   }, [])
 
   useEffect(() => {
@@ -33,31 +40,112 @@ export default function DashboardPage() {
   }
 
   const renderJobStatusBadge = (st: string | null) => {
-    const status = st || 'DRAFT'
+    const status = (st || 'DRAFT').toUpperCase()
     if (status === 'COMPLETED') return <span className="badge badge--success">{t('statusCompleted')}</span>
     if (status === 'IN_PROGRESS') return <span className="badge badge--warning">{t('statusInProgress')}</span>
     if (status === 'PLANNED') return <span className="badge badge--info">{t('statusPlanned')}</span>
     return <span className="badge badge--neutral">{status}</span>
   }
 
+  // Determine active financial dataset (Real vs Demo)
+  const activeFinance = demoMode
+    ? data?.demoFinanceOverview
+    : data?.financeOverview
+
+  const hasRealFinanceData = (data?.financeOverview?.totalInvoicesCount || 0) > 0
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 14, minHeight: '100%', paddingBottom: 20 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 14, minHeight: '100%', paddingBottom: 24 }}>
       
-      {/* ── Header Bar ── */}
+      {/* ── Demo Mode Warning Banner (Pinned when active) ── */}
+      {demoMode && (
+        <div
+          style={{
+            padding: '8px 16px',
+            borderRadius: 8,
+            background: 'linear-gradient(90deg, #FFFBEB 0%, #FEF3C7 100%)',
+            border: '1px solid #FDE68A',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            boxShadow: '0 1px 3px rgba(217, 119, 6, 0.1)',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <Sparkles size={16} style={{ color: '#D97706', flexShrink: 0 }} />
+            <span style={{ fontSize: 12, fontWeight: 700, color: '#92400E' }}>
+              {t('demoWarningBadge')}
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setDemoMode(false)}
+            style={{
+              background: '#D97706',
+              color: '#FFFFFF',
+              border: 'none',
+              borderRadius: 4,
+              padding: '2px 10px',
+              fontSize: 11,
+              fontWeight: 600,
+              cursor: 'pointer',
+            }}
+          >
+            {t('turnOffDemo')}
+          </button>
+        </div>
+      )}
+
+      {/* ── 1. Page Header Bar ── */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <Package size={22} style={{ color: 'var(--accent)' }} />
+          <div
+            style={{
+              width: 36,
+              height: 36,
+              borderRadius: 8,
+              background: 'var(--tint-teal-bg, #F0FDFA)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              border: '1px solid #CCFBF1',
+            }}
+          >
+            <BarChart3 size={20} style={{ color: 'var(--accent, #0D9488)' }} />
+          </div>
           <div>
-            <h1 style={{ fontSize: 16, fontWeight: 700, fontFamily: 'var(--font-jp)', color: 'var(--text-primary)', margin: 0 }}>
-              {t('title')}
+            <h1 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary, #0F172A)', margin: 0 }}>
+              {t('executiveTitle')}
             </h1>
-            <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
-              {t('subtitle')}
+            <span style={{ fontSize: 11, color: 'var(--text-muted, #64748B)' }}>
+              {t('executiveSubtitle')}
             </span>
           </div>
         </div>
 
+        {/* Header Action Tools */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          {/* Demo Mode Toggle Switch */}
+          <div
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
+              padding: '4px 10px',
+              borderRadius: 20,
+              background: demoMode ? '#FEF3C7' : '#F1F5F9',
+              border: demoMode ? '1px solid #FCD34D' : '1px solid #E2E8F0',
+              cursor: 'pointer',
+            }}
+            onClick={() => setDemoMode(!demoMode)}
+            title={t('demoToggleTooltip')}
+          >
+            <Eye size={13} style={{ color: demoMode ? '#D97706' : '#64748B' }} />
+            <span style={{ fontSize: 11, fontWeight: 600, color: demoMode ? '#92400E' : '#475569' }}>
+              {demoMode ? t('demoActive') : t('demoToggle')}
+            </span>
+          </div>
+
           <button
             onClick={loadData}
             className="btn btn-secondary"
@@ -76,283 +164,492 @@ export default function DashboardPage() {
             <span>{t('quickCreateBtn')}</span>
           </Link>
           <Link
-            href="/worklog"
+            href="/orders/quotations"
             className="btn btn-secondary"
             style={{ height: 30, padding: '0 12px', gap: 6, fontSize: 12, textDecoration: 'none' }}
           >
             <FileText size={14} />
-            <span>{t('worklogBtn')}</span>
+            <span>{t('createQuotationBtn')}</span>
           </Link>
         </div>
       </div>
 
-      {/* ── Row 1: Real KPI Cards (4 Cards with Visual Anchor Tints) ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, flexShrink: 0 }}>
-        
-        {/* KPI 1: Products */}
-        <div className="card-flat" style={{ padding: '14px 16px', background: 'var(--tint-teal-bg)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--accent)', fontFamily: 'var(--font-jp)' }}>
-              {t('kpiProducts')}
-            </span>
-            <Package size={16} style={{ color: 'var(--accent)', opacity: 0.8 }} />
+      {/* ─────────────────────────────────────────────────────────────────── */}
+      {/* 🏭 TẦNG 1: SẢN XUẤT, THIẾT BỊ & NĂNG SUẤT XƯỞNG (Live DB 100%)       */}
+      {/* ─────────────────────────────────────────────────────────────────── */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, margin: '4px 0 0 0' }}>
+          <Factory size={15} style={{ color: 'var(--accent)' }} />
+          <h2 style={{ margin: 0, fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '0.02em' }}>
+            {t('tier1Title')}
+          </h2>
+          <span className="badge badge--success" style={{ fontSize: 10, padding: '1px 6px' }}>
+            {t('liveDbBadge')}
+          </span>
+        </div>
+
+        {/* 4 KPI Cards (Manufacturing & Equipment) */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, flexShrink: 0 }}>
+          {/* KPI 1: Products & Design Revisions */}
+          <div className="card-flat" style={{ padding: '12px 14px', background: 'var(--tint-teal-bg, #F0FDFA)', border: '1px solid #CCFBF1' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--accent, #0D9488)' }}>
+                {t('kpiProducts')}
+              </span>
+              <Package size={16} style={{ color: 'var(--accent)', opacity: 0.8 }} />
+            </div>
+            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginTop: 6 }}>
+              <span style={{ fontSize: 20, fontWeight: 700, fontFamily: 'monospace', color: '#0F172A' }}>
+                {data?.kpis.totalProducts?.toLocaleString() || '—'}
+              </span>
+              <span style={{ fontSize: 11, color: '#64748B' }}>
+                {data?.kpis.totalDesignRevisions?.toLocaleString() || '—'} {t('revisionsUnit')}
+              </span>
+            </div>
           </div>
-          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginTop: 8 }}>
-            <span style={{ fontSize: 24, fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'monospace' }}>
-              {loading ? '...' : (data?.kpis.totalProducts || 0).toLocaleString()}
-            </span>
-            <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>
-              {loading ? '' : t('kpiDesignRevisions', { count: (data?.kpis.totalDesignRevisions || 0).toLocaleString() })}
-            </span>
+
+          {/* KPI 2: Unified Equipment (8 Types ADR-001) */}
+          <div className="card-flat" style={{ padding: '12px 14px', background: 'var(--tint-blue-bg, #EFF6FF)', border: '1px solid #DBEAFE' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span style={{ fontSize: 11, fontWeight: 700, color: '#2563EB' }}>
+                {t('kpiEquipment')}
+              </span>
+              <Wrench size={16} style={{ color: '#2563EB', opacity: 0.8 }} />
+            </div>
+            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginTop: 6 }}>
+              <span style={{ fontSize: 20, fontWeight: 700, fontFamily: 'monospace', color: '#0F172A' }}>
+                {data?.kpis.totalEquipment?.toLocaleString() || '—'}
+              </span>
+              <span style={{ fontSize: 11, color: '#64748B' }}>
+                {data?.kpis.totalPhysicalMolds?.toLocaleString() || '—'} {t('moldsUnit')}
+              </span>
+            </div>
+          </div>
+
+          {/* KPI 3: Processing Jobs */}
+          <div className="card-flat" style={{ padding: '12px 14px', background: 'var(--tint-orange-bg, #FFFBEB)', border: '1px solid #FDE68A' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span style={{ fontSize: 11, fontWeight: 700, color: '#D97706' }}>
+                {t('kpiJobs')}
+              </span>
+              <Hammer size={16} style={{ color: '#D97706', opacity: 0.8 }} />
+            </div>
+            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginTop: 6 }}>
+              <span style={{ fontSize: 20, fontWeight: 700, fontFamily: 'monospace', color: '#0F172A' }}>
+                {data?.kpis.totalJobs?.toLocaleString() || '—'}
+              </span>
+              <span style={{ fontSize: 11, color: '#D97706', fontWeight: 600 }}>
+                {data?.jobStatusBreakdown?.find((j) => j.status === 'IN_PROGRESS')?.count || 0} {t('inProgressUnit')}
+              </span>
+            </div>
+          </div>
+
+          {/* KPI 4: WorkLogs & Logged Hours */}
+          <div className="card-flat" style={{ padding: '12px 14px', background: 'var(--tint-purple-bg, #FAF5FF)', border: '1px solid #F3E8FF' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span style={{ fontSize: 11, fontWeight: 700, color: '#7C3AED' }}>
+                {t('kpiWorkHours')}
+              </span>
+              <Clock size={16} style={{ color: '#7C3AED', opacity: 0.8 }} />
+            </div>
+            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginTop: 6 }}>
+              <span style={{ fontSize: 20, fontWeight: 700, fontFamily: 'monospace', color: '#0F172A' }}>
+                {data?.kpis.totalWorkHours?.toLocaleString() || '—'}
+              </span>
+              <span style={{ fontSize: 11, color: '#64748B' }}>
+                {data?.kpis.totalWorkLogs?.toLocaleString() || '—'} {t('workLogsUnit')}
+              </span>
+            </div>
           </div>
         </div>
 
-        {/* KPI 2: Physical Molds */}
-        <div className="card-flat" style={{ padding: '14px 16px', background: 'var(--tint-blue-bg)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--status-info)', fontFamily: 'var(--font-jp)' }}>
-              {t('kpiPhysicalMolds')}
-            </span>
-            <Wrench size={16} style={{ color: 'var(--status-info)', opacity: 0.8 }} />
+        {/* Row 2: Widget 1 (Equipment Types 8 ADR-001) & Widget 2 (Jobs Status & Progress) */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 12 }}>
+          
+          {/* Widget 1: Equipment Breakdown by 8 Types */}
+          <div className="card-flat" style={{ padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #E2E8F0', paddingBottom: 6 }}>
+              <span style={{ fontSize: 12, fontWeight: 700, color: '#0F172A' }}>
+                {t('widgetEquipmentDistribution')}
+              </span>
+              <Link href="/equipment/unified" style={{ fontSize: 11, color: 'var(--accent)', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 2 }}>
+                <span>{t('viewAll')}</span>
+                <ArrowRight size={11} />
+              </Link>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8 }}>
+              {(data?.equipmentBreakdown || []).map((eq) => (
+                <div
+                  key={eq.type}
+                  style={{
+                    padding: '8px 10px',
+                    borderRadius: 6,
+                    background: '#F8FAFC',
+                    border: '1px solid #E2E8F0',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 4,
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <span style={{ fontSize: 11, fontWeight: 600, color: '#334155' }}>
+                      {eq.typeNameJA}
+                    </span>
+                    <span style={{ fontSize: 13, fontWeight: 700, fontFamily: 'monospace', color: '#0F172A' }}>
+                      {eq.count}
+                    </span>
+                  </div>
+                  <div style={{ width: '100%', height: 4, background: '#E2E8F0', borderRadius: 2, overflow: 'hidden' }}>
+                    <div
+                      style={{
+                        width: `${Math.min(100, Math.round((eq.activeCount / Math.max(1, eq.count)) * 100))}%`,
+                        height: '100%',
+                        background: 'var(--accent, #0D9488)',
+                      }}
+                    />
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 10, color: '#64748B' }}>
+                    <span>{t('activeStatus')}: {eq.activeCount}</span>
+                    {eq.maintenanceCount > 0 && (
+                      <span style={{ color: '#D97706', fontWeight: 600 }}>
+                        {t('maintenanceStatus')}: {eq.maintenanceCount}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
-          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginTop: 8 }}>
-            <span style={{ fontSize: 24, fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'monospace' }}>
-              {loading ? '...' : (data?.kpis.totalPhysicalMolds || 0).toLocaleString()}
-            </span>
-            <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>
-              {loading ? '' : t('kpiCutters', { count: (data?.kpis.totalCutters || 0).toLocaleString() })}
-            </span>
+
+          {/* Widget 2: Jobs Status & Recent Active Jobs */}
+          <div className="card-flat" style={{ padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #E2E8F0', paddingBottom: 6 }}>
+              <span style={{ fontSize: 12, fontWeight: 700, color: '#0F172A' }}>
+                {t('widgetRecentJobs')}
+              </span>
+              <Link href="/equipment/jobs" style={{ fontSize: 11, color: 'var(--accent)', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 2 }}>
+                <span>{t('viewAllJobs')}</span>
+                <ArrowRight size={11} />
+              </Link>
+            </div>
+
+            {/* Jobs Status Summary Pills */}
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+              {(data?.jobStatusBreakdown || []).map((st) => (
+                <div
+                  key={st.status}
+                  style={{
+                    padding: '4px 8px',
+                    borderRadius: 6,
+                    background: '#F1F5F9',
+                    fontSize: 11,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                  }}
+                >
+                  <span style={{ color: '#475569', fontWeight: 600 }}>{st.status}</span>
+                  <span style={{ fontWeight: 700, fontFamily: 'monospace', color: '#0F172A' }}>{st.count}</span>
+                </div>
+              ))}
+            </div>
+
+            {/* Recent Jobs Mini List */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, flex: 1, overflow: 'auto' }}>
+              {(data?.recentJobs || []).map((job) => (
+                <div
+                  key={job.job_id}
+                  style={{
+                    padding: '6px 8px',
+                    borderRadius: 4,
+                    border: '1px solid #F1F5F9',
+                    background: '#FAFAFA',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                  }}
+                >
+                  <div style={{ display: 'flex', flexDirection: 'column', maxWidth: '65%' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <Link
+                        href={`/equipment/jobs/${job.job_id}`}
+                        style={{ fontSize: 12, fontWeight: 700, fontFamily: 'monospace', color: 'var(--accent)', textDecoration: 'none' }}
+                      >
+                        {job.job_code}
+                      </Link>
+                      <span style={{ fontSize: 11, color: '#334155', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {job.job_name}
+                      </span>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    {renderJobStatusBadge(job.job_status)}
+                    <span style={{ fontSize: 11, color: '#64748B', fontFamily: 'monospace' }}>
+                      {formatDate(job.deadline)}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
 
-        {/* KPI 3: Mold Jobs */}
-        <div className="card-flat" style={{ padding: '14px 16px', background: 'var(--tint-orange-bg)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--status-warning)', fontFamily: 'var(--font-jp)' }}>
-              {t('kpiJobs')}
-            </span>
-            <Hammer size={16} style={{ color: 'var(--status-warning)', opacity: 0.8 }} />
-          </div>
-          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginTop: 8 }}>
-            <span style={{ fontSize: 24, fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'monospace' }}>
-              {loading ? '...' : (data?.kpis.totalJobs || 0).toLocaleString()}
-            </span>
-            <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>
-              {loading ? '' : t('kpiWorklogs', { count: (data?.kpis.totalWorkLogs || 0).toLocaleString() })}
-            </span>
-          </div>
-        </div>
-
-        {/* KPI 4: Companies */}
-        <div className="card-flat" style={{ padding: '14px 16px', background: 'var(--tint-purple-bg)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--status-success)', fontFamily: 'var(--font-jp)' }}>
-              {t('kpiCompanies')}
-            </span>
-            <Building2 size={16} style={{ color: 'var(--status-success)', opacity: 0.8 }} />
-          </div>
-          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginTop: 8 }}>
-            <span style={{ fontSize: 24, fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'monospace' }}>
-              {loading ? '...' : (data?.kpis.totalCompanies || 0).toLocaleString()}
-            </span>
-            <span style={{ fontSize: 10, color: 'var(--status-success)', fontWeight: 600 }}>
-              {t('kpiRealAccess')}
-            </span>
-          </div>
-        </div>
-
-      </div>
-      {/* ── Row 1.5: Quick Business Action Hub ── */}
-      <QuickActionsHub />
-
-      {/* ── Row 2: 4 Real Analytics Cards ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, flexShrink: 0 }}>
-        
-        {/* Widget 1: Job Status */}
-        <div className="card-flat" style={{ padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <div className="card-header-tint" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 8px', borderRadius: 4 }}>
-            <span style={{ fontSize: 12, fontWeight: 700, fontFamily: 'var(--font-jp)' }}>{t('jobStatusTitle')}</span>
-            <span className="badge badge--info" style={{ fontSize: 9 }}>Real</span>
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            {data?.jobStatusBreakdown.map((item, idx) => (
-              <div key={idx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 11 }}>
-                <span style={{ color: 'var(--text-secondary)' }}>{item.status}</span>
-                <span style={{ fontWeight: 700, fontFamily: 'monospace' }}>{item.count.toLocaleString()}</span>
+        {/* Row 3: Widget 3 (Attention Equipment) */}
+        {(data?.attentionEquipment?.length || 0) > 0 && (
+          <div className="card-flat" style={{ padding: '10px 14px', background: '#FFFBEB', border: '1px solid #FDE68A' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <AlertTriangle size={14} style={{ color: '#D97706' }} />
+                <span style={{ fontSize: 12, fontWeight: 700, color: '#92400E' }}>
+                  {t('widgetAttentionEquipment')}
+                </span>
               </div>
-            ))}
-          </div>
-        </div>
+              <span style={{ fontSize: 11, color: '#B45309' }}>
+                {data?.attentionEquipment.length} {t('attentionCountUnit')}
+              </span>
+            </div>
 
-        {/* Widget 2: Mold Device Status */}
-        <div className="card-flat" style={{ padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <div className="card-header-tint" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 8px', borderRadius: 4 }}>
-            <span style={{ fontSize: 12, fontWeight: 700, fontFamily: 'var(--font-jp)' }}>{t('moldStatusTitle')}</span>
-            <span className="badge badge--success" style={{ fontSize: 9 }}>Real</span>
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            {data?.moldStatusBreakdown.map((item, idx) => (
-              <div key={idx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 11 }}>
-                <span style={{ color: 'var(--text-secondary)' }}>{item.status}</span>
-                <span style={{ fontWeight: 700, fontFamily: 'monospace' }}>{item.count.toLocaleString()}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Widget 3: Asset Ratio */}
-        <div className="card-flat" style={{ padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <div className="card-header-tint" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 8px', borderRadius: 4 }}>
-            <span style={{ fontSize: 12, fontWeight: 700, fontFamily: 'var(--font-jp)' }}>{t('techAssetsTitle')}</span>
-            <span className="badge badge--neutral" style={{ fontSize: 9 }}>Access Data</span>
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: 11 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span style={{ color: 'var(--text-secondary)' }}>CAD Revisions</span>
-              <span style={{ fontWeight: 700, fontFamily: 'monospace' }}>4,735</span>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span style={{ color: 'var(--text-secondary)' }}>Physical Molds</span>
-              <span style={{ fontWeight: 700, fontFamily: 'monospace' }}>4,751</span>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span style={{ color: 'var(--text-secondary)' }}>Physical Cutters</span>
-              <span style={{ fontWeight: 700, fontFamily: 'monospace' }}>1,283</span>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
+              {data?.attentionEquipment.map((item) => (
+                <div
+                  key={item.equipment_id}
+                  style={{
+                    padding: '6px 10px',
+                    borderRadius: 4,
+                    background: '#FFFFFF',
+                    border: '1px solid #FCD34D',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                  }}
+                >
+                  <div>
+                    <div style={{ fontSize: 11, fontWeight: 700, fontFamily: 'monospace', color: '#0F172A' }}>
+                      {item.equipment_code}
+                    </div>
+                    <div style={{ fontSize: 10, color: '#64748B' }}>
+                      {item.equipment_name}
+                    </div>
+                  </div>
+                  <span className="badge badge--warning" style={{ fontSize: 10 }}>
+                    {item.device_status}
+                  </span>
+                </div>
+              ))}
             </div>
           </div>
-        </div>
-
-        {/* Widget 4: Nippo Worklogs */}
-        <div className="card-flat" style={{ padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <div className="card-header-tint" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 8px', borderRadius: 4 }}>
-            <span style={{ fontSize: 12, fontWeight: 700, fontFamily: 'var(--font-jp)' }}>{t('nippoTitle')}</span>
-            <span className="badge badge--warning" style={{ fontSize: 9 }}>Active</span>
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: 11 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span style={{ color: 'var(--text-secondary)' }}>{t('nippoTotalLogs')}</span>
-              <span style={{ fontWeight: 700, fontFamily: 'monospace', color: 'var(--accent)' }}>6,980</span>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span style={{ color: 'var(--text-secondary)' }}>{t('nippoEmployees')}</span>
-              <span style={{ fontWeight: 700, fontFamily: 'monospace' }}>45+</span>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span style={{ color: 'var(--text-secondary)' }}>{t('nippoProcesses')}</span>
-              <span style={{ fontWeight: 700, fontFamily: 'monospace' }}>44</span>
-            </div>
-          </div>
-        </div>
-
+        )}
       </div>
 
-      {/* ── Row 3: Main Layout (Recent Jobs Table + Master System Stats) ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 12, flex: 1, minHeight: 0 }}>
-        
-        {/* Left: 10 Recent Real Jobs */}
-        <div className="card-flat" style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden', padding: 0 }}>
-          <div className="card-header-tint" style={{ padding: '10px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <Hammer size={14} style={{ color: 'var(--accent)' }} />
-              <h3 style={{ margin: 0, fontSize: 13, fontWeight: 700, fontFamily: 'var(--font-jp)' }}>
-                {t('recentJobs.title')}
-              </h3>
-            </div>
-            <Link href="/equipment/jobs" style={{ fontSize: 11, color: 'var(--accent)', textDecoration: 'none', fontWeight: 600 }}>
-              {t('recentJobs.viewAll')}
+      {/* ─────────────────────────────────────────────────────────────────── */}
+      {/* 💼 TẦNG 2: THƯƠNG MẠI, DOANH THU & CÔNG NỢ (Live DB + Empty State)   */}
+      {/* ─────────────────────────────────────────────────────────────────── */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 6 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <DollarSign size={15} style={{ color: '#2563EB' }} />
+            <h2 style={{ margin: 0, fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '0.02em' }}>
+              {t('tier2Title')}
+            </h2>
+            {demoMode ? (
+              <span className="badge badge--warning" style={{ fontSize: 10, padding: '1px 6px' }}>
+                {t('demoBadge')}
+              </span>
+            ) : hasRealFinanceData ? (
+              <span className="badge badge--success" style={{ fontSize: 10, padding: '1px 6px' }}>
+                {t('liveDbBadge')}
+              </span>
+            ) : (
+              <span className="badge badge--neutral" style={{ fontSize: 10, padding: '1px 6px' }}>
+                {t('readyBadge')}
+              </span>
+            )}
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <Link
+              href="/orders/invoices"
+              style={{ fontSize: 11, color: 'var(--accent)', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 2 }}
+            >
+              <span>{t('viewInvoices')}</span>
+              <ArrowRight size={11} />
+            </Link>
+            <span style={{ color: '#CBD5E1' }}>|</span>
+            <Link
+              href="/orders/debt"
+              style={{ fontSize: 11, color: 'var(--accent)', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 2 }}
+            >
+              <span>{t('viewDebtReport')}</span>
+              <ArrowRight size={11} />
             </Link>
           </div>
+        </div>
 
-          <div style={{ overflowY: 'auto', flex: 1 }}>
-            <table className="data-table">
+        {/* Financial KPI Cards */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
+          {/* Total Invoiced */}
+          <div className="card-flat" style={{ padding: '12px 14px', background: '#FFFFFF', border: '1px solid #E2E8F0' }}>
+            <div style={{ fontSize: 11, fontWeight: 600, color: '#64748B' }}>{t('kpiTotalBilled')}</div>
+            <div style={{ fontSize: 18, fontWeight: 700, fontFamily: 'monospace', color: '#0F172A', marginTop: 4 }}>
+              ¥{(activeFinance?.totalBilledAmount || 0).toLocaleString()}
+            </div>
+            <div style={{ fontSize: 10, color: '#94A3B8', marginTop: 2 }}>
+              {activeFinance?.totalInvoicesCount || 0} {t('invoicesCountUnit')}
+            </div>
+          </div>
+
+          {/* Total Collected */}
+          <div className="card-flat" style={{ padding: '12px 14px', background: '#F0FDF4', border: '1px solid #BBF7D0' }}>
+            <div style={{ fontSize: 11, fontWeight: 600, color: '#166534' }}>{t('kpiTotalPaid')}</div>
+            <div style={{ fontSize: 18, fontWeight: 700, fontFamily: 'monospace', color: '#16A34A', marginTop: 4 }}>
+              ¥{(activeFinance?.totalPaidAmount || 0).toLocaleString()}
+            </div>
+            <div style={{ fontSize: 10, color: '#15803D', marginTop: 2 }}>
+              {activeFinance?.totalBilledAmount ? Math.round(((activeFinance.totalPaidAmount || 0) / activeFinance.totalBilledAmount) * 100) : 0}% {t('collectionRate')}
+            </div>
+          </div>
+
+          {/* Total Outstanding Debt */}
+          <div className="card-flat" style={{ padding: '12px 14px', background: (activeFinance?.totalRemainingDebt || 0) > 0 ? '#FFFBEB' : '#F8FAFC', border: '1px solid #FDE68A' }}>
+            <div style={{ fontSize: 11, fontWeight: 600, color: '#92400E' }}>{t('kpiTotalRemaining')}</div>
+            <div style={{ fontSize: 18, fontWeight: 700, fontFamily: 'monospace', color: (activeFinance?.totalRemainingDebt || 0) > 0 ? '#D97706' : '#16A34A', marginTop: 4 }}>
+              ¥{(activeFinance?.totalRemainingDebt || 0).toLocaleString()}
+            </div>
+            <div style={{ fontSize: 10, color: '#B45309', marginTop: 2 }}>
+              {activeFinance?.overdueInvoicesCount || 0} {t('overdueInvoicesCountUnit')}
+            </div>
+          </div>
+
+          {/* Commercial Quotes */}
+          <div className="card-flat" style={{ padding: '12px 14px', background: '#FFFFFF', border: '1px solid #E2E8F0' }}>
+            <div style={{ fontSize: 11, fontWeight: 600, color: '#64748B' }}>{t('kpiQuotations')}</div>
+            <div style={{ fontSize: 18, fontWeight: 700, fontFamily: 'monospace', color: '#0F172A', marginTop: 4 }}>
+              {activeFinance?.totalQuotationsCount || 0} {t('quotationsCountUnit')}
+            </div>
+            <div style={{ fontSize: 10, color: '#94A3B8', marginTop: 2 }}>
+              {t('quotationsSubtitle')}
+            </div>
+          </div>
+        </div>
+
+        {/* Widget 5: Top Debt Partners & Empty State Banner */}
+        <div className="card-flat" style={{ padding: 0, overflow: 'hidden' }}>
+          {!demoMode && !hasRealFinanceData ? (
+            // ── Clean Empty State Banner ──
+            <div
+              style={{
+                padding: '36px 24px',
+                textAlign: 'center',
+                background: '#FAFAFA',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 10,
+              }}
+            >
+              <div
+                style={{
+                  width: 44,
+                  height: 44,
+                  borderRadius: '50%',
+                  background: '#F1F5F9',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#64748B',
+                }}
+              >
+                <CreditCard size={22} />
+              </div>
+              <div style={{ maxWidth: 520 }}>
+                <h3 style={{ margin: 0, fontSize: 14, fontWeight: 700, color: '#0F172A' }}>
+                  {t('emptyFinanceTitle')}
+                </h3>
+                <p style={{ margin: '6px 0 0 0', fontSize: 12, color: '#64748B', lineHeight: 1.5 }}>
+                  {t('emptyFinanceDesc')}
+                </p>
+              </div>
+              <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
+                <button
+                  type="button"
+                  onClick={() => setDemoMode(true)}
+                  className="btn btn-secondary"
+                  style={{ fontSize: 12, padding: '4px 12px', display: 'inline-flex', alignItems: 'center', gap: 6 }}
+                >
+                  <Sparkles size={14} style={{ color: '#D97706' }} />
+                  <span>{t('previewDemoBtn')}</span>
+                </button>
+                <Link
+                  href="/orders/quotations"
+                  className="btn btn-primary"
+                  style={{ fontSize: 12, padding: '4px 12px', textDecoration: 'none' }}
+                >
+                  {t('createQuotationBtn')}
+                </Link>
+              </div>
+            </div>
+          ) : (
+            // ── Partner Debt Summary Table (Real or Demo) ──
+            <table className="data-table" style={{ margin: 0, width: '100%' }}>
               <thead>
                 <tr>
-                  <th style={{ width: 110 }}>{t('recentJobs.colCode')}</th>
-                  <th>{t('recentJobs.colName')}</th>
-                  <th style={{ width: 120 }}>{t('recentJobs.colMold')}</th>
-                  <th style={{ width: 100 }}>{t('recentJobs.colDeadline')}</th>
-                  <th style={{ width: 110, textAlign: 'center' }}>{t('recentJobs.colStatus')}</th>
+                  <th>{t('partnerName')}</th>
+                  <th style={{ width: 110, textAlign: 'center' }}>{t('invoicesCount')}</th>
+                  <th style={{ width: 140, textAlign: 'right' }}>{t('billedAmount')}</th>
+                  <th style={{ width: 140, textAlign: 'right' }}>{t('paidAmount')}</th>
+                  <th style={{ width: 150, textAlign: 'right' }}>{t('remainingDebt')}</th>
+                  <th style={{ width: 120, textAlign: 'center' }}>{t('overdueStatus')}</th>
+                  <th style={{ width: 120, textAlign: 'center' }}>{t('actions')}</th>
                 </tr>
               </thead>
               <tbody>
-                {loading ? (
-                  <tr>
-                    <td colSpan={5} style={{ textAlign: 'center', padding: 30, color: 'var(--text-muted)', fontSize: 12 }}>
-                      {t('recentJobs.loading')}
+                {(activeFinance?.topDebtCustomers || []).map((item) => (
+                  <tr key={item.company_id}>
+                    <td>
+                      <div style={{ fontWeight: 600, color: '#0F172A' }}>{item.company_name}</div>
+                      {item.company_code && (
+                        <div style={{ fontSize: 11, color: '#64748B', fontFamily: 'monospace' }}>{item.company_code}</div>
+                      )}
+                    </td>
+                    <td style={{ textAlign: 'center', fontFamily: 'monospace', fontWeight: 600 }}>
+                      {item.total_invoices}
+                    </td>
+                    <td style={{ textAlign: 'right', fontFamily: 'monospace', fontWeight: 600 }}>
+                      ¥{item.total_billed.toLocaleString()}
+                    </td>
+                    <td style={{ textAlign: 'right', fontFamily: 'monospace', color: '#16A34A', fontWeight: 600 }}>
+                      ¥{item.total_paid.toLocaleString()}
+                    </td>
+                    <td style={{ textAlign: 'right', fontFamily: 'monospace', fontWeight: 700, color: item.total_remaining > 0 ? '#D97706' : '#16A34A' }}>
+                      ¥{item.total_remaining.toLocaleString()}
+                    </td>
+                    <td style={{ textAlign: 'center' }}>
+                      {item.overdue_count > 0 ? (
+                        <span className="badge badge--error" style={{ fontSize: 11 }}>
+                          {item.overdue_count} {t('overdueUnit')}
+                        </span>
+                      ) : (
+                        <span style={{ fontSize: 12, color: '#94A3B8' }}>0</span>
+                      )}
+                    </td>
+                    <td style={{ textAlign: 'center' }}>
+                      <Link
+                        href="/orders/invoices"
+                        className="btn btn-secondary"
+                        style={{ padding: '2px 8px', fontSize: 11, textDecoration: 'none' }}
+                      >
+                        {t('details')}
+                      </Link>
                     </td>
                   </tr>
-                ) : data?.recentJobs.length === 0 ? (
-                  <tr>
-                    <td colSpan={5} style={{ textAlign: 'center', padding: 30, color: 'var(--text-muted)', fontSize: 12 }}>
-                      {t('recentJobs.empty')}
-                    </td>
-                  </tr>
-                ) : (
-                  data?.recentJobs.map(j => (
-                    <tr key={j.job_id} className="hover:bg-[var(--bg-surface-2)] transition-colors">
-                      <td style={{ fontFamily: 'monospace', fontWeight: 700 }}>
-                        <Link href={`/equipment/jobs/${j.job_id}`} style={{ color: 'var(--accent)', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                          {j.job_code}
-                          <ExternalLink size={10} />
-                        </Link>
-                      </td>
-                      <td style={{ fontWeight: 600, fontSize: 12 }}>
-                        {j.job_name}
-                      </td>
-                      <td style={{ fontSize: 11, fontFamily: 'monospace', color: 'var(--text-secondary)' }}>
-                        {j.system_code || j.display_name || '—'}
-                      </td>
-                      <td style={{ fontSize: 11, fontFamily: 'monospace', color: 'var(--text-secondary)' }}>
-                        {formatDate(j.deadline)}
-                      </td>
-                      <td style={{ textAlign: 'center' }}>
-                        {renderJobStatusBadge(j.job_status)}
-                      </td>
-                    </tr>
-                  ))
-                )}
+                ))}
               </tbody>
             </table>
-          </div>
+          )}
         </div>
-
-        {/* Right: Master System Stats */}
-        <div className="card-flat" style={{ display: 'flex', flexDirection: 'column', padding: 0, overflow: 'hidden' }}>
-          <div className="card-header-tint" style={{ padding: '10px 14px' }}>
-            <h3 style={{ margin: 0, fontSize: 13, fontWeight: 700, fontFamily: 'var(--font-jp)' }}>
-              {t('systemMasterStats.title')}
-            </h3>
-          </div>
-          <div style={{ padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 10, flex: 1, overflowY: 'auto' }}>
-            {([
-              ['products', t('systemMasterStats.masterItemProducts'), (data?.kpis.totalProducts || 0).toLocaleString(), t('systemMasterStats.masterItemProductsSub', { count: (data?.kpis.totalProducts || 0).toLocaleString() })],
-              ['designs', t('systemMasterStats.masterItemDesigns'), (data?.kpis.totalDesignRevisions || 0).toLocaleString(), t('systemMasterStats.masterItemDesignsSub', { count: (data?.kpis.totalDesignRevisions || 0).toLocaleString() })],
-              ['molds', t('systemMasterStats.masterItemMolds'), (data?.kpis.totalPhysicalMolds || 0).toLocaleString(), t('systemMasterStats.masterItemMoldsSub', { count: (data?.kpis.totalPhysicalMolds || 0).toLocaleString() })],
-              ['cutters', t('systemMasterStats.masterItemCutters'), (data?.kpis.totalCutters || 0).toLocaleString(), t('systemMasterStats.masterItemCuttersSub', { count: (data?.kpis.totalCutters || 0).toLocaleString() })],
-              ['jobs', t('systemMasterStats.masterItemJobs'), (data?.kpis.totalJobs || 0).toLocaleString(), t('systemMasterStats.masterItemJobsSub', { count: (data?.kpis.totalJobs || 0).toLocaleString() })],
-              ['worklogs', t('systemMasterStats.masterItemWorklogs'), (data?.kpis.totalWorkLogs || 0).toLocaleString(), t('systemMasterStats.masterItemWorklogsSub', { count: (data?.kpis.totalWorkLogs || 0).toLocaleString() })],
-              ['companies', t('systemMasterStats.masterItemCompanies'), (data?.kpis.totalCompanies || 0).toLocaleString(), t('systemMasterStats.masterItemCompaniesSub', { count: (data?.kpis.totalCompanies || 0).toLocaleString() })],
-            ] as [string, string, string, string][]).map(([key, label, val, sub], i) => (
-              <div key={key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: i < 6 ? '1px solid var(--border-subtle)' : 'none', paddingBottom: 6 }}>
-                <div>
-                  <div style={{ fontSize: 12, fontWeight: 600, fontFamily: 'var(--font-jp)', color: 'var(--text-primary)' }}>{label}</div>
-                  <div style={{ fontSize: 10, color: 'var(--text-muted)' }}>{sub}</div>
-                </div>
-                <span style={{ fontSize: 14, fontWeight: 700, fontFamily: 'monospace', color: 'var(--text-primary)' }}>{val}</span>
-              </div>
-            ))}
-          </div>
-          
-          <div style={{ padding: '8px 14px', borderTop: '1px solid var(--border-default)', background: 'var(--bg-surface-2)', textAlign: 'center' }}>
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11, color: 'var(--status-success)', fontWeight: 600 }}>
-              <div className="badge-dot badge-dot--success" />
-              <span>{t('systemMasterStats.onlineStatus')}</span>
-            </div>
-          </div>
-        </div>
-
       </div>
-
     </div>
   )
 }
