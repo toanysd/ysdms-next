@@ -12,11 +12,13 @@
   - Sprint R4-S3 (Clean Tech Debt + Refactor Unified Equipment SSOT): ✅ ĐÃ NGHIỆM THU
 - **Phase R5 (Công Nợ / Thanh Toán / Báo Cáo Tổng Hợp / E2E Testing):** ĐANG MỞ 🚀
   - Sprint R5-S1 (Phân hệ Công Nợ & Thanh Toán + Hóa đơn + View v_customer_debt_summary): ✅ ĐÃ NGHIỆM THU CHÍNH THỨC (2026-08-20)
-  - Sprint R5-S2 (E2E Testing & Khép Kín Vòng Đời Order-to-Cash trên Live DB): ✅ HOÀN THÀNH (6/6 Playwright cases PASS, chờ PE review)
+  - Sprint R5-S2 (E2E Testing & Khép Kín Vòng Đời Order-to-Cash trên Live DB): ✅ ĐÃ NGHIỆM THU CHÍNH THỨC (2026-08-20)
 
 ## Chỉ thị đang mở
 - **#018:** ĐÃ ĐÓNG CHÍNH THỨC ✅ (Sprint R5-S1 nghiệm thu thành công trên Live DB).
-- **#019:** Triển khai Sprint R5-S2 E2E Testing (Đã hoàn thành 6/6 test cases, báo cáo `e2e/README_R5S2.md`).
+- **#019:** ĐÃ ĐÓNG CHÍNH THỨC ✅ (Sprint R5-S2 E2E 6/6 test cases pass 100%).
+- **#020:** ĐÃ ĐÓNG CHÍNH THỨC ✅ (Đã xóa sạch 100% test data `TEST_E2E_%` trên Live DB, verify COUNT = 0).
+- **#021:** Chờ PE ban hành chỉ thị mở Sprint R5-S3: Executive Dashboard & Báo Cáo Tổng Hợp.
 
 ## Kiến trúc cốt lõi đã xác lập
 - **ADR-001:** Unified SSOT `equipment` (8 loại thiết bị, quan hệ N:N `equipment_assignments` cho bộ SET gá lắp & dùng chung SHARED)
