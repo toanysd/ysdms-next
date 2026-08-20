@@ -24,7 +24,7 @@ CONTEXT KHỞI ĐẦU THẢO LUẬN — DỰ ÁN ysdms-next
   Sprint R5-S1: ✅ ĐÃ NGHIỆM THU (Phân hệ Công Nợ & Thanh Toán)
   Sprint R5-S2: ✅ ĐÃ NGHIỆM THU (E2E Testing & Khép Kín Vòng Đời Order-to-Cash, 6/6 test cases PASS)
   Sprint R5-S3: 🚀 HOÀN THÀNH (Executive Dashboard 2 Tầng: Sản Xuất Live DB & Thương Mại/Công Nợ + Demo Mode)
-  Chỉ thị #021: Đã hoàn thành (Chờ PE review & nghiệm thu)
+  Chỉ thị #021, #022: Đã hoàn thành (Đã sửa lỗi giới hạn 1.000 dòng bằng Server SQL Views, chờ PE nghiệm thu)
 
 ## 4. QUY TẮC PHỐI HỢP BẮT BUỘC
 

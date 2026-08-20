@@ -7681,6 +7681,38 @@ export type Database = {
         }
         Relationships: []
       }
+      v_equipment_type_summary: {
+        Row: {
+          equipment_type: string
+          total_count: number | null
+          active_count: number | null
+          maintenance_count: number | null
+        }
+        Relationships: []
+      }
+      v_job_status_summary: {
+        Row: {
+          job_status: string
+          count: number | null
+          avg_progress: number | null
+        }
+        Relationships: []
+      }
+      v_dashboard_executive_kpis: {
+        Row: {
+          total_products: number | null
+          total_design_revisions: number | null
+          total_equipment: number | null
+          total_physical_molds: number | null
+          total_cutters: number | null
+          total_jobs: number | null
+          total_work_logs: number | null
+          total_companies: number | null
+          total_quotations: number | null
+          total_invoices: number | null
+        }
+        Relationships: []
+      }
       material_inventory_v2: {
         Row: {
           available_m: number | null
