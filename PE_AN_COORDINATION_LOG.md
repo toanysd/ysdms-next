@@ -13,14 +13,15 @@
 - **Phase R5 (Công Nợ / Thanh Toán / Báo Cáo Tổng Hợp / E2E Testing):** ĐANG MỞ 🚀
   - Sprint R5-S1 (Phân hệ Công Nợ & Thanh Toán + Hóa đơn + View v_customer_debt_summary): ✅ ĐÃ NGHIỆM THU CHÍNH THỨC (2026-08-20)
   - Sprint R5-S2 (E2E Testing & Khép Kín Vòng Đời Order-to-Cash trên Live DB): ✅ ĐÃ NGHIỆM THU CHÍNH THỨC (2026-08-20)
-  - Sprint R5-S3 (Executive Dashboard 2 Tầng: Sản Xuất Live & Thương Mại/Công Nợ): ✅ HOÀN THÀNH (chờ PE review)
+  - Sprint R5-S3 (Executive Dashboard 2 Tầng: Sản Xuất Live DB & Thương Mại/Công Nợ): ✅ ĐÃ NGHIỆM THU CHÍNH THỨC (2026-08-20)
 
-## Chỉ thị đang mở
+## Chỉ thị đã hoàn thành & đóng
 - **#018:** ĐÃ ĐÓNG CHÍNH THỨC ✅ (Sprint R5-S1 nghiệm thu thành công trên Live DB).
 - **#019:** ĐÃ ĐÓNG CHÍNH THỨC ✅ (Sprint R5-S2 E2E 6/6 test cases pass 100%).
 - **#020:** ĐÃ ĐÓNG CHÍNH THỨC ✅ (Đã xóa sạch 100% test data `TEST_E2E_%` trên Live DB, verify COUNT = 0).
-- **#021:** Triển khai Executive Dashboard R5-S3 (Đã hoàn thành 100% Phần A & Phần B, kèm Empty State & Demo Mode).
-- **#022:** ĐÃ HOÀN THÀNH ✅ (Sửa triệt để lỗi giới hạn 1.000 dòng bằng Server SQL Views: `v_equipment_type_summary`, `v_job_status_summary`, `v_dashboard_executive_kpis`).
+- **#021:** ĐÃ ĐÓNG CHÍNH THỨC ✅ (Executive Dashboard R5-S3 hoàn thành Phần A & Phần B, kèm Empty State & Demo Mode).
+- **#022:** ĐÃ ĐÓNG CHÍNH THỨC ✅ (Sửa triệt để lỗi giới hạn 1.000 dòng bằng Server SQL Views `v_equipment_type_summary`, `v_job_status_summary`, `v_dashboard_executive_kpis`).
+- **#023:** ĐÃ ĐÓNG CHÍNH THỨC ✅ (Đồng bộ SESSION_STARTER.md chuẩn bị chuyển giao sang thread thảo luận mới theo Quy tắc 4e).
 
 ## Kiến trúc cốt lõi đã xác lập
 - **ADR-001:** Unified SSOT `equipment` (8 loại thiết bị, quan hệ N:N `equipment_assignments` cho bộ SET gá lắp & dùng chung SHARED)
