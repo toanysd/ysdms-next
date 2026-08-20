@@ -21,11 +21,8 @@ CONTEXT KHỞI ĐẦU THẢO LUẬN — DỰ ÁN ysdms-next
 - Phase R3  : ✅ ĐÃ ĐÓNG (Product 360° + Dashboard SX)
 - Phase R4  : ✅ ĐÃ ĐÓNG (Báo Giá + Giao Hàng + Tech Debt)
 - Phase R5  : 🚀 ĐANG MỞ
-  Sprint R5-S1: 🟡 Chờ PE verify DB live + nghiệm thu chính thức
-               (Phân hệ Công Nợ & Thanh Toán, 3 bảng mới:
-               invoices, invoice_lines, invoice_payments +
-               view v_customer_debt_summary)
-  Chỉ thị #018 đang mở
+  Sprint R5-S1: ✅ ĐÃ NGHIỆM THU (Phân hệ Công Nợ & Thanh Toán, 3 bảng mới: invoices, invoice_lines, invoice_payments + view v_customer_debt_summary)
+  Chỉ thị #018: ✅ ĐÃ ĐÓNG (Chờ Chỉ thị #019 mở Sprint R5-S2)
 
 ## 4. QUY TẮC PHỐI HỢP BẮT BUỘC
 
