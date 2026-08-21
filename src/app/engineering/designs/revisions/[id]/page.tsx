@@ -99,7 +99,6 @@ export default function DesignRevisionDetailPage() {
         *,
         employees!designer_id(employee_name),
         products(product_code, product_name, companies:companies!products_company_id_fkey(company_id, company_name, company_code)),
-        mold_revisions(physical_molds(physical_mold_id, system_code, device_status)),
         jobs(job_id, job_code, job_name, job_status)
       `)
       .eq('revision_id', revisionId)
@@ -108,8 +107,7 @@ export default function DesignRevisionDetailPage() {
     if (err) {
       setError(err.message)
     } else if (data) {
-      let physical_molds = data.mold_revisions?.flatMap((mr: any) => mr.physical_molds || []) || []
-      
+      let physical_molds: any[] = []
       // Khắc phục khuôn mồ côi (không có mold_revision_id)
       if (physical_molds.length === 0 && data.design_code) {
         const { data: pmData } = await supabase

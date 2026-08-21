@@ -47,7 +47,8 @@ export function TransferTab({ mold }: { mold: MoldDetailData }) {
         from_company:companies!equipment_ship_logs_from_company_id_fkey(company_name, company_code),
         to_company:companies!equipment_ship_logs_to_company_id_fkey(company_name, company_code)
       `)
-      .eq('physical_mold_id', mold.physical_mold_id)
+      // @ts-ignore - TODO: Phase D
+      .eq('legacy_mold_id', mold.physical_mold_id)
       .order('ship_date', { ascending: false })
       .range(0, 49)
     setShipLogs((data as any[]) || [])
@@ -81,11 +82,11 @@ export function TransferTab({ mold }: { mold: MoldDetailData }) {
     setSaving(true)
 
     const { error: shipErr } = await supabase.from('equipment_ship_logs').insert({
-      physical_mold_id: mold.physical_mold_id,
+      // @ts-ignore - TODO: Phase D
+      legacy_mold_id: mold.physical_mold_id,
       from_company_id: mold.keeper_company_id,
       to_company_id: selectedToCompany,
       ship_date: selectedDate,
-      ship_status: selectedStatus,
       ship_item_name: mold.display_name,
       notes: notes || null,
     })

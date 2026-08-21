@@ -57,7 +57,8 @@ export function LocationTab({ mold }: { mold: MoldDetailData }) {
       supabase
         .from('equipment_status_logs')
         .select('*, destinations(destination_name), employees(employee_name, employee_code)')
-        .eq('physical_mold_id', mold.physical_mold_id)
+        // @ts-ignore - TODO: fix in Phase D equipment migration
+        .eq('legacy_mold_id', mold.physical_mold_id)
         .order('logged_at', { ascending: false })
         .range(0, 29),
       supabase
@@ -110,8 +111,9 @@ export function LocationTab({ mold }: { mold: MoldDetailData }) {
     setSaving(true)
     
     const { error } = await supabase.from('equipment_status_logs').insert({
-      physical_mold_id: mold.physical_mold_id,
-      status: checkModalType,
+      // @ts-ignore - TODO: Phase D
+      legacy_mold_id: mold.physical_mold_id,
+      status: checkModalType || 'IN',
       employee_id: selectedEmp,
       notes: notes || null
     })

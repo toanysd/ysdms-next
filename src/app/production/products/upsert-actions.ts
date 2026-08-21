@@ -99,52 +99,9 @@ export async function upsertUnifiedTray(payload: UnifiedTrayPayload): Promise<{ 
         designRevisionId = newDesign.revision_id
       }
 
-      // 2.2 Upsert Mold Revision (using product_id instead of mold_master_id)
-      const { data: latestRev } = await supabase
-        .from('mold_revisions')
-        .select('revision_id')
-        .eq('product_id', productId!)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle()
+      // 2.2 Upsert Mold Revision - DEPRECATED (mold_revisions dropped)
+      // True SSOT is design_revisions which is handled elsewhere.
 
-      let revisionId: string
-
-      const revisionData = {
-        product_id: productId!,
-        design_revision_id: designRevisionId,
-        revision_name: `Revision`
-      }
-
-      if (latestRev && !payload.create_new_revision) {
-        revisionId = latestRev.revision_id
-        const { error: revErr } = await supabase
-          .from('mold_revisions')
-          .update(revisionData)
-          .eq('revision_id', revisionId)
-        if (revErr) throw new Error(`mold_revisions update failed: ${revErr.message}`)
-      } else {
-        // Create new
-        const { count } = await supabase
-          .from('mold_revisions')
-          .select('*', { count: 'exact', head: true })
-          .eq('product_id', productId!)
-
-        const versionNum = (count || 0) + 1
-        const finalRevData = {
-          ...revisionData,
-          revision_code: `${payload.mold_code}-R${String(versionNum).padStart(2, '0')}`,
-          revision_name: `Revision R${versionNum}`
-        }
-
-        const { data: newRev, error: revErr } = await supabase
-          .from('mold_revisions')
-          .insert(finalRevData)
-          .select('revision_id')
-          .single()
-        if (revErr) throw new Error(`mold_revisions insert failed: ${revErr.message}`)
-        revisionId = newRev.revision_id
-      }
 
       // 2.3 If Plastic ID is provided, link via product_material_specs
       // TODO: Phase 2 - migrate mold_material_bom to product-based linking

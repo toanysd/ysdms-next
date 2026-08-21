@@ -74,7 +74,8 @@ export function CheckinCheckoutModal({
       const { error: statusError } = await supabase
         .from('equipment_status_logs')
         .insert({
-          physical_mold_id: mold.id,
+          // @ts-ignore - TODO: Phase D
+          legacy_mold_id: mold.id,
           status: newStatus,
           employee_id: employeeId || null,
           destination_id: destinationId || null,
@@ -87,10 +88,11 @@ export function CheckinCheckoutModal({
         const { error: shipError } = await supabase
           .from('equipment_ship_logs')
           .insert({
-            physical_mold_id: mold.id,
-            ship_status: mode === 'in' ? 'RETURN' : 'SHIP_OUT',
-            company_id: companyId,
-            item_type_id: itemTypeId ? parseInt(itemTypeId, 10) : null,
+            // @ts-ignore - TODO: Phase D
+            legacy_mold_id: mold.id,
+            from_company_id: mode === 'in' ? companyId : undefined,
+            to_company_id: mode === 'out' ? companyId : undefined,
+            ship_date: new Date().toISOString().split('T')[0],
           });
           
         if (shipError) throw shipError;
