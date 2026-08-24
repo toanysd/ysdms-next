@@ -1,7 +1,7 @@
 # YSDMS NextGen — Các Quyết Định Kiến Trúc Kỹ Thuật
 
-> **Phiên bản:** 1.0
-> **Ngày cập nhật:** 2026-07-17
+> **Phiên bản:** 1.1
+> **Ngày cập nhật:** 2026-08-24
 > **Ngữ cảnh:** Sự thống nhất kiến trúc xuất phát từ `PRD.md`, `AI_SYSTEM_RULES.md`, và `SCHEMA_REFERENCE.md`.
 
 ## 1. Kiến Trúc Môi Trường & Hạ Tầng
@@ -64,3 +64,18 @@
   - `Plastics`: Từ vựng liên quan đến quản lý nhựa, lô sản xuất, và đo đạc tiêu hao mét nhựa.
   - `Login`: Từ vựng cho màn hình đăng nhập và các thông báo lỗi xác thực.
 
+## 7. Phát Hiện Vận Hành Phase R6 — "Activate" (2026-08-24)
+
+### [R6-S1] job_steps schema discovery — 2026-08-24
+
+- **Vấn đề:** Khi PE verify schema `job_steps`, query với `limit=15` cắt mất nhiều cột — báo cáo chỉ có 15 cột và không có `progress_percent`. Thực tế bảng có **36 cột** bao gồm `progress_percent` (integer type).
+- **Quyết định:** AN phát hiện sai lệch và tự điều chỉnh — vẫn dùng logic `step_status` (theo chỉ thị PE) thay vì `progress_percent` (đang toàn 0). Kết quả backfill đúng.
+- **Bài học:** Luôn query `information_schema.columns` **không giới hạn** khi verify schema. Không dùng `LIMIT` cho metadata queries.
+- **Thêm:** AN cũng phát hiện PE dùng `jobs.id` và `jobs.status` trong SQL mẫu — tên đúng là `jobs.job_id` và `jobs.job_status`. AN tự điều chỉnh khi apply.
+
+### [R6-S2] product_code convention mismatch — 2026-08-24
+
+- **Vấn đề:** `SCHEMA_REFERENCE.md` ghi `product_code` = mã nội bộ YSD compact (bỏ gạch ngang, VD: `ADY071`). Nhưng dữ liệu thực tế trong DB dùng format **có gạch ngang** (VD: `ADY-071`, `JAE-047`, `DIC-018`).
+- **Bằng chứng:** Dry-run ETL lookup `JAE-047` (có gạch ngang) → tìm thấy 6/6 mẫu test đầu tiên. Tổng 8,288 product codes trong DB đều dùng format có gạch ngang.
+- **Quyết định:** ETL script dùng format có gạch ngang là đúng. `SCHEMA_REFERENCE.md` cần cập nhật convention cho khớp thực tế.
+- **Ghi chú:** `product_code` và `product_name_internal` hiện tại gần như trùng format trong DB (cả hai đều có gạch ngang). Convention compact chỉ tồn tại trên tài liệu, không trong data.
