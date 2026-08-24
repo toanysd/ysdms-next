@@ -127,8 +127,8 @@ FK:  company_id     UUID → companies(company_id) NOT NULL
 ```
 PK:  product_id          UUID
 FK:  company_id          UUID → companies(company_id) NOT NULL  ← BẮT BUỘC
-     product_code        TEXT UNIQUE NOT NULL  ← Mã nội bộ YSD compact (bỏ gạch ngang: ADY071, TOW004)
-     product_name_internal TEXT               ← Tên hiển thị nội bộ YSD (có gạch ngang: ADY-071, TOW-004)
+     product_code        TEXT UNIQUE NOT NULL  ← Mã sản phẩm nội bộ YSD (có gạch ngang: ADY-071, JAE-047) — SSOT lookup key
+     product_name_internal TEXT               ← Tên hiển thị nội bộ YSD (thường trùng format product_code: ADY-071, TOW-004)
      product_name        TEXT                  ← Tên SP chính thức từ KH trên hợp đồng/hóa đơn (ban đầu có thể NULL)
      product_name_en     TEXT                  ← Tên SP tiếng Anh
      customer_product_name TEXT                ← Mã part hoặc tên sản phẩm phía KH gọi (VD: PART-8802-A)
@@ -146,8 +146,9 @@ FK:  company_id          UUID → companies(company_id) NOT NULL  ← BẮT BU�
 ```
 
 > [!IMPORTANT]
-> - `product_code` = **Mã nội bộ YSD compact** (bỏ gạch ngang, VD: `ADY071`).
-> - `product_name_internal` = **Tên hiển thị nội bộ YSD** (có gạch ngang, VD: `ADY-071`).
+> - `product_code` = **Mã sản phẩm nội bộ YSD** (có gạch ngang, VD: `ADY-071`, `JAE-047`) ← SSOT lookup key trong ETL
+> - `product_name_internal` = **Tên hiển thị nội bộ YSD** (thường trùng format với `product_code`, VD: `ADY-071`)
+> - ⚠️ Lưu ý: Convention "compact không gạch ngang" (ADY071) chỉ tồn tại trong tài liệu cũ — **không có trong data thực tế**. Không dùng format compact khi lookup DB.
 > - `customer_product_name` = **Mã part/tên khách hàng gọi** (thay thế hoàn toàn `company_pn`).
 > - `product_description` = **Tên làm việc / mô tả sơ bộ** do KD nhập từ đầu.
 > - `company_pn`, `mold_masters` = **DEPRECATED / DROPPED** — Không sử dụng trong code mới.
