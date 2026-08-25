@@ -89,3 +89,4 @@ hardcoded_results.txt
 tsconfig.tsbuildinfo
 # Unignore supabase migrations
 !supabase/migrations/
+
