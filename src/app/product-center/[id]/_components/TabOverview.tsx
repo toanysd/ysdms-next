@@ -578,12 +578,12 @@ export function TabOverview(props: TabOverviewProps) {
           // Check for shared cutters via mold_design_cutters junction table
           const { data: juncs } = await supabase
             .from('mold_design_cutters')
-            .select('mold_design_id, cutter_id')
+            .select('mold_design_id, equipment_id')
             .in('mold_design_id', revIds)
 
           let sharedCutters: any[] = []
           if (juncs && juncs.length > 0) {
-            const juncCutterIds = juncs.map(j => j.cutter_id).filter(Boolean)
+            const juncCutterIds = juncs.map(j => j.equipment_id as string).filter(Boolean)
             if (juncCutterIds.length > 0) {
               const { data: sCutters } = await supabase
                 .from('equipment')
@@ -597,7 +597,7 @@ export function TabOverview(props: TabOverviewProps) {
 
               if (sCutters) {
                 sharedCutters = sCutters.map(sc => {
-                  const matchJunc = juncs.find(j => j.cutter_id === sc.equipment_id)
+                  const matchJunc = juncs.find(j => j.equipment_id === sc.equipment_id)
                   return {
                     cutter_id: sc.equipment_id,
                     cutter_no: sc.equipment_code,

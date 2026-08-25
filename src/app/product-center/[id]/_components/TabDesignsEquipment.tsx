@@ -225,16 +225,16 @@ export function TabDesignsEquipment({ productId }: TabDesignsEquipmentProps) {
       // B. Shared cutters via mold_design_cutters junction table
       const { data: juncs } = await supabase
         .from('mold_design_cutters')
-        .select('cutter_id')
+        .select('equipment_id')
         .eq('mold_design_id', selectedRevId)
 
       if (juncs && juncs.length > 0) {
-        const juncCutterIds = juncs.map(j => j.cutter_id).filter(Boolean)
+        const juncCutterIds = juncs.map(j => j.equipment_id as string).filter(Boolean)
         if (juncCutterIds.length > 0) {
           const { data: sCutters } = await supabase
             .from('equipment')
             .select('equipment_id, equipment_type, equipment_code, display_name, usage_status, device_status, rack_layers(layer_code, racks(rack_code))')
-            .or(`equipment_id.in.(${juncCutterIds.join(',')}),legacy_cutter_id.in.(${juncCutterIds.join(',')})`)
+            .in('equipment_id', juncCutterIds)
 
           if (sCutters && sCutters.length > 0) {
             sCutters.forEach((sc: any) => {
@@ -351,7 +351,7 @@ export function TabDesignsEquipment({ productId }: TabDesignsEquipmentProps) {
               .from('mold_design_cutters')
               .delete()
               .eq('mold_design_id', selectedRevId)
-              .eq('cutter_id', item.id)
+              .eq('equipment_id', item.id)
           }
           await supabase
             .from('equipment')
@@ -364,7 +364,7 @@ export function TabDesignsEquipment({ productId }: TabDesignsEquipmentProps) {
         if (isCutter) {
           await supabase
             .from('mold_design_cutters')
-            .upsert({ mold_design_id: selectedRevId, cutter_id: item.id })
+            .upsert({ mold_design_id: selectedRevId, equipment_id: item.id, cutter_id: item.id })
         } else {
           await supabase
             .from('equipment')

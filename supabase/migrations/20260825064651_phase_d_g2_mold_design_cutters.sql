@@ -1,0 +1,1 @@
+﻿ALTER TABLE mold_design_cutters DROP CONSTRAINT IF EXISTS mold_design_cutters_cutter_id_fkey;

@@ -234,16 +234,16 @@ export default function EquipmentDetailModal({
     if (revId && !isItemCutter && isUuid(revId)) {
       const { data: juncCutters } = await supabase
         .from('mold_design_cutters')
-        .select('cutter_id')
+        .select('equipment_id')
         .eq('mold_design_id', revId)
       if (juncCutters && juncCutters.length > 0) {
-        const cutterRefIds = juncCutters.map(j => j.cutter_id).filter(Boolean)
+        const cutterRefIds = juncCutters.map(j => j.equipment_id as string).filter(Boolean)
         const validCutterRefIds = cutterRefIds.filter(cid => isUuid(cid))
         if (validCutterRefIds.length > 0) {
           const { data: eqCutters } = await supabase
             .from('equipment')
             .select('equipment_id, equipment_code, display_name, usage_status, equipment_type')
-            .or(`equipment_id.in.(${validCutterRefIds.join(',')}),legacy_cutter_id.in.(${validCutterRefIds.join(',')})`)
+            .in('equipment_id', validCutterRefIds)
           if (eqCutters && eqCutters.length > 0) {
             eqCutters.forEach((ec: any) => {
               if (!isSelf(ec.equipment_id, ec.equipment_code)) {
@@ -268,7 +268,7 @@ export default function EquipmentDetailModal({
         const { data: juncMolds } = await supabase
           .from('mold_design_cutters')
           .select('mold_design_id')
-          .in('cutter_id', cutterLookupIds)
+          .in('equipment_id', cutterLookupIds)
         if (juncMolds && juncMolds.length > 0) {
           const moldDesignIds = [...new Set(juncMolds.map(j => j.mold_design_id).filter(Boolean))]
           const validMoldDesignIds = moldDesignIds.filter(mid => isUuid(mid))

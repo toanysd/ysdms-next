@@ -161,7 +161,7 @@ export default function Topbar() {
                 const { data: juncs } = await supabase
                   .from('mold_design_cutters')
                   .select('mold_design_id, design_revisions(product_id, products(product_code))')
-                  .eq('cutter_id', c.equipment_id)
+                  .eq('equipment_id', c.equipment_id)
                   .limit(1)
 
                 if (juncs && juncs.length > 0) {

@@ -519,3 +519,6 @@
 
 **Backlog UI (Chờ phê duyệt ngoài scope Phase D):**
 - Trong TechnicalReviewForm.tsx: Cần chuyển đổi mold_id và cutting_die_id từ dạng raw text input (nhập UUID thủ công) sang dạng dropdown select (fetch từ bảng equipment) để cải thiện UX.
+
+**Backlog Database (Giai đoạn 3 ADR-004):**
+- Cột cutter_id trong mold_design_cutters đã bị drop constraint và deprecated hoàn toàn — UI đã chuyển 100% sang sử dụng cột equipment_id. Chờ archive data và drop cột này ở Giai đoạn 3.
