@@ -534,3 +534,7 @@ pm run db:types\. Ch?a c?n x? ly hom nay.
 ### 3. Giai ?o?n 2 - Sub-phase 5b (Equipment Detail & Modals)
 - **Status:** Hoan thanh (Commit: 39eb713)
 - **Chi ti?t:** ?a thay th? query physical_mold_id sang equipment_id cho 5 component: CutterDetailView, EquipmentDetailModal, TeflonCoatingModule, JobsTab, DesignJobsList. Gi? nguyen prop name ?? ch?ng scope creep ??i v?i cac tab khong thu?c scope Giai ?o?n 2.
+
+### 4. Giai ?o?n 2 - Sub-phase 5c (Engineering & Product Center + Fix Regression)
+- **Status:** Hoan thanh (Commit: 62f4a70)
+- **Chi ti?t:** Fix l?i regression ng?m t?i 4 component trong jobs/[id] do thay ??i alias t? physical_molds sang equipment trong qua trinh th?c thi Sub-phase 5a. D?n d?p query physical_mold_id th?a ? TabOverview.tsx. 
