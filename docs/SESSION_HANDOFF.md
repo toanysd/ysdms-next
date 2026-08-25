@@ -530,3 +530,7 @@
 - **Chi ti?t:** ?a s?a active bug ? QuickLinkMoldModal.tsx va linkJobToPhysicalMoldAction (payload c? ghi equipment_id vao c?t physical_mold_id gay l?i FK). UI ?a ??ng b? s? d?ng c?t equipment_id.
 - **L?i TS t?n t?i t? tr??c:** 3 file query 4 b?ng log (forming/press/grinding/inspection_daily_logs) ch?a c?p nh?t database.types.ts, c?n \
 pm run db:types\. Ch?a c?n x? ly hom nay.
+
+### 3. Giai ?o?n 2 - Sub-phase 5b (Equipment Detail & Modals)
+- **Status:** Hoan thanh (Commit: 39eb713)
+- **Chi ti?t:** ?a thay th? query physical_mold_id sang equipment_id cho 5 component: CutterDetailView, EquipmentDetailModal, TeflonCoatingModule, JobsTab, DesignJobsList. Gi? nguyen prop name ?? ch?ng scope creep ??i v?i cac tab khong thu?c scope Giai ?o?n 2.
