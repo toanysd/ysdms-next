@@ -489,7 +489,25 @@
   - Skipped: 1 AMBIGUOUS (`A-016-1`), 165 NO_COMPANY (numeric codes), 6 ALREADY_EXISTS.
   - Final DB: 2,396 orders / 7,299 lines / 10,092,253 trays / 8,422 products.
 
+### 98. Phase D-Fix-1 + R7-S1 Close (2026-08-25)
+- **Phase D-Fix-1 (`commit aa5764d`):**
+  - `engineering/designs/revisions/[id]/page.tsx`: `.from('physical_molds')` → `.from('equipment').eq('equipment_type','MOLD')` + map to legacy shape
+  - `equipment/aluminum/page.tsx` line 35: mold dropdown query → equipment, maps back to `{physical_mold_id, system_code, display_name, actual_length_mm/width/height}`
+  - FK alias references (aluminum line 41, 118, 286) left intact — `aluminum_blanks.mold_id → physical_molds` FK not yet migrated
+  - Remaining 23 FK constraints → backlog for ADR migration
+  - `npx tsc --noEmit`: 0 errors ✅
+- **R7-S1 CLOSED (no action):**
+  - 6 work_orders = handmade NEW_SET records by Thoan, correct by design
+  - Bulk WO from 2,396 orders = wrong direction (orders = sales records, not manufacturing requests)
+  - "R7-S1 tạo WO từ order data" removed from backlog — was a misunderstanding
+- **Schema Facts Discovered 25/08:**
+  - `work_orders` PK = `wo_id` (NOT `work_order_id`) — query PE wrote used wrong column name
+  - `work_orders` columns: `wo_id, wo_code, wo_name, wo_type, wo_status, start_date, deadline, product_id, company_id, order_id, case_id, responsible_id, priority, notes`
+  - `jobs` has 2 work_order FK columns: `work_order_id` (→ `work_orders.wo_id`) AND `mold_work_order_id`
+  - `order_date` in imported orders = ship date (calendar grid date), NOT purchase order date — `due_date` = NULL for all 7,299 lines
+  - `production_orders` has `physical_mold_id` → `physical_molds` FK (deprecated, not yet migrated)
+
 ### Backlog for Next Session
-1. **R7-S1** — Create work_orders forward-looking from order data (PE spec pending)
-2. **172 unresolved product codes** — numeric + unknown prefix, needs business input
-3. **Phase D** — 15 files UI still reference deprecated `physical_molds`/`cutters` tables
+1. **172 unresolved product codes** — numeric + unknown prefix, needs business input from Thoan
+2. **Phase D remaining** — 23 FK constraints still point to `physical_molds`/`cutters` → needs ADR + migration plan
+3. **Phase D UI** — `mold_design_cutters` junction table queries in EquipmentDetailModal, TabDesignsEquipment, TabOverview — blocked on FK migration
