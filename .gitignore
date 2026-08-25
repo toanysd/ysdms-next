@@ -1,4 +1,4 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+﻿# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
 # dependencies
 /node_modules
@@ -45,7 +45,7 @@ add_col.js
 /test-results/
 /playwright-report/
 
-# Scratch / Debug / Legacy (dọn dẹp 2026-07-15)
+# Scratch / Debug / Legacy (d盻肱 d蘯ｹp 2026-07-15)
 /scratch/
 temp_ai/*.json
 temp_ai/backup_*/
@@ -81,9 +81,11 @@ refactor_i18n.js
 check.py
 hardcoded_results.txt
 
-# AI workspace files (không push lên GitHub)
+# AI workspace files (khﾃｴng push lﾃｪn GitHub)
 /.ai/
 /.claude/
 .cursorrules
 .cursorignore
 tsconfig.tsbuildinfo
+# Unignore supabase migrations
+!supabase/migrations/

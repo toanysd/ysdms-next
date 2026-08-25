@@ -511,3 +511,8 @@
 1. **172 unresolved product codes** — numeric + unknown prefix, needs business input from Thoan
 2. **Phase D remaining** — 23 FK constraints still point to `physical_molds`/`cutters` → needs ADR + migration plan
 3. **Phase D UI** — `mold_design_cutters` junction table queries in EquipmentDetailModal, TabDesignsEquipment, TabOverview — blocked on FK migration
+
+## Cập Nhật 25/08/2026 (Cuối Phiên Sáng)
+- **ADR-004:** Đã được PE phê duyệt.
+- **Phase D (Giai đoạn 1):** Đã hoàn thành và verify độc lập thành công 13/25 FK constraints an toàn. Tất cả 13 bảng này đã được chuyển mapping từ `physical_molds`/`cutters` sang `equipment`. Orphan records = 0.
+- **Phase D (Giai đoạn 2):** (12 FKs phức tạp còn lại gồm `jobs`, `production_orders`, `mold_design_cutters`...) được xếp vào backlog cho phiên tiếp theo. Giai đoạn 2 yêu cầu đồng bộ logic UI code với DB migration.
