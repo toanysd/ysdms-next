@@ -524,3 +524,9 @@
 - Cột cutter_id trong mold_design_cutters đã bị drop constraint và deprecated hoàn toàn — UI đã chuyển 100% sang sử dụng cột equipment_id. Chờ archive data và drop cột này ở Giai đoạn 3.
 
 - **production_orders**: 3 cột FK (physical_mold_id, om_reference_mold_id, cutter_id) đã được migrate thành công trỏ vào equipment. Alias UI physical_molds đã đổi thành equipment.
+
+### 2. Giai ?o?n 2 - Sub-phase 5a (Jobs Core Logic & API)
+- **Status:** Hoan thanh (Commit: 4448b0a)
+- **Chi ti?t:** ?a s?a active bug ? QuickLinkMoldModal.tsx va linkJobToPhysicalMoldAction (payload c? ghi equipment_id vao c?t physical_mold_id gay l?i FK). UI ?a ??ng b? s? d?ng c?t equipment_id.
+- **L?i TS t?n t?i t? tr??c:** 3 file query 4 b?ng log (forming/press/grinding/inspection_daily_logs) ch?a c?p nh?t database.types.ts, c?n \
+pm run db:types\. Ch?a c?n x? ly hom nay.
