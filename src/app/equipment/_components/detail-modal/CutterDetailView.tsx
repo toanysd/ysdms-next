@@ -150,7 +150,7 @@ export default function CutterDetailView({ data, jobsHistory = [] }: Props) {
               ID:
             </span>
             <span style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: 12, color: 'var(--text-secondary)' }}>
-              {data.legacy_id || (data.equipment_id ? `#${data.equipment_id.slice(0, 8)}` : (data as any).cutter_id ? `#${(data as any).cutter_id.slice(0, 8)}` : '—')}
+              {data.legacy_id || (data.equipment_id ? `#${data.equipment_id.slice(0, 8)}` : (data as any).legacy_cutter_id ? `#${(data as any).legacy_cutter_id.slice(0, 8)}` : '—')}
             </span>
           </div>
 

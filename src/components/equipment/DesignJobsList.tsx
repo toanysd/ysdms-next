@@ -14,10 +14,10 @@ type Job = {
   overall_progress: number
   created_at: string
   design_revision_id: string | null
-  physical_mold_id: string | null
+  equipment_id: string | null
   job_types: { job_type_name_ja: string } | null
   design_revisions: { design_code: string; revision_number: number } | null
-  physical_molds: { display_name: string; system_code: string } | null
+  equipment: { display_name: string; equipment_code: string } | null
 }
 
 export function DesignJobsList({ 
@@ -41,14 +41,14 @@ export function DesignJobsList({
       .from('jobs')
       .select(`
         job_id, job_code, job_name, job_status, overall_progress, created_at,
-        design_revision_id, physical_mold_id,
+        design_revision_id, equipment_id,
         job_types(job_type_name_ja),
         design_revisions!inner(design_code, revision_number, product_id),
-        physical_molds(display_name, system_code)
+        equipment(display_name, equipment_code)
       `)
 
     if (selectedMoldId) {
-      req = req.eq('physical_mold_id', selectedMoldId)
+      req = req.eq('equipment_id', selectedMoldId)
     } else if (selectedRevisionId) {
       req = req.eq('design_revision_id', selectedRevisionId)
     } else if (productId) {
@@ -125,7 +125,7 @@ export function DesignJobsList({
                     {job.design_revisions ? `${job.design_revisions.design_code} (Rev ${job.design_revisions.revision_number})` : '—'}
                   </td>
                   <td style={{ fontSize: 11, color: 'var(--text-secondary)' }}>
-                    {job.physical_molds ? `${job.physical_molds.display_name}` : '—'}
+                    {job.equipment ? `${job.equipment.display_name}` : '—'}
                   </td>
                   <td style={{ fontSize: 11 }}>{job.job_status}</td>
                   <td>

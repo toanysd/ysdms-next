@@ -108,7 +108,7 @@ export default function EquipmentDetailModal({
               job_id, job_code, job_name, job_status, created_at, deadline, ship_date, job_category, notes,
               design_revisions(revision_id, design_code)
             `)
-            .or(`physical_mold_id.eq.${targetEqId},equipment_id.eq.${targetEqId}`)
+            .eq('equipment_id', targetEqId)
             .order('created_at', { ascending: true })
         : Promise.resolve({ data: [] })
 
@@ -323,7 +323,7 @@ export default function EquipmentDetailModal({
       return
     }
 
-    const initialId = equipmentId || initialData?.equipment_id || (initialData as any)?.physical_mold_id || (initialData as any)?.cutter_id || (initialData as any)?.cutter_no || (initialData as any)?.system_code
+    const initialId = equipmentId || initialData?.equipment_id || (initialData as any)?.physical_mold_id || (initialData as any)?.legacy_cutter_id || (initialData as any)?.cutter_no || (initialData as any)?.system_code
     if (!initialId) return
 
     // Increment counter so stale fetches from earlier renders get ignored

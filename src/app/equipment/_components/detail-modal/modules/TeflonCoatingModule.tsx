@@ -46,7 +46,7 @@ export default function TeflonCoatingModule({ data, onClose, onSuccess, onReques
   const [loading, setLoading] = useState(false)
   const [fetching, setFetching] = useState(true)
   const [msg, setMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
-  const targetEquipmentId = data?.equipment_id || (data as any)?.physical_mold_id || (data as any)?.cutter_id || (data as any)?.id
+  const targetEquipmentId = data?.equipment_id || (data as any)?.physical_mold_id || (data as any)?.legacy_cutter_id || (data as any)?.id
 
   // Lookups
   const [teflonVendors, setTeflonVendors] = useState<Company[]>([])
