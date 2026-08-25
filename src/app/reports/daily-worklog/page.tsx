@@ -24,7 +24,7 @@ type WorkLog = {
   } | null
   jobs: {
     job_code: string
-    physical_molds: { system_code: string } | null
+    equipment: { equipment_code: string } | null
     design_revisions: { design_code: string } | null
     products: { product_code: string } | null
   } | null
@@ -80,7 +80,7 @@ export default function DailyWorklogReportPage() {
         processing_codes(processing_name),
         jobs(
           job_code,
-          physical_molds(system_code),
+          equipment(equipment_code),
           design_revisions(design_code),
           products(product_code)
         )
@@ -119,7 +119,7 @@ export default function DailyWorklogReportPage() {
 
   const getModelCode = (log: WorkLog) => {
     if (!log.jobs) return '-'
-    if (log.jobs.physical_molds?.system_code) return log.jobs.physical_molds.system_code
+    if (log.jobs.equipment?.equipment_code) return log.jobs.equipment.equipment_code
     if (log.jobs.design_revisions?.design_code) return log.jobs.design_revisions.design_code
     if (log.jobs.products?.product_code) return log.jobs.products.product_code
     return log.jobs.job_code
