@@ -339,7 +339,7 @@ export async function getProductionPlansByDate(dateStr: string) {
         .select(`
             *,
             machines(machine_id, machine_name, machine_code),
-            physical_molds:physical_mold_id(physical_mold_id, system_code),
+            equipment:physical_mold_id(equipment_id, equipment_code),
             order_lines(
                 line_id, product_id, due_date, quantity,
                 products(product_code, product_name),
@@ -362,7 +362,7 @@ export async function getProductionPlansByDate(dateStr: string) {
             }
         } catch(e) {}
 
-        const moldCode = d.physical_molds?.system_code || ''
+        const moldCode = d.equipment?.equipment_code || ''
 
         return {
             ...d,
@@ -377,7 +377,7 @@ export async function getProductionPlansByDate(dateStr: string) {
             notes: meta.notes !== undefined ? meta.notes : d.notes,
             delivery_date: d.delivery_date || d.order_lines?.due_date || null,
             machine_instance: d.machines ? { id: d.machines.machine_id, name: d.machines.machine_name, internal_code: d.machines.machine_code } : null,
-            mold_physical: d.physical_molds ? { id: d.physical_molds.physical_mold_id, physical_code: moldCode, system_code: moldCode } : null,
+            mold_physical: d.equipment ? { id: d.equipment.equipment_id, physical_code: moldCode, system_code: moldCode } : null,
             order_items: d.order_lines ? {
                 id: d.order_lines.line_id,
                 product_id: d.order_lines.product_id,
@@ -398,7 +398,7 @@ export async function getProductionPlansByDateRange(startDateStr: string, endDat
         .select(`
             *,
             machines(machine_id, machine_name, machine_code),
-            physical_molds:physical_mold_id(physical_mold_id, system_code),
+            equipment:physical_mold_id(equipment_id, equipment_code),
             order_lines(
                 line_id, product_id, due_date, quantity,
                 products(product_code, product_name),
@@ -421,7 +421,7 @@ export async function getProductionPlansByDateRange(startDateStr: string, endDat
             }
         } catch(e) {}
 
-        const moldCode = d.physical_molds?.system_code || ''
+        const moldCode = d.equipment?.equipment_code || ''
 
         return {
             ...d,
@@ -436,7 +436,7 @@ export async function getProductionPlansByDateRange(startDateStr: string, endDat
             notes: meta.notes !== undefined ? meta.notes : d.notes,
             delivery_date: d.delivery_date || d.order_lines?.due_date || null,
             machine_instance: d.machines ? { id: d.machines.machine_id, name: d.machines.machine_name, internal_code: d.machines.machine_code } : null,
-            mold_physical: d.physical_molds ? { id: d.physical_molds.physical_mold_id, physical_code: moldCode, system_code: moldCode } : null,
+            mold_physical: d.equipment ? { id: d.equipment.equipment_id, physical_code: moldCode, system_code: moldCode } : null,
             order_items: d.order_lines ? {
                 id: d.order_lines.line_id,
                 product_id: d.order_lines.product_id,
@@ -466,7 +466,7 @@ export async function getTodayProductionPlans() {
         .select(`
             *,
             machines(machine_id, machine_name, machine_code),
-            physical_molds:physical_mold_id(physical_mold_id, system_code),
+            equipment:physical_mold_id(equipment_id, equipment_code),
             order_lines(
                 line_id, product_id, due_date, quantity,
                 products(product_code, product_name),
@@ -910,7 +910,7 @@ export async function getProductionPlansByOrderId(orderId: string) {
         .select(`
             *,
             machines(machine_id, machine_code, machine_name),
-            physical_molds:physical_mold_id(physical_mold_id, system_code),
+            equipment:physical_mold_id(equipment_id, equipment_code),
             order_lines!inner(line_id, order_id, product_id, quantity)
         `)
         .eq('order_lines.order_id', orderId)
@@ -925,7 +925,8 @@ export async function getProductionPlansByOrderId(orderId: string) {
         id: d.po_id,
         planned_date: d.planned_start,
         machine_instance_id: d.machine_id,
-        order_item_id: d.order_line_id
+        order_item_id: d.order_line_id,
+        mold_physical: d.equipment ? { physical_code: d.equipment.equipment_code } : null
     }))
 }
 

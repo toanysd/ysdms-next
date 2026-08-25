@@ -522,3 +522,5 @@
 
 **Backlog Database (Giai đoạn 3 ADR-004):**
 - Cột cutter_id trong mold_design_cutters đã bị drop constraint và deprecated hoàn toàn — UI đã chuyển 100% sang sử dụng cột equipment_id. Chờ archive data và drop cột này ở Giai đoạn 3.
+
+- **production_orders**: 3 cột FK (physical_mold_id, om_reference_mold_id, cutter_id) đã được migrate thành công trỏ vào equipment. Alias UI physical_molds đã đổi thành equipment.

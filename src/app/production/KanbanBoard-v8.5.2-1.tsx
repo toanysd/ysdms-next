@@ -123,7 +123,7 @@ export default function KanbanBoard({ initialPending, initialActive, initialComp
                                             </div>
                                             <div className="text-[11px] text-[var(--mcs-text-muted)] flex items-center gap-2 flex-wrap">
                                                 <span className="bg-[var(--mcs-surface-2)] px-1.5 py-0.5 rounded">設備: {plan.machine_instance?.internal_code || '-'}</span>
-                                                <span className="bg-[var(--mcs-surface-2)] px-1.5 py-0.5 rounded">金型: {plan.mold_physical?.physical_code || plan.physical_molds?.system_code || '-'}</span>
+                                                <span className="bg-[var(--mcs-surface-2)] px-1.5 py-0.5 rounded">金型: {plan.mold_physical?.physical_code || plan.equipment?.equipment_code || '-'}</span>
                                                 {plan.operator_name && <span>担当者: {plan.operator_name}</span>}
                                             </div>
                                         </div>
