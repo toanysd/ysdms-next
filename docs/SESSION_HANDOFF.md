@@ -516,3 +516,6 @@
 - **ADR-004:** Đã được PE phê duyệt.
 - **Phase D (Giai đoạn 1):** Đã hoàn thành và verify độc lập thành công 13/25 FK constraints an toàn. Tất cả 13 bảng này đã được chuyển mapping từ `physical_molds`/`cutters` sang `equipment`. Orphan records = 0.
 - **Phase D (Giai đoạn 2):** (12 FKs phức tạp còn lại gồm `jobs`, `production_orders`, `mold_design_cutters`...) được xếp vào backlog cho phiên tiếp theo. Giai đoạn 2 yêu cầu đồng bộ logic UI code với DB migration.
+
+**Backlog UI (Chờ phê duyệt ngoài scope Phase D):**
+- Trong TechnicalReviewForm.tsx: Cần chuyển đổi mold_id và cutting_die_id từ dạng raw text input (nhập UUID thủ công) sang dạng dropdown select (fetch từ bảng equipment) để cải thiện UX.

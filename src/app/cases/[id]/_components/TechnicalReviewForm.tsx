@@ -177,7 +177,7 @@ export default function TechnicalReviewForm({
                 name="mold_id"
                 className="form-input"
                 defaultValue={review?.mold_id ?? ''}
-                placeholder="FK physical_mold_id"
+                placeholder="FK equipment_id (MOLD)"
               />
             </div>
             <div className="form-group">
@@ -231,7 +231,7 @@ export default function TechnicalReviewForm({
                 name="cutting_die_id"
                 className="form-input"
                 defaultValue={review?.cutting_die_id ?? ''}
-                placeholder="FK cutter_id"
+                placeholder="FK equipment_id (CUTTER)"
               />
             </div>
             <div className="form-group">
