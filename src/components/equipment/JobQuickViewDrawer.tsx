@@ -536,7 +536,7 @@ export function JobQuickViewDrawer({ job, onClose, onOpenStepEdit, onJobUpdated 
         </div>
 
         {/* ─── Mold Dimensions & Info (compact) ─── */}
-        {(job.design_revisions || job.physical_molds || job.products) && (
+        {(job.design_revisions || job.equipment || job.products) && (
           <div style={{ padding: '8px 20px', display: 'flex', flexWrap: 'wrap', gap: 6, borderBottom: '1px solid var(--border-default)', backgroundColor: 'var(--bg-surface)' }}>
             {job.design_revisions?.design_length && (
               <span style={{ fontSize: 11, color: 'var(--text-muted)', backgroundColor: 'var(--bg-surface-2)', padding: '2px 8px', borderRadius: 4 }}>
@@ -569,9 +569,9 @@ export function JobQuickViewDrawer({ job, onClose, onOpenStepEdit, onJobUpdated 
                 🔗 {(job as any).mold_masters.mold_master_code} (TK)
               </Link>
             )}
-            {job.physical_molds && (
-              <Link href={`/equipment/molds/${job.physical_molds.physical_mold_id}`} style={{ fontSize: 11, color: 'var(--accent)', backgroundColor: 'var(--bg-surface-2)', padding: '2px 8px', borderRadius: 4, textDecoration: 'none', fontWeight: 600 }}>
-                🔗 {job.physical_molds.display_name} (VL)
+            {job.equipment && (
+              <Link href={`/equipment/molds/${job.equipment.equipment_id}`} style={{ fontSize: 11, color: 'var(--accent)', backgroundColor: 'var(--bg-surface-2)', padding: '2px 8px', borderRadius: 4, textDecoration: 'none', fontWeight: 600 }}>
+                🔗 {job.equipment.display_name} (VL)
               </Link>
             )}
           </div>

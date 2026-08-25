@@ -13,7 +13,7 @@ export interface CreateMoldJobInput {
     job_type_id: string               // FK -> job_types.job_type_id (e.g. 'NEW_MOLD', 'REVISION')
     mold_master_id?: string | null    // @deprecated - use product_id instead
     product_id?: string | null        // FK -> products
-    physical_mold_id?: string | null  // FK -> physical_molds
+    equipment_id?: string | null      // FK -> equipment
     design_revision_id?: string | null // FK -> design_revisions
     company_id?: string | null        // FK -> companies (khách hàng)
     responsible_id?: string | null    // FK -> employees
@@ -61,13 +61,14 @@ export interface JobForGantt {
         cavity_count: number | null
         plastic_type_designed: string | null
     } | null
-    physical_molds: {
-        physical_mold_id: string
-        system_code: string
+    equipment: {
+        equipment_id: string
+        equipment_code: string
         display_name: string
-        actual_length_mm: string | null
-        actual_width_mm: string | null
-        actual_height_mm: string | null
+        equipment_type: string
+        actual_length_mm: number | null
+        actual_width_mm: number | null
+        actual_height_mm: number | null
     } | null
     companies: {
         company_name: string
@@ -83,12 +84,7 @@ export interface JobForGantt {
         wo_type: string
         deadline: string | null
     } | null
-    equipment?: {
-        equipment_id: string
-        equipment_code: string
-        display_name: string
-        equipment_type: string
-    } | null
+
 }
 
 export interface WorkLogRow {
@@ -151,7 +147,7 @@ export async function createMoldJobAction(input: CreateMoldJobInput) {
             job_name: input.job_name,
             job_type_id: input.job_type_id,
             product_id: input.product_id || input.mold_master_id || null, // fallback from deprecated mold_master_id
-            physical_mold_id: input.physical_mold_id || null,
+            equipment_id: input.equipment_id || null,
             design_revision_id: input.design_revision_id || null,
             company_id: input.company_id || null,
             responsible_id: input.responsible_id || null,
@@ -294,7 +290,7 @@ export async function createQuickJob(input: CreateQuickJobInput): Promise<{
     return { success: true, job_id: job.job_id, job_code: job.job_code }
 }
 
-export async function linkJobToPhysicalMoldAction(job_id: string, physical_mold_id: string) {
+export async function linkJobToPhysicalMoldAction(job_id: string, equipment_id: string) {
     const supabase = await createClient()
 
     const { data: mold, error: moldErr } = await supabase
@@ -304,7 +300,7 @@ export async function linkJobToPhysicalMoldAction(job_id: string, physical_mold_
             design_revision_id,
             design_revisions(product_id, company_id)
         `)
-        .eq('equipment_id', physical_mold_id)
+        .eq('equipment_id', equipment_id)
         .single()
 
     if (moldErr || !mold) {
@@ -317,7 +313,7 @@ export async function linkJobToPhysicalMoldAction(job_id: string, physical_mold_
     const companyId = designRevision?.company_id || null
 
     const updatePayload: any = {
-        physical_mold_id,
+        equipment_id,
         updated_at: new Date().toISOString(),
         notes: null
     }
@@ -384,8 +380,7 @@ export async function getJobsForGantt(searchQuery?: string, fromDate?: string, t
                 product_material_specs(material_type, material_grade, thickness_mm, sheet_width_mm)
             ),
             design_revisions(design_code, revision_number, design_length, design_width, design_height, design_depth, cutline_length, cutline_width, cavity_count, plastic_type_designed),
-            physical_molds(physical_mold_id, system_code, display_name, actual_length_mm, actual_width_mm, actual_height_mm),
-            equipment!jobs_equipment_id_fkey(equipment_id, equipment_code, display_name, equipment_type),
+            equipment!jobs_equipment_id_fkey(equipment_id, equipment_code, display_name, equipment_type, actual_length_mm, actual_width_mm, actual_height_mm),
             work_orders!jobs_work_order_id_fkey(wo_id, wo_code, wo_name, wo_status, wo_type, deadline),
             companies!jobs_company_id_fkey(company_name, company_code),
             job_types(job_type_name_ja, job_type_name_vi)
@@ -465,7 +460,7 @@ export async function getJobsForGantt(searchQuery?: string, fromDate?: string, t
                     product_material_specs(material_type, material_grade, thickness_mm, sheet_width_mm)
                 ),
                 design_revisions(design_code, revision_number, design_length, design_width, design_height, design_depth, cutline_length, cutline_width, cavity_count, plastic_type_designed),
-                physical_molds(physical_mold_id, system_code, display_name, actual_length_mm, actual_width_mm, actual_height_mm),
+                equipment!jobs_equipment_id_fkey(equipment_id, equipment_code, display_name, equipment_type, actual_length_mm, actual_width_mm, actual_height_mm),
                 companies!jobs_company_id_fkey(company_name, company_code),
                 job_types(job_type_name_ja, job_type_name_vi)
             `, { count: 'exact' })
@@ -542,8 +537,7 @@ export async function getJobsForGantt(searchQuery?: string, fromDate?: string, t
                         product_material_specs(material_type, material_grade, thickness_mm, sheet_width_mm)
                     ),
                     design_revisions(design_code, revision_number, design_length, design_width, design_height, design_depth, cutline_length, cutline_width, cavity_count, plastic_type_designed),
-                    physical_molds(physical_mold_id, system_code, display_name, actual_length_mm, actual_width_mm, actual_height_mm),
-                    equipment!jobs_equipment_id_fkey(equipment_id, equipment_code, display_name, equipment_type),
+                    equipment!jobs_equipment_id_fkey(equipment_id, equipment_code, display_name, equipment_type, actual_length_mm, actual_width_mm, actual_height_mm),
                     work_orders!jobs_work_order_id_fkey(wo_id, wo_code, wo_name, wo_status, wo_type, deadline),
                     companies!jobs_company_id_fkey(company_name, company_code),
                     job_types(job_type_name_ja, job_type_name_vi)

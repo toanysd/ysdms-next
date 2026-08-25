@@ -61,7 +61,7 @@ export default function JobDetailPage() {
         *,
         job_types(job_type_name_ja, job_type_name_vi),
         companies!jobs_company_id_fkey(company_name),
-        physical_molds(physical_mold_id, system_code, display_name, actual_length_mm, actual_width_mm, actual_height_mm, actual_weight, device_status),
+        equipment!jobs_equipment_id_fkey(equipment_id, equipment_code, display_name, actual_length_mm, actual_width_mm, actual_height_mm, actual_weight, device_status),
         design_revisions(revision_id, design_code, revision_number, design_length, design_width, design_height, design_depth, cutline_length, cutline_width, cavity_count, pocket_numbers, cavity_pitch_mm, machine_feed_pitch_mm, plastic_type_designed, corner_r, draft_angle, plug_type),
         products!jobs_product_id_fkey(product_id, product_code, product_name, product_name_internal, product_material_specs(material_type, material_grade, thickness_mm, sheet_width_mm)),
         job_steps(
@@ -184,10 +184,10 @@ export default function JobDetailPage() {
                 <span style={{ fontSize: 9, color: 'var(--text-muted)' }}>{job.design_revisions.design_code}</span>
               </Link>
             )}
-            {/* ← Physical Mold */}
-            {job.physical_molds && (
+            {/* ← Equipment */}
+            {job.equipment && (
               <Link
-                href={`/equipment/molds/${job.physical_molds.physical_mold_id}`}
+                href={`/equipment/molds/${job.equipment.equipment_id}`}
                 className="hover:underline"
                 style={{
                   display: 'inline-flex', alignItems: 'center', gap: 4,

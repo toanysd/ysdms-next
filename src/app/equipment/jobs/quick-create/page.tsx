@@ -632,11 +632,11 @@ export default function QuickCreateMoldJobPage() {
         setPocketPrototype(d.change_summary.replace('ポケット試作:', '').trim())
       }
 
-      // Physical Mold
-      const m = j.physical_molds || {}
-      const sysCode = m.system_code || ''
+      // Equipment
+      const m = j.equipment || {}
+      const sysCode = m.equipment_code || ''
       const dispName = m.display_name || ''
-      const stamp = m.physical_stamp || ''
+      const stamp = m.physical_stamp || sysCode
       setSystemCode(sysCode)
       setDisplayName(dispName)
       setPhysicalStamp(stamp)
@@ -1159,7 +1159,7 @@ export default function QuickCreateMoldJobPage() {
       setShowConfirmModal(false)
 
       if (res.success && res.job_id) {
-        setCreatedResult({ jobId: res.job_id, moldId: res.physical_mold_id || '', isEdit: true })
+        setCreatedResult({ jobId: res.job_id, moldId: res.equipment_id || '', isEdit: true })
       } else {
         alert(`${t('errUpdate')}: ${res.error}`)
       }
@@ -1170,7 +1170,7 @@ export default function QuickCreateMoldJobPage() {
       setShowConfirmModal(false)
 
       if (res.success && res.job_id) {
-        setCreatedResult({ jobId: res.job_id, moldId: res.physical_mold_id || '', isEdit: false })
+        setCreatedResult({ jobId: res.job_id, moldId: res.equipment_ids?.[0] || '', isEdit: false })
       } else {
         alert(`${t('errCreate')}: ${res.error}`)
       }

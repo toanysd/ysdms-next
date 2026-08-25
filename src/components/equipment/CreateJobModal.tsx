@@ -280,7 +280,7 @@ export function CreateJobModal({
         job_name: autoJobName,
         job_type_id: jobTypeId,
         product_id: jobCategory === 'MOLD' ? (productId || null) : null,
-        physical_mold_id: jobCategory === 'MOLD' ? (selectedMoldId || null) : null,
+        equipment_id: jobCategory === 'MOLD' ? (selectedMoldId || null) : null,
         design_revision_id: jobCategory === 'MOLD' ? selectedDesignId : undefined,
         notes: notes || null
       })

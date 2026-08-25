@@ -318,7 +318,6 @@ export async function createQuickMoldJobWorkflow(input: QuickMoldJobInput) {
       job_ids: createdJobIds,
       job_id: createdJobIds[0] || undefined,
       equipment_ids: createdEquipmentIds,
-      physical_mold_id: undefined,
       product_id: productId,
       design_revision_id: designRevisionId,
     }
@@ -371,18 +370,10 @@ export async function getQuickMoldJobData(jobId: string) {
       if (comp) resolvedCompany = comp
     }
 
-    const physical_molds = (job as any).equipment ? {
-      system_code: (job as any).equipment.equipment_code,
-      display_name: (job as any).equipment.display_name,
-      physical_stamp: (job as any).equipment.physical_stamp || (job as any).equipment.equipment_code,
-      device_status: (job as any).equipment.device_status || (job as any).equipment.usage_status
-    } : null
-
     return {
       success: true,
       job: {
         ...job,
-        physical_molds,
         resolved_company: resolvedCompany
       } as any,
     }
@@ -515,7 +506,6 @@ export async function updateQuickMoldJobWorkflow(jobId: string, input: any) {
       success: true,
       job_id: jobId,
       equipment_id: currentJob.equipment_id,
-      physical_mold_id: currentJob.equipment_id,
     }
   } catch (err: any) {
     return { success: false, error: err.message || 'Lỗi cập nhật hệ thống' }

@@ -30,7 +30,7 @@ type JobRow = {
   priority: number | null
   job_types: { job_type_name_ja: string; job_type_name_vi: string } | null
   companies: { company_name: string } | null
-  physical_molds: { physical_mold_id: string; display_name: string; system_code: string; actual_length_mm: string | null; actual_width_mm: string | null; actual_height_mm: string | null } | null
+  equipment: { equipment_id: string; display_name: string; equipment_code: string; actual_length_mm: number | null; actual_width_mm: number | null; actual_height_mm: number | null } | null
   design_revisions: { design_length: number | null; design_width: number | null; design_height: number | null; plastic_type_designed: string | null } | null
   products: { product_id: string; product_code: string; product_name: string | null; product_name_internal: string | null; product_material_specs: { material_type: string }[] } | null
 }
@@ -133,7 +133,7 @@ function JobsPageContent() {
         priority,
         job_types(job_type_name_ja, job_type_name_vi),
         companies!jobs_company_id_fkey(company_name),
-        physical_molds(physical_mold_id, display_name, system_code, actual_length_mm, actual_width_mm, actual_height_mm),
+        equipment!jobs_equipment_id_fkey(equipment_id, display_name, equipment_code, actual_length_mm, actual_width_mm, actual_height_mm),
         design_revisions!jobs_design_revision_id_fkey(revision_id, design_code, design_length, design_width, design_height, plastic_type_designed),
         products${filterMold ? '!inner' : ''}!jobs_product_id_fkey(product_id, product_code, product_name, product_name_internal, product_material_specs(material_type))
       `, { count: 'exact' })
@@ -151,7 +151,7 @@ function JobsPageContent() {
       query = query.eq('design_revision_id', filterRevision)
     }
     if (filterPhysicalMold) {
-      query = query.eq('physical_mold_id', filterPhysicalMold)
+      query = query.eq('equipment_id', filterPhysicalMold)
     }
 
     // Pagination & Sorting
@@ -376,10 +376,10 @@ function JobsPageContent() {
                       </td>
                       <td>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                          {job.physical_molds && (
+                          {job.equipment && (
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
-                              <Link href={`/equipment/molds/${job.physical_molds.physical_mold_id}`} style={{ fontWeight: 600, color: 'var(--accent)', textDecoration: 'none', fontSize: 12 }}>
-                                {job.physical_molds.display_name} (VL)
+                              <Link href={`/equipment/molds/${job.equipment.equipment_id}`} style={{ fontWeight: 600, color: 'var(--accent)', textDecoration: 'none', fontSize: 12 }}>
+                                {job.equipment.display_name} (VL)
                               </Link>
                             </div>
                           )}
@@ -390,7 +390,7 @@ function JobsPageContent() {
                               </Link>
                             </div>
                           )}
-                          {!job.physical_molds && !job.products && (
+                          {!job.equipment && !job.products && (
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                               {job.job_name.includes('社内作業') ? (
                                 <span className="badge badge--neutral" style={{ fontSize: 9 }}>🧹 社内作業</span>
@@ -413,10 +413,10 @@ function JobsPageContent() {
                       </td>
                       <td>
                         <div style={{ display: 'flex', flexDirection: 'column', fontSize: 11, fontFamily: 'monospace', color: 'var(--text-secondary)' }}>
-                          {(job.design_revisions?.design_length || job.physical_molds?.actual_length_mm) ? (
+                          {(job.design_revisions?.design_length || job.equipment?.actual_length_mm) ? (
                             <>
                               {job.design_revisions?.design_length && <span>TK: {job.design_revisions.design_length}×{job.design_revisions.design_width}×{job.design_revisions.design_height}</span>}
-                              {job.physical_molds?.actual_length_mm && <span>実測: {job.physical_molds.actual_length_mm}×{job.physical_molds.actual_width_mm}×{job.physical_molds.actual_height_mm}</span>}
+                              {job.equipment?.actual_length_mm && <span>実測: {job.equipment.actual_length_mm}×{job.equipment.actual_width_mm}×{job.equipment.actual_height_mm}</span>}
                             </>
                           ) : '—'}
                         </div>

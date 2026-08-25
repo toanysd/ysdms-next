@@ -7,9 +7,9 @@ import { useTranslations } from 'next-intl'
 import { linkJobToPhysicalMoldAction } from '@/app/actions/mold-job'
 
 type PhysicalMoldOption = {
-  physical_mold_id: string
+  equipment_id: string
   display_name: string
-  system_code: string
+  equipment_code: string
   customer_name?: string | null
 }
 
@@ -40,25 +40,26 @@ export function QuickLinkMoldModal({
     async function searchMolds() {
       setLoading(true)
       let req = supabase
-        .from('physical_molds')
+        .from('equipment')
         .select(`
-          physical_mold_id,
+          equipment_id,
           display_name,
-          system_code
+          equipment_code
         `)
+        .eq('equipment_type', 'MOLD')
         .order('display_name')
         .limit(20)
 
       if (search.trim()) {
-        req = req.or(`display_name.ilike.%${search.trim()}%,system_code.ilike.%${search.trim()}%`)
+        req = req.or(`display_name.ilike.%${search.trim()}%,equipment_code.ilike.%${search.trim()}%`)
       }
 
       const { data } = await req
       if (data) {
         setMolds(data.map(m => ({
-          physical_mold_id: m.physical_mold_id,
+          equipment_id: m.equipment_id,
           display_name: m.display_name,
-          system_code: m.system_code,
+          equipment_code: m.equipment_code,
         })))
       }
       setLoading(false)
@@ -146,11 +147,11 @@ export function QuickLinkMoldModal({
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
               {molds.map(m => {
-                const isSelected = selectedMoldId === m.physical_mold_id
+                const isSelected = selectedMoldId === m.equipment_id
                 return (
                   <div
-                    key={m.physical_mold_id}
-                    onClick={() => setSelectedMoldId(m.physical_mold_id)}
+                    key={m.equipment_id}
+                    onClick={() => setSelectedMoldId(m.equipment_id)}
                     style={{
                       padding: '10px 14px',
                       borderRadius: 8,
@@ -168,7 +169,7 @@ export function QuickLinkMoldModal({
                         {m.display_name}
                       </div>
                       <div style={{ fontSize: 11, fontFamily: 'monospace', color: 'var(--text-secondary)', marginTop: 2 }}>
-                        {t('systemCodeLabel')} {m.system_code}
+                        {t('systemCodeLabel')} {m.equipment_code}
                       </div>
                     </div>
                     {isSelected && (
