@@ -31,9 +31,19 @@ export default function AluminumBlanksPage() {
 
   async function fetchData() {
     setIsLoading(true);
-    // Fetch molds for dropdown
-    const { data: moldData } = await supabase.from('physical_molds').select('physical_mold_id, actual_length_mm, actual_width_mm, actual_height_mm, system_code, display_name');
-    if (moldData) setMolds(moldData);
+    // Fetch molds for dropdown — dùng equipment (SSOT) thay vì physical_molds (deprecated)
+    const { data: eqMoldData } = await supabase
+      .from('equipment')
+      .select('equipment_id, actual_length_mm, actual_width_mm, actual_height_mm, equipment_code, display_name')
+      .eq('equipment_type', 'MOLD');
+    if (eqMoldData) setMolds(eqMoldData.map(e => ({
+      physical_mold_id: e.equipment_id,
+      actual_length_mm: e.actual_length_mm,
+      actual_width_mm: e.actual_width_mm,
+      actual_height_mm: e.actual_height_mm,
+      system_code: e.equipment_code,
+      display_name: e.display_name,
+    })));
 
     // Fetch blanks
     const { data: blankData, error } = await supabase

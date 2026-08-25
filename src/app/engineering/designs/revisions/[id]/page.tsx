@@ -59,7 +59,7 @@ export type DesignRevisionDetail = {
     product_name: string | null
     companies: { company_id: string; company_name: string; company_code: string } | null
   } | null
-  physical_molds?: { physical_mold_id: string; system_code: string; device_status: string }[] | null
+  physical_molds?: { physical_mold_id: string; system_code: string; device_status: string }[] | null // mapped from equipment table
   jobs?: { job_id: string; job_code: string; job_name: string; job_status: string }[] | null
 }
 
@@ -108,15 +108,20 @@ export default function DesignRevisionDetailPage() {
       setError(err.message)
     } else if (data) {
       let physical_molds: any[] = []
-      // Khắc phục khuôn mồ côi (không có mold_revision_id)
+      // Tìm khuôn theo design_code prefix — dùng equipment (SSOT) thay vì physical_molds (deprecated)
       if (physical_molds.length === 0 && data.design_code) {
-        const { data: pmData } = await supabase
-          .from('physical_molds')
-          .select('physical_mold_id, system_code, device_status')
-          .like('system_code', `${data.design_code}%`)
+        const { data: eqData } = await supabase
+          .from('equipment')
+          .select('equipment_id, equipment_code, device_status')
+          .eq('equipment_type', 'MOLD')
+          .like('equipment_code', `${data.design_code}%`)
           
-        if (pmData && pmData.length > 0) {
-          physical_molds = pmData
+        if (eqData && eqData.length > 0) {
+          physical_molds = eqData.map(e => ({
+            physical_mold_id: e.equipment_id,
+            system_code: e.equipment_code,
+            device_status: e.device_status
+          }))
         }
       }
 
