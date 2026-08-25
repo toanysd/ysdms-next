@@ -121,7 +121,7 @@ export default function MoldWorkOrdersPage() {
 
       // 2. Fetch lookup data
       const { data: machData } = await (supabase as any).from('machines').select('*');
-      const { data: moldData } = await (supabase as any).from('physical_molds').select('*');
+      const { data: moldData } = await (supabase as any).from('equipment').select('*').eq('equipment_type', 'MOLD');
       const { data: cutData } = await (supabase as any).from('equipment').select('*').in('equipment_type', ['CUTTER_SEPARATE', 'CUTTER_INLINE']);
       const { data: empData } = await (supabase as any).from('employees').select('*').order('employee_code');
 
@@ -913,7 +913,7 @@ export default function MoldWorkOrdersPage() {
                     onChange={(e) => setAssignedMold(e.target.value)}
                   >
                     <option value="">{t('unselected')}</option>
-                    {molds.map((m: any) => <option key={m.physical_mold_id} value={m.physical_mold_id}>{m.display_name} ({m.system_code})</option>)}
+                    {molds.map((m: any) => <option key={m.equipment_id} value={m.equipment_id}>{m.display_name} ({m.equipment_code})</option>)}
                   </select>
                 </div>
 
@@ -926,7 +926,7 @@ export default function MoldWorkOrdersPage() {
                     onChange={(e) => setAssignedCutter(e.target.value)}
                   >
                     <option value="">{t('unselected')}</option>
-                    {cutters.map((c: any) => <option key={c.cutter_id} value={c.cutter_id}>{c.cutter_name} ({c.cutter_no})</option>)}
+                    {cutters.map((c: any) => <option key={c.equipment_id} value={c.equipment_id}>{c.display_name} ({c.equipment_code})</option>)}
                   </select>
                 </div>
 
