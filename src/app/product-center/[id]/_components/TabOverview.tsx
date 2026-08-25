@@ -651,7 +651,7 @@ export function TabOverview(props: TabOverviewProps) {
         }
 
         // Jobs (select extra equipment link columns)
-        let jobQuery = supabase.from('jobs').select('job_id, job_code, job_name, job_status, mold_deadline, created_at, physical_mold_id, equipment_id, design_revision_id')
+        let jobQuery = supabase.from('jobs').select('job_id, job_code, job_name, job_status, mold_deadline, created_at, equipment_id, design_revision_id')
         if (revIds.length > 0) {
           jobQuery = jobQuery.or(`product_id.eq.${productId},design_revision_id.in.(${revIds.join(',')})`)
         } else {
@@ -1687,7 +1687,7 @@ export function TabOverview(props: TabOverviewProps) {
             // Selected Equipment Jobs - strictly match selected physical equipment
             const selectedEquipJobs = allJobs.filter((j: JobItem) => {
               if (!selectedEquip) return true
-              return j.physical_mold_id === selectedEquip.id || j.equipment_id === selectedEquip.id
+              return j.equipment_id === selectedEquip.id
             })
 
             const sortMolds = [...filteredMolds].sort((a, b) => {

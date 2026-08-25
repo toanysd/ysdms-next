@@ -83,14 +83,14 @@ export function JobDetailHeader({ job }: { job: any }) {
       </div>
 
       {/* Row 2: Related links */}
-      {(job.physical_molds || job.design_revisions) && (
+      {(job.equipment || job.design_revisions) && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, paddingTop: 4, borderTop: '1px solid var(--border-default)' }}>
           <span style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600 }}>{t('Equipment.related')}:</span>
-          {job.physical_molds && (
-            <Link href={`/equipment/molds/${job.physical_molds.physical_mold_id}`} style={{ textDecoration: 'none' }}>
+          {job.equipment && (
+            <Link href={`/equipment/molds/${job.equipment.equipment_id}`} style={{ textDecoration: 'none' }}>
               <span className="badge badge--info font-mono font-bold text-[12px]">
                 <Box size={12} />
-                {job.physical_molds.system_code}
+                {job.equipment.equipment_code}
               </span>
             </Link>
           )}

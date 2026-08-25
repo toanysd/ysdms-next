@@ -200,7 +200,7 @@ export default function JobDetailPage() {
               >
                 <Wrench size={12} style={{ color: 'var(--text-secondary)' }} />
                 <span style={{ fontFamily: 'var(--font-jp)' }}>金型</span>
-                <span style={{ fontSize: 9, color: 'var(--text-muted)' }}>{job.physical_molds.system_code}</span>
+                <span style={{ fontSize: 9, color: 'var(--text-muted)' }}>{job.equipment?.equipment_code}</span>
               </Link>
             )}
 

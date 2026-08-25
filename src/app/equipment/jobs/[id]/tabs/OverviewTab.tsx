@@ -281,10 +281,10 @@ export function OverviewTab({ job, onRefresh }: { job: any; onRefresh?: () => vo
               </span>
             ) : '—'
           } />
-          {job.physical_molds && (
+          {job.equipment && (
             <InfoRow label={t('Equipment.khuonVatLy')} value={
-              <Link href={`/equipment/molds/${job.physical_molds.mold_id}`} style={{ color: 'var(--accent)', textDecoration: 'none' }} className="hover:underline font-bold font-mono">
-                {job.physical_molds.display_name} ({job.physical_molds.system_code})
+              <Link href={`/equipment/molds/${job.equipment.equipment_id}`} style={{ color: 'var(--accent)', textDecoration: 'none' }} className="hover:underline font-bold font-mono">
+                {job.equipment.display_name} ({job.equipment.equipment_code})
               </Link>
             } />
           )}
@@ -311,7 +311,7 @@ export function OverviewTab({ job, onRefresh }: { job: any; onRefresh?: () => vo
       </div>
 
       {/* Mold Dimensions Card */}
-      {(job.design_revisions || job.physical_molds) && (
+      {(job.design_revisions || job.equipment) && (
         <div className="card-flat" style={{ padding: 20 }}>
           <h3 style={{ margin: '0 0 16px 0', display: 'flex', alignItems: 'center', gap: 6, color: 'var(--text-primary)' }}>
             <Ruler size={16} style={{ color: 'var(--accent)' }} />
@@ -355,11 +355,11 @@ export function OverviewTab({ job, onRefresh }: { job: any; onRefresh?: () => vo
                 )}
               </>
             )}
-            {job.physical_molds && (job.physical_molds.actual_length_mm || job.physical_molds.actual_width_mm) && (
+            {job.equipment && (job.equipment.actual_length_mm || job.equipment.actual_width_mm) && (
               <InfoRow label={t('Equipment.actualMoldDimensions')} value={
                 <span style={{ fontFamily: 'monospace', fontWeight: 700 }}>
-                  {job.physical_molds.actual_length_mm || '—'} × {job.physical_molds.actual_width_mm || '—'} × {job.physical_molds.actual_height_mm || '—'} mm
-                  {job.physical_molds.actual_weight ? ` (${job.physical_molds.actual_weight}kg)` : ''}
+                  {job.equipment.actual_length_mm || '—'} × {job.equipment.actual_width_mm || '—'} × {job.equipment.actual_height_mm || '—'} mm
+                  {job.equipment.actual_weight ? ` (${job.equipment.actual_weight}kg)` : ''}
                 </span>
               } />
             )}

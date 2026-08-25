@@ -726,7 +726,7 @@ export function EditStepModal({ step, jobId, nextStepNo = 1, initialLog, mode = 
   const getModelCode = (l: any) => {
     if (!l.jobs) return '-'
     if (l.jobs.job_code === '社内作業') return '社内作業'
-    if (l.jobs.physical_molds?.equipment_code) return l.jobs.physical_molds.equipment_code
+    if (l.jobs.equipment?.equipment_code) return l.jobs.equipment.equipment_code
     if (l.jobs.products?.product_code) return l.jobs.products.product_code
     return l.jobs.job_code || ''
   }
