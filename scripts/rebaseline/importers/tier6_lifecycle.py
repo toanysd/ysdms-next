@@ -18,7 +18,7 @@ def import_tier6(supabase, registry: IdRegistry, stats: ImportStats, dry_run: bo
         records = []
         for _, row in df_teflon.iterrows():
             legacy_id = clean_value(row.get('TeflonLogID'))
-            physical_mold_id = registry.lookup('physical_molds', clean_id(row.get('MoldID')))
+            physical_mold_id = registry.lookup('equipment', clean_id(row.get('MoldID')))
             
             if not physical_mold_id:
                 stats.log_error('mold_maintenance', legacy_id, f"Missing MoldID: {row.get('MoldID')}")

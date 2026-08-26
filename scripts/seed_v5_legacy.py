@@ -85,11 +85,11 @@ def main():
             code = sql_str(r.get("CutterCode") or r.get("CutterName") or f"CUT-{cid}")
             cid_to_code[str(cid).strip()] = code
             cname = sql_str(r.get('CutterName'))
-            f.write(f"INSERT INTO public.cutters (cutter_id, cutter_no, cutter_name, pitch_mm, date_entry) VALUES ")
+            f.write(f"INSERT INTO public.equipment (equipment_id, equipment_code, display_name, dimensions, entry_date, equipment_type) VALUES ")
             pitch = sql_num(r.get('Pitch'))
             date = sql_date(r.get('CutterManufactureDate'))
             f.write(f"({cutter_uuid(cid)}, {code}, {cname}, {pitch}, {date}) ")
-            f.write("ON CONFLICT (cutter_no) DO UPDATE SET pitch_mm = EXCLUDED.pitch_mm, date_entry = EXCLUDED.date_entry;\n")
+            f.write("ON CONFLICT (equipment_code) DO NOTHING;\n")
 
         # 2. MOLD DESIGN CUTTERS
         f.write("\n-- [2] Mold Design Cutters\n")
@@ -108,7 +108,7 @@ def main():
             
             uid = f"'00000000-44dd-0000-0000-{hex_12(mid)}'::uuid"
             f.write(f"INSERT INTO public.mold_design_cutters (id, mold_design_id, cutter_id, notes, date_entry) VALUES ")
-            f.write(f"({uid}, {design_uuid(did)}, (SELECT cutter_id FROM public.cutters WHERE cutter_no = {code}), {sql_str(r.get('MoldCutterNotes'))}, {sql_timestamp(r.get('DateEntry'))}) ")
+            f.write(f"({uid}, {design_uuid(did)}, (SELECT equipment_id FROM public.equipment WHERE equipment_code = {code}), {sql_str(r.get('MoldCutterNotes'))}, {sql_timestamp(r.get('DateEntry'))}) ")
             f.write("ON CONFLICT ON CONSTRAINT mold_design_cutters_cutter_id_mold_design_id_key DO NOTHING;\n")
 
         # 3. JOBS
@@ -129,7 +129,7 @@ def main():
             jtype = "(SELECT job_type_id FROM job_types LIMIT 1)"
             
             phys_id = phys_uuid(r.get('MoldID')) if r.get('MoldID') else "NULL"
-            safe_phys = f"(SELECT physical_mold_id FROM public.physical_molds WHERE physical_mold_id = {phys_id})" if phys_id != "NULL" else "NULL"
+            safe_phys = f"(SELECT equipment_id FROM public.equipment WHERE equipment_id = {phys_id})" if phys_id != "NULL" else "NULL"
             
             design_id = design_uuid(r.get('MoldDesignID')) if r.get('MoldDesignID') else "NULL"
             safe_design = f"(SELECT revision_id FROM public.design_revisions WHERE revision_id = {design_id})" if design_id != "NULL" else "NULL"

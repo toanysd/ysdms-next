@@ -11,7 +11,7 @@ from utils.validator import ImportStats
 from utils.name_parser import parse_mold_name
 
 def import_tier3(supabase: Any, registry: IdRegistry, stats: ImportStats, dry_run: bool = False) -> None:
-    print("Starting Tier 3 Import: Design Revisions & Physical Molds")
+    print("Starting Tier 3 Import: Design Revisions & Equipment Molds")
     
     # 3A. Design Revisions & Mold Revisions
     print("Importing design revisions and mold revisions...")
@@ -69,15 +69,7 @@ def import_tier3(supabase: Any, registry: IdRegistry, stats: ImportStats, dry_ru
             }
             design_records.append(record)
             
-            # Mold Revision bridge record for physical_molds FK constraint
-            mold_rev_record = {
-                'revision_id': uuid_id,
-                'design_revision_id': uuid_id,
-                'product_id': product_id,
-                'revision_name': d_code,
-                'is_active': True
-            }
-            mold_revision_records.append(mold_rev_record)
+
             
             registry.register('design_revisions', design_id, uuid_id)
             if product_id:
@@ -90,19 +82,14 @@ def import_tier3(supabase: Any, registry: IdRegistry, stats: ImportStats, dry_ru
             print(f"  Inserted {len(design_records)} design revisions")
             stats.record_success('design_revisions', len(design_records))
 
-        if not dry_run and mold_revision_records:
-            for i in range(0, len(mold_revision_records), BATCH_SIZE):
-                chunk = mold_revision_records[i:i+BATCH_SIZE]
-                supabase.table('mold_revisions').upsert(chunk).execute()
-            print(f"  Inserted {len(mold_revision_records)} mold revisions")
-            stats.record_success('mold_revisions', len(mold_revision_records))
+
 
     except Exception as e:
         print(f"Error importing design revisions: {e}")
         stats.record_error('design_revisions', str(e))
 
-    # 3B. Physical Molds
-    print("Importing physical molds...")
+    # 3B. Equipment Molds
+    print("Importing equipment molds...")
     try:
         df_molds = read_csv(CSV_DIR / 'molds.csv')
         mold_records = []
@@ -140,31 +127,32 @@ def import_tier3(supabase: Any, registry: IdRegistry, stats: ImportStats, dry_ru
             disp_name = parsed_name.get('display_name') or sys_code
 
             record = {
-                'physical_mold_id': uuid_id,
+                'equipment_id': uuid_id,
+                'equipment_type': 'MOLD',
                 'legacy_id': legacy_id,
-                'system_code': sys_code,
+                'equipment_code': sys_code,
                 'display_name': disp_name,
                 'physical_stamp': parsed_name.get('physical_stamp'),
                 'mold_type': parsed_name.get('mold_type'),
                 'copy_number': parsed_name.get('copy_number'),
                 'piece_count': parsed_name.get('piece_count'),
-                'mold_revision_id': mold_revision_id,
+                'design_revision_id': mold_revision_id,
                 'keeper_company_id': keeper_company_id,
                 'current_rack_layer_id': current_rack_layer_id,
                 'device_status': clean_value(row.get('DeviceStatus')) or 'ACTIVE',
                 'usage_status': clean_value(row.get('UsageStatus')) or 'IN_STOCK'
             }
             mold_records.append(record)
-            registry.register('physical_molds', mold_id_val, uuid_id)
+            registry.register('equipment', mold_id_val, uuid_id)
             
         if not dry_run and mold_records:
             for i in range(0, len(mold_records), BATCH_SIZE):
                 chunk = mold_records[i:i+BATCH_SIZE]
-                supabase.table('physical_molds').upsert(chunk).execute()
-                print(f"  Inserted {min(i+BATCH_SIZE, len(mold_records))} / {len(mold_records)} physical molds")
-            stats.record_success('physical_molds', len(mold_records))
+                supabase.table('equipment').upsert(chunk).execute()
+                print(f"  Inserted {min(i+BATCH_SIZE, len(mold_records))} / {len(mold_records)} equipment molds")
+            stats.record_success('equipment', len(mold_records))
     except Exception as e:
-        print(f"Error importing physical molds: {e}")
-        stats.record_error('physical_molds', str(e))
+        print(f"Error importing equipment molds: {e}")
+        stats.record_error('equipment', str(e))
 
     print("Tier 3 Import Complete.")

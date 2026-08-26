@@ -70,7 +70,7 @@ def import_tier5(supabase, registry: IdRegistry, stats: ImportStats, dry_run: bo
             job_id = str(uuid.uuid4())
             
             design_revision_id = registry.lookup('design_revisions', clean_id(row.get('MoldDesignID')))
-            physical_mold_id = registry.lookup('physical_molds', clean_id(row.get('MoldID')))
+            physical_mold_id = registry.lookup('equipment', clean_id(row.get('MoldID')))
             company_id = registry.lookup('customers', clean_id(row.get('CustomerID')))
             if not company_id:
                 company_id = registry.lookup('companies', clean_id(row.get('CustomerID')))

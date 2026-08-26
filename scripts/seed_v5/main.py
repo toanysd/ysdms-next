@@ -16,7 +16,7 @@ TABLES_TO_TRUNCATE = [
     ("job_steps", "step_id"),
     ("jobs", "job_id"),
     ("mold_design_cutters", "id"),
-    ("cutters", "cutter_id")
+    
 ]
 
 def truncate_ysdms_tables(supabase):
@@ -54,11 +54,11 @@ def preload_registry_from_db(supabase, registry):
         if row['legacy_id'] and row['legacy_id'].startswith('EMP-'):
             registry.register('employees', row['legacy_id'].replace('EMP-',''), row['employee_id'])
             
-    # 3. Physical Molds
-    res = supabase.table('physical_molds').select('legacy_id, physical_mold_id').execute()
+    # 3. Equipment (Molds)
+    res = supabase.table('equipment').select('legacy_id, equipment_id').eq('equipment_type', 'MOLD').execute()
     for row in res.data:
         if row['legacy_id'] and row['legacy_id'].startswith('MOLD-'):
-            registry.register('physical_molds', row['legacy_id'].replace('MOLD-',''), row['physical_mold_id'])
+            registry.register('equipment', row['legacy_id'].replace('MOLD-',''), row['equipment_id'])
             
     # 4. Design Revisions
     res = supabase.table('design_revisions').select('legacy_id, revision_id, product_id').execute()

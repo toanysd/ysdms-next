@@ -38,7 +38,7 @@ def import_jobs(supabase, registry: IdRegistry):
             'outsource_company': mc_uuid,
             'job_status': 'PENDING',
             'notes': str(row['JobNote']) if row['JobNote'] else None,
-            'physical_mold_id': registry.resolve('physical_molds', row['MoldID']) if 'MoldID' in row else None,
+            'equipment_id': registry.resolve('equipment', row['MoldID']) if 'MoldID' in row else None,
             'ship_date': str(row['DeliveryDeadline']) if 'DeliveryDeadline' in row and row['DeliveryDeadline'] else None,
             'start_date': str(row['JobStartDate']) if 'JobStartDate' in row and row['JobStartDate'] else None,
             'year_period': int(row['YearPeriod']) if 'YearPeriod' in row and str(row['YearPeriod']).replace('.','',1).isdigit() else None,

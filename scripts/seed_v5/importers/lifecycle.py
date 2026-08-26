@@ -11,7 +11,7 @@ def import_lifecycle(supabase, registry: IdRegistry):
     df_teflon = clean_dataframe(read_csv_safe(CSV_DIR / 'teflonlog.csv'))
     maintenance_records = []
     for _, row in df_teflon.iterrows():
-        mold_uuid = registry.resolve('physical_molds', row['MoldID']) if 'MoldID' in row else None
+        mold_uuid = registry.resolve('equipment', row['MoldID']) if 'MoldID' in row else None
         if not mold_uuid:
             continue
             
@@ -44,7 +44,7 @@ def import_lifecycle(supabase, registry: IdRegistry):
     df_loc = clean_dataframe(read_csv_safe(CSV_DIR / 'locationlog.csv'))
     loc_records = []
     for _, row in df_loc.iterrows():
-        mold_uuid = registry.resolve('physical_molds', row['MoldID']) if 'MoldID' in row else None
+        mold_uuid = registry.resolve('equipment', row['MoldID']) if 'MoldID' in row else None
         if not mold_uuid:
             # We ignore cutter locations or missing molds to satisfy schema
             continue

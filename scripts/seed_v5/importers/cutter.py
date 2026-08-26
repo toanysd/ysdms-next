@@ -5,14 +5,14 @@ from utils import read_csv_safe, clean_dataframe, IdRegistry
 def import_cutters(supabase, registry: IdRegistry):
     print("--- Importing Cutters ---")
     
-    # 1. cutters
+    # 1. cutters -> equipment
     df_cutters = clean_dataframe(read_csv_safe(CSV_DIR / 'cutters.csv'))
     cutter_records = []
     cutter_nos_seen = set()
     for _, row in df_cutters.iterrows():
         new_uuid = str(uuid.uuid4())
         legacy_id = str(row['CutterID'])
-        registry.register('cutters', legacy_id, new_uuid)
+        registry.register('equipment', legacy_id, new_uuid)
         
         company_uuid = registry.resolve('customers', row['CustomerID'])
         
@@ -30,10 +30,11 @@ def import_cutters(supabase, registry: IdRegistry):
         cutter_nos_seen.add(cutter_no)
 
         cutter_records.append({
-            'cutter_id': new_uuid,
+            'equipment_id': new_uuid,
+            'equipment_type': 'CUTTER_SEPARATE',
             'legacy_id': legacy_id,
-            'cutter_no': cutter_no,
-            'cutter_name': str(row['CutterName']) if row['CutterName'] else None,
+            'equipment_code': cutter_no,
+            'display_name': str(row['CutterName']) if row['CutterName'] else None,
             'company_id': company_uuid,
             'design_revision_id': dr_uuid,
             'usage_status': 'ACTIVE'
@@ -41,15 +42,15 @@ def import_cutters(supabase, registry: IdRegistry):
     if cutter_records:
         chunk_size = 500
         for i in range(0, len(cutter_records), chunk_size):
-            supabase.table('cutters').insert(cutter_records[i:i+chunk_size]).execute()
-        print(f"Imported {len(cutter_records)} cutters")
+            supabase.table('equipment').insert(cutter_records[i:i+chunk_size]).execute()
+        print(f"Imported {len(cutter_records)} cutters to equipment")
 
     # 2. mold_design_cutters (Many to many)
     df_mdc = clean_dataframe(read_csv_safe(CSV_DIR / 'moldcutter.csv'))
     mdc_records = []
     for _, row in df_mdc.iterrows():
         dr_uuid = registry.resolve('design_revisions', row['MoldDesignID'])
-        cutter_uuid = registry.resolve('cutters', row['CutterID'])
+        cutter_uuid = registry.resolve('equipment', row['CutterID'])
         
         if dr_uuid and cutter_uuid:
             mdc_records.append({
@@ -62,4 +63,3 @@ def import_cutters(supabase, registry: IdRegistry):
         for i in range(0, len(mdc_records), chunk_size):
             supabase.table('mold_design_cutters').insert(mdc_records[i:i+chunk_size]).execute()
         print(f"Imported {len(mdc_records)} mold_design_cutters")
-

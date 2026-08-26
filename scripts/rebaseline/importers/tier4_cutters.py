@@ -40,11 +40,12 @@ def import_tier4(supabase, registry: IdRegistry, stats: ImportStats, dry_run: bo
             c_name = clean_value(row.get('CutterName')) or c_no
 
             record = {
-                'cutter_id': cutter_id,
+                'equipment_id': cutter_id,
+                'equipment_type': 'CUTTER_SEPARATE',
                 'legacy_id': legacy_id,
-                'cutter_no': c_no,
-                'cutter_name': c_name,
-                'cutter_design_code': design_code,
+                'equipment_code': c_no,
+                'display_name': c_name,
+                
                 'company_id': company_id,
                 'design_revision_id': design_revision_id,
                 'current_rack_layer_id': current_rack_layer_id,
@@ -53,13 +54,13 @@ def import_tier4(supabase, registry: IdRegistry, stats: ImportStats, dry_run: bo
                 'updated_at': parse_date(row.get('UpdatedAt'))
             }
             records.append(record)
-            registry.register('cutters', cid, cutter_id)
+            registry.register('equipment', cid, cutter_id)
         
         stats.log_table('cutters', len(records))
         if not dry_run and records:
             for i in range(0, len(records), BATCH_SIZE):
                 chunk = records[i:i+BATCH_SIZE]
-                supabase.table('cutters').upsert(chunk).execute()
+                supabase.table('equipment').upsert(chunk).execute()
     else:
         print(f"Warning: {cutters_path.name} not found.")
 
@@ -71,7 +72,7 @@ def import_tier4(supabase, registry: IdRegistry, stats: ImportStats, dry_run: bo
         for _, row in df_mc.iterrows():
             legacy_id = clean_value(row.get('MoldCutterID'))
             
-            cutter_id = registry.lookup('cutters', clean_id(row.get('CutterID')))
+            cutter_id = registry.lookup('equipment', clean_id(row.get('CutterID')))
             design_revision_id = registry.lookup('design_revisions', clean_id(row.get('MoldDesignID')))
             
             if not cutter_id or not design_revision_id:
@@ -80,7 +81,8 @@ def import_tier4(supabase, registry: IdRegistry, stats: ImportStats, dry_run: bo
                 
             record = {
                 'id': str(uuid.uuid4()),
-                'cutter_id': cutter_id,
+                'equipment_id': cutter_id,
+                'equipment_type': 'CUTTER_SEPARATE',
                 'mold_design_id': design_revision_id,
                 'notes': clean_value(row.get('MoldCutterNotes')),
                 'date_entry': parse_date(row.get('DateEntry'))

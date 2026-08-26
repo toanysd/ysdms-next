@@ -199,33 +199,15 @@ def import_mold_hierarchy(supabase, registry: IdRegistry):
     if update_count:
         print(f"Updated {update_count} products with customer_tray_name / tray_info")
 
-    # 3. mold_revisions
+    # 3. (mold_revisions dropped) - build lookup mapping
     df_mr = clean_dataframe(read_csv_safe(CSV_DIR / 'moldrevision.csv'))
-    mr_records = []
-    for _, row in df_mr.iterrows():
-        new_uuid = str(uuid.uuid4())
-        legacy_id = str(row['MoldRevisionID'])
-        registry.register('mold_revisions', legacy_id, new_uuid)
-        
-        product_uuid = registry.resolve('mold_to_product', row['MoldMasterID'])
-        dr_uuid = registry.resolve('design_revisions', row['MoldDesignID'])
-        
-        mr_records.append({
-            'revision_id': new_uuid,
-            'legacy_id': legacy_id,
-            'revision_code': str(row['RevisionNo']) if 'RevisionNo' in row and row['RevisionNo'] else legacy_id,
-            'revision_name': str(row['RevisionName']) if 'RevisionName' in row and row['RevisionName'] else None,
-            'product_id': product_uuid,
-            'design_revision_id': dr_uuid,
-            'is_active': True
-        })
-    if mr_records:
-        chunk_size = 500
-        for i in range(0, len(mr_records), chunk_size):
-            supabase.table('mold_revisions').insert(mr_records[i:i+chunk_size]).execute()
-        print(f"Imported {len(mr_records)} mold_revisions")
+    mr_to_dr = {}
+    if df_mr is not None:
+        for _, row in df_mr.iterrows():
+            dr_uuid = registry.resolve('design_revisions', row['MoldDesignID'])
+            mr_to_dr[str(row['MoldRevisionID'])] = dr_uuid
 
-    # 4. physical_molds
+    # 4. equipment (MOLDS)
     df_pm = clean_dataframe(read_csv_safe(CSV_DIR / 'molds.csv'))
     
     # Pre-load jobs to get manufacturing_date
@@ -243,9 +225,9 @@ def import_mold_hierarchy(supabase, registry: IdRegistry):
     for _, row in df_pm.iterrows():
         new_uuid = str(uuid.uuid4())
         legacy_id = str(row['MoldID'])
-        registry.register('physical_molds', legacy_id, new_uuid)
+        registry.register('equipment', legacy_id, new_uuid)
         
-        mr_uuid = registry.resolve('mold_revisions', row['MoldRevisionID'])
+        dr_uuid = mr_to_dr.get(str(row['MoldRevisionID']))
         
         base_code = str(row['MoldCode']) if 'MoldCode' in row and row['MoldCode'] else legacy_id
         system_code = base_code
@@ -256,11 +238,12 @@ def import_mold_hierarchy(supabase, registry: IdRegistry):
         system_codes_seen.add(system_code)
 
         pm_records.append({
-            'physical_mold_id': new_uuid,
+            'equipment_id': new_uuid,
+            'equipment_type': 'MOLD',
             'legacy_id': legacy_id,
-            'system_code': system_code,
+            'equipment_code': system_code,
             'display_name': str(row['MoldName']) if 'MoldName' in row and row['MoldName'] else None,
-            'mold_revision_id': mr_uuid,
+            'design_revision_id': dr_uuid,
             'usage_status': str(row['MoldUsageStatus']) if 'MoldUsageStatus' in row and row['MoldUsageStatus'] else 'ACTIVE',
             'manufacturing_date': mold_manufacturing_dates.get(legacy_id),
             'current_rack_layer_id': registry.resolve('rack_layers', row['RackLayerID']) if 'RackLayerID' in row and row['RackLayerID'] else None,
@@ -269,7 +252,7 @@ def import_mold_hierarchy(supabase, registry: IdRegistry):
             'actual_width_mm': str(row['MoldWidthModified']) if 'MoldWidthModified' in row and row['MoldWidthModified'] else None,
             'actual_height_mm': str(row['MoldHeightModified']) if 'MoldHeightModified' in row and row['MoldHeightModified'] else None,
             'actual_weight': str(row['MoldWeight']) if 'MoldWeight' in row and row['MoldWeight'] else None,
-            'mold_entry_date': str(row['MoldEntry']) if 'MoldEntry' in row and row['MoldEntry'] else None,
+            'entry_date': str(row['MoldEntry']) if 'MoldEntry' in row and row['MoldEntry'] else None,
             'device_status': str(row['DeviceStatus']) if 'DeviceStatus' in row and row['DeviceStatus'] else None,
             'notes': str(row['MoldNotes']) if 'MoldNotes' in row and row['MoldNotes'] else None,
             'on_checklist': bool(row['MoldOnCheckList']) if 'MoldOnCheckList' in row and row['MoldOnCheckList'] else False,
@@ -279,6 +262,6 @@ def import_mold_hierarchy(supabase, registry: IdRegistry):
     if pm_records:
         chunk_size = 500
         for i in range(0, len(pm_records), chunk_size):
-            supabase.table('physical_molds').insert(pm_records[i:i+chunk_size]).execute()
-        print(f"Imported {len(pm_records)} physical_molds")
+            supabase.table('equipment').insert(pm_records[i:i+chunk_size]).execute()
+        print(f"Imported {len(pm_records)} molds to equipment")
 
