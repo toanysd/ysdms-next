@@ -48,12 +48,12 @@ export function TransferTab({ mold }: { mold: MoldDetailData }) {
         to_company:companies!equipment_ship_logs_to_company_id_fkey(company_name, company_code)
       `)
       // @ts-ignore - TODO: Phase D
-      .eq('legacy_mold_id', mold.physical_mold_id)
+      .eq('legacy_mold_id', mold.equipment_id)
       .order('ship_date', { ascending: false })
       .range(0, 49)
     setShipLogs((data as any[]) || [])
     setLoading(false)
-  }, [mold.physical_mold_id, supabase])
+  }, [mold.equipment_id, supabase])
 
   useEffect(() => { fetchLogs() }, [fetchLogs])
 
@@ -83,7 +83,7 @@ export function TransferTab({ mold }: { mold: MoldDetailData }) {
 
     const { error: shipErr } = await supabase.from('equipment_ship_logs').insert({
       // @ts-ignore - TODO: Phase D
-      legacy_mold_id: mold.physical_mold_id,
+      legacy_mold_id: mold.equipment_id,
       from_company_id: mold.keeper_company_id,
       to_company_id: selectedToCompany,
       ship_date: selectedDate,
@@ -93,9 +93,9 @@ export function TransferTab({ mold }: { mold: MoldDetailData }) {
 
     if (!shipErr) {
       const { error: moldErr } = await supabase
-        .from('physical_molds')
+        .from('equipment')
         .update({ keeper_company_id: selectedToCompany })
-        .eq('physical_mold_id', mold.physical_mold_id)
+        .eq('equipment_id', mold.equipment_id)
 
       if (!moldErr) {
         setModalOpen(false)

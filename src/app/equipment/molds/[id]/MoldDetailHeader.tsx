@@ -54,7 +54,7 @@ export function MoldDetailHeader({ mold, isEditing, setIsEditing, onOpenReviseMo
               color: 'var(--accent)', fontFamily: 'monospace',
             }}
           >
-            {mold.system_code}
+            {mold.equipment_code}
           </h1>
           <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>
             {mold.display_name}

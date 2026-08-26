@@ -162,13 +162,6 @@ export default function LocationMoveModule({ data, onClose, onSuccess }: Props) 
           .eq('equipment_id', targetEquipmentId)
 
         if (eqErr) throw eqErr
-      } else if ((data as any)?.physical_mold_id) {
-        await supabase
-          .from('physical_molds')
-          .update({
-            usage_status: autoCheckIn ? 'IN_STOCK' : 'OUT_OF_STOCK'
-          } as any)
-          .eq('physical_mold_id', targetEquipmentId)
       }
 
       // 2. Insert into equipment_history (Action Type = RELOCATE)

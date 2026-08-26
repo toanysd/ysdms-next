@@ -84,7 +84,7 @@ export function ReviseMoldModal({ mold, onClose, onSuccess }: Props) {
     setSaving(true)
     try {
       const result = await revisePhysicalMoldAction({
-        physical_mold_id: mold.physical_mold_id,
+        equipment_id: mold.equipment_id,
         new_design_revision_id: selectedDesignId,
         new_display_name: displayName,
         notes

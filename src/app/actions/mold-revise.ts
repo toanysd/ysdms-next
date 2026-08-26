@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 
 type ReviseMoldPayload = {
-  physical_mold_id: string
+  equipment_id: string
   new_design_revision_id: string
   new_display_name: string
   notes?: string
@@ -29,7 +29,7 @@ export async function revisePhysicalMoldAction(payload: ReviseMoldPayload) {
     const { data: currentMold, error: currErr } = await supabase
       .from('equipment')
       .select('display_name, design_revision_id')
-      .eq('equipment_id', payload.physical_mold_id)
+      .eq('equipment_id', payload.equipment_id)
       .single()
 
     if (currErr || !currentMold) {
@@ -44,12 +44,12 @@ export async function revisePhysicalMoldAction(payload: ReviseMoldPayload) {
         display_name: payload.new_display_name,
         equipment_code: payload.new_display_name
       })
-      .eq('equipment_id', payload.physical_mold_id)
+      .eq('equipment_id', payload.equipment_id)
 
     if (updateErr) throw new Error(updateErr.message)
 
     revalidatePath('/equipment/molds')
-    revalidatePath(`/equipment/molds/${payload.physical_mold_id}`)
+    revalidatePath(`/equipment/molds/${payload.equipment_id}`)
     if (revData.product_id) {
       revalidatePath(`/engineering/designs/${revData.product_id}`)
     }

@@ -18,8 +18,8 @@ import { ReviseMoldModal } from './ReviseMoldModal'
 // ─── Shared Type (exported for child components) ──────────────────────────
 
 export type MoldDetailData = {
-  physical_mold_id: string
-  system_code: string
+  equipment_id: string
+  equipment_code: string
   display_name: string
   device_status: string | null
   usage_status: string | null
@@ -32,14 +32,14 @@ export type MoldDetailData = {
   actual_weight: string | null
   manufacturing_date: string | null
   physical_stamp: string | null
-  mold_entry_date: string | null
+  entry_date: string | null
   disposed_date: string | null
   notes: string | null
   qr_uuid: string | null
   on_checklist: boolean | null
   keeper_company_id: string | null
   current_rack_layer_id: string | null
-  mold_revision_id: string
+  design_revision_id: string
   photo_url: string | null
   last_inventory_date: string | null
   created_at: string | null
@@ -187,10 +187,10 @@ export default function MoldDetailPage() {
     } else {
       let finalData = {
         ...data,
-        physical_mold_id: data.equipment_id,
-        system_code: data.equipment_code,
+        equipment_id: data.equipment_id,
+        equipment_code: data.equipment_code,
         display_name: data.display_name,
-        mold_revision_id: data.design_revision_id,
+        design_revision_id: data.design_revision_id,
         mold_revisions: data.design_revisions ? {
           revision_code: data.design_revisions.design_code,
           revision_name: data.design_revisions.design_code,
@@ -212,7 +212,7 @@ export default function MoldDetailPage() {
     if (!mold) return
     
     const fieldsToUpdate = {
-      equipment_code: formData.system_code,
+      equipment_code: formData.equipment_code,
       display_name: formData.display_name,
       device_status: formData.device_status,
       usage_status: formData.usage_status,
@@ -229,7 +229,7 @@ export default function MoldDetailPage() {
     const { error: updateErr } = await supabase
       .from('equipment')
       .update(fieldsToUpdate)
-      .eq('equipment_id', mold.physical_mold_id)
+      .eq('equipment_id', mold.equipment_id)
 
     if (!updateErr) {
       setIsEditing(false)
@@ -352,7 +352,7 @@ export default function MoldDetailPage() {
         {/* → Jobs */}
         {mold.mold_revisions?.products && (
           <Link
-            href={`/equipment/jobs?search=${encodeURIComponent(mold.system_code)}`}
+            href={`/equipment/jobs?search=${encodeURIComponent(mold.equipment_code)}`}
             className="hover:underline"
             style={{
               display: 'inline-flex', alignItems: 'center', gap: 4,

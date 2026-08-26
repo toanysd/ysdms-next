@@ -107,7 +107,7 @@ export function RealtimeReferencePanel({
 
         promises.push(
           supabase
-            .from('physical_molds')
+            .from('equipment')
             .select('*')
             .or(moldCond)
             .limit(3)

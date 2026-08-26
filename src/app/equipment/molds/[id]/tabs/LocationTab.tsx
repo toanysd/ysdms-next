@@ -58,7 +58,7 @@ export function LocationTab({ mold }: { mold: MoldDetailData }) {
         .from('equipment_status_logs')
         .select('*, destinations(destination_name), employees(employee_name, employee_code)')
         // @ts-ignore - TODO: fix in Phase D equipment migration
-        .eq('legacy_mold_id', mold.physical_mold_id)
+        .eq('legacy_mold_id', mold.equipment_id)
         .order('logged_at', { ascending: false })
         .range(0, 29),
       supabase
@@ -69,14 +69,14 @@ export function LocationTab({ mold }: { mold: MoldDetailData }) {
           new_rack_layer:rack_layers!asset_location_logs_new_rack_layer_id_fkey(layer_code, racks(rack_code)),
           employees!asset_location_logs_moved_by_fkey(employee_name)
         `)
-        .eq('asset_id', mold.physical_mold_id)
+        .eq('asset_id', mold.equipment_id)
         .order('moved_at', { ascending: false })
         .range(0, 29),
     ])
     setStatusLogs((statusRes.data as any[]) || [])
     setLocationLogs((locRes.data as any[]) || [])
     setLoading(false)
-  }, [mold.physical_mold_id, supabase])
+  }, [mold.equipment_id, supabase])
 
   useEffect(() => { fetchLogs() }, [fetchLogs])
 
@@ -112,7 +112,7 @@ export function LocationTab({ mold }: { mold: MoldDetailData }) {
     
     const { error } = await supabase.from('equipment_status_logs').insert({
       // @ts-ignore - TODO: Phase D
-      legacy_mold_id: mold.physical_mold_id,
+      legacy_mold_id: mold.equipment_id,
       status: checkModalType || 'IN',
       employee_id: selectedEmp,
       notes: notes || null
@@ -120,7 +120,7 @@ export function LocationTab({ mold }: { mold: MoldDetailData }) {
     
     if (!error) {
       const usage = checkModalType === 'IN' ? 'IN_STOCK' : 'OUT_OF_STOCK'
-      await supabase.from('physical_molds').update({ usage_status: usage }).eq('physical_mold_id', mold.physical_mold_id)
+      await supabase.from('equipment').update({ usage_status: usage === 'IN_STOCK' ? 'IN' : 'OUT' } as any).eq('equipment_id', mold.equipment_id)
       setCheckModalType(null)
       window.location.reload()
     } else {
@@ -135,7 +135,7 @@ export function LocationTab({ mold }: { mold: MoldDetailData }) {
     setSaving(true)
     
     const { error } = await supabase.from('asset_location_logs').insert({
-      asset_id: mold.physical_mold_id,
+      asset_id: mold.equipment_id,
       asset_type: 'MOLD',
       old_rack_layer_id: mold.current_rack_layer_id,
       new_rack_layer_id: selectedRackLayer,
@@ -144,7 +144,7 @@ export function LocationTab({ mold }: { mold: MoldDetailData }) {
     })
     
     if (!error) {
-      await supabase.from('physical_molds').update({ current_rack_layer_id: selectedRackLayer }).eq('physical_mold_id', mold.physical_mold_id)
+      await supabase.from('equipment').update({ current_rack_layer_id: selectedRackLayer } as any).eq('equipment_id', mold.equipment_id)
       setLocModalOpen(false)
       window.location.reload()
     } else {

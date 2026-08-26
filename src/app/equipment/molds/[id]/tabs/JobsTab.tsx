@@ -51,12 +51,12 @@ export function JobsTab({ mold }: { mold: MoldDetailData }) {
         job_types!jobs_job_type_id_fkey(job_type_name_ja, job_type_name_vi),
         employees!jobs_responsible_id_fkey(employee_name)
       `)
-      .eq('equipment_id', mold.physical_mold_id)
+      .eq('equipment_id', mold.equipment_id)
       .order('created_at', { ascending: false })
 
     setJobs((data as any[]) || [])
     setLoading(false)
-  }, [mold.physical_mold_id, supabase])
+  }, [mold.equipment_id, supabase])
 
   useEffect(() => {
     fetchJobs()
@@ -160,7 +160,7 @@ export function JobsTab({ mold }: { mold: MoldDetailData }) {
       {/* Create Job Modal */}
       {showCreateModal && (
         <CreateJobModal
-          initialPhysicalMoldId={mold.physical_mold_id}
+          initialPhysicalMoldId={mold.equipment_id}
           productId={mold.mold_revisions?.product_id || undefined}
           onClose={() => setShowCreateModal(false)}
           onSuccess={() => {

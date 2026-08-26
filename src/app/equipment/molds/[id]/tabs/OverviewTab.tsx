@@ -84,9 +84,9 @@ export function OverviewTab({
         </h3>
 
         <InfoRow 
-          icon={Hash} labelKey="moldSystemCode" value={mold.system_code} 
+          icon={Hash} labelKey="moldSystemCode" value={mold.equipment_code} 
           isEditing={isEditing}
-          editNode={<input className="form-input text-xs w-full" value={formData?.system_code || ''} onChange={e => handleChange('system_code', e.target.value)} />}
+          editNode={<input className="form-input text-xs w-full" value={formData?.equipment_code || ''} onChange={e => handleChange('equipment_code', e.target.value)} />}
         />
         <InfoRow 
           icon={FileText} labelKey="moldName" value={mold.display_name} 
@@ -141,7 +141,7 @@ export function OverviewTab({
           isEditing={isEditing}
           editNode={<input type="date" className="form-input text-xs w-full" value={formData?.manufacturing_date || ''} onChange={e => handleChange('manufacturing_date', e.target.value)} />}
         />
-        <InfoRow icon={Calendar} labelKey="moldEntryDate" value={mold.mold_entry_date} />
+        <InfoRow icon={Calendar} labelKey="moldEntryDate" value={mold.entry_date} />
         <InfoRow icon={Calendar} labelKey="disposedDate" value={mold.disposed_date} />
         <InfoRow 
           icon={Calendar} labelKey="lastInventoryDate" value={mold.last_inventory_date} 
