@@ -585,3 +585,5 @@ Danh sách chia sub-phase:
 - **Lưu ý:** Hai file mold-orders/page.tsx và molds/actions.ts giữ nguyên do đã khớp với kiến trúc schema (FK đã trỏ đúng nhưng tên cột vẫn là physical_mold_id).
 
 - 12:42 - Đã hoàn tất Sub-phase 6b: migrate Master/Engineering sang equipment, fix lỗi data (commit c241202).
+
+- 13:27 - Patch bổ sung cho 6b: fix các lỗi sót physical_mold_id/system_code refs bị missed ở các thẻ link (commit 437355c).
