@@ -359,7 +359,7 @@ export function OverviewTab({
                         </span>
                       </div>
                       <div className="text-[13px] font-bold font-mono text-[var(--text-primary)]">
-                        {mold.display_name || mold.system_code}
+                        {mold.display_name || mold.equipment_code}
                       </div>
                       <div className="flex items-center justify-between text-[10px] text-[var(--text-muted)]">
                         <span>Code: {mold.equipment_code}</span>

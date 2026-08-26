@@ -107,9 +107,9 @@ export default function DesignRevisionDetailPage() {
     if (err) {
       setError(err.message)
     } else if (data) {
-      let physical_molds: any[] = []
-      // Tìm khuôn theo design_code prefix — dùng equipment (SSOT) thay vì physical_molds (deprecated)
-      if (physical_molds.length === 0 && data.design_code) {
+      let equipment: any[] = []
+      // Tìm khuôn theo design_code prefix
+      if (equipment.length === 0 && data.design_code) {
         const { data: eqData } = await supabase
           .from('equipment')
           .select('equipment_id, equipment_code, device_status')
@@ -117,17 +117,13 @@ export default function DesignRevisionDetailPage() {
           .like('equipment_code', `${data.design_code}%`)
           
         if (eqData && eqData.length > 0) {
-          physical_molds = eqData.map(e => ({
-            physical_mold_id: e.equipment_id,
-            system_code: e.equipment_code,
-            device_status: e.device_status
-          }))
+          equipment = eqData
         }
       }
 
       const formatted = {
         ...data,
-        physical_molds
+        equipment
       }
       setRev(formatted as unknown as DesignRevisionDetail)
       setFormData(formatted as unknown as Partial<DesignRevisionDetail>)

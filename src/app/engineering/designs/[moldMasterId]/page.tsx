@@ -911,7 +911,7 @@ export default function MoldMasterDesignsPage() {
                             sortedMolds.map(mold => (
                               <Link
                                 key={mold.equipment_id}
-                                href={`/equipment/molds/${mold.physical_mold_id}`}
+                                href={`/equipment/molds/${mold.equipment_id}`}
                                 className="flex items-center justify-between p-2 rounded hover:bg-[var(--bg-surface-2)] transition-colors border border-transparent hover:border-[var(--border-subtle)]"
                               >
                                 <span className="text-[12px] font-bold font-mono text-[var(--text-primary)]">
