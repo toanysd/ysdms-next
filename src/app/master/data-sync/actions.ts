@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 
 export async function hideCompany(companyId: string) {
-  const supabase = createClient()
+  const supabase = await createClient()
   
   const { data: userData, error: userError } = await supabase.auth.getUser()
   if (userError || !userData?.user) throw new Error("Unauthorized")
@@ -24,7 +24,7 @@ export async function hideCompany(companyId: string) {
 }
 
 export async function promoteCompanyToSSOT(companyId: string) {
-  const supabase = createClient()
+  const supabase = await createClient()
   
   const { data: userData, error: userError } = await supabase.auth.getUser()
   if (userError || !userData?.user) throw new Error("Unauthorized")
@@ -44,7 +44,7 @@ export async function promoteCompanyToSSOT(companyId: string) {
 }
 
 export async function remapCompanyFKs(oldCompanyId: string, newCompanyId: string) {
-  const supabase = createClient()
+  const supabase = await createClient()
   
   const { data: userData, error: userError } = await supabase.auth.getUser()
   if (userError || !userData?.user) throw new Error("Unauthorized")

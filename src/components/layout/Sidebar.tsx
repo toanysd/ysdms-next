@@ -8,7 +8,7 @@ import {
   Layers, ArrowDownUp,
   Factory, Calendar, Calculator,
   ShieldCheck, AlertTriangle,
-  Building2, Users, Server, Grid3X3,
+  Building2, Users, Database, Server, Grid3X3,
   BarChart3, Settings, ChevronRight,
   Search, GanttChart, ExternalLink, Box, Columns3, Menu, X, Pin, DatabaseZap,
   Briefcase, ClipboardList, ScanLine, HardDriveDownload, Receipt, CreditCard

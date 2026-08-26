@@ -8,7 +8,7 @@ import { parse } from 'csv-parse/sync'
 export const dynamic = 'force-dynamic'
 
 export default async function DataSyncPage() {
-  const supabase = createClient()
+  const supabase = await createClient()
   
   // 1. Fetch DB state
   const { data: dbCompanies } = await supabase
@@ -16,7 +16,7 @@ export default async function DataSyncPage() {
     .select('company_id, is_active, is_manually_edited, company_name, company_code')
 
   const dbMap = new Map()
-  dbCompanies?.forEach(c => dbMap.set(c.company_id, c))
+  dbCompanies?.forEach((c: any) => dbMap.set(c.company_id, c))
 
   // 2. Read CSV Report
   const csvPath = path.join(process.cwd(), 'src/app/master/data-sync/source_data/company_classification_v4.csv')
