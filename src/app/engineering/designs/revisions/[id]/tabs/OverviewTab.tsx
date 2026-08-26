@@ -298,18 +298,18 @@ export function OverviewTab({
             <h3 className="text-[12px] font-bold font-mono text-[var(--text-primary)]">{t('relatedMoldsTitle')}</h3>
           </div>
           <div className="flex flex-col gap-2">
-            {!rev.physical_molds || rev.physical_molds.length === 0 ? (
+            {!rev.equipment || rev.equipment.length === 0 ? (
               <div className="text-[11px] text-center p-4 text-[var(--text-muted)]">{t('noMolds')}</div>
             ) : (
-              rev.physical_molds.map(mold => (
+              rev.equipment.map(mold => (
                 <Link
-                  key={mold.physical_mold_id}
+                  key={mold.equipment_id}
                   href={`/equipment/molds/${mold.physical_mold_id}`}
-                  title={`金型詳細: ${mold.system_code}`}
+                  title={`金型詳細: ${mold.equipment_code}`}
                   className="flex items-center justify-between p-2 rounded hover:bg-[var(--bg-surface-2)] transition-colors border border-transparent hover:border-[var(--border-subtle)]"
                 >
                   <div className="flex flex-col">
-                    <span className="text-[12px] font-bold font-mono text-[var(--accent)] hover:underline">{mold.system_code}</span>
+                    <span className="text-[12px] font-bold font-mono text-[var(--accent)] hover:underline">{mold.equipment_code}</span>
                   </div>
                   <span className="text-[9px] badge badge--neutral">{mold.device_status || 'NORMAL'}</span>
                 </Link>

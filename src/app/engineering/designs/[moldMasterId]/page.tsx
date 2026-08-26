@@ -83,7 +83,7 @@ type DesignRevision = {
   change_summary: string | null
   created_at: string | null
   employees: { employee_name: string } | null
-  physical_molds?: { physical_mold_id: string; system_code: string; device_status: string }[] | null
+  equipment?: { equipment_id: string; equipment_code: string; device_status: string }[] | null
   jobs?: { job_id: string; job_code: string; job_name: string; job_status: string }[] | null
 }
 
@@ -222,7 +222,7 @@ export default function MoldMasterDesignsPage() {
     setLoading(true)
     const { data, error: err } = await supabase
       .from('design_revisions')
-      .select('*, employees!designer_id(employee_name), equipment(equipment_id, equipment_code, equipment_type, status), jobs(job_id, job_code, job_name, job_status)')
+      .select('*, employees!designer_id(employee_name), equipment(equipment_id, equipment_code, equipment_type, device_status), jobs(job_id, job_code, job_name, job_status)')
       .eq('product_id', moldMasterId)
       .order('revision_number', { ascending: false })
     if (err) {
@@ -231,10 +231,10 @@ export default function MoldMasterDesignsPage() {
     } else {
       const formattedData = data?.map(rev => ({
         ...rev,
-        physical_molds: ((rev as any).equipment || []).map((eq: any) => ({
-          physical_mold_id: eq.equipment_id,
-          system_code: eq.equipment_code,
-          device_status: eq.status
+        equipment: ((rev as any).equipment || []).map((eq: any) => ({
+          equipment_id: eq.equipment_id,
+          equipment_code: eq.equipment_code,
+          device_status: eq.device_status
         }))
       }))
       setRevisions((formattedData as unknown as DesignRevision[]) || [])
@@ -891,7 +891,7 @@ export default function MoldMasterDesignsPage() {
               <div className="lg:col-span-1 flex flex-col gap-4">
                 {editingId && revisions.find(r => r.revision_id === editingId) ? (() => {
                   const currentRev = revisions.find(r => r.revision_id === editingId)!
-                  const sortedMolds = [...(currentRev.physical_molds || [])].sort((a, b) => a.system_code.localeCompare(b.system_code))
+                  const sortedMolds = [...(currentRev.equipment || [])].sort((a, b) => a.equipment_code.localeCompare(b.equipment_code))
                   const sortedJobs = [...(currentRev.jobs || [])].sort((a, b) => a.job_code.localeCompare(b.job_code))
 
                   return (
@@ -910,12 +910,12 @@ export default function MoldMasterDesignsPage() {
                           ) : (
                             sortedMolds.map(mold => (
                               <Link
-                                key={mold.physical_mold_id}
+                                key={mold.equipment_id}
                                 href={`/equipment/molds/${mold.physical_mold_id}`}
                                 className="flex items-center justify-between p-2 rounded hover:bg-[var(--bg-surface-2)] transition-colors border border-transparent hover:border-[var(--border-subtle)]"
                               >
                                 <span className="text-[12px] font-bold font-mono text-[var(--text-primary)]">
-                                  {mold.system_code}
+                                  {mold.equipment_code}
                                 </span>
                                 <span className="text-[10px] text-[var(--text-muted)]">
                                   {mold.device_status}

@@ -169,7 +169,7 @@ export function OverviewTab({
   // Linked Physical Molds for active revision
   const linkedPhysicalMolds = useMemo(() => {
     if (!activeRevision) return []
-    return activeRevision.physical_molds || []
+    return activeRevision.equipment || []
   }, [activeRevision])
 
   // Linked Cutters for active revision
@@ -349,7 +349,7 @@ export function OverviewTab({
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {/* Physical Molds */}
                   {linkedPhysicalMolds.map((mold: any) => (
-                    <div key={mold.physical_mold_id} className="p-3 rounded border border-[var(--border-subtle)] bg-[var(--bg-surface-2)] flex flex-col gap-1.5">
+                    <div key={mold.equipment_id} className="p-3 rounded border border-[var(--border-subtle)] bg-[var(--bg-surface-2)] flex flex-col gap-1.5">
                       <div className="flex items-center justify-between">
                         <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-[var(--tint-teal-bg)] text-[var(--accent)] flex items-center gap-1">
                           <Layers size={10} /> {t('physicalMold')}
@@ -362,7 +362,7 @@ export function OverviewTab({
                         {mold.display_name || mold.system_code}
                       </div>
                       <div className="flex items-center justify-between text-[10px] text-[var(--text-muted)]">
-                        <span>Code: {mold.system_code}</span>
+                        <span>Code: {mold.equipment_code}</span>
                         <span>Stamp: {mold.physical_stamp || '—'}</span>
                       </div>
                     </div>

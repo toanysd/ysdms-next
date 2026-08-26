@@ -59,7 +59,7 @@ export type DesignRevisionDetail = {
     product_name: string | null
     companies: { company_id: string; company_name: string; company_code: string } | null
   } | null
-  physical_molds?: { physical_mold_id: string; system_code: string; device_status: string }[] | null // mapped from equipment table
+  equipment?: { equipment_id: string; equipment_code: string; device_status: string }[] | null
   jobs?: { job_id: string; job_code: string; job_name: string; job_status: string }[] | null
 }
 
@@ -164,7 +164,7 @@ export default function DesignRevisionDetailPage() {
   const handleSave = async () => {
     setSaving(true)
     setError(null)
-    const { physical_molds, jobs, products, employees, mold_revisions, ...updateData } = formData as any
+    const { equipment, jobs, products, employees, mold_revisions, ...updateData } = formData as any
     const { error: err } = await supabase
       .from('design_revisions')
       .update(updateData)

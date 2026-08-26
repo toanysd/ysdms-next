@@ -72,9 +72,9 @@ export type ProductDetailData = {
       thickness_mm: number | null
       color_name_normalized: string | null
     } | null
-    physical_molds?: {
-      physical_mold_id: string
-      system_code: string
+    equipment?: {
+      equipment_id: string
+      equipment_code: string
       display_name: string
       physical_stamp: string | null
       usage_status: string | null
@@ -166,7 +166,8 @@ export default function ProductDetailPage() {
           corner_r, chamfer_c, draft_angle, undercut_spec, under_depth,
           orientation, setup_type, plug_type, has_separate_cutter, plastic_type_designed,
           designer, customer_drawing_no,
-          plastic_master(plastic_code, thickness_mm, color_name_normalized)
+          plastic_master(plastic_code, thickness_mm, color_name_normalized),
+          equipment(equipment_id, equipment_code, display_name, physical_stamp)
         )
       `)
       .eq('product_id', productId)
