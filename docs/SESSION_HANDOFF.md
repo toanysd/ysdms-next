@@ -569,3 +569,12 @@ Danh sách chia sub-phase:
   - src/app/production/mold-orders/page.tsx
   - src/app/production/molds/actions.ts
   - src/app/equipment/aluminum/page.tsx
+
+### Cập nhật Database Schema (Giai đoạn 3 - Migration FK)
+- **Status:** Hoàn thành (Bởi PE)
+- **Thời gian:** 2026-08-26
+- **Chi tiết:** Constraint production_instructions_physical_mold_id_fkey đã được repoint trỏ vào bảng equipment(equipment_id). Mở khóa cho việc migrate API PDF.
+
+### 6. Sub-phase 6a (Server Actions & APIs)
+- **Status:** Hoàn thành (Commit: fcda289)
+- **Chi tiết:** Update query PDF route .select('..., equipment(equipment_id, equipment_code, display_name), ...') và cập nhật component ProductionInstructionPDF. mold-revise.ts và production.ts giữ nguyên (đã khớp cấu trúc DB hiện tại).
