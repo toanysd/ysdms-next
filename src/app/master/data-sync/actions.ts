@@ -14,7 +14,7 @@ async function verifyAdmin() {
     .eq('id', userData.user.id)
     .maybeSingle()
 
-  if (profile?.role !== 'admin') {
+  if (profile?.role !== 'admin' && profile?.role !== 'pe') {
     throw new Error("Forbidden: Requires admin role")
   }
 
