@@ -48,7 +48,7 @@ export default function AluminumBlanksPage() {
     // Fetch blanks
     const { data: blankData, error } = await supabase
       .from('aluminum_blanks')
-      .select('*, physical_molds(system_code)')
+      .select('*, equipment(equipment_code)')
       .order('created_at', { ascending: false });
     
     if (!error && blankData) {
@@ -125,7 +125,7 @@ export default function AluminumBlanksPage() {
 
   const filteredBlanks = blanks.filter(b => 
     b.material_grade?.toLowerCase().includes(searchQuery.toLowerCase()) || 
-    b.physical_molds?.system_code?.toLowerCase().includes(searchQuery.toLowerCase())
+    b.equipment?.equipment_code?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
@@ -293,7 +293,7 @@ export default function AluminumBlanksPage() {
                 ) : (
                   filteredBlanks.map(b => (
                     <tr key={b.id} className="border-b last:border-0 hover-bg-subtle" style={{ borderColor: 'var(--border-subtle)' }}>
-                      <td className="px-3 py-2 text-[12px] font-bold">{b.physical_molds?.system_code || <span className="text-muted font-normal">{t('unspecified')}</span>}</td>
+                      <td className="px-3 py-2 text-[12px] font-bold">{b.equipment?.equipment_code || <span className="text-muted font-normal">{t('unspecified')}</span>}</td>
                       <td className="px-3 py-2 text-[12px]">
                         <div className="flex items-center gap-1">
                           <span className="font-mono text-accent">{b.material_grade}</span>
