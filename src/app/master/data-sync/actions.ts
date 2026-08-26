@@ -3,15 +3,30 @@
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 
-export async function hideCompany(companyId: string) {
+async function verifyAdmin() {
   const supabase = await createClient()
-  
   const { data: userData, error: userError } = await supabase.auth.getUser()
   if (userError || !userData?.user) throw new Error("Unauthorized")
 
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', userData.user.id)
+    .maybeSingle()
+
+  if (profile?.role !== 'admin') {
+    throw new Error("Forbidden: Requires admin role")
+  }
+
+  return { supabase, user: userData.user }
+}
+
+export async function hideCompany(companyId: string) {
+  const { supabase, user } = await verifyAdmin()
+
   const { error } = await supabase.rpc('hide_company', {
     p_company_id: companyId,
-    p_user_id: userData.user.id
+    p_user_id: user.id
   })
 
   if (error) {
@@ -24,14 +39,11 @@ export async function hideCompany(companyId: string) {
 }
 
 export async function promoteCompanyToSSOT(companyId: string) {
-  const supabase = await createClient()
-  
-  const { data: userData, error: userError } = await supabase.auth.getUser()
-  if (userError || !userData?.user) throw new Error("Unauthorized")
+  const { supabase, user } = await verifyAdmin()
 
   const { error } = await supabase.rpc('promote_company_to_ssot', {
     p_company_id: companyId,
-    p_user_id: userData.user.id
+    p_user_id: user.id
   })
 
   if (error) {
@@ -44,15 +56,12 @@ export async function promoteCompanyToSSOT(companyId: string) {
 }
 
 export async function remapCompanyFKs(oldCompanyId: string, newCompanyId: string) {
-  const supabase = await createClient()
-  
-  const { data: userData, error: userError } = await supabase.auth.getUser()
-  if (userError || !userData?.user) throw new Error("Unauthorized")
+  const { supabase, user } = await verifyAdmin()
 
   const { error } = await supabase.rpc('remap_company_fks', {
     p_old_company_id: oldCompanyId,
     p_new_company_id: newCompanyId,
-    p_user_id: userData.user.id
+    p_user_id: user.id
   })
 
   if (error) {
