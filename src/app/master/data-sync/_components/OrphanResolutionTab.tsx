@@ -32,14 +32,16 @@ export default function OrphanResolutionTab({
   const handlePromote = async (id: string) => {
     if (!confirm('Xác nhận đưa công ty này vào danh sách Khách hàng cốt lõi (SSOT)?')) return
     setLoadingId(id)
-    await promoteCompanyToSSOT(id)
+    const res = await promoteCompanyToSSOT(id)
+    if (res?.error) alert('Lỗi: ' + res.error)
     setLoadingId(null)
   }
 
   const handleHide = async (id: string) => {
     if (!confirm('Xác nhận ẨN công ty này khỏi các dropdown tạo đơn hàng? (Dữ liệu lịch sử vẫn giữ nguyên)')) return
     setLoadingId(id)
-    await hideCompany(id)
+    const res = await hideCompany(id)
+    if (res?.error) alert('Lỗi: ' + res.error)
     setLoadingId(null)
   }
 
@@ -51,7 +53,8 @@ export default function OrphanResolutionTab({
     if (!confirm('CẢNH BÁO: Hành động này sẽ chuyển TOÀN BỘ lịch sử đơn hàng, khuôn, thiết kế... sang công ty mới và vô hiệu hóa công ty cũ. Bạn có chắc chắn?')) return
     
     setLoadingId(oldId)
-    await remapCompanyFKs(oldId, newId)
+    const res = await remapCompanyFKs(oldId, newId)
+    if (res?.error) alert('Lỗi: ' + res.error)
     setLoadingId(null)
   }
 
