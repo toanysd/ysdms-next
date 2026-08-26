@@ -1,32 +1,53 @@
-# Priority 8a: Data Reconciliation Module - Diff Engine (Companies)
+# Kế hoạch Triển khai: Data Sync Center & Data Remapping (Priority 8b)
 
-Mục tiêu: Xây dựng bộ đồng bộ hóa (Continuous Sync Engine) cho phép đọc `companies.csv` và `customers.csv` từ thư mục `source_data/csv-access-data/`, so sánh với dữ liệu đang có trên Supabase (bảng `companies`), và xuất báo cáo sự sai khác (Diff Report) trước khi thực hiện cập nhật an toàn (Upsert).
+**Mục tiêu**: Xây dựng một module UI chuẩn trên Web (Next.js) để tự động hóa việc đồng bộ dữ liệu từ Access (CSVs) sang Supabase, đồng thời cung cấp giao diện trực quan để làm sạch 1.271 công ty rác hiện tại mà không làm hỏng 5.410 Khóa ngoại (FKs).
 
-## Nguyên tắc thiết kế (Core Principles)
-1. **SSOT Anchor**: Sử dụng cột `legacy_id` (VD: `CUST-12`, `COMP-45`) làm định danh mỏ neo không bao giờ thay đổi.
-2. **Deterministic UUID**: Không dùng `uuid.uuid4()`. Nếu `legacy_id` đã có trong DB, tái sử dụng UUID cũ. Nếu chưa có, tạo UUID mới.
-3. **Dry-run Mặc định**: Chỉ quét và báo cáo, tuyệt đối không gọi lệnh Insert/Update nếu không có cờ `--apply`.
-4. **Field-level Diffing**: So sánh từng trường (Tên công ty, Mã công ty, v.v.). Báo cáo chính xác trường nào đổi từ giá trị cũ sang giá trị mới.
+Thay vì dùng các script Python thủ công chạy ngầm (đã gây ra việc rác dữ liệu trước đây), hệ thống này sẽ mang lại quyền kiểm soát 100% cho người dùng cuối.
 
-## Proposed Changes
+## 1. Trả lời các câu hỏi của Anh Thoan
+- **Tính năng này đã có chưa?** Chưa có trên Web. Trước đây chúng ta chỉ dùng các đoạn script Python rải rác trong `source_data/scripts/` để đẩy data 1 chiều. Các script này không có cơ chế đối chiếu (Diff), dẫn đến việc sinh ra 1.271 công ty rác bị lặp lặp.
+- **Có thể tự động hóa về sau không?** CÓ THỂ. Khi có UI, anh chỉ cần kéo thả file CSV mới nhất xuất từ Access vào. Hệ thống sẽ tự phân tích dòng nào thêm mới, dòng nào cập nhật, và hỏi anh có muốn đồng bộ hay không.
 
-### [NEW] `scripts/continuous_sync/sync_companies.py`
-Script Python chạy trên CLI, thực hiện các bước sau:
-1. **Load DB State**: Truy vấn bảng `companies` trên Supabase, lấy về danh sách tất cả các bản ghi, tạo Map `[legacy_id] -> DatabaseRecord`.
-2. **Read CSVs**: Đọc `customers.csv` và `companies.csv` bằng thư viện có sẵn `utils.csv_reader`.
-3. **Diff Engine**:
-   - Duyệt qua từng dòng CSV, tính toán `legacy_id`.
-   - Nếu `legacy_id` KHÔNG có trong Map -> Đánh dấu trạng thái **[INSERT]** (Thêm mới).
-   - Nếu `legacy_id` CÓ trong Map -> So sánh từng field (Tên, Code, Type...).
-     - Nếu giống nhau 100% -> Đánh dấu **[UNCHANGED]** (Bỏ qua).
-     - Nếu có khác biệt -> Đánh dấu **[UPDATE]** (Cập nhật), lưu lại cụ thể `Old Value -> New Value`.
-4. **Report Output**: Sinh ra file `sync_report_companies.txt` tổng hợp số lượng Insert, Update, Unchanged và chi tiết các dòng bị thay đổi.
-5. **Apply Logic**: Nếu chạy với `--apply`, sẽ gom các bản ghi [INSERT] và [UPDATE] thành một danh sách và gọi lệnh `.upsert(data, on_conflict='company_id')`.
+## 2. Kiến trúc Module `Data Sync Center`
 
-## Verification Plan
-1. **Test 1 - Dry Run Ban Đầu**: Chạy script trên data hiện tại. Vì Web chưa sửa gì nhiều so với Access, hầu hết sẽ rơi vào [UNCHANGED].
-2. **Test 2 - Phát hiện thay đổi**: Cố tình sửa 1 dòng trong `customers.csv` (VD: Đổi tên công ty), và thêm 1 dòng mới tinh. Chạy lại script. Đảm bảo Report báo chính xác 1 dòng UPDATE và 1 dòng INSERT.
-3. **Test 3 - Không vỡ khóa ngoại**: Đảm bảo UUID của dòng bị thay đổi vẫn giữ nguyên, không làm đứt gãy các bảng phụ thuộc (VD: `orders.company_id`).
+**Route dự kiến:** `/master/data-sync` (Nằm trong menu Master Data)
 
-## Open Questions
-- Với `companies`, Access có 2 file là `customers.csv` và `companies.csv`. Nếu 2 file này có chung 1 thực thể (VD: cùng 1 công ty nhưng tồn tại ở cả 2 file), chúng ta vẫn sẽ ưu tiên `customers.csv` như code seeding cũ chứ?
+### 2.1. Tab 1: CSV Sync & Diff Report (Đồng bộ định kỳ)
+Giao diện cho phép:
+1. Upload file CSV (vd: `customers.csv`, `mold_masters.csv`).
+2. **Diff Engine (Chạy trên trình duyệt/Server Action)**:
+   - Đọc CSV và đối chiếu với Database bằng `legacy_id`.
+   - Hiển thị Bảng Báo Cáo (Preview):
+     - 🟢 **New**: Có bao nhiêu dòng mới hoàn toàn.
+     - 🟡 **Updated**: Có bao nhiêu dòng có thay đổi (chỉ ghi đè nếu `is_manually_edited = false`).
+     - ⚪ **Unchanged**: Dữ liệu không đổi.
+3. Nút **"Xác nhận Đồng bộ" (Execute Sync)**: Khi bấm, hệ thống sẽ thực hiện UPSERT an toàn thông qua Supabase RPC, có Transaction.
+
+### 2.2. Tab 2: Orphan Resolution & Remapping (Xử lý dọn rác lịch sử)
+Giải quyết dứt điểm 1.271 công ty rác và 5.410 FKs (Khóa ngoại) hiện tại.
+Giao diện sẽ hiển thị 1 bảng (Data Table) chuyên dụng:
+- **Cột 1 (Dữ liệu rác)**: Tên công ty không chuẩn (vd: `Cong ty TNHH ABC (giao hang)`).
+- **Cột 2 (Mức độ ảnh hưởng)**: Đang được dùng bởi bao nhiêu Đơn hàng / Sản phẩm (vd: `52 Orders, 13 Products`).
+- **Cột 3 (Gợi ý chuẩn hóa)**: Dropdown chứa 795 công ty chuẩn (SSOT). Hệ thống tự fuzzy-search để gợi ý tên giống nhất (vd: `CUST-102: ABC Co., Ltd`).
+- **Hành động**: Nút **"Remap & Khóa"**. Khi bấm, Server Action sẽ:
+  1. Trỏ (UPDATE) 52 Orders và 13 Products kia sang ID của `CUST-102`.
+  2. Đánh dấu `is_active = false` cho công ty rác kia để nó biến mất khỏi hệ thống.
+
+## 3. Các bước code (Thứ tự thực hiện)
+
+### Bước 1: UI / Layout (Client)
+- Đăng ký route mới vào `Sidebar.tsx`.
+- Tạo `src/app/master/data-sync/page.tsx`.
+- Dựng UI Tabs và Data Table (sử dụng thư viện UI hiện có, tuân thủ `AGENTS.md`).
+
+### Bước 2: Server Actions & Supabase RPC (Backend)
+- Viết hàm `reconcile_company_fks(old_id, new_id)` trong Supabase bằng PL/pgSQL để đảo FK an toàn và có Transaction.
+- Viết API route hoặc Server Action để parse CSV trả về JSON Diff.
+
+### Bước 3: Áp dụng dọn rác đợt 1
+- Hướng dẫn Anh Thoan dùng chính công cụ UI này để xử lý 10-20 công ty rác có lượng FK lớn nhất để kiểm chứng độ an toàn trên Production.
+
+## 4. User Review Required (Cần phê duyệt)
+> [!IMPORTANT]
+> - Anh Thoan có đồng ý xây dựng tính năng này thành 1 trang UI trên Web theo kiến trúc trên không?
+> - Trước mắt chúng ta sẽ làm tính năng Sync cho bảng **Công ty (Companies)** trước, sau khi ổn định sẽ mở rộng kiến trúc này cho bảng **Khuôn/Thiết bị** và **Sản phẩm**.
