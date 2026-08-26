@@ -26,7 +26,7 @@ export default function EquipmentQuickPreviewModal({ isOpen, onClose, item }: Pr
   if (!isOpen || !item) return null
 
   const baseEquipId = item.type === 'mold'
-    ? (item.data.equipment_id || item.data.physical_mold_id || item.data.system_code || item.data.equipment_code)
+    ? (item.data.equipment_id || item.data.equipment_code)
     : item.type === 'cutter'
     ? (item.data.equipment_id || item.data.cutter_id || item.data.cutter_no || item.data.equipment_code)
     : (item.data.equipment_id || item.data.equipment_code)

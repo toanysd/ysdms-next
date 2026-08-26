@@ -59,8 +59,8 @@ export function SectionEquipment({ productId }: SectionEquipmentProps) {
             .select('equipment_id, equipment_type, equipment_code, display_name, usage_status, device_status, rack_layers(layer_code, racks(rack_code))')
             .in('design_revision_id', revIds),
           supabase
-            .from('physical_molds')
-            .select('physical_mold_id, system_code, display_name, usage_status, rack_layers(layer_code, racks(rack_code))')
+            .from('equipment')
+            .select('equipment_id, equipment_code, display_name, usage_status, rack_layers(layer_code, racks(rack_code))')
             .limit(20),
         ])
 
@@ -89,13 +89,13 @@ export function SectionEquipment({ productId }: SectionEquipmentProps) {
             const layerCode = m.rack_layers?.layer_code || ''
             const rack = [rackCode, layerCode].filter(Boolean).join('-') || '—'
             list.push({
-              id: m.physical_mold_id,
+              id: m.equipment_id,
               type: 'MOLD',
-              code: m.system_code || '',
+              code: m.equipment_code || '',
               name: m.display_name || '',
               status: m.usage_status || '',
               rack,
-              url: `/equipment/molds/${m.physical_mold_id}`,
+              url: `/equipment/molds/${m.equipment_id}`,
             })
           })
         }

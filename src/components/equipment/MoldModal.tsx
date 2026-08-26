@@ -20,7 +20,7 @@ const getStorageLabels = (t: any) => ({
 })
 
 export type PhysicalMoldFormData = {
-  system_code: string
+  equipment_code: string
   display_name: string
   device_status: string
   usage_status: string
@@ -53,7 +53,7 @@ export function MoldModal({ isOpen, onClose, onSuccess, editingId, initialData }
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const [formSystemCode, setFormSystemCode] = useState(initialData?.system_code || '')
+  const [formSystemCode, setFormSystemCode] = useState(initialData?.equipment_code || '')
   const [formDisplayName, setFormDisplayName] = useState(initialData?.display_name || '')
   const [formStatus, setFormStatus] = useState(initialData?.device_status || 'ACTIVE')
   const [formUsage, setFormUsage] = useState(initialData?.usage_status || 'IN_STOCK')
@@ -71,9 +71,9 @@ export function MoldModal({ isOpen, onClose, onSuccess, editingId, initialData }
     if (isOpen && editingId) {
       // Fetch existing data
       const fetchMold = async () => {
-        const { data, error } = await supabase.from('physical_molds').select('*').eq('physical_mold_id', editingId).single()
+        const { data, error } = await supabase.from('equipment').select('*').eq('equipment_id', editingId).single()
         if (data) {
-          setFormSystemCode(data.system_code || '')
+          setFormSystemCode(data.equipment_code || '')
           setFormDisplayName(data.display_name || '')
           setFormStatus(data.device_status || 'ACTIVE')
           setFormUsage(data.usage_status || 'IN_STOCK')
@@ -89,7 +89,7 @@ export function MoldModal({ isOpen, onClose, onSuccess, editingId, initialData }
       }
       fetchMold()
     } else if (isOpen && initialData) {
-      setFormSystemCode(initialData.system_code || '')
+      setFormSystemCode(initialData.equipment_code || '')
       setFormDisplayName(initialData.display_name || '')
       setFormStatus(initialData.device_status || 'ACTIVE')
       setFormUsage(initialData.usage_status || 'IN_STOCK')
@@ -116,7 +116,8 @@ export function MoldModal({ isOpen, onClose, onSuccess, editingId, initialData }
     }
 
     const payload: any = {
-      system_code: formSystemCode.trim(),
+      equipment_type: 'MOLD',
+      equipment_code: formSystemCode.trim(),
       display_name: formDisplayName.trim() || formSystemCode.trim(),
       device_status: formStatus,
       usage_status: formUsage,
@@ -133,9 +134,9 @@ export function MoldModal({ isOpen, onClose, onSuccess, editingId, initialData }
 
     if (editingId) {
       const { error: err } = await supabase
-        .from('physical_molds')
+        .from('equipment')
         .update({ ...payload, updated_at: new Date().toISOString() })
-        .eq('physical_mold_id', editingId)
+        .eq('equipment_id', editingId)
       if (err) { setError(err.message); setSaving(false); return }
       setSaving(false)
       if (onSuccess) onSuccess(editingId)
@@ -143,14 +144,14 @@ export function MoldModal({ isOpen, onClose, onSuccess, editingId, initialData }
       onClose()
     } else {
       const { data, error: err } = await supabase
-        .from('physical_molds')
+        .from('equipment')
         .insert([payload])
-        .select('physical_mold_id')
+        .select('equipment_id')
         .single()
       if (err) { setError(err.message); setSaving(false); return }
       setSaving(false)
-      if (onSuccess && data) onSuccess(data.physical_mold_id)
-      else if (data) router.push(`/equipment/molds/${data.physical_mold_id}`)
+      if (onSuccess && data) onSuccess(data.equipment_id)
+      else if (data) router.push(`/equipment/molds/${data.equipment_id}`)
       onClose()
     }
   }

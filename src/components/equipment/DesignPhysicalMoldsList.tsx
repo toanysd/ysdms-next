@@ -7,14 +7,11 @@ import Link from 'next/link'
 import { useTranslations } from 'next-intl'
 
 type PhysicalMold = {
-  physical_mold_id: string
-  system_code: string
+  equipment_id: string
+  equipment_code: string
   display_name: string
   device_status: string
   created_at: string
-  mold_revisions?: {
-    design_revision_id: string
-  } | null
 }
 
 export function DesignPhysicalMoldsList({ 
@@ -39,15 +36,16 @@ export function DesignPhysicalMoldsList({
     setLoading(true)
 
     let req = supabase
-      .from('physical_molds')
-      .select('physical_mold_id, system_code, display_name, device_status, created_at, mold_revisions!inner(design_revision_id, design_revisions!inner(product_id))')
+      .from('equipment')
+      .select('equipment_id, equipment_code, display_name, device_status, created_at, design_revisions!inner(product_id)')
+      .eq('equipment_type', 'MOLD')
 
     if (selectedRevisionId) {
-      req = req.eq('mold_revisions.design_revision_id', selectedRevisionId)
+      req = req.eq('design_revision_id', selectedRevisionId)
     } else if (productId) {
-      req = req.eq('mold_revisions.design_revisions.product_id', productId)
+      req = req.eq('design_revisions.product_id', productId)
     } else if (productCode) {
-      req = req.ilike('system_code', `${productCode}%`)
+      req = req.ilike('equipment_code', `${productCode}%`)
     } else {
       setMolds([])
       setLoading(false)
@@ -99,11 +97,11 @@ export function DesignPhysicalMoldsList({
             </thead>
             <tbody>
               {molds.map(mold => {
-                const isSelected = selectedMoldId === mold.physical_mold_id
+                const isSelected = selectedMoldId === mold.equipment_id
                 return (
                   <tr 
-                    key={mold.physical_mold_id}
-                    onClick={() => onMoldSelect(isSelected ? null : mold.physical_mold_id)}
+                    key={mold.equipment_id}
+                    onClick={() => onMoldSelect(isSelected ? null : mold.equipment_id)}
                     style={{
                       cursor: 'pointer',
                       background: isSelected ? 'color-mix(in srgb, var(--accent) 12%, transparent)' : undefined,
@@ -112,8 +110,8 @@ export function DesignPhysicalMoldsList({
                     className="hover:bg-[var(--bg-surface-2)] transition-colors"
                   >
                     <td style={{ fontFamily: 'monospace', fontWeight: 600 }} onClick={e => e.stopPropagation()}>
-                      <Link href={`/equipment/molds/${mold.physical_mold_id}`} style={{ color: 'var(--accent)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4 }}>
-                          {mold.system_code}
+                      <Link href={`/equipment/molds/${mold.equipment_id}`} style={{ color: 'var(--accent)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4 }}>
+                          {mold.equipment_code}
                           <ExternalLink size={10} />
                       </Link>
                     </td>

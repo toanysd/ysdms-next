@@ -30,9 +30,8 @@ type JobItem = {
   job_status: string | null
   mold_deadline: string | null
   created_at: string
-  physical_mold_id?: string | null
-  cutter_id?: string | null
   equipment_id?: string | null
+    cutter_id?: string | null
   design_revision_id?: string | null
 }
 
@@ -113,8 +112,8 @@ type RecentOrderLine = {
 }
 
 type MoldDetail = {
-  physical_mold_id: string
-  system_code: string | null
+  equipment_id: string
+  equipment_code: string | null
   display_name: string | null
   device_status: string | null
   usage_status: string | null
@@ -501,12 +500,12 @@ export function TabOverview(props: TabOverviewProps) {
 
           let allEquipList: any[] = equips || []
 
-          // Fallback: Check physical_molds if any physical mold is missing from equipment table
+          // Fallback: Check equipment if any physical mold is missing from equipment table
           const existingMoldCodes = new Set(allEquipList.filter(e => ['MOLD', 'WATER_BASE', 'PRESSURE_BASE'].includes(e.equipment_type)).map(e => e.equipment_code))
           const { data: pMolds } = await supabase
-            .from('physical_molds')
+            .from('equipment')
             .select(`
-              physical_mold_id, system_code, display_name, device_status, usage_status,
+              equipment_id, equipment_code, display_name, device_status, usage_status,
               mold_type, piece_count, actual_length_mm, actual_width_mm, actual_height_mm,
               actual_weight, manufacturing_date,
               rack_layers(layer_code, racks(rack_code))
@@ -515,10 +514,10 @@ export function TabOverview(props: TabOverviewProps) {
 
           if (pMolds) {
             pMolds.forEach((pm: any) => {
-              if (!existingMoldCodes.has(pm.system_code)) {
+              if (!existingMoldCodes.has(pm.equipment_code)) {
                 allEquipList.push({
-                  equipment_id: pm.physical_mold_id,
-                  equipment_code: pm.system_code,
+                  equipment_id: pm.equipment_id,
+                  equipment_code: pm.equipment_code,
                   display_name: pm.display_name,
                   equipment_type: 'MOLD',
                   sub_type: pm.mold_type,
@@ -554,8 +553,8 @@ export function TabOverview(props: TabOverviewProps) {
 
           // Map Molds
           const moldDetailsMapped = moldEquips.map((eq: any) => ({
-            physical_mold_id: eq.equipment_id,
-            system_code: eq.equipment_code,
+            equipment_id: eq.equipment_id,
+            equipment_code: eq.equipment_code,
             display_name: eq.display_name,
             device_status: eq.device_status,
             usage_status: eq.usage_status,
@@ -1528,7 +1527,7 @@ export function TabOverview(props: TabOverviewProps) {
 
             // Filter equipment by revision if filter mode is 'revision'
             const filteredMolds = equipFilterMode === 'revision' && selectedRevId
-              ? moldDetails.filter(m => matchesRevision(getMoldRevId(m), m.system_code, m.display_name))
+              ? moldDetails.filter(m => matchesRevision(getMoldRevId(m), m.equipment_code, m.display_name))
               : moldDetails
             const filteredCutters = equipFilterMode === 'revision' && selectedRevId
               ? cutterDetails.filter(c => matchesRevision(c.linked_rev_id || c.design_revision_id, c.cutter_no, c.cutter_name))
@@ -1625,13 +1624,13 @@ export function TabOverview(props: TabOverviewProps) {
             const selectedEquipData = (() => {
               if (!selectedEquip) return null
               if (selectedEquip.type === 'mold') {
-                const m = moldDetails.find(item => item.physical_mold_id === selectedEquip.id)
+                const m = moldDetails.find(item => item.equipment_id === selectedEquip.id)
                 if (!m) return null
                 const moldDims = [m.actual_length_mm || activeRev?.design_length, m.actual_width_mm || activeRev?.design_width, m.actual_height_mm || activeRev?.design_height || activeRev?.design_depth].filter(Boolean).join(' × ')
                 const keeperName = m.keeper_company?.company_code || m.keeper_company?.company_name || 'YSD'
                 const stInfo = parseStorageStatus(m.usage_status, m.device_status, keeperName)
                 return {
-                  code: formatMoldDisplayCode(m.system_code),
+                  code: formatMoldDisplayCode(m.equipment_code),
                   name: m.display_name || 'Physical Mold',
                   rack: getRack(m.rack_layers),
                   keeper: keeperName,
@@ -1694,7 +1693,7 @@ export function TabOverview(props: TabOverviewProps) {
               const aActive = getMoldRevId(a) === selectedRevId ? 0 : 1
               const bActive = getMoldRevId(b) === selectedRevId ? 0 : 1
               if (aActive !== bActive) return aActive - bActive
-              return (a.system_code || '').localeCompare(b.system_code || '')
+              return (a.equipment_code || '').localeCompare(b.equipment_code || '')
             })
 
             const sortCutters = [...filteredCutters].sort((a, b) => {
@@ -2156,9 +2155,9 @@ export function TabOverview(props: TabOverviewProps) {
                           const isDisposed = m.usage_status === 'DISPOSED'
                           const renderFunc = equipViewMode === 'grid' ? renderEquipCard : renderEquipRow
                           return renderFunc(
-                            m.physical_mold_id,
+                            m.equipment_id,
                             'mold',
-                            formatMoldDisplayCode(m.system_code),
+                            formatMoldDisplayCode(m.equipment_code),
                             m.display_name,
                             <Box size={13} style={{ color: 'var(--tint-blue-text)', flexShrink: 0 }} />,
                             tPC('moldsGroupTitle') || '金型',

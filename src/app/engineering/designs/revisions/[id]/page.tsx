@@ -396,7 +396,7 @@ export default function DesignRevisionDetailPage() {
         initialData={{
           mold_revision_id: rev.revision_id,
           mold_revision_label: `${rev.products?.product_code} ${rev.design_code}`,
-          system_code: rev.design_code + '-M1',
+          equipment_code: rev.design_code + '-M1',
           display_name: rev.products?.product_name || rev.design_code,
           actual_length_mm: rev.design_length?.toString() || '',
           actual_width_mm: rev.design_width?.toString() || '',
