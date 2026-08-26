@@ -593,3 +593,15 @@ Danh sách chia sub-phase:
 - \DesignPhysicalMoldsList.tsx\: Fixed critical production bug by removing dropped \mold_revisions\ table and replacing it with direct join to \design_revisions\ via \design_revision_id\ FK on \equipment\.
 - Also patched \src/app/engineering/designs/revisions/[id]/page.tsx\ to replace residual \system_code\ fallback from Sub-phase 6b.
 - Commit: 84568d1
+
+### Sub-phase 7a (D?n d?p n?t Giai ?o?n 2 - Migration FK) - COMPLETED
+- ?a ap d?ng DB Migration DDL (26/08/2026):
+  - Repoint \production_lots_physical_mold_id_fkey\ sang \equipment(equipment_id)\.
+  - Repoint \production_schedules_mold_id_fkey\ sang \equipment(equipment_id)\.
+  - Drop constraint \jobs_physical_mold_id_fkey\ nh?ng **khong xoa c?t**, gi? nguyen 1183 dong d? li?u l?ch s? t?i c?t \jobs.physical_mold_id\ ?? khong pha v? script backfill c?.
+- Hanh ??ng nay chinh th?c ch?t ??t toan b? FK constraint lien k?t t?i \physical_molds\ va \cutters\ trong production.
+
+### Backlog Giai ?o?n 3 (Archive & Drop) - CH? DUY?T T? ANH THOAN
+- Drop cac b?ng ?a h?t gia tr? s? d?ng: \physical_molds\, \cutters\.
+- Drop c?t legacy: \jobs.physical_mold_id\.
+- **L?u y:** Giai ?o?n 3 c?n backup d? li?u l?ch s? va sign-off t? Anh Thoan tr??c khi th?c hi?n cac l?nh DROP.
