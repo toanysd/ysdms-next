@@ -538,3 +538,34 @@ pm run db:types\. Ch?a c?n x? ly hom nay.
 ### 4. Giai ?o?n 2 - Sub-phase 5c (Engineering & Product Center + Fix Regression)
 - **Status:** Hoan thanh (Commit: 62f4a70)
 - **Chi ti?t:** Fix l?i regression ng?m t?i 4 component trong jobs/[id] do thay ??i alias t? physical_molds sang equipment trong qua trinh th?c thi Sub-phase 5a. D?n d?p query physical_mold_id th?a ? TabOverview.tsx. 
+
+### 5. Giai đoạn 2 - Sub-phase 5d (Jobs Reports)
+- **Status:** Hoàn thành (Commit: 977c352)
+- **Chi tiết:** Migrate alias physical_molds sang equipment trong query và logic render của daily-worklog/page.tsx.
+
+---
+
+## 🎯 PRIORITY 6 - Products / Design / Equipment Migration (Phase D - Nhóm B)
+Dựa trên kết quả rà soát toàn cục (Grep), Priority 5 đã hoàn thành trọn vẹn và 16 file còn lại chứa physical_molds (không thuộc scope jobs) sẽ được xử lý trong Priority 6.
+Danh sách chia sub-phase:
+
+- **Sub-phase 6a: Server Actions & APIs (3 file)**
+  - src/app/actions/mold-revise.ts
+  - src/app/actions/production.ts
+  - src/app/api/production-instructions/[id]/pdf/route.ts
+- **Sub-phase 6b: Engineering & Master Data (5 file)**
+  - src/app/engineering/designs/[moldMasterId]/page.tsx
+  - src/app/engineering/designs/revisions/[id]/page.tsx
+  - src/app/engineering/designs/revisions/[id]/tabs/OverviewTab.tsx
+  - src/app/master/products/[id]/page.tsx
+  - src/app/master/products/[id]/tabs/OverviewTab.tsx
+- **Sub-phase 6c: Product Center & Equipment Components (5 file)**
+  - src/app/product-center/[id]/_components/EquipmentQuickPreviewModal.tsx
+  - src/app/product-center/[id]/_components/SectionEquipment.tsx
+  - src/app/product-center/[id]/_components/TabOverview.tsx
+  - src/components/equipment/DesignPhysicalMoldsList.tsx
+  - src/components/equipment/MoldModal.tsx
+- **Sub-phase 6d: Production & Aluminum (3 file)**
+  - src/app/production/mold-orders/page.tsx
+  - src/app/production/molds/actions.ts
+  - src/app/equipment/aluminum/page.tsx
