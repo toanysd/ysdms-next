@@ -25,7 +25,7 @@ export async function GET(
         )
       ),
       delivery_sites(site_name, site_address, contact_person, site_tel),
-      physical_molds(physical_mold_id, system_code, display_name),
+      equipment(equipment_id, equipment_code, display_name),
       production_instruction_tags(
         tag_code,
         custom_label,

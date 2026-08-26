@@ -553,7 +553,7 @@ export function ProductionInstructionPDF({ pi, revision, locale = 'ja' }: { pi: 
             <View style={[styles.gridColValue, { width: '25%' }]}><Text style={styles.boldText}>{pi.products?.product_code || ''}</Text></View>
             <View style={[styles.gridColValue, { width: '8%' }]}><Text>{pi.daily_quantity ? `${pi.daily_quantity.toLocaleString()}枚` : ''}</Text></View>
             <View style={[styles.gridColValue, { width: '8%' }]}><Text>{revision?.gas_pressure || ''}</Text></View>
-            <View style={[styles.gridColValue, { width: '12%' }]}><Text style={styles.boldText}>{pi.physical_molds?.system_code || revision?.customer_equipment_no || ''}</Text></View>
+            <View style={[styles.gridColValue, { width: '12%' }]}><Text style={styles.boldText}>{pi.equipment?.equipment_code || revision?.customer_equipment_no || ''}</Text></View>
             <View style={[styles.gridColValue, { width: '8%' }]}><Text>{pi.material_width ? `${pi.material_width}mm` : ''}</Text></View>
             <View style={[styles.gridColValue, { width: '12%' }]}><Text>{revision?.setup_type || ''}</Text></View>
             <View style={[styles.gridColValue, { width: '7%' }]}><Text>{revision?.cavity_count || ''}</Text></View>
@@ -660,15 +660,15 @@ export function ProductionInstructionPDF({ pi, revision, locale = 'ja' }: { pi: 
             <Text style={styles.moldTitle}>使用金型情報</Text>
             <View style={styles.deliveryRow}>
               <Text style={styles.deliveryLabel}>金型No.</Text>
-              <Text style={styles.deliveryValue}>{pi.physical_molds?.system_code || ''}</Text>
+              <Text style={styles.deliveryValue}>{pi.equipment?.equipment_code || ''}</Text>
             </View>
             <View style={styles.deliveryRow}>
               <Text style={styles.deliveryLabel}>金型名称</Text>
-              <Text style={styles.deliveryValue}>{pi.physical_molds?.display_name || ''}</Text>
+              <Text style={styles.deliveryValue}>{pi.equipment?.display_name || ''}</Text>
             </View>
             <View style={styles.deliveryRow}>
               <Text style={styles.deliveryLabel}>備考</Text>
-              <Text style={styles.deliveryValue}>{pi.physical_molds?.notes || ''}</Text>
+              <Text style={styles.deliveryValue}>{pi.equipment?.notes || ''}</Text>
             </View>
           </View>
         </View>
