@@ -578,3 +578,8 @@ Danh sách chia sub-phase:
 ### 6. Sub-phase 6a (Server Actions & APIs)
 - **Status:** Hoàn thành (Commit: fcda289)
 - **Chi tiết:** Update query PDF route .select('..., equipment(equipment_id, equipment_code, display_name), ...') và cập nhật component ProductionInstructionPDF. mold-revise.ts và production.ts giữ nguyên (đã khớp cấu trúc DB hiện tại).
+
+### 7. Sub-phase 6d (Production & Aluminum)
+- **Status:** Hoàn thành (Commit: 0f889d9)
+- **Chi tiết:** Đã cập nhật alias query và render (từ physical_molds(system_code) sang equipment(equipment_code)) trong src/app/equipment/aluminum/page.tsx.
+- **Lưu ý:** Hai file mold-orders/page.tsx và molds/actions.ts giữ nguyên do đã khớp với kiến trúc schema (FK đã trỏ đúng nhưng tên cột vẫn là physical_mold_id).
