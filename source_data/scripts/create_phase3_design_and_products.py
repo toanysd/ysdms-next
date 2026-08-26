@@ -15,9 +15,9 @@ import re
 sys.stdout.reconfigure(encoding='utf-8')
 
 SUPABASE_URL = "https://iirezrszalmecsslbruo.supabase.co"
-SERVICE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlpcmV6cnN6YWxtZWNzc2xicnVvIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NTYxMTc0NSwiZXhwIjoyMDkxMTg3NzQ1fQ.zDDtsF_NP7_g9HiclRu3Y-nPJLcalxtz0yCSwuRgtBQ"
+SERVICE_KEY = "os.environ.get("SUPABASE_SERVICE_ROLE_KEY")"
 
-SERVER_CATALOG = r'source_data/mold_server_catalog.json'
+SERVER_CATALOG = r'sour_data/mold_server_catalog.json'
 
 def process():
     print("=== CREATING DESIGN REVISIONS & PRODUCTS FOR 1,680 MOLDS ===")
@@ -174,7 +174,7 @@ def process():
                     pass
 
     print(f"\n=== LINKAGE SETUP COMPLETED ===")
-    print(f"Created/Linked Products         : {created_products_count}")
+    print(f"Created/Linked Products         : {created_prproducts_count}")
     print(f"Created/Linked Design Revisions : {created_designs_count}")
     print(f"Linked Equipment Records       : {updated_equipment_count}")
 

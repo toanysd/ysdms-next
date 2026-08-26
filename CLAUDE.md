@@ -22,7 +22,7 @@
 
 ## Critical Rules — Database
 1. `orders.company_id → companies` (KHÔNG phải `customer_id → customers`)
-2. `products.product_name_ja` (KHÔNG phải `product_name`)
+2. `products.product_name` (KHÔNG phải `product_name_ja` — đã đổi tên trong schema V3)
 3. Filter đơn hàng: `.eq('company_id', id)` KHÔNG phải `.eq('customer_id', id)`
 
 ## Critical Rules — Code

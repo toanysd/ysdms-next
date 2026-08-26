@@ -18,7 +18,7 @@ EXTRACTED_FILE = r'source_data/生産指示書/納入先一覧表_extracted.txt'
 OUTPUT_FILE = r'source_data/products_normalized.json'
 
 SUPABASE_URL = "https://iirezrszalmecsslbruo.supabase.co"
-SERVICE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlpcmV6cnN6YWxtZWNzc2xicnVvIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NTYxMTc0NSwiZXhwIjoyMDkxMTg3NzQ1fQ.zDDtsF_NP7_g9HiclRu3Y-nPJLcalxtz0yCSwuRgtBQ"
+SERVICE_KEY = "os.environ.get("SUPABASE_SERVICE_ROLE_KEY")"
 
 def clean_text(text):
     if not text or text in ['*', '-', '|', '#N/A', '#DIV/0!']:

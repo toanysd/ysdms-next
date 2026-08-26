@@ -1,0 +1,403 @@
+{
+  "見積": {
+    "count": 14651,
+    "samples": [
+      "トレイ御見積もり依頼",
+      "Re: トレイ御見積もり依頼",
+      "RE: トレイ御見積もり依頼",
+      "Re: トレイ御見積もり依頼",
+      "RE: トレイ御見積もり依頼"
+    ],
+    "top_participants": [
+      "From:  () -> To:  () (x11965)",
+      "From: YSD 小林 (kobayashi@ysd-pack.co.jp) -> To: 'YSD  クアン' (quan@ysd-pack.co.jp) (x456)",
+      "From: YSD  クアン (quan@ysd-pack.co.jp) -> To: 'YSD 小林' (kobayashi@ysd-pack.co.jp) (x456)"
+    ]
+  },
+  "受注": {
+    "count": 219,
+    "samples": [
+      "RE: 本日受注分注文書　送付の件",
+      "RE: 本日受注分注文書　送付の件",
+      "RE: 本日受注分注文書　送付の件",
+      "RE: 本日受注分注文書　送付の件",
+      "RE: 本日受注分注文書　送付の件"
+    ],
+    "top_participants": [
+      "From:  () -> To:  () (x95)",
+      "From: YSD 小林 (kobayashi@ysd-pack.co.jp) -> To: '加藤勇志郎 ' (yuushirou_katoh@chugen.co.jp) (x12)",
+      "From: YSD 小林 (kobayashi@ysd-pack.co.jp) -> To: takayuki.k@mrdi.co.jp;toan@ysd-pack.co.jp;'㈱丸大　鴻野山　内田様';'丸大　長谷川さん';'YSD 新井' (takayuki.k@mrdi.co.jp;toan@ysd-pack.co.jp;y.uchida@mrdi.co.jp;m.hasegawa@mrdi.co.jp;gyoumu2@ysd-pack.co.jp) (x10)"
+    ]
+  },
+  "設計": {
+    "count": 3142,
+    "samples": [
+      "RE: 新規トレイの設計検討のお願い",
+      "RE: 新規トレイの設計検討のお願い",
+      "RE: 新規トレイの設計検討のお願い",
+      "【W40×40×1.28トレイの北海道からのリクエスト】RE: 新規トレイの設計検討のお願い",
+      "RE: 【W40×40×1.28トレイの北海道からのリクエスト】RE: 新規トレイの設計検討のお願い"
+    ],
+    "top_participants": [
+      "From:  () -> To:  () (x3048)",
+      "From: YSD 小林 (kobayashi@ysd-pack.co.jp) -> To: 'Mitsuhiro Ohira' (mitsuhiro.ohira@rapidus.co.jp) (x28)",
+      "From: Mitsuhiro Ohira (mitsuhiro.ohira@rapidus.co.jp) -> To: YSD 小林 (kobayashi@ysd-pack.co.jp) (x24)"
+    ]
+  },
+  "金型": {
+    "count": 7344,
+    "samples": [
+      "RE: 大分キヤノン様 固定資産/経費資産リスト 金型写真提出のお願い",
+      "RE: SJK-005金型写真撮影について　（QRコードラベル付）",
+      "RE: 【11/22(金)迄】　金型等有無確認のお願い",
+      "RE: 【11/22(金)迄】　金型等有無確認のお願い",
+      "RE: 【11/22(金)迄】　金型等有無確認のお願い"
+    ],
+    "top_participants": [
+      "From:  () -> To:  () (x5418)",
+      "From: YSD  クアン (quan@ysd-pack.co.jp) -> To: 'YSD 小林' (kobayashi@ysd-pack.co.jp) (x230)",
+      "From: YSD 小林 (kobayashi@ysd-pack.co.jp) -> To: 'Tsuyoshi Eguchi/ 江口 毅' (teguchi@minebeamitsumi.com) (x216)"
+    ]
+  },
+  "出荷": {
+    "count": 686,
+    "samples": [
+      "Re: 茨城向け出荷品の梱包完了報告",
+      "RE: 茨城向け出荷品の梱包完了報告",
+      "FW: ご相談　ヨシダ：GA3R-BV-P1 出荷用トレイ",
+      "RE: ご相談　ヨシダ：GA3R-BV-P1 出荷用トレイ　JAE-353",
+      "RE: ご相談　ヨシダ：GA3R-BV-P1 出荷用トレイ　JAE-353"
+    ],
+    "top_participants": [
+      "From:  () -> To:  () (x670)",
+      "From: YSD 小林 (kobayashi@ysd-pack.co.jp) -> To: 'YSD  クアン' (quan@ysd-pack.co.jp) (x6)",
+      "From: YSD  クアン (quan@ysd-pack.co.jp) -> To: 'YSD 小林' (kobayashi@ysd-pack.co.jp) (x4)"
+    ]
+  },
+  "納品": {
+    "count": 508,
+    "samples": [
+      "納品書発行の御願い 注文書№204182",
+      "RE: 納品書発行の御願い 注文書№204182",
+      "RE: 納品書発行の御願い 注文書№204182",
+      "RE: 納品書発行の御願い 注文書№204182",
+      "RE: 納品書発行の御願い 注文書№204182"
+    ],
+    "top_participants": [
+      "From:  () -> To:  () (x481)",
+      "From: YSD 小林 (kobayashi@ysd-pack.co.jp) -> To: '滝本 里奈' (takimoto.rina@kk-asahi.co.jp) (x4)",
+      "From: YSD 桜井　麻子 (gyoumu@ysd-pack.co.jp) -> To: 'Mitsuhiro Ohira' (mitsuhiro.ohira@rapidus.co.jp) (x4)"
+    ]
+  },
+  "請求": {
+    "count": 100,
+    "samples": [
+      "RE: 請求書送付",
+      "RE: 請求書送付",
+      "RE: 請求書送付",
+      "RE: 請求書送付",
+      "RE: 請求書送付"
+    ],
+    "top_participants": [
+      "From:  () -> To:  () (x92)",
+      "From: YSD 小林 (kobayashi@ysd-pack.co.jp) -> To: a-saeki@co-scw.jp (a-saeki@co-scw.jp) (x4)",
+      "From: YSD  クアン (quan@ysd-pack.co.jp) -> To: 'YSD 小林' (kobayashi@ysd-pack.co.jp) (x4)"
+    ]
+  },
+  "検査": {
+    "count": 19,
+    "samples": [
+      "《こちらの分の納品書兼検査票もお願いします》RE: 【W40×40×1.28トレイの北海道からのリクエスト】RE: 新規トレイの設計検討のお願い",
+      "RE: 《こちらの分の納品書兼検査票もお願いします》RE: 【W40×40×1.28トレイの北海道からのリクエスト】RE: 新規トレイの設計検討のお願い",
+      "RE: 《こちらの分の納品書兼検査票もお願いします》RE: 【W40×40×1.28トレイの北海道からのリクエスト】RE: 新規トレイの設計検討のお願い",
+      "RE: 《こちらの分の納品書兼検査票もお願いします》RE: 【W40×40×1.28トレイの北海道からのリクエスト】RE: 新規トレイの設計検討のお願い",
+      "【Lindoへの納品書兼検査票と現品票の登録】RE: 《Lindoへの納期回答登録のお願い》RE: 【金型起工のPOの件】RE: LID48.00×48.00Sトレイの金型作製の件"
+    ],
+    "top_participants": [
+      "From: YSD 桜井　麻子 (gyoumu@ysd-pack.co.jp) -> To: 'Mitsuhiro Ohira' (mitsuhiro.ohira@rapidus.co.jp) (x4)",
+      "From:  () -> To:  () (x4)",
+      "From: YSD 桜井　麻子 (gyoumu@ysd-pack.co.jp) -> To: 'Mitsuhiro Ohira';'YSD 中村';'YSD 小林' (mitsuhiro.ohira@rapidus.co.jp;eigyo@ysd-pack.co.jp;kobayashi@ysd-pack.co.jp) (x3)"
+    ]
+  },
+  "試作": {
+    "count": 1835,
+    "samples": [
+      "【No403010_注文書発行 - 材料板厚変更試作TRY】（XMN0P0-0020 サポートピン用​プレスフィットターミナル​トレー 試作一式(PS黒 0.8mm) (24枚)）",
+      "RE: 【No403010_注文書発行 - 材料板厚変更試作TRY】（XMN0P0-0020 サポートピン用​プレスフィットターミナル​トレー 試作一式(PS黒 0.8mm) (24枚)）",
+      "Re: 【No403010_注文書発行 - 材料板厚変更試作TRY】（XMN0P0-0020 サポートピン用​プレスフィットターミナル​トレー 試作一式(PS黒 0.8mm) (24枚)）",
+      "RE: 【No403010_注文書発行 - 材料板厚変更試作TRY】（XMN0P0-0020 サポートピン用​プレスフィットターミナル​トレー 試作一式(PS黒 0.8mm) (24枚)）",
+      "RE: 【No403010_注文書発行 - 材料板厚変更試作TRY】（XMN0P0-0020 サポートピン用​プレスフィットターミナル​トレー 試作一式(PS黒 0.8mm) (24枚)）"
+    ],
+    "top_participants": [
+      "From:  () -> To:  () (x1656)",
+      "From: YSD 小林 (kobayashi@ysd-pack.co.jp) -> To: 'YSD  クアン' (quan@ysd-pack.co.jp) (x30)",
+      "From: YSD  クアン (quan@ysd-pack.co.jp) -> To: 'YSD 小林' (kobayashi@ysd-pack.co.jp) (x27)"
+    ]
+  },
+  "改造": {
+    "count": 4141,
+    "samples": [
+      "RE: トレイの材料変更及び金型改造の件",
+      "RE: トレイの材料変更及び金型改造の件",
+      "RE: トレイの材料変更及び金型改造の件",
+      "RE: トレイの材料変更及び金型改造の件",
+      "RE: トレイの材料変更及び金型改造の件"
+    ],
+    "top_participants": [
+      "From:  () -> To:  () (x4095)",
+      "From: YODOGAWA Kazuhiko /淀川　和彦 (yodogawak@jae.co.jp) -> To: YSD 小林;SHIKANAI Shinji /鹿内　伸治;SATOU Motoe /佐藤　元重;SUE Daisuke /須惠　大介 (kobayashi@ysd-pack.co.jp;shikanais@jae.co.jp;satoumt@jae.co.jp;sued@jae.co.jp) (x4)",
+      "From: YSD 小林 (kobayashi@ysd-pack.co.jp) -> To: 'Yoshida, Takahiro';'Hirota, Shinichi' (yoshida.takahiro@te.com;hirota.shinichi@te.com) (x4)"
+    ]
+  },
+  "借用": {
+    "count": 120,
+    "samples": [
+      "13162Bコネクタ用トレー　金型借用書の件",
+      "RE: 大分キヤノン様　「借用証/現品受渡確認票」　ご提出のお願い　　※提出期限 6/18(水)",
+      "RE: 大分キヤノン様　「借用証/現品受渡確認票」　ご提出のお願い　　※提出期限 6/18(水)",
+      "RE: 大分キヤノン様　「借用証/現品受渡確認票」　ご提出のお願い　　※提出期限 6/18(水)",
+      "RE: 大分キヤノン様　「借用証/現品受渡確認票」　ご提出のお願い　　※提出期限 6/18(水)"
+    ],
+    "top_participants": [
+      "From: YSD 小林 (kobayashi@ysd-pack.co.jp) -> To: '有賀 弘拓' (k.aruga@asyck.co.jp) (x20)",
+      "From: 最上 登紀子 (mogami.tokiko@kk-asahi.co.jp) -> To: YSD 小林 (kobayashi@ysd-pack.co.jp) (x15)",
+      "From: YSD 小林 (kobayashi@ysd-pack.co.jp) -> To: '最上 登紀子' (mogami.tokiko@kk-asahi.co.jp) (x14)"
+    ]
+  },
+  "返却": {
+    "count": 53,
+    "samples": [
+      "Re: 設備返却依頼",
+      "設備返却依頼",
+      "RE: 設備返却依頼",
+      "RE: 設備返却依頼",
+      "RE: 設備返却依頼"
+    ],
+    "top_participants": [
+      "From: YSD 桜井　麻子 (gyoumu@ysd-pack.co.jp) -> To: 'YSD 吉田';'藤巻 達也';'YSD 小林';toan@ysd-pack.co.jp (jr@ysd-pack.co.jp;fujimaki.tatsuya@omuragiken.jp;kobayashi@ysd-pack.co.jp;toan@ysd-pack.co.jp) (x4)",
+      "From: YSD 新井 (gyoumu2@ysd-pack.co.jp) -> To: 'TEZUKA Takeshi /手塚　剛';'ABE Tatsuya /阿部　達也';'YSD 小林' (tedukat@jae.co.jp;abett@hae.jae.co.jp;kobayashi@ysd-pack.co.jp) (x4)",
+      "From: YSD 吉田 (jr@ysd-pack.co.jp) -> To: 藤巻 達也;YSD 小林;toan@ysd-pack.co.jp;'YSD 桜井 麻子' (fujimaki.tatsuya@omuragiken.jp;kobayashi@ysd-pack.co.jp;toan@ysd-pack.co.jp;gyoumu@ysd-pack.co.jp) (x2)"
+    ]
+  },
+  "材料": {
+    "count": 1141,
+    "samples": [
+      "【No403010_注文書発行 - 材料板厚変更試作TRY】（XMN0P0-0020 サポートピン用​プレスフィットターミナル​トレー 試作一式(PS黒 0.8mm) (24枚)）",
+      "RE: 【No403010_注文書発行 - 材料板厚変更試作TRY】（XMN0P0-0020 サポートピン用​プレスフィットターミナル​トレー 試作一式(PS黒 0.8mm) (24枚)）",
+      "Re: 【No403010_注文書発行 - 材料板厚変更試作TRY】（XMN0P0-0020 サポートピン用​プレスフィットターミナル​トレー 試作一式(PS黒 0.8mm) (24枚)）",
+      "RE: 【No403010_注文書発行 - 材料板厚変更試作TRY】（XMN0P0-0020 サポートピン用​プレスフィットターミナル​トレー 試作一式(PS黒 0.8mm) (24枚)）",
+      "RE: 【No403010_注文書発行 - 材料板厚変更試作TRY】（XMN0P0-0020 サポートピン用​プレスフィットターミナル​トレー 試作一式(PS黒 0.8mm) (24枚)）"
+    ],
+    "top_participants": [
+      "From:  () -> To:  () (x1063)",
+      "From: Yutaka Matsuzawa/ 松澤 豊 (ymatsuzawa@minebea-c.com) -> To: YSD 小林 (kobayashi@ysd-pack.co.jp) (x17)",
+      "From: YSD 小林 (kobayashi@ysd-pack.co.jp) -> To: 'Yutaka Matsuzawa/ 松澤 豊' (ymatsuzawa@minebea-c.com) (x15)"
+    ]
+  },
+  "指示": {
+    "count": 238,
+    "samples": [
+      "金型の廃棄に関しましてはお客様からの廃棄指示があれば対応させて頂きます。",
+      "金型の廃棄に関しましてはお客様からの廃棄指示があれば対応させて頂きます。",
+      "金型の廃棄に関しましてはお客様からの廃棄指示があれば対応させて頂きます。",
+      "金型の廃棄に関しましてはお客様からの廃棄指示があれば対応させて頂きます。",
+      "金型改造のご指示は明日(6/27)ご連絡お待ちしております。"
+    ],
+    "top_participants": [
+      "From:  () -> To:  () (x237)",
+      "From: kobayashi@ysd-pack.co.jp (SMTP) -> To: quan@ysd-pack.co.jp (SMTP) (x1)"
+    ]
+  },
+  "承認": {
+    "count": 661,
+    "samples": [
+      "RE: 【承認図面送付の件】RE: 【手配決定連絡】RE: ENT-002トレー変更品見積り依頼の件　ENT-001",
+      "RE: 【承認図面送付の件】RE: 【手配決定連絡】RE: ENT-002トレー変更品見積り依頼の件　ENT-001",
+      "RE: 【承認図面送付の件】RE: 【手配決定連絡】RE: ENT-002トレー変更品見積り依頼の件　ENT-001",
+      "RE: 【承認図面送付の件】RE: 【手配決定連絡】RE: ENT-002トレー変更品見積り依頼の件　ENT-001",
+      "RE: 新幹線用カショクトレイ図面承認いただきました。"
+    ],
+    "top_participants": [
+      "From:  () -> To:  () (x649)",
+      "From: YSD 小林 (kobayashi@ysd-pack.co.jp) -> To: 'YSD  クアン' (quan@ysd-pack.co.jp) (x6)",
+      "From: YSD  クアン (quan@ysd-pack.co.jp) -> To: 'YSD 小林' (kobayashi@ysd-pack.co.jp) (x4)"
+    ]
+  },
+  "図面": {
+    "count": 3659,
+    "samples": [
+      "RE: 【承認図面送付の件】RE: 【手配決定連絡】RE: ENT-002トレー変更品見積り依頼の件　ENT-001",
+      "RE: 【承認図面送付の件】RE: 【手配決定連絡】RE: ENT-002トレー変更品見積り依頼の件　ENT-001",
+      "RE: 【承認図面送付の件】RE: 【手配決定連絡】RE: ENT-002トレー変更品見積り依頼の件　ENT-001",
+      "RE: 図面送付",
+      "RE: 図面送付"
+    ],
+    "top_participants": [
+      "From:  () -> To:  () (x3524)",
+      "From: YSD 小林 (kobayashi@ysd-pack.co.jp) -> To: 'YSD  クアン' (quan@ysd-pack.co.jp) (x24)",
+      "From: YSD  クアン (quan@ysd-pack.co.jp) -> To: 'YSD 小林' (kobayashi@ysd-pack.co.jp) (x20)"
+    ]
+  },
+  "打合せ": {
+    "count": 546,
+    "samples": [
+      "RE: 【KISCO】 6/16  TAB-NB　トレイ 打合せ議事メモ　KSC-005",
+      "RE: 【KISCO】 6/16  TAB-NB　トレイ 打合せ議事メモ　KSC-005",
+      "RE: 【KISCO】 6/16  TAB-NB　トレイ 打合せ議事メモ　KSC-005",
+      "RE: 【KISCO】 6/16  TAB-NB　トレイ 打合せ議事メモ　KSC-005",
+      "RE: 【KISCO】 6/16  TAB-NB　トレイ 打合せ議事メモ　KSC-005"
+    ],
+    "top_participants": [
+      "From:  () -> To:  () (x485)",
+      "From: YSD 小林 (kobayashi@ysd-pack.co.jp) -> To: 'Yasuo Ohki/ 大木 康雄' (ohki.yasuo@htk-jp.com) (x6)",
+      "From: Yasuo Ohki/ 大木 康雄 (ohki.yasuo@htk-jp.com) -> To: YSD 小林 (kobayashi@ysd-pack.co.jp) (x6)"
+    ]
+  },
+  "棚卸": {
+    "count": 238,
+    "samples": [
+      "RE: 【ご依頼】貸与設備の棚卸調査依頼（ヨシタ゛ハ゜ッケーシ゛殿）についてのパスワード通知メール",
+      "RE: 【ご依頼】貸与設備の棚卸調査依頼（ヨシタ゛ハ゜ッケーシ゛殿）について",
+      "RE: 【ご依頼】貸与設備の棚卸調査依頼（ヨシタ゛ハ゜ッケーシ゛殿）について",
+      "RE: 購入品貸与資産棚卸しの件",
+      "FW: 【KSG005592】パナソニック白河向け金型棚卸のお願い（２月返却実施予定）"
+    ],
+    "top_participants": [
+      "From:  () -> To:  () (x18)",
+      "From: YSD 小林 (kobayashi@ysd-pack.co.jp) -> To: 'Satomi Nakatsubo' (satomi-n@smk.co.jp) (x14)",
+      "From: takayuki.k@mrdi.co.jp (takayuki.k@mrdi.co.jp) -> To: takayuki.k@mrdi.co.jp (takayuki.k@mrdi.co.jp) (x10)"
+    ]
+  },
+  "保管": {
+    "count": 127,
+    "samples": [
+      "金型保管料のお見積り依頼（ヨシダッケージ様）",
+      "RE: 保管いただいております金型に関しまして　ミヤマ",
+      "RE: 保管いただいております金型に関しまして　ミヤマ",
+      "RE: 保管いただいております金型に関しまして　ミヤマ",
+      "RE: 保管いただいております金型に関しまして　ミヤマ"
+    ],
+    "top_participants": [
+      "From:  () -> To:  () (x51)",
+      "From: YSD 小林 (kobayashi@ysd-pack.co.jp) -> To: 'miyata' (miyata@naisan.co.jp) (x16)",
+      "From: miyata (miyata@naisan.co.jp) -> To: 'YSD 小林' (kobayashi@ysd-pack.co.jp) (x10)"
+    ]
+  },
+  "廃棄": {
+    "count": 94,
+    "samples": [
+      "RE: 金型廃棄依頼",
+      "RE: 廃棄処理許可がありました。",
+      "RE: 廃棄処理許可がありました。",
+      "RE: 廃棄処理許可がありました。",
+      "FW: 金型廃棄依頼"
+    ],
+    "top_participants": [
+      "From:  () -> To:  () (x14)",
+      "From: YSD 小林 (kobayashi@ysd-pack.co.jp) -> To: 'oku-isao' (oku-isao@smk.co.jp) (x10)",
+      "From: YSD 小林 (kobayashi@ysd-pack.co.jp) -> To: ' (ubukata-kenji@eye.co.jp) (x8)"
+    ]
+  },
+  "ISO": {
+    "count": 25,
+    "samples": [
+      "尚、月曜日(6/30)はISO更新審査のため返信等が遅くなってしまう場合が御座いますのでご了承ください。",
+      "尚、月曜日(6/30)はISO更新審査のため返信等が遅くなってしまう場合が御座いますのでご了承ください。",
+      "尚、月曜日(6/30)はISO更新審査のため返信等が遅くなってしまう場合が御座いますのでご了承ください。",
+      "尚、月曜日(6/30)はISO更新審査のため返信等が遅くなってしまう場合が御座いますのでご了承ください。",
+      "尚、月曜日(6/30)はISO更新審査のため返信等が遅くなってしまう場合が御座いますのでご了承ください。"
+    ],
+    "top_participants": [
+      "From:  () -> To:  () (x25)"
+    ]
+  },
+  "評価": {
+    "count": 185,
+    "samples": [
+      "RE: JX金属様向けバスバー用トレー　ポケットサンプル評価の件",
+      "Re2: JX金属様向けバスバー用トレー　ポケットサンプル評価の件",
+      "RE: Re2: JX金属様向けバスバー用トレー　ポケットサンプル評価の件",
+      "Re4: JX金属様向けバスバー用トレー　ポケットサンプル評価の件",
+      "RE: Re4: JX金属様向けバスバー用トレー　ポケットサンプル評価の件"
+    ],
+    "top_participants": [
+      "From:  () -> To:  () (x153)",
+      "From: YSD 小林 (kobayashi@ysd-pack.co.jp) -> To: '加藤勇志郎 ' (yuushirou_katoh@chugen.co.jp) (x16)",
+      "From: 加藤勇志郎  (yuushirou_katoh@chugen.co.jp) -> To: YSD 小林 (kobayashi@ysd-pack.co.jp) (x11)"
+    ]
+  },
+  "株式会社": {
+    "count": 10697,
+    "samples": [
+      "RE: 【引揚希望日のご確認】RE: 【リマインド】RE: 金型引揚申請について_タツミ精工株式会社様",
+      "RE: 【引揚希望日のご確認】RE: 【リマインド】RE: 金型引揚申請について_タツミ精工株式会社様",
+      "RE: 【引揚希望日のご確認】RE: 【リマインド】RE: 金型引揚申請について_タツミ精工株式会社様",
+      "RE: 【引揚希望日のご確認】RE: 【リマインド】RE: 金型引揚申請について_タツミ精工株式会社様",
+      "RE: 【引揚希望日のご確認】RE: 【リマインド】RE: 金型引揚申請について_タツミ精工株式会社様"
+    ],
+    "top_participants": [
+      "From:  () -> To:  () (x10678)",
+      "From: 西村㈱藤田幸久 (fujita@nishimura-oil.co.jp) -> To: 'YSD 小林' (kobayashi@ysd-pack.co.jp) (x6)",
+      "From: YSD 小林 (kobayashi@ysd-pack.co.jp) -> To: ' (fujita@nishimura-oil.co.jp) (x4)"
+    ]
+  },
+  "生産計画": {
+    "count": 1,
+    "samples": [
+      "② 生産計画　は　800台/Ｄ　企画20"
+    ],
+    "top_participants": [
+      "From:  () -> To:  () (x1)"
+    ]
+  },
+  "在庫": {
+    "count": 518,
+    "samples": [
+      "シート材材料在庫/トレイ製作見積依頼",
+      "RE: シート材材料在庫/トレイ製作見積依頼",
+      "本トレイは循環トレイとして何回か使います予定なので、輸送時や在庫保管時に出るだけかさばらないようにしたく、",
+      "また、購入必要となっている“PPシート”ですが、JAE専用在庫として手配・管理している",
+      "・PP黒の導電シートは在庫を保有していないので、規格シートを1ロール購入しなければなりません。"
+    ],
+    "top_participants": [
+      "From:  () -> To:  () (x514)",
+      "From: Tsuyoshi Eguchi/ 江口 毅 (teguchi@minebeamitsumi.com) -> To: YSD ���� (kobayashi@ysd-pack.co.jp) (x2)",
+      "From: YSD 小林 (kobayashi@ysd-pack.co.jp) -> To: 'Tsuyoshi Eguchi/ 江口 毅' (teguchi@minebeamitsumi.com) (x2)"
+    ]
+  },
+  "仕入": {
+    "count": 11,
+    "samples": [
+      "早速ですが、下記のトレイについて、現行仕入先より値上げ要請があり、比較の為、相見積をお願いします。",
+      "早速ですが、下記のトレイについて、現行仕入先より値上げ要請があり、比較の為、相見積をお願いします。",
+      "早速ですが、下記のトレイについて、現行仕入先より値上げ要請があり、比較の為、相見積をお願いします。",
+      "早速ですが、下記のトレイについて、現行仕入先より値上げ要請があり、比較の為、相見積をお願いします。",
+      "早速ですが、下記のトレイについて、現行仕入先より値上げ要請があり、比較の為、相見積をお願いします。"
+    ],
+    "top_participants": [
+      "From:  () -> To:  () (x11)"
+    ]
+  },
+  "外注": {
+    "count": 28,
+    "samples": [
+      "\tシリコンを使用する可能性は漆原様あての初回サンプルと各プレス外注様宛の初回生産分の予定ですが",
+      "\tテフロン加工は外注のため1週間ほど時間が掛かります。",
+      "シリコンを使用する可能性は漆原様あての初回サンプルと各プレス外注様宛の初回生産分の予定ですが",
+      "テフロン加工は外注のため1週間ほど時間が掛かります。",
+      "ご連絡頂きました件は弊社 成形外注の日三化成様(奈良県)と打ち合わせの上ご連絡致します。"
+    ],
+    "top_participants": [
+      "From:  () -> To:  () (x28)"
+    ]
+  },
+  "運送": {
+    "count": 1,
+    "samples": [
+      "　何度も申し訳ございませんが製品の運送が宅配業者です"
+    ],
+    "top_participants": [
+      "From:  () -> To:  () (x1)"
+    ]
+  }
+}

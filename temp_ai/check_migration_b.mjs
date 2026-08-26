@@ -4,7 +4,7 @@ import { createClient } from '@supabase/supabase-js'
 const supabase = createClient(
   'https://iirezrszalmecsslbruo.supabase.co',
   // dùng service_role key để bypass RLS
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlpcmV6cnN6YWxtZWNzc2xicnVvIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NTYxMTc0NSwiZXhwIjoyMDkxMTg3NzQ1fQ.zDDtsF_NP7_g9HiclRu3Y-nPJLcalxtz0yCS'
+  'process.env.SUPABASE_SERVICE_ROLE_KEY'
 )
 
 async function checkDB() {
