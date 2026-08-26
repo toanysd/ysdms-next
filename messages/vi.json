@@ -448,7 +448,8 @@
       "plasticsInventory": "Tồn kho cuộn nhựa",
       "dailyMaterials": "Nhập xuất hàng ngày",
       "quickCreate": "⚡ Tạo/Sửa nhanh 1-Trang",
-      "productCenter": "📊 Trung tâm dữ liệu SP"
+      "productCenter": "📊 Trung tâm dữ liệu SP",
+      "dataSync": "Data Sync Center"
     },
     "bottom": {
       "reports": "Báo cáo thống kê",

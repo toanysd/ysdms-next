@@ -448,7 +448,8 @@
       "plasticsInventory": "プラスチック在庫",
       "dailyMaterials": "日常材料入出庫",
       "quickCreate": "⚡ 1ページ一括登録・編集",
-      "productCenter": "📊 製品データセンター"
+      "productCenter": "📊 製品データセンター",
+      "dataSync": "データ同期"
     },
     "bottom": {
       "reports": "レポート・集計",
