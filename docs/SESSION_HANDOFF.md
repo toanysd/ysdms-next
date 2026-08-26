@@ -587,3 +587,9 @@ Danh sách chia sub-phase:
 - 12:42 - Đã hoàn tất Sub-phase 6b: migrate Master/Engineering sang equipment, fix lỗi data (commit c241202).
 
 - 13:27 - Patch bổ sung cho 6b: fix các lỗi sót physical_mold_id/system_code refs bị missed ở các thẻ link (commit 437355c).
+
+### Sub-phase 6c (Product Center & Equipment Components) - COMPLETED
+- Migrated 5 files: \MoldModal.tsx\, \SectionEquipment.tsx\, \TabOverview.tsx\, \EquipmentQuickPreviewModal.tsx\, \DesignPhysicalMoldsList.tsx\.
+- \DesignPhysicalMoldsList.tsx\: Fixed critical production bug by removing dropped \mold_revisions\ table and replacing it with direct join to \design_revisions\ via \design_revision_id\ FK on \equipment\.
+- Also patched \src/app/engineering/designs/revisions/[id]/page.tsx\ to replace residual \system_code\ fallback from Sub-phase 6b.
+- Commit: 84568d1
