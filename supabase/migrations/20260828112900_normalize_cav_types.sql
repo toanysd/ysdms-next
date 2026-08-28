@@ -7,7 +7,8 @@
 -- ============================================================
 
 -- Bước 1: Xóa dữ liệu cũ (57 dòng mã số thuần, không chuẩn)
-TRUNCATE TABLE cav_types;
+-- CASCADE: bảng machine_cav_compatibility có FK → cav_types, cần xóa đồng thời
+TRUNCATE TABLE cav_types CASCADE;
 
 -- Bước 2: Insert 52 dòng đúng theo bảng xưởng vật lý
 -- Nhóm STANDARD (32 mã: A → ZH)
