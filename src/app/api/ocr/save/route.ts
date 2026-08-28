@@ -607,98 +607,16 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // ─── 6. Create or Update Master Manufacturing Job (jobs table) with Standard Steps ──
-    const moldJobCode = `JOB-${baseCode}-${Date.now().toString().slice(-4)}`
+    // ─── 6. Create Separate Jobs Per Equipment Component ────────────────
+    // Pattern: 1 Job = 1 Equipment (matching established data from Access import)
+    // Each component from the 工程票 gets its own Job + Job Steps
     const isJobModification = revNum > 0 && moldHandlingMode === 'REUSE_EXISTING'
-    const moldJobName = isJobModification 
-      ? `金型改修: ${baseInternal}${revSuffix}`
-      : `新規金型製作: ${baseInternal}${revSuffix}`
-    const moldCategory = isJobModification ? 'MOLD_MODIFY' : 'MOLD_NEW'
-    const moldTypeId = isJobModification ? '2' : '1'
     const moldDeadline = body.mold_deadline || maxDeadline || undefined
     const targetCompletionDate = (body as any).target_completion_date || calculateTargetCompletionDate(body.shipping_deadline, moldDeadline)
 
-    let moldJobId: string | null = null
-    const { data: existingJob } = await supabase
-      .from('jobs')
-      .select('job_id, job_category')
-      .eq('product_id', productId!)
-      .eq('design_revision_id', revisionId!)
-      .neq('job_category', 'DESIGN')
-      .limit(1)
-      .maybeSingle()
-
-    let hasRecordedLogs = false
-    if (existingJob) {
-      moldJobId = existingJob.job_id
-      await supabase
-        .from('jobs')
-        .update({
-          job_name: moldJobName,
-          equipment_id: moldEquipmentId || undefined,
-          company_id: companyId,
-          separate_cutter: body.has_separate_cutter || false,
-          has_plug: Boolean(body.plug_type && body.plug_type !== 'なし'),
-          deadline: moldDeadline,
-          ship_date: body.shipping_deadline || undefined,
-          mold_deadline: body.mold_deadline || undefined,
-          target_completion_date: targetCompletionDate || undefined,
-          unit_price: body.cost_amount ? parseFloat(String(body.cost_amount)) : (body.quotation_amount ? parseFloat(String(body.quotation_amount)) : undefined),
-          price_quote_required: body.price_quote_required ?? (body.quotation_attached ? ['有', '要', '✓', 'true', '添付済'].includes(String(body.quotation_attached).trim()) : undefined)
-        })
-        .eq('job_id', moldJobId)
-
-      const { count: logCount } = await supabase
-        .from('work_logs')
-        .select('*', { count: 'exact', head: true })
-        .eq('job_id', moldJobId)
-
-      hasRecordedLogs = Boolean(logCount && logCount > 0)
-      if (!hasRecordedLogs) {
-        await supabase.from('job_steps').delete().eq('job_id', moldJobId)
-      }
-    } else {
-      const { data: newMoldJob, error: jobErr } = await supabase
-        .from('jobs')
-        .insert([{
-          job_code: moldJobCode,
-          job_name: moldJobName,
-          product_id: productId,
-          equipment_id: moldEquipmentId,
-          design_revision_id: revisionId,
-          company_id: companyId,
-          job_status: 'NEW',
-          job_type_id: moldTypeId,
-          job_category: moldCategory,
-          separate_cutter: body.has_separate_cutter || false,
-          has_plug: Boolean(body.plug_type && body.plug_type !== 'なし'),
-          start_date: new Date().toISOString().split('T')[0],
-          work_order_id: workOrderId,
-          deadline: moldDeadline,
-          ship_date: body.shipping_deadline || undefined,
-          mold_deadline: body.mold_deadline || undefined,
-          target_completion_date: targetCompletionDate || undefined,
-          unit_price: body.cost_amount ? parseFloat(String(body.cost_amount)) : (body.quotation_amount ? parseFloat(String(body.quotation_amount)) : undefined),
-          price_quote_required: body.price_quote_required ?? (body.quotation_attached ? ['有', '要', '✓', 'true', '添付済'].includes(String(body.quotation_attached).trim()) : undefined)
-        }])
-        .select('job_id')
-        .single()
-
-      if (jobErr || !newMoldJob) {
-        throw new Error(`Failed to create mold manufacturing job: ${jobErr?.message}`)
-      }
-      moldJobId = newMoldJob.job_id
-    }
-
-    // Insert component steps strictly from the OCR sheet (1 step per equipment component / milestone)
-    const moldComp = body.components?.find(c => c.type_code === 'MOLD')
-    const plugComp = body.components?.find(c => c.type_code === 'PLUG')
-    const cutterComp = body.components?.find(c => c.type_code === 'CUTTER')
-
-    const targetYear = (moldDeadline ? new Date(moldDeadline).getFullYear() : (body.shipping_deadline ? new Date(body.shipping_deadline).getFullYear() : new Date().getFullYear())) || new Date().getFullYear()
-
     const normalizeDl = (dStr?: string | null) => {
       if (!dStr) return null
+      const targetYear = (moldDeadline ? new Date(moldDeadline as string).getFullYear() : (body.shipping_deadline ? new Date(body.shipping_deadline).getFullYear() : new Date().getFullYear())) || new Date().getFullYear()
       const m = String(dStr).match(/^(\d{4})-(\d{2}-\d{2}.*)$/)
       if (m && targetYear && parseInt(m[1], 10) !== targetYear) {
         return `${targetYear}-${m[2]}`
@@ -706,129 +624,227 @@ export async function POST(request: NextRequest) {
       return dStr
     }
 
-    const jobStepsToInsert: any[] = []
-    let stepNo = 1
-
-    const normalizedMoldCompDl = normalizeDl(moldComp?.deadline)
-    const normalizedPlugCompDl = normalizeDl(plugComp?.deadline)
-    const normalizedCutterCompDl = normalizeDl(cutterComp?.deadline)
-
-    // 1. Track [M] 金型
-    if (normalizedMoldCompDl && normalizedMoldCompDl !== moldDeadline) {
-      jobStepsToInsert.push({
-        job_id: moldJobId,
-        step_no: stepNo++,
-        step_name: 'アルミ材手配',
-        track: 'MOLD',
-        type_code: 'MOLD',
-        material_spec: moldComp?.material_spec || 'アルミ材',
-        arrangement: 'REQUIRED',
-        condition: 'NEW',
-        step_status: 'PENDING',
-        manufacture_location: moldComp?.manufacture_location || 'IN_HOUSE',
-        deadline: normalizedMoldCompDl,
-        estimated_hours: null
-      })
+    const createdJobIds: { type: string; jobId: string; jobCode: string }[] = []
+    const commonJobFields = {
+      product_id: productId,
+      design_revision_id: revisionId,
+      company_id: companyId,
+      work_order_id: workOrderId,
+      ship_date: body.shipping_deadline || undefined,
+      mold_deadline: body.mold_deadline || undefined,
+      target_completion_date: targetCompletionDate || undefined,
+      unit_price: body.cost_amount ? parseFloat(String(body.cost_amount)) : (body.quotation_amount ? parseFloat(String(body.quotation_amount)) : undefined),
+      price_quote_required: body.price_quote_required ?? (body.quotation_attached ? ['有', '要', '✓', 'true', '添付済'].includes(String(body.quotation_attached).trim()) : undefined),
     }
-    const primaryFabDl = targetCompletionDate || moldDeadline || null
 
-    jobStepsToInsert.push({
-      job_id: moldJobId,
-      step_no: stepNo++,
-      step_name: '金型製作',
-      track: 'MOLD',
-      type_code: 'MOLD',
-      material_spec: moldComp?.material_spec || 'アルミ材',
-      arrangement: 'REQUIRED',
-      condition: 'NEW',
-      step_status: 'PENDING',
-      manufacture_location: moldComp?.manufacture_location || 'IN_HOUSE',
-      deadline: primaryFabDl,
-      target_completion_date: targetCompletionDate,
-      estimated_hours: null
+    // Helper: create or update a job for a specific equipment
+    async function upsertEquipmentJob(params: {
+      equipmentId: string | null,
+      jobCategory: string,
+      jobTypeId: string,
+      jobName: string,
+      jobCodePrefix: string,
+      deadline: string | null | undefined,
+      steps: Array<{ step_name: string; track: string; type_code: string; material_spec?: string; manufacture_location?: string; deadline?: string | null; estimated_hours?: number | null }>,
+    }) {
+      const { equipmentId, jobCategory, jobTypeId, jobName, jobCodePrefix, deadline, steps } = params
+
+      // Check for existing job with same equipment + product + design (avoid duplicates)
+      const existingQuery = supabase
+        .from('jobs')
+        .select('job_id')
+        .eq('product_id', productId!)
+        .eq('design_revision_id', revisionId!)
+        .eq('job_category', jobCategory)
+
+      if (equipmentId) {
+        existingQuery.eq('equipment_id', equipmentId)
+      }
+
+      const { data: existingJob } = await existingQuery.limit(1).maybeSingle()
+
+      let jobId: string
+      let jobCode: string
+
+      if (existingJob) {
+        jobId = existingJob.job_id
+        jobCode = jobCodePrefix
+        await supabase.from('jobs').update({
+          job_name: jobName,
+          equipment_id: equipmentId || undefined,
+          ...commonJobFields,
+          deadline: deadline || undefined,
+          separate_cutter: body.has_separate_cutter || false,
+          has_plug: Boolean(body.plug_type && body.plug_type !== 'なし'),
+        }).eq('job_id', jobId)
+
+        // Only replace steps if no work_logs exist yet
+        const { count: logCount } = await supabase
+          .from('work_logs')
+          .select('*', { count: 'exact', head: true })
+          .eq('job_id', jobId)
+
+        if (!logCount || logCount === 0) {
+          await supabase.from('job_steps').delete().eq('job_id', jobId)
+          if (steps.length > 0) {
+            await supabase.from('job_steps').insert(
+              steps.map((s, i) => ({
+                job_id: jobId,
+                step_no: i + 1,
+                step_name: s.step_name,
+                track: s.track,
+                type_code: s.type_code,
+                material_spec: s.material_spec || null,
+                arrangement: 'REQUIRED',
+                condition: 'NEW',
+                step_status: 'PENDING',
+                manufacture_location: s.manufacture_location || 'IN_HOUSE',
+                deadline: s.deadline || deadline || null,
+                target_completion_date: targetCompletionDate || null,
+                estimated_hours: s.estimated_hours || null,
+              }))
+            )
+          }
+        }
+      } else {
+        jobCode = `${jobCodePrefix}-${Date.now().toString().slice(-4)}`
+        const { data: newJob, error: jobErr } = await supabase
+          .from('jobs')
+          .insert([{
+            job_code: jobCode,
+            job_name: jobName,
+            equipment_id: equipmentId,
+            job_status: 'NEW',
+            job_type_id: jobTypeId,
+            job_category: jobCategory,
+            separate_cutter: body.has_separate_cutter || false,
+            has_plug: Boolean(body.plug_type && body.plug_type !== 'なし'),
+            start_date: new Date().toISOString().split('T')[0],
+            deadline: deadline || undefined,
+            ...commonJobFields,
+          }])
+          .select('job_id')
+          .single()
+
+        if (jobErr || !newJob) {
+          console.warn(`Non-blocking: Failed to create ${jobCategory} job: ${jobErr?.message}`)
+          return null
+        }
+        jobId = newJob.job_id
+
+        if (steps.length > 0) {
+          await supabase.from('job_steps').insert(
+            steps.map((s, i) => ({
+              job_id: jobId,
+              step_no: i + 1,
+              step_name: s.step_name,
+              track: s.track,
+              type_code: s.type_code,
+              material_spec: s.material_spec || null,
+              arrangement: 'REQUIRED',
+              condition: 'NEW',
+              step_status: 'PENDING',
+              manufacture_location: s.manufacture_location || 'IN_HOUSE',
+              deadline: s.deadline || deadline || null,
+              target_completion_date: targetCompletionDate || null,
+              estimated_hours: s.estimated_hours || null,
+            }))
+          )
+        }
+      }
+
+      createdJobIds.push({ type: jobCategory, jobId, jobCode })
+      return jobId
+    }
+
+    // ── 6a. Mold Job (金型製作) ──────────────────────────────────────────
+    const moldComp = body.components?.find(c => c.type_code === 'MOLD')
+    const moldCategory = isJobModification ? 'MOLD_MODIFY' : 'MOLD_NEW'
+    const moldTypeId = isJobModification ? '2' : '1'
+    const moldJobName = isJobModification
+      ? `金型改修: ${baseInternal}${revSuffix}`
+      : `新規金型製作: ${baseInternal}${revSuffix}`
+
+    const moldSteps: Array<{ step_name: string; track: string; type_code: string; material_spec?: string; manufacture_location?: string; deadline?: string | null; estimated_hours?: number | null }> = []
+    const normalizedMoldDl = normalizeDl(moldComp?.deadline)
+    if (normalizedMoldDl && normalizedMoldDl !== moldDeadline) {
+      moldSteps.push({ step_name: 'アルミ材手配', track: 'MOLD', type_code: 'MOLD', material_spec: moldComp?.material_spec || 'アルミ材', manufacture_location: moldComp?.manufacture_location || 'IN_HOUSE', deadline: normalizedMoldDl })
+    }
+    moldSteps.push({ step_name: '金型製作', track: 'MOLD', type_code: 'MOLD', material_spec: moldComp?.material_spec || 'アルミ材', manufacture_location: moldComp?.manufacture_location || 'IN_HOUSE', deadline: (targetCompletionDate || moldDeadline || null) as string | null })
+
+    const moldJobId = await upsertEquipmentJob({
+      equipmentId: moldEquipmentId,
+      jobCategory: moldCategory,
+      jobTypeId: moldTypeId,
+      jobName: moldJobName,
+      jobCodePrefix: `JOB-${baseCode}-M`,
+      deadline: moldDeadline as string | null | undefined,
+      steps: moldSteps,
     })
 
-    // 2. Track [P] プラグ
-    const hasPlugRequirement = plugComp 
-      ? (plugComp.arrangement === 'REQUIRED' && plugComp.condition !== 'EXISTING') 
+    // ── 6b. Cutter Job (抜型製作) ────────────────────────────────────────
+    const cutterComp = body.components?.find(c => c.type_code === 'CUTTER')
+    const hasCutterRequirement = cutterComp
+      ? (cutterComp.arrangement === 'REQUIRED' && cutterComp.condition !== 'EXISTING')
+      : true // Default: cutter is always needed unless explicitly marked EXISTING
+
+    if (hasCutterRequirement && cutterEquipmentId) {
+      const normalizedCutterDl = normalizeDl(cutterComp?.deadline)
+      await upsertEquipmentJob({
+        equipmentId: cutterEquipmentId,
+        jobCategory: 'CUTTER_NEW',
+        jobTypeId: '3',
+        jobName: `抜型製作: ${baseInternal}${revSuffix}`,
+        jobCodePrefix: `JOB-${baseCode}-C`,
+        deadline: (normalizedCutterDl || moldDeadline || null) as string | null | undefined,
+        steps: [{ step_name: '抜型製作', track: 'CUTTER', type_code: 'CUTTER', material_spec: cutterComp?.material_spec || '抜型', manufacture_location: cutterComp?.manufacture_location || 'OUTSOURCE' }],
+      })
+    }
+
+    // ── 6c. Plug Job (プラグ製作) ────────────────────────────────────────
+    const plugComp = body.components?.find(c => c.type_code === 'PLUG')
+    const hasPlugRequirement = plugComp
+      ? (plugComp.arrangement === 'REQUIRED' && plugComp.condition !== 'EXISTING')
       : Boolean(body.plug_type && body.plug_type !== 'なし' && body.plug_type !== 'NONE')
 
     if (hasPlugRequirement) {
-      const plugDl = (normalizedPlugCompDl && normalizedPlugCompDl !== moldDeadline) ? normalizedPlugCompDl : primaryFabDl
-      jobStepsToInsert.push({
-        job_id: moldJobId,
-        step_no: stepNo++,
-        step_name: 'プラグ製作',
-        track: 'PLUG',
-        type_code: 'PLUG',
-        material_spec: plugComp?.material_spec || null,
-        arrangement: 'REQUIRED',
-        condition: 'NEW',
-        step_status: 'PENDING',
-        manufacture_location: plugComp?.manufacture_location || 'IN_HOUSE',
-        deadline: plugDl,
-        target_completion_date: targetCompletionDate,
-        estimated_hours: null
+      const plugEquipId = createdEquipmentIds.find(e => e.type === 'PLUG')?.id || null
+      const normalizedPlugDl = normalizeDl(plugComp?.deadline)
+      await upsertEquipmentJob({
+        equipmentId: plugEquipId,
+        jobCategory: 'EQUIPMENT_NEW',
+        jobTypeId: '4',
+        jobName: `プラグ製作: ${baseInternal}${revSuffix}`,
+        jobCodePrefix: `JOB-${baseCode}-P`,
+        deadline: (normalizedPlugDl || moldDeadline || null) as string | null | undefined,
+        steps: [{ step_name: 'プラグ製作', track: 'PLUG', type_code: 'PLUG', material_spec: plugComp?.material_spec || undefined, manufacture_location: plugComp?.manufacture_location || 'IN_HOUSE' }],
       })
     }
 
-    // 3. Track [C] 抜型
-    const hasCutterRequirement = cutterComp 
-      ? (cutterComp.arrangement === 'REQUIRED' && cutterComp.condition !== 'EXISTING') 
-      : true
-
-    if (hasCutterRequirement) {
-      const cutterDl = (normalizedCutterCompDl && normalizedCutterCompDl !== moldDeadline) ? normalizedCutterCompDl : primaryFabDl
-      jobStepsToInsert.push({
-        job_id: moldJobId,
-        step_no: stepNo++,
-        step_name: '抜型製作',
-        track: 'CUTTER',
-        type_code: 'CUTTER',
-        material_spec: cutterComp?.material_spec || '抜型',
-        arrangement: 'REQUIRED',
-        condition: 'NEW',
-        step_status: 'PENDING',
-        manufacture_location: cutterComp?.manufacture_location || 'OUTSOURCE',
-        deadline: cutterDl,
-        target_completion_date: targetCompletionDate,
-        estimated_hours: null
-      })
-    }
-
-    // 4. Other auxiliary components (Water base, Frame, Stacking...)
-    // ONLY insert into job_steps if explicitly REQUIRED to manufacture (arrangement === 'REQUIRED' and condition !== 'EXISTING')
+    // ── 6d. Auxiliary Equipment Jobs (WB, PB, Frame, Stacking — only if NEW) ─
     const otherComps = body.components?.filter(c => !['MOLD', 'PLUG', 'CUTTER'].includes(c.type_code)) || []
     for (const oc of otherComps) {
       const isReq = oc.arrangement === 'REQUIRED' && oc.condition !== 'EXISTING'
-      if (!isReq) continue // Skip creating job step if existing or not required
+      if (!isReq) continue
 
-      const ocDl = oc.deadline ? normalizeDl(oc.deadline) : primaryFabDl
-      const isOutsource = oc.type_code === 'FRAME' || oc.type_code === 'CUTTER' || (oc.step_name && (oc.step_name.includes('枠') || oc.step_name.includes('抜型')))
-      jobStepsToInsert.push({
-        job_id: moldJobId,
-        step_no: stepNo++,
-        step_name: oc.step_name || oc.type_code,
-        track: oc.type_code,
-        type_code: oc.type_code,
-        material_spec: oc.material_spec || null,
-        arrangement: 'REQUIRED',
-        condition: 'NEW',
-        step_status: 'PENDING',
-        manufacture_location: oc.manufacture_location || (isOutsource ? 'OUTSOURCE' : 'IN_HOUSE'),
-        deadline: ocDl,
-        target_completion_date: targetCompletionDate,
-        estimated_hours: oc.estimated_hours || null
+      const auxEquipId = createdEquipmentIds.find(e => e.type === oc.type_code)?.id || null
+      if (!auxEquipId) continue // No equipment created = no job needed
+
+      const isOutsource = oc.type_code === 'FRAME' || (oc.step_name && (oc.step_name.includes('枠') || oc.step_name.includes('抜型')))
+      const ocDl = oc.deadline ? normalizeDl(oc.deadline) : moldDeadline
+      await upsertEquipmentJob({
+        equipmentId: auxEquipId,
+        jobCategory: 'EQUIPMENT_NEW',
+        jobTypeId: '5',
+        jobName: `${oc.step_name || oc.type_code}製作: ${baseInternal}${revSuffix}`,
+        jobCodePrefix: `JOB-${baseCode}-${oc.type_code.slice(0, 2)}`,
+        deadline: (ocDl || null) as string | null | undefined,
+        steps: [{ step_name: oc.step_name || oc.type_code, track: oc.type_code, type_code: oc.type_code, material_spec: oc.material_spec || undefined, manufacture_location: oc.manufacture_location || (isOutsource ? 'OUTSOURCE' : 'IN_HOUSE'), estimated_hours: oc.estimated_hours || undefined }],
       })
-    }
-
-    if (!existingJob || !hasRecordedLogs) {
-      await supabase.from('job_steps').insert(jobStepsToInsert)
     }
 
     // ─── 7. Auto-create Design Job for the Product & Revision ───────
     try {
-      const designJobCode = `DES-${cleanCode}`
       const { data: existingDesignJob } = await supabase
         .from('jobs')
         .select('job_id')
@@ -838,13 +854,16 @@ export async function POST(request: NextRequest) {
         .maybeSingle()
 
       if (!existingDesignJob) {
+        const designJobCode = `DES-${cleanCode}`
         const designJobName = `${cleanInternal} 設計`
+        const hasProto = body.design_category === 'PROTOTYPE_POCKET' || Boolean(body.components?.some(c => c.step_name?.includes('試作')))
+
         const { data: newDesJob } = await supabase
           .from('jobs')
           .insert([{
             job_code: designJobCode,
             job_name: designJobName,
-            job_type_id: '9', // 設計
+            job_type_id: '9',
             job_category: 'DESIGN',
             product_id: productId,
             design_revision_id: revisionId,
@@ -864,7 +883,6 @@ export async function POST(request: NextRequest) {
           .maybeSingle()
 
         if (newDesJob) {
-          const hasProto = body.design_category === 'PROTOTYPE_POCKET' || Boolean(body.components?.some(c => c.step_name?.includes('試作')))
           const desSteps = hasProto
             ? [
                 { job_id: newDesJob.job_id, step_no: 1, step_name: '試作金型作成', step_status: 'NOT_STARTED', track: 'DESIGN', deadline: moldDeadline || null, target_completion_date: targetCompletionDate || null, notes: '試作金型作成' },
@@ -875,6 +893,7 @@ export async function POST(request: NextRequest) {
               ]
 
           await supabase.from('job_steps').insert(desSteps)
+          createdJobIds.push({ type: 'DESIGN', jobId: newDesJob.job_id, jobCode: designJobCode })
         }
       }
     } catch (desErr) {
@@ -890,8 +909,8 @@ export async function POST(request: NextRequest) {
         mold_equipment_id: moldEquipmentId,
         cutter_equipment_id: cutterEquipmentId,
         equipment_count: createdEquipmentIds.length,
-        job_id: moldJobId,
-        job_code: moldJobCode,
+        job_count: createdJobIds.length,
+        jobs: createdJobIds,
         product_code: cleanCode,
         product_name_internal: cleanInternal
       }

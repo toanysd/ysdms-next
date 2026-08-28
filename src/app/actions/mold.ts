@@ -305,7 +305,7 @@ export async function fetchMoldForEdit(physicalId: string) {
           *,
           products (*)
         ),
-        cav_types (cav_type_id, cav_name),
+        cav_types (cav_type_id, cav_code, description),
         rack_layers (id, code, label, rack_id)
       `)
       .eq('equipment_id', physicalId)
