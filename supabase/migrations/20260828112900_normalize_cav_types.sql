@@ -12,7 +12,7 @@ TRUNCATE TABLE cav_types CASCADE;
 
 -- Bước 2: Insert 52 dòng đúng theo bảng xưởng vật lý
 -- Nhóm STANDARD (32 mã: A → ZH)
-INSERT INTO cav_types (cav_code, cav_name, cav_length_mm, cav_width_mm, machine_group, cav_series, alias_cav_code, notes) VALUES
+INSERT INTO cav_types (cav_code, description, cav_length_mm, cav_width_mm, machine_group, cav_series, alias_cav_code, notes) VALUES
   ('A',    'CAV A',    470, 300, 'STANDARD', 'C6',  '74B',  NULL),
   ('B',    'CAV B',    335, 265, 'STANDARD', 'PS',  NULL,   NULL),
   ('C',    'CAV C',    499, 347, 'STANDARD', 'JR',  '74F',  NULL),
