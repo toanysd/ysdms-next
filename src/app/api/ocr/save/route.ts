@@ -51,6 +51,7 @@ interface SaveOCRInput {
     shared_from_product_code?: string
     notes?: string
   }>
+  dry_run?: boolean
 }
 
 export async function POST(request: NextRequest) {
@@ -119,6 +120,12 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    const isDryRun = body.dry_run === true
+    const dryRunLogs: string[] = []
+    const logDryRun = (msg: string) => {
+      if (isDryRun) dryRunLogs.push(msg)
+    }
+
     // ─── 2. Check or Create Base Product (Single Source of Truth) ─────
     let productId: string | null = null
 
@@ -136,40 +143,48 @@ export async function POST(request: NextRequest) {
 
     if (existingProd) {
       productId = existingProd.product_id
-      // Update missing fields
-      await supabase.from('products').update({
-        product_name_internal: existingProd.product_name_internal || baseInternal,
-        product_description: body.product_description || undefined,
-        customer_product_name: body.customer_product_name || undefined,
-        pocket_count: body.pocket_count || undefined,
-        box_spec: body.packaging_info || undefined,
-        first_shipment_date: body.shipping_deadline || undefined,
-        updated_at: new Date().toISOString()
-      }).eq('product_id', productId)
-    } else {
-      const { data: newProd, error: prodErr } = await supabase
-        .from('products')
-        .insert([
-          {
-            product_code: baseCode,
-            product_name_internal: baseInternal,
-            product_name: baseInternal,
-            product_description: body.product_description || null,
-            customer_product_name: body.customer_product_name || null,
-            company_id: companyId,
-            pocket_count: body.pocket_count || null,
-            box_spec: body.packaging_info || null,
-            first_shipment_date: body.shipping_deadline || null,
-            product_status: 'ACTIVE'
-          }
-        ])
-        .select('product_id')
-        .single()
-
-      if (prodErr || !newProd) {
-        throw new Error(`Failed to create product: ${prodErr?.message}`)
+      logDryRun(`✅ Update existing Product: ${baseInternal} (${productId})`)
+      if (!isDryRun) {
+        // Update missing fields
+        await supabase.from('products').update({
+          product_name_internal: existingProd.product_name_internal || baseInternal,
+          product_description: body.product_description || undefined,
+          customer_product_name: body.customer_product_name || undefined,
+          pocket_count: body.pocket_count || undefined,
+          box_spec: body.packaging_info || undefined,
+          first_shipment_date: body.shipping_deadline || undefined,
+          updated_at: new Date().toISOString()
+        }).eq('product_id', productId)
       }
-      productId = newProd.product_id
+    } else {
+      logDryRun(`🆕 Create new Product: ${baseInternal}`)
+      if (isDryRun) {
+        productId = 'dry-run-prod-id'
+      } else {
+        const { data: newProd, error: prodErr } = await supabase
+          .from('products')
+          .insert([
+            {
+              product_code: baseCode,
+              product_name_internal: baseInternal,
+              product_name: baseInternal,
+              product_description: body.product_description || null,
+              customer_product_name: body.customer_product_name || null,
+              company_id: companyId,
+              pocket_count: body.pocket_count || null,
+              box_spec: body.packaging_info || null,
+              first_shipment_date: body.shipping_deadline || null,
+              product_status: 'ACTIVE'
+            }
+          ])
+          .select('product_id')
+          .single()
+
+        if (prodErr || !newProd) {
+          throw new Error(`Failed to create product: ${prodErr?.message}`)
+        }
+        productId = newProd.product_id
+      }
     }
 
     // ─── 3. Create or Enrich Design Revision (SSOT) ───────────────────
@@ -243,29 +258,32 @@ export async function POST(request: NextRequest) {
 
     if (existingRev) {
       revisionId = existingRev.revision_id
-      await supabase
-        .from('design_revisions')
-        .update({
-          design_code: existingRev.design_code || designCode,
-          cav_type_id: matchedCavTypeId || undefined,
-          plastic_type_designed: body.plastic_type_designed || undefined,
-          plastic_id: body.plastic_id || undefined,
-          design_length: body.design_length || undefined,
-          design_width: body.design_width || undefined,
-          design_height: body.design_height || undefined,
-          design_depth: body.design_depth || undefined,
-          cutline_length: body.cutline_length || undefined,
-          cutline_width: body.cutline_width || undefined,
-          cavity_count: body.pieces_per_cycle || undefined,
-          plug_type: normalizedPlugType,
-          has_separate_cutter: body.has_separate_cutter || false,
-          corner_r: body.corner_r || undefined,
-          chamfer_c: body.chamfer_c || undefined,
-          draft_angle: body.draft_angle || undefined,
-          tolerance_pitch: body.tolerance_info || undefined,
-          change_summary: '新規金型製造工程票 (AI OCR 自動補完・更新)'
-        })
-        .eq('revision_id', revisionId!)
+      logDryRun(`✅ Update existing Design Revision: ${designCode} (${revisionId})`)
+      if (!isDryRun) {
+        await supabase
+          .from('design_revisions')
+          .update({
+            design_code: existingRev.design_code || designCode,
+            cav_type_id: matchedCavTypeId || undefined,
+            plastic_type_designed: body.plastic_type_designed || undefined,
+            plastic_id: body.plastic_id || undefined,
+            design_length: body.design_length || undefined,
+            design_width: body.design_width || undefined,
+            design_height: body.design_height || undefined,
+            design_depth: body.design_depth || undefined,
+            cutline_length: body.cutline_length || undefined,
+            cutline_width: body.cutline_width || undefined,
+            cavity_count: body.pieces_per_cycle || undefined,
+            plug_type: normalizedPlugType,
+            has_separate_cutter: body.has_separate_cutter || false,
+            corner_r: body.corner_r || undefined,
+            chamfer_c: body.chamfer_c || undefined,
+            draft_angle: body.draft_angle || undefined,
+            tolerance_pitch: body.tolerance_info || undefined,
+            change_summary: '新規金型製造工程票 (AI OCR 自動補完・更新)'
+          })
+          .eq('revision_id', revisionId!)
+      }
     } else {
       // Check if designCode collides with an existing code from another product or rev
       const { data: duplicateCodeCheck } = await supabase
@@ -287,40 +305,45 @@ export async function POST(request: NextRequest) {
         designCode = `${baseInternal}-R${nextRevNum}`
       }
 
-      const { data: newRev, error: revErr } = await supabase
-        .from('design_revisions')
-        .insert([{
-          product_id: productId,
-          company_id: companyId,
-          design_code: designCode,
-          revision_number: revNum,
-          design_category: 'MASS',
-          status: 'APPROVED',
-          cav_type_id: matchedCavTypeId || undefined,
-          plastic_type_designed: body.plastic_type_designed || null,
-          plastic_id: body.plastic_id || null,
-          design_length: body.design_length || null,
-          design_width: body.design_width || null,
-          design_height: body.design_height || null,
-          design_depth: body.design_depth || null,
-          cutline_length: body.cutline_length || null,
-          cutline_width: body.cutline_width || null,
-          cavity_count: body.pieces_per_cycle || null,
-          plug_type: normalizedPlugType,
-          has_separate_cutter: body.has_separate_cutter || false,
-          corner_r: body.corner_r || null,
-          chamfer_c: body.chamfer_c || null,
-          draft_angle: body.draft_angle || null,
-          tolerance_pitch: body.tolerance_info || null,
-          change_summary: '新規金型製造工程票 (AI OCR 自動取込)'
-        }])
-        .select('revision_id')
-        .single()
+      logDryRun(`🆕 Create new Design Revision: ${designCode}`)
+      if (isDryRun) {
+        revisionId = 'dry-run-rev-id'
+      } else {
+        const { data: newRev, error: revErr } = await supabase
+          .from('design_revisions')
+          .insert([{
+            product_id: productId,
+            company_id: companyId,
+            design_code: designCode,
+            revision_number: revNum,
+            design_category: 'MASS',
+            status: 'APPROVED',
+            cav_type_id: matchedCavTypeId || undefined,
+            plastic_type_designed: body.plastic_type_designed || null,
+            plastic_id: body.plastic_id || null,
+            design_length: body.design_length || null,
+            design_width: body.design_width || null,
+            design_height: body.design_height || null,
+            design_depth: body.design_depth || null,
+            cutline_length: body.cutline_length || null,
+            cutline_width: body.cutline_width || null,
+            cavity_count: body.pieces_per_cycle || null,
+            plug_type: normalizedPlugType,
+            has_separate_cutter: body.has_separate_cutter || false,
+            corner_r: body.corner_r || null,
+            chamfer_c: body.chamfer_c || null,
+            draft_angle: body.draft_angle || null,
+            tolerance_pitch: body.tolerance_info || null,
+            change_summary: '新規金型製造工程票 (AI OCR 自動取込)'
+          }])
+          .select('revision_id')
+          .single()
 
-      if (revErr || !newRev) {
-        throw new Error(`Failed to create design revision: ${revErr?.message}`)
+        if (revErr || !newRev) {
+          throw new Error(`Failed to create design revision: ${revErr?.message}`)
+        }
+        revisionId = newRev.revision_id
       }
-      revisionId = newRev.revision_id
     }
 
     // ─── 4. Create or Update Work Order (Parent for all jobs) ─────────
@@ -355,31 +378,39 @@ export async function POST(request: NextRequest) {
 
     if (existingWO) {
       workOrderId = existingWO.wo_id
-      await supabase
-        .from('work_orders')
-        .update({
-          deadline: maxDeadline || undefined,
-          wo_status: 'PLANNED'
-        })
-        .eq('wo_id', workOrderId)
+      logDryRun(`✅ Update existing Work Order: ${workOrderId}`)
+      if (!isDryRun) {
+        await supabase
+          .from('work_orders')
+          .update({
+            deadline: maxDeadline || undefined,
+            wo_status: 'PLANNED'
+          })
+          .eq('wo_id', workOrderId)
+      }
     } else {
-      const { data: newWO } = await supabase
-        .from('work_orders')
-        .insert([{
-          wo_code: woCode,
-          wo_name: woName,
-          product_id: productId,
-          design_revision_id: revisionId,
-          company_id: companyId,
-          wo_type: woType,
-          wo_status: 'PLANNED',
-          start_date: new Date().toISOString().split('T')[0],
-          deadline: maxDeadline || undefined
-        }])
-        .select('wo_id')
-        .maybeSingle()
+      logDryRun(`🆕 Create new Work Order: ${woCode}`)
+      if (isDryRun) {
+        workOrderId = 'dry-run-wo-id'
+      } else {
+        const { data: newWO } = await supabase
+          .from('work_orders')
+          .insert([{
+            wo_code: woCode,
+            wo_name: woName,
+            product_id: productId,
+            design_revision_id: revisionId,
+            company_id: companyId,
+            wo_type: woType,
+            wo_status: 'PLANNED',
+            start_date: new Date().toISOString().split('T')[0],
+            deadline: maxDeadline || undefined
+          }])
+          .select('wo_id')
+          .maybeSingle()
 
-      workOrderId = newWO?.wo_id || null
+        workOrderId = newWO?.wo_id || null
+      }
     }
 
     // ─── 5. Create & Link Equipment (Kit Members) ─────────────────────
@@ -402,44 +433,52 @@ export async function POST(request: NextRequest) {
     if (moldHandlingMode === 'REUSE_EXISTING' && existingBaseMold) {
       // Re-use existing physical mold and update its linked design revision
       moldEquipmentId = existingBaseMold.equipment_id
-      await supabase
-        .from('equipment')
-        .update({
-          design_revision_id: revisionId,
-          actual_length_mm: body.design_length ? String(body.design_length) : undefined,
-          actual_width_mm: body.design_width ? String(body.design_width) : undefined,
-          material_spec: moldComponent?.material_spec || 'アルミ材',
-          cav_type_id: matchedCavTypeId || undefined
-        })
-        .eq('equipment_id', moldEquipmentId)
+      logDryRun(`✅ Update existing Mold Equipment: ${existingBaseMold.equipment_code} (${moldEquipmentId})`)
+      if (!isDryRun) {
+        await supabase
+          .from('equipment')
+          .update({
+            design_revision_id: revisionId,
+            actual_length_mm: body.design_length ? String(body.design_length) : undefined,
+            actual_width_mm: body.design_width ? String(body.design_width) : undefined,
+            material_spec: moldComponent?.material_spec || 'アルミ材',
+            cav_type_id: matchedCavTypeId || undefined
+          })
+          .eq('equipment_id', moldEquipmentId)
+      }
       createdEquipmentIds.push({ type: 'MOLD', id: moldEquipmentId })
     } else if (moldIsNew) {
       const moldCode = revNum > 0 ? `${baseInternal} R${revNum}` : baseInternal
-      const { data: newMold, error: moldErr } = await supabase
-        .from('equipment')
-        .insert([
-          {
-            equipment_code: moldCode,
-            display_name: moldCode,
-            equipment_type: 'MOLD',
-            company_id: companyId,
-            design_revision_id: revisionId,
-            cav_type_id: matchedCavTypeId || null,
-            material_spec: moldComponent?.material_spec || 'アルミ材',
-            actual_length_mm: body.design_length ? String(body.design_length) : null,
-            actual_width_mm: body.design_width ? String(body.design_width) : null,
-            actual_height_mm: body.design_height ? String(body.design_height) : null,
-            device_status: 'NORMAL',
-            usage_status: 'STORAGE'
-          }
-        ])
-        .select('equipment_id')
-        .single()
+      logDryRun(`🆕 Create new Mold Equipment: ${moldCode}`)
+      if (isDryRun) {
+        moldEquipmentId = 'dry-run-mold-id'
+      } else {
+        const { data: newMold, error: moldErr } = await supabase
+          .from('equipment')
+          .insert([
+            {
+              equipment_code: moldCode,
+              display_name: moldCode,
+              equipment_type: 'MOLD',
+              company_id: companyId,
+              design_revision_id: revisionId,
+              cav_type_id: matchedCavTypeId || null,
+              material_spec: moldComponent?.material_spec || 'アルミ材',
+              actual_length_mm: body.design_length ? String(body.design_length) : null,
+              actual_width_mm: body.design_width ? String(body.design_width) : null,
+              actual_height_mm: body.design_height ? String(body.design_height) : null,
+              device_status: 'NORMAL',
+              usage_status: 'STORAGE'
+            }
+          ])
+          .select('equipment_id')
+          .single()
 
-      if (moldErr || !newMold) {
-        throw new Error(`Failed to create mold equipment: ${moldErr?.message}`)
+        if (moldErr || !newMold) {
+          throw new Error(`Failed to create mold equipment: ${moldErr?.message}`)
+        }
+        moldEquipmentId = newMold.equipment_id
       }
-      moldEquipmentId = newMold.equipment_id
       if (moldEquipmentId) createdEquipmentIds.push({ type: 'MOLD', id: moldEquipmentId })
     }
 
@@ -453,28 +492,34 @@ export async function POST(request: NextRequest) {
       const cutterCode = revNum > 0 ? `C-${cleanInternal}-R${revNum}` : `C-${cleanInternal}`
       const cutterDisplayName = revNum > 0 ? `No.${cleanInternal} R${revNum}` : `No.${cleanInternal}`
 
-      const { data: newCutter } = await supabase
-        .from('equipment')
-        .insert([
-          {
-            equipment_code: cutterCode,
-            display_name: cutterDisplayName,
-            equipment_type: cutterType,
-            company_id: companyId,
-            design_revision_id: revisionId,
-            actual_length_mm: body.cutline_length ? String(body.cutline_length) : null,
-            actual_width_mm: body.cutline_width ? String(body.cutline_width) : null,
-            material_spec: cutterComponent?.material_spec || '抜型',
-            device_status: 'NORMAL',
-            usage_status: 'STORAGE'
-          }
-        ])
-        .select('equipment_id')
-        .maybeSingle()
-
-      if (newCutter) {
-        cutterEquipmentId = newCutter.equipment_id
+      logDryRun(`🆕 Create new Cutter Equipment: ${cutterCode}`)
+      if (isDryRun) {
+        cutterEquipmentId = 'dry-run-cutter-id'
         createdEquipmentIds.push({ type: 'CUTTER', id: cutterEquipmentId })
+      } else {
+        const { data: newCutter } = await supabase
+          .from('equipment')
+          .insert([
+            {
+              equipment_code: cutterCode,
+              display_name: cutterDisplayName,
+              equipment_type: cutterType,
+              company_id: companyId,
+              design_revision_id: revisionId,
+              actual_length_mm: body.cutline_length ? String(body.cutline_length) : null,
+              actual_width_mm: body.cutline_width ? String(body.cutline_width) : null,
+              material_spec: cutterComponent?.material_spec || '抜型',
+              device_status: 'NORMAL',
+              usage_status: 'STORAGE'
+            }
+          ])
+          .select('equipment_id')
+          .maybeSingle()
+
+        if (newCutter) {
+          cutterEquipmentId = newCutter.equipment_id
+          createdEquipmentIds.push({ type: 'CUTTER', id: cutterEquipmentId })
+        }
       }
     } else {
       // Shared existing cutter! E.g. "MMT-014と同じ"
@@ -521,16 +566,19 @@ export async function POST(request: NextRequest) {
         cutterEquipmentId = matchedCutterId
         // Link to equipment_assignments with relationship_type = 'SHARED'
         if (moldEquipmentId) {
-          try {
-            await supabase.from('equipment_assignments').upsert({
-              primary_equipment_id: moldEquipmentId,
-              related_equipment_id: matchedCutterId,
-              relationship_type: 'SHARED',
-              is_default: true,
-              notes: sharedCode ? `${sharedCode} (AI OCR 抜型流用設定)` : '抜型流用設定'
-            }, { onConflict: 'primary_equipment_id,related_equipment_id' })
-          } catch (assignErr) {
-            console.warn('Non-blocking cutter assignment link error:', assignErr)
+          logDryRun(`🔗 Link Cutter Equipment: ${matchedCutterId} to Mold ${moldEquipmentId} (SHARED)`)
+          if (!isDryRun) {
+            try {
+              await supabase.from('equipment_assignments').upsert({
+                primary_equipment_id: moldEquipmentId,
+                related_equipment_id: matchedCutterId,
+                relationship_type: 'SHARED',
+                is_default: true,
+                notes: sharedCode ? `${sharedCode} (AI OCR 抜型流用設定)` : '抜型流用設定'
+              }, { onConflict: 'primary_equipment_id,related_equipment_id' })
+            } catch (assignErr) {
+              console.warn('Non-blocking cutter assignment link error:', assignErr)
+            }
           }
         }
       }
@@ -561,24 +609,29 @@ export async function POST(request: NextRequest) {
       // Only insert new equipment if condition is explicitly NEW
       if (!auxEquipId && comp.condition === 'NEW') {
         const auxCode = `${comp.type_code.slice(0, 2)}-${cleanInternal}-R${revNum}`
-        const { data: newAux } = await supabase
-          .from('equipment')
-          .insert([{
-            equipment_code: auxCode,
-            display_name: `${comp.step_name} (${cleanInternal})`,
-            equipment_type: comp.type_code,
-            company_id: companyId,
-            design_revision_id: revisionId,
-            material_spec: comp.material_spec || null,
-            cav_type_id: matchedCavTypeId || null,
-            device_status: 'NORMAL',
-            usage_status: 'STORAGE'
-          }])
-          .select('equipment_id')
-          .maybeSingle()
+        logDryRun(`🆕 Create new Aux Equipment: ${auxCode}`)
+        if (isDryRun) {
+          auxEquipId = `dry-run-aux-${comp.type_code.toLowerCase()}-id`
+        } else {
+          const { data: newAux } = await supabase
+            .from('equipment')
+            .insert([{
+              equipment_code: auxCode,
+              display_name: `${comp.step_name} (${cleanInternal})`,
+              equipment_type: comp.type_code,
+              company_id: companyId,
+              design_revision_id: revisionId,
+              material_spec: comp.material_spec || null,
+              cav_type_id: matchedCavTypeId || null,
+              device_status: 'NORMAL',
+              usage_status: 'STORAGE'
+            }])
+            .select('equipment_id')
+            .maybeSingle()
 
-        if (newAux) {
-          auxEquipId = newAux.equipment_id
+          if (newAux) {
+            auxEquipId = newAux.equipment_id
+          }
         }
       }
 
@@ -591,18 +644,21 @@ export async function POST(request: NextRequest) {
     if (moldEquipmentId && createdEquipmentIds.length > 1) {
       for (const eq of createdEquipmentIds) {
         if (eq.id === moldEquipmentId) continue
-        try {
-          await supabase
-            .from('equipment_assignments')
-            .upsert({
-              primary_equipment_id: moldEquipmentId,
-              related_equipment_id: eq.id,
-              relationship_type: 'SET_MEMBER',
-              is_default: true,
-              notes: 'AI OCR 工程票取込 自動セット設定'
-            }, { onConflict: 'primary_equipment_id,related_equipment_id' })
-        } catch (assignErr) {
-          console.warn('Non-blocking assignment link error:', assignErr)
+        logDryRun(`🔗 Link Equipment ${eq.id} to Mold ${moldEquipmentId} (SET_MEMBER)`)
+        if (!isDryRun) {
+          try {
+            await supabase
+              .from('equipment_assignments')
+              .upsert({
+                primary_equipment_id: moldEquipmentId,
+                related_equipment_id: eq.id,
+                relationship_type: 'SET_MEMBER',
+                is_default: true,
+                notes: 'AI OCR 工程票取込 自動セット設定'
+              }, { onConflict: 'primary_equipment_id,related_equipment_id' })
+          } catch (assignErr) {
+            console.warn('Non-blocking assignment link error:', assignErr)
+          }
         }
       }
     }
@@ -634,7 +690,7 @@ export async function POST(request: NextRequest) {
       mold_deadline: body.mold_deadline || undefined,
       target_completion_date: targetCompletionDate || undefined,
       unit_price: body.cost_amount ? parseFloat(String(body.cost_amount)) : (body.quotation_amount ? parseFloat(String(body.quotation_amount)) : undefined),
-      price_quote_required: body.price_quote_required ?? (body.quotation_attached ? ['有', '要', '✓', 'true', '添付済'].includes(String(body.quotation_attached).trim()) : undefined),
+        price_quote_required: body.price_quote_required ?? (body.quotation_attached ? ['有', '要', '✓', 'true', '添付済'].includes(String(body.quotation_attached).trim()) : undefined),
     }
 
     // Helper: create or update a job for a specific equipment
@@ -650,18 +706,36 @@ export async function POST(request: NextRequest) {
       const { equipmentId, jobCategory, jobTypeId, jobName, jobCodePrefix, deadline, steps } = params
 
       // Check for existing job with same equipment + product + design (avoid duplicates)
-      const existingQuery = supabase
-        .from('jobs')
-        .select('job_id')
-        .eq('product_id', productId!)
-        .eq('design_revision_id', revisionId!)
-        .eq('job_category', jobCategory)
+      let existingJob: any = null
+      
+      if (!isDryRun) {
+        let existingQuery = supabase
+          .from('jobs')
+          .select('job_id')
+          .eq('product_id', productId!)
+          .eq('design_revision_id', revisionId!)
+          .eq('job_category', jobCategory)
 
-      if (equipmentId) {
-        existingQuery.eq('equipment_id', equipmentId)
+        if (equipmentId) {
+          existingQuery = existingQuery.eq('equipment_id', equipmentId)
+        }
+
+        const { data: found } = await existingQuery.limit(1).maybeSingle()
+        existingJob = found
+      } else {
+        // In dry-run, mock IDs wouldn't be found anyway, so we just assume new unless it's a real equipment ID
+        if (equipmentId && !equipmentId.toString().startsWith('dry-run-')) {
+          let existingQuery = supabase
+            .from('jobs')
+            .select('job_id')
+            .eq('product_id', productId!)
+            .eq('design_revision_id', revisionId!)
+            .eq('job_category', jobCategory)
+            .eq('equipment_id', equipmentId)
+          const { data: found } = await existingQuery.limit(1).maybeSingle()
+          existingJob = found
+        }
       }
-
-      const { data: existingJob } = await existingQuery.limit(1).maybeSingle()
 
       let jobId: string
       let jobCode: string
@@ -669,23 +743,76 @@ export async function POST(request: NextRequest) {
       if (existingJob) {
         jobId = existingJob.job_id
         jobCode = jobCodePrefix
-        await supabase.from('jobs').update({
-          job_name: jobName,
-          equipment_id: equipmentId || undefined,
-          ...commonJobFields,
-          deadline: deadline || undefined,
-          separate_cutter: body.has_separate_cutter || false,
-          has_plug: Boolean(body.plug_type && body.plug_type !== 'なし'),
-        }).eq('job_id', jobId)
+        logDryRun(`✅ Update existing Job: [${jobCategory}] ${jobName} (${jobId})`)
+        
+        if (!isDryRun) {
+          await supabase.from('jobs').update({
+            job_name: jobName,
+            equipment_id: equipmentId || undefined,
+            ...commonJobFields,
+            deadline: deadline || undefined,
+            separate_cutter: body.has_separate_cutter || false,
+            has_plug: Boolean(body.plug_type && body.plug_type !== 'なし'),
+          }).eq('job_id', jobId)
 
-        // Only replace steps if no work_logs exist yet
-        const { count: logCount } = await supabase
-          .from('work_logs')
-          .select('*', { count: 'exact', head: true })
-          .eq('job_id', jobId)
+          // Only replace steps if no work_logs exist yet
+          const { count: logCount } = await supabase
+            .from('work_logs')
+            .select('*', { count: 'exact', head: true })
+            .eq('job_id', jobId)
 
-        if (!logCount || logCount === 0) {
-          await supabase.from('job_steps').delete().eq('job_id', jobId)
+          if (!logCount || logCount === 0) {
+            await supabase.from('job_steps').delete().eq('job_id', jobId)
+            if (steps.length > 0) {
+              await supabase.from('job_steps').insert(
+                steps.map((s, i) => ({
+                  job_id: jobId,
+                  step_no: i + 1,
+                  step_name: s.step_name,
+                  track: s.track,
+                  type_code: s.type_code,
+                  material_spec: s.material_spec || null,
+                  arrangement: 'REQUIRED',
+                  condition: 'NEW',
+                  step_status: 'PENDING',
+                  manufacture_location: s.manufacture_location || 'IN_HOUSE',
+                  deadline: s.deadline || deadline || null,
+                  target_completion_date: targetCompletionDate || null,
+                  estimated_hours: s.estimated_hours || null,
+                }))
+              )
+            }
+          }
+        }
+      } else {
+        jobCode = `${jobCodePrefix}-${Date.now().toString().slice(-4)}`
+        logDryRun(`🆕 Create new Job: [${jobCategory}] ${jobName} (${jobCode})`)
+        
+        if (isDryRun) {
+          jobId = `dry-run-job-${jobCategory}-id`
+        } else {
+          const { data: newJob, error: jobErr } = await supabase
+            .from('jobs')
+            .insert([{
+              job_code: jobCode,
+              job_name: jobName,
+              equipment_id: equipmentId,
+              job_status: 'NEW',
+              job_type_id: jobTypeId,
+              job_category: jobCategory,
+              ...commonJobFields,
+              deadline: deadline || null,
+              separate_cutter: body.has_separate_cutter || false,
+              has_plug: Boolean(body.plug_type && body.plug_type !== 'なし'),
+            }])
+            .select('job_id')
+            .single()
+
+          if (jobErr || !newJob) {
+            throw new Error(`Failed to create job ${jobCategory}: ${jobErr?.message}`)
+          }
+          jobId = newJob.job_id
+
           if (steps.length > 0) {
             await supabase.from('job_steps').insert(
               steps.map((s, i) => ({
@@ -705,51 +832,6 @@ export async function POST(request: NextRequest) {
               }))
             )
           }
-        }
-      } else {
-        jobCode = `${jobCodePrefix}-${Date.now().toString().slice(-4)}`
-        const { data: newJob, error: jobErr } = await supabase
-          .from('jobs')
-          .insert([{
-            job_code: jobCode,
-            job_name: jobName,
-            equipment_id: equipmentId,
-            job_status: 'NEW',
-            job_type_id: jobTypeId,
-            job_category: jobCategory,
-            separate_cutter: body.has_separate_cutter || false,
-            has_plug: Boolean(body.plug_type && body.plug_type !== 'なし'),
-            start_date: new Date().toISOString().split('T')[0],
-            deadline: deadline || undefined,
-            ...commonJobFields,
-          }])
-          .select('job_id')
-          .single()
-
-        if (jobErr || !newJob) {
-          console.warn(`Non-blocking: Failed to create ${jobCategory} job: ${jobErr?.message}`)
-          return null
-        }
-        jobId = newJob.job_id
-
-        if (steps.length > 0) {
-          await supabase.from('job_steps').insert(
-            steps.map((s, i) => ({
-              job_id: jobId,
-              step_no: i + 1,
-              step_name: s.step_name,
-              track: s.track,
-              type_code: s.type_code,
-              material_spec: s.material_spec || null,
-              arrangement: 'REQUIRED',
-              condition: 'NEW',
-              step_status: 'PENDING',
-              manufacture_location: s.manufacture_location || 'IN_HOUSE',
-              deadline: s.deadline || deadline || null,
-              target_completion_date: targetCompletionDate || null,
-              estimated_hours: s.estimated_hours || null,
-            }))
-          )
         }
       }
 
@@ -845,56 +927,70 @@ export async function POST(request: NextRequest) {
 
     // ─── 7. Auto-create Design Job for the Product & Revision ───────
     try {
-      const { data: existingDesignJob } = await supabase
-        .from('jobs')
-        .select('job_id')
-        .eq('product_id', productId!)
-        .eq('job_category', 'DESIGN')
-        .limit(1)
-        .maybeSingle()
+      let existingDesignJob: any = null
+      if (!isDryRun) {
+        const { data: found } = await supabase
+          .from('jobs')
+          .select('job_id')
+          .eq('product_id', productId!)
+          .eq('job_category', 'DESIGN')
+          .limit(1)
+          .maybeSingle()
+        existingDesignJob = found
+      } else {
+        // Mock ID wouldn't be found
+      }
 
       if (!existingDesignJob) {
         const designJobCode = `DES-${cleanCode}`
         const designJobName = `${cleanInternal} 設計`
         const hasProto = body.design_category === 'PROTOTYPE_POCKET' || Boolean(body.components?.some(c => c.step_name?.includes('試作')))
 
-        const { data: newDesJob } = await supabase
-          .from('jobs')
-          .insert([{
-            job_code: designJobCode,
-            job_name: designJobName,
-            job_type_id: '9',
-            job_category: 'DESIGN',
-            product_id: productId,
-            design_revision_id: revisionId,
-            company_id: companyId,
-            job_status: 'NEW',
-            overall_progress: 0,
-            priority: 5,
-            start_date: new Date().toISOString().split('T')[0],
-            mold_deadline: moldDeadline || undefined,
-            ship_date: body.shipping_deadline || undefined,
-            deadline: moldDeadline || undefined,
-            target_completion_date: targetCompletionDate || undefined,
-            work_order_id: workOrderId || undefined,
-            notes: 'AI OCR 工程票取込 自動作成'
-          }])
-          .select('job_id')
-          .maybeSingle()
+        logDryRun(`🆕 Create new Design Job: ${designJobCode}`)
+        
+        if (isDryRun) {
+          createdJobIds.push({ type: 'DESIGN', jobId: 'dry-run-design-job-id', jobCode: designJobCode })
+        } else {
+          const { data: newDesJob } = await supabase
+            .from('jobs')
+            .insert([{
+              job_code: designJobCode,
+              job_name: designJobName,
+              job_type_id: '9',
+              job_category: 'DESIGN',
+              product_id: productId,
+              design_revision_id: revisionId,
+              company_id: companyId,
+              job_status: 'NEW',
+              overall_progress: 0,
+              priority: 5,
+              start_date: new Date().toISOString().split('T')[0],
+              mold_deadline: moldDeadline || undefined,
+              ship_date: body.shipping_deadline || undefined,
+              deadline: moldDeadline || undefined,
+              target_completion_date: targetCompletionDate || undefined,
+              work_order_id: workOrderId || undefined,
+              notes: 'AI OCR 工程票取込 自動作成'
+            }])
+            .select('job_id')
+            .maybeSingle()
 
-        if (newDesJob) {
-          const desSteps = hasProto
-            ? [
-                { job_id: newDesJob.job_id, step_no: 1, step_name: '試作金型作成', step_status: 'NOT_STARTED', track: 'DESIGN', deadline: moldDeadline || null, target_completion_date: targetCompletionDate || null, notes: '試作金型作成' },
-                { job_id: newDesJob.job_id, step_no: 2, step_name: '本型設計', step_status: 'NOT_STARTED', track: 'DESIGN', deadline: moldDeadline || null, target_completion_date: targetCompletionDate || null, notes: '本型設計' }
-              ]
-            : [
-                { job_id: newDesJob.job_id, step_no: 1, step_name: '本型設計', step_status: 'NOT_STARTED', track: 'DESIGN', deadline: moldDeadline || null, target_completion_date: targetCompletionDate || null, notes: '本型設計' }
-              ]
+          if (newDesJob) {
+            const desSteps = hasProto
+              ? [
+                  { job_id: newDesJob.job_id, step_no: 1, step_name: '試作金型作成', step_status: 'NOT_STARTED', track: 'DESIGN', deadline: moldDeadline || null, target_completion_date: targetCompletionDate || null, notes: '試作金型作成' },
+                  { job_id: newDesJob.job_id, step_no: 2, step_name: '本型設計', step_status: 'NOT_STARTED', track: 'DESIGN', deadline: moldDeadline || null, target_completion_date: targetCompletionDate || null, notes: '本型設計' }
+                ]
+              : [
+                  { job_id: newDesJob.job_id, step_no: 1, step_name: '本型設計', step_status: 'NOT_STARTED', track: 'DESIGN', deadline: moldDeadline || null, target_completion_date: targetCompletionDate || null, notes: '本型設計' }
+                ]
 
-          await supabase.from('job_steps').insert(desSteps)
-          createdJobIds.push({ type: 'DESIGN', jobId: newDesJob.job_id, jobCode: designJobCode })
+            await supabase.from('job_steps').insert(desSteps)
+            createdJobIds.push({ type: 'DESIGN', jobId: newDesJob.job_id, jobCode: designJobCode })
+          }
         }
+      } else {
+        logDryRun(`✅ Existing Design Job found: ${existingDesignJob.job_id}`)
       }
     } catch (desErr) {
       console.warn('Non-blocking Design Job creation error in OCR save:', desErr)
@@ -912,7 +1008,9 @@ export async function POST(request: NextRequest) {
         job_count: createdJobIds.length,
         jobs: createdJobIds,
         product_code: cleanCode,
-        product_name_internal: cleanInternal
+        product_name_internal: cleanInternal,
+        dry_run: isDryRun,
+        dry_run_logs: dryRunLogs
       }
     })
   } catch (err: any) {

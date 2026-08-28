@@ -148,6 +148,7 @@ export function ManufacturingSheetOCRModal({
 
   const [moldHandlingMode, setMoldHandlingMode] = useState<'REUSE_EXISTING' | 'CREATE_NEW'>('CREATE_NEW')
   const [existingHandlingMode, setExistingHandlingMode] = useState<'ENRICH_EXISTING' | 'NEW_REVISION'>('ENRICH_EXISTING')
+  const [isDryRun, setIsDryRun] = useState(true) // Default to true for safety
   const [existingProductInfo, setExistingProductInfo] = useState<any | null>(null)
 
   const fileInputRef = useRef<HTMLInputElement | null>(null)
@@ -452,7 +453,8 @@ export function ManufacturingSheetOCRModal({
         mold_deadline: formData.mold_deadline || undefined,
         mold_handling_mode: moldHandlingMode,
         existing_handling_mode: existingHandlingMode,
-        components: formData.components
+        components: formData.components,
+        dry_run: isDryRun
       }
 
       const res = await fetch('/api/ocr/save', {
@@ -1662,6 +1664,18 @@ export function ManufacturingSheetOCRModal({
                       <span>{t('btnSkipToProductDetail')}</span>
                     </a>
                   )}
+                  
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, cursor: 'pointer', marginRight: 8, padding: '4px 8px', borderRadius: 4, backgroundColor: isDryRun ? 'var(--tint-orange-bg)' : 'transparent' }}>
+                    <input 
+                      type="checkbox" 
+                      checked={isDryRun} 
+                      onChange={(e) => setIsDryRun(e.target.checked)} 
+                      style={{ accentColor: 'var(--accent)' }}
+                    />
+                    <span style={{ fontWeight: isDryRun ? 600 : 400, color: isDryRun ? '#B45309' : 'inherit' }}>
+                      🧪 プレビューモード (DBに保存しない)
+                    </span>
+                  </label>
 
                   <button
                     type="button"
@@ -1696,8 +1710,8 @@ export function ManufacturingSheetOCRModal({
                 width: 64,
                 height: 64,
                 borderRadius: '50%',
-                background: 'color-mix(in srgb, #10B981 15%, transparent)',
-                color: '#047857',
+                background: savedResult.dry_run ? 'color-mix(in srgb, #F59E0B 15%, transparent)' : 'color-mix(in srgb, #10B981 15%, transparent)',
+                color: savedResult.dry_run ? '#D97706' : '#047857',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center'
@@ -1707,42 +1721,71 @@ export function ManufacturingSheetOCRModal({
             </div>
 
             <h3 style={{ fontSize: 18, fontWeight: 700, margin: 0, color: 'var(--text-primary)' }}>
-              {t('successTitle')}
+              {savedResult.dry_run ? 'プレビュー完了 (DB未保存)' : t('successTitle')}
             </h3>
 
             <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0, maxWidth: 520, lineHeight: 1.6 }}>
-              {t('successDesc')}
+              {savedResult.dry_run 
+                ? 'プレビューモードで処理が完了しました。実際のデータは保存されていません。' 
+                : t('successDesc')}
             </p>
 
-            {/* Summary info box */}
-            <div
-              className="card-flat"
-              style={{
-                background: 'var(--bg-surface-2)',
-                padding: '14px 24px',
-                borderRadius: 8,
-                display: 'flex',
-                gap: 24,
-                justifyContent: 'center',
-                alignItems: 'center',
-                marginTop: 4,
-                border: '1px solid var(--border-default)'
-              }}
-            >
-              <div>
-                <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{t('createdProduct')}</div>
-                <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--accent)', fontFamily: 'monospace' }}>
-                  {savedResult.product_name_internal || savedResult.product_code}
+            {savedResult.dry_run && savedResult.dry_run_logs && (
+              <div
+                style={{
+                  width: '100%',
+                  maxWidth: 600,
+                  background: 'var(--bg-surface-2)',
+                  border: '1px solid var(--border-default)',
+                  borderRadius: 8,
+                  padding: 16,
+                  textAlign: 'left',
+                  marginTop: 8,
+                  maxHeight: 250,
+                  overflowY: 'auto'
+                }}
+              >
+                <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 8 }}>
+                  シミュレーション結果
+                </div>
+                {savedResult.dry_run_logs.map((log: string, i: number) => (
+                  <div key={i} style={{ fontSize: 12, color: 'var(--text-secondary)', fontFamily: 'monospace', padding: '4px 0', borderBottom: i < savedResult.dry_run_logs.length - 1 ? '1px solid var(--border-default)' : 'none' }}>
+                    {log}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {!savedResult.dry_run && (
+              <div
+                className="card-flat"
+                style={{
+                  background: 'var(--bg-surface-2)',
+                  padding: '14px 24px',
+                  borderRadius: 8,
+                  display: 'flex',
+                  gap: 24,
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  marginTop: 4,
+                  border: '1px solid var(--border-default)'
+                }}
+              >
+                <div>
+                  <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{t('createdProduct')}</div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--accent)', fontFamily: 'monospace' }}>
+                    {savedResult.product_name_internal || savedResult.product_code}
+                  </div>
+                </div>
+                <div style={{ width: 1, height: 24, background: 'var(--border-default)' }} />
+                <div>
+                  <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{t('createdJob')}</div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'monospace' }}>
+                    {savedResult.jobs?.length ? `${savedResult.jobs.length} Jobs` : '—'}
+                  </div>
                 </div>
               </div>
-              <div style={{ width: 1, height: 24, background: 'var(--border-default)' }} />
-              <div>
-                <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{t('createdJob')}</div>
-                <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'monospace' }}>
-                  {savedResult.job_code || '—'}
-                </div>
-              </div>
-            </div>
+            )}
 
             {/* Action Choice Buttons */}
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, justifyContent: 'center', marginTop: 14 }}>
@@ -1756,25 +1799,29 @@ export function ManufacturingSheetOCRModal({
                 <span>{t('btnContinueNextSheet')}</span>
               </button>
 
-              <Link
-                href={`/product-center/${savedResult.product_id}`}
-                className="btn btn-secondary"
-                style={{ fontSize: 13, padding: '9px 18px', gap: 7, textDecoration: 'none' }}
-                onClick={onClose}
-              >
-                <ExternalLink size={15} />
-                <span>{t('btnViewProduct')}</span>
-              </Link>
+              {!savedResult.dry_run && (
+                <>
+                  <Link
+                    href={`/product-center/${savedResult.product_id}`}
+                    className="btn btn-secondary"
+                    style={{ fontSize: 13, padding: '9px 18px', gap: 7, textDecoration: 'none' }}
+                    onClick={onClose}
+                  >
+                    <ExternalLink size={15} />
+                    <span>{t('btnViewProduct')}</span>
+                  </Link>
 
-              <Link
-                href={`/equipment/schedule`}
-                className="btn btn-secondary"
-                style={{ fontSize: 13, padding: '9px 18px', gap: 7, textDecoration: 'none' }}
-                onClick={onClose}
-              >
-                <Calendar size={15} />
-                <span>{t('btnViewSchedule')}</span>
-              </Link>
+                  <Link
+                    href={`/equipment/schedule`}
+                    className="btn btn-secondary"
+                    style={{ fontSize: 13, padding: '9px 18px', gap: 7, textDecoration: 'none' }}
+                    onClick={onClose}
+                  >
+                    <Calendar size={15} />
+                    <span>{t('btnViewSchedule')}</span>
+                  </Link>
+                </>
+              )}
 
               <button
                 type="button"
