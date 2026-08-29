@@ -201,6 +201,7 @@ export default function QuickCreateMoldJobPage() {
   const [companies, setCompanies] = useState<Company[]>([])
   const [employees, setEmployees] = useState<Employee[]>([])
   const [jobTypes, setJobTypes] = useState<JobType[]>(DEFAULT_JOB_TYPES)
+  const [workOrders, setWorkOrders] = useState<{wo_id: string, wo_code: string, wo_name: string, wo_status: string, product_id: string | null, deadline: string | null, company_id: string | null}[]>([])
   const [processingCodes, setProcessingCodes] = useState<ProcessingCode[]>([])
   const [plasticMasters, setPlasticMasters] = useState<PlasticMaster[]>([])
   const [loadingMasters, setLoadingMasters] = useState(true)
@@ -268,6 +269,7 @@ export default function QuickCreateMoldJobPage() {
   const [jobCode, setJobCode] = useState('')
   const [jobName, setJobName] = useState('新規本型加工')
   const [jobTypeId, setJobTypeId] = useState('1')
+  const [workOrderId, setWorkOrderId] = useState('CREATE_NEW')
   const [responsibleId, setResponsibleId] = useState('')
   const [startDate, setStartDate] = useState(new Date().toISOString().substring(0, 10))
   const [deadline, setDeadline] = useState('')
@@ -458,11 +460,12 @@ export default function QuickCreateMoldJobPage() {
   useEffect(() => {
     async function loadMasters() {
       setLoadingMasters(true)
-      const [empRes, jtRes, procRes, plasticRes] = await Promise.all([
+      const [empRes, jtRes, procRes, plasticRes, woRes] = await Promise.all([
         supabase.from('employees').select('employee_id, employee_name').order('employee_name').limit(100),
         supabase.from('job_types').select('job_type_id, job_type_name_ja, job_type_name_vi').order('sort_order'),
         supabase.from('processing_codes').select('processing_code_id, processing_name, category').order('processing_code_id'),
-        supabase.from('plastic_master').select('plastic_id, plastic_code, plastic_family, thickness_mm').order('plastic_code')
+        supabase.from('plastic_master').select('plastic_id, plastic_code, plastic_family, thickness_mm').order('plastic_code'),
+        supabase.from('work_orders').select('wo_id, wo_code, wo_name, wo_status, product_id, deadline, company_id').in('wo_status', ['PLANNED', 'IN_PROGRESS']).order('created_at', { ascending: false }).limit(200)
       ])
 
       if (empRes.data) setEmployees(empRes.data)
@@ -482,6 +485,7 @@ export default function QuickCreateMoldJobPage() {
       }
       if (procRes.data) setProcessingCodes(procRes.data as ProcessingCode[])
       if (plasticRes.data) setPlasticMasters(plasticRes.data as PlasticMaster[])
+      if (woRes.data) setWorkOrders(woRes.data)
       setLoadingMasters(false)
     }
     loadMasters()
@@ -541,6 +545,19 @@ export default function QuickCreateMoldJobPage() {
 
     return () => clearTimeout(timer)
   }, [productCode, supabase])
+
+  // Sync workOrderId based on jobTypeId category rules
+  useEffect(() => {
+    const jobCategory = JOB_TYPE_TO_CATEGORY[jobTypeId] || 'OTHER'
+    const isGroupA = ['MOLD_NEW', 'MOLD_MODIFY', 'CUTTER_NEW', 'EQUIPMENT_NEW'].includes(jobCategory)
+    const isGroupC = ['INTERNAL_OPS', 'OTHER'].includes(jobCategory)
+    
+    if (isGroupA && (!workOrderId || workOrderId === 'NONE')) {
+      setWorkOrderId('CREATE_NEW')
+    } else if (isGroupC && workOrderId !== 'NONE') {
+      setWorkOrderId('NONE')
+    }
+  }, [jobTypeId, workOrderId])
 
   // ── Load Existing Job Data into Form (Edit Mode) ──
   const loadJobForEditing = useCallback(async (jobId: string) => {
@@ -649,6 +666,7 @@ export default function QuickCreateMoldJobPage() {
       setJobCode(jCode)
       setJobName(jName)
       setJobTypeId(j.job_type_id?.toString() || '1')
+      setWorkOrderId(j.work_order_id || 'NONE')
       setResponsibleId(j.responsible_id || '')
       setStartDate(j.start_date ? j.start_date.substring(0, 10) : '')
       setDeadline(jDead)
@@ -1142,6 +1160,7 @@ export default function QuickCreateMoldJobPage() {
       job_name: jobName,
       job_type_id: jobTypeId || null,
       job_category: JOB_TYPE_TO_CATEGORY[jobTypeId] || 'OTHER',
+      work_order_id: (JOB_TYPE_TO_CATEGORY[jobTypeId] || 'OTHER') === 'INTERNAL_OPS' || (JOB_TYPE_TO_CATEGORY[jobTypeId] || 'OTHER') === 'OTHER' ? null : (workOrderId === 'NONE' ? null : workOrderId),
       responsible_id: responsibleId || undefined,
       start_date: startDate || undefined,
       deadline: deadline || undefined,
@@ -1775,6 +1794,41 @@ export default function QuickCreateMoldJobPage() {
                     </select>
                   </div>
                 </div>
+
+                {(() => {
+                  const jobCategory = JOB_TYPE_TO_CATEGORY[jobTypeId] || 'OTHER'
+                  const isGroupA = ['MOLD_NEW', 'MOLD_MODIFY', 'CUTTER_NEW', 'EQUIPMENT_NEW'].includes(jobCategory)
+                  const isGroupC = ['INTERNAL_OPS', 'OTHER'].includes(jobCategory)
+                  const isGroupB = !isGroupA && !isGroupC
+                  
+                  if (isGroupC) return null;
+
+                  return (
+                    <div className="mb-2">
+                      <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 2 }}>
+                        {tText('Work Order', 'Work Order (製造指示)')} {isGroupA && <span style={{ color: 'var(--status-error)' }}>*</span>}
+                      </label>
+                      <select 
+                        className="form-input" 
+                        style={{ height: 28, fontSize: 12, padding: '2px 6px' }} 
+                        value={workOrderId} 
+                        onChange={e => setWorkOrderId(e.target.value)}
+                        required={isGroupA}
+                      >
+                        {isGroupB && <option value="NONE">— {tText('Không liên kết (Tùy chọn)', 'リンクなし (任意)')} —</option>}
+                        <option value="CREATE_NEW">✨ {tText('Tạo Work Order mới cùng lúc', '新しいWork Orderを同時に作成')}</option>
+                        
+                        {workOrders.length > 0 && <optgroup label={tText('Work Order đã có (Đang thực hiện)', '既存のWork Order (進行中)')}>
+                          {workOrders.map(wo => (
+                            <option key={wo.wo_id} value={wo.wo_id}>
+                              [{wo.wo_code}] {wo.wo_name}
+                            </option>
+                          ))}
+                        </optgroup>}
+                      </select>
+                    </div>
+                  )
+                })()}
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
                   <div>

@@ -81,6 +81,7 @@ export type QuickMoldJobInput = {
   pocket_prototype?: string | null
 
   // 3. Work Order
+  work_order_id?: string | null // If 'CREATE_NEW', it will create one. If null, it will not attach.
   wo_name?: string | null
   wo_type?: string | null   // NEW_SET, REPAIR, REMAKE
   responsible_id?: string | null
@@ -196,34 +197,38 @@ export async function createQuickMoldJobWorkflow(input: QuickMoldJobInput) {
 
     // Step 3: Work Order (Option C Model)
     let workOrderId: string | null = null
-    try {
-      const year = new Date().getFullYear()
-      const randSeq = Math.floor(100000 + Math.random() * 900000)
-      const woCode = `WO-${year}-${randSeq}`
+    if (input.work_order_id && input.work_order_id !== 'CREATE_NEW') {
+      workOrderId = input.work_order_id
+    } else if (input.work_order_id !== null) { // if null, explicitly skip
+      try {
+        const year = new Date().getFullYear()
+        const randSeq = Math.floor(100000 + Math.random() * 900000)
+        const woCode = `WO-${year}-${randSeq}`
 
-      const { data: woData } = await supabase
-        .from('work_orders')
-        .insert({
-          wo_code: woCode,
-          wo_name: input.wo_name || `Chế tạo bộ khuôn ${input.product_code.trim()}`,
-          product_id: productId,
-          design_revision_id: designRevisionId,
-          company_id: companyId,
-          wo_type: input.wo_type || 'NEW_SET',
-          wo_status: 'PLANNED',
-          deadline: input.deadline || null,
-          start_date: input.start_date || null,
-          responsible_id: input.responsible_id || null,
-          notes: input.notes || null,
-        })
-        .select('wo_id')
-        .single()
+        const { data: woData } = await supabase
+          .from('work_orders')
+          .insert({
+            wo_code: woCode,
+            wo_name: input.wo_name || `Chế tạo bộ khuôn ${input.product_code.trim()}`,
+            product_id: productId,
+            design_revision_id: designRevisionId,
+            company_id: companyId,
+            wo_type: input.wo_type || 'NEW_SET',
+            wo_status: 'PLANNED',
+            deadline: input.deadline || null,
+            start_date: input.start_date || null,
+            responsible_id: input.responsible_id || null,
+            notes: input.notes || null,
+          })
+          .select('wo_id')
+          .single()
 
-      if (woData) {
-        workOrderId = woData.wo_id
+        if (woData) {
+          workOrderId = woData.wo_id
+        }
+      } catch (woErr) {
+        console.warn('Non-blocking error creating Work Order:', woErr)
       }
-    } catch (woErr) {
-      console.warn('Non-blocking error creating Work Order:', woErr)
     }
 
     // Step 4: Process Jobs (1 Job = 1 Equipment)
@@ -390,7 +395,7 @@ export async function updateQuickMoldJobWorkflow(jobId: string, input: any) {
     // 1. Fetch current job references
     const { data: currentJob } = await supabase
       .from('jobs')
-      .select('job_id, product_id, design_revision_id, equipment_id')
+      .select('job_id, product_id, design_revision_id, equipment_id, work_order_id')
       .eq('job_id', jobId)
       .single()
 
@@ -456,6 +461,45 @@ export async function updateQuickMoldJobWorkflow(jobId: string, input: any) {
       }).eq('equipment_id', currentJob.equipment_id)
     }
 
+    // 4.5 Work Order Management
+    let workOrderId = input.work_order_id
+    if (workOrderId === 'CREATE_NEW') {
+      try {
+        const year = new Date().getFullYear()
+        const randSeq = Math.floor(100000 + Math.random() * 900000)
+        const woCode = `WO-${year}-${randSeq}`
+
+        const { data: woData } = await supabase
+          .from('work_orders')
+          .insert({
+            wo_code: woCode,
+            wo_name: `Chế tạo bộ khuôn ${input.product_code.trim()}`,
+            product_id: currentJob.product_id,
+            design_revision_id: currentJob.design_revision_id,
+            company_id: companyId,
+            wo_type: 'NEW_SET',
+            wo_status: 'PLANNED',
+            deadline: input.deadline || null,
+            start_date: input.start_date || null,
+            responsible_id: input.responsible_id || null,
+            notes: input.notes || null,
+          })
+          .select('wo_id')
+          .single()
+
+        if (woData) {
+          workOrderId = woData.wo_id
+        } else {
+          workOrderId = currentJob.work_order_id // fallback
+        }
+      } catch (woErr) {
+        console.warn('Non-blocking error creating Work Order:', woErr)
+        workOrderId = null
+      }
+    } else if (workOrderId === 'NONE') {
+      workOrderId = null
+    }
+
     // 5. Update Job
     const totalEstHours = (input.steps || []).reduce((sum: number, s: any) => sum + (s.estimated_hours || 0), 0)
     const combinedNotes = [input.notes?.trim(), compSummary].filter(Boolean).join('\n')
@@ -465,6 +509,7 @@ export async function updateQuickMoldJobWorkflow(jobId: string, input: any) {
       job_name: input.job_name.trim(),
       job_type_id: input.job_type_id || '1',
       job_category: input.job_category || 'MOLD_NEW',
+      work_order_id: workOrderId !== undefined ? workOrderId : undefined,
       responsible_id: input.responsible_id || null,
       company_id: companyId || undefined,
       start_date: input.start_date || null,
