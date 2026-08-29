@@ -256,7 +256,11 @@ const TaskRow = React.memo(function TaskRow({
   if (t.type === 'project') {
      expanderSymbol = isExpanded ? "▼" : "▶"
   } else if (t.isTrackHeader) {
-     expanderSymbol = expandedTracks.has(t.id) ? "▼" : "▶"
+     if (t.trackStepCount === 1) {
+       expanderSymbol = ""
+     } else {
+       expanderSymbol = expandedTracks.has(t.id) ? "▼" : "▶"
+     }
   }
 
   let statusColor = 'var(--text-muted)'
@@ -535,6 +539,14 @@ const TaskRow = React.memo(function TaskRow({
   return (
     <div 
       onClick={() => onSelectTask && onSelectTask(t)}
+      onDoubleClick={(e) => {
+        e.stopPropagation()
+        if (t.type === 'project' && t.originalJob) {
+          onOpenQuickView(t.originalJob)
+        } else if (isTask) {
+          onEditStep(t)
+        }
+      }}
       style={{ 
         height: rowHeight, 
         width: rowWidth, 
@@ -986,6 +998,8 @@ export default function MoldJobGantt({ workOrders = [], jobs, employees = [], ma
   const [editingWorklog, setEditingWorklog] = useState<any>(null)
   const [expandedJobs, setExpandedJobs] = useState<Set<string>>(new Set())
   const [expandedTracks, setExpandedTracks] = useState<Set<string>>(new Set())
+
+
   const [visibleMonth, setVisibleMonth] = useState<string>('')
   const [quickViewJob, setQuickViewJob] = useState<JobForGantt | null>(null)
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null)
@@ -1254,7 +1268,7 @@ export default function MoldJobGantt({ workOrders = [], jobs, employees = [], ma
     sortedJobs.forEach(job => {
       const rawProdCode = (job as any).products?.product_name_internal || (job as any).products?.product_code || job.job_code || ''
       const baseProdCode = extractBaseMassCode(rawProdCode) || rawProdCode
-      const groupKey = baseProdCode.toUpperCase().trim() || (job as any).product_id || (job as any).work_order_id || job.job_id
+      const groupKey = (job as any).work_order_id || baseProdCode.toUpperCase().trim() || (job as any).product_id || job.job_id
       if (!productGroups.has(groupKey)) {
         productGroups.set(groupKey, {
           groupKey,
@@ -1301,6 +1315,20 @@ export default function MoldJobGantt({ workOrders = [], jobs, employees = [], ma
             s.track = isProtoJobOrStep ? 'PROTOTYPE_PLUG' : 'PLUG'
           } else if (upperName.includes('CUTTER') || upperName.includes('抜型')) {
             s.track = 'CUTTER'
+          } else if (upperName.includes('STAKING') || upperName.includes('STACKING') || upperName.includes('スタッキング')) {
+            s.track = 'STAKING'
+          } else if (upperName.includes('WATER') || upperName.includes('水冷')) {
+            s.track = 'WATER COOLING BASE'
+          } else if (upperName.includes('PRESSURE') || upperName.includes('圧空')) {
+            s.track = 'PRESSIER BASE'
+          } else if (upperName.includes('FRAME') || upperName.includes('フレーム')) {
+            s.track = 'FRAME'
+          } else if (upperName.includes('MACHINE') || upperName.includes('機械')) {
+            s.track = 'MACHINE'
+          } else if (upperName.includes('ALUMI') || upperName.includes('アルミ')) {
+            s.track = 'ALUMI'
+          } else if (upperName.includes('OTHER') || upperName.includes('成形') || upperName.includes('出荷')) {
+            s.track = 'OTHER'
           } else if (upperName.includes('FINISH') || upperName.includes('仕上げ')) {
             s.track = 'FINISH'
           } else if (upperName.includes('DESIGN') || upperName.includes('設計')) {
@@ -1535,7 +1563,7 @@ export default function MoldJobGantt({ workOrders = [], jobs, employees = [], ma
             backgroundSelectedColor: 'var(--accent-light)' 
         }
 
-        const containerStep = trackSteps.find(s => (s as any).item_type_id != null)
+        const containerStep = trackSteps.find(s => (s as any).item_type_id != null) || trackSteps[0]
         let finalTrackStatus = containerStep?.processing_statuses?.status_code || null;
 
         if (!finalTrackStatus) {
@@ -1590,7 +1618,7 @@ export default function MoldJobGantt({ workOrders = [], jobs, employees = [], ma
           trackStatus: finalTrackStatus,
         } as ExtendedTask)
 
-        if (!expandedTracks.has(trackId)) return;
+        if (!expandedTracks.has(trackId) || trackSteps.length === 1) return;
 
         const pushTaskRows = (
             taskId: string, name: string,
@@ -2178,7 +2206,7 @@ export default function MoldJobGantt({ workOrders = [], jobs, employees = [], ma
   }, [])
 
   const handleTaskDoubleClick = useCallback((task: Task) => {
-    const extTask = task as ExtendedTask
+    const extTask = (tasksRef.current.find(t => t.id === task.id) || task) as ExtendedTask
     if ((extTask as any).isAddStepRow) {
       setEditingJobId((extTask as any).originalJobId)
       setEditingStep(null)
