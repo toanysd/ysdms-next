@@ -59,7 +59,7 @@ export function ManufacturingSheetOCRModal({
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState<string | null>(null)
   const [apiKey, setApiKey] = useState<string>('')
-  const [selectedModel, setSelectedModel] = useState<string>('gemini-2.5-flash')
+  const [selectedModel, setSelectedModel] = useState<string>('gemini-3.6-flash')
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -718,10 +718,10 @@ export function ManufacturingSheetOCRModal({
                   className="form-input"
                   style={{ fontSize: 12, fontWeight: 600 }}
                 >
-                  <option value="gemini-2.5-flash">{t('model25Flash')}</option>
-                  <option value="gemini-2.5-pro">{t('model25Pro')}</option>
-                  <option value="gemini-2.0-flash">Gemini 2.0 Flash</option>
-                  <option value="gemini-1.5-flash">Gemini 1.5 Flash</option>
+                  <option value="gemini-3.6-flash">Gemini 3.6 Flash (Recommended)</option>
+                  <option value="gemini-3.5-flash">Gemini 3.5 Flash</option>
+                  <option value="gemini-2.5-flash">Gemini 2.5 Flash (Legacy)</option>
+                  <option value="gemini-flash-latest">{t('modelFlashLatest')}</option>
                 </select>
               </div>
 
