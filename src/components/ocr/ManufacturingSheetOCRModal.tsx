@@ -720,8 +720,8 @@ export function ManufacturingSheetOCRModal({
                 >
                   <option value="gemini-2.5-flash">{t('model25Flash')}</option>
                   <option value="gemini-2.5-pro">{t('model25Pro')}</option>
-                  <option value="gemini-flash-latest">{t('modelFlashLatest')}</option>
-                  <option value="gemini-3.5-flash">{t('model35Flash')}</option>
+                  <option value="gemini-2.0-flash">Gemini 2.0 Flash</option>
+                  <option value="gemini-1.5-flash">Gemini 1.5 Flash</option>
                 </select>
               </div>
 

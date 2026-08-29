@@ -446,7 +446,7 @@ Respond ONLY with a valid JSON object:
 
     // Direct fast sequence — models verified via ListModels API (Aug 2026)
     const modelCandidates = Array.from(
-      new Set([requestedModel, 'gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-flash-latest', 'gemini-3.5-flash'])
+      new Set([requestedModel, 'gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-2.0-flash', 'gemini-1.5-flash'])
     )
 
     let lastError = ''
