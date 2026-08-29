@@ -26,3 +26,6 @@ Ví dụ: `ADR-001_unified-equipment-table.md`, `ADR-002_work-order-option-c.md`
 | ADR-001 | 2026-08-05 | APPROVED | Hợp nhất Equipment (physical_molds + cutters → equipment) |
 | ADR-002 | 2026-08-10 | APPROVED | Work Order Model Option C (4 tầng) |
 | ADR-003 | 2026-08-18 | APPROVED | Tách Job theo Equipment Type & Sửa Filter Lịch Sản Xuất |
+| ADR-004 | 2026-08-18 | APPROVED | Deprecate physical_molds/cutters FK |
+| ADR-005 | 2026-08-20 | APPROVED | Company Entity Unification and Classification |
+| ADR-006 | 2026-08-29 | APPROVED | Multi-Perspective Schedule View & Gantt Tree Structure |

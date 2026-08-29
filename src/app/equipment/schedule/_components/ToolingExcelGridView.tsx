@@ -48,6 +48,22 @@ export default function ToolingExcelGridView({
         setLiveJobs(jobs)
     }, [jobs])
 
+    // ===== DEBUG: Diagnostic log for PE verification =====
+    useEffect(() => {
+        console.log('[ExcelGridView DEBUG] Total jobs received:', liveJobs.length)
+        console.log('[ExcelGridView DEBUG] startDateStr:', startDateStr, 'daysCount:', daysCount)
+        const sampleJobs = liveJobs.slice(0, 5)
+        sampleJobs.forEach(j => {
+            const steps = j.job_steps || []
+            const totalLogs = steps.reduce((s, st) => s + (st.work_logs?.length || 0), 0)
+            console.log(`[ExcelGridView DEBUG] Job ${j.job_code}: steps=${steps.length}, totalWorkLogs=${totalLogs}, mold_deadline=${j.mold_deadline}, target_completion_date=${j.target_completion_date}, status=${j.job_status}`)
+            steps.forEach(st => {
+                console.log(`  Step[${st.step_no}] "${st.step_name}": deadline=${st.deadline}, planned_start=${st.planned_start}, planned_end=${st.planned_end}, planned_hours=${st.planned_hours}, estimated_hours=${st.estimated_hours}, step_status=${st.step_status}, work_logs=${st.work_logs?.length || 0}`)
+            })
+        })
+    }, [liveJobs, startDateStr, daysCount])
+    // ===== END DEBUG =====
+
     // Accordion state: dateStr -> activeJobId (null means all collapsed in multi-job cells)
     const [activeAccordionMap, setActiveAccordionMap] = useState<Record<string, string | null>>({})
     
@@ -114,9 +130,6 @@ export default function ToolingExcelGridView({
         return list
     }, [start, activeDaysCount])
 
-    // Check if step falls on date: SMART DEADLINE MATCH
-    // - Ad-hoc / custom steps (e.g. スタッキング on 8/17, 材料手配 on 8/18) match their explicit step.deadline
-    // - Main mold manufacturing steps (金型製作, プラグ, 抜型, etc.) match job.target_completion_date (完成目標日 - 3稼働日前)
     const isStepOnDate = (step: JobStepRow, dateStr: string, job: JobForGantt) => {
         const hasLogs = step.work_logs && step.work_logs.length > 0
         const hasHours = Number(step.planned_hours) > 0 || Number(step.estimated_hours) > 0 || (step.actual_hours && step.actual_hours > 0)
@@ -125,17 +138,19 @@ export default function ToolingExcelGridView({
         const stepDl = step.deadline ? step.deadline.split('T')[0] : null
         const jobMoldDl = job.mold_deadline ? job.mold_deadline.split('T')[0] : null
         const jobTargetDl = job.target_completion_date ? job.target_completion_date.split('T')[0] : (jobMoldDl || null)
+        
+        // Fallback: nếu cấp job không có target/mold deadline, dùng chính deadline của step
+        const effectiveTargetDl = jobTargetDl || stepDl
 
-        // 1. If step has an explicit custom deadline DIFFERENT from job.mold_deadline (e.g. スタッキング on 8/17)
-        if (stepDl && jobMoldDl && stepDl !== jobMoldDl) {
+        // 1. Nếu step có deadline riêng khác với mục tiêu tổng (ví dụ: các công đoạn ad-hoc)
+        if (stepDl && effectiveTargetDl && stepDl !== effectiveTargetDl) {
             if (stepDl === dateStr) return true
             return false
         }
 
-        // 2. If step is a main manufacturing step (step.deadline equals mold_deadline or target_completion_date or is null)
-        // Match against job.target_completion_date (the fabrication target for the mold department)
-        if (!stepDl || stepDl === jobMoldDl || stepDl === jobTargetDl) {
-            if (jobTargetDl === dateStr && (hasLogs || hasHours || isCompletedOrActive)) {
+        // 2. Nếu là công đoạn sản xuất chính (deadline trùng với mục tiêu tổng hoặc không có)
+        if (!stepDl || stepDl === effectiveTargetDl) {
+            if (effectiveTargetDl === dateStr && (hasLogs || hasHours || isCompletedOrActive)) {
                 return true
             }
         }
