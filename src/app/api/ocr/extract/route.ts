@@ -308,9 +308,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Image data is empty' }, { status: 400 })
     }
 
-    const apiKey = customApiKey || process.env.GOOGLE_GEMINI_API_KEY || process.env.GEMINI_API_KEY
+    const envApiKey = process.env.GOOGLE_GEMINI_API_KEY || process.env.GEMINI_API_KEY || ''
+    const keysToTry = Array.from(new Set([customApiKey.trim(), envApiKey.trim()])).filter(Boolean)
 
-    if (!apiKey) {
+    if (keysToTry.length === 0) {
       return NextResponse.json(
         {
           error: 'GOOGLE_GEMINI_API_KEY is not configured. Please provide an API key in settings or .env.local.'
@@ -452,39 +453,42 @@ Respond ONLY with a valid JSON object:
     let parsedData: OCRResponseData | null = null
     let successfulModel = ''
 
-    for (const model of modelCandidates) {
-      try {
-        const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`
-        const response = await fetch(geminiUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(promptPayload)
-        })
-
-        if (!response.ok) {
-          const errorText = await response.text()
-          lastError = `Model ${model} failed (${response.status}): ${errorText}`
-          console.warn(lastError)
-          continue
-        }
-
-        const result = await response.json()
-        let rawText = result.candidates?.[0]?.content?.parts?.[0]?.text || '{}'
-        rawText = rawText.replace(/```json\s*|\s*```/gi, '').trim()
-
+    for (const currentKey of keysToTry) {
+      for (const model of modelCandidates) {
         try {
-          const rawParsed = JSON.parse(rawText)
-          parsedData = normalizeExtractedData(rawParsed)
-          successfulModel = model
-          break
-        } catch (parseErr) {
-          lastError = `Failed to parse JSON response from ${model}: ${rawText.slice(0, 200)}`
+          const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${currentKey}`
+          const response = await fetch(geminiUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(promptPayload)
+          })
+
+          if (!response.ok) {
+            const errorText = await response.text()
+            lastError = `Model ${model} failed (${response.status}): ${errorText}`
+            console.warn(lastError)
+            continue
+          }
+
+          const result = await response.json()
+          let rawText = result.candidates?.[0]?.content?.parts?.[0]?.text || '{}'
+          rawText = rawText.replace(/```json\s*|\s*```/gi, '').trim()
+
+          try {
+            const rawParsed = JSON.parse(rawText)
+            parsedData = normalizeExtractedData(rawParsed)
+            successfulModel = model
+            break
+          } catch (parseErr) {
+            lastError = `Failed to parse JSON response from ${model}: ${rawText.slice(0, 200)}`
+            console.warn(lastError)
+          }
+        } catch (callErr: any) {
+          lastError = `Call error on ${model}: ${callErr.message}`
           console.warn(lastError)
         }
-      } catch (callErr: any) {
-        lastError = `Call error on ${model}: ${callErr.message}`
-        console.warn(lastError)
       }
+      if (parsedData) break
     }
 
     if (!parsedData) {

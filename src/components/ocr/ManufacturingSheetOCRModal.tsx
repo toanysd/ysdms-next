@@ -726,15 +726,27 @@ export function ManufacturingSheetOCRModal({
               </div>
 
               <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
-                  <Key size={14} style={{ color: 'var(--accent)' }} />
-                  <span style={{ fontSize: 11, fontWeight: 700 }}>{t('apiKeyLabel')}</span>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <Key size={14} style={{ color: 'var(--accent)' }} />
+                    <span style={{ fontSize: 11, fontWeight: 700 }}>{t('apiKeyLabel')}</span>
+                  </div>
+                  {apiKey && (
+                    <button
+                      type="button"
+                      onClick={() => handleSaveApiKey('')}
+                      style={{ background: 'none', border: 'none', color: 'var(--status-error)', fontSize: 10, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 2, padding: 0 }}
+                    >
+                      <X size={12} />
+                      <span>{t('clearKey') || 'キーをクリア (Clear)'}</span>
+                    </button>
+                  )}
                 </div>
                 <input
                   type="password"
                   value={apiKey}
                   onChange={(e) => handleSaveApiKey(e.target.value)}
-                  placeholder={t('apiKeyPlaceholder')}
+                  placeholder={t('apiKeyPlaceholder') || '.env.local 設定済の場合は空欄でOK'}
                   className="form-input"
                   style={{ fontSize: 12, fontFamily: 'monospace' }}
                 />
