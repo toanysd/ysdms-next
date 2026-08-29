@@ -738,7 +738,7 @@ export function ManufacturingSheetOCRModal({
                       style={{ background: 'none', border: 'none', color: 'var(--status-error)', fontSize: 10, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 2, padding: 0 }}
                     >
                       <X size={12} />
-                      <span>{t('clearKey') || 'キーをクリア (Clear)'}</span>
+                      <span>{t('clearKey')}</span>
                     </button>
                   )}
                 </div>
@@ -746,7 +746,7 @@ export function ManufacturingSheetOCRModal({
                   type="password"
                   value={apiKey}
                   onChange={(e) => handleSaveApiKey(e.target.value)}
-                  placeholder={t('apiKeyPlaceholder') || '.env.local 設定済の場合は空欄でOK'}
+                  placeholder={t('apiKeyPlaceholder')}
                   className="form-input"
                   style={{ fontSize: 12, fontFamily: 'monospace' }}
                 />
