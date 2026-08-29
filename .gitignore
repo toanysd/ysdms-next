@@ -1,4 +1,4 @@
-﻿# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
 # dependencies
 /node_modules
@@ -45,11 +45,9 @@ add_col.js
 /test-results/
 /playwright-report/
 
-# Scratch / Debug / Legacy (d盻肱 d蘯ｹp 2026-07-15)
+# Scratch / Debug / Legacy (dọn dẹp 2026-07-15)
 /scratch/
-temp_ai/*.json
-temp_ai/backup_*/
-temp_ai/inbox/
+temp_ai/
 
 # Data and backups
 /backups/
