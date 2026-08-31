@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { normalizeCode } from '@/lib/utils/normalizeCode'
 
 export async function GET(request: NextRequest) {
   try {
@@ -12,10 +13,10 @@ export async function GET(request: NextRequest) {
 
     const supabase = await createClient()
 
-    const cleanCode = rawCode.trim().toUpperCase().replace(/[^A-Z0-9]/g, '')
-    const baseCode = cleanCode.replace(/R\d+$/i, '')
-    const baseInternal = rawCode.trim().toUpperCase().replace(/(?:[\s\-_(]|^)(?:R|REV\.?|REVISION\s*)(\d+)\)?$/i, '').trim()
-
+    // 1. Dùng hàm normalizeCode như chỉ thị (chỉ bỏ khoảng trắng, gạch nối, underscore)
+    const normalizedInput = normalizeCode(rawCode)
+    
+    // Nếu PE muốn query giống hệt hướng dẫn:
     const { data: product, error } = await supabase
       .from('products')
       .select(`
@@ -34,7 +35,7 @@ export async function GET(request: NextRequest) {
           created_at
         )
       `)
-      .or(`product_code.eq.${baseCode},product_code.eq.${cleanCode},product_name_internal.eq.${baseInternal}`)
+      .or(`product_code_normalized.eq.${normalizedInput},product_name_normalized.eq.${normalizedInput}`)
       .limit(1)
       .maybeSingle()
 
