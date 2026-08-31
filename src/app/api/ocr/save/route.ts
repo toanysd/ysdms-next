@@ -424,11 +424,20 @@ export async function POST(request: NextRequest) {
     const cutterComponent = body.components?.find(c => c.type_code === 'CUTTER')
     const moldIsNew = !moldComponent || moldComponent.condition !== 'EXISTING'
 
+    const originalCode = body.product_code.trim().toUpperCase()
     // Look for existing base mold to avoid creating phantom duplicate equipment
     const { data: existingBaseMold } = await supabase
       .from('equipment')
       .select('equipment_id, equipment_code')
-      .in('equipment_code', [baseInternal, `${baseInternal} R${revNum}`, cleanInternal, cleanCode, baseCode])
+      .in('equipment_code', [
+        baseInternal,
+        `${baseInternal} R${revNum}`,
+        cleanInternal,
+        cleanCode,
+        baseCode,
+        originalCode,
+        `${originalCode} R${revNum}`
+      ])
       .eq('equipment_type', 'MOLD')
       .limit(1)
       .maybeSingle()
@@ -495,7 +504,41 @@ export async function POST(request: NextRequest) {
     let cutterEquipmentId: string | null = null
     const cutterIsNew = !cutterComponent || cutterComponent.condition !== 'EXISTING'
 
-    if (cutterIsNew) {
+    // Look for existing base cutter to avoid creating phantom duplicate equipment
+    const { data: existingBaseCutter } = await supabase
+      .from('equipment')
+      .select('equipment_id, equipment_code')
+      .in('equipment_code', [
+        `C-${cleanInternal}`,
+        `C-${cleanInternal}-R${revNum}`,
+        `C-${cleanCode}`,
+        `C-${baseCode}`,
+        `C-${originalCode}`,
+        `C-${originalCode}-R${revNum}`,
+        `C-${baseInternal}`
+      ])
+      .in('equipment_type', ['CUTTER', 'CUTTER_INLINE', 'CUTTER_SEPARATE'])
+      .limit(1)
+      .maybeSingle()
+
+    if (moldHandlingMode === 'REUSE_EXISTING' && existingBaseCutter) {
+      cutterEquipmentId = existingBaseCutter.equipment_id
+      logDryRun(`✅ Update existing Cutter Equipment: ${existingBaseCutter.equipment_code} (${cutterEquipmentId})`)
+      if (!isDryRun) {
+        await supabase
+          .from('equipment')
+          .update({
+            design_revision_id: revisionId,
+            actual_length_mm: body.cutline_length ? String(body.cutline_length) : undefined,
+            actual_width_mm: body.cutline_width ? String(body.cutline_width) : undefined,
+            material_spec: cutterComponent?.material_spec || '抜型',
+            shared_with_code: cutterComponent?.shared_with_code || null,
+            shared_note: cutterComponent?.shared_note || null
+          })
+          .eq('equipment_id', cutterEquipmentId)
+      }
+      createdEquipmentIds.push({ type: 'CUTTER', id: cutterEquipmentId })
+    } else if (cutterIsNew) {
       const cutterType = body.has_separate_cutter ? 'CUTTER_SEPARATE' : 'CUTTER_INLINE'
       const cutterCode = revNum > 0 ? `C-${cleanInternal}-R${revNum}` : `C-${cleanInternal}`
       const cutterDisplayName = revNum > 0 ? `No.${cleanInternal} R${revNum}` : `No.${cleanInternal}`
