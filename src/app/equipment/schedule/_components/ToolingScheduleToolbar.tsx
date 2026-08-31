@@ -114,10 +114,22 @@ export default function ToolingScheduleToolbar({
     }
 
     const commitDateChange = (type: 'start' | 'end') => {
-        const newStart = type === 'start' ? localStart : currentDate
-        const newEnd = type === 'end' ? localEnd : endDate
+        let newStart = type === 'start' ? localStart : currentDate
+        let newEnd = type === 'end' ? localEnd : endDate
         if (newStart === currentDate && newEnd === endDate) return
-        updateUrl({ from: newStart, to: newEnd, timeframe: 'custom' })
+        
+        // If start date changes, auto-adjust end date to match the current timeframe
+        if (type === 'start') {
+            const parsedStart = parseISO(newStart)
+            let days = 14
+            if (timeframe === 'week1') days = 7
+            else if (timeframe === 'week2') days = 14
+            else if (timeframe === 'month') days = 30
+            newEnd = format(addDays(parsedStart, days - 1), 'yyyy-MM-dd')
+            setLocalEnd(newEnd)
+        }
+        
+        updateUrl({ from: newStart, to: newEnd, timeframe: timeframe })
     }
 
     const handleTimeframeChange = (newTf: TimeframeMode) => {

@@ -102,7 +102,17 @@
     "existingActionEnrich": "Bổ sung Chỉ thị & Cập nhật CAD cho sản phẩm này (Khuyên dùng)",
     "existingActionEnrichDesc": "Bổ sung thông số CAD, đường cắt, mốc vật tư vào sản phẩm hiện có và tạo Chỉ thị/Job chuẩn.",
     "existingActionNewRev": "Tạo phiên bản sửa khuôn mới (R1/R2...)",
-    "existingActionNewRevDesc": "Tạo phiên bản thiết kế sửa đổi mới cho các lần cải tạo khuôn sau này."
+    "existingActionNewRevDesc": "Tạo phiên bản thiết kế sửa đổi mới cho các lần cải tạo khuôn sau này.",
+    "actionNewProduct": "Tạo mới như một sản phẩm khác",
+    "actionNewProductDesc": "Đổi mã sản phẩm và tạo mới hoàn toàn.",
+    "costNoteBadge": "Đơn giá đặc biệt",
+    "addNote": "+ Ghi chú",
+    "clearNote": "✕ Xóa",
+    "sharedCodePlaceholder": "Mã dùng chung",
+    "sharedNotePlaceholder": "Ghi chú dùng chung",
+    "sharedLink": "🔗 Dùng chung với {code}",
+    "conflictErrorChangeCode": "Vui lòng thay đổi mã sản phẩm.",
+    "conflictErrorSelectAction": "Sản phẩm đã tồn tại. Vui lòng chọn cách xử lý ở bảng cảnh báo bên trên."
   },
   "WorkOrders": {
     "pageTitle": "Danh sách Lệnh gia công",

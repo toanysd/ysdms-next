@@ -43,6 +43,8 @@ interface ComponentItem {
   estimated_hours: number | null
   existing_equipment_id?: string
   shared_from_product_code?: string | null
+  shared_with_code?: string | null
+  shared_note?: string | null
   notes?: string | null
 }
 
@@ -104,6 +106,7 @@ export function ManufacturingSheetOCRModal({
     packaging_info: string
     quotation_attached: string
     cost_amount: string
+    cost_note: string | null
     price_quote_required: boolean
     shipping_deadline: string
     mold_deadline: string
@@ -140,6 +143,7 @@ export function ManufacturingSheetOCRModal({
     packaging_info: '',
     quotation_attached: '',
     cost_amount: '',
+    cost_note: null,
     price_quote_required: false,
     shipping_deadline: '',
     mold_deadline: '',
@@ -148,6 +152,7 @@ export function ManufacturingSheetOCRModal({
 
   const [moldHandlingMode, setMoldHandlingMode] = useState<'REUSE_EXISTING' | 'CREATE_NEW'>('CREATE_NEW')
   const [existingHandlingMode, setExistingHandlingMode] = useState<'ENRICH_EXISTING' | 'NEW_REVISION'>('ENRICH_EXISTING')
+  const [conflictResolution, setConflictResolution] = useState<{ productAction: 'USE_EXISTING' | 'CREATE_NEW', revisionAction: 'USE_EXISTING' | 'CREATE_NEW' } | null>(null)
   const [isDryRun, setIsDryRun] = useState(true) // Default to true for safety
   const [existingProductInfo, setExistingProductInfo] = useState<any | null>(null)
 
@@ -271,6 +276,7 @@ export function ManufacturingSheetOCRModal({
         packaging_info: d.packaging_info || '',
         quotation_attached: d.quotation_attached || (d.price_quote_required ? '有' : '') || '',
         cost_amount: d.cost_amount != null ? d.cost_amount.toString() : '',
+        cost_note: d.cost_note || null,
         price_quote_required: Boolean(d.price_quote_required),
         shipping_deadline: d.shipping_deadline || '',
         mold_deadline: d.mold_deadline || '',
@@ -282,7 +288,10 @@ export function ManufacturingSheetOCRModal({
           condition: c.condition || 'NEW',
           manufacture_location: c.manufacture_location || 'IN_HOUSE',
           deadline: c.deadline || null,
-          estimated_hours: c.estimated_hours || null
+          estimated_hours: c.estimated_hours || null,
+          shared_with_code: c.shared_with_code || null,
+          shared_note: c.shared_note || null,
+          notes: c.notes || null
         }))
       }
 
@@ -419,6 +428,42 @@ export function ManufacturingSheetOCRModal({
     setSaving(true)
     setError(null)
 
+    // Check for conflict
+    try {
+      const checkCode = formData.product_name_internal || formData.product_code
+      const chkRes = await fetch(`/api/ocr/check-product?code=${encodeURIComponent(checkCode)}`)
+      const chkJson = await chkRes.json()
+
+      if (chkJson.exists && chkJson.product) {
+        // If conflict detected and not yet resolved, or resolved to CREATE_NEW but code wasn't changed
+        if (!conflictResolution || conflictResolution.productAction === 'CREATE_NEW') {
+          setExistingProductInfo(chkJson.product)
+          if (!conflictResolution) {
+            setConflictResolution({ productAction: 'USE_EXISTING', revisionAction: 'CREATE_NEW' }) // Default selection
+          }
+          if (conflictResolution?.productAction === 'CREATE_NEW') {
+            setError(t('conflictErrorChangeCode'))
+          } else {
+            setError(t('conflictErrorSelectAction'))
+          }
+          setSaving(false)
+          
+          // Scroll to top
+          const scrollableDiv = document.querySelector('.modal-scrollable-content')
+          if (scrollableDiv) {
+            scrollableDiv.scrollTo({ top: 0, behavior: 'smooth' })
+          }
+          return
+        }
+      } else {
+        // Clear conflict if no longer exists
+        setConflictResolution(null)
+        setExistingProductInfo(null)
+      }
+    } catch (e) {
+      console.error('Error checking conflict:', e)
+    }
+
     try {
       const payload = {
         product_code: formData.product_code,
@@ -519,6 +564,7 @@ export function ManufacturingSheetOCRModal({
       packaging_info: '',
       quotation_attached: '',
       cost_amount: '',
+      cost_note: null,
       price_quote_required: false,
       shipping_deadline: '',
       mold_deadline: '',
@@ -941,15 +987,16 @@ export function ManufacturingSheetOCRModal({
                         </div>
                       </div>
 
-                      {/* Action selector */}
+                      {/* Action selector using conflictResolution */}
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 2 }}>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                           <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, cursor: 'pointer', fontSize: 11.5 }}>
                             <input
                               type="radio"
-                              name="existingHandling"
-                              checked={existingHandlingMode === 'ENRICH_EXISTING'}
+                              name="conflictResolution"
+                              checked={conflictResolution?.productAction === 'USE_EXISTING' && conflictResolution?.revisionAction === 'USE_EXISTING'}
                               onChange={() => {
+                                setConflictResolution({ productAction: 'USE_EXISTING', revisionAction: 'USE_EXISTING' })
                                 setExistingHandlingMode('ENRICH_EXISTING')
                                 setMoldHandlingMode('REUSE_EXISTING')
                                 setFormData(prev => ({ ...prev, revision_number: 0 }))
@@ -965,10 +1012,12 @@ export function ManufacturingSheetOCRModal({
                           <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, cursor: 'pointer', fontSize: 11.5 }}>
                             <input
                               type="radio"
-                              name="existingHandling"
-                              checked={existingHandlingMode === 'NEW_REVISION'}
+                              name="conflictResolution"
+                              checked={conflictResolution?.productAction === 'USE_EXISTING' && conflictResolution?.revisionAction === 'CREATE_NEW'}
                               onChange={() => {
+                                setConflictResolution({ productAction: 'USE_EXISTING', revisionAction: 'CREATE_NEW' })
                                 setExistingHandlingMode('NEW_REVISION')
+                                setMoldHandlingMode('CREATE_NEW')
                                 const nextRev = (existingProductInfo.existingRevs?.length || 0)
                                 setFormData(prev => ({ ...prev, revision_number: nextRev > 0 ? nextRev : 1 }))
                               }}
@@ -977,6 +1026,22 @@ export function ManufacturingSheetOCRModal({
                             <div>
                               <strong style={{ color: '#78350f' }}>{t('existingActionNewRev')}</strong>
                               <div style={{ color: '#b45309', fontSize: 10.5 }}>{t('existingActionNewRevDesc')}</div>
+                            </div>
+                          </label>
+                          <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, cursor: 'pointer', fontSize: 11.5 }}>
+                            <input
+                              type="radio"
+                              name="conflictResolution"
+                              checked={conflictResolution?.productAction === 'CREATE_NEW'}
+                              onChange={() => {
+                                setConflictResolution({ productAction: 'CREATE_NEW', revisionAction: 'CREATE_NEW' })
+                                // They must change product code to proceed
+                              }}
+                              style={{ marginTop: 2 }}
+                            />
+                            <div>
+                              <strong style={{ color: '#b45309' }}>{t('actionNewProduct')}</strong>
+                              <div style={{ color: '#d97706', fontSize: 10.5 }}>{t('actionNewProductDesc')}</div>
                             </div>
                           </label>
                         </div>
@@ -1474,18 +1539,53 @@ export function ManufacturingSheetOCRModal({
                     </div>
 
                     <div>
-                      <label className="form-label" style={{ fontSize: 11, fontWeight: 600 }}>
-                        {t('unitCost')}
-                      </label>
-                      <input
-                        type="number"
-                        step="any"
-                        value={formData.cost_amount}
-                        onChange={(e) => setFormData({ ...formData, cost_amount: e.target.value })}
-                        className="form-input"
-                        style={{ fontFamily: 'monospace' }}
-                        placeholder="—"
-                      />
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                        <label className="form-label" style={{ fontSize: 11, fontWeight: 600, margin: 0 }}>
+                          {t('unitCost')}
+                        </label>
+                        {!formData.cost_note && (
+                          <button
+                            type="button"
+                            onClick={() => setFormData({ ...formData, cost_note: 'メモ' })}
+                            style={{ fontSize: 10, color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+                          >
+                            {t('addNote')}
+                          </button>
+                        )}
+                      </div>
+                      {formData.cost_note != null ? (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <span className="badge badge--warning" style={{ fontSize: 10 }}>
+                              📝 {t('costNoteBadge')}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => setFormData({ ...formData, cost_note: null })}
+                              style={{ fontSize: 10, color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+                            >
+                              {t('clearNote')}
+                            </button>
+                          </div>
+                          <input
+                            type="text"
+                            value={formData.cost_note}
+                            onChange={(e) => setFormData({ ...formData, cost_note: e.target.value })}
+                            className="form-input"
+                            style={{ borderColor: 'var(--amber-400)' }}
+                          />
+                        </div>
+                      ) : (
+                        <input
+                          type="number"
+                          step="any"
+                          value={formData.cost_amount}
+                          onChange={(e) => setFormData({ ...formData, cost_amount: e.target.value })}
+                          className="form-input"
+                          style={{ fontFamily: 'monospace' }}
+                          placeholder="—"
+                        />
+                      )}
                     </div>
 
                     <div>
@@ -1562,6 +1662,13 @@ export function ManufacturingSheetOCRModal({
                                   className="form-input"
                                   style={{ padding: '4px 6px', fontSize: 11 }}
                                 />
+                                {comp.type_code === 'CUTTER' && comp.shared_with_code && (
+                                  <div style={{ marginTop: 4 }}>
+                                    <span className="badge badge--info" style={{ fontSize: 10 }}>
+                                      {t('sharedLink', { code: comp.shared_with_code })}
+                                    </span>
+                                  </div>
+                                )}
                               </td>
                               <td>
                                 <input
@@ -1585,7 +1692,26 @@ export function ManufacturingSheetOCRModal({
                                 </select>
                               </td>
                               <td>
-                                {comp.condition === 'EXISTING' ? (
+                                {comp.type_code === 'CUTTER' ? (
+                                  <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                                    <input
+                                      type="text"
+                                      value={comp.shared_with_code || ''}
+                                      onChange={(e) => handleComponentChange(idx, 'shared_with_code', e.target.value)}
+                                      className="form-input"
+                                      style={{ padding: '4px 6px', fontSize: 11, fontFamily: 'monospace', fontWeight: 600, color: 'var(--accent)' }}
+                                      placeholder={t('sharedCodePlaceholder')}
+                                    />
+                                    <input
+                                      type="text"
+                                      value={comp.shared_note || ''}
+                                      onChange={(e) => handleComponentChange(idx, 'shared_note', e.target.value)}
+                                      className="form-input"
+                                      style={{ padding: '4px 6px', fontSize: 11 }}
+                                      placeholder={t('sharedNotePlaceholder')}
+                                    />
+                                  </div>
+                                ) : comp.condition === 'EXISTING' ? (
                                   <input
                                     type="text"
                                     value={comp.shared_from_product_code || comp.notes || ''}
