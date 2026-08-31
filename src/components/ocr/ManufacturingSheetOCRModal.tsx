@@ -401,14 +401,11 @@ export function ManufacturingSheetOCRModal({
 
   // Ensure conflict check runs when OCR result is loaded and we enter REVIEW step
   useEffect(() => {
-    if (step === 'REVIEW') {
-      const code = formData.product_name_internal || formData.product_code
-      if (code && !existingProductInfo) {
-        checkProductExists(code)
-      }
+    const code = formData.product_name_internal || formData.product_code
+    if (step === 'REVIEW' && code && !existingProductInfo) {
+      checkProductExists(code)
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [step])
+  }, [step, formData.product_code, formData.product_name_internal])
 
   // Search Plastic Master
   const searchPlastics = async (q: string) => {
