@@ -231,6 +231,9 @@ FK:  current_rack_layer_id UUID → rack_layers(id)              ← Vị trí g
      qr_uuid               UUID DEFAULT gen_random_uuid()
      legacy_id             TEXT
      legacy_specs          JSONB
+     shared_with_code      TEXT                    ← Mã thiết bị dùng chung dao cắt (OCR U2)
+     shared_note           TEXT                    ← Ghi chú viết tay về dao cắt dùng chung (OCR U2)
+     cost_note             TEXT                    ← Ghi chú đơn giá đặc biệt không phải số (OCR U3)
      notes                 TEXT
 ```
 

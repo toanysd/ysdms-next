@@ -4,48 +4,73 @@ import json
 import codecs
 from collections import defaultdict
 import argparse
-import psycopg2
-from psycopg2.extras import execute_values
-from dotenv import load_dotenv
 import requests
+from dotenv import load_dotenv
+import math
 
 load_dotenv('.env.local')
 DATA_DIR = r"D:\AntiGravity_Workspace\apps\ysdms-nextgen\source_data\csv-access-data"
 OUTPUT_DIR = r"D:\AntiGravity_Workspace\apps\ysdms-nextgen\temp_ai"
+EXCEPTIONS_FILE = os.path.join(OUTPUT_DIR, 'recovery_exceptions.csv')
 
-def get_db_connection():
-    db_url = os.environ.get('DATABASE_URL')
-    if not db_url:
-        raise ValueError("DATABASE_URL not found in .env.local")
-    return psycopg2.connect(db_url)
-
-def fetch_products_rest():
-    product_map = {}
-    url = os.environ['NEXT_PUBLIC_SUPABASE_URL'] + '/rest/v1/products?select=legacy_id,product_id'
-    headers = {
-        'apikey': os.environ['NEXT_PUBLIC_SUPABASE_ANON_KEY'],
-        'Authorization': 'Bearer ' + os.environ['NEXT_PUBLIC_SUPABASE_ANON_KEY']
+def get_rest_headers():
+    key = os.environ['SUPABASE_SERVICE_ROLE_KEY']
+    return {
+        'apikey': key,
+        'Authorization': 'Bearer ' + key,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=minimal'
     }
-    # Supabase pagination
+
+def fetch_existing_legacy_ids(table):
+    existing = set()
+    url = os.environ['NEXT_PUBLIC_SUPABASE_URL'] + f'/rest/v1/{table}?select=legacy_id&legacy_id=not.is.null'
+    headers = get_rest_headers()
     offset = 0
     limit = 1000
     while True:
         headers['Range-Unit'] = 'items'
         headers['Range'] = f"{offset}-{offset+limit-1}"
         r = requests.get(url, headers=headers)
-        if r.status_code != 200:
-            print(f"Error fetching products via REST: {r.text}")
-            break
+        if r.status_code != 200: break
         data = r.json()
-        if not data:
-            break
+        if not data: break
         for row in data:
-            if row.get('legacy_id'):
-                product_map[row['legacy_id']] = row['product_id']
-        if len(data) < limit:
-            break
+            existing.add(row['legacy_id'])
+        if len(data) < limit: break
         offset += limit
-    return product_map
+    return existing
+
+def insert_rest(table, data):
+    url = f"{os.environ['NEXT_PUBLIC_SUPABASE_URL']}/rest/v1/{table}"
+    headers = get_rest_headers()
+    chunk_size = 800
+    for i in range(0, len(data), chunk_size):
+        chunk = data[i:i + chunk_size]
+        print(f"Inserting {len(chunk)} rows to {table} (Chunk {i//chunk_size + 1})...")
+        r = requests.post(url, headers=headers, json=chunk)
+        if r.status_code not in (200, 201, 204):
+            raise Exception(f"REST API Error during insert to {table}: {r.text}")
+
+def fetch_mapping_rest(table, legacy_col='legacy_id', id_col='id'):
+    mapping = {}
+    url = os.environ['NEXT_PUBLIC_SUPABASE_URL'] + f'/rest/v1/{table}?select={legacy_col},{id_col}&{legacy_col}=not.is.null'
+    headers = get_rest_headers()
+    offset = 0
+    limit = 1000
+    while True:
+        headers['Range-Unit'] = 'items'
+        headers['Range'] = f"{offset}-{offset+limit-1}"
+        r = requests.get(url, headers=headers)
+        if r.status_code != 200: break
+        data = r.json()
+        if not data: break
+        for row in data:
+            if row.get(legacy_col):
+                mapping[row[legacy_col]] = row[id_col]
+        if len(data) < limit: break
+        offset += limit
+    return mapping
 
 def read_csv(filename):
     path = os.path.join(DATA_DIR, filename)
@@ -53,278 +78,245 @@ def read_csv(filename):
     try:
         with codecs.open(path, 'r', encoding='utf-8-sig') as f:
             content = f.read()
-            encoding = 'utf-8-sig'
     except UnicodeDecodeError:
         with codecs.open(path, 'r', encoding='shift_jis', errors='replace') as f:
             content = f.read()
-            encoding = 'shift_jis'
-    print(f"Loaded {filename} with encoding {encoding}")
     return list(csv.DictReader(content.splitlines()))
 
-def get_job_mapping(processing_item_id):
-    mapping = {
-        '1': ('1', 'MOLD_NEW', 'MOLD'),
-        '2': ('1', 'MOLD_NEW', 'MOLD'),
-        '3': ('5', 'EQUIPMENT_NEW', 'WATER_BASE'),
-        '4': ('6', 'EQUIPMENT_NEW', 'PRESSURE_BASE'),
-        '5': ('7', 'EQUIPMENT_NEW', 'UNKNOWN_EQ'),
-        '6': ('7', 'EQUIPMENT_NEW', 'PLUG'),
-        '7': ('7', 'EQUIPMENT_NEW', 'STACKING'),
-        '10': ('10', 'INTERNAL_OPS', None),
-        '11': ('4', 'CUTTER_NEW', 'CUTTER_INLINE_OR_FRAME'),
-        '12': ('10', 'INTERNAL_OPS', None),
-        '13': ('10', 'INTERNAL_OPS', None),
-        '14': ('10', 'INTERNAL_OPS', None),
-        '15': ('7', 'EQUIPMENT_NEW', 'UNKNOWN_EQ'),
-        '17': ('3', 'MAINTENANCE', 'MOLD'),
-        '18': ('8', 'EQUIPMENT_REPAIR', 'MOLD'),
-        '19': ('7', 'EQUIPMENT_NEW', 'UNKNOWN_EQ'),
-        '20': ('4', 'CUTTER_NEW', 'CUTTER_SEPARATE'),
-        '21': ('10', 'INTERNAL_OPS', None),
-        '22': ('4', 'CUTTER_NEW', 'CUTTER_SEPARATE'),
-        '23': ('3', 'MAINTENANCE', 'MOLD')
-    }
-    return mapping.get(str(processing_item_id))
+def get_job_mapping(proc_id):
+    pid = str(proc_id).strip()
+    if pid in ['1', '2']: return '1', 'MOLD_NEW'
+    if pid in ['11', '20', '22']: return '4', 'CUTTER_NEW'
+    if pid in ['17', '23']: return '3', 'MAINTENANCE'
+    if pid == '18': return '8', 'EQUIPMENT_REPAIR'
+    if pid in ['10', '12', '13', '14', '21']: return '10', 'INTERNAL_OPS'
+    if pid in ['3', '4', '6', '7', '5', '15', '19']: return '7', 'EQUIPMENT_NEW'
+    return '10', 'OTHER'
 
-def get_equipment_mapping(item_type_id):
-    mapping = {
-        '2': 'MOLD', '11': 'MOLD', '3': 'PLUG', '4': 'CUTTER_INLINE',
-        '5': 'WATER_BASE', '6': 'PRESSURE_BASE', '7': 'STACKING', '8': 'FRAME'
-    }
-    return mapping.get(str(item_type_id))
+def clean_float(val):
+    try:
+        f = float(val)
+        if math.isnan(f): return 0
+        return f
+    except (ValueError, TypeError):
+        return 0
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--execute', action='store_true', help='Execute DB inserts (WARNING: modifies DB)')
-    parser.add_argument('--stage', choices=['A', 'B'], default='A', help='Stage to execute (A: designs+equipment, B: wo+jobs+steps+logs)')
+    parser.add_argument('--execute', action='store_true', help='Execute DB inserts via REST')
+    parser.add_argument('--stage', choices=['A', 'B'], default='B', help='Stage to execute')
     args = parser.parse_args()
 
-    print(f"Starting Parsing... Execute={args.execute}, Stage={args.stage}")
+    if args.stage == 'A':
+        return
+
     os.makedirs(OUTPUT_DIR, exist_ok=True)
-
-    print("Fetching products legacy_id mapping from REST API...")
-    product_map = fetch_products_rest()
-    print(f"Loaded {len(product_map)} products.")
-
-    molds_data = read_csv('molds.csv')
-    cutters_data = read_csv('cutters.csv')
-    designs_data = read_csv('molddesign.csv')
-    jobs_data = read_csv('jobs.csv')
-    job_steps_data = read_csv('processingdeadline.csv')
-    worklogs_data = read_csv('worklog.csv')
-    
-    summary = {
-        'source_records': {
-            'molds': len(molds_data), 'cutters': len(cutters_data),
-            'designs': len(designs_data), 'jobs': len(jobs_data),
-            'job_steps': len(job_steps_data), 'worklogs': len(worklogs_data)
-        },
-        'valid_imports': defaultdict(int),
-        'mapping_stats': defaultdict(int),
-        'ignored_records': defaultdict(int)
-    }
     exceptions = []
-    
-    # 1. Parse Designs
-    valid_designs = {} # legacy_id -> data
-    for row in designs_data:
-        d_id = row.get('MoldDesignID')
-        if not d_id: continue
-        
-        tray_id = row.get('TrayID')
-        product_legacy = f"TRAY-{tray_id}" if tray_id else None
-        product_id = product_map.get(product_legacy)
-        
-        if not product_id:
-            summary['ignored_records']['design_revisions'] += 1
-            exceptions.append({'file': 'molddesign.csv', 'legacy_id': d_id, 'reason': f'product_id not resolved for TrayID {tray_id}'})
-            summary['mapping_stats']['design_missing_product'] += 1
-            continue
-            
-        legacy_id = f"D-{d_id}"
-        valid_designs[legacy_id] = {
-            'design_code': row.get('MoldDesignCode') or f"DES-{d_id}",
-            'legacy_id': legacy_id,
-            'legacy_specs': json.dumps(row),
-            'product_id': product_id
-        }
-        summary['valid_imports']['design_revisions'] += 1
-        summary['mapping_stats']['design_resolved_product'] += 1
-            
-    # 2. Parse Equipment
-    equipment_type_dist = defaultdict(int)
-    valid_equipment = {}
-    
-    for row in molds_data:
-        m_id = row.get('MoldID')
-        if not m_id: continue
-        item_type = row.get('ItemTypeID')
-        eq_type = get_equipment_mapping(item_type)
-        if not eq_type:
-            summary['ignored_records']['equipment'] += 1
-            exceptions.append({'file': 'molds.csv', 'legacy_id': m_id, 'reason': f'Ignored or Unknown ItemTypeID {item_type}'})
-            continue
-            
-        legacy_id = f"M-{m_id}"
-        design_id = row.get('MoldDesignID')
-        
-        # Determine design resolution and pass down product_id if found
-        d_legacy = f"D-{design_id}" if design_id else None
-        linked_design = valid_designs.get(d_legacy)
-        
-        valid_equipment[legacy_id] = {
-            'equipment_code': row.get('MoldCode') or f"EQ-{m_id}",
-            'display_name': row.get('MoldName') or "Unknown",
-            'equipment_type': eq_type,
-            'legacy_id': legacy_id,
-            'legacy_specs': json.dumps(row),
-            'design_revision_legacy_id': d_legacy if linked_design else None
-        }
-        equipment_type_dist[eq_type] += 1
-        summary['valid_imports']['equipment'] += 1
 
-    for row in cutters_data:
-        c_id = row.get('CutterID')
-        if not c_id: continue
-        legacy_id = f"C-{c_id}"
-        design_id = row.get('MoldDesignID')
-        d_legacy = f"D-{design_id}" if design_id else None
-        linked_design = valid_designs.get(d_legacy)
-        
-        valid_equipment[legacy_id] = {
-            'equipment_code': row.get('CutterCode') or row.get('CutterNo') or f"CT-{c_id}",
-            'display_name': row.get('CutterName') or "Unknown Cutter",
-            'equipment_type': 'CUTTER_SEPARATE',
-            'legacy_id': legacy_id,
-            'legacy_specs': json.dumps(row),
-            'design_revision_legacy_id': d_legacy if linked_design else None
-        }
-        equipment_type_dist['CUTTER_SEPARATE'] += 1
-        summary['valid_imports']['equipment'] += 1
-        
-    # 3. Parse Jobs & Work Orders
-    job_cat_dist = defaultdict(int)
+    print("Fetching mappings from Supabase...")
+    equipment_map = fetch_mapping_rest('equipment', 'legacy_id', 'equipment_id')
+    employee_map = fetch_mapping_rest('employees', 'legacy_id', 'employee_id')
+
+    jobs_data = read_csv('jobs.csv')
+    steps_data = read_csv('processingdeadline.csv')
+    logs_data = read_csv('worklog.csv')
+
+    valid_wos = {}
     valid_jobs = {}
-    work_orders = {}
+    valid_steps = {}
+    valid_logs = {}
+    
+    seen_wo_codes = set()
+    seen_job_codes = set()
+
+    job_category_stats = defaultdict(int)
+    orphan_equipment_stats = 0
+    orphan_employee_stats = 0
     
     for row in jobs_data:
         j_id = row.get('JobID')
         if not j_id: continue
-        proc_item_id = row.get('ProcessingItemID')
-        mapping = get_job_mapping(proc_item_id)
-        if not mapping:
-            summary['ignored_records']['jobs'] += 1
-            exceptions.append({'file': 'jobs.csv', 'legacy_id': j_id, 'reason': f'Unmapped ProcessingItemID {proc_item_id}'})
-            continue
-            
-        job_type_id, job_category, expected_eq = mapping
-        job_cat_dist[job_category] += 1
+        
+        proc_id = row.get('ProcessingItemID')
+        job_type, job_category = get_job_mapping(proc_id)
         
         mold_id = row.get('MoldID')
-        eq_legacy_id = f"M-{mold_id}" if mold_id else None
-        has_eq = eq_legacy_id in valid_equipment
+        eq_legacy = f"M-{mold_id}" if mold_id else None
         
-        if expected_eq and expected_eq not in ('UNKNOWN_EQ', 'CUTTER_INLINE_OR_FRAME') and expected_eq != 'CUTTER_SEPARATE':
-            if not has_eq:
-                exceptions.append({'file': 'jobs.csv', 'legacy_id': j_id, 'reason': f'Expected {expected_eq} but MoldID {mold_id} not found in equipment'})
-                
-        if has_eq:
-            summary['mapping_stats']['jobs_with_equipment'] += 1
-        else:
-            summary['mapping_stats']['jobs_without_equipment'] += 1
+        eq_uuid = equipment_map.get(eq_legacy)
+        if not eq_uuid:
+            orphan_equipment_stats += 1
+            exceptions.append({
+                'table': 'jobs',
+                'legacy_id': f"LEGACY-JOB-{j_id}",
+                'reason': f"Unresolved equipment_id for MoldID {mold_id}"
+            })
+            continue 
             
-        instr_id = row.get('InstructionID')
-        wo_code = f"LEGACY-INST-{instr_id}" if instr_id else f"LEGACY-JOB-{j_id}"
-        if wo_code not in work_orders:
-            work_orders[wo_code] = {
-                'wo_code': wo_code,
-                'wo_name': f"Legacy Work Order {wo_code}",
-                'wo_type': 'OTHER'
-            }
-            
-        valid_jobs[j_id] = {
-            'job_code': row.get('JobCode') or f"JOB-{j_id}",
-            'job_name': row.get('JobName') or "Unknown Job",
-            'job_type_id': job_type_id,
-            'job_category': job_category,
-            'legacy_id': j_id,
+        job_category_stats[job_category] += 1
+        
+        wo_legacy = f"LEGACY-WO-{j_id}"
+        job_legacy = f"LEGACY-JOB-{j_id}"
+        
+        wo_code = f"WO-L-{j_id}"
+        counter = 2
+        while wo_code in seen_wo_codes:
+            wo_code = f"WO-L-{j_id}-{counter}"
+            counter += 1
+        seen_wo_codes.add(wo_code)
+        
+        job_code = row.get('JobCode') or f"JOB-L-{j_id}"
+        original_job_code = job_code
+        counter = 2
+        while job_code in seen_job_codes:
+            job_code = f"{original_job_code}-{counter}"
+            counter += 1
+        seen_job_codes.add(job_code)
+
+        valid_wos[wo_legacy] = {
             'wo_code': wo_code,
-            'equipment_legacy_id': eq_legacy_id if has_eq else None,
-            'legacy_specs': json.dumps(row)
+            'wo_name': row.get('JobName') or f"Legacy WO {j_id}",
+            'wo_type': 'OTHER',
+            'wo_status': 'COMPLETED',
+            'legacy_id': wo_legacy,
+            'legacy_specs': row
         }
-        summary['valid_imports']['jobs'] += 1
         
-    summary['valid_imports']['work_orders'] = len(work_orders)
-    
-    with open(os.path.join(OUTPUT_DIR, 'recovery_dry_run_summary.json'), 'w') as f: json.dump(summary, f, indent=2)
-    with open(os.path.join(OUTPUT_DIR, 'equipment_type_distribution.csv'), 'w', newline='') as f:
-        writer = csv.writer(f)
-        writer.writerow(['Equipment_Type', 'Count'])
-        for k, v in equipment_type_dist.items(): writer.writerow([k, v])
-    with open(os.path.join(OUTPUT_DIR, 'job_category_distribution.csv'), 'w', newline='') as f:
-        writer = csv.writer(f)
-        writer.writerow(['Job_Category', 'Count'])
-        for k, v in job_cat_dist.items(): writer.writerow([k, v])
-    with open(os.path.join(OUTPUT_DIR, 'recovery_exceptions.csv'), 'w', newline='', encoding='utf-8') as f:
-        writer = csv.DictWriter(f, fieldnames=['file', 'legacy_id', 'reason'])
+        valid_jobs[job_legacy] = {
+            'job_code': job_code,
+            'job_name': row.get('JobName') or f"Legacy Job {j_id}",
+            'job_category': job_category,
+            'job_type_id': job_type,
+            'job_status': 'COMPLETED',
+            'legacy_id': job_legacy,
+            'legacy_specs': row,
+            'equipment_id': eq_uuid,
+            'wo_legacy': wo_legacy
+        }
+
+    job_step_counters = defaultdict(int)
+    for row in steps_data:
+        s_id = row.get('ProcessingDeadlineID')
+        if not s_id: continue
+        
+        j_id = row.get('JobID')
+        job_legacy = f"LEGACY-JOB-{j_id}" if j_id else None
+        if job_legacy not in valid_jobs:
+            exceptions.append({
+                'table': 'job_steps',
+                'legacy_id': f"LEGACY-STEP-{s_id}",
+                'reason': f"Parent job LEGACY-JOB-{j_id} was skipped"
+            })
+            continue
+        
+        job_step_counters[job_legacy] += 1
+        step_legacy = f"LEGACY-STEP-{s_id}"
+        
+        valid_steps[step_legacy] = {
+            'step_no': job_step_counters[job_legacy],
+            'step_name': row.get('ItemTypeID') or 'Legacy Step',
+            'step_status': 'COMPLETED',
+            'legacy_id': step_legacy,
+            'legacy_specs': row,
+            'job_legacy': job_legacy
+        }
+
+    for row in logs_data:
+        l_id = row.get('WorkLogID')
+        if not l_id: continue
+        
+        s_id = row.get('ProcessingDeadlineID')
+        step_legacy = f"LEGACY-STEP-{s_id}" if s_id else None
+        
+        if step_legacy not in valid_steps:
+            exceptions.append({
+                'table': 'work_logs',
+                'legacy_id': f"LEGACY-LOG-{l_id}",
+                'reason': f"Parent step LEGACY-STEP-{s_id} was skipped"
+            })
+            continue
+            
+        emp_id_raw = row.get('EmployeeID')
+        emp_legacy = f"EMP-{emp_id_raw}" if emp_id_raw else None
+        emp_uuid = employee_map.get(emp_legacy)
+        
+        if not emp_uuid:
+            orphan_employee_stats += 1
+            exceptions.append({
+                'table': 'work_logs',
+                'legacy_id': f"LEGACY-LOG-{l_id}",
+                'reason': f"Unresolved employee_id for EmployeeID {emp_id_raw}"
+            })
+            continue 
+        
+        job_legacy = valid_steps[step_legacy]['job_legacy']
+        hours = clean_float(row.get('ProcessingTime'))
+        
+        log_legacy = f"LEGACY-LOG-{l_id}"
+        
+        valid_logs[log_legacy] = {
+            'work_date': row.get('ProcessingDate') or '2000-01-01',
+            'hours_spent': hours,
+            'description': row.get('ProcessingNotes') or 'Legacy Log',
+            'legacy_id': log_legacy,
+            'legacy_specs': row,
+            'job_legacy': job_legacy,
+            'step_legacy': step_legacy,
+            'employee_id': emp_uuid
+        }
+
+    with open(EXCEPTIONS_FILE, 'w', encoding='utf-8', newline='') as f:
+        writer = csv.DictWriter(f, fieldnames=['table', 'legacy_id', 'reason'])
         writer.writeheader()
         writer.writerows(exceptions)
-        
-    print("Parsed data. Artifacts saved to temp_ai directory.")
 
     if args.execute:
-        print(f"--- EXECUTE MODE: STAGE {args.stage} ---")
-        try:
-            conn = get_db_connection()
-            conn.autocommit = False
-            cur = conn.cursor()
+        print("\n--- EXECUTE MODE: STAGE B ---")
+        
+        existing_wos = fetch_existing_legacy_ids('work_orders')
+        wo_payload = [d for d in valid_wos.values() if d['legacy_id'] not in existing_wos]
+        if wo_payload:
+            insert_rest('work_orders', wo_payload)
             
-            if args.stage == 'A':
-                print(f"Inserting {len(valid_designs)} design_revisions...")
-                cur.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_design_revisions_legacy_id ON design_revisions(legacy_id) WHERE legacy_id IS NOT NULL;")
-                design_query = """
-                    INSERT INTO design_revisions (design_code, legacy_id, legacy_specs, product_id)
-                    VALUES %s
-                    ON CONFLICT (legacy_id) DO UPDATE SET 
-                        design_code = EXCLUDED.design_code,
-                        legacy_specs = EXCLUDED.legacy_specs,
-                        product_id = EXCLUDED.product_id
-                    RETURNING revision_id, legacy_id;
-                """
-                design_values = [(d['design_code'], d['legacy_id'], d['legacy_specs'], d['product_id']) for d in valid_designs.values()]
-                execute_values(cur, design_query, design_values, fetch=True)
-                design_rows = cur.fetchall()
-                design_legacy_map = {row[1]: row[0] for row in design_rows}
-                
-                print(f"Inserting {len(valid_equipment)} equipment...")
-                cur.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_equipment_legacy_id ON equipment(legacy_id) WHERE legacy_id IS NOT NULL;")
-                eq_query = """
-                    INSERT INTO equipment (equipment_code, display_name, equipment_type, legacy_id, legacy_specs, design_revision_id)
-                    VALUES %s
-                    ON CONFLICT (legacy_id) DO UPDATE SET
-                        display_name = EXCLUDED.display_name,
-                        equipment_type = EXCLUDED.equipment_type,
-                        legacy_specs = EXCLUDED.legacy_specs,
-                        design_revision_id = EXCLUDED.design_revision_id
-                """
-                eq_values = [
-                    (e['equipment_code'], e['display_name'], e['equipment_type'], e['legacy_id'], e['legacy_specs'], design_legacy_map.get(e['design_revision_legacy_id']))
-                    for e in valid_equipment.values()
-                ]
-                execute_values(cur, eq_query, eq_values)
-                
-            elif args.stage == 'B':
-                print("Stage B is currently a placeholder until A is approved.")
-                pass
-                
-            conn.commit()
-            print("Transaction committed successfully.")
-        except Exception as e:
-            if 'conn' in locals(): conn.rollback()
-            print(f"Transaction failed and rolled back. Error: {e}")
-            raise
-        finally:
-            if 'conn' in locals(): conn.close()
+        wo_id_map = fetch_mapping_rest('work_orders', 'legacy_id', 'wo_id')
+        
+        existing_jobs = fetch_existing_legacy_ids('jobs')
+        job_payload = []
+        for j_leg, j_data in valid_jobs.items():
+            if j_leg in existing_jobs: continue
+            j_data['work_order_id'] = wo_id_map.get(j_data['wo_legacy'])
+            del j_data['wo_legacy']
+            job_payload.append(j_data)
+        if job_payload:
+            insert_rest('jobs', job_payload)
+            
+        job_id_map = fetch_mapping_rest('jobs', 'legacy_id', 'job_id')
+        
+        existing_steps = fetch_existing_legacy_ids('job_steps')
+        step_payload = []
+        for s_leg, s_data in valid_steps.items():
+            if s_leg in existing_steps: continue
+            s_data['job_id'] = job_id_map.get(s_data['job_legacy'])
+            del s_data['job_legacy']
+            step_payload.append(s_data)
+        if step_payload:
+            insert_rest('job_steps', step_payload)
+            
+        step_id_map = fetch_mapping_rest('job_steps', 'legacy_id', 'step_id')
+        
+        existing_logs = fetch_existing_legacy_ids('work_logs')
+        log_payload = []
+        for l_leg, l_data in valid_logs.items():
+            if l_leg in existing_logs: continue
+            l_data['job_id'] = job_id_map.get(l_data['job_legacy'])
+            l_data['job_step_id'] = step_id_map.get(l_data['step_legacy'])
+            del l_data['job_legacy']
+            del l_data['step_legacy']
+            log_payload.append(l_data)
+        if log_payload:
+            insert_rest('work_logs', log_payload)
+            
+        print("Stage B executed successfully.")
 
 if __name__ == "__main__":
     main()

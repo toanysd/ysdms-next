@@ -32,6 +32,7 @@ interface SaveOCRInput {
   quotation_attached?: string
   quotation_amount?: number
   cost_amount?: number
+  cost_note?: string | null
   price_quote_required?: boolean
   shipping_deadline?: string
   mold_deadline?: string
@@ -49,6 +50,8 @@ interface SaveOCRInput {
     estimated_hours?: number
     existing_equipment_id?: string
     shared_from_product_code?: string
+    shared_with_code?: string | null
+    shared_note?: string | null
     notes?: string
   }>
   dry_run?: boolean
@@ -412,13 +415,13 @@ export async function POST(request: NextRequest) {
         workOrderId = newWO?.wo_id || null
       }
     }
-
     // ─── 5. Create & Link Equipment (Kit Members) ─────────────────────
     let moldEquipmentId: string | null = null
     const createdEquipmentIds: { type: string; id: string }[] = []
 
-    // 5a. Main Mold Equipment
+    // 5. Create or Update Equipment
     const moldComponent = body.components?.find(c => c.type_code === 'MOLD')
+    const cutterComponent = body.components?.find(c => c.type_code === 'CUTTER')
     const moldIsNew = !moldComponent || moldComponent.condition !== 'EXISTING'
 
     // Look for existing base mold to avoid creating phantom duplicate equipment
@@ -442,7 +445,10 @@ export async function POST(request: NextRequest) {
             actual_length_mm: body.design_length ? String(body.design_length) : undefined,
             actual_width_mm: body.design_width ? String(body.design_width) : undefined,
             material_spec: moldComponent?.material_spec || 'アルミ材',
-            cav_type_id: matchedCavTypeId || undefined
+            cav_type_id: matchedCavTypeId || undefined,
+            cost_note: body.cost_note || null,
+            shared_with_code: cutterComponent?.shared_with_code || null,
+            shared_note: cutterComponent?.shared_note || null
           })
           .eq('equipment_id', moldEquipmentId)
       }
@@ -467,6 +473,9 @@ export async function POST(request: NextRequest) {
               actual_length_mm: body.design_length ? String(body.design_length) : null,
               actual_width_mm: body.design_width ? String(body.design_width) : null,
               actual_height_mm: body.design_height ? String(body.design_height) : null,
+              cost_note: body.cost_note || null,
+              shared_with_code: cutterComponent?.shared_with_code || null,
+              shared_note: cutterComponent?.shared_note || null,
               device_status: 'NORMAL',
               usage_status: 'STORAGE'
             }
@@ -484,7 +493,6 @@ export async function POST(request: NextRequest) {
 
     // 5b. Cutter Equipment
     let cutterEquipmentId: string | null = null
-    const cutterComponent = body.components?.find(c => c.type_code === 'CUTTER')
     const cutterIsNew = !cutterComponent || cutterComponent.condition !== 'EXISTING'
 
     if (cutterIsNew) {
@@ -509,6 +517,8 @@ export async function POST(request: NextRequest) {
               actual_length_mm: body.cutline_length ? String(body.cutline_length) : null,
               actual_width_mm: body.cutline_width ? String(body.cutline_width) : null,
               material_spec: cutterComponent?.material_spec || '抜型',
+              shared_with_code: cutterComponent?.shared_with_code || null,
+              shared_note: cutterComponent?.shared_note || null,
               device_status: 'NORMAL',
               usage_status: 'STORAGE'
             }

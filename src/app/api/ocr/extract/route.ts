@@ -30,6 +30,7 @@ interface OCRResponseData {
   quotation_attached: string | null
   quotation_amount: number | null
   cost_amount: number | null
+  cost_note: string | null
   price_quote_required: boolean | null
   target_completion_date: string | null
   shipping_deadline: string | null
@@ -43,6 +44,8 @@ interface OCRResponseData {
     manufacture_location: string
     deadline: string | null
     estimated_hours: number | null
+    shared_with_code?: string | null
+    shared_note?: string | null
   }>
   raw_text?: string
 }
@@ -206,6 +209,7 @@ function normalizeExtractedData(raw: any): OCRResponseData {
   const tolerance_info = src.tolerance_info || specs.tolerance_info || src['公差'] || specs['寸法公差'] || null
   const packaging_info = src.packaging_info || specs.packaging_info || src['荷姿'] || src['梱包'] || null
   const cost_amount = parseNum(src.cost_amount ?? src['原価'])
+  const cost_note = src.cost_note || null
   const quotation_attached = src.quotation_attached || src['見積添付'] || src.price_quote_required || src['見積要'] || null
 
   const components = Array.isArray(componentsRaw) ? componentsRaw.map((c: any) => {
@@ -231,6 +235,8 @@ function normalizeExtractedData(raw: any): OCRResponseData {
       deadline: normalizeComponentDate(c.deadline) || null,
       estimated_hours: parseNum(c.estimated_hours || c.hours),
       shared_from_product_code: sharedFrom || null,
+      shared_with_code: c.shared_with_code || null,
+      shared_note: c.shared_note || null,
       notes: c.notes || c.note || (sharedFrom ? `${sharedFrom}と同じ` : null)
     }
   }) : []
@@ -264,6 +270,7 @@ function normalizeExtractedData(raw: any): OCRResponseData {
     quotation_attached: quotation_attached ? String(quotation_attached) : null,
     quotation_amount: null,
     cost_amount,
+    cost_note,
     price_quote_required: quotation_attached ? ['有', '要', '✓', 'true', '添付済'].includes(String(quotation_attached).trim()) : null,
     shipping_deadline: shipping_deadline || null,
     mold_deadline: mold_deadline_val || null,
@@ -342,7 +349,10 @@ Carefully read handwriting and stamp seals across the document:
    - ポケット数 (Pocket count per tray): pocket_count (integer, number of compartments in one tray).
    - 材質 (Plastic Material): plastic_type_designed (e.g. "PP ナチュラル 0.8mm [640] 帯電防止付 シリコン無"). Copy exact text.
    - プラグ仕様 (Plug Type): plug_type (e.g. "ベニヤ木板", "なし").
-   - 別抜き (Separate cutting): has_separate_cutter (boolean: true if 有/別抜き, false if 無/インライン).
+   - 別抜き (Separate Cutter):
+     - If you see "別抜き：有" or "別抜き有" -> has_separate_cutter = true (equipment_type will be CUTTER_SEPARATE).
+     - If you see "別抜き：無" or "別抜き無" -> has_separate_cutter = false (equipment_type will be CUTTER_INLINE).
+     - Default is false if not mentioned.
    - コーナーR: corner_r (e.g. "R5").
    - 面取りC: chamfer_c (e.g. "C2").
    - 勾配: draft_angle (e.g. "5°").
@@ -351,7 +361,10 @@ Carefully read handwriting and stamp seals across the document:
 
 3. Cost & Quotation (見積添付・原価):
    - 見積添付 (Quotation Attached): quotation_attached (e.g. "有", "無", "✓", "添付済" or null). Note: This is an attachment/check status, NOT an amount!
-   - 原価 (Cost / Quoted Unit Price): cost_amount (number or null, e.g. 84.7). This is the quoted unit price in yen.
+   - 原価 (Unit Price): 
+     - If 原価 is a number (e.g. 42.7, 150000) -> cost_amount = that number, cost_note = null.
+     - If 原価 is text (e.g. "金型のみ", "見積なし", "別途") -> cost_amount = null, cost_note = that text.
+     - If empty -> cost_amount = null, cost_note = null.
 
 4. Deadlines (納期):
    - CRITICAL: Carefully distinguish the 3 different types of dates on the sheet:
@@ -375,6 +388,11 @@ Carefully read handwriting and stamp seals across the document:
    - arrangement: "REQUIRED" if 要, "NOT_REQUIRED" if 不要
    - condition: "NEW" if 新規/新, "EXISTING" if 既存/有/流用. If marked with a shared mold/product note (e.g. "MMT-014と同じ", "MMT-014と共通", "流用: MMT-014"), set condition to "EXISTING".
    - shared_from_product_code: If there is a shared equipment note (e.g. "MMT-014と同じ"), extract the referenced model code (e.g. "MMT-014"). Otherwise null.
+   - 流用カッター (Shared Cutter): Look for text next to "カッター" in 手配 or anywhere. 
+     - Pattern "[CODE]と同じ" -> shared_with_code = CODE, shared_note = "[CODE]と同じ"
+     - Pattern "[CODE]共用" -> shared_with_code = CODE, shared_note = "[CODE]共用"
+     - Just a product code on its own (e.g. "JAE-381") -> shared_with_code = "JAE-381", shared_note = null
+     - If not found -> shared_with_code = null, shared_note = null
    - notes: Any side notes (e.g. "MMT-014と同じ").
    - manufacture_location: "IN_HOUSE" if 内製, "OUTSOURCED" if 外注
    - deadline: Component-specific material/procurement date from the 手配 table (e.g. "YYYY-08-06" for 8/6, NOT the 8/26 mold deadline)
@@ -407,19 +425,22 @@ Respond ONLY with a valid JSON object:
   "tolerance_info": null,
   "packaging_info": null,
   "quotation_attached": "有",
-  "cost_amount": 84.7,
+  "cost_amount": null,
+  "cost_note": "金型のみ",
   "shipping_deadline": null,
   "mold_deadline": null,
   "components": [
     {
-      "type_code": "MOLD",
-      "step_name": "本型(アルミ材)",
-      "material_spec": "アルミ材",
+      "type_code": "CUTTER",
+      "step_name": "抜型",
+      "material_spec": "ベニヤ12mm",
       "arrangement": "REQUIRED",
-      "condition": "NEW",
-      "manufacture_location": "IN_HOUSE",
+      "condition": "EXISTING",
+      "manufacture_location": "OUTSOURCED",
       "deadline": null,
-      "estimated_hours": null
+      "estimated_hours": null,
+      "shared_with_code": "JAE-381",
+      "shared_note": "JAE-381と同じ"
     }
   ]
 }`

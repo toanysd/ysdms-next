@@ -102,7 +102,17 @@
     "existingActionEnrich": "既存製品に工程票・諸元を補完・更新 (推奨)",
     "existingActionEnrichDesc": "既存の製品・設計情報に工程票・CAD寸法・構成機器を追記し、製造指示書とJobを整備します。",
     "existingActionNewRev": "新規改修リビジョン (R1/R2...) として追加",
-    "existingActionNewRevDesc": "設計変更や金型改造として新しいリビジョン番号を付与して保存します。"
+    "existingActionNewRevDesc": "設計変更や金型改造として新しいリビジョン番号を付与して保存します。",
+    "actionNewProduct": "別製品として新規登録",
+    "actionNewProductDesc": "製品コードを変更して、新しい製品として登録します。",
+    "costNoteBadge": "特殊原価",
+    "addNote": "+ メモ",
+    "clearNote": "✕ クリア",
+    "sharedCodePlaceholder": "流用元コード",
+    "sharedNotePlaceholder": "流用メモ",
+    "sharedLink": "🔗 {code} と流用",
+    "conflictErrorChangeCode": "製品コードを変更してください。",
+    "conflictErrorSelectAction": "製品が既に存在します。上部の警告パネルで対応方法を選択してください。"
   },
   "WorkOrders": {
     "pageTitle": "製作指示一覧",
