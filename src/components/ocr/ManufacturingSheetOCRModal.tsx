@@ -1085,6 +1085,9 @@ export function ManufacturingSheetOCRModal({
                         className="form-input"
                         style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: 13 }}
                       />
+                      <p style={{ fontSize: 10, color: 'var(--text-muted, #64748B)', marginTop: 4, marginBottom: 0 }}>
+                        ※ JAE-380 と JAE380 は同一として検索します
+                      </p>
                     </div>
 
                     <div>
