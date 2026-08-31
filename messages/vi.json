@@ -2467,7 +2467,16 @@
     "locationMoved": "locationMoved",
     "newStatus": "newStatus",
     "outOfRack": "outOfRack",
-    "system": "Hệ thống"
+    "system": "Hệ thống",
+    "copyNumber": "Số bản sao",
+    "manufacturingDate": "Ngày chế tạo",
+    "moldEntryDate": "Ngày nhập kho",
+    "disposedDate": "Ngày hủy",
+    "lastInventoryDate": "Ngày kiểm kê cuối",
+    "actualWeight": "Trọng lượng",
+    "cavityCount": "Số lượng mặt (Cavity)",
+    "cornerR": "Góc bo R",
+    "chamferC": "Vát cạnh C"
   },
   "Master": {
     "allStatus": "Tất cả trạng thái",

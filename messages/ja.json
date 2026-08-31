@@ -2467,7 +2467,16 @@
     "locationMoved": "locationMoved",
     "newStatus": "newStatus",
     "outOfRack": "outOfRack",
-    "system": "システム"
+    "system": "システム",
+    "copyNumber": "コピー番号",
+    "manufacturingDate": "製造日",
+    "moldEntryDate": "登録日",
+    "disposedDate": "廃棄日",
+    "lastInventoryDate": "最終棚卸日",
+    "actualWeight": "重量",
+    "cavityCount": "取数 (Cavity)",
+    "cornerR": "角R",
+    "chamferC": "面取りC"
   },
   "Master": {
     "allStatus": "すべてのステータス",
