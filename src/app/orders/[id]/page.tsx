@@ -1,222 +1,122 @@
-'use client'
+import { getTranslations } from 'next-intl/server'
+import Link from 'next/link'
+import { ArrowLeft, ArrowUpFromLine } from 'lucide-react'
+import { BackButton } from './_components/BackButton'
+import { createClient } from '@/lib/supabase/server'
+import { notFound } from 'next/navigation'
+import { OrderHeaderForm } from './_components/OrderHeaderForm'
+import { OrderLineForm } from './_components/OrderLineForm'
+import { WorkOrderLinker } from './_components/WorkOrderLinker'
 
-import { useEffect, useState, useCallback } from 'react'
-import { createClient } from '@/lib/supabase/client'
-import { Loader2, AlertTriangle, Save } from 'lucide-react'
-import { useParams } from 'next/navigation'
-import { useTranslations } from 'next-intl'
-
-import { OrderBackButton } from './BackButton'
-import { OrderDetailHeader } from './OrderDetailHeader'
-import { OrderTabNavigation, type TabId } from './OrderTabNavigation'
-import { OverviewTab } from './tabs/OverviewTab'
-import { OrderLinesTab } from './tabs/OrderLinesTab'
-import { ProductionInstructionsTab } from './tabs/ProductionInstructionsTab'
-import { OrderForm } from '../_components/OrderForm'
-import { OrderHeaderInput, OrderLineInput } from '@/app/actions/orders'
-
-export type OrderLineDetail = {
-  line_id: string
-  order_id: string
-  product_id: string | null
-  quantity: number
-  unit: string
-  unit_price: number | null
-  status: string
-  line_no: number
-  is_free_sample: boolean
-  products: { product_id: string; product_code: string; product_name: string | null } | null
-}
-
-export type OrderDetailData = {
-  order_id: string
-  order_no: string
-  company_id: string | null
-  quote_id: string | null
-  order_date: string | null
-  requested_delivery: string | null
-  order_type: string | null
-  customer_order_no: string | null
-  lot_no: string | null
-  order_status: string
-  notes: string | null
-  created_at: string
-  companies: {
-    company_name: string
-    company_code: string
-  } | null
-  order_lines: (OrderLineDetail & OrderLineInput)[]
-}
-
-function TabContent({ 
-  tab, order, isEditing, formData, setFormData 
-}: { 
-  tab: TabId; order: OrderDetailData;
-  isEditing: boolean;
-  formData: Partial<OrderDetailData>;
-  setFormData: React.Dispatch<React.SetStateAction<Partial<OrderDetailData>>>;
+export default async function OrderDetailPage(props: {
+  params: Promise<{ id: string }>
+  searchParams?: Promise<{ tab?: string }>
 }) {
-  switch (tab) {
-    case 'overview':  return <OverviewTab order={order} isEditing={isEditing} formData={formData} setFormData={setFormData} />
-    case 'order_lines': return <OrderLinesTab order={order} />
-    case 'production_instructions': return <ProductionInstructionsTab order={order} />
-    case 'shipments': return <PlaceholderTab name="shipments" />
-    default:          return null
-  }
-}
+  const tMaster = await getTranslations('Master')
+  const { id } = await props.params
+  const sp = await props.searchParams
+  const activeTab = sp?.tab || 'lines'
 
-function PlaceholderTab({ name }: { name: TabId }) {
-  const t = useTranslations('Orders')
-  return (
-    <div className="card-flat" style={{
-      padding: '40px 20px', textAlign: 'center', color: 'var(--text-muted)',
-    }}>
-      <div style={{ fontSize: 13, marginBottom: 4 }}>
-        {t('Tabs.shipments')}
-      </div>
-      <div style={{ fontSize: 11 }}>
-        {t('noData')}
-      </div>
-    </div>
-  )
-}
+  const supabase = await createClient()
 
-export default function OrderDetailPage() {
-  const t = useTranslations('Orders')
-  const params = useParams()
-  const orderId = params.id as string
-  const supabase = createClient()
+  // 1. Fetch Order + Companies
+  const { data: order, error } = await supabase
+    .from('orders')
+    .select('*, companies(company_id, company_name, company_code)')
+    .eq('order_id', id)
+    .single()
 
-  const [order, setOrder] = useState<OrderDetailData | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [activeTab, setActiveTab] = useState<TabId>('overview')
+  if (error || !order) notFound()
 
-  const [isEditing, setIsEditing] = useState(false)
-  const [formData, setFormData] = useState<Partial<OrderDetailData>>({})
+  // 2. Fetch Order Lines
+  const { data: orderLines } = await supabase
+    .from('order_lines')
+    .select('*, products(product_id, product_code, product_name)')
+    .eq('order_id', id)
+    .order('line_no', { ascending: true })
 
-  const fetchOrder = useCallback(async () => {
-    setLoading(true)
-    setError(null)
+  // 3. Fetch Work Orders for Linker
+  let linkedWOs: any[] = []
+  let suggestedWOs: any[] = []
 
-    const { data, error: err } = await supabase
-      .from('orders')
-      .select(`
-        *,
-        companies(company_name, company_code),
-        order_lines(
-          *,
-          products(product_id, product_code, product_name)
-        )
-      `)
-      .eq('order_id', orderId)
-      .single()
+  if (activeTab === 'work_orders') {
+    // Linked
+    const { data: linked } = await supabase
+      .from('work_orders')
+      .select('*')
+      .eq('order_id', id)
+      .order('created_at', { ascending: false })
+    linkedWOs = linked || []
 
-    if (err) {
-      setError(err.message)
-    } else {
-      setOrder(data as unknown as OrderDetailData)
-      setFormData(data as unknown as OrderDetailData)
+    // Suggested
+    const productIds = (orderLines || []).map(l => l.product_id).filter(Boolean)
+    if (productIds.length > 0) {
+      const { data: suggested } = await supabase
+        .from('work_orders')
+        .select('*')
+        .is('order_id', null)
+        .in('product_id', productIds)
+        .order('created_at', { ascending: false })
+      suggestedWOs = suggested || []
     }
-    setLoading(false)
-  }, [orderId, supabase])
-
-  useEffect(() => { fetchOrder() }, [fetchOrder])
-
-  // handleSave is now handled by OrderForm, we just need to refresh when done
-  const handleEditSuccess = () => {
-    setIsEditing(false)
-    fetchOrder()
-  }
-
-  if (loading) {
-    return (
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 300, gap: 8 }}>
-        <Loader2 size={20} className="animate-spin" style={{ color: 'var(--accent)' }} />
-        <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{t('loading')}</span>
-      </div>
-    )
-  }
-
-  if (error || !order) {
-    return (
-      <div className="card-flat" style={{ padding: 20, textAlign: 'center' }}>
-        <AlertTriangle size={24} style={{ color: 'var(--status-error)', marginBottom: 8, marginInline: 'auto' }} />
-        <div style={{ fontSize: 13, color: 'var(--status-error)', fontWeight: 600 }}>
-          {error || t('orderNotFound')}
-        </div>
-        <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>
-          ID: {orderId}
-        </div>
-      </div>
-    )
   }
 
   return (
-    <div className="flex flex-col gap-3 relative" style={{ height: '100%', paddingBottom: isEditing ? 0 : 0 }}>
-      {!isEditing && <OrderBackButton />}
-
-      {!isEditing && (
-        <>
-          <OrderDetailHeader 
-            order={order} 
-            isEditing={isEditing} 
-            setIsEditing={setIsEditing}
-          />
-          <OrderTabNavigation activeTab={activeTab} onTabChange={setActiveTab} />
-          
-          <div style={{ marginTop: 16 }}>
-            <TabContent 
-              tab={activeTab} 
-              order={order} 
-              isEditing={isEditing} 
-              formData={formData} 
-              setFormData={setFormData} 
-            />
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', gap: '12px' }}>
+      
+      {/* ── PageHeader ── */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0, padding: '4px 0' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <BackButton />
+          <Link href="/orders" style={{ color: 'var(--text-muted)' }}>
+            <ArrowUpFromLine size={18} />
+          </Link>
+          <div style={{ width: 1, height: 24, background: 'var(--border-subtle)' }} />
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <h1 className="text-[16px] font-bold" style={{ color: 'var(--text-primary)' }}>{order.order_no}</h1>
+              <span className="badge badge--info font-mono">{order.companies?.company_name}</span>
+            </div>
           </div>
-        </>
-      )}
-
-      {isEditing && (
-        <div style={{ marginTop: 16 }}>
-          <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 16 }}>{t('editOrder')}</h2>
-          <OrderForm 
-            isEditing={true}
-            initialOrder={{
-              header: {
-                order_id: order.order_id,
-                company_id: order.company_id || '',
-                order_no: order.order_no,
-                order_date: order.order_date,
-                requested_delivery: order.requested_delivery,
-                order_type: order.order_type,
-                customer_order_no: order.customer_order_no,
-                lot_no: order.lot_no,
-                notes: order.notes,
-                order_status: order.order_status
-              },
-              lines: order.order_lines.map(l => ({
-                line_id: l.line_id,
-                order_id: l.order_id,
-                product_id: l.product_id,
-                delivery_site_id: l.delivery_site_id || null,
-                line_no: l.line_no,
-                quantity: l.quantity,
-                unit: l.unit,
-                due_date: l.due_date,
-                ship_date: l.ship_date,
-                is_free_sample: l.is_free_sample,
-                charge_type: l.charge_type,
-                packing_style: l.packing_style,
-                shipping_notes: l.shipping_notes,
-                line_status: l.line_status
-              }))
-            }}
-            onCancel={() => setIsEditing(false)}
-            onSuccess={handleEditSuccess}
-          />
         </div>
-      )}
+      </div>
+
+      {/* ── Order Header Form ── */}
+      <OrderHeaderForm order={order} companies={[]} />
+
+      {/* ── FilterBar / TabBar ── */}
+      <div className="form-section" style={{ flexShrink: 0, marginBottom: 0 }}>
+        <div className="form-section-body">
+          <div className="tab-nav" style={{ margin: '-14px -14px -14px', background: 'var(--bg-surface)' }}>
+            <Link 
+              href={`/orders/${id}?tab=lines`}
+              className={`tab-item ${activeTab === 'lines' ? 'tab-item--active' : ''}`}
+              style={{ flex: 1, padding: '8px 4px', textDecoration: 'none' }}
+            >
+              <span style={{ fontWeight: 700 }}>Chi tiết Đơn</span>
+            </Link>
+            <Link 
+              href={`/orders/${id}?tab=work_orders`}
+              className={`tab-item ${activeTab === 'work_orders' ? 'tab-item--active' : ''}`}
+              style={{ flex: 1, padding: '8px 4px', textDecoration: 'none' }}
+            >
+              <span style={{ fontWeight: 700 }}>Lệnh sản xuất</span>
+            </Link>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Content Area ── */}
+      <div className="card-flat" style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}>
+        {activeTab === 'lines' && (
+          <OrderLineForm orderId={id} initialLines={orderLines || []} orderStatus={order.order_status || 'DRAFT'} />
+        )}
+        
+        {activeTab === 'work_orders' && (
+          <WorkOrderLinker orderId={id} linkedWorkOrders={linkedWOs} suggestedWorkOrders={suggestedWOs} />
+        )}
+      </div>
+
     </div>
   )
 }
