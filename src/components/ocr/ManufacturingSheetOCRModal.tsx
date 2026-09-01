@@ -539,14 +539,11 @@ export function ManufacturingSheetOCRModal({
         throw new Error(json.error || 'データの保存に失敗しました')
       }
 
-      // If this was a dry-run preview, show alert with summary and stay on REVIEW
+      // If this was a dry-run preview, open ChangePreviewDialog to show diff
       if (json.data?.dry_run) {
         setHasPreviewedDryRun(true)
-        const logs: string[] = json.data?.dry_run_logs || []
-        const summary = logs.length > 0
-          ? logs.slice(0, 8).join('\n')
-          : 'シミュレーション完了 — 問題は検出されませんでした'
-        alert(`🧪 変更内容プレビュー\n\n${summary}\n\n実際に保存するには「確認して保存」をクリックしてください。`)
+        setPreviewLogs(json.data?.dry_run_logs || [])
+        setShowPreviewDialog(true)
         return
       }
 
@@ -2117,8 +2114,9 @@ export function ManufacturingSheetOCRModal({
           workOrders={existingProductInfo?.workOrders || []}
           currentWoId={targetWoId}
           onCancel={() => setShowWoDialog(false)}
-          onConfirm={(woId) => {
+          onConfirm={(woId, jobId) => {
             setTargetWoId(woId)
+            setTargetJobId(jobId || null)
             setShowWoDialog(false)
           }}
         />

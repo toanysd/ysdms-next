@@ -8,7 +8,7 @@ interface WOSelectionDialogProps {
   workOrders: any[]
   currentWoId: string | null
   onCancel: () => void
-  onConfirm: (woId: string | null) => void
+  onConfirm: (woId: string | null, jobId?: string | null) => void
 }
 
 export function WOSelectionDialog({ isOpen, productCode, companyName, workOrders, currentWoId, onCancel, onConfirm }: WOSelectionDialogProps) {
@@ -167,7 +167,17 @@ export function WOSelectionDialog({ isOpen, productCode, companyName, workOrders
           </button>
           <button
             type="button"
-            onClick={() => onConfirm(selectedWo)}
+            onClick={() => {
+              if (!selectedWo) {
+                onConfirm(null, null)
+              } else {
+                const targetWoObj = workOrders.find(w => w.wo_id === selectedWo)
+                const moldJob = (targetWoObj?.jobs || []).find((j: any) => 
+                  !j.job_category || j.job_category.startsWith('MOLD')
+                )
+                onConfirm(selectedWo, moldJob?.job_id || null)
+              }
+            }}
             className="btn btn-primary"
           >
             ✅ 適用先を確定
