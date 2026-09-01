@@ -274,6 +274,11 @@ FK:  taken_by          UUID → employees(employee_id)
 
 ## 🔑 Bảng `work_orders` — Lệnh Sản Xuất / Chế Tạo Khuôn Tổng Thể (Tầng 1 - ADR-002)
 
+> **Quy tắc WO Legacy vs. WO Mới (Cập nhật 2026-09-01)**
+> - **Data di trú từ Access:** WO được sinh mã `WO-L-{legacy_no}` tự động khi ETL. Cột `jobs.work_order_id` đã được backfill đầy đủ (203 jobs legacy đã trỏ về đúng WO-L-xxxx).
+> - **Khi bóc tách OCR phiếu mới (新規指示):** Nếu sản phẩm đã có WO-L-xxxx, UI bắt buộc người dùng chọn WO-L-xxxx hiện có $\rightarrow$ append thông tin 新規 (Job thiết kế/khuôn mới) vào WO cũ. Không được tạo WO mới trùng lặp.
+> - **Gantt group key ưu tiên:** `work_order_id` (uuid) > `baseProdCode` > `product_id` > `job_id`.
+
 ```
 PK:  wo_id              UUID
      wo_code            TEXT UNIQUE NOT NULL   ← (VD: 'WO-2026-000001')
