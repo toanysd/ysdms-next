@@ -155,6 +155,7 @@ export function ManufacturingSheetOCRModal({
   const [conflictResolution, setConflictResolution] = useState<{ productAction: 'USE_EXISTING' | 'CREATE_NEW', revisionAction: 'USE_EXISTING' | 'CREATE_NEW' } | null>(null)
   const [isDryRun, setIsDryRun] = useState(true) // Default to true for safety
   const [existingProductInfo, setExistingProductInfo] = useState<any | null>(null)
+  const [targetJobId, setTargetJobId] = useState<string | null>(null)
 
   const fileInputRef = useRef<HTMLInputElement | null>(null)
   const cameraInputRef = useRef<HTMLInputElement | null>(null)
@@ -507,7 +508,8 @@ export function ManufacturingSheetOCRModal({
         mold_handling_mode: moldHandlingMode,
         existing_handling_mode: existingHandlingMode,
         components: formData.components,
-        dry_run: isDryRun
+        dry_run: isDryRun,
+        target_job_id: targetJobId || undefined
       }
 
       const res = await fetch('/api/ocr/save', {
@@ -930,6 +932,86 @@ export function ManufacturingSheetOCRModal({
             {/* Right: Extracted Structured Form */}
             <div style={{ width: '58%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
               <div style={{ padding: '16px 20px', overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: 14 }}>
+                
+                {/* SECTION 0: Job Linking */}
+                {existingProductInfo && existingProductInfo.hasJobs && (
+                  <div className="card-flat" style={{ padding: 14, background: '#f0f9ff', border: '1.5px solid #0ea5e9' }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: '#0369a1', marginBottom: 10 }}>
+                      既存のJobに工程票を紐付ける (Merge into existing Job)
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      {existingProductInfo.jobs.map((job: any) => {
+                        const hasWO = !!job.work_order_id;
+                        return (
+                          <label
+                            key={job.job_id}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 8,
+                              padding: '8px 12px',
+                              background: '#fff',
+                              border: '1px solid #bae6fd',
+                              borderRadius: 6,
+                              cursor: hasWO ? 'not-allowed' : 'pointer',
+                              opacity: hasWO ? 0.6 : 1
+                            }}
+                          >
+                            <input
+                              type="radio"
+                              name="target_job"
+                              value={job.job_id}
+                              checked={targetJobId === job.job_id}
+                              onChange={() => setTargetJobId(job.job_id)}
+                              disabled={hasWO}
+                            />
+                            <div style={{ flex: 1 }}>
+                              <div style={{ fontSize: 13, fontWeight: 600, color: '#0f172a' }}>
+                                {job.job_name || job.job_code}
+                              </div>
+                              <div style={{ fontSize: 11, color: '#475569', marginTop: 2 }}>
+                                {job.equipment?.equipment_code || 'N/A'} · {({ COMPLETED: '完了', IN_PROGRESS: '進行中', PLANNED: '計画中', CANCELLED: '中止', NEW: '新規' } as Record<string, string>)[job.job_status] || job.job_status}
+                                {hasWO && (
+                                  <span style={{ marginLeft: 6, color: '#0369a1', fontWeight: 600 }}>
+                                    · {job.work_order_id} (登録済み)
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                            {hasWO && (
+                              <span className="badge" style={{ background: '#e0f2fe', color: '#0369a1' }}>
+                                WO登録済
+                              </span>
+                            )}
+                          </label>
+                        )
+                      })}
+                      <label
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 8,
+                          padding: '8px 12px',
+                          background: '#fff',
+                          border: '1px solid #bae6fd',
+                          borderRadius: 6,
+                          cursor: 'pointer'
+                        }}
+                      >
+                        <input
+                          type="radio"
+                          name="target_job"
+                          value="NEW"
+                          checked={targetJobId === null}
+                          onChange={() => setTargetJobId(null)}
+                        />
+                        <span style={{ fontSize: 13, fontWeight: 600, color: '#0f172a' }}>
+                          紐付けず、新しくJobを作成する (Create entirely new Job)
+                        </span>
+                      </label>
+                    </div>
+                  </div>
+                )}
                 
                 {/* SECTION 1: Product Header */}
                 <div className="card-flat" style={{ padding: 14, background: 'var(--bg-surface-2)' }}>

@@ -51,8 +51,19 @@ export async function GET(request: NextRequest) {
 
     const { data: jobs } = await supabase
       .from('jobs')
-      .select('job_id, job_code, job_name, job_status, created_at')
+      .select(`
+        job_id,
+        job_code,
+        job_name,
+        job_status,
+        job_category,
+        work_order_id,
+        equipment_id,
+        created_at,
+        equipment(equipment_type, equipment_code)
+      `)
       .eq('product_id', product.product_id)
+      .order('created_at', { ascending: false })
       .limit(5)
 
     return NextResponse.json({

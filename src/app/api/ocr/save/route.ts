@@ -55,6 +55,7 @@ interface SaveOCRInput {
     notes?: string
   }>
   dry_run?: boolean
+  target_job_id?: string
 }
 
 export async function POST(request: NextRequest) {
@@ -371,9 +372,10 @@ export async function POST(request: NextRequest) {
       : body.shipping_deadline || null
 
     let workOrderId: string | null = null
+    let finalWoCode = woCode
     const { data: existingWO } = await supabase
       .from('work_orders')
-      .select('wo_id')
+      .select('wo_id, wo_code')
       .eq('product_id', productId!)
       .eq('design_revision_id', revisionId!)
       .limit(1)
@@ -381,6 +383,9 @@ export async function POST(request: NextRequest) {
 
     if (existingWO) {
       workOrderId = existingWO.wo_id
+      if (existingWO.wo_code) {
+        finalWoCode = existingWO.wo_code
+      }
       logDryRun(`✅ Update existing Work Order: ${workOrderId}`)
       if (!isDryRun) {
         await supabase
@@ -755,16 +760,24 @@ export async function POST(request: NextRequest) {
       jobCodePrefix: string,
       deadline: string | null | undefined,
       steps: Array<{ step_name: string; track: string; type_code: string; material_spec?: string; manufacture_location?: string; deadline?: string | null; estimated_hours?: number | null }>,
+      isTargetJob?: boolean,
     }) {
-      const { equipmentId, jobCategory, jobTypeId, jobName, jobCodePrefix, deadline, steps } = params
+      const { equipmentId, jobCategory, jobTypeId, jobName, jobCodePrefix, deadline, steps, isTargetJob } = params
 
       // Check for existing job with same equipment + product + design (avoid duplicates)
       let existingJob: any = null
       
-      if (!isDryRun) {
+      if (isTargetJob && body.target_job_id) {
+        if (!isDryRun) {
+          const { data: targetJob } = await supabase.from('jobs').select('job_id, job_name').eq('job_id', body.target_job_id).limit(1).maybeSingle()
+          existingJob = targetJob
+        } else {
+          existingJob = { job_id: body.target_job_id, job_name: 'Existing Job (Dry Run)' }
+        }
+      } else if (!isDryRun) {
         let existingQuery = supabase
           .from('jobs')
-          .select('job_id')
+          .select('job_id, job_name')
           .eq('product_id', productId!)
           .eq('design_revision_id', revisionId!)
           .eq('job_category', jobCategory)
@@ -780,7 +793,7 @@ export async function POST(request: NextRequest) {
         if (equipmentId && !equipmentId.toString().startsWith('dry-run-')) {
           let existingQuery = supabase
             .from('jobs')
-            .select('job_id')
+            .select('job_id, job_name')
             .eq('product_id', productId!)
             .eq('design_revision_id', revisionId!)
             .eq('job_category', jobCategory)
@@ -796,11 +809,17 @@ export async function POST(request: NextRequest) {
       if (existingJob) {
         jobId = existingJob.job_id
         jobCode = jobCodePrefix
-        logDryRun(`✅ Update existing Job: [${jobCategory}] ${jobName} (${jobId})`)
+        
+        let finalJobName = jobName
+        if (isTargetJob && body.target_job_id) {
+          finalJobName = `${existingJob.job_name} [${finalWoCode}]`
+        }
+
+        logDryRun(`✅ Update existing Job: [${jobCategory}] ${finalJobName} (${jobId})`)
         
         if (!isDryRun) {
           await supabase.from('jobs').update({
-            job_name: jobName,
+            job_name: finalJobName,
             equipment_id: equipmentId || undefined,
             ...commonJobFields,
             deadline: deadline || undefined,
@@ -915,6 +934,7 @@ export async function POST(request: NextRequest) {
       jobCodePrefix: `JOB-${baseCode}-M`,
       deadline: moldDeadline as string | null | undefined,
       steps: moldSteps,
+      isTargetJob: true,
     })
 
     // ── 6b. Cutter Job (抜型製作) ────────────────────────────────────────
