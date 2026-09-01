@@ -82,14 +82,26 @@ export function OrderCreateForm() {
                 Khách hàng <span style={{ color: 'var(--status-error)' }}>*</span>
               </label>
               <AsyncSearchableSelect
-                tableName="companies"
-                labelColumn="company_name"
-                valueColumn="company_id"
-                searchColumns={['company_name', 'company_code']}
                 placeholder="Tìm Khách hàng..."
                 value={companyId}
                 onChange={(val) => setCompanyId(val)}
-                filter={{ column: 'company_type', operator: 'cs', value: ['CUSTOMER'] }}
+                fetchOptions={async (query: string) => {
+                  let q = supabase
+                    .from('companies')
+                    .select('company_id, company_code, company_name')
+                    .contains('company_type', ['CUSTOMER'])
+                  
+                  if (query) {
+                    q = q.or(`company_code.ilike.%${query}%,company_name.ilike.%${query}%`)
+                  }
+                  
+                  const { data } = await q.limit(20)
+                  return (data || []).map(c => ({
+                    value: c.company_id,
+                    label: c.company_name,
+                    sublabel: c.company_code
+                  }))
+                }}
               />
             </div>
           </div>
