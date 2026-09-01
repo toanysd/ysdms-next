@@ -474,6 +474,18 @@ PK:  plastic_id       UUID
      width_mm         INTEGER
 ```
 
+**`plastic_manufacturer_map`** — Mapping mã vật liệu của nhà cung cấp
+```
+PK:  map_id                    UUID
+FK:  supplier_id               UUID → companies(company_id)
+     commercial_grade_code     TEXT UNIQUE
+FK:  plastic_id                UUID → plastic_master(plastic_id)
+     mapping_status            TEXT DEFAULT 'needs_confirmation'
+     specific_gravity_kg_m3    NUMERIC
+     price_jpy_per_kg          NUMERIC
+     is_active                 BOOLEAN
+```
+
 **`plastic_receipt_roll`** — Quản lý cuộn nhựa thực tế
 ```
 PK:  id                UUID
