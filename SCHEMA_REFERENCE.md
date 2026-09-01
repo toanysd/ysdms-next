@@ -381,6 +381,25 @@ FK:  machine_id           UUID → machines(machine_id)
 
 ---
 
+## 📋 Phase Log — Order/Customer Phase (CLOSED 2026-09-01)
+### Migrations đã apply production
+- **070** (2026-09-01): `orders.order_status` DEFAULT → 'DRAFT', thêm CHECK constraint 6 giá trị, bật RLS
+- **071** (2026-09-01): RLS policies `orders_select_authenticated` + `orders_modify_authenticated`
+### Routes đã build
+- `/master/customers` — Danh sách + Detail 3 tab (Thông tin | Đơn hàng | Sản phẩm), read-only
+- `/orders` — Danh sách đơn hàng, filter theo status tab
+- `/orders/new` — Tạo đơn Header đơn giản → redirect sang [id]
+- `/orders/[id]` — Detail: OrderHeaderForm + Tab Lines (OrderLineForm) + Tab WO (WorkOrderLinker)
+### Business Rules đã xác lập
+- Order Type: Bán khay nhựa (products) — khuôn/thiết bị đi qua invoices (Phase R5)
+- Creation Flow: WO (OCR) tạo trước, Order tạo sau → link thủ công qua WorkOrderLinker
+- Status Flow: DRAFT → CONFIRMED → IN_PRODUCTION → SHIPPED → CLOSED (chỉ tiến 1 bước, CANCEL từ DRAFT/CONFIRMED)
+- Legacy 1000 orders: giữ nguyên shell CONFIRMED, không backfill order_lines
+- Edit lock: order_lines chỉ edit được khi status = DRAFT | CONFIRMED
+### Phase tiếp theo open
+- Phase R5: Invoices & Công nợ (schema đã có, UI chưa build)
+- Phase Plastic WMS
+
 ## 🔑 Bảng `orders`, `order_lines`, `shipments` — Đơn Hàng & Giao Hàng
 
 **`orders`**
@@ -390,7 +409,7 @@ FK:  company_id         UUID → companies(company_id) NOT NULL  ← KHÔNG CÓ 
      order_no           TEXT UNIQUE NOT NULL
      order_date         DATE
      requested_delivery DATE
-     order_status       TEXT  ('NEW' | 'CONFIRMED' | 'IN_PRODUCTION' | 'SHIPPED' | 'CANCELLED')
+     order_status       TEXT DEFAULT 'DRAFT'  ('DRAFT' | 'CONFIRMED' | 'IN_PRODUCTION' | 'SHIPPED' | 'CLOSED' | 'CANCELLED')
      customer_order_no  TEXT    ← Số PO khách hàng (要求No.)
      lot_no             TEXT    ← Mã Lot / 伝票No.
      notes              TEXT
