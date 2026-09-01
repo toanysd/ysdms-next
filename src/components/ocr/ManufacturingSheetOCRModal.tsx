@@ -10,6 +10,8 @@ import {
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useTranslations } from 'next-intl'
+import { WOSelectionDialog } from './WOSelectionDialog'
+import { ChangePreviewDialog } from './ChangePreviewDialog'
 import { createClient } from '@/lib/supabase/client'
 import { compressImageFile } from '@/lib/storage/EquipmentPhotoStore'
 import { AsyncSearchableSelect } from '@/components/ui/AsyncSearchableSelect'
@@ -155,8 +157,13 @@ export function ManufacturingSheetOCRModal({
   const [conflictResolution, setConflictResolution] = useState<{ productAction: 'USE_EXISTING' | 'CREATE_NEW', revisionAction: 'USE_EXISTING' | 'CREATE_NEW' } | null>(null)
   const [existingProductInfo, setExistingProductInfo] = useState<any | null>(null)
 
-  // NEW: review phase state — null = not yet previewed, true = previewed
+  const [targetJobId, setTargetJobId] = useState<string | null>(null)
+  const [targetWoId, setTargetWoId] = useState<string | null>(null)
+  const [showWoDialog, setShowWoDialog] = useState(false)
+  const [showPreviewDialog, setShowPreviewDialog] = useState(false)
+  const [previewLogs, setPreviewLogs] = useState<string[]>([])
   const [hasPreviewedDryRun, setHasPreviewedDryRun] = useState<boolean>(false)
+
 
   const fileInputRef = useRef<HTMLInputElement | null>(null)
   const cameraInputRef = useRef<HTMLInputElement | null>(null)
@@ -430,7 +437,9 @@ export function ManufacturingSheetOCRModal({
     }
   }
 
-  // Atomic Save to DB — dryRunOverride: true = preview only, false = real save
+
+  // Atomic Save to DB
+
   const handleSaveToDatabase = async (dryRunOverride: boolean = false) => {
     if (!formData.product_code || !formData.product_name_internal) {
       setError('製品コードと社内製品名は必須です')
@@ -511,7 +520,11 @@ export function ManufacturingSheetOCRModal({
         mold_handling_mode: moldHandlingMode,
         existing_handling_mode: existingHandlingMode,
         components: formData.components,
-        dry_run: dryRunOverride
+
+        dry_run: dryRunOverride,
+        target_work_order_id: targetWoId || undefined,
+          target_job_id: targetJobId || undefined
+
       }
 
       const res = await fetch('/api/ocr/save', {
@@ -947,6 +960,71 @@ export function ManufacturingSheetOCRModal({
             <div style={{ width: '58%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
               <div style={{ padding: '16px 20px', overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: 14 }}>
                 
+
+                {/* SECTION 0: Work Order & Job Linking */}
+                {existingProductInfo && (
+                  <div className="card-flat" style={{ padding: 14, background: '#f0f9ff', border: '1.5px solid #0ea5e9', borderRadius: 8 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <span style={{ fontSize: 16 }}>📋</span>
+                        <span style={{ fontSize: 13, fontWeight: 700, color: '#0369a1' }}>
+                          関連する Work Order (製作指示) の選択
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setShowWoDialog(true)}
+                        className="btn btn-secondary"
+                        style={{ fontSize: 12, padding: '5px 12px', gap: 6, borderColor: '#0284c7', color: '#0369a1', background: '#fff', fontWeight: 600 }}
+                      >
+                        <Search size={14} />
+                        <span>🔍 Xem phả hệ & chọn WO</span>
+                      </button>
+                    </div>
+                    <div style={{ background: '#fff', padding: '10px 14px', borderRadius: 6, border: '1px solid #bae6fd' }}>
+                      {targetWoId ? (
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                          <div>
+                            <div style={{ fontSize: 13, fontWeight: 700, color: '#0f172a' }}>
+                              選択中: {existingProductInfo.workOrders?.find((wo: any) => wo.wo_id === targetWoId)?.wo_code || targetWoId}
+                              {existingProductInfo.workOrders?.find((wo: any) => wo.wo_id === targetWoId)?.wo_name ? ` (${existingProductInfo.workOrders?.find((wo: any) => wo.wo_id === targetWoId)?.wo_name})` : ''}
+                            </div>
+                            <div style={{ fontSize: 11, color: '#64748b', marginTop: 2 }}>
+                              既存のWork Orderに新しいジョブ・工程を紐付け/更新します
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setTargetWoId(null)}
+                            style={{ fontSize: 11, color: '#ef4444', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}
+                          >
+                            解除 (新規作成に変更)
+                          </button>
+                        </div>
+                      ) : (
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                          <div>
+                            <div style={{ fontSize: 13, fontWeight: 600, color: '#0f172a' }}>
+                              新規 Work Order を作成
+                            </div>
+                            <div style={{ fontSize: 11, color: '#64748b', marginTop: 2 }}>
+                              既存のWork Orderには紐付けず、新しいWork Order番号を発行します
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setShowWoDialog(true)}
+                            style={{ fontSize: 11, color: '#0369a1', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}
+                          >
+                            既存WOを選択
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+                
+
                 {/* SECTION 1: Product Header */}
                 <div className="card-flat" style={{ padding: 14, background: 'var(--bg-surface-2)' }}>
                   {existingProductInfo && (
@@ -1860,25 +1938,13 @@ export function ManufacturingSheetOCRModal({
                     onClick={() => handleSaveToDatabase(true)}
                     disabled={saving}
                     className="btn btn-secondary"
-                    style={{
-                      fontSize: 13,
-                      padding: '8px 18px',
-                      gap: 6,
-                      borderColor: hasPreviewedDryRun ? 'var(--status-success)' : undefined,
-                      color: hasPreviewedDryRun ? 'var(--status-success)' : undefined
-                    }}
+
+                    style={{ fontSize: 13, padding: '8px 16px', gap: 6, color: '#0369a1', borderColor: '#0369a1', fontWeight: 600 }}
                   >
-                    {saving ? (
-                      <Loader2 size={15} className="animate-spin" />
-                    ) : (
-                      <React.Fragment>
-                        {hasPreviewedDryRun ? <Check size={15} /> : <ArrowRight size={15} />}
-                        <span>{hasPreviewedDryRun ? '✅ 確認済み' : '変更内容を確認 →'}</span>
-                      </React.Fragment>
-                    )}
+                    変更内容を確認 →
                   </button>
 
-                  {/* Button 2: Real save — enabled always, but turns green after preview */}
+
                   <button
                     type="button"
                     onClick={() => handleSaveToDatabase(false)}
@@ -2043,6 +2109,30 @@ export function ManufacturingSheetOCRModal({
             </div>
           </div>
         )}
+        {/* SUB-POPUPS (Overlays with higher z-index) */}
+        <WOSelectionDialog
+          isOpen={showWoDialog}
+          productCode={formData.product_code || ''}
+          companyName={existingProductInfo?.company_name || formData.customer_name || ''}
+          workOrders={existingProductInfo?.workOrders || []}
+          currentWoId={targetWoId}
+          onCancel={() => setShowWoDialog(false)}
+          onConfirm={(woId) => {
+            setTargetWoId(woId)
+            setShowWoDialog(false)
+          }}
+        />
+
+        <ChangePreviewDialog
+          isOpen={showPreviewDialog}
+          previewLogs={previewLogs}
+          saving={saving}
+          onCancel={() => setShowPreviewDialog(false)}
+          onConfirm={() => {
+            setShowPreviewDialog(false)
+            handleSaveToDatabase(false)
+          }}
+        />
       </div>
     </div>
   )

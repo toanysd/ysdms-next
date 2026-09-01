@@ -56,6 +56,7 @@ interface SaveOCRInput {
   }>
   dry_run?: boolean
   target_job_id?: string
+  target_work_order_id?: string
 }
 
 export async function POST(request: NextRequest) {
@@ -373,51 +374,78 @@ export async function POST(request: NextRequest) {
 
     let workOrderId: string | null = null
     let finalWoCode = woCode
-    const { data: existingWO } = await supabase
-      .from('work_orders')
-      .select('wo_id, wo_code')
-      .eq('product_id', productId!)
-      .eq('design_revision_id', revisionId!)
-      .limit(1)
-      .maybeSingle()
 
-    if (existingWO) {
-      workOrderId = existingWO.wo_id
-      if (existingWO.wo_code) {
-        finalWoCode = existingWO.wo_code
+    if (body.target_work_order_id) {
+      workOrderId = body.target_work_order_id
+      const { data: targetWO } = await supabase
+        .from('work_orders')
+        .select('wo_id, wo_code, wo_name')
+        .eq('wo_id', workOrderId)
+        .maybeSingle()
+
+      if (targetWO?.wo_code) {
+        finalWoCode = targetWO.wo_code
       }
-      logDryRun(`✅ Update existing Work Order: ${workOrderId}`)
+
+      logDryRun(`🔗 Link to existing Work Order: ${finalWoCode} (${workOrderId})`)
       if (!isDryRun) {
         await supabase
           .from('work_orders')
           .update({
-            deadline: maxDeadline || undefined,
-            wo_status: 'PLANNED'
-          })
-          .eq('wo_id', workOrderId)
-      }
-    } else {
-      logDryRun(`🆕 Create new Work Order: ${woCode}`)
-      if (isDryRun) {
-        workOrderId = 'dry-run-wo-id'
-      } else {
-        const { data: newWO } = await supabase
-          .from('work_orders')
-          .insert([{
-            wo_code: woCode,
-            wo_name: woName,
             product_id: productId,
             design_revision_id: revisionId,
             company_id: companyId,
-            wo_type: woType,
-            wo_status: 'PLANNED',
-            start_date: new Date().toISOString().split('T')[0],
             deadline: maxDeadline || undefined
-          }])
-          .select('wo_id')
-          .maybeSingle()
+          })
+          .eq('wo_id', workOrderId!)
+      }
+    } else {
+      const { data: existingWO } = await supabase
+        .from('work_orders')
+        .select('wo_id, wo_code')
+        .eq('product_id', productId!)
+        .eq('design_revision_id', revisionId!)
+        .limit(1)
+        .maybeSingle()
 
-        workOrderId = newWO?.wo_id || null
+      if (existingWO) {
+        workOrderId = existingWO.wo_id
+        if (existingWO.wo_code) {
+          finalWoCode = existingWO.wo_code
+        }
+        logDryRun(`✅ Update existing Work Order: ${workOrderId}`)
+        if (!isDryRun) {
+          await supabase
+            .from('work_orders')
+            .update({
+              deadline: maxDeadline || undefined,
+              wo_status: 'PLANNED'
+            })
+            .eq('wo_id', workOrderId)
+        }
+      } else {
+        logDryRun(`🆕 Create new Work Order: ${woCode}`)
+        if (isDryRun) {
+          workOrderId = 'dry-run-wo-id'
+        } else {
+          const { data: newWO } = await supabase
+            .from('work_orders')
+            .insert([{
+              wo_code: woCode,
+              wo_name: woName,
+              product_id: productId,
+              design_revision_id: revisionId,
+              company_id: companyId,
+              wo_type: woType,
+              wo_status: 'PLANNED',
+              start_date: new Date().toISOString().split('T')[0],
+              deadline: maxDeadline || undefined
+            }])
+            .select('wo_id')
+            .maybeSingle()
+
+          workOrderId = newWO?.wo_id || null
+        }
       }
     }
     // ─── 5. Create & Link Equipment (Kit Members) ─────────────────────
@@ -788,6 +816,44 @@ export async function POST(request: NextRequest) {
 
         const { data: found } = await existingQuery.limit(1).maybeSingle()
         existingJob = found
+
+        // If not found yet and target_work_order_id is provided, check jobs belonging to that Work Order or legacy job
+        if (!existingJob && body.target_work_order_id) {
+          let woJobQuery = supabase
+            .from('jobs')
+            .select('job_id, job_name, job_category, legacy_id')
+            .eq('work_order_id', body.target_work_order_id)
+
+          if (jobCategory.startsWith('MOLD')) {
+            woJobQuery = woJobQuery.in('job_category', ['MOLD', 'MOLD_NEW', 'MOLD_MAINTENANCE', 'MOLD_REPAIR'])
+          } else {
+            woJobQuery = woJobQuery.eq('job_category', jobCategory)
+          }
+
+          const { data: foundWoJob } = await woJobQuery.limit(1).maybeSingle()
+          if (foundWoJob) {
+            existingJob = foundWoJob
+          } else {
+            const { data: targetWO } = await supabase
+              .from('work_orders')
+              .select('legacy_id')
+              .eq('wo_id', body.target_work_order_id)
+              .maybeSingle()
+
+            if (targetWO?.legacy_id) {
+              const expectedJobLegacyId = targetWO.legacy_id.replace('WO', 'JOB')
+              const { data: foundLegacyJob } = await supabase
+                .from('jobs')
+                .select('job_id, job_name, job_category, legacy_id')
+                .eq('legacy_id', expectedJobLegacyId)
+                .limit(1)
+                .maybeSingle()
+              if (foundLegacyJob) {
+                existingJob = foundLegacyJob
+              }
+            }
+          }
+        }
       } else {
         // In dry-run, mock IDs wouldn't be found anyway, so we just assume new unless it's a real equipment ID
         if (equipmentId && !equipmentId.toString().startsWith('dry-run-')) {
@@ -800,6 +866,9 @@ export async function POST(request: NextRequest) {
             .eq('equipment_id', equipmentId)
           const { data: found } = await existingQuery.limit(1).maybeSingle()
           existingJob = found
+        }
+        if (!existingJob && body.target_work_order_id) {
+          existingJob = { job_id: 'dry-run-existing-wo-job-id', job_name: `${jobName} (Target WO Job)` }
         }
       }
 

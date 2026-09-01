@@ -14,11 +14,8 @@ export async function GET(request: NextRequest) {
     }
 
     const supabase = await createClient()
-
-    // 1. Dùng hàm normalizeCode như chỉ thị (chỉ bỏ khoảng trắng, gạch nối, underscore)
     const normalizedInput = normalizeCode(rawCode)
     
-    // Nếu PE muốn query giống hệt hướng dẫn:
     const { data: product, error } = await supabase
       .from('products')
       .select(`
@@ -45,13 +42,33 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ exists: false, product: null })
     }
 
-    const { data: workOrders } = await supabase
+    // Find work orders by product_id OR by name matching code
+    const woFilter = [
+      `product_id.eq.${product.product_id}`,
+      `wo_name.ilike.%${rawCode}%`,
+      `wo_name.ilike.%${normalizedInput}%`
+    ]
+    const { data: rawWorkOrders } = await supabase
       .from('work_orders')
-      .select('wo_id, wo_code, wo_name, wo_status, created_at')
-      .eq('product_id', product.product_id)
-      .limit(5)
+      .select('wo_id, wo_code, wo_name, wo_status, created_at, product_id, legacy_id')
+      .or(woFilter.join(','))
+      .order('created_at', { ascending: false })
+      .limit(10)
 
-    const { data: jobs } = await supabase
+    const workOrders = rawWorkOrders || []
+    const woIds = workOrders.map(w => w.wo_id)
+
+    // Find jobs
+    const jobFilter = [
+      `product_id.eq.${product.product_id}`,
+      `job_name.ilike.%${rawCode}%`,
+      `job_code.ilike.%${normalizedInput}%`
+    ]
+    if (woIds.length > 0) {
+      jobFilter.push(`work_order_id.in.(${woIds.join(',')})`)
+    }
+
+    const { data: rawJobs } = await supabase
       .from('jobs')
       .select(`
         job_id,
@@ -61,12 +78,27 @@ export async function GET(request: NextRequest) {
         job_category,
         work_order_id,
         equipment_id,
+        legacy_id,
         created_at,
         equipment(equipment_type, equipment_code)
       `)
-      .eq('product_id', product.product_id)
+      .or(jobFilter.join(','))
       .order('created_at', { ascending: false })
-      .limit(5)
+      .limit(20)
+
+    const allJobs = rawJobs || []
+
+    // Group jobs under corresponding work orders
+    const workOrdersWithJobs = workOrders.map(wo => {
+      const matchedJobs = allJobs.filter(j => 
+        j.work_order_id === wo.wo_id || 
+        (wo.legacy_id && j.legacy_id && wo.legacy_id.replace('WO', '') === j.legacy_id.replace('JOB', ''))
+      )
+      return {
+        ...wo,
+        jobs: matchedJobs
+      }
+    })
 
     return NextResponse.json({
       exists: true,
@@ -79,10 +111,10 @@ export async function GET(request: NextRequest) {
         company_name: (product.companies as any)?.company_name || null,
         company_code: (product.companies as any)?.company_code || null,
         existingRevs: (product.design_revisions || []).sort((a: any, b: any) => (a.revision_number || 0) - (b.revision_number || 0)),
-        hasWorkOrder: Boolean(workOrders && workOrders.length > 0),
-        workOrders: workOrders || [],
-        hasJobs: Boolean(jobs && jobs.length > 0),
-        jobs: jobs || []
+        hasWorkOrder: Boolean(workOrdersWithJobs && workOrdersWithJobs.length > 0),
+        workOrders: workOrdersWithJobs,
+        hasJobs: Boolean(allJobs && allJobs.length > 0),
+        jobs: allJobs
       }
     })
   } catch (err: any) {
