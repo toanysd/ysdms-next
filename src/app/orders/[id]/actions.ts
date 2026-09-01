@@ -11,9 +11,27 @@ export async function updateOrderHeaderAction(orderId: string, payload: any) {
   return { success: true }
 }
 
-export async function updateOrderStatusAction(orderId: string, status: string) {
+export async function updateOrderStatusAction(orderId: string, newStatus: string) {
   const supabase = await createClient()
-  const { error } = await supabase.from('orders').update({ order_status: status }).eq('order_id', orderId)
+  
+  // Validate transition
+  const VALID_FLOW = ['DRAFT', 'CONFIRMED', 'IN_PRODUCTION', 'SHIPPED', 'CLOSED']
+  const ALLOW_CANCEL_FROM = ['DRAFT', 'CONFIRMED']
+  
+  const { data: current } = await supabase
+    .from('orders').select('order_status').eq('order_id', orderId).single()
+  
+  const currentIdx = VALID_FLOW.indexOf(current?.order_status || '')
+  const newIdx = VALID_FLOW.indexOf(newStatus)
+  
+  const isForwardOne = newIdx === currentIdx + 1
+  const isCancelAllowed = newStatus === 'CANCELLED' && ALLOW_CANCEL_FROM.includes(current?.order_status || '')
+  
+  if (!isForwardOne && !isCancelAllowed) {
+    return { success: false, error: `Không thể chuyển từ ${current?.order_status || 'UNKNOWN'} → ${newStatus}` }
+  }
+  
+  const { error } = await supabase.from('orders').update({ order_status: newStatus }).eq('order_id', orderId)
   if (error) return { success: false, error: error.message }
   revalidatePath(`/orders/${orderId}`)
   return { success: true }
@@ -22,6 +40,12 @@ export async function updateOrderStatusAction(orderId: string, status: string) {
 export async function saveOrderLinesAction(orderId: string, lines: any[]) {
   const supabase = await createClient()
   
+  const { data: order } = await supabase
+    .from('orders').select('order_status').eq('order_id', orderId).single()
+  if (!['DRAFT', 'CONFIRMED'].includes(order?.order_status || '')) {
+    return { success: false, error: 'Không thể sửa đơn hàng đã xác nhận giao/đóng.' }
+  }
+
   // 1. Fetch existing lines
   const { data: existing } = await supabase.from('order_lines').select('line_id').eq('order_id', orderId)
   const existingIds = (existing || []).map(l => l.line_id)
