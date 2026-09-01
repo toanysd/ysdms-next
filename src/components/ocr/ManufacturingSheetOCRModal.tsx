@@ -153,9 +153,10 @@ export function ManufacturingSheetOCRModal({
   const [moldHandlingMode, setMoldHandlingMode] = useState<'REUSE_EXISTING' | 'CREATE_NEW'>('CREATE_NEW')
   const [existingHandlingMode, setExistingHandlingMode] = useState<'ENRICH_EXISTING' | 'NEW_REVISION'>('ENRICH_EXISTING')
   const [conflictResolution, setConflictResolution] = useState<{ productAction: 'USE_EXISTING' | 'CREATE_NEW', revisionAction: 'USE_EXISTING' | 'CREATE_NEW' } | null>(null)
-  const [isDryRun, setIsDryRun] = useState(true) // Default to true for safety
   const [existingProductInfo, setExistingProductInfo] = useState<any | null>(null)
-  const [targetJobId, setTargetJobId] = useState<string | null>(null)
+
+  // NEW: review phase state — null = not yet previewed, true = previewed
+  const [hasPreviewedDryRun, setHasPreviewedDryRun] = useState<boolean>(false)
 
   const fileInputRef = useRef<HTMLInputElement | null>(null)
   const cameraInputRef = useRef<HTMLInputElement | null>(null)
@@ -297,6 +298,8 @@ export function ManufacturingSheetOCRModal({
       }
 
       setFormData(initialFormData)
+      // Reset preview state on new OCR
+      setHasPreviewedDryRun(false)
 
       // Auto search company by prefix or name
       if (d.customer_code_prefix || d.customer_name) {
@@ -427,8 +430,8 @@ export function ManufacturingSheetOCRModal({
     }
   }
 
-  // Atomic Save to DB
-  const handleSaveToDatabase = async () => {
+  // Atomic Save to DB — dryRunOverride: true = preview only, false = real save
+  const handleSaveToDatabase = async (dryRunOverride: boolean = false) => {
     if (!formData.product_code || !formData.product_name_internal) {
       setError('製品コードと社内製品名は必須です')
       return
@@ -508,8 +511,7 @@ export function ManufacturingSheetOCRModal({
         mold_handling_mode: moldHandlingMode,
         existing_handling_mode: existingHandlingMode,
         components: formData.components,
-        dry_run: isDryRun,
-        target_job_id: targetJobId || undefined
+        dry_run: dryRunOverride
       }
 
       const res = await fetch('/api/ocr/save', {
@@ -522,6 +524,17 @@ export function ManufacturingSheetOCRModal({
 
       if (!res.ok || !json.success) {
         throw new Error(json.error || 'データの保存に失敗しました')
+      }
+
+      // If this was a dry-run preview, show alert with summary and stay on REVIEW
+      if (json.data?.dry_run) {
+        setHasPreviewedDryRun(true)
+        const logs: string[] = json.data?.dry_run_logs || []
+        const summary = logs.length > 0
+          ? logs.slice(0, 8).join('\n')
+          : 'シミュレーション完了 — 問題は検出されませんでした'
+        alert(`🧪 変更内容プレビュー\n\n${summary}\n\n実際に保存するには「確認して保存」をクリックしてください。`)
+        return
       }
 
       setSavedResult(json.data)
@@ -542,6 +555,7 @@ export function ManufacturingSheetOCRModal({
     setError(null)
     setExistingProductInfo(null)
     setZoomLevel(1)
+    setHasPreviewedDryRun(false)
     setFormData({
       product_code: '',
       product_name_internal: '',
@@ -933,94 +947,14 @@ export function ManufacturingSheetOCRModal({
             <div style={{ width: '58%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
               <div style={{ padding: '16px 20px', overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: 14 }}>
                 
-                {/* SECTION 0: Job Linking */}
-                {existingProductInfo && existingProductInfo.hasJobs && (
-                  <div className="card-flat" style={{ padding: 14, background: '#f0f9ff', border: '1.5px solid #0ea5e9' }}>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: '#0369a1', marginBottom: 10 }}>
-                      既存のJobに工程票を紐付ける (Merge into existing Job)
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                      {existingProductInfo.jobs.map((job: any) => {
-                        const hasWO = !!job.work_order_id;
-                        return (
-                          <label
-                            key={job.job_id}
-                            style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: 8,
-                              padding: '8px 12px',
-                              background: '#fff',
-                              border: '1px solid #bae6fd',
-                              borderRadius: 6,
-                              cursor: hasWO ? 'not-allowed' : 'pointer',
-                              opacity: hasWO ? 0.6 : 1
-                            }}
-                          >
-                            <input
-                              type="radio"
-                              name="target_job"
-                              value={job.job_id}
-                              checked={targetJobId === job.job_id}
-                              onChange={() => setTargetJobId(job.job_id)}
-                              disabled={hasWO}
-                            />
-                            <div style={{ flex: 1 }}>
-                              <div style={{ fontSize: 13, fontWeight: 600, color: '#0f172a' }}>
-                                {job.job_name || job.job_code}
-                              </div>
-                              <div style={{ fontSize: 11, color: '#475569', marginTop: 2 }}>
-                                {job.equipment?.equipment_code || 'N/A'} · {({ COMPLETED: '完了', IN_PROGRESS: '進行中', PLANNED: '計画中', CANCELLED: '中止', NEW: '新規' } as Record<string, string>)[job.job_status] || job.job_status}
-                                {hasWO && (
-                                  <span style={{ marginLeft: 6, color: '#0369a1', fontWeight: 600 }}>
-                                    · {job.work_order_id} (登録済み)
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                            {hasWO && (
-                              <span className="badge" style={{ background: '#e0f2fe', color: '#0369a1' }}>
-                                WO登録済
-                              </span>
-                            )}
-                          </label>
-                        )
-                      })}
-                      <label
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 8,
-                          padding: '8px 12px',
-                          background: '#fff',
-                          border: '1px solid #bae6fd',
-                          borderRadius: 6,
-                          cursor: 'pointer'
-                        }}
-                      >
-                        <input
-                          type="radio"
-                          name="target_job"
-                          value="NEW"
-                          checked={targetJobId === null}
-                          onChange={() => setTargetJobId(null)}
-                        />
-                        <span style={{ fontSize: 13, fontWeight: 600, color: '#0f172a' }}>
-                          紐付けず、新しくJobを作成する (Create entirely new Job)
-                        </span>
-                      </label>
-                    </div>
-                  </div>
-                )}
-                
                 {/* SECTION 1: Product Header */}
                 <div className="card-flat" style={{ padding: 14, background: 'var(--bg-surface-2)' }}>
                   {existingProductInfo && (
                     <div style={{
                       marginBottom: 14,
                       padding: '12px 14px',
-                      backgroundColor: '#fffbeb',
-                      border: '1.5px solid #f59e0b',
+                      backgroundColor: '#fef2f2',
+                      border: '2px solid #ef4444',
                       borderRadius: 8,
                       display: 'flex',
                       flexDirection: 'column',
@@ -1028,12 +962,12 @@ export function ManufacturingSheetOCRModal({
                     }}>
                       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                          <span style={{ fontSize: 20 }}>⚠️</span>
+                          <span style={{ fontSize: 20 }}>🚨</span>
                           <div>
-                            <div style={{ fontSize: 13, fontWeight: 800, color: '#92400e' }}>
+                            <div style={{ fontSize: 13, fontWeight: 800, color: '#991b1b' }}>
                               {t('productExistsAlert', { code: existingProductInfo.product_name_internal || existingProductInfo.product_code })}
                             </div>
-                            <div style={{ fontSize: 11, color: '#b45309', marginTop: 1 }}>
+                            <div style={{ fontSize: 11, color: '#b91c1c', marginTop: 1 }}>
                               {existingProductInfo.company_name ? `得意先: ${existingProductInfo.company_code ? `[${existingProductInfo.company_code}] ` : ''}${existingProductInfo.company_name}` : ''}
                             </div>
                           </div>
@@ -1054,9 +988,9 @@ export function ManufacturingSheetOCRModal({
                       </div>
 
                       {/* Current status inspection */}
-                      <div style={{ background: '#fef3c7', padding: '8px 12px', borderRadius: 6, fontSize: 11, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                      <div style={{ background: '#fee2e2', padding: '8px 12px', borderRadius: 6, fontSize: 11, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
                         <div>
-                          <span style={{ fontWeight: 600, color: '#78350f' }}>📋 製作指示 (Work Order): </span>
+                          <span style={{ fontWeight: 600, color: '#7f1d1d' }}>📋 製作指示 (Work Order): </span>
                           {existingProductInfo.hasWorkOrder ? (
                             <span className="badge badge--success" style={{ fontSize: 9.5, padding: '1px 6px', fontWeight: 700 }}>
                               {t('woStatusRegistered')} ({existingProductInfo.workOrders?.[0]?.wo_code || 'WO'})
@@ -1068,19 +1002,29 @@ export function ManufacturingSheetOCRModal({
                           )}
                         </div>
                         <div>
-                          <span style={{ fontWeight: 600, color: '#78350f' }}>📐 CAD設計: </span>
+                          <span style={{ fontWeight: 600, color: '#7f1d1d' }}>📐 CAD設計: </span>
                           {existingProductInfo.existingRevs && existingProductInfo.existingRevs.length > 0 ? (
                             <span>{existingProductInfo.existingRevs.map((r: any) => `R${r.revision_number}`).join(', ')}</span>
                           ) : (
-                            <span style={{ color: '#92400e' }}>未登録</span>
+                            <span style={{ color: '#991b1b' }}>未登録</span>
                           )}
                         </div>
                       </div>
 
-                      {/* Action selector using conflictResolution */}
+                      {/* Action selector — 3 options clearly labelled */}
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 2 }}>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                          <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, cursor: 'pointer', fontSize: 11.5 }}>
+                        <div style={{ fontSize: 11, fontWeight: 700, color: '#991b1b', marginBottom: 2 }}>
+                          ▼ 処理方法を選択してください:
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+
+                          {/* Option A: Enrich existing */}
+                          <label style={{
+                            display: 'flex', alignItems: 'flex-start', gap: 8, cursor: 'pointer',
+                            padding: '8px 10px', borderRadius: 6, border: '1.5px solid',
+                            borderColor: conflictResolution?.productAction === 'USE_EXISTING' && conflictResolution?.revisionAction === 'USE_EXISTING' ? '#ef4444' : '#fca5a5',
+                            background: conflictResolution?.productAction === 'USE_EXISTING' && conflictResolution?.revisionAction === 'USE_EXISTING' ? '#fef2f2' : '#fff'
+                          }}>
                             <input
                               type="radio"
                               name="conflictResolution"
@@ -1091,15 +1035,21 @@ export function ManufacturingSheetOCRModal({
                                 setMoldHandlingMode('REUSE_EXISTING')
                                 setFormData(prev => ({ ...prev, revision_number: 0 }))
                               }}
-                              style={{ marginTop: 2 }}
+                              style={{ marginTop: 2, accentColor: '#ef4444' }}
                             />
                             <div>
-                              <strong style={{ color: '#92400e' }}>{t('existingActionEnrich')}</strong>
-                              <div style={{ color: '#b45309', fontSize: 10.5 }}>{t('existingActionEnrichDesc')}</div>
+                              <strong style={{ fontSize: 12, color: '#991b1b' }}>① {t('existingActionEnrich')}</strong>
+                              <div style={{ color: '#b91c1c', fontSize: 10.5, marginTop: 2 }}>{t('existingActionEnrichDesc')}</div>
                             </div>
                           </label>
 
-                          <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, cursor: 'pointer', fontSize: 11.5 }}>
+                          {/* Option B: New revision */}
+                          <label style={{
+                            display: 'flex', alignItems: 'flex-start', gap: 8, cursor: 'pointer',
+                            padding: '8px 10px', borderRadius: 6, border: '1.5px solid',
+                            borderColor: conflictResolution?.productAction === 'USE_EXISTING' && conflictResolution?.revisionAction === 'CREATE_NEW' ? '#ef4444' : '#fca5a5',
+                            background: conflictResolution?.productAction === 'USE_EXISTING' && conflictResolution?.revisionAction === 'CREATE_NEW' ? '#fef2f2' : '#fff'
+                          }}>
                             <input
                               type="radio"
                               name="conflictResolution"
@@ -1111,14 +1061,21 @@ export function ManufacturingSheetOCRModal({
                                 const nextRev = (existingProductInfo.existingRevs?.length || 0)
                                 setFormData(prev => ({ ...prev, revision_number: nextRev > 0 ? nextRev : 1 }))
                               }}
-                              style={{ marginTop: 2 }}
+                              style={{ marginTop: 2, accentColor: '#ef4444' }}
                             />
                             <div>
-                              <strong style={{ color: '#78350f' }}>{t('existingActionNewRev')}</strong>
-                              <div style={{ color: '#b45309', fontSize: 10.5 }}>{t('existingActionNewRevDesc')}</div>
+                              <strong style={{ fontSize: 12, color: '#991b1b' }}>② {t('existingActionNewRev')}</strong>
+                              <div style={{ color: '#b91c1c', fontSize: 10.5, marginTop: 2 }}>{t('existingActionNewRevDesc')}</div>
                             </div>
                           </label>
-                          <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, cursor: 'pointer', fontSize: 11.5 }}>
+
+                          {/* Option C: Create new product (different code) */}
+                          <label style={{
+                            display: 'flex', alignItems: 'flex-start', gap: 8, cursor: 'pointer',
+                            padding: '8px 10px', borderRadius: 6, border: '1.5px solid',
+                            borderColor: conflictResolution?.productAction === 'CREATE_NEW' ? '#ef4444' : '#fca5a5',
+                            background: conflictResolution?.productAction === 'CREATE_NEW' ? '#fef2f2' : '#fff'
+                          }}>
                             <input
                               type="radio"
                               name="conflictResolution"
@@ -1127,13 +1084,14 @@ export function ManufacturingSheetOCRModal({
                                 setConflictResolution({ productAction: 'CREATE_NEW', revisionAction: 'CREATE_NEW' })
                                 // They must change product code to proceed
                               }}
-                              style={{ marginTop: 2 }}
+                              style={{ marginTop: 2, accentColor: '#ef4444' }}
                             />
                             <div>
-                              <strong style={{ color: '#b45309' }}>{t('actionNewProduct')}</strong>
-                              <div style={{ color: '#d97706', fontSize: 10.5 }}>{t('actionNewProductDesc')}</div>
+                              <strong style={{ fontSize: 12, color: '#991b1b' }}>③ {t('actionNewProduct')}</strong>
+                              <div style={{ color: '#b91c1c', fontSize: 10.5, marginTop: 2 }}>{t('actionNewProductDesc')}</div>
                             </div>
                           </label>
+
                         </div>
                       </div>
                     </div>
@@ -1860,7 +1818,7 @@ export function ManufacturingSheetOCRModal({
                 )}
               </div>
 
-              {/* Review Footer */}
+              {/* Review Footer — 2-button flow, no isDryRun checkbox */}
               <div
                 style={{
                   display: 'flex',
@@ -1895,25 +1853,44 @@ export function ManufacturingSheetOCRModal({
                       <span>{t('btnSkipToProductDetail')}</span>
                     </a>
                   )}
-                  
-                  <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, cursor: 'pointer', marginRight: 8, padding: '4px 8px', borderRadius: 4, backgroundColor: isDryRun ? 'var(--tint-orange-bg)' : 'transparent' }}>
-                    <input 
-                      type="checkbox" 
-                      checked={isDryRun} 
-                      onChange={(e) => setIsDryRun(e.target.checked)} 
-                      style={{ accentColor: 'var(--accent)' }}
-                    />
-                    <span style={{ fontWeight: isDryRun ? 600 : 400, color: isDryRun ? '#B45309' : 'inherit' }}>
-                      🧪 プレビューモード (DBに保存しない)
-                    </span>
-                  </label>
 
+                  {/* Button 1: Dry-run preview */}
                   <button
                     type="button"
-                    onClick={handleSaveToDatabase}
+                    onClick={() => handleSaveToDatabase(true)}
+                    disabled={saving}
+                    className="btn btn-secondary"
+                    style={{
+                      fontSize: 13,
+                      padding: '8px 18px',
+                      gap: 6,
+                      borderColor: hasPreviewedDryRun ? 'var(--status-success)' : undefined,
+                      color: hasPreviewedDryRun ? 'var(--status-success)' : undefined
+                    }}
+                  >
+                    {saving ? (
+                      <Loader2 size={15} className="animate-spin" />
+                    ) : (
+                      <React.Fragment>
+                        {hasPreviewedDryRun ? <Check size={15} /> : <ArrowRight size={15} />}
+                        <span>{hasPreviewedDryRun ? '✅ 確認済み' : '変更内容を確認 →'}</span>
+                      </React.Fragment>
+                    )}
+                  </button>
+
+                  {/* Button 2: Real save — enabled always, but turns green after preview */}
+                  <button
+                    type="button"
+                    onClick={() => handleSaveToDatabase(false)}
                     disabled={saving}
                     className="btn btn-primary"
-                    style={{ fontSize: 13, padding: '8px 24px', gap: 6 }}
+                    style={{
+                      fontSize: 13,
+                      padding: '8px 24px',
+                      gap: 6,
+                      background: hasPreviewedDryRun ? 'var(--status-success, #16a34a)' : undefined,
+                      borderColor: hasPreviewedDryRun ? 'var(--status-success, #16a34a)' : undefined
+                    }}
                   >
                     {saving ? (
                       <React.Fragment>
@@ -1923,7 +1900,7 @@ export function ManufacturingSheetOCRModal({
                     ) : (
                       <React.Fragment>
                         <CheckCircle2 size={16} />
-                        <span>{t('confirmSave')}</span>
+                        <span>確認して保存</span>
                       </React.Fragment>
                     )}
                   </button>
