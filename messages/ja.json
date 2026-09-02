@@ -4319,5 +4319,22 @@
     "cancel": "キャンセル",
     "date": "日付",
     "successMsg": "保存しました"
+  },
+  "QC": {
+    "title": "QC日記",
+    "addBtn": "＋ QC記録",
+    "searchJobCode": "ジョブコードで検索",
+    "filterResultAll": "すべて",
+    "filterResultNG": "NGあり",
+    "filterResultPass": "100% Pass",
+    "colJobCode": "ジョブ",
+    "colStep": "工程",
+    "colDate": "記録日",
+    "colKCS": "検査員",
+    "colChecked": "検査数",
+    "colPass": "合格",
+    "colNG": "NG",
+    "colDefect": "不良種類",
+    "emptyText": "データなし"
   }
 }

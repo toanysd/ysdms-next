@@ -4319,5 +4319,22 @@
     "cancel": "Hủy",
     "date": "Ngày",
     "successMsg": "Đã lưu thành công"
+  },
+  "QC": {
+    "title": "Nhật ký QC",
+    "addBtn": "＋ Ghi nhận QC",
+    "searchJobCode": "Tìm mã Job",
+    "filterResultAll": "Tất cả",
+    "filterResultNG": "Có NG",
+    "filterResultPass": "Pass 100%",
+    "colJobCode": "Mã Job",
+    "colStep": "Công đoạn",
+    "colDate": "Ngày ghi",
+    "colKCS": "KCS",
+    "colChecked": "Số lượng kiểm",
+    "colPass": "Pass",
+    "colNG": "NG",
+    "colDefect": "Loại lỗi",
+    "emptyText": "Không có dữ liệu"
   }
 }
