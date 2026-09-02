@@ -47,18 +47,40 @@ export default async function ShipmentsListPage({
     .order('ship_date', { ascending: false })
 
   if (orderNo || customer) {
-    let orderQuery = supabase.from('orders').select('order_id, companies!inner(company_name)')
+    let companyIds: string[] = []
     
+    // Step 0: Pre-query companies if customer filter exists
+    if (customer) {
+      const { data: cos } = await supabase
+        .from('companies')
+        .select('company_id')
+        .ilike('company_name', `%${customer}%`)
+        .limit(100)
+      companyIds = cos?.map((c: any) => c.company_id) ?? []
+    }
+
+    // Step 1: Pre-query orders
+    let orderQuery = supabase.from('orders').select('order_id')
     if (orderNo) orderQuery = orderQuery.ilike('order_no', `%${orderNo}%`)
-    if (customer) orderQuery = orderQuery.ilike('companies.company_name', `%${customer}%`)
     
-    const { data: matchedOrders } = await orderQuery.limit(200)
-    
-    if (matchedOrders && matchedOrders.length > 0) {
-      const orderIds = matchedOrders.map(o => o.order_id)
-      query = query.in('order_id', orderIds)
-    } else {
+    if (customer && companyIds.length > 0) {
+      orderQuery = orderQuery.in('company_id', companyIds)
+    } else if (customer && companyIds.length === 0) {
+      // Force empty if no companies matched
       query = query.eq('shipment_id', '00000000-0000-0000-0000-000000000000')
+      orderQuery = orderQuery.eq('order_id', '00000000-0000-0000-0000-000000000000') // prevents fetching all orders
+    }
+    
+    // Step 2: Fetch matched orders and filter shipments
+    if (!(customer && companyIds.length === 0)) {
+      const { data: matchedOrders } = await orderQuery.limit(200)
+      
+      if (matchedOrders && matchedOrders.length > 0) {
+        const orderIds = matchedOrders.map((o: any) => o.order_id)
+        query = query.in('order_id', orderIds)
+      } else {
+        query = query.eq('shipment_id', '00000000-0000-0000-0000-000000000000')
+      }
     }
   }
 

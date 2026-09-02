@@ -4355,7 +4355,8 @@
     "defectBURR": "バリ",
     "defectOTHER": "その他",
     "searchJobPlaceholder": "ジョブコード入力して検索",
-    "selectEmployee": "検査員を選択"
+    "selectEmployee": "検査員を選択",
+    "changeBtn": "変更"
   },
   "Shipment": {
     "title": "納品書",
@@ -4374,6 +4375,23 @@
     "colStatus": "ステータス",
     "emptyText": "データなし",
     "badgeShipped": "出荷済",
-    "badgePending": "未出荷"
+    "badgePending": "未出荷",
+    "newTitle": "新規納品書作成",
+    "backToList": "一覧へ戻る",
+    "selectOrderLine": "受注明細を選択",
+    "searchOrderPlaceholder": "注文番号を入力...",
+    "shipDate": "出荷日",
+    "selectSite": "納品先を選択",
+    "deliveryMethod": "配送方法",
+    "deliveryNoteNo": "納品書番号",
+    "notes": "備考",
+    "saveBtn": "保存する",
+    "savingBtn": "保存中...",
+    "methodTRUCK": "自社トラック",
+    "methodDELIVERY_SERVICE": "路線便",
+    "methodCUSTOMER_PICKUP": "客先引取",
+    "methodOTHER": "その他",
+    "noSite": "指定なし",
+    "changeBtn": "変更"
   }
 }

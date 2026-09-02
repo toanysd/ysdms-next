@@ -4355,7 +4355,8 @@
     "defectBURR": "Ba-via (Burr)",
     "defectOTHER": "Khác",
     "searchJobPlaceholder": "Nhập mã job để tìm",
-    "selectEmployee": "Chọn KCS"
+    "selectEmployee": "Chọn KCS",
+    "changeBtn": "Đổi"
   },
   "Shipment": {
     "title": "Giao Hàng",
@@ -4374,6 +4375,23 @@
     "colStatus": "Status",
     "emptyText": "Không có dữ liệu",
     "badgeShipped": "SHIPPED",
-    "badgePending": "PENDING"
+    "badgePending": "PENDING",
+    "newTitle": "Tạo Phiếu Giao Mới",
+    "backToList": "Về danh sách",
+    "selectOrderLine": "Chọn Line Đơn Hàng",
+    "searchOrderPlaceholder": "Nhập mã đơn hàng...",
+    "shipDate": "Ngày giao",
+    "selectSite": "Chọn địa điểm giao",
+    "deliveryMethod": "Phương thức giao",
+    "deliveryNoteNo": "Số Delivery Note",
+    "notes": "Ghi chú",
+    "saveBtn": "Lưu Phiếu Giao",
+    "savingBtn": "Đang lưu...",
+    "methodTRUCK": "Xe tải cty (TRUCK)",
+    "methodDELIVERY_SERVICE": "Dịch vụ giao hàng (COURIER)",
+    "methodCUSTOMER_PICKUP": "Khách đến lấy (PICKUP)",
+    "methodOTHER": "Khác (OTHER)",
+    "noSite": "Không chỉ định",
+    "changeBtn": "Đổi"
   }
 }

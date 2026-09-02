@@ -159,7 +159,7 @@ export function QCForm({ employees }: { employees: Employee[] }) {
                 onClick={() => { setSelectedJob(''); setJobSearch(''); setJobs([]) }}
                 className="text-xs text-slate-500 hover:text-slate-800 underline"
               >
-                Change
+                {t('changeBtn')}
               </button>
             </div>
           )}
