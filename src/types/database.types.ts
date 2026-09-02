@@ -1,3 +1,7 @@
+// ⚠️ WARNING: Manual patch applied for rpc_start_job (migration 077)
+// Next gen types will erase this. Re-apply patch or fix CLI encoding issue first.
+// Last patched: 2026-09-02 by AN
+
 export type Json =
   | string
   | number
