@@ -160,31 +160,62 @@ export function GanttChart({ jobs, startDate, endDate }: { jobs: any[], startDat
                         const leftPercent = Math.max(0, (leftOffsetDays / totalDays) * 100)
                         const widthPercent = Math.min(100 - leftPercent, (durationDays / totalDays) * 100)
                         
-                        // Don't render if completely outside view
-                        if (leftPercent >= 100 || widthPercent <= 0) return null
+                        // Calculate Progress (PE logic)
+                        const totalSteps = job.job_steps?.length || 0
+                        const completedSteps = job.job_steps?.filter((s: any) => s.step_status === 'COMPLETED').length || 0
+                        const stepPct = totalSteps > 0 ? Math.round((completedSteps / totalSteps) * 100) : 0
+
+                        const targetQty = job.job_steps?.reduce((sum: number, s: any) => sum + (s.quantity ?? 0), 0) || 0
+                        let producedQty = 0
+                        job.job_steps?.forEach((step: any) => {
+                          producedQty += step.work_logs?.reduce((sum: number, log: any) => sum + (log.quantity_done ?? 0), 0) || 0
+                        })
+                        const qtyPct = targetQty > 0 ? Math.min(100, Math.round((producedQty / targetQty) * 100)) : null
+                        const displayPct = qtyPct ?? stepPct
+
+                        const statusColor = STATUS_COLORS[job.job_status] || STATUS_COLORS.PLANNED
 
                         return (
                           <div key={job.job_id} style={{ position: 'relative', height: 24, width: '100%' }}>
-                            <Link href={`/production/work-orders/${job.work_orders?.wo_id}`} style={{
+                            <Link href={`/production/jobs/${job.job_id}`} style={{
                               position: 'absolute',
                               left: `${leftPercent}%`,
                               width: `${widthPercent}%`,
                               height: '100%',
-                              background: STATUS_COLORS[job.job_status] || STATUS_COLORS.PLANNED,
+                              background: '#E2E8F0', // Light gray background for the full bar
                               borderRadius: 4,
                               display: 'flex',
                               alignItems: 'center',
-                              padding: '0 8px',
                               overflow: 'hidden',
-                              color: 'white',
-                              fontSize: 11,
-                              fontWeight: 700,
-                              fontFamily: 'monospace',
                               textDecoration: 'none',
                               whiteSpace: 'nowrap',
-                              boxShadow: '0 1px 2px rgba(0,0,0,0.1)'
-                            }} title={`${job.job_code} - ${job.job_name}`}>
-                              {job.job_code}
+                              boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
+                              border: `1px solid ${statusColor}`
+                            }} title={`${job.job_code} - ${job.job_name} (${displayPct}%)`}>
+                              
+                              {/* Progress Fill */}
+                              <div style={{
+                                position: 'absolute',
+                                left: 0,
+                                top: 0,
+                                bottom: 0,
+                                width: `${displayPct}%`,
+                                background: statusColor,
+                                zIndex: 1
+                              }} />
+                              
+                              {/* Label */}
+                              <span style={{ 
+                                position: 'relative', 
+                                zIndex: 2, 
+                                padding: '0 8px', 
+                                fontSize: 11, 
+                                fontWeight: 700, 
+                                fontFamily: 'monospace', 
+                                color: displayPct > 50 ? 'white' : 'var(--text-primary)' 
+                              }}>
+                                {job.job_code} {displayPct}%
+                              </span>
                             </Link>
                           </div>
                         )

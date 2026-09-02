@@ -28,7 +28,11 @@ export default async function SchedulePage(props: { searchParams: Promise<{ from
       job_id, job_code, job_name, job_category, job_status,
       start_date, deadline, priority,
       work_orders!inner(wo_id, wo_code, wo_status),
-      equipment(equipment_type, equipment_code)
+      equipment(equipment_type, equipment_code),
+      job_steps (
+        quantity, step_status,
+        work_logs (quantity_done)
+      )
     `)
     .gte('deadline', fromDate.toISOString())
     .lte('deadline', toDate.toISOString())
