@@ -126,7 +126,7 @@ export function JobStepsList({ job, employees }: { job: any, employees: any[] })
                                     <span style={{ fontFamily: 'monospace' }}>{log.work_date}</span>
                                   </div>
                                 </td>
-                                <td>{emp?.full_name || log.employee_id}</td>
+                                <td>{emp?.employee_name || log.employee_id}</td>
                                 <td style={{ fontFamily: 'monospace', fontWeight: 600 }}>{log.hours_spent || '-'}</td>
                                 <td style={{ fontFamily: 'monospace', fontWeight: 600 }}>{log.quantity_done || '-'}</td>
                                 <td>{log.notes || '-'}</td>
@@ -168,7 +168,7 @@ export function JobStepsList({ job, employees }: { job: any, employees: any[] })
                             <select name="employee_id" className="form-input" required>
                               <option value="">-- Chọn nhân viên --</option>
                               {employees.map(e => (
-                                <option key={e.employee_id} value={e.employee_id}>{e.full_name}</option>
+                                <option key={e.employee_id} value={e.employee_id}>{e.employee_name}</option>
                               ))}
                             </select>
                           </div>

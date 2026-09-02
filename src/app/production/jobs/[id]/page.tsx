@@ -31,9 +31,9 @@ export default async function JobDetailPage(props: { params: Promise<{ id: strin
   // Fetch employees for dropdown
   const { data: employees } = await supabase
     .from('employees')
-    .select('employee_id, full_name, role')
+    .select('employee_id, employee_name, role')
     .eq('is_active', true)
-    .order('full_name')
+    .order('employee_name')
 
   // Calculate Progress (Gantt logic from PE)
   const totalSteps = job.job_steps?.length || 0
