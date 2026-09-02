@@ -2,8 +2,8 @@
 _Last updated: 2026-09-02_
 
 ## Security
-- [ ] TD-001: 11 tables missing RLS (Milestone 5)
-- [ ] TD-002: 5 views need SECURITY INVOKER (Milestone 5)
+- [x] TD-001: 11 tables missing RLS (Milestone 5)
+- [x] TD-002: 5 views need SECURITY INVOKER (Milestone 5)
 - [ ] TD-003: database.types.ts manual patch for rpc_start_job
        → Fix: resolve Supabase CLI encoding issue on Windows
 
