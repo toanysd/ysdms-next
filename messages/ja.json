@@ -4335,6 +4335,26 @@
     "colPass": "合格",
     "colNG": "NG",
     "colDefect": "不良種類",
-    "emptyText": "データなし"
+    "emptyText": "データなし",
+    "newTitle": "新規QC記録",
+    "backToList": "一覧へ戻る",
+    "selectJob": "ジョブを選択",
+    "selectStep": "工程を選択",
+    "recordedAt": "記録日時",
+    "checkedQty": "検査数",
+    "passQty": "合格数",
+    "ngQty": "NG数",
+    "defectCategory": "不良種類",
+    "defectNotes": "不良備考",
+    "saveBtn": "保存する",
+    "savingBtn": "保存中...",
+    "selectDefectOpt": "不良種類を選択",
+    "defectDIMENSION": "寸法不良",
+    "defectAPPEARANCE": "外観不良",
+    "defectMATERIAL": "材料不良",
+    "defectBURR": "バリ",
+    "defectOTHER": "その他",
+    "searchJobPlaceholder": "ジョブコード入力して検索",
+    "selectEmployee": "検査員を選択"
   }
 }

@@ -4335,6 +4335,26 @@
     "colPass": "Pass",
     "colNG": "NG",
     "colDefect": "Loại lỗi",
-    "emptyText": "Không có dữ liệu"
+    "emptyText": "Không có dữ liệu",
+    "newTitle": "Ghi nhận QC mới",
+    "backToList": "Về danh sách",
+    "selectJob": "Chọn Job",
+    "selectStep": "Chọn Công đoạn",
+    "recordedAt": "Ngày giờ ghi nhận",
+    "checkedQty": "Số lượng kiểm",
+    "passQty": "Số lượng Pass",
+    "ngQty": "Số lượng NG",
+    "defectCategory": "Loại lỗi",
+    "defectNotes": "Ghi chú lỗi",
+    "saveBtn": "Lưu",
+    "savingBtn": "Đang lưu...",
+    "selectDefectOpt": "Chọn loại lỗi",
+    "defectDIMENSION": "Lỗi kích thước",
+    "defectAPPEARANCE": "Lỗi ngoại quan",
+    "defectMATERIAL": "Lỗi vật liệu",
+    "defectBURR": "Ba-via (Burr)",
+    "defectOTHER": "Khác",
+    "searchJobPlaceholder": "Nhập mã job để tìm",
+    "selectEmployee": "Chọn KCS"
   }
 }
