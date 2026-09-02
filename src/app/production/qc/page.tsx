@@ -12,7 +12,7 @@ export default async function QCListPage({
   searchParams: { [key: string]: string | string[] | undefined }
 }) {
   const t = await getTranslations('QC')
-  const supabase = createClient()
+  const supabase = await createClient()
 
   const search = typeof searchParams.search === 'string' ? searchParams.search : ''
   const result = typeof searchParams.result === 'string' ? searchParams.result : ''
