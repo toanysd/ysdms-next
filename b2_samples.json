@@ -1,0 +1,37 @@
+[
+  {
+    "revision_id": "e46bef72-1c4b-407a-8376-43492ffab067",
+    "plastic_id": "b9005517-58d6-4141-b435-cfda4453858b",
+    "plastic_type_designed": "PS(B) 0.8t [405] 帯電: ｼﾘｺﾝ: 塗布:",
+    "design_code": "AAT001B",
+    "plastic_family": "PS"
+  },
+  {
+    "revision_id": "173a93ba-ad65-4d85-8a3f-d5ecfe269d26",
+    "plastic_id": "1cd82a57-3f91-4317-97ed-1eee780feea9",
+    "plastic_type_designed": "PET\n(CL) 0.8t [460] 帯電: ｼﾘｺﾝ: 塗布:",
+    "design_code": "AAT001T",
+    "plastic_family": "PET"
+  },
+  {
+    "revision_id": "656c7a06-c72c-415f-ad9c-6692be5a2a8a",
+    "plastic_id": "f58b90a8-bd11-47f6-9e82-6f3140e6818a",
+    "plastic_type_designed": "PET\n(CL) 0.6t [520] 帯電:有 ｼﾘｺﾝ:無 塗布:無",
+    "design_code": "AAT004B",
+    "plastic_family": "PET"
+  },
+  {
+    "revision_id": "3118c895-5005-47cd-bde8-a1adf7700e25",
+    "plastic_id": "f58b90a8-bd11-47f6-9e82-6f3140e6818a",
+    "plastic_type_designed": "PET\n(CL) 0.6t [520] 帯電:有 ｼﾘｺﾝ:無 塗布:無",
+    "design_code": "AAT004T",
+    "plastic_family": "PET"
+  },
+  {
+    "revision_id": "6e86b0bd-a9a6-4274-bdf1-7a8fbe302778",
+    "plastic_id": "134bb87a-42cd-470c-b95f-07b17209f249",
+    "plastic_type_designed": "PET\n(CL) 0.8t [520] 帯電:有 ｼﾘｺﾝ:無 塗布:無",
+    "design_code": "AAT005",
+    "plastic_family": "PET"
+  }
+]

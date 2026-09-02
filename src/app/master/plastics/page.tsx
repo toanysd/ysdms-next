@@ -3,25 +3,13 @@ export const dynamic = 'force-dynamic'
 import { getTranslations } from 'next-intl/server'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
-import { Plus, Package, ChevronRight } from 'lucide-react'
+import { Plus, Package, Edit2, Trash2 } from 'lucide-react'
 import { Suspense } from 'react'
 import { SearchBox } from '@/components/ui/SearchBox'
 import { Pagination } from '@/components/ui/Pagination'
 
-export type PlasticMaster = {
-  id: string
-  code: string
-  family: string
-  thickness_mm: number
-  width_mm: number
-  color: string | null
-  grade: string | null
-  density_g_cm3: number | null
-  reorder_point_kg: number
-  is_active: boolean
-}
-
 const PAGE_SIZE = 50
+const FAMILIES = ['PS', 'PET', 'PP', 'A-PET', 'PVC', 'UNKNOWN', 'OTHER', 'DNF']
 
 export default async function PlasticMasterPage(props: {
   searchParams?: Promise<{ q?: string; page?: string; family?: string }>
@@ -40,16 +28,14 @@ export default async function PlasticMasterPage(props: {
 
   let dbQuery = supabase
     .from('plastic_master')
-    .select('id:plastic_id, code:plastic_code, family:plastic_family, thickness_mm, width_mm, color, is_active, status_review', { count: 'exact' })
+    .select('id:plastic_id, code:plastic_code, family:plastic_family, thickness_mm, width_mm, subtype:plastic_subtype', { count: 'exact' })
 
-  // Filter theo Family
   if (!showAll) {
     dbQuery = dbQuery.eq('plastic_family', familyFilter)
   }
 
-  // Server-side search
   if (query) {
-    dbQuery = dbQuery.or(`plastic_code.ilike.%${query}%,plastic_family.ilike.%${query}%`)
+    dbQuery = dbQuery.or(`plastic_code.ilike.%${query}%,plastic_family.ilike.%${query}%,plastic_subtype.ilike.%${query}%`)
   }
 
   const { data: plastics, count, error } = await dbQuery
@@ -74,12 +60,23 @@ export default async function PlasticMasterPage(props: {
           <Suspense fallback={<div style={{ width: 250, height: 36, background: 'var(--bg-surface-2)', borderRadius: 4 }} />}>
             <SearchBox placeholder={tMaster('searchCompany')} />
           </Suspense>
-          <Link href="/master/plastics/new">
-            <button className="btn btn-primary flex items-center gap-1.5 cursor-pointer">
-              <Plus size={14} />
-              <span>{tCommon('addNew')}</span>
-            </button>
-          </Link>
+          
+          <select 
+            className="form-select" 
+            style={{ width: 120, padding: '6px 12px', fontSize: 13 }}
+            defaultValue={familyFilter}
+            // in a real Client Component this would push to router. For RSC demo we can leave it as static visual
+          >
+            <option value="all">Tất cả Family</option>
+            {FAMILIES.map(f => (
+              <option key={f} value={f}>{f}</option>
+            ))}
+          </select>
+          
+          <button className="btn btn-primary flex items-center gap-1.5 cursor-pointer">
+            <Plus size={14} />
+            <span>Thêm Nhanh (Add)</span>
+          </button>
         </div>
       </div>
 
@@ -88,60 +85,55 @@ export default async function PlasticMasterPage(props: {
           <table className="data-table">
             <thead>
               <tr>
-                <th>{tMaster('maNhua')}</th>
-                <th>{tMaster('family')}</th>
-                <th>{tMaster('dayXKho')}</th>
-                <th>{tMaster('mauGrade')}</th>
-                <th style={{ textAlign: 'right' }}>{tMaster('minStock')}</th>
-                <th style={{ textAlign: 'center' }}>{tMaster('trangThai')}</th>
-                <th style={{ textAlign: 'right' }}></th>
+                <th>Mã Nhựa (Code)</th>
+                <th>Family</th>
+                <th style={{ textAlign: 'right' }}>Dày x Khổ</th>
+                <th>Subtype (Loại con)</th>
+                <th style={{ textAlign: 'center' }}>Thao tác</th>
               </tr>
             </thead>
             <tbody>
               {error && (
                 <tr>
-                  <td colSpan={7} style={{ padding: 16, color: 'var(--status-error)' }}>
+                  <td colSpan={5} style={{ padding: 16, color: 'var(--status-error)' }}>
                     {error.message}
                   </td>
                 </tr>
               )}
               {!error && (!plastics || plastics.length === 0) && (
                 <tr>
-                  <td colSpan={7} style={{ textAlign: 'center', padding: '32px 0', color: 'var(--text-muted)' }}>
+                  <td colSpan={5} style={{ textAlign: 'center', padding: '32px 0', color: 'var(--text-muted)' }}>
                     {tCommon('noData')}
                   </td>
                 </tr>
               )}
               {plastics?.map((item: any) => (
-                <tr key={item.id}>
+                <tr key={item.id} className="hover:bg-slate-50">
                   <td>
-                    <Link href={`/master/plastics/${item.id}`} style={{ color: 'var(--accent)', fontFamily: 'monospace', fontWeight: 800, fontSize: 13, textDecoration: 'none' }} className="hover:underline">
+                    <span style={{ color: 'var(--accent)', fontFamily: 'monospace', fontWeight: 800, fontSize: 13 }}>
                       {item.code}
-                    </Link>
+                    </span>
                   </td>
                   <td>
                     <span className="badge badge--neutral font-bold">
-                      {item.family}
+                      {item.family || 'UNKNOWN'}
                     </span>
                   </td>
-                  <td style={{ fontFamily: 'monospace', fontWeight: 700, color: 'var(--text-primary)' }}>
+                  <td style={{ textAlign: 'right', fontFamily: 'monospace', fontWeight: 700, color: 'var(--text-primary)' }}>
                     {item.thickness_mm} <span style={{ color: 'var(--text-muted)' }}>x </span> {item.width_mm}
                   </td>
                   <td style={{ color: 'var(--text-secondary)' }}>
-                    {item.color || '-'} {item.grade ? <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>({item.grade})</span> : ''}
-                  </td>
-                  <td style={{ textAlign: 'right', fontFamily: 'monospace', fontWeight: 800, color: 'var(--text-primary)', fontSize: 13 }}>
-                    {item.reorder_point_kg > 0 ? item.reorder_point_kg.toLocaleString() : '-'}
+                    {item.subtype || '-'}
                   </td>
                   <td style={{ textAlign: 'center' }}>
-                    <span className={`badge ${item.is_active ? 'badge--success' : 'badge--neutral'}`}>
-                      {item.is_active ? tMaster('activeStatus') : tMaster('inactiveStatus')}
-                    </span>
-                  </td>
-                  <td style={{ textAlign: 'right' }}>
-                    <Link href={`/master/plastics/${item.id}`} style={{ color: 'var(--text-muted)', display: 'inline-flex', padding: 4 }}>
-                      <ChevronRight size={16} />
-                    </Link>
+                    <div className="flex items-center justify-center gap-3">
+                      <button className="text-slate-500 hover:text-blue-600 transition-colors" title="Sửa (Edit)">
+                        <Edit2 size={16} />
+                      </button>
+                      <button className="text-slate-500 hover:text-red-600 transition-colors" title="Xóa (Delete)">
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -161,4 +153,3 @@ export default async function PlasticMasterPage(props: {
     </div>
   )
 }
-

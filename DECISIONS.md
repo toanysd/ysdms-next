@@ -79,3 +79,9 @@
 - **Bằng chứng:** Dry-run ETL lookup `JAE-047` (có gạch ngang) → tìm thấy 6/6 mẫu test đầu tiên. Tổng 8,288 product codes trong DB đều dùng format có gạch ngang.
 - **Quyết định:** ETL script dùng format có gạch ngang là đúng. `SCHEMA_REFERENCE.md` cần cập nhật convention cho khớp thực tế.
 - **Ghi chú:** `product_code` và `product_name_internal` hiện tại gần như trùng format trong DB (cả hai đều có gạch ngang). Convention compact chỉ tồn tại trên tài liệu, không trong data.
+
+## 2026-09-02: B3 Plastic WMS — 16 Unmatched Specs
+- 16 spec từ 材料在庫棚4-21.xlsx không match plastic_master
+- Nguyên nhân: width quá nhỏ (<100mm) hoặc loại đặc biệt (ミネロン, レグルス, PVC slim)
+- Quyết định: Bỏ qua trong ETL lần này, chờ nhập thủ công qua UI plastic_master CRUD
+- Status: ACCEPTED — không phải lỗi hệ thống

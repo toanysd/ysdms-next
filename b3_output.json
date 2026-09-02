@@ -1,0 +1,777 @@
+{
+  "inserted": [
+    {
+      "barcode": "LEGACY-PS-0.3X520.0-716DA4",
+      "spec": "PS(N)0.30×520×600 AN",
+      "length": 1935.0
+    },
+    {
+      "barcode": "LEGACY-PS-0.38X405.0-EEDF01",
+      "spec": "PS(N)0.38×405×500AN",
+      "length": 1460.0
+    },
+    {
+      "barcode": "LEGACY-PS-0.38X520.0-1A2F1B",
+      "spec": "PS(N)0.38×520×500 AN",
+      "length": 10374.0
+    },
+    {
+      "barcode": "LEGACY-PS-0.48X405.0-5C1DB8",
+      "spec": "PS(N)0.48×405×400 AN",
+      "length": 2265.0
+    },
+    {
+      "barcode": "LEGACY-PS-0.48X405.0-374A9D",
+      "spec": "PS(N)0.48×405×400 AN SI",
+      "length": 1200.0
+    },
+    {
+      "barcode": "LEGACY-PS-0.48X520.0-42DB21",
+      "spec": "PS(N)0.48×520×400　AN",
+      "length": 1969.0
+    },
+    {
+      "barcode": "LEGACY-PS-0.48X550.0-C15582",
+      "spec": "PS(N)0.48×550×400 AN",
+      "length": 1064.0
+    },
+    {
+      "barcode": "LEGACY-PS-0.58X405.0-0962A4",
+      "spec": "PS(N)0.58×405×350 AN Si",
+      "length": 2226.0
+    },
+    {
+      "barcode": "LEGACY-PS-0.58X405.0-45F5DC",
+      "spec": "PS(N)0.58×405×350 AN",
+      "length": 2160.0
+    },
+    {
+      "barcode": "LEGACY-PS-0.58X520.0-0DAB2A",
+      "spec": "PS(N)0.58×520×350 AN",
+      "length": 5989.0
+    },
+    {
+      "barcode": "LEGACY-PS-0.58X520.0-7ED774",
+      "spec": "PS(N)0.58×520×350 AN Si",
+      "length": 1070.0
+    },
+    {
+      "barcode": "LEGACY-PS-0.58X520.0-C82F1F",
+      "spec": "PS(W)0.58×520×350 AN Si",
+      "length": 441.0
+    },
+    {
+      "barcode": "LEGACY-PS-0.58X640.0-ADABC7",
+      "spec": "PS(N)0.58×640×350  Si",
+      "length": 0.0
+    },
+    {
+      "barcode": "LEGACY-PS-0.68X435.0-4D371E",
+      "spec": "PS(N)0.68×435×300 AN Si",
+      "length": 1492.0
+    },
+    {
+      "barcode": "LEGACY-PS-0.68X640.0-861403",
+      "spec": "PS(N)0.68×640×300  Si",
+      "length": 1235.0
+    },
+    {
+      "barcode": "LEGACY-PS-0.78X405.0-351C96",
+      "spec": "PS(N)0.78×405×250 AN Si",
+      "length": 3356.0
+    },
+    {
+      "barcode": "LEGACY-PS-0.78X405.0-C1E647",
+      "spec": "PS(N)0.78×405×250 AN",
+      "length": 3060.0
+    },
+    {
+      "barcode": "LEGACY-PS-0.78X435.0-F372AB",
+      "spec": "PS(N)0.78×435×300 AN Si",
+      "length": 0.0
+    },
+    {
+      "barcode": "LEGACY-PS-0.78X520.0-EE2099",
+      "spec": "PS(N)0.78×520×250 AN",
+      "length": 0.0
+    },
+    {
+      "barcode": "LEGACY-PS-0.78X520.0-3C916A",
+      "spec": "PS(N)0.78×520×250 AN Si",
+      "length": 2724.0
+    },
+    {
+      "barcode": "LEGACY-PS-0.78X550.0-8BD8A2",
+      "spec": "PS(N)0.78×550×250 AN Si",
+      "length": 416.0
+    },
+    {
+      "barcode": "LEGACY-PS-0.98X405.0-E908EC",
+      "spec": "PS(N)0.98×405×200 AN Si",
+      "length": 621.0
+    },
+    {
+      "barcode": "LEGACY-PS-0.98X435.0-3E9847",
+      "spec": "PS(N)0.98×435×250 AN SI",
+      "length": 475.0
+    },
+    {
+      "barcode": "LEGACY-PS-0.98X520.0-D80596",
+      "spec": "PS(N)0.98×520×200 AN",
+      "length": 1210.0
+    },
+    {
+      "barcode": "LEGACY-PS-0.98X520.0-22966F",
+      "spec": "PS(N)0.98×520×200 AN Si",
+      "length": 1881.0
+    },
+    {
+      "barcode": "LEGACY-PS-0.98X550.0-838A89",
+      "spec": "PS(N)0.98×550×200 AN",
+      "length": 1282.0
+    },
+    {
+      "barcode": "LEGACY-PS-0.98X550.0-B3B0AF",
+      "spec": "PS(N)0.98×550×200 ANSi",
+      "length": 3506.0
+    },
+    {
+      "barcode": "LEGACY-PS-1.08X405.0-C80AC9",
+      "spec": "PS(N)1.08×405×200m  AN",
+      "length": 279.0
+    },
+    {
+      "barcode": "LEGACY-PS-1.18X520.0-417B74",
+      "spec": "PS(N)1.18×520×200 AN",
+      "length": 200.0
+    },
+    {
+      "barcode": "LEGACY-PS-1.48X520.0-50DFC2",
+      "spec": "PS(N)1.48×520×155 ANSi",
+      "length": 465.0
+    },
+    {
+      "barcode": "LEGACY-PS-0.48X520.0-C5EC39",
+      "spec": "PS(CL)0.48×520×400 AN",
+      "length": 1070.0
+    },
+    {
+      "barcode": "LEGACY-PS-0.78X405.0-F2D913",
+      "spec": "PS(CL)0.78×405×250 AN",
+      "length": 2101.0
+    },
+    {
+      "barcode": "LEGACY-PS-0.98X450.0-91D8E7",
+      "spec": "PS(CL)0.98×450×200 AN Si",
+      "length": 576.0
+    },
+    {
+      "barcode": "LEGACY-PS-1.0X450.0-F8522E",
+      "spec": "PS(CL)1.0×450×200 Si",
+      "length": 0.0
+    },
+    {
+      "barcode": "LEGACY-PS-1.0X400.0-1CE4C9",
+      "spec": "PS(CL)1.00×400×200 Si",
+      "length": 800.0
+    },
+    {
+      "barcode": "LEGACY-PS-0.78X575.0-205520",
+      "spec": "PS(N)0.78×575×250 AN",
+      "length": 927.0
+    },
+    {
+      "barcode": "LEGACY-PS-0.48X550.0-B6D12C",
+      "spec": "PS(導電)0.48×550×400",
+      "length": 2577.0
+    },
+    {
+      "barcode": "LEGACY-PS-0.68X640.0-7D0AA9",
+      "spec": "PS(導電)0.68×640×200(マルアイ)",
+      "length": 635.0
+    },
+    {
+      "barcode": "LEGACY-PS-0.78X405.0-D0D6D3",
+      "spec": "PS(導電)0.78×405×250",
+      "length": 1064.0
+    },
+    {
+      "barcode": "LEGACY-PS-0.78X435.0-512985",
+      "spec": "PS(導電)0.78×435×250",
+      "length": 717.0
+    },
+    {
+      "barcode": "LEGACY-PS-0.78X520.0-F206C4",
+      "spec": "PS(導電)0.78×520×250",
+      "length": 634.0
+    },
+    {
+      "barcode": "LEGACY-PS-0.98X405.0-092F1B",
+      "spec": "PS(導電)0.98×405×250ＶＮ",
+      "length": 659.0
+    },
+    {
+      "barcode": "LEGACY-PS-0.98X550.0-19B8C9",
+      "spec": "PS(緑)0.98×550  マルアイ",
+      "length": 0.0
+    },
+    {
+      "barcode": "LEGACY-PS-1.18X520.0-E2DE39",
+      "spec": "PS(導電)1.18×520×200",
+      "length": 757.0
+    },
+    {
+      "barcode": "LEGACY-PP-0.38X520.0-FF0C0C",
+      "spec": "PP(N)0.38×520×500 AN",
+      "length": 1251.0
+    },
+    {
+      "barcode": "LEGACY-PP-0.38X565.0-170EBB",
+      "spec": "PP(N)0.38×565×500AN SI",
+      "length": 2577.0
+    },
+    {
+      "barcode": "LEGACY-PP-0.48X405.0-1FCAC5",
+      "spec": "PP(N)0.48×405×400 AN",
+      "length": 2404.0
+    },
+    {
+      "barcode": "LEGACY-PP-0.48X550.0-3BF424",
+      "spec": "PP(N)0.48×550×400 AN",
+      "length": 1780.0
+    },
+    {
+      "barcode": "LEGACY-PP-0.5X640.0-4A16FF",
+      "spec": "PP(N)0.5×640×300(共栄）",
+      "length": 300.0
+    },
+    {
+      "barcode": "LEGACY-PP-0.58X405.0-56B174",
+      "spec": "PP(N)0.58×405×350 AN",
+      "length": 2371.0
+    },
+    {
+      "barcode": "LEGACY-PP-0.58X520.0-7E138D",
+      "spec": "PP(N)0.58×520×350 AN",
+      "length": 0.0
+    },
+    {
+      "barcode": "LEGACY-PP-0.58X550.0-CA9F36",
+      "spec": "PP(N)0.58×550×350 AN",
+      "length": 1482.0
+    },
+    {
+      "barcode": "LEGACY-PP-0.78X520.0-686830",
+      "spec": "PP(N)0.78×520×250 AN(東プラ)",
+      "length": 1000.0
+    },
+    {
+      "barcode": "LEGACY-PP-0.78X520.0-5BA5CD",
+      "spec": "PP(N)0.78×520×250 AN (SR)",
+      "length": 2152.0
+    },
+    {
+      "barcode": "LEGACY-PP-0.78X550.0-F98542",
+      "spec": "PP(N)0.78×550×300 AN",
+      "length": 503.0
+    },
+    {
+      "barcode": "LEGACY-PP-0.78X640.0-483390",
+      "spec": "PP(N)0.78×640×250 AN",
+      "length": 57.0
+    },
+    {
+      "barcode": "LEGACY-PP-0.98X405.0-FAA31B",
+      "spec": "PP(N)0.98×405×200 AN",
+      "length": 760.0
+    },
+    {
+      "barcode": "LEGACY-PP-0.98X520.0-C29CD5",
+      "spec": "PP(N)0.98×520×200 AN",
+      "length": 454.0
+    },
+    {
+      "barcode": "LEGACY-PP-0.98X580.0-B443B9",
+      "spec": "PP(N)0.98×580× 200AN",
+      "length": 1000.0
+    },
+    {
+      "barcode": "LEGACY-PP-0.98X670.0-45E26A",
+      "spec": "PP(N)0.98×670×200 AN",
+      "length": 0.0
+    },
+    {
+      "barcode": "LEGACY-PP-1.5X640.0-38C9D0",
+      "spec": "PP(N)1.5×640 AN            227ｍ",
+      "length": 1.5
+    },
+    {
+      "barcode": "LEGACY-PP-1.5X640.0-442A7F",
+      "spec": "PP(N)1.5×640 AN SI            33m",
+      "length": 2.0
+    },
+    {
+      "barcode": "LEGACY-PS-0.6X600.0-131D92",
+      "spec": "PS(N)0.6×600×340  Si",
+      "length": 2783.0
+    },
+    {
+      "barcode": "LEGACY-PET-0.38X520.0-C72F64",
+      "spec": "PET(CL)0.38×520×450 AN(AB材)",
+      "length": 1304.0
+    },
+    {
+      "barcode": "LEGACY-PET-0.38X520.0-17B109",
+      "spec": "PET(CL)0.38×520×450 SI",
+      "length": 2311.0
+    },
+    {
+      "barcode": "LEGACY-PET-0.48X520.0-956F41",
+      "spec": "PET(CL)0.48×520×350AN",
+      "length": 2064.0
+    },
+    {
+      "barcode": "LEGACY-PET-0.58X520.0-D64429",
+      "spec": "PET(CL)0.58×520×300 AN",
+      "length": 1860.0
+    },
+    {
+      "barcode": "LEGACY-PET-0.68X350.0-9CB341",
+      "spec": "PET(CL)0.68×350×300m  SI",
+      "length": 1192.0
+    },
+    {
+      "barcode": "LEGACY-PET-0.78X520.0-CA99CC",
+      "spec": "PET(CL)0.78×520×200m AN",
+      "length": 1811.0
+    },
+    {
+      "barcode": "LEGACY-PET-0.78X520.0-F8DCD9",
+      "spec": "PET(CL)0.78×520×200mSI",
+      "length": 1056.0
+    },
+    {
+      "barcode": "LEGACY-PET-0.78X690.0-75D00E",
+      "spec": "PET(CL)0.78×690 AN VIRGIN",
+      "length": 0.0
+    },
+    {
+      "barcode": "LEGACY-PET-0.98X405.0-8B0D25",
+      "spec": "PET(CL)0.98×405×200mSI",
+      "length": 1096.0
+    },
+    {
+      "barcode": "LEGACY-PET-0.98X520.0-E4BDD1",
+      "spec": "PET(CL)0.98×520×200m AN AB剤",
+      "length": 1066.0
+    },
+    {
+      "barcode": "LEGACY-PET-0.98X550.0-0C5CC9",
+      "spec": "PET(CL)0.98×550×200m AN AB剤",
+      "length": 2551.0
+    },
+    {
+      "barcode": "LEGACY-PET-0.98X640.0-B2AC00",
+      "spec": "PET(CL)0.98×640×150　SI",
+      "length": 24.0
+    },
+    {
+      "barcode": "LEGACY-PET-0.98X690.0-529686",
+      "spec": "PET(CL)0.98×690 AN AB剤",
+      "length": 0.0
+    },
+    {
+      "barcode": "LEGACY-PET-0.48X520.0-A38F47",
+      "spec": "PET(G)0.48×520×300  レグルス",
+      "length": 1782.0
+    },
+    {
+      "barcode": "LEGACY-PET-0.58X520.0-A34E5B",
+      "spec": "PET(G)0.58×520×300",
+      "length": 1276.0
+    },
+    {
+      "barcode": "LEGACY-PET-0.68X550.0-E23FB7",
+      "spec": "PET(G)0.68×550×150",
+      "length": 750.0
+    },
+    {
+      "barcode": "LEGACY-PET-0.68X520.0-710ECF",
+      "spec": "PET(B)0.68×520×250（レグルス）　400ｍ",
+      "length": 0.68
+    },
+    {
+      "barcode": "LEGACY-PET-0.78X420.0-5B83DE",
+      "spec": "PET(G)0.78×420×250（レグルス）",
+      "length": 603.0
+    },
+    {
+      "barcode": "LEGACY-PET-0.78X520.0-232DC2",
+      "spec": "PET(G)0.78×520×250",
+      "length": 0.0
+    },
+    {
+      "barcode": "LEGACY-PET-0.98X550.0-7D8896",
+      "spec": "PET(G)0.98×550×150",
+      "length": 696.0
+    },
+    {
+      "barcode": "LEGACY-PET-1.0X550.0-DE2E5B",
+      "spec": "PET(B)1.0×550×150（レグルス）",
+      "length": 0.0
+    },
+    {
+      "barcode": "LEGACY-PET-0.25X520.0-CD6F27",
+      "spec": "PET(CL)0.25X520 SI (又永) 0ｍ",
+      "length": 0.3
+    },
+    {
+      "barcode": "LEGACY-A-PET-0.3X460.0-265C08",
+      "spec": "PET(CL)0.3×460（ミネロン）  110m",
+      "length": 0.3
+    },
+    {
+      "barcode": "LEGACY-PET-0.3X640.0-F1C842",
+      "spec": "PET(CL)0.3×640（カネロン） 0m",
+      "length": 0.3
+    },
+    {
+      "barcode": "LEGACY-PET-0.3X640.0-FD3E8B",
+      "spec": "PET(CL)0.3×640（ミネロン）  32ｍ",
+      "length": 0.4
+    },
+    {
+      "barcode": "LEGACY-PET-0.4X640.0-F284A6",
+      "spec": "PET(CL)0.4×640（ミネロン ）0ｍ",
+      "length": 0.4
+    },
+    {
+      "barcode": "LEGACY-PET-0.4X640.0-A1DFFD",
+      "spec": "PET(CL)0.4×640×300AN　1231ｍ",
+      "length": 0.4
+    },
+    {
+      "barcode": "LEGACY-PET-0.4X460.0-4924CF",
+      "spec": "PET(CL)0.4×460 SI（ミネロン）0ｍ",
+      "length": 0.5
+    },
+    {
+      "barcode": "LEGACY-PET-0.7X640.0-71EEB7",
+      "spec": "PET(CL)0.70×640（東プラAB材）  34m",
+      "length": 0.8
+    },
+    {
+      "barcode": "LEGACY-PET-1.0X550.0-073691",
+      "spec": "PET(CL)1.00×550  AB材入  0m",
+      "length": 1.0
+    },
+    {
+      "barcode": "LEGACY-PET-1.0X640.0-79E0B3",
+      "spec": "PET(CL)1.0×640（東プラAB材）483ｍ",
+      "length": 1.2
+    },
+    {
+      "barcode": "LEGACY-PET-0.5X550.0-D93A0E",
+      "spec": "PET(G)0.5×550（マルアイ）   105m",
+      "length": 0.5
+    },
+    {
+      "barcode": "LEGACY-PET-0.5X640.0-CA25BF",
+      "spec": "PET(B)0.5×640 （マルアイ） 0m",
+      "length": 0.5
+    },
+    {
+      "barcode": "LEGACY-PET-1.0X550.0-B38A6D",
+      "spec": "PET(B)1.0×550（マルアイ） 2294m",
+      "length": 1.0
+    },
+    {
+      "barcode": "LEGACY-PET-1.0X640.0-AF9278",
+      "spec": "PET(G)1.0X640X100(マルアイ) 100m",
+      "length": 1.0
+    },
+    {
+      "barcode": "LEGACY-PET-1.0X640.0-770E6A",
+      "spec": "PET(B)1.0×640 マルアイ    0m",
+      "length": 1.0
+    },
+    {
+      "barcode": "LEGACY-PET-1.0X520.0-345989",
+      "spec": "SCS.V.APET1.0X520（ユーパック支給材）0m",
+      "length": 1.0
+    },
+    {
+      "barcode": "LEGACY-PS-0.8X520.0-370EE6",
+      "spec": "PST(N)0.80×520×250 AN Si",
+      "length": 1158.0
+    },
+    {
+      "barcode": "LEGACY-PS-0.8X670.0-0F7965",
+      "spec": "PST(N)0.80×670×200 AN Si",
+      "length": 143.0
+    },
+    {
+      "barcode": "LEGACY-PS-0.9X520.0-BF066E",
+      "spec": "PST(N)0.90×520×200 AN Si",
+      "length": 67.0
+    },
+    {
+      "barcode": "LEGACY-PS-0.98X520.0-F84A18",
+      "spec": "PST(N)0.98×520×200 AN Si",
+      "length": 464.0
+    },
+    {
+      "barcode": "LEGACY-PS-0.98X640.0-253832",
+      "spec": "PST(N)0.98X640X200 AN SI",
+      "length": 0.0
+    },
+    {
+      "barcode": "LEGACY-PS-1.18X520.0-D0F65F",
+      "spec": "PST(N)1.18×520×200 AN Si",
+      "length": 483.0
+    },
+    {
+      "barcode": "LEGACY-PS-0.8X550.0-6C044E",
+      "spec": "PST(B)0.8×550×250   250m",
+      "length": 0.8
+    },
+    {
+      "barcode": "LEGACY-PS-0.8X640.0-73624C",
+      "spec": "PST(B)0.8×640×100 65m",
+      "length": 1.0
+    },
+    {
+      "barcode": "LEGACY-PS-1.0X550.0-9FAF28",
+      "spec": "PST(B)1.0×550×200  800m",
+      "length": 1.0
+    },
+    {
+      "barcode": "LEGACY-PS-0.5X540.0-F74DC3",
+      "spec": "PS(導電)0.50×540MTM  　420m",
+      "length": 1.2
+    },
+    {
+      "barcode": "LEGACY-PS-1.2X550.0-A9A027",
+      "spec": "PS(B)1.2×550ミツミ支給材 47m",
+      "length": 0.5
+    },
+    {
+      "barcode": "LEGACY-PET-0.5X640.0-C50058",
+      "spec": "PET(B)0.5×640(マルアイ）0m",
+      "length": 0.7
+    },
+    {
+      "barcode": "LEGACY-PET-0.7X640.0-B15E75",
+      "spec": "PET(B)0.7×640(マルアイ 136m",
+      "length": 0.8
+    },
+    {
+      "barcode": "LEGACY-PET-0.8X640.0-DF6CA7",
+      "spec": "PET(B)0.8×640（ミツミ支給材） 0m",
+      "length": 0.5
+    },
+    {
+      "barcode": "LEGACY-PET-0.5X640.0-67261F",
+      "spec": "PET(G)0.5×640(マルアイ） 94m",
+      "length": 0.5
+    },
+    {
+      "barcode": "LEGACY-PET-0.5X640.0-3B77E2",
+      "spec": "C-APET0.5×640×200   0m",
+      "length": 0.5
+    },
+    {
+      "barcode": "LEGACY-PET-0.5X640.0-383AD4",
+      "spec": "TB-APET0.5×640×200   49m",
+      "length": 0.7
+    },
+    {
+      "barcode": "LEGACY-PS-0.3X405.0-179DD4",
+      "spec": "PS(N)0.30×405N Si    130m",
+      "length": 0.5
+    },
+    {
+      "barcode": "LEGACY-PS-0.5X360.0-97B905",
+      "spec": "PS(N)0.50×360AN     128m",
+      "length": 0.45
+    },
+    {
+      "barcode": "LEGACY-PS-0.45X630.0-B6441E",
+      "spec": "PS(N)0.45×630 Si      350m",
+      "length": 0.5
+    },
+    {
+      "barcode": "LEGACY-PS-0.8X640.0-F375D2",
+      "spec": "PS(B)0.8×640　       151m",
+      "length": 0.8
+    },
+    {
+      "barcode": "LEGACY-PS-0.8X640.0-F4ED7E",
+      "spec": "PS(N)0.80×640AN  538m",
+      "length": 0.8
+    },
+    {
+      "barcode": "LEGACY-PS-1.0X640.0-9FA69C",
+      "spec": "PS(N)1.0×640×150Si    859m",
+      "length": 1.0
+    },
+    {
+      "barcode": "LEGACY-PS-1.0X640.0-7B4E60",
+      "spec": "PS(G)1.0×640マルアイ    300m",
+      "length": 1.2
+    },
+    {
+      "barcode": "LEGACY-PS-1.2X520.0-C05B7C",
+      "spec": "PS(導電)1.2×520レグルス  0m",
+      "length": 1.18
+    },
+    {
+      "barcode": "LEGACY-PS-1.18X550.0-DA8420",
+      "spec": "PS(N)1.18×550AN           214m",
+      "length": 0.55
+    },
+    {
+      "barcode": "LEGACY-PP-0.7X520.0-35DE47",
+      "spec": "PP(B)0.7×520×300 AN 808m",
+      "length": 1.0
+    },
+    {
+      "barcode": "LEGACY-PP-1.0X405.0-600177",
+      "spec": "PP(B)1.0×405×150(マルアイ）10m",
+      "length": 1.0
+    },
+    {
+      "barcode": "LEGACY-PP-1.0X520.0-CB8D2F",
+      "spec": "PP(B)1.0X520X200(ミクローム）  240m",
+      "length": 1.0
+    },
+    {
+      "barcode": "LEGACY-PP-1.0X640.0-59E185",
+      "spec": "PP(B)1.0X640X200(ミクローム）  0m",
+      "length": 0.8
+    },
+    {
+      "barcode": "LEGACY-PP-0.98X550.0-4C95F4",
+      "spec": "PP(N)0.98×550×200 スプ 3023m",
+      "length": 1.2
+    },
+    {
+      "barcode": "LEGACY-PVC-0.2X640.0-7CAC87",
+      "spec": "PVC(CL)0.2×640×300SI  300m",
+      "length": 0.3
+    },
+    {
+      "barcode": "LEGACY-PVC-0.4X640.0-4818AE",
+      "spec": "PVC(CL)0.4×640×150SI  432m",
+      "length": 0.5
+    },
+    {
+      "barcode": "LEGACY-PVC-0.5X460.0-620C50",
+      "spec": "PVC(CL)0.5×460×120SI 31m",
+      "length": 0.5
+    },
+    {
+      "barcode": "LEGACY-PVC-0.5X640.0-3915C6",
+      "spec": "PVC(CL)0.5×640×120  267m",
+      "length": 0.6
+    },
+    {
+      "barcode": "LEGACY-PVC-0.6X640.0-1F9765",
+      "spec": "PVC(CL)0.6×640×100SI  120m",
+      "length": 0.8
+    },
+    {
+      "barcode": "LEGACY-PET-0.78X580.0-464DD7",
+      "spec": "PET0.78×580   カネロン　 0m",
+      "length": 0.8
+    },
+    {
+      "barcode": "LEGACY-PET-0.8X640.0-D4483A",
+      "spec": "PET0.8×640   カネロン 　　　9m",
+      "length": 1.0
+    },
+    {
+      "barcode": "LEGACY-PP-1.0X640.0-255DFA",
+      "spec": "PPF1.0X640X150ジェイウィング　150m",
+      "length": 1.0
+    },
+    {
+      "barcode": "LEGACY-PS-1.0X450.0-D06904",
+      "spec": "PS(CL)1.0X450SI 橙テープ400ｍ",
+      "length": 0.7
+    },
+    {
+      "barcode": "LEGACY-PET-1.0X640.0-5907A1",
+      "spec": "ＳＣＳTC-APET01.0×640  75m",
+      "length": 0.7
+    },
+    {
+      "barcode": "LEGACY-PET-0.4X640.0-AA446E",
+      "spec": "SCS.B.APET0.4×640         229m",
+      "length": 0.7
+    },
+    {
+      "barcode": "LEGACY-PET-0.7X640.0-D940BD",
+      "spec": "SCS.B.APET0.7×640        440m",
+      "length": 0.48
+    },
+    {
+      "barcode": "LEGACY-PET-0.48X540.0-EBD49D",
+      "spec": "SCS.NK.APET(G)0.48×540×300  180m",
+      "length": 0.5
+    },
+    {
+      "barcode": "LEGACY-PET-1.0X550.0-5EF698",
+      "spec": "SCS.V.APET1.0×550×150    32m",
+      "length": 0.98
+    },
+    {
+      "barcode": "LEGACY-PET-0.6X520.0-20061F",
+      "spec": "PET(CL)0.6×520(東プラ）AB材1.5倍 100m",
+      "length": 0.6
+    },
+    {
+      "barcode": "LEGACY-PET-0.6X520.0-D50F36",
+      "spec": "PET(CL)0.6×520(東プラ）高スリップ材 200m",
+      "length": 0.6
+    },
+    {
+      "barcode": "LEGACY-PET-0.6X520.0-6537A5",
+      "spec": "PET(CL)0.6X520(カネロン)PA6SV 50m",
+      "length": 0.4
+    },
+    {
+      "barcode": "LEGACY-PET-0.4X640.0-77C1A3",
+      "spec": "PET(CL)0.4×640×300SI(東プラ） 1200m",
+      "length": 0.5
+    },
+    {
+      "barcode": "LEGACY-PET-0.5X640.0-E42B94",
+      "spec": "PET(CL)0.5×640×200(東プラ）    816m",
+      "length": 0.6
+    },
+    {
+      "barcode": "LEGACY-PET-0.6X640.0-FA824B",
+      "spec": "PET(CL)0.6×640×250SI(東プラ） 200m",
+      "length": 0.8
+    }
+  ],
+  "unmatched": [
+    "PS(N)0.58×435×350 AN Si",
+    "PS(N)0.58×550×350 AN",
+    "PS(N)1.18×435×200 AN",
+    "PS(導電)0.48×420×400",
+    "PS(導電)0.58×420×350",
+    "PS(導電)0.58×485×350",
+    "PS(導電)1.18×435×200",
+    "PP(N)0.38×405×500 AN",
+    "PP(N)0.48×520×400 AN",
+    "PP(N)1.18×520×200 AN (SR)",
+    "PET(CL)0.5×460 SI ミネロン）354ｍ",
+    "PET(CL)0.80×580SI         0m",
+    "PS(B)0.70×540( レグルス)  151m",
+    "PVC(CL)0.3×640×200SI  0m",
+    "PVC(CL)0.8×640×100SI   38m",
+    "PVC(CL)1.0×640×70SI     70m"
+  ]
+}

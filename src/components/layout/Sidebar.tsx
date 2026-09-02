@@ -90,6 +90,8 @@ const NAV_SECTIONS: NavSection[] = [
     id: 'd4', icon: Factory, tKey: 'sections.thermoforming', color: '#8B5CF6',
     items: [
       { href: '/production/dashboard', icon: Home, tKey: 'items.overview', exact: true },
+      { href: '/production/work-orders', icon: ClipboardList, tKey: 'items.workOrders' },
+      { href: '/production/schedule', icon: GanttChart, tKey: 'items.schedule' },
       { href: '/production/planning', icon: Calendar, tKey: 'items.planning' },
       { href: '/production-instructions', icon: ClipboardList, tKey: 'items.productionInstructions' },
       { href: '/production/kanban', icon: Columns3, tKey: 'items.kanban' },

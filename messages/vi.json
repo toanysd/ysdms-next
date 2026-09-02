@@ -460,7 +460,8 @@
       "dailyMaterials": "Nhập xuất hàng ngày",
       "quickCreate": "⚡ Tạo/Sửa nhanh 1-Trang",
       "productCenter": "📊 Trung tâm dữ liệu SP",
-      "dataSync": "Data Sync Center"
+      "dataSync": "Data Sync Center",
+      "workOrders": "Lệnh sản xuất"
     },
     "bottom": {
       "reports": "Báo cáo thống kê",

@@ -155,6 +155,11 @@ FK:  company_id          UUID → companies(company_id) NOT NULL  ← BẮT BU�
 
 ---
 
+
+> ⚠️ **LƯU Ý QUAN TRỌNG (Cập nhật 2026-09-02)**
+> - `design_revisions` KHÔNG CÓ cột `is_active`. Để kiểm tra revision active/approved, dùng `status = 'APPROVED'`.
+> - `products` KHÔNG CÓ cột `design_code`. Cột `design_code` nằm ở `design_revisions`.
+
 ## 🔑 Bảng `design_revisions` — Bản Vẽ Kỹ Thuật CAD & Thông Số Thiết Kế
 
 ```
