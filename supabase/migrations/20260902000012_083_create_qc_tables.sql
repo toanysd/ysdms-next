@@ -4,7 +4,7 @@
 -- 1. In-Process QC Table (BP-49)
 CREATE TABLE IF NOT EXISTS job_qc_logs (
     qc_log_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    job_step_id UUID NOT NULL REFERENCES job_steps(job_step_id) ON DELETE CASCADE,
+    job_step_id UUID NOT NULL REFERENCES job_steps(step_id) ON DELETE CASCADE,
     job_id UUID NOT NULL REFERENCES jobs(job_id) ON DELETE CASCADE,
     recorded_by UUID NOT NULL REFERENCES employees(employee_id),
     recorded_at TIMESTAMPTZ NOT NULL DEFAULT now(),
