@@ -4356,5 +4356,24 @@
     "defectOTHER": "その他",
     "searchJobPlaceholder": "ジョブコード入力して検索",
     "selectEmployee": "検査員を選択"
+  },
+  "Shipment": {
+    "title": "納品書",
+    "addBtn": "＋ 納品書作成",
+    "searchOrderNo": "注文番号",
+    "searchCustomer": "顧客名",
+    "filterStatusAll": "すべて",
+    "filterStatusPending": "未出荷",
+    "filterStatusShipped": "出荷済",
+    "colDeliveryNote": "納品書番号",
+    "colCustomer": "顧客名",
+    "colOrderNo": "注文番号",
+    "colDate": "出荷日",
+    "colSite": "納品先",
+    "colMethod": "配送方法",
+    "colStatus": "ステータス",
+    "emptyText": "データなし",
+    "badgeShipped": "出荷済",
+    "badgePending": "未出荷"
   }
 }

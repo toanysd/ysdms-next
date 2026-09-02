@@ -4356,5 +4356,24 @@
     "defectOTHER": "Khác",
     "searchJobPlaceholder": "Nhập mã job để tìm",
     "selectEmployee": "Chọn KCS"
+  },
+  "Shipment": {
+    "title": "Giao Hàng",
+    "addBtn": "＋ Tạo Phiếu Giao",
+    "searchOrderNo": "Mã đơn hàng",
+    "searchCustomer": "Khách hàng",
+    "filterStatusAll": "Tất cả",
+    "filterStatusPending": "PENDING",
+    "filterStatusShipped": "SHIPPED",
+    "colDeliveryNote": "Delivery Note No",
+    "colCustomer": "Khách hàng",
+    "colOrderNo": "Mã đơn",
+    "colDate": "Ngày giao",
+    "colSite": "Địa điểm",
+    "colMethod": "Phương thức",
+    "colStatus": "Status",
+    "emptyText": "Không có dữ liệu",
+    "badgeShipped": "SHIPPED",
+    "badgePending": "PENDING"
   }
 }
