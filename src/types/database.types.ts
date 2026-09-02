@@ -1,8 +1,4 @@
-// ⚠️ WARNING: Manual patch applied for rpc_start_job (migration 077)
-// Next gen types will erase this. Re-apply patch or fix CLI encoding issue first.
-// Last patched: 2026-09-02 by AN
-
-export type Json =
+﻿export type Json =
   | string
   | number
   | boolean
@@ -2920,6 +2916,70 @@ export type Database = {
         }
         Relationships: []
       }
+      job_qc_logs: {
+        Row: {
+          created_at: string | null
+          defect_category: string | null
+          defect_notes: string | null
+          job_id: string
+          job_step_id: string
+          qc_log_id: string
+          quantity_checked: number
+          quantity_ng: number
+          quantity_pass: number
+          recorded_at: string
+          recorded_by: string
+        }
+        Insert: {
+          created_at?: string | null
+          defect_category?: string | null
+          defect_notes?: string | null
+          job_id: string
+          job_step_id: string
+          qc_log_id?: string
+          quantity_checked: number
+          quantity_ng?: number
+          quantity_pass: number
+          recorded_at?: string
+          recorded_by: string
+        }
+        Update: {
+          created_at?: string | null
+          defect_category?: string | null
+          defect_notes?: string | null
+          job_id?: string
+          job_step_id?: string
+          qc_log_id?: string
+          quantity_checked?: number
+          quantity_ng?: number
+          quantity_pass?: number
+          recorded_at?: string
+          recorded_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_qc_logs_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["job_id"]
+          },
+          {
+            foreignKeyName: "job_qc_logs_job_step_id_fkey"
+            columns: ["job_step_id"]
+            isOneToOne: false
+            referencedRelation: "job_steps"
+            referencedColumns: ["step_id"]
+          },
+          {
+            foreignKeyName: "job_qc_logs_recorded_by_fkey"
+            columns: ["recorded_by"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["employee_id"]
+          },
+        ]
+      }
       job_step_dependencies: {
         Row: {
           created_at: string | null
@@ -5277,6 +5337,72 @@ export type Database = {
           },
         ]
       }
+      outgoing_qc_records: {
+        Row: {
+          created_at: string | null
+          customer_form_ref: string | null
+          inspected_at: string
+          inspector_id: string
+          measurement_data: Json | null
+          notes: string | null
+          order_line_id: string
+          qc_record_id: string
+          qty_ng: number
+          qty_pass: number
+          qty_submitted: number
+          recycled_material_pct: number | null
+          result: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          customer_form_ref?: string | null
+          inspected_at?: string
+          inspector_id: string
+          measurement_data?: Json | null
+          notes?: string | null
+          order_line_id: string
+          qc_record_id?: string
+          qty_ng?: number
+          qty_pass: number
+          qty_submitted: number
+          recycled_material_pct?: number | null
+          result?: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          customer_form_ref?: string | null
+          inspected_at?: string
+          inspector_id?: string
+          measurement_data?: Json | null
+          notes?: string | null
+          order_line_id?: string
+          qc_record_id?: string
+          qty_ng?: number
+          qty_pass?: number
+          qty_submitted?: number
+          recycled_material_pct?: number | null
+          result?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "outgoing_qc_records_inspector_id_fkey"
+            columns: ["inspector_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["employee_id"]
+          },
+          {
+            foreignKeyName: "outgoing_qc_records_order_line_id_fkey"
+            columns: ["order_line_id"]
+            isOneToOne: false
+            referencedRelation: "order_lines"
+            referencedColumns: ["line_id"]
+          },
+        ]
+      }
       payroll_records: {
         Row: {
           allowance_total: number
@@ -5528,7 +5654,22 @@ export type Database = {
           supplier_id?: string | null
           updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "plastic_receipt_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "plastic_receipt_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "v_customer_debt_summary"
+            referencedColumns: ["company_id"]
+          },
+        ]
       }
       plastic_receipt_roll: {
         Row: {
@@ -7278,6 +7419,7 @@ export type Database = {
           invoice_no: string | null
           notes: string | null
           order_id: string | null
+          order_line_id: string | null
           service_desc: string | null
           ship_date: string
           shipment_id: string
@@ -7296,6 +7438,7 @@ export type Database = {
           invoice_no?: string | null
           notes?: string | null
           order_id?: string | null
+          order_line_id?: string | null
           service_desc?: string | null
           ship_date: string
           shipment_id?: string
@@ -7314,6 +7457,7 @@ export type Database = {
           invoice_no?: string | null
           notes?: string | null
           order_id?: string | null
+          order_line_id?: string | null
           service_desc?: string | null
           ship_date?: string
           shipment_id?: string
@@ -7339,6 +7483,13 @@ export type Database = {
             referencedColumns: ["order_id"]
           },
           {
+            foreignKeyName: "shipments_order_line_id_fkey"
+            columns: ["order_line_id"]
+            isOneToOne: false
+            referencedRelation: "order_lines"
+            referencedColumns: ["line_id"]
+          },
+          {
             foreignKeyName: "shipments_shipped_by_fkey"
             columns: ["shipped_by"]
             isOneToOne: false
@@ -7346,6 +7497,117 @@ export type Database = {
             referencedColumns: ["employee_id"]
           },
         ]
+      }
+      sm_captures: {
+        Row: {
+          created_at: string | null
+          device_id: string
+          id: number
+          metadata: Json | null
+          storage_path: string | null
+          thumbnail: string | null
+          type: string
+        }
+        Insert: {
+          created_at?: string | null
+          device_id: string
+          id?: number
+          metadata?: Json | null
+          storage_path?: string | null
+          thumbnail?: string | null
+          type: string
+        }
+        Update: {
+          created_at?: string | null
+          device_id?: string
+          id?: number
+          metadata?: Json | null
+          storage_path?: string | null
+          thumbnail?: string | null
+          type?: string
+        }
+        Relationships: []
+      }
+      sm_devices: {
+        Row: {
+          arch: string | null
+          camera_ip: string | null
+          camera_rtsp_port: number | null
+          clipboard_log_on: boolean | null
+          cpus: number | null
+          created_at: string | null
+          device_id: string
+          device_token: string | null
+          external_ip: string | null
+          hostname: string | null
+          id: number
+          last_seen: string | null
+          memory: number | null
+          online: boolean | null
+          platform: string | null
+          screen_capture_on: boolean | null
+          screen_interval_min: number | null
+          tailscale_ip: string | null
+          tunnel_url: string | null
+          updated_at: string | null
+          webcam_capture_on: boolean | null
+          webcam_interval_min: number | null
+          webcam_record_interval_min: number | null
+          webcam_record_on: boolean | null
+        }
+        Insert: {
+          arch?: string | null
+          camera_ip?: string | null
+          camera_rtsp_port?: number | null
+          clipboard_log_on?: boolean | null
+          cpus?: number | null
+          created_at?: string | null
+          device_id: string
+          device_token?: string | null
+          external_ip?: string | null
+          hostname?: string | null
+          id?: number
+          last_seen?: string | null
+          memory?: number | null
+          online?: boolean | null
+          platform?: string | null
+          screen_capture_on?: boolean | null
+          screen_interval_min?: number | null
+          tailscale_ip?: string | null
+          tunnel_url?: string | null
+          updated_at?: string | null
+          webcam_capture_on?: boolean | null
+          webcam_interval_min?: number | null
+          webcam_record_interval_min?: number | null
+          webcam_record_on?: boolean | null
+        }
+        Update: {
+          arch?: string | null
+          camera_ip?: string | null
+          camera_rtsp_port?: number | null
+          clipboard_log_on?: boolean | null
+          cpus?: number | null
+          created_at?: string | null
+          device_id?: string
+          device_token?: string | null
+          external_ip?: string | null
+          hostname?: string | null
+          id?: number
+          last_seen?: string | null
+          memory?: number | null
+          online?: boolean | null
+          platform?: string | null
+          screen_capture_on?: boolean | null
+          screen_interval_min?: number | null
+          tailscale_ip?: string | null
+          tunnel_url?: string | null
+          updated_at?: string | null
+          webcam_capture_on?: boolean | null
+          webcam_interval_min?: number | null
+          webcam_record_interval_min?: number | null
+          webcam_record_on?: boolean | null
+        }
+        Relationships: []
       }
       standard_process_times: {
         Row: {
@@ -7843,6 +8105,7 @@ export type Database = {
           processing_code_id: number | null
           processing_status_id: number | null
           quantity_done: number | null
+          quantity_ng: number
           work_date: string
         }
         Insert: {
@@ -7866,6 +8129,7 @@ export type Database = {
           processing_code_id?: number | null
           processing_status_id?: number | null
           quantity_done?: number | null
+          quantity_ng?: number
           work_date: string
         }
         Update: {
@@ -7889,6 +8153,7 @@ export type Database = {
           processing_code_id?: number | null
           processing_status_id?: number | null
           quantity_done?: number | null
+          quantity_ng?: number
           work_date?: string
         }
         Relationships: [
@@ -8158,18 +8423,7 @@ export type Database = {
       }
     }
     Functions: {
-      
-        rpc_start_job: {
-          Args: {
-            p_job_id: string
-          }
-          Returns: {
-            success: boolean
-            jobs_created: number
-            message: string
-          }
-        }
-        calculate_plastic_mrp_v2: {
+      calculate_plastic_mrp_v2: {
         Args: { p_end_date: string; p_start_date: string }
         Returns: {
           demand_meters: number
@@ -8209,6 +8463,21 @@ export type Database = {
         }
         Returns: undefined
       }
+      rpc_adjust_roll: {
+        Args: {
+          p_delta: number
+          p_operator: string
+          p_reason: string
+          p_roll_id: string
+          p_type: string
+        }
+        Returns: Json
+      }
+      rpc_confirm_work_order: {
+        Args: { p_confirmed_by: string; p_wo_id: string }
+        Returns: Json
+      }
+      rpc_start_job: { Args: { p_job_id: string }; Returns: Json }
     }
     Enums: {
       asset_type: "MOLD" | "CUTTER" | "EQUIPMENT" | "TRAY_SAMPLE" | "PLUG"
@@ -8258,12 +8527,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -8287,11 +8556,11 @@ export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -8312,11 +8581,11 @@ export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -8337,11 +8606,11 @@ export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -8354,11 +8623,11 @@ export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
+    : never) = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
