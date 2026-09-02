@@ -7,7 +7,7 @@ export async function startJobAction(jobId: string) {
   const supabase = await createClient()
 
   // Called to invoke the rpc_start_job and template job_steps
-  const { data, error } = await supabase.rpc('rpc_start_job', { p_job_id: jobId })
+  const { data, error } = await supabase.rpc('rpc_start_job' as any, { p_job_id: jobId })
 
   if (error) {
     console.error('Error starting job:', error)

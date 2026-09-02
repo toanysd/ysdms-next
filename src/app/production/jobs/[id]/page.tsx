@@ -49,7 +49,7 @@ export default async function JobDetailPage(props: { params: Promise<{ id: strin
 
   const displayPct = qtyPct ?? stepPct
 
-  const getStatusBadge = (st: string) => {
+  const getStatusBadge = (st: string | null | undefined) => {
     switch (st) {
       case 'PLANNED': return <span className="badge badge--info font-bold">PLANNED</span>
       case 'IN_PROGRESS': return <span className="badge badge--warning font-bold">IN PROGRESS</span>

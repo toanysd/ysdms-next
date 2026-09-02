@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import { ChevronDown, ChevronRight, Play, CheckCircle2, Clock, Calendar, Save, AlertCircle } from 'lucide-react'
-import { startJobAction, addWorkLogAction } from '../actions'
+import { startJobAction, addWorkLogAction } from '../../actions'
 
 export function JobStepsList({ job, employees }: { job: any, employees: any[] }) {
   const [isPending, startTransition] = useTransition()
