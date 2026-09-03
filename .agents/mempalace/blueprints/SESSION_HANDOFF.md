@@ -341,3 +341,5 @@ Danh sách chia sub-phase:
 - **[TASK 3 - Nút 入荷登録]:**
   - Bổ sung PageHeader và nút `[+ 入荷登録]` tại `plastics/inventory/page.tsx` dẫn sang `/plastics/inventory/new`.
 - **TypeScript Check:** `npx tsc --noEmit` = 0 errors. Commit `8f428eb` đã push lên `origin main`.
+
+- **[Fix Verification]:** Điều chỉnh path import `../../actions` cho component con `new/_components/ReceiptForm.tsx` và prop `currentPage` của `Pagination` tại `plastics/inventory/page.tsx`. Đã test `npx tsc --noEmit` hoàn toàn sạch **0 errors**. Commit: `1cae1c2` đã push lên `origin main`.
