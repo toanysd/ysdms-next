@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, ArrowUpFromLine, FileText, Calendar, Edit, MapPin, UserCheck } from 'lucide-react'
+import { ArrowLeft, ArrowUpFromLine, FileText, Calendar, Edit, MapPin, UserCheck, FileDown } from 'lucide-react'
 import { getTranslations } from 'next-intl/server'
 
 export const dynamic = 'force-dynamic'
@@ -85,10 +85,22 @@ export default async function QuotationDetailPage(props: { params: Promise<{ id:
           </div>
         </div>
 
-        <button className="btn btn-secondary flex items-center gap-1.5" disabled>
-          <Edit size={14} />
-          Edit (Phase 2)
-        </button>
+        <div className="flex items-center gap-2">
+          <a
+            href={`/api/quotations/${quote.quotation_id}/pdf`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn btn-primary flex items-center gap-1.5 cursor-pointer text-xs"
+          >
+            <FileDown size={14} />
+            <span>PDFダウンロード</span>
+          </a>
+
+          <button className="btn btn-secondary flex items-center gap-1.5" disabled>
+            <Edit size={14} />
+            Edit (Phase 2)
+          </button>
+        </div>
       </div>
 
       {/* Content Area */}

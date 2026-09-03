@@ -31,6 +31,8 @@ export default async function QuotationsPage(props: { searchParams: Promise<{ se
   if (searchParams.search) {
     const searchTerm = `%${searchParams.search}%`
     
+    // TD-011: PostgREST .or() does not support cross-table embedded filters (e.g. quotation_no OR companies.company_name).
+    // Preserving 2-step lookup pending PostgREST v12 upgrade or unified search view.
     // Step 1: find matching company IDs
     const { data: matchedCompanies } = await supabase
       .from('companies')

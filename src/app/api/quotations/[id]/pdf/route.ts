@@ -1,51 +1,48 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { NextResponse } from 'next/server'
 import { renderToBuffer } from '@react-pdf/renderer'
-import { QuotationPDFDocument } from '@/app/orders/quotations/_components/QuotationPDFDocument'
+import { QuotationPDF } from '@/components/pdf/QuotationPDF'
+import { createClient } from '@/lib/supabase/server'
 import React from 'react'
 
 export async function GET(
-  _req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  req: Request,
+  props: { params: Promise<{ id: string }> }
 ) {
-  const { id } = await params
+  const params = await props.params
   const supabase = await createClient()
 
-  // 1. Fetch quotation header with customer and employee relations
-  const { data: quotation, error: qErr } = await supabase
+  // Fetch quotation + lines + company
+  const { data: quote, error } = await supabase
     .from('quotations')
     .select(`
-      quotation_id, quotation_no, quote_date, valid_until,
-      status, quotation_type, total_amount, notes,
-      company_id, prepared_by, extra_json,
-      companies ( company_id, company_name, company_code, tel, address ),
-      employees:employees!quotations_prepared_by_fkey ( employee_id, employee_name )
+      *, 
+      companies(company_name),
+      quotation_lines(*)
     `)
-    .eq('quotation_id', id)
+    .eq('quotation_id', params.id)
     .single()
 
-  if (qErr || !quotation) {
+  if (error || !quote) {
     return NextResponse.json({ error: 'Quotation not found' }, { status: 404 })
   }
 
-  // 2. Fetch quotation lines
-  const { data: lines } = await supabase
-    .from('quotation_lines')
-    .select('*')
-    .eq('quotation_id', id)
-    .order('line_no', { ascending: true })
+  // Sort lines by line_no
+  if (quote.quotation_lines && Array.isArray(quote.quotation_lines)) {
+    quote.quotation_lines.sort((a: any, b: any) => (a.line_no || 0) - (b.line_no || 0))
+  }
 
   const buffer = await renderToBuffer(
-    React.createElement(QuotationPDFDocument as React.ComponentType<any>, {
-      quotation,
-      lines: lines || [],
-    })
+    React.createElement(QuotationPDF as React.ComponentType<any>, { data: quote })
   )
 
+  const filename = `${quote.quotation_no}_Rev${quote.revision_no || 1}.pdf`
+
   return new NextResponse(buffer as unknown as BodyInit, {
+    status: 200,
     headers: {
       'Content-Type': 'application/pdf',
-      'Content-Disposition': `inline; filename="${quotation.quotation_no || 'quotation'}.pdf"`,
+      'Content-Disposition': `attachment; filename="${encodeURIComponent(filename)}"`,
+      'Cache-Control': 'no-store, max-age=0',
     },
   })
 }

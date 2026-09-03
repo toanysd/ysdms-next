@@ -11,6 +11,14 @@ export async function submitOutgoingQCAction(formData: FormData) {
   const qtyNg = Math.max(0, qtySubmitted - qtyPass)
   const result = qtyNg === 0 ? 'PASS' : 'FAIL'
   const measurementData = formData.get('measurement_data') as string
+  let parsedMeasurementData = null
+  if (measurementData) {
+    try {
+      parsedMeasurementData = JSON.parse(measurementData)
+    } catch {
+      parsedMeasurementData = null
+    }
+  }
   const customerFormRef = formData.get('customer_form_ref') as string
   const notes = formData.get('notes') as string
 
@@ -22,7 +30,7 @@ export async function submitOutgoingQCAction(formData: FormData) {
     qty_pass: qtyPass,
     qty_ng: qtyNg,
     result,
-    measurement_data: measurementData ? JSON.parse(measurementData) : null,
+    measurement_data: parsedMeasurementData,
     customer_form_ref: customerFormRef || null,
     notes: notes || null
   })
