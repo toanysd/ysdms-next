@@ -45,7 +45,7 @@ const NAV_SECTIONS: NavSection[] = [
       { href: '/master/customers', icon: Users, tKey: 'items.customers' },
       { href: '/master/data-sync', icon: Database, tKey: 'items.dataSync' },
       { href: '/master/products', icon: Package, tKey: 'items.products' },
-      { href: '/orders/quotations', icon: FileSpreadsheet, tKey: 'items.quotations' },
+      { href: '/sales/quotations', icon: FileSpreadsheet, tKey: 'items.quotations' },
       { href: '/orders', icon: FileText, tKey: 'items.orders' },
       { href: '/orders/shipments', icon: Truck, tKey: 'items.shipments' },
       { href: '/orders/invoices', icon: Receipt, tKey: 'items.invoices' },
