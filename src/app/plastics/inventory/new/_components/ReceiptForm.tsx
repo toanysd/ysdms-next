@@ -3,7 +3,7 @@
 import React, { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Plus, Trash2, Save, PackageCheck, AlertCircle, RefreshCw, Barcode } from 'lucide-react'
-import { createPlasticReceiptAction, RollInput } from '../actions'
+import { createPlasticReceiptAction, RollInput } from '../../actions'
 
 interface PlasticMasterItem {
   plastic_id: string

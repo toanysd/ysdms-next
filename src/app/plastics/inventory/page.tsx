@@ -434,7 +434,7 @@ export default function PlasticsInventoryPage() {
         {/* Pagination */}
         <div style={{ padding: '8px 12px', display: 'flex', justifyContent: 'flex-end', borderTop: '1px solid var(--border-default)' }}>
           <Pagination
-            page={page}
+            currentPage={page}
             totalRecords={totalRecords}
             pageSize={PAGE_SIZE}
             onPageChange={(p) => setPage(p)}
