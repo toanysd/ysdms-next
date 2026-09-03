@@ -24,7 +24,13 @@ type OrderLineDetail = {
   unit: string
 }
 
-export function ShipmentForm({ deliverySites }: { deliverySites: DeliverySite[] }) {
+interface ShipmentFormProps {
+  deliverySites: DeliverySite[]
+  initialOrder?: any
+  initialLines?: OrderLineDetail[]
+}
+
+export function ShipmentForm({ deliverySites, initialOrder, initialLines = [] }: ShipmentFormProps) {
   const t = useTranslations('Shipment')
   const router = useRouter()
 
@@ -32,18 +38,29 @@ export function ShipmentForm({ deliverySites }: { deliverySites: DeliverySite[] 
   
   // Order Line Search State
   const [orderSearch, setOrderSearch] = useState('')
-  const [availableLines, setAvailableLines] = useState<OrderLineDetail[]>([])
-  const [selectedLine, setSelectedLine] = useState<OrderLineDetail | null>(null)
+  const [availableLines, setAvailableLines] = useState<OrderLineDetail[]>(initialLines)
+  const [selectedLine, setSelectedLine] = useState<OrderLineDetail | null>(() => {
+    return initialLines.length > 0 ? initialLines[0] : null
+  })
 
   // Form State
-  const [quantity, setQuantity] = useState<number | ''>('')
+  const [quantity, setQuantity] = useState<number | ''>(() => {
+    return initialLines.length > 0 ? initialLines[0].remaining_qty : ''
+  })
   const [shipDate, setShipDate] = useState(() => {
     const today = new Date()
     return today.toISOString().split('T')[0]
   })
   const [deliverySiteId, setDeliverySiteId] = useState('')
   const [deliveryMethod, setDeliveryMethod] = useState('TRUCK')
-  const [deliveryNoteNo, setDeliveryNoteNo] = useState('')
+  const [deliveryNoteNo, setDeliveryNoteNo] = useState(() => {
+    const d = new Date()
+    const yy = String(d.getFullYear()).slice(-2)
+    const mm = String(d.getMonth() + 1).padStart(2, '0')
+    const dd = String(d.getDate()).padStart(2, '0')
+    const rnd = Math.floor(1000 + Math.random() * 9000)
+    return `DN-${yy}${mm}${dd}-${rnd}`
+  })
   const [notes, setNotes] = useState('')
 
   // Async Order Line Search

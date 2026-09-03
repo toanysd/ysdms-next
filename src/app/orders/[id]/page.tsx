@@ -1,6 +1,6 @@
 import { getTranslations } from 'next-intl/server'
 import Link from 'next/link'
-import { ArrowLeft, ArrowUpFromLine } from 'lucide-react'
+import { ArrowLeft, ArrowUpFromLine, Truck } from 'lucide-react'
 import { BackButton } from './_components/BackButton'
 import { createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
@@ -79,6 +79,16 @@ export default async function OrderDetailPage(props: {
             </div>
           </div>
         </div>
+
+        {/* Nút phát hành 納品書 */}
+        {order.order_status !== 'CANCELLED' && (
+          <Link href={`/orders/shipments/new?order_id=${order.order_id}`}>
+            <button className="btn btn-primary flex items-center gap-1.5 text-xs px-3 py-1.5 h-auto cursor-pointer">
+              <Truck size={14} />
+              <span>納品書を発行する</span>
+            </button>
+          </Link>
+        )}
       </div>
 
       {/* ── Order Header Form ── */}

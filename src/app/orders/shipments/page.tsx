@@ -1,16 +1,15 @@
 import { createClient } from '@/lib/supabase/server'
 import { getTranslations } from 'next-intl/server'
 import Link from 'next/link'
-import { Plus, PackageCheck } from 'lucide-react'
+import { Plus, PackageCheck, FileText, ArrowUpRight } from 'lucide-react'
 import { ShipmentFilterBar } from './_components/ShipmentFilterBar'
 
 export const dynamic = 'force-dynamic'
 
-export default async function ShipmentsListPage({
-  searchParams,
-}: {
-  searchParams: { [key: string]: string | string[] | undefined }
+export default async function ShipmentsListPage(props: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>
 }) {
+  const searchParams = await props.searchParams
   const t = await getTranslations('Shipment')
   const supabase = await createClient()
 
@@ -30,15 +29,12 @@ export default async function ShipmentsListPage({
       delivery_method,
       status,
       orders (
+        order_id,
         order_no,
         company_id,
         companies (
           company_name
         )
-      ),
-      order_lines (
-        quantity,
-        product_id
       ),
       delivery_sites (
         site_name
@@ -66,9 +62,8 @@ export default async function ShipmentsListPage({
     if (customer && companyIds.length > 0) {
       orderQuery = orderQuery.in('company_id', companyIds)
     } else if (customer && companyIds.length === 0) {
-      // Force empty if no companies matched
       query = query.eq('shipment_id', '00000000-0000-0000-0000-000000000000')
-      orderQuery = orderQuery.eq('order_id', '00000000-0000-0000-0000-000000000000') // prevents fetching all orders
+      orderQuery = orderQuery.eq('order_id', '00000000-0000-0000-0000-000000000000')
     }
     
     // Step 2: Fetch matched orders and filter shipments
@@ -94,41 +89,55 @@ export default async function ShipmentsListPage({
     console.error('Error fetching shipments:', error)
   }
 
+  const renderStatusBadge = (st: string | null) => {
+    switch (st) {
+      case 'DELIVERED':
+        return <span className="badge badge--success font-bold text-xs">受領済 ✅</span>
+      case 'SHIPPED':
+        return <span className="badge badge--info font-bold text-xs">出荷済 🚚</span>
+      case 'CANCELLED':
+        return <span className="badge badge--error font-bold text-xs">取消 ❌</span>
+      case 'PREPARING':
+      default:
+        return <span className="badge badge--neutral font-bold text-xs text-slate-500">準備中 ⏳</span>
+    }
+  }
+
   return (
     <div className="flex flex-col h-full gap-3">
-      {/* PageHeader (Rule 2) */}
+      {/* PageHeader */}
       <div className="shrink-0 flex items-center justify-between p-4 card-flat">
         <div className="flex items-center gap-3">
           <PackageCheck className="w-5 h-5 text-[var(--accent)]" />
           <h1 className="text-lg font-bold text-slate-900">{t('title')}</h1>
         </div>
-        <Link href="/orders/shipments/new" className="btn btn-primary">
-          <Plus className="w-4 h-4 mr-2" />
-          {t('addBtn')}
+        <Link href="/orders/shipments/new" className="btn btn-primary flex items-center gap-1.5">
+          <Plus size={16} />
+          <span>{t('addBtn')}</span>
         </Link>
       </div>
 
-      {/* FilterBar (Rule 2) */}
+      {/* FilterBar */}
       <ShipmentFilterBar />
 
       {/* Content Area */}
-      <div className="flex-1 overflow-auto card-flat">
+      <div className="flex-1 overflow-auto card-flat p-0">
         <table className="data-table w-full">
           <thead>
             <tr>
-              <th className="text-left">{t('colDeliveryNote')}</th>
-              <th className="text-left">{t('colCustomer')}</th>
-              <th className="text-left">{t('colOrderNo')}</th>
-              <th className="text-left">{t('colDate')}</th>
-              <th className="text-left">{t('colSite')}</th>
-              <th className="text-left">{t('colMethod')}</th>
-              <th className="text-center">{t('colStatus')}</th>
+              <th style={{ width: '18%' }}>納品書No</th>
+              <th style={{ width: '22%' }}>得意先</th>
+              <th style={{ width: '14%' }}>受注No</th>
+              <th style={{ width: '12%' }}>出荷日</th>
+              <th style={{ width: '12%' }}>出荷方法</th>
+              <th style={{ width: '10%', textAlign: 'center' }}>ステータス</th>
+              <th style={{ width: '12%', textAlign: 'center' }}>操作</th>
             </tr>
           </thead>
           <tbody>
             {(!shipments || shipments.length === 0) ? (
               <tr>
-                <td colSpan={7} className="text-center text-slate-500 py-8">
+                <td colSpan={7} className="text-center text-slate-500 py-12 font-medium">
                   {t('emptyText')}
                 </td>
               </tr>
@@ -140,30 +149,49 @@ export default async function ShipmentsListPage({
                       href={`/orders/shipments/${ship.shipment_id}`}
                       className="text-[var(--accent)] font-bold font-mono text-[13px] hover:underline"
                     >
-                      {ship.delivery_note_no || '—'}
+                      {ship.delivery_note_no || 'DN-未採番'}
                     </Link>
                   </td>
-                  <td className="text-slate-900 font-medium text-[13px]">
+                  <td className="text-slate-900 font-semibold text-[13px]">
                     {ship.orders?.companies?.company_name || '—'}
                   </td>
-                  <td className="text-slate-600 font-mono text-[13px]">
-                    {ship.orders?.order_no || '—'}
+                  <td>
+                    <Link
+                      href={`/orders/${ship.orders?.order_id}`}
+                      className="text-slate-600 font-mono text-[12px] hover:underline"
+                    >
+                      {ship.orders?.order_no || '—'}
+                    </Link>
                   </td>
-                  <td className="text-slate-600 text-[13px]">
-                    {ship.ship_date ? new Date(ship.ship_date).toLocaleDateString('ja-JP') : '—'}
+                  <td className="text-slate-700 font-mono text-[12px]">
+                    {ship.ship_date || '—'}
                   </td>
-                  <td className="text-slate-600 text-[13px]">
-                    {ship.delivery_sites?.site_name || '—'}
+                  <td className="text-slate-700 text-[12px]">
+                    {ship.delivery_method || '自社便・トラック'}
                   </td>
-                  <td className="text-slate-600 text-[13px]">
-                    {ship.delivery_method || '—'}
+                  <td style={{ textAlign: 'center' }}>
+                    {renderStatusBadge(ship.status)}
                   </td>
-                  <td className="text-center">
-                    {ship.status === 'SHIPPED' ? (
-                      <span className="badge badge--success">{t('badgeShipped')}</span>
-                    ) : (
-                      <span className="badge badge--warning">{t('badgePending')}</span>
-                    )}
+                  <td style={{ textAlign: 'center' }}>
+                    <div className="flex items-center justify-center gap-2">
+                      <a
+                        href={`/api/shipments/${ship.shipment_id}/pdf`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="btn btn-secondary text-xs px-2 py-1 h-auto flex items-center gap-1 font-bold text-slate-700 hover:text-teal-700"
+                        title="納品書PDFを表示・印刷"
+                      >
+                        <FileText size={13} color="var(--accent)" />
+                        <span>納品書</span>
+                      </a>
+                      <Link
+                        href={`/orders/shipments/${ship.shipment_id}`}
+                        className="btn btn-secondary text-xs px-2 py-1 h-auto flex items-center text-slate-500"
+                        title="詳細を表示"
+                      >
+                        <ArrowUpRight size={13} />
+                      </Link>
+                    </div>
                   </td>
                 </tr>
               ))
