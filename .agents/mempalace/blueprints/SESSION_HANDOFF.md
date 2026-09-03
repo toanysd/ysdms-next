@@ -254,3 +254,20 @@ Danh sách chia sub-phase:
   - Tích hợp con dấu đỏ YSD (`public/stamps/stamp_yoshida.png`) tại khu vực triện đóng.
   - Phân tách trang phục vụ in ấn A4 chuẩn Nhật: Nửa trên là **「納　品　書」**, nửa dưới là **「納　品　受　領　書」** có ô ký nhận và ngày nhận hàng.
 - **TypeScript Check:** `npx tsc --noEmit` = 0 errors. Commit `d0323c4` đã push lên `origin main`.
+
+## Milestone 10: Shipment UI & Order-to-Shipment Flow (M10-S2) - COMPLETED
+[AN @ 2026-09-03 14:52 JST]
+
+**Thực thi thành công Chỉ thị #035:**
+- **[TASK 1 - Trang Danh Sách Shipments]:**
+  - Cột mã phiếu `納品書No` hiển thị hyperlink monospace dẫn trực tiếp vào trang chi tiết.
+  - Bổ sung cột Thao tác (Action): Nút `📄 納品書` mở trực tiếp file PDF trong tab mới (`/api/shipments/[id]/pdf`).
+  - Badge trạng thái trực quan: `PREPARING` ⏳ (chuẩn bị), `SHIPPED` 🚚 (đã xuất), `DELIVERED` ✅ (đã nhận), `CANCELLED` ❌ (hủy).
+- **[TASK 2 - Trang Chi Tiết Shipment]:**
+  - **Section A (Header):** Hiển thị khách hàng, địa điểm giao, mã đơn liên kết, ngày xuất, phương thức vận chuyển, mã vận đơn, nút tải PDF và nút lưu chỉnh sửa.
+  - **Section B (Lô xuất kho):** Bảng chi tiết lô xuất `shipment_lots` (Lot#, Mã hàng, Tên hàng, Số lượng, Số thùng carton, Pallet, Ghi chú).
+  - **Section C (Tiến độ Order Lines):** Thanh tiến độ mini cho từng dòng đơn hàng của Order liên quan, hiển thị rõ `注文総数 / 出荷済 / 未出荷残数` và badge trạng thái (`全数出荷済`, `一部出荷済`, `未出荷`).
+- **[TASK 3 - Nút Liên Thông Order → Shipment]:**
+  - Trang chi tiết Đơn hàng `src/app/orders/[id]/page.tsx`: Thêm nút chủ động `「納品書を発行する」` (icon `Truck`) tại PageHeader.
+  - Trang tạo mới `src/app/orders/shipments/new/page.tsx`: Nhận tham số `?order_id=`, tự động pre-fill thông tin khách hàng và nạp danh sách các dòng đơn còn hàng (`remaining_qty > 0`) để xuất ngay.
+- **TypeScript Check:** `npx tsc --noEmit` = 0 errors. Commit `b3c155e` đã push lên `origin main`.
