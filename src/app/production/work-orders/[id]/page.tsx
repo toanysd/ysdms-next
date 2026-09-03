@@ -1,10 +1,12 @@
 export const dynamic = 'force-dynamic'
 
 import { createClient } from '@/lib/supabase/server'
-import { ArrowLeft, ArrowUpFromLine, Calendar, Hash, CheckCircle2, Play, Edit2, Briefcase } from 'lucide-react'
+import { ArrowLeft, ArrowUpFromLine, Calendar, Hash, CheckCircle2, Play, Edit2, Briefcase, Wrench } from 'lucide-react'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { ConfirmWoButton } from './_components/ConfirmWoButton'
+import { JobsListSimple } from './_components/JobsListSimple'
+import { generateJobsForWorkOrder } from '../actions'
 
 export default async function WorkOrderDetailPage(props: { params: Promise<{ id: string }> }) {
   const params = await props.params
@@ -17,7 +19,9 @@ export default async function WorkOrderDetailPage(props: { params: Promise<{ id:
       products (product_code, product_name),
       companies (company_name),
       jobs (
-        job_id, job_code, job_name, job_category, job_status, equipment_id
+        job_id, job_code, job_name, job_category, job_status, equipment_id,
+        equipment (equipment_type, display_name, equipment_code),
+        job_steps (step_id, step_status)
       )
     `)
     .eq('wo_id', params.id)
@@ -69,7 +73,20 @@ export default async function WorkOrderDetailPage(props: { params: Promise<{ id:
             <span>Sửa Lệnh</span>
           </button>
           
-          <ConfirmWoButton woId={wo.wo_id} status={wo.wo_status} />
+          {/* Nút phát hành chỉ thị gia công khi chưa có jobs */}
+          {jobs.length === 0 ? (
+            <form action={async () => {
+              'use server'
+              await generateJobsForWorkOrder(wo.wo_id)
+            }}>
+              <button type="submit" className="btn btn-primary flex items-center gap-1.5 cursor-pointer">
+                <Wrench size={14} />
+                <span>加工指示を発行する</span>
+              </button>
+            </form>
+          ) : (
+            <ConfirmWoButton woId={wo.wo_id} status={wo.wo_status} />
+          )}
         </div>
       </div>
 
@@ -111,55 +128,31 @@ export default async function WorkOrderDetailPage(props: { params: Promise<{ id:
             </div>
           </div>
 
-          <div className="card-flat" style={{ padding: 0, flex: 1, display: 'flex', flexDirection: 'column' }}>
-            <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-default)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h2 className="text-[14px] font-bold" style={{ color: 'var(--text-primary)' }}>Danh Sách Jobs Gia Công ({jobs.length})</h2>
+          {/* Jobs List (ADR-003) */}
+          {jobs.length > 0 ? (
+            <JobsListSimple jobs={jobs as any} />
+          ) : (
+            <div className="card-flat" style={{ padding: '48px 20px', textAlign: 'center' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
+                <Briefcase size={48} color="var(--border-default)" />
+                <p style={{ color: 'var(--text-primary)', fontWeight: 700, fontSize: 15 }}>
+                  Chưa có Chỉ Thị Gia Công (Jobs) nào
+                </p>
+                <p style={{ color: 'var(--text-muted)', fontSize: 13, maxWidth: 450 }}>
+                  Bấm nút <strong>「加工指示を発行する」</strong> ở góc trên để hệ thống tự động phân tích bộ thiết bị của sản phẩm và tạo ra các Jobs gia công riêng biệt cho từng thiết bị.
+                </p>
+                <form action={async () => {
+                  'use server'
+                  await generateJobsForWorkOrder(wo.wo_id)
+                }}>
+                  <button type="submit" className="btn btn-primary flex items-center gap-1.5 cursor-pointer mt-2">
+                    <Wrench size={14} />
+                    <span>加工指示を発行する (Sinh Jobs)</span>
+                  </button>
+                </form>
+              </div>
             </div>
-            
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th style={{ width: '20%' }}>Mã Job</th>
-                  <th style={{ width: '40%' }}>Tên Job / Thiết Bị</th>
-                  <th style={{ width: '20%' }}>Phân Loại</th>
-                  <th style={{ width: '20%' }}>Trạng Thái</th>
-                </tr>
-              </thead>
-              <tbody>
-                {jobs.length === 0 ? (
-                  <tr>
-                    <td colSpan={4} style={{ textAlign: 'center', padding: '64px 0' }}>
-                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
-                        <Briefcase size={40} color="var(--border-default)" />
-                        <p style={{ color: 'var(--text-muted)', fontWeight: 600, fontSize: 13 }}>
-                          Lệnh này chưa được xác nhận để sinh Jobs.
-                        </p>
-                      </div>
-                    </td>
-                  </tr>
-                ) : (
-                  jobs.map((job: any) => (
-                    <tr key={job.job_id}>
-                      <td>
-                        <span style={{ color: 'var(--accent)', fontWeight: 700, fontFamily: 'monospace' }}>
-                          {job.job_code}
-                        </span>
-                      </td>
-                      <td>
-                        <span style={{ fontWeight: 600 }}>{job.job_name}</span>
-                      </td>
-                      <td>
-                        <span className="badge badge--neutral">{job.job_category}</span>
-                      </td>
-                      <td>
-                        <span className="badge badge--neutral font-bold">{job.job_status}</span>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+          )}
 
         </div>
 
