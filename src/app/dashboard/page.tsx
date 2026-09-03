@@ -652,6 +652,83 @@ export default function ExecutiveDashboardPage() {
         </div>
       </div>
 
+      {/* ── Hàng KPI: 材料在庫 (Material Inventory) (M12-S2) ── */}
+      <div className="card-flat" style={{ padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <Layers size={16} style={{ color: 'var(--accent)' }} />
+            <span style={{ fontSize: 13, fontWeight: 700, color: '#0F172A' }}>
+              材料在庫・原反ロール (Material Inventory Cockpit)
+            </span>
+            <span className="badge badge--neutral" style={{ fontSize: 10 }}>
+              Live DB View
+            </span>
+          </div>
+          <Link
+            href="/plastics/inventory"
+            style={{ fontSize: 11, color: 'var(--accent)', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 2, fontWeight: 600 }}
+          >
+            <span>ロール在庫管理へ</span>
+            <ArrowRight size={11} />
+          </Link>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
+          {/* 1. 総在庫量 */}
+          <div style={{ padding: '10px 14px', background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 6 }}>
+            <div style={{ fontSize: 11, fontWeight: 600, color: '#166534' }}>総在庫量 (Total Stock)</div>
+            <div style={{ fontSize: 20, fontWeight: 800, fontFamily: 'monospace', color: '#14532D', marginTop: 4 }}>
+              {(data?.materialKPIs?.totalAvailableM || 0).toLocaleString()} <span style={{ fontSize: 12, fontWeight: 400 }}>m</span>
+            </div>
+            <div style={{ fontSize: 10, color: '#15803D', marginTop: 2 }}>
+              本社・青森 全工場の有効在庫合計
+            </div>
+          </div>
+
+          {/* 2. 規格数 */}
+          <div style={{ padding: '10px 14px', background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 6 }}>
+            <div style={{ fontSize: 11, fontWeight: 600, color: '#475569' }}>規格数 (Active Specs)</div>
+            <div style={{ fontSize: 20, fontWeight: 800, fontFamily: 'monospace', color: '#0F172A', marginTop: 4 }}>
+              {data?.materialKPIs?.uniqueSpecsCount || 0} <span style={{ fontSize: 12, fontWeight: 400 }}>規格</span>
+            </div>
+            <div style={{ fontSize: 10, color: '#64748B', marginTop: 2 }}>
+              現在在庫がある原反マテリアル規格
+            </div>
+          </div>
+
+          {/* 3. 在庫不足 */}
+          <div
+            style={{
+              padding: '10px 14px',
+              background: (data?.materialKPIs?.lowStockMaterialCount || 0) > 0 ? '#FEF2F2' : '#F8FAFC',
+              border: (data?.materialKPIs?.lowStockMaterialCount || 0) > 0 ? '1px solid #FECACA' : '1px solid #E2E8F0',
+              borderRadius: 6,
+            }}
+          >
+            <div style={{ fontSize: 11, fontWeight: 600, color: (data?.materialKPIs?.lowStockMaterialCount || 0) > 0 ? '#B91C1C' : '#475569' }}>
+              在庫不足 (Low Stock &lt;500m)
+            </div>
+            <div
+              style={{
+                fontSize: 20,
+                fontWeight: 800,
+                fontFamily: 'monospace',
+                color: (data?.materialKPIs?.lowStockMaterialCount || 0) > 0 ? '#991B1B' : '#0F172A',
+                marginTop: 4,
+              }}
+            >
+              {data?.materialKPIs?.lowStockMaterialCount || 0} <span style={{ fontSize: 12, fontWeight: 400 }}>規格</span>
+              {(data?.materialKPIs?.lowStockMaterialCount || 0) > 0 && (
+                <span style={{ fontSize: 11, marginLeft: 6 }}>⚠️ 補充推奨</span>
+              )}
+            </div>
+            <div style={{ fontSize: 10, color: (data?.materialKPIs?.lowStockMaterialCount || 0) > 0 ? '#DC2626' : '#64748B', marginTop: 2 }}>
+              安全在庫500m未満の規格
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* ─────────────────────────────────────────────────────────────────── */}
       {/* 💼 TẦNG 2: THƯƠNG MẠI, DOANH THU & CÔNG NỢ (Live DB + Empty State)   */}
       {/* ─────────────────────────────────────────────────────────────────── */}

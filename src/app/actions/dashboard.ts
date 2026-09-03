@@ -55,6 +55,12 @@ export type ExecutiveDashboardData = {
     readyToShipCount: number
     deliveredCount: number
   }
+  // ── Material Inventory KPIs (M12-S2) ──
+  materialKPIs: {
+    totalAvailableM: number
+    uniqueSpecsCount: number
+    lowStockMaterialCount: number
+  }
   equipmentBreakdown: {
     type: string
     typeNameJA: string
@@ -194,6 +200,7 @@ export async function getDashboardData(): Promise<ExecutiveDashboardData> {
       { data: activeWOsData },
       { data: ordersPipelineData },
       { data: shipmentsMonthData },
+      { data: materialInventoryData },
     ] = await Promise.all([
       // 1. Executive Master KPIs from SQL View
       supabase.from('v_dashboard_executive_kpis').select('*').single(),
@@ -271,6 +278,11 @@ export async function getDashboardData(): Promise<ExecutiveDashboardData> {
         .from('shipments')
         .select('status, ship_date')
         .gte('ship_date', startOfMonth.toISOString().split('T')[0]),
+
+      // 12. Material Inventory Summary (M12-S2)
+      supabase
+        .from('material_inventory_v2')
+        .select('material_spec, available_m, factory_site'),
     ])
 
     // Format Equipment Breakdown
@@ -398,6 +410,18 @@ export async function getDashboardData(): Promise<ExecutiveDashboardData> {
       deliveredCount,
     }
 
+    // Format Material Inventory KPIs (M12-S2)
+    const inventoryRows = materialInventoryData || []
+    const totalAvailableM = inventoryRows.reduce((sum: number, r: any) => sum + (Number(r.available_m) || 0), 0)
+    const lowStockMaterialCount = inventoryRows.filter((r: any) => (Number(r.available_m) || 0) < 500).length
+    const uniqueSpecsCount = new Set(inventoryRows.map((r: any) => r.material_spec)).size
+
+    const materialKPIs = {
+      totalAvailableM: Math.round(totalAvailableM),
+      uniqueSpecsCount,
+      lowStockMaterialCount,
+    }
+
     // Format Recent Jobs
     const recentJobs = (recentJobsData || []).map((j: any) => ({
       job_id: j.job_id,
@@ -500,6 +524,7 @@ export async function getDashboardData(): Promise<ExecutiveDashboardData> {
       urgentJobs,
       activeWorkOrders,
       commercialPipeline,
+      materialKPIs,
       equipmentBreakdown,
       jobStatusBreakdown,
       recentJobs,
@@ -550,6 +575,11 @@ export async function getDashboardData(): Promise<ExecutiveDashboardData> {
         inProductionCount: 0,
         readyToShipCount: 0,
         deliveredCount: 0,
+      },
+      materialKPIs: {
+        totalAvailableM: 0,
+        uniqueSpecsCount: 0,
+        lowStockMaterialCount: 0,
       },
       equipmentBreakdown: [],
       jobStatusBreakdown: [],

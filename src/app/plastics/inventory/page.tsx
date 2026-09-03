@@ -3,10 +3,26 @@
 import { useEffect, useState, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Pagination } from '@/components/ui/Pagination'
-import { Search, Loader2, ArrowUp, ArrowDown, ArrowUpDown, AlertTriangle, Box, Layers, PackagePlus } from 'lucide-react'
+import {
+  Search,
+  Loader2,
+  ArrowUp,
+  ArrowDown,
+  ArrowUpDown,
+  AlertTriangle,
+  Box,
+  Layers,
+  PackagePlus,
+  ClipboardList,
+  History,
+  X,
+  ArrowRight,
+  User,
+} from 'lucide-react'
 import { useSearchHistory } from '@/hooks/useSearchHistory'
 import { SearchSuggestions } from '@/components/ui/SearchSuggestions'
 import Link from 'next/link'
+import { getRollConsumptionHistoryAction } from './actions'
 
 // ── Status labels ──
 const STATUS_LABELS: Record<string, { ja: string; color: string; bg: string }> = {
@@ -90,6 +106,11 @@ export default function PlasticsInventoryPage() {
   const [totalRecords, setTotalRecords] = useState(0)
   const PAGE_SIZE = 50
 
+  // Consumption History Drawer State (TASK 2)
+  const [selectedDrawerRoll, setSelectedDrawerRoll] = useState<any | null>(null)
+  const [historyLogs, setHistoryLogs] = useState<any[]>([])
+  const [loadingHistory, setLoadingHistory] = useState(false)
+
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedSearch(searchQuery)
@@ -160,6 +181,25 @@ export default function PlasticsInventoryPage() {
 
   useEffect(() => { fetchRolls() }, [fetchRolls])
 
+  const handleOpenDrawer = async (roll: any) => {
+    setSelectedDrawerRoll(roll)
+    setLoadingHistory(true)
+    try {
+      const logs = await getRollConsumptionHistoryAction(roll.id)
+      setHistoryLogs(logs)
+    } catch (e) {
+      console.error('Failed to load history:', e)
+      setHistoryLogs([])
+    } finally {
+      setLoadingHistory(false)
+    }
+  }
+
+  const handleCloseDrawer = () => {
+    setSelectedDrawerRoll(null)
+    setHistoryLogs([])
+  }
+
   const handleSort = (col: string) => {
     if (sortCol === col) {
       if (sortDir === 'asc') setSortDir('desc')
@@ -190,7 +230,7 @@ export default function PlasticsInventoryPage() {
   }
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-3 relative">
       {/* ── PageHeader (TASK 3) ── */}
       <div className="card-flat" style={{ padding: '10px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div className="flex items-center gap-2">
@@ -206,6 +246,12 @@ export default function PlasticsInventoryPage() {
         </div>
 
         <div className="flex items-center gap-2">
+          <Link href="/plastics/inventory/consume">
+            <button className="btn btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, height: 32, padding: '0 12px', fontWeight: 700 }}>
+              <ClipboardList size={15} />
+              <span>消費登録</span>
+            </button>
+          </Link>
           <Link href="/plastics/inventory/new">
             <button className="btn btn-primary" style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, height: 32, padding: '0 12px', fontWeight: 700 }}>
               <PackagePlus size={15} />
@@ -318,11 +364,11 @@ export default function PlasticsInventoryPage() {
       {/* Data Table */}
       <div className="card-flat" style={{ padding: 0, overflow: 'hidden' }}>
         <div style={{ overflowX: 'auto' }}>
-          <table className="data-table w-full" style={{ borderCollapse: 'collapse', minWidth: 1000 }}>
+          <table className="data-table w-full" style={{ borderCollapse: 'collapse', minWidth: 1050 }}>
             <thead>
               <tr style={{ background: 'var(--bg-surface-2)' }}>
                 <ThSort col="roll_barcode" ja="ロールコード" w={140} />
-                <ThSort col="plastic_master.plastic_code" ja="標準コード" w={200} />
+                <ThSort col="plastic_master.plastic_code" ja="標準コード" w={190} />
                 <ThSort col="plastic_master.plastic_family" ja="材質" w={70} />
                 <th style={{ padding: '6px 8px', fontSize: 10, fontWeight: 700, color: 'var(--text-muted)', textAlign: 'center', borderBottom: '1px solid var(--border-default)', fontFamily: 'var(--font-jp)' }}>厚さ×幅</th>
                 <th style={{ padding: '6px 8px', fontSize: 10, fontWeight: 700, color: 'var(--text-muted)', textAlign: 'center', borderBottom: '1px solid var(--border-default)', fontFamily: 'var(--font-jp)' }}>色</th>
@@ -332,19 +378,20 @@ export default function PlasticsInventoryPage() {
                 <ThSort col="status" ja="状態" w={80} align="center" />
                 <ThSort col="location" ja="工場・場所" w={90} />
                 <ThSort col="lot_no" ja="ロットNo" w={110} />
+                <th style={{ width: 85, textAlign: 'center', padding: '6px 8px', fontSize: 10, fontWeight: 700, color: 'var(--text-muted)', borderBottom: '1px solid var(--border-default)' }}>履歴/消費</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={11} style={{ textAlign: 'center', padding: 40, color: 'var(--text-muted)' }}>
+                  <td colSpan={12} style={{ textAlign: 'center', padding: 40, color: 'var(--text-muted)' }}>
                     <Loader2 size={20} className="animate-spin" style={{ margin: '0 auto 8px' }} />
                     ロールデータを読み込み中...
                   </td>
                 </tr>
               ) : rolls.length === 0 ? (
                 <tr>
-                  <td colSpan={11} style={{ textAlign: 'center', padding: 40, color: 'var(--text-muted)' }}>
+                  <td colSpan={12} style={{ textAlign: 'center', padding: 40, color: 'var(--text-muted)' }}>
                     データが見つかりません
                   </td>
                 </tr>
@@ -358,10 +405,32 @@ export default function PlasticsInventoryPage() {
                   const st = STATUS_LABELS[r.status] || { ja: r.status, color: 'var(--text-muted)', bg: 'var(--bg-surface-2)' }
 
                   return (
-                    <tr key={r.id} style={{ borderBottom: '1px solid var(--border-default)', background: isLow ? '#FFFBEB' : undefined }}>
-                      {/* Roll Barcode */}
+                    <tr
+                      key={r.id}
+                      style={{
+                        borderBottom: '1px solid var(--border-default)',
+                        background: isLow ? '#FFFBEB' : undefined,
+                      }}
+                    >
+                      {/* Roll Barcode (Clickable to open Drawer) */}
                       <td style={{ padding: '6px 8px', fontFamily: 'monospace', fontWeight: 700, fontSize: 12 }}>
-                        <span style={{ color: 'var(--accent)' }}>{r.roll_barcode}</span>
+                        <button
+                          type="button"
+                          onClick={() => handleOpenDrawer(r)}
+                          style={{
+                            color: 'var(--accent)',
+                            background: 'none',
+                            border: 'none',
+                            padding: 0,
+                            fontFamily: 'monospace',
+                            fontWeight: 700,
+                            fontSize: 12,
+                            cursor: 'pointer',
+                            textDecoration: 'underline',
+                          }}
+                        >
+                          {r.roll_barcode}
+                        </button>
                       </td>
 
                       {/* Plastic Code */}
@@ -423,6 +492,18 @@ export default function PlasticsInventoryPage() {
                       <td style={{ padding: '6px 8px', fontSize: 11, fontFamily: 'monospace', color: 'var(--text-muted)' }}>
                         {r.lot_no || '—'}
                       </td>
+
+                      {/* Action: Open Drawer */}
+                      <td style={{ padding: '6px 8px', textAlign: 'center' }}>
+                        <button
+                          type="button"
+                          onClick={() => handleOpenDrawer(r)}
+                          className="btn btn-secondary text-[10px] px-2 py-0.5 h-auto font-bold flex items-center gap-1 mx-auto"
+                        >
+                          <History size={11} />
+                          <span>履歴</span>
+                        </button>
+                      </td>
                     </tr>
                   )
                 })
@@ -441,6 +522,182 @@ export default function PlasticsInventoryPage() {
           />
         </div>
       </div>
+
+      {/* ── Slide Drawer: Consumption History (TASK 2) ── */}
+      {selectedDrawerRoll && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(15, 23, 42, 0.4)',
+            display: 'flex',
+            justifyContent: 'flex-end',
+            zIndex: 9999,
+          }}
+          onClick={handleCloseDrawer}
+        >
+          <div
+            style={{
+              width: '100%',
+              maxWidth: 480,
+              background: '#FFFFFF',
+              height: '100%',
+              boxShadow: '-4px 0 20px rgba(0,0,0,0.15)',
+              display: 'flex',
+              flexDirection: 'column',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Drawer Header */}
+            <div style={{ padding: '14px 18px', borderBottom: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#F8FAFC' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <History size={18} color="var(--accent)" />
+                <div>
+                  <h3 style={{ margin: 0, fontSize: 14, fontWeight: 700, color: '#0F172A', fontFamily: 'monospace' }}>
+                    {selectedDrawerRoll.roll_barcode}
+                  </h3>
+                  <span style={{ fontSize: 11, color: '#64748B' }}>
+                    {selectedDrawerRoll.plastic_master?.plastic_code || '原反ロール詳細'}
+                  </span>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={handleCloseDrawer}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748B', padding: 4 }}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Meter Gauge Card */}
+            <div style={{ padding: '14px 18px', borderBottom: '1px solid #F1F5F9', background: '#FFFFFF' }}>
+              {(() => {
+                const nominal = selectedDrawerRoll.nominal_length_m || selectedDrawerRoll.received_length_m || 1
+                const current = selectedDrawerRoll.current_length_m || 0
+                const used = Math.max(0, nominal - current)
+                const usedPct = Math.min(100, Math.max(0, Math.round((used / nominal) * 100)))
+
+                return (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, fontFamily: 'monospace' }}>
+                      <span>受入: <strong>{nominal}</strong>m</span>
+                      <span>消費済: <strong style={{ color: '#D97706' }}>{used}</strong>m</span>
+                      <span>残量: <strong style={{ color: current <= 50 ? '#DC2626' : 'var(--accent)' }}>{current}</strong>m</span>
+                    </div>
+
+                    <div style={{ width: '100%', height: 8, background: '#E2E8F0', borderRadius: 4, overflow: 'hidden' }}>
+                      <div
+                        style={{
+                          width: `${usedPct}%`,
+                          height: '100%',
+                          background: current <= 50 ? '#DC2626' : 'var(--accent)',
+                        }}
+                      />
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: '#64748B' }}>
+                      <span>消化率: {usedPct}%</span>
+                      <span>保管場所: {selectedDrawerRoll.location || '本社'}</span>
+                    </div>
+                  </div>
+                )
+              })()}
+            </div>
+
+            {/* Consumption History List */}
+            <div style={{ flex: 1, overflowY: 'auto', padding: '14px 18px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span style={{ fontSize: 12, fontWeight: 700, color: '#0F172A' }}>
+                  消費・調整履歴 (Consumption Logs)
+                </span>
+                <span style={{ fontSize: 11, color: '#64748B', fontFamily: 'monospace' }}>
+                  {historyLogs.length} 件
+                </span>
+              </div>
+
+              {loadingHistory ? (
+                <div style={{ textAlign: 'center', padding: 40, color: '#64748B' }}>
+                  <Loader2 size={20} className="animate-spin" style={{ margin: '0 auto 6px' }} />
+                  履歴を読込中...
+                </div>
+              ) : historyLogs.length === 0 ? (
+                <div style={{ padding: 24, textAlign: 'center', background: '#F8FAFC', borderRadius: 6, color: '#94A3B8', fontSize: 12 }}>
+                  まだ消費履歴がありません（新規ロールまたは未記録）
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {historyLogs.map((log) => {
+                    const dt = log.created_at ? new Date(log.created_at) : null
+                    const dateStr = dt
+                      ? `${String(dt.getMonth() + 1).padStart(2, '0')}/${String(dt.getDate()).padStart(2, '0')} ${String(dt.getHours()).padStart(2, '0')}:${String(dt.getMinutes()).padStart(2, '0')}`
+                      : '—'
+
+                    return (
+                      <div
+                        key={log.id}
+                        style={{
+                          padding: '10px 12px',
+                          borderRadius: 6,
+                          border: '1px solid #E2E8F0',
+                          background: '#FAFAFA',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: 4,
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                          <span style={{ fontSize: 11, fontFamily: 'monospace', color: '#64748B' }}>
+                            {dateStr}
+                          </span>
+                          <span
+                            style={{
+                              fontSize: 12,
+                              fontWeight: 800,
+                              fontFamily: 'monospace',
+                              color: (log.change_length_m || 0) < 0 ? '#DC2626' : '#166534',
+                            }}
+                          >
+                            {(log.change_length_m || 0) > 0 ? `+${log.change_length_m}` : log.change_length_m}m
+                          </span>
+                        </div>
+
+                        <div style={{ fontSize: 11, fontWeight: 600, color: '#1E293B' }}>
+                          {log.note || '製造消費'}
+                        </div>
+
+                        {log.operator_name && (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 10, color: '#64748B' }}>
+                            <User size={11} />
+                            <span>担当: {log.operator_name}</span>
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Drawer Footer Actions */}
+            <div style={{ padding: '14px 18px', borderTop: '1px solid #E2E8F0', background: '#F8FAFC', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <button
+                type="button"
+                onClick={handleCloseDrawer}
+                className="btn btn-secondary text-xs px-3 py-1.5 h-auto font-bold"
+              >
+                閉じる
+              </button>
+
+              <Link href={`/plastics/inventory/consume?roll_id=${selectedDrawerRoll.id}`}>
+                <button className="btn btn-primary text-xs px-3.5 py-1.5 h-auto flex items-center gap-1.5 font-bold">
+                  <ClipboardList size={14} />
+                  <span>このロールを消費登録する →</span>
+                </button>
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
