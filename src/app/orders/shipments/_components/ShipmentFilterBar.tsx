@@ -2,8 +2,8 @@
 
 import { useTranslations } from 'next-intl'
 import { useRouter, usePathname, useSearchParams } from 'next/navigation'
-import { Search } from 'lucide-react'
-import { useCallback, useState, useEffect } from 'react'
+import { Search, X } from 'lucide-react'
+import { useState, useEffect, useRef } from 'react'
 
 export function ShipmentFilterBar() {
   const t = useTranslations('Shipment')
@@ -13,35 +13,44 @@ export function ShipmentFilterBar() {
 
   const [orderNo, setOrderNo] = useState(searchParams.get('order_no') || '')
   const [customer, setCustomer] = useState(searchParams.get('customer') || '')
-  
-  // Update URL params
-  const createQueryString = useCallback(
-    (name: string, value: string) => {
-      const params = new URLSearchParams(searchParams.toString())
-      if (value) {
-        params.set(name, value)
-      } else {
-        params.delete(name)
-      }
-      return params.toString()
-    },
-    [searchParams]
-  )
+  const [fromDate, setFromDate] = useState(searchParams.get('from_date') || '')
+  const [toDate, setToDate] = useState(searchParams.get('to_date') || '')
+  const [status, setStatus] = useState(searchParams.get('status') || '')
 
-  // Debounce search
+  const isMounted = useRef(false)
+
+  // Debounce search updates
   useEffect(() => {
+    if (!isMounted.current) {
+      isMounted.current = true
+      return
+    }
+
     const timer = setTimeout(() => {
-      let url = pathname + '?'
-      const params = new URLSearchParams(searchParams.toString())
+      const params = new URLSearchParams()
       if (orderNo) params.set('order_no', orderNo)
-      else params.delete('order_no')
       if (customer) params.set('customer', customer)
-      else params.delete('customer')
-      
-      router.push(pathname + '?' + params.toString())
+      if (fromDate) params.set('from_date', fromDate)
+      if (toDate) params.set('to_date', toDate)
+      if (status) params.set('status', status)
+
+      const qs = params.toString()
+      router.push(qs ? `${pathname}?${qs}` : pathname)
     }, 400)
+
     return () => clearTimeout(timer)
-  }, [orderNo, customer, router, pathname, searchParams])
+  }, [orderNo, customer, fromDate, toDate, status, router, pathname])
+
+  const handleClear = () => {
+    setOrderNo('')
+    setCustomer('')
+    setFromDate('')
+    setToDate('')
+    setStatus('')
+    router.push(pathname)
+  }
+
+  const hasFilters = Boolean(orderNo || customer || fromDate || toDate || status)
 
   return (
     <div className="card-flat shrink-0 flex items-center gap-3 p-3 flex-wrap">
@@ -73,33 +82,44 @@ export function ShipmentFilterBar() {
         />
       </div>
 
-      {/* Date filter placeholder */}
+      {/* Date filter */}
       <input 
         type="date" 
         className="form-input w-36"
-        value={searchParams.get('from_date') || ''}
-        onChange={(e) => router.push(pathname + '?' + createQueryString('from_date', e.target.value))}
+        value={fromDate}
+        onChange={(e) => setFromDate(e.target.value)}
       />
       <span className="text-slate-400">-</span>
       <input 
         type="date" 
         className="form-input w-36"
-        value={searchParams.get('to_date') || ''}
-        onChange={(e) => router.push(pathname + '?' + createQueryString('to_date', e.target.value))}
+        value={toDate}
+        onChange={(e) => setToDate(e.target.value)}
       />
 
       {/* Status Filter */}
       <select 
-        className="form-select w-32"
-        value={searchParams.get('status') || ''}
-        onChange={(e) => {
-          router.push(pathname + '?' + createQueryString('status', e.target.value))
-        }}
+        className="form-select w-36"
+        value={status}
+        onChange={(e) => setStatus(e.target.value)}
       >
         <option value="">{t('filterStatusAll')}</option>
-        <option value="PENDING">{t('filterStatusPending')}</option>
+        <option value="PREPARING">準備中 (Preparing)</option>
         <option value="SHIPPED">{t('filterStatusShipped')}</option>
+        <option value="DELIVERED">受領済 (Delivered)</option>
       </select>
+
+      {/* Clear Filters */}
+      {hasFilters && (
+        <button
+          type="button"
+          onClick={handleClear}
+          className="btn btn-secondary flex items-center gap-1 text-xs px-2.5 py-1.5 h-auto"
+        >
+          <X size={13} />
+          <span>クリア</span>
+        </button>
+      )}
     </div>
   )
 }

@@ -3,7 +3,7 @@
 import { useTranslations } from 'next-intl'
 import { useRouter } from 'next/navigation'
 import { useState, useEffect } from 'react'
-import { Save } from 'lucide-react'
+import { Save, AlertCircle } from 'lucide-react'
 import { createShipmentAction, searchOrderLinesAction } from '../../actions'
 
 type DeliverySite = {
@@ -15,8 +15,13 @@ type OrderLineDetail = {
   line_id: string
   order_id: string
   quantity: number
+  shipped_qty: number
+  remaining_qty: number
   order_no: string
+  customer_name: string
+  product_code: string
   product_name: string
+  unit: string
 }
 
 export function ShipmentForm({ deliverySites }: { deliverySites: DeliverySite[] }) {
@@ -31,12 +36,13 @@ export function ShipmentForm({ deliverySites }: { deliverySites: DeliverySite[] 
   const [selectedLine, setSelectedLine] = useState<OrderLineDetail | null>(null)
 
   // Form State
+  const [quantity, setQuantity] = useState<number | ''>('')
   const [shipDate, setShipDate] = useState(() => {
     const today = new Date()
     return today.toISOString().split('T')[0]
   })
   const [deliverySiteId, setDeliverySiteId] = useState('')
-  const [deliveryMethod, setDeliveryMethod] = useState('')
+  const [deliveryMethod, setDeliveryMethod] = useState('TRUCK')
   const [deliveryNoteNo, setDeliveryNoteNo] = useState('')
   const [notes, setNotes] = useState('')
 
@@ -48,21 +54,39 @@ export function ShipmentForm({ deliverySites }: { deliverySites: DeliverySite[] 
     }
     const fetchLines = async () => {
       const results = await searchOrderLinesAction(orderSearch)
-      setAvailableLines(results)
+      setAvailableLines(results as any)
     }
 
     const timer = setTimeout(fetchLines, 400)
     return () => clearTimeout(timer)
   }, [orderSearch])
 
+  const handleSelectLine = (line: OrderLineDetail) => {
+    setSelectedLine(line)
+    setQuantity(line.remaining_qty)
+    setOrderSearch('')
+
+    if (!deliveryNoteNo) {
+      const d = new Date()
+      const yy = String(d.getFullYear()).slice(-2)
+      const mm = String(d.getMonth() + 1).padStart(2, '0')
+      const dd = String(d.getDate()).padStart(2, '0')
+      const rnd = Math.floor(1000 + Math.random() * 9000)
+      setDeliveryNoteNo(`DN-${yy}${mm}${dd}-${rnd}`)
+    }
+  }
+
+  const isQtyInvalid = selectedLine && (Number(quantity) <= 0 || Number(quantity) > selectedLine.remaining_qty)
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!selectedLine || !shipDate || !deliveryMethod) return
+    if (!selectedLine || !shipDate || !deliveryMethod || isQtyInvalid) return
     
     setLoading(true)
     const formData = new FormData()
     formData.append('order_line_id', selectedLine.line_id)
     formData.append('order_id', selectedLine.order_id)
+    formData.append('quantity', String(quantity))
     formData.append('ship_date', shipDate)
     if (deliverySiteId) formData.append('delivery_site_id', deliverySiteId)
     formData.append('delivery_method', deliveryMethod)
@@ -96,22 +120,24 @@ export function ShipmentForm({ deliverySites }: { deliverySites: DeliverySite[] 
                 onChange={(e) => setOrderSearch(e.target.value)}
               />
               {availableLines.length > 0 && (
-                <div className="border border-slate-200 rounded-md shadow-sm mt-1 max-h-48 overflow-y-auto">
+                <div className="border border-slate-200 rounded-md shadow-sm mt-1 max-h-56 overflow-y-auto">
                   {availableLines.map(line => (
                     <div 
                       key={line.line_id} 
-                      className="px-3 py-2 hover:bg-slate-50 cursor-pointer flex flex-col gap-1 border-b last:border-b-0"
-                      onClick={() => {
-                        setSelectedLine(line)
-                        setOrderSearch('')
-                      }}
+                      className="px-3 py-2.5 hover:bg-slate-50 cursor-pointer flex flex-col gap-1 border-b last:border-b-0"
+                      onClick={() => handleSelectLine(line)}
                     >
                       <div className="flex items-center justify-between">
                         <span className="text-[13px] font-mono font-bold text-[var(--accent)]">{line.order_no}</span>
-                        <span className="text-xs text-slate-500 font-mono">Qty: {line.quantity}</span>
+                        <div className="flex items-center gap-2 text-xs font-mono">
+                          <span className="text-slate-500">発注: {line.quantity}</span>
+                          <span className="text-emerald-700 font-bold bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
+                            残: {line.remaining_qty} {line.unit}
+                          </span>
+                        </div>
                       </div>
                       <div className="text-xs text-slate-700 font-medium">
-                        {line.product_name || '—'}
+                        {line.customer_name ? `${line.customer_name} — ` : ''}{line.product_name || line.product_code || '—'}
                       </div>
                     </div>
                   ))}
@@ -119,31 +145,88 @@ export function ShipmentForm({ deliverySites }: { deliverySites: DeliverySite[] 
               )}
             </>
           ) : (
-            <div className="flex items-center justify-between bg-[var(--tint-teal-bg)] border border-teal-100 p-3 rounded-md">
-              <div className="flex flex-col gap-1">
+            <div className="flex flex-col gap-2 bg-[var(--tint-teal-bg)] border border-teal-200 p-3 rounded-md">
+              <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <span className="font-mono text-[14px] font-bold text-[var(--accent)]">
                     {selectedLine.order_no}
                   </span>
-                  <span className="text-xs text-slate-600 bg-white px-2 py-0.5 rounded border">
-                    Qty: {selectedLine.quantity}
-                  </span>
+                  {selectedLine.customer_name && (
+                    <span className="text-xs text-slate-600 font-medium">
+                      ({selectedLine.customer_name})
+                    </span>
+                  )}
                 </div>
-                <div className="text-sm font-medium text-slate-800">
-                  {selectedLine.product_name}
+                <button 
+                  type="button" 
+                  onClick={() => setSelectedLine(null)}
+                  className="text-xs text-slate-500 hover:text-slate-800 underline shrink-0"
+                >
+                  {t('changeBtn')}
+                </button>
+              </div>
+
+              <div className="text-sm font-medium text-slate-800">
+                {selectedLine.product_name || selectedLine.product_code}
+              </div>
+
+              {/* Delivery Stats Bar */}
+              <div className="grid grid-cols-3 gap-2 mt-1 pt-2 border-t border-teal-100 text-xs font-mono">
+                <div>
+                  <span className="text-slate-500 block text-[10px]">発注総数</span>
+                  <span className="font-bold text-slate-800">{selectedLine.quantity.toLocaleString()} {selectedLine.unit}</span>
+                </div>
+                <div>
+                  <span className="text-slate-500 block text-[10px]">出荷済</span>
+                  <span className="font-bold text-slate-700">{selectedLine.shipped_qty.toLocaleString()} {selectedLine.unit}</span>
+                </div>
+                <div>
+                  <span className="text-slate-500 block text-[10px]">未出荷残数</span>
+                  <span className="font-bold text-emerald-700">{selectedLine.remaining_qty.toLocaleString()} {selectedLine.unit}</span>
                 </div>
               </div>
-              <button 
-                type="button" 
-                onClick={() => setSelectedLine(null)}
-                className="text-xs text-slate-500 hover:text-slate-800 underline shrink-0"
-              >
-                {t('changeBtn')}
-              </button>
             </div>
           )}
         </div>
       </div>
+
+      {/* Partial Delivery Quantity Input */}
+      {selectedLine && (
+        <div className="form-section bg-slate-50 p-3 rounded-md border border-slate-200">
+          <label className="form-label flex items-center justify-between">
+            <span>出荷数量 (今回の出荷数)</span>
+            <span className="text-xs text-slate-500 font-normal">
+              上限: {selectedLine.remaining_qty.toLocaleString()} {selectedLine.unit}
+            </span>
+          </label>
+          <div className="flex items-center gap-2">
+            <input 
+              type="number" 
+              className="form-input font-mono font-bold text-sm w-48"
+              value={quantity}
+              min={1}
+              max={selectedLine.remaining_qty}
+              onChange={(e) => setQuantity(e.target.value === '' ? '' : Number(e.target.value))}
+              required
+            />
+            <span className="text-xs text-slate-600 font-medium">{selectedLine.unit}</span>
+            <button
+              type="button"
+              className="btn btn-secondary text-xs px-2 py-1 h-auto"
+              onClick={() => setQuantity(selectedLine.remaining_qty)}
+            >
+              全数出荷 ({selectedLine.remaining_qty})
+            </button>
+          </div>
+
+          {isQtyInvalid && (
+            <div className="flex items-center gap-1.5 text-xs text-red-600 font-semibold mt-1.5">
+              <AlertCircle size={13} />
+              <span>出荷数量は 1 〜 {selectedLine.remaining_qty.toLocaleString()} の範囲で入力してください。</span>
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="form-grid-2">
         <div className="form-section">
@@ -164,7 +247,6 @@ export function ShipmentForm({ deliverySites }: { deliverySites: DeliverySite[] 
             onChange={(e) => setDeliveryMethod(e.target.value)}
             required
           >
-            <option value="">--</option>
             <option value="TRUCK">{t('methodTRUCK')}</option>
             <option value="COURIER">{t('methodDELIVERY_SERVICE')}</option>
             <option value="SELF_PICKUP">{t('methodCUSTOMER_PICKUP')}</option>
@@ -175,10 +257,11 @@ export function ShipmentForm({ deliverySites }: { deliverySites: DeliverySite[] 
 
       <div className="form-grid-2">
         <div className="form-section">
-          <label className="form-label">{t('deliveryNoteNo')}</label>
+          <label className="form-label">{t('deliveryNoteNo')} (納品書番号)</label>
           <input 
             type="text" 
             className="form-input font-mono" 
+            placeholder="DN-YYMMDD-XXXX"
             value={deliveryNoteNo}
             onChange={(e) => setDeliveryNoteNo(e.target.value)}
           />
@@ -214,7 +297,7 @@ export function ShipmentForm({ deliverySites }: { deliverySites: DeliverySite[] 
         <button 
           type="submit" 
           className="btn btn-primary" 
-          disabled={loading || !selectedLine || !shipDate || !deliveryMethod}
+          disabled={loading || !selectedLine || !shipDate || !deliveryMethod || Boolean(isQtyInvalid)}
         >
           <Save className="w-4 h-4 mr-2" />
           {loading ? t('savingBtn') : t('saveBtn')}

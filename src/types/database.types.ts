@@ -5162,8 +5162,10 @@ export type Database = {
           priority: number | null
           product_id: string
           quantity: number
+          remaining_qty: number | null
           sample_type: string | null
           ship_date: string | null
+          shipped_qty: number
           shipping_notes: string | null
           unit: string | null
           updated_at: string | null
@@ -5187,8 +5189,10 @@ export type Database = {
           priority?: number | null
           product_id: string
           quantity: number
+          remaining_qty?: number | null
           sample_type?: string | null
           ship_date?: string | null
+          shipped_qty?: number
           shipping_notes?: string | null
           unit?: string | null
           updated_at?: string | null
@@ -5212,8 +5216,10 @@ export type Database = {
           priority?: number | null
           product_id?: string
           quantity?: number
+          remaining_qty?: number | null
           sample_type?: string | null
           ship_date?: string | null
+          shipped_qty?: number
           shipping_notes?: string | null
           unit?: string | null
           updated_at?: string | null
