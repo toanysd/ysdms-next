@@ -186,3 +186,7 @@ Danh sách chia sub-phase:
 
 **Tech Debt ghi nhận:**
 - **TD-012:** LOT pricing (báo giá cùng sản phẩm chia 4–8 bậc số lượng với đơn giá giảm dần) - chuyển M9+.
+
+### ⚡ DB Migration Note (Playbook Rule)
+- **Migration 085 Applied & Verified:** 5/5 columns confirmed in DB by PE via MCP. PostgREST schema cache reloaded successfully.
+- **Quy tắc Playbook về Migration:** Project Supabase hiện cấu hình DNS IPv6 cho direct DB, không route qua IPv4 mạng nội bộ; pooler IPv4 chưa bật. Migration apply = luôn cần PE hoặc Thoan xác nhận qua Dashboard/MCP, AN không tự apply production DB bằng lệnh `db push` direct.
