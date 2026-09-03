@@ -16,37 +16,47 @@ export function QuotationFilterBar({ initialSearch, initialStatus }: Props) {
   const searchParams = useSearchParams()
 
   const [search, setSearch] = useState(initialSearch || '')
-  const [debouncedSearch, setDebouncedSearch] = useState(initialSearch || '')
-  
   const [status, setStatus] = useState(initialStatus || '')
 
+  // Sync state if props change (e.g. navigation / back / forward)
   useEffect(() => {
+    setSearch(initialSearch || '')
+  }, [initialSearch])
+
+  useEffect(() => {
+    setStatus(initialStatus || '')
+  }, [initialStatus])
+
+  // Debounced search effect: ONLY push if search changed from current URL
+  useEffect(() => {
+    const currentUrlSearch = searchParams.get('search') || ''
+    if (search === currentUrlSearch) return
+
     const handler = setTimeout(() => {
-      setDebouncedSearch(search)
-    }, 300)
+      const params = new URLSearchParams(searchParams.toString())
+      if (search) {
+        params.set('search', search)
+      } else {
+        params.delete('search')
+      }
+      params.set('page', '1')
+      router.push(`?${params.toString()}`)
+    }, 400)
+
     return () => clearTimeout(handler)
-  }, [search])
+  }, [search, searchParams, router])
 
-  useEffect(() => {
+  const handleStatusChange = (newStatus: string) => {
+    setStatus(newStatus)
     const params = new URLSearchParams(searchParams.toString())
-    
-    if (debouncedSearch) {
-      params.set('search', debouncedSearch)
-    } else {
-      params.delete('search')
-    }
-
-    if (status) {
-      params.set('status', status)
+    if (newStatus) {
+      params.set('status', newStatus)
     } else {
       params.delete('status')
     }
-
-    // Reset to page 1 on filter change
     params.set('page', '1')
-
     router.push(`?${params.toString()}`)
-  }, [debouncedSearch, status, router, searchParams])
+  }
 
   return (
     <div style={{ flexShrink: 0, padding: '0 20px', display: 'flex', gap: 12 }}>
@@ -65,7 +75,7 @@ export function QuotationFilterBar({ initialSearch, initialStatus }: Props) {
         className="form-input" 
         style={{ width: 160 }} 
         value={status}
-        onChange={e => setStatus(e.target.value)}
+        onChange={e => handleStatusChange(e.target.value)}
       >
         <option value="">{t('filter_status')}</option>
         <option value="DRAFT">DRAFT</option>

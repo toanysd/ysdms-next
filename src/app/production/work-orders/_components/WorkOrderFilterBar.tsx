@@ -17,44 +17,64 @@ export function WorkOrderFilterBar({ initialSearch, initialStatus, initialType }
   const searchParams = useSearchParams()
 
   const [search, setSearch] = useState(initialSearch || '')
-  const [debouncedSearch, setDebouncedSearch] = useState(initialSearch || '')
-  
   const [status, setStatus] = useState(initialStatus || '')
   const [type, setType] = useState(initialType || '')
 
+  // Sync state if props change (e.g. navigation / back / forward)
   useEffect(() => {
+    setSearch(initialSearch || '')
+  }, [initialSearch])
+
+  useEffect(() => {
+    setStatus(initialStatus || '')
+  }, [initialStatus])
+
+  useEffect(() => {
+    setType(initialType || '')
+  }, [initialType])
+
+  // Debounced search effect: ONLY push if search changed from current URL
+  useEffect(() => {
+    const currentUrlSearch = searchParams.get('search') || ''
+    if (search === currentUrlSearch) return
+
     const handler = setTimeout(() => {
-      setDebouncedSearch(search)
-    }, 300)
+      const params = new URLSearchParams(searchParams.toString())
+      if (search) {
+        params.set('search', search)
+      } else {
+        params.delete('search')
+      }
+      params.set('page', '1')
+      router.push(`?${params.toString()}`)
+    }, 400)
+
     return () => clearTimeout(handler)
-  }, [search])
+  }, [search, searchParams, router])
 
-  useEffect(() => {
+  const handleTypeChange = (newType: string) => {
+    setType(newType)
     const params = new URLSearchParams(searchParams.toString())
-    
-    if (debouncedSearch) {
-      params.set('search', debouncedSearch)
-    } else {
-      params.delete('search')
-    }
-
-    if (status) {
-      params.set('status', status)
-    } else {
-      params.delete('status')
-    }
-
-    if (type) {
-      params.set('type', type)
+    if (newType) {
+      params.set('type', newType)
     } else {
       params.delete('type')
     }
-
-    // Reset to page 1 on filter change
     params.set('page', '1')
-
     router.push(`?${params.toString()}`)
-  }, [debouncedSearch, status, type, router, searchParams])
+  }
+
+  const handleStatusChange = (newStatus: string) => {
+    setStatus(newStatus)
+    const params = new URLSearchParams(searchParams.toString())
+    if (newStatus) {
+      params.set('status', newStatus)
+    } else {
+      params.delete('status')
+    }
+    params.set('page', '1')
+    router.push(`?${params.toString()}`)
+  }
 
   return (
     <div style={{ flexShrink: 0, padding: '0 20px', display: 'flex', gap: 12 }}>
@@ -73,7 +93,7 @@ export function WorkOrderFilterBar({ initialSearch, initialStatus, initialType }
         className="form-input" 
         style={{ width: 150 }} 
         value={type}
-        onChange={e => setType(e.target.value)}
+        onChange={e => handleTypeChange(e.target.value)}
       >
         <option value="">{t('filter_type')}</option>
         <option value="NEW_SET">NEW_SET</option>
@@ -86,7 +106,7 @@ export function WorkOrderFilterBar({ initialSearch, initialStatus, initialType }
         className="form-input" 
         style={{ width: 150 }} 
         value={status}
-        onChange={e => setStatus(e.target.value)}
+        onChange={e => handleStatusChange(e.target.value)}
       >
         <option value="">{t('filter_status')}</option>
         <option value="PLANNED">PLANNED</option>
