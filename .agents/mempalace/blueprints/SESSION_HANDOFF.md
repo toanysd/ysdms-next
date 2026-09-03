@@ -117,3 +117,29 @@ Danh s√°ch chia sub-phase:
 
 ### Rule Update
 - database.types.ts KH√îNG ƒë√°ng tin c·∫≠y sau M6 ‚Äî b·∫Øt bu·ªôc verify qua information_schema
+
+## Session 2026-09-03 (sang) ? M6 FULLY CLOSED
+
+### Tech Debt Cleared
+- TD-006: CHECK quantity_ng >= 0 Å® Applied migration 084 ?
+- TD-007: database.types.ts regenerated ?
+- TD-008: await createClient() confirmed ?
+- TD-009: CLOSED Å® Replaced by Server Actions C-1/C-2/C-3
+
+### Phase C Delivered
+- C-1: jobs/actions.ts patched (NEW Å® IN_PROGRESS fallback)
+- C-2: production/qc/actions.ts (submitOutgoingQCAction)
+- C-3: orders/shipments/actions.ts (createShipmentAction)
+- ShipmentForm.tsx wired to Server Action (inline client removed)
+
+### Open Tech Debt Carry-Forward
+- TD-010: JSON.parse(measurementData) c?n try/catch ? LOW priority
+
+### Milestone 7 ? Starting Point
+- Scope: TBD ? PE s? define khi m? th?o lu?n m?i
+- DB: 84 migrations applied, schema stable
+- T?t c? routes M6 ?a co Server Actions, khong con inline Supabase client calls tren forms
+
+### Rule Reminder
+- database.types.ts KHONG ph?i SSOT ? verify qua information_schema
+- M?i FK verify trong migration: query information_schema tr??c khi push
