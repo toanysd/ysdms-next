@@ -129,7 +129,21 @@
     "completed": "Hoàn thành",
     "cancelled": "Đã hủy",
     "jobCount": "Số công việc",
-    "belongsToWo": "Thuộc chỉ thị"
+    "belongsToWo": "Thuộc chỉ thị",
+    "title": "Lệnh Sản Xuất (Work Orders)",
+    "new": "Tạo Mới (New WO)",
+    "search_placeholder": "Tìm theo mã WO...",
+    "filter_type": "Tất cả loại",
+    "filter_status": "Tất cả trạng thái",
+    "col_code": "Mã Lệnh (WO Code)",
+    "col_name": "Tên Lệnh / Sản Phẩm",
+    "col_customer": "Khách Hàng (Customer)",
+    "col_product": "Sản Phẩm (Product)",
+    "col_type": "Loại (Type)",
+    "col_status": "Trạng Thái",
+    "col_start": "Ngày Bắt Đầu",
+    "col_deadline": "Hạn Chót",
+    "col_priority": "Mức Độ (Pri)"
   },
   "TransportModule": {
     "stepEmployee": "Chọn nhân viên",
@@ -1124,7 +1138,7 @@
     "delete": "Xóa"
   },
   "Quotations": {
-    "title": "Quản lý Báo giá",
+    "title": "Báo Giá (Quotations)",
     "quotationTitle": "Báo Giá",
     "quotationList": "Danh sách Báo giá",
     "newQuotation": "Tạo báo giá mới",
@@ -1160,7 +1174,28 @@
     "updateStatus": "Cập nhật trạng thái",
     "backToList": "Quay lại danh sách báo giá",
     "printPreview": "Xem trước bản in",
-    "downloadPdf": "Tải xuống file PDF"
+    "downloadPdf": "Tải xuống file PDF",
+    "new": "Tạo Mới (New Quote)",
+    "search_placeholder": "Mã báo giá hoặc KH...",
+    "filter_status": "Tất cả trạng thái",
+    "col_code": "Mã Báo Giá (Quote No)",
+    "col_type": "Loại (Type)",
+    "col_customer": "Khách Hàng (Customer)",
+    "col_case": "Sự Việc (Case)",
+    "col_amount": "Tổng Tiền",
+    "col_date": "Ngày Báo Giá",
+    "col_valid_until": "Hiệu Lực Đến",
+    "col_status": "Trạng Thái",
+    "btn_add_line": "+ Thêm Dòng",
+    "btn_remove": "Xóa",
+    "col_line_no": "STT",
+    "col_item_type": "Loại Hạng Mục",
+    "col_desc": "Nội Dung",
+    "col_qty": "SL",
+    "col_unit_price": "Đơn Giá",
+    "tab_overview": "Tổng Quan",
+    "tab_lines": "Chi Tiết",
+    "back": "Quay Lại"
   },
   "Planning": {
     "Toolbar": {
