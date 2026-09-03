@@ -190,3 +190,14 @@ Danh sách chia sub-phase:
 ### ⚡ DB Migration Note (Playbook Rule)
 - **Migration 085 Applied & Verified:** 5/5 columns confirmed in DB by PE via MCP. PostgREST schema cache reloaded successfully.
 - **Quy tắc Playbook về Migration:** Project Supabase hiện cấu hình DNS IPv6 cho direct DB, không route qua IPv4 mạng nội bộ; pooler IPv4 chưa bật. Migration apply = luôn cần PE hoặc Thoan xác nhận qua Dashboard/MCP, AN không tự apply production DB bằng lệnh `db push` direct.
+
+## Milestone 8: Quotation PDF Export & Tech Debt Resolution (M8-S2) - COMPLETED
+[AN @ 2026-09-03 11:47 JST]
+
+**Thực thi thành công Chỉ thị #030:**
+- **[TD-010 RESOLVED]:** Bọc try/catch an toàn cho `JSON.parse(measurementData)` trong `src/app/production/qc/actions.ts`. Nếu dữ liệu lỗi hoặc rỗng, trả về `null` thay vì crash Server Action.
+- **[TD-011 RESOLVED/DOCUMENTED]:** Khảo sát chi tiết PostgREST v11/v12: cú pháp `.or()` không hỗ trợ filter xuyên quan hệ (cross-resource) như `companies.company_name`. Duy trì cơ chế 2-step lookup an toàn và tài liệu hóa chi tiết trong `src/app/sales/quotations/page.tsx`.
+- **[PDF TEMPLATE]:** Tạo `src/components/pdf/QuotationPDF.tsx` sử dụng `@react-pdf/renderer`, font tiếng Nhật `NotoSansJP` (Regular + Bold), thương hiệu Yoshida Package (màu xanh `#0066CC`), con dấu đỏ `stamp_yoshida.png`, đầy đủ các trường `model_code`, `quantity_text` ('一式'), thời hạn hiệu lực, điều khoản và cam kết thuế.
+- **[API ROUTE]:** Tạo `src/app/api/quotations/[id]/pdf/route.ts` chạy trên Node.js runtime, xuất buffer PDF kèm `Content-Disposition: attachment; filename="QUO-xxxx_RevN.pdf"`.
+- **[UI ACTION]:** Thêm nút `PDFダウンロード` kèm biểu tượng `FileDown` trong BackBar tại `src/app/sales/quotations/[id]/page.tsx`.
+- **TypeScript Check:** `npx tsc --noEmit` = 0 errors. Commit `780c04d` đã push lên `origin main`.
