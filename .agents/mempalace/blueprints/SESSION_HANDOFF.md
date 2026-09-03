@@ -271,3 +271,26 @@ Danh sách chia sub-phase:
   - Trang chi tiết Đơn hàng `src/app/orders/[id]/page.tsx`: Thêm nút chủ động `「納品書を発行する」` (icon `Truck`) tại PageHeader.
   - Trang tạo mới `src/app/orders/shipments/new/page.tsx`: Nhận tham số `?order_id=`, tự động pre-fill thông tin khách hàng và nạp danh sách các dòng đơn còn hàng (`remaining_qty > 0`) để xuất ngay.
 - **TypeScript Check:** `npx tsc --noEmit` = 0 errors. Commit `b3c155e` đã push lên `origin main`.
+
+## Milestone 11: Production Cockpit & Urgent Alerts (M11-S1) - COMPLETED
+[AN @ 2026-09-03 15:20 JST]
+
+**Thực thi thành công Chỉ thị #037:**
+- **[TASK 1 - Server Action `getDashboardData` Mở Rộng]:**
+  - Thêm thống kê Work Orders theo trạng thái: `totalWorkOrders`, `inProgressCount`, `readyForProductionCount`, `plannedCount`, `completedCount`.
+  - Thêm truy vấn `urgentJobs`: Lọc Jobs chưa hoàn thành (`job_status NOT IN ('COMPLETED', 'CANCELLED')`), có hạn chót trong vòng 7 ngày (`deadline <= NOW() + 7 days`), tính toán số ngày còn lại (`daysRemaining`), sắp xếp `deadline ASC`.
+  - Thêm truy vấn `activeWorkOrders`: Lấy top Work Orders đang hoạt động (`IN_PROGRESS`, `READY_FOR_PRODUCTION`, `CONFIRMED`, `PLANNED`), sắp xếp `updated_at DESC`.
+- **[TASK 2 - Giao Diện Dashboard `src/app/dashboard/page.tsx`]:**
+  - **Widget A (Work Order Status Cards):** Bổ sung 3 thẻ KPI trạng thái sản xuất trực quan:
+    - `製造指示中 (In Progress)` [Amber badge / text]
+    - `出荷準備完了 (Ready for Production)` [Emerald badge / text]
+    - `未着手・計画中 (Planned)` [Slate neutral badge / text]
+  - **Widget B (🚨 7日以内に期限を迎える加工指示 - Urgent Jobs Alert):**
+    - Bảng cảnh báo khẩn cấp với chỉ số ngày còn lại: `🔴 1日/超過`, `🟡 2-3日`, `⚪ 4-7日`.
+    - Hiển thị Job Code (link mở trang Job), Tên sản phẩm, Mã thiết bị, Badge trạng thái.
+    - Hiển thị thông báo hoàn thành tất cả khi danh sách trống.
+  - **Widget C (製造中の製造指示 - Active Work Orders):**
+    - Danh sách Work Orders đang chạy với link điều hướng nhanh đến trang chi tiết Lệnh sản xuất (`/production/work-orders/[id]`).
+- **[TASK 3 - Migration 088]:**
+  - Tạo file `supabase/migrations/20260903000005_088_extend_dashboard_views.sql` mở rộng view `v_dashboard_executive_kpis` với các cột đếm Work Orders và Shipments.
+- **TypeScript Check:** `npx tsc --noEmit` = 0 errors. Commit `d177d3d` đã push lên `origin main`.
