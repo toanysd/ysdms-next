@@ -86,6 +86,7 @@ export default async function QuotationsPage(props: { searchParams: Promise<{ se
               currentPage={currentPage}
               totalRecords={totalItems}
               pageSize={PAGE_SIZE}
+              baseUrl={`/sales/quotations?search=${searchParams.search || ''}&status=${searchParams.status || ''}`}
             />
           </div>
         </div>

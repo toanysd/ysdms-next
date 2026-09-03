@@ -73,6 +73,7 @@ export default async function WorkOrdersPage(props: { searchParams: Promise<{ se
               currentPage={currentPage}
               totalRecords={totalItems}
               pageSize={PAGE_SIZE}
+              baseUrl={`/production/work-orders?search=${searchParams.search || ''}&status=${searchParams.status || ''}&type=${searchParams.type || ''}`}
             />
           </div>
         </div>
