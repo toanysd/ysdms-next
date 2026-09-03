@@ -87,6 +87,12 @@ export async function addWorkLogAction(formData: FormData) {
         job_status: 'COMPLETED',
         completed_date: todayStr
       }).eq('job_id', jobId)
+    } else {
+      // NEW → IN_PROGRESS khi có ít nhất 1 step done
+      await supabase.from('jobs')
+        .update({ job_status: 'IN_PROGRESS' })
+        .eq('job_id', jobId)
+        .eq('job_status', 'NEW')  // chỉ update nếu còn NEW, tránh overwrite COMPLETED
     }
   }
 
