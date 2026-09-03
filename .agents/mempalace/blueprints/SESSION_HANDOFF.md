@@ -317,3 +317,27 @@ Danh sách chia sub-phase:
     - `④ 納品完了` (Xanh lục / DELIVERED) ➔ Link `/orders/shipments`
   - Mỗi thẻ card hỗ trợ hover visual, hiển thị số lượng to rõ nét và click 1 chạm mở thẳng module tương ứng.
 - **TypeScript Check:** `npx tsc --noEmit` = 0 errors. Commit `1fb3d5c` đã push lên `origin main`.
+
+## Milestone 12: Material Inventory & Intake Engine (M12-S1) - COMPLETED
+[AN @ 2026-09-03 17:01 JST]
+
+**Thực thi thành công Chỉ thị #040:**
+- **[TASK 0.5 - Xác nhận Schema plastic_receipt & plastic_receipt_roll]:**
+  - Đã đối soát chính xác cột: `plastic_receipt` (`id`, `receipt_no`, `supplier_id`, `receipt_date`, `note`) và `plastic_receipt_roll` (`id`, `roll_barcode`, `receipt_id`, `plastic_id`, `nominal_length_m`, `received_length_m`, `current_length_m`, `status`, `location`, `lot_no`, `supplier_name`).
+  - Ghi nhận: Cột trạng thái là `status` (`in_stock`, `in_use`, `empty`, `returned`), không phải `roll_status`.
+- **[TASK 1 - Form Nhập Kho Cuộn Mới]:**
+  - Tạo `src/app/plastics/inventory/new/page.tsx` và `ReceiptForm.tsx`:
+    - Bước 1: Header phiếu nhập (`receipt_date`, `receipt_no` tự sinh, `supplier_name`, `note`).
+    - Bước 2: Bảng chi tiết từng cuộn màng (`roll_barcode`, chọn loại nhựa master `plastic_id`, `received_length_m`, `lot_no`, `location`). Hỗ trợ thêm dòng, xóa dòng, tự điền chiều dài tiêu chuẩn từ master.
+    - Thanh tóm tắt tổng số cuộn và tổng mét màng nhập kho.
+  - Tạo Server Action `createPlasticReceiptAction` trong `actions.ts`:
+    - Kiểm tra tính duy nhất của mã `roll_barcode` (ngăn trùng lặp mã barcode cuộn).
+    - Insert phiếu nhập vào `plastic_receipt` ➔ Insert chi tiết N cuộn vào `plastic_receipt_roll` với `status = 'in_stock'` và `current_length_m = received_length_m`.
+- **[TASK 2 - Low Stock Alert Widget]:**
+  - Trong `src/app/plastics/inventory/page.tsx`:
+    - Thêm Alert Banner cảnh báo: `⚠️ 残量50m以下のロールが {lowStockCount} 本あります` kèm nút bấm `残量50m以下を抽出`.
+    - Thẻ StatCard `在庫低下 (≤50m)` hỗ trợ click 1 chạm để bật/tắt chế độ lọc chỉ xem các cuộn sắp hết.
+    - Highlight màu nền hàng bảng dữ liệu vàng nhạt và icon ⚠️ cho các cuộn có `current_length_m <= 50m`.
+- **[TASK 3 - Nút 入荷登録]:**
+  - Bổ sung PageHeader và nút `[+ 入荷登録]` tại `plastics/inventory/page.tsx` dẫn sang `/plastics/inventory/new`.
+- **TypeScript Check:** `npx tsc --noEmit` = 0 errors. Commit `8f428eb` đã push lên `origin main`.
