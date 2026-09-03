@@ -343,3 +343,32 @@ Danh sách chia sub-phase:
 - **TypeScript Check:** `npx tsc --noEmit` = 0 errors. Commit `8f428eb` đã push lên `origin main`.
 
 - **[Fix Verification]:** Điều chỉnh path import `../../actions` cho component con `new/_components/ReceiptForm.tsx` và prop `currentPage` của `Pagination` tại `plastics/inventory/page.tsx`. Đã test `npx tsc --noEmit` hoàn toàn sạch **0 errors**. Commit: `1cae1c2` đã push lên `origin main`.
+
+## Milestone 12: Manual Consumption Entry & Dashboard Material KPI (M12-S2) - COMPLETED & MILESTONE 12 CLOSED
+[AN @ 2026-09-03 17:10 JST]
+
+**Thực thi thành công Chỉ thị #041 (Điều chỉnh):**
+- **[Audit Constraint material_consumption_logs & Migration 089]:**
+  - Đã kiểm tra thực tế trên Supabase: `production_lot_id` có ràng buộc `NOT NULL` và FK `REFERENCES production_lots(lot_id)` (bảng `production_lots` hiện có 0 dòng).
+  - `plastic_adjustment_log` là bảng chuẩn SSOT cho biến động màng nhựa theo `roll_id`, hỗ trợ `action_type = 'PRODUCTION'` và `change_length_m < 0`.
+  - Đã tạo migration file: `supabase/migrations/20260903000006_089_material_consumption_wo_roll.sql` để nới lỏng `production_lot_id DROP NOT NULL` và bổ sung `work_order_id`, `roll_id`.
+- **[TASK 1 - Form Ghi Nhận Tiêu Hao Thủ Công]:**
+  - Tạo `src/app/plastics/inventory/consume/page.tsx` và `ConsumeForm.tsx`:
+    - Chọn cuộn màng cần xuất dùng (chỉ hiện cuộn đang có sẵn `in_stock` hoặc `in_use` và `current_length_m > 0`).
+    - Thẻ đo trực quan (Meter Gauge Card): Xem ngay số mét ban đầu, số mét hiện có, thanh tiến trình mô phỏng lượng mét còn lại sau khi trừ.
+    - Nhập số mét tiêu hao (có các nút chọn nhanh +30m, +50m, +100m, +150m, +200m, Toàn bộ cuộn).
+    - Liên kết Lệnh sản xuất (Work Order) và ghi nhận tên thợ/người vận hành.
+  - Server Action `consumePlasticRollAction`:
+    - Kiểm tra `consumed_m <= current_length_m`.
+    - Trừ trực tiếp `current_length_m` trên `plastic_receipt_roll`, tự động đổi trạng thái sang `'empty'` nếu hết mét, hoặc `'in_use'` nếu còn.
+    - Ghi nhận lịch sử chi tiết vào `plastic_adjustment_log` (`action_type: 'PRODUCTION'`, `change_length_m: -consumed_m`, ghi chú WO và thợ).
+- **[TASK 2 - Consumption History Tab/Drawer trên Roll Detail]:**
+  - Tại `plastics/inventory/page.tsx`: Bấm vào mã barcode hoặc nút `[履歴]` của bất kỳ cuộn nào sẽ mở Slide Drawer hiển thị chi tiết:
+    - Quy cách màng, tỷ lệ tiêu hao % qua thanh tiến trình màu sắc.
+    - Bảng lịch sử các lần xuất dùng / cắt màng theo thời gian (giờ JST, số mét trừ đỏ, người phụ trách, mã WO).
+    - Nút bấm trực tiếp `[このロールを消費登録する →]` dẫn ngay sang form trừ mét cho đúng cuộn đó.
+- **[TASK 3 - Dashboard Material KPI]:**
+  - Mở rộng `getDashboardData()` trong `dashboard.ts` truy vấn SQL View `material_inventory_v2`.
+  - Tính toán: `totalAvailableM` (tổng mét khả dụng toàn công ty), `uniqueSpecsCount` (số quy cách màng), `lowStockMaterialCount` (số quy cách dưới 500m).
+  - Tích hợp hàng KPI mới **「材料在庫 (Material Inventory Cockpit)」** trên Dashboard ngay cuối Tầng 1 với 3 thẻ chỉ số và link liên thông sang kho cuộn.
+- **TypeScript Check:** `npx tsc --noEmit` = 0 errors. Commit: `cdee97e` và `0540a33` đã push lên `origin main`.
