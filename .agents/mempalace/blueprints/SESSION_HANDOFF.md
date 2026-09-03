@@ -164,3 +164,6 @@ Danh sách chia sub-phase:
 - Export PDF Báo Giá (Phase 2 của Quotations).
 - Phân hệ Nhựa (P0 Inventory).
 - Auto-create Job từ WO (ADR-003).
+
+### M7 Closure Notes & Tech Debt
+- **TD-011**: QuotationList search - Migrate from 2-step lookup to Postgres embedded filter syntax (`companies!inner(company_name.ilike.%search%)`) to avoid `.in()` scaling limits.
