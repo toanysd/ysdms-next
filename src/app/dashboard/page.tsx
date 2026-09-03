@@ -263,6 +263,57 @@ export default function ExecutiveDashboardPage() {
           </div>
         </div>
 
+        {/* Work Order Status Cards (M11-S1) */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, flexShrink: 0 }}>
+          {/* Card 1: IN_PROGRESS */}
+          <div className="card-flat" style={{ padding: '10px 14px', background: '#FFFBEB', border: '1px solid #FDE68A' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span style={{ fontSize: 11, fontWeight: 700, color: '#D97706' }}>
+                製造指示中 (In Progress)
+              </span>
+              <span className="badge badge--warning" style={{ fontSize: 10 }}>IN_PROGRESS</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginTop: 4 }}>
+              <span style={{ fontSize: 22, fontWeight: 800, fontFamily: 'monospace', color: '#92400E' }}>
+                {data?.workOrderKPIs?.inProgressCount ?? 0}
+              </span>
+              <span style={{ fontSize: 11, color: '#B45309', fontWeight: 600 }}>件 進行中</span>
+            </div>
+          </div>
+
+          {/* Card 2: READY_FOR_PRODUCTION */}
+          <div className="card-flat" style={{ padding: '10px 14px', background: '#ECFDF5', border: '1px solid #A7F3D0' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span style={{ fontSize: 11, fontWeight: 700, color: '#059669' }}>
+                出荷準備完了 (Ready for Production)
+              </span>
+              <span className="badge badge--success" style={{ fontSize: 10 }}>READY_FOR_PRD</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginTop: 4 }}>
+              <span style={{ fontSize: 22, fontWeight: 800, fontFamily: 'monospace', color: '#065F46' }}>
+                {data?.workOrderKPIs?.readyForProductionCount ?? 0}
+              </span>
+              <span style={{ fontSize: 11, color: '#047857', fontWeight: 600 }}>件 成型スタンバイ</span>
+            </div>
+          </div>
+
+          {/* Card 3: PLANNED / UNPROCESSED */}
+          <div className="card-flat" style={{ padding: '10px 14px', background: '#F8FAFC', border: '1px solid #E2E8F0' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span style={{ fontSize: 11, fontWeight: 700, color: '#475569' }}>
+                未着手・計画中 (Planned)
+              </span>
+              <span className="badge badge--neutral" style={{ fontSize: 10 }}>PLANNED</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginTop: 4 }}>
+              <span style={{ fontSize: 22, fontWeight: 800, fontFamily: 'monospace', color: '#334155' }}>
+                {data?.workOrderKPIs?.plannedCount ?? 0}
+              </span>
+              <span style={{ fontSize: 11, color: '#64748B', fontWeight: 600 }}>件 計画待機</span>
+            </div>
+          </div>
+        </div>
+
         {/* Row 2: Widget 1 (Equipment Types 8 ADR-001) & Widget 2 (Jobs Status & Progress) */}
         <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 12 }}>
           
@@ -440,6 +491,165 @@ export default function ExecutiveDashboardPage() {
             </div>
           </div>
         )}
+
+        {/* Row 4: Widget B (Urgent Jobs Alert) & Widget C (Active Work Orders) (M11-S1) */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 12 }}>
+          {/* Widget B: 🚨 緊急対応が必要な加工指示 (Urgent Jobs Alert) */}
+          <div className="card-flat" style={{ padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #E2E8F0', paddingBottom: 6 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <AlertTriangle size={15} style={{ color: '#DC2626' }} />
+                <span style={{ fontSize: 12, fontWeight: 700, color: '#0F172A' }}>
+                  ⚠️ 7日以内に期限を迎える加工指示
+                </span>
+                <span className="badge badge--error" style={{ fontSize: 10, fontWeight: 700 }}>
+                  {data?.urgentJobs?.length || 0} 件
+                </span>
+              </div>
+              <Link href="/equipment/jobs" style={{ fontSize: 11, color: 'var(--accent)', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 2 }}>
+                <span>すべてのJobs</span>
+                <ArrowRight size={11} />
+              </Link>
+            </div>
+
+            {(!data?.urgentJobs || data.urgentJobs.length === 0) ? (
+              <div style={{ padding: '24px 16px', textAlign: 'center', background: '#F8FAFC', borderRadius: 6, border: '1px dashed #CBD5E1' }}>
+                <CheckCircle2 size={24} style={{ color: '#059669', margin: '0 auto 6px' }} />
+                <span style={{ fontSize: 12, fontWeight: 600, color: '#334155', display: 'block' }}>
+                  現在、期限間近の緊急Jobsはありません
+                </span>
+                <span style={{ fontSize: 11, color: '#64748B' }}>すべての加工指示が計画通り順調に進行しています</span>
+              </div>
+            ) : (
+              <table className="data-table" style={{ width: '100%', fontSize: 12 }}>
+                <thead>
+                  <tr>
+                    <th style={{ width: 65, textAlign: 'center' }}>残日数</th>
+                    <th style={{ width: 130 }}>Job Code</th>
+                    <th>製品・設備</th>
+                    <th style={{ width: 90, textAlign: 'center' }}>ステータス</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.urgentJobs.map((j) => {
+                    let badgeStyle = { bg: '#FEF2F2', color: '#DC2626', label: `🔴 ${j.daysRemaining <= 0 ? '超過' : `${j.daysRemaining}日`}` }
+                    if (j.daysRemaining > 1 && j.daysRemaining <= 3) {
+                      badgeStyle = { bg: '#FFFBEB', color: '#D97706', label: `🟡 ${j.daysRemaining}日` }
+                    } else if (j.daysRemaining > 3) {
+                      badgeStyle = { bg: '#F1F5F9', color: '#475569', label: `⚪ ${j.daysRemaining}日` }
+                    }
+
+                    return (
+                      <tr key={j.job_id}>
+                        <td style={{ textAlign: 'center' }}>
+                          <span style={{
+                            fontSize: 10, fontWeight: 800, padding: '2px 6px', borderRadius: 4,
+                            background: badgeStyle.bg, color: badgeStyle.color, fontFamily: 'monospace'
+                          }}>
+                            {badgeStyle.label}
+                          </span>
+                        </td>
+                        <td>
+                          <Link
+                            href={`/equipment/jobs/${j.job_id}`}
+                            style={{ fontFamily: 'monospace', fontWeight: 800, color: 'var(--accent)', textDecoration: 'none' }}
+                          >
+                            {j.job_code}
+                          </Link>
+                        </td>
+                        <td>
+                          <span style={{ fontWeight: 600, color: '#0F172A', display: 'block' }}>
+                            {j.product_name || j.product_code || j.job_name}
+                          </span>
+                          {j.equipment_code && (
+                            <span style={{ fontSize: 10, color: '#64748B', fontFamily: 'monospace' }}>
+                              設備: {j.equipment_code}
+                            </span>
+                          )}
+                        </td>
+                        <td style={{ textAlign: 'center' }}>
+                          <span className={`badge ${j.job_status === 'IN_PROGRESS' ? 'badge--warning' : 'badge--neutral'}`} style={{ fontSize: 9 }}>
+                            {j.job_status}
+                          </span>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            )}
+          </div>
+
+          {/* Widget C: 製造中の製造指示 (Active Work Orders) */}
+          <div className="card-flat" style={{ padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #E2E8F0', paddingBottom: 6 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <Layers size={15} style={{ color: 'var(--accent)' }} />
+                <span style={{ fontSize: 12, fontWeight: 700, color: '#0F172A' }}>
+                  製造中の製造指示 (Active Work Orders)
+                </span>
+                <span className="badge badge--info" style={{ fontSize: 10, fontWeight: 700 }}>
+                  {data?.workOrderKPIs?.totalWorkOrders || 0} 件
+                </span>
+              </div>
+              <Link href="/production/work-orders" style={{ fontSize: 11, color: 'var(--accent)', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 2 }}>
+                <span>すべての指示</span>
+                <ArrowRight size={11} />
+              </Link>
+            </div>
+
+            {(!data?.activeWorkOrders || data.activeWorkOrders.length === 0) ? (
+              <div style={{ padding: '24px 16px', textAlign: 'center', background: '#F8FAFC', borderRadius: 6, border: '1px dashed #CBD5E1' }}>
+                <span style={{ fontSize: 12, color: '#64748B' }}>現在進行中の製造指示はありません</span>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6, flex: 1, overflow: 'auto' }}>
+                {data.activeWorkOrders.map((wo) => (
+                  <div
+                    key={wo.wo_id}
+                    style={{
+                      padding: '8px 10px',
+                      borderRadius: 6,
+                      border: '1px solid #E2E8F0',
+                      background: '#FAFAFA',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                    }}
+                  >
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 2, maxWidth: '70%' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <Link
+                          href={`/production/work-orders/${wo.wo_id}`}
+                          style={{ fontSize: 12, fontWeight: 800, fontFamily: 'monospace', color: 'var(--accent)', textDecoration: 'none' }}
+                        >
+                          {wo.wo_code}
+                        </Link>
+                        {wo.company_name && (
+                          <span style={{ fontSize: 11, color: '#475569', fontWeight: 600 }}>
+                            {wo.company_name}
+                          </span>
+                        )}
+                      </div>
+                      <span style={{ fontSize: 11, color: '#0F172A', fontWeight: 600 }}>
+                        {wo.product_name || wo.product_code || wo.wo_name}
+                      </span>
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <span className={`badge ${wo.wo_status === 'READY_FOR_PRODUCTION' ? 'badge--success' : (wo.wo_status === 'IN_PROGRESS' ? 'badge--warning' : 'badge--neutral')}`} style={{ fontSize: 10 }}>
+                        {wo.wo_status}
+                      </span>
+                      <Link href={`/production/work-orders/${wo.wo_id}`} style={{ color: '#94A3B8' }}>
+                        <ArrowRight size={13} />
+                      </Link>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* ─────────────────────────────────────────────────────────────────── */}
