@@ -696,6 +696,121 @@ export default function ExecutiveDashboardPage() {
           </div>
         </div>
 
+        {/* ── Widget: 今月の受注・出荷パイプライン (M11-S2) ── */}
+        <div className="card-flat" style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <TrendingUp size={16} style={{ color: '#2563EB' }} />
+              <span style={{ fontSize: 13, fontWeight: 700, color: '#0F172A' }}>
+                今月の受注・出荷パイプライン ({data?.commercialPipeline?.monthLabel || '今月'})
+              </span>
+              <span className="badge badge--info" style={{ fontSize: 10 }}>
+                E2E Pipeline
+              </span>
+            </div>
+            <span style={{ fontSize: 11, color: '#64748B' }}>
+              各段階をクリックして詳細を表示
+            </span>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr auto 1fr auto 1fr', alignItems: 'center', gap: 8 }}>
+            {/* Step 1: 新規受注 */}
+            <Link
+              href="/orders"
+              style={{ textDecoration: 'none' }}
+              className="card-flat hover:border-blue-300 transition-all cursor-pointer"
+            >
+              <div style={{ padding: '10px 12px', background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 6 }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: '#1D4ED8' }}>① 新規受注</span>
+                  <Package size={14} style={{ color: '#2563EB' }} />
+                </div>
+                <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
+                  <span style={{ fontSize: 20, fontWeight: 800, fontFamily: 'monospace', color: '#1E3A8A' }}>
+                    {data?.commercialPipeline?.newOrdersCount ?? 0}
+                  </span>
+                  <span style={{ fontSize: 10, color: '#3B82F6', fontWeight: 600 }}>CONFIRMED</span>
+                </div>
+              </div>
+            </Link>
+
+            {/* Arrow 1 */}
+            <div style={{ color: '#94A3B8', display: 'flex', justifyContent: 'center' }}>
+              <ArrowRight size={18} />
+            </div>
+
+            {/* Step 2: 生産中 */}
+            <Link
+              href="/production/work-orders"
+              style={{ textDecoration: 'none' }}
+              className="card-flat hover:border-amber-300 transition-all cursor-pointer"
+            >
+              <div style={{ padding: '10px 12px', background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: 6 }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: '#B45309' }}>② 生産中</span>
+                  <Hammer size={14} style={{ color: '#D97706' }} />
+                </div>
+                <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
+                  <span style={{ fontSize: 20, fontWeight: 800, fontFamily: 'monospace', color: '#78350F' }}>
+                    {data?.commercialPipeline?.inProductionCount ?? 0}
+                  </span>
+                  <span style={{ fontSize: 10, color: '#D97706', fontWeight: 600 }}>IN_PROGRESS</span>
+                </div>
+              </div>
+            </Link>
+
+            {/* Arrow 2 */}
+            <div style={{ color: '#94A3B8', display: 'flex', justifyContent: 'center' }}>
+              <ArrowRight size={18} />
+            </div>
+
+            {/* Step 3: 出荷準備 */}
+            <Link
+              href="/production/work-orders"
+              style={{ textDecoration: 'none' }}
+              className="card-flat hover:border-emerald-300 transition-all cursor-pointer"
+            >
+              <div style={{ padding: '10px 12px', background: '#ECFDF5', border: '1px solid #A7F3D0', borderRadius: 6 }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: '#047857' }}>③ 出荷準備</span>
+                  <Layers size={14} style={{ color: '#059669' }} />
+                </div>
+                <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
+                  <span style={{ fontSize: 20, fontWeight: 800, fontFamily: 'monospace', color: '#064E3B' }}>
+                    {data?.commercialPipeline?.readyToShipCount ?? 0}
+                  </span>
+                  <span style={{ fontSize: 10, color: '#059669', fontWeight: 600 }}>READY_FOR_PRD</span>
+                </div>
+              </div>
+            </Link>
+
+            {/* Arrow 3 */}
+            <div style={{ color: '#94A3B8', display: 'flex', justifyContent: 'center' }}>
+              <ArrowRight size={18} />
+            </div>
+
+            {/* Step 4: 納品完了 */}
+            <Link
+              href="/orders/shipments"
+              style={{ textDecoration: 'none' }}
+              className="card-flat hover:border-teal-300 transition-all cursor-pointer"
+            >
+              <div style={{ padding: '10px 12px', background: '#F0FDFA', border: '1px solid #99F6E4', borderRadius: 6 }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: '#0F766E' }}>④ 納品完了</span>
+                  <CheckCircle2 size={14} style={{ color: '#0D9488' }} />
+                </div>
+                <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
+                  <span style={{ fontSize: 20, fontWeight: 800, fontFamily: 'monospace', color: '#134E4A' }}>
+                    {data?.commercialPipeline?.deliveredCount ?? 0}
+                  </span>
+                  <span style={{ fontSize: 10, color: '#0D9488', fontWeight: 600 }}>DELIVERED</span>
+                </div>
+              </div>
+            </Link>
+          </div>
+        </div>
+
         {/* Financial KPI Cards */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
           {/* Total Invoiced */}
