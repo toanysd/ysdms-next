@@ -64,11 +64,9 @@ export default async function QuotationsPage(props: { searchParams: Promise<{ se
             {t('title')}
           </h1>
         </div>
-        <Link href="/sales/quotations/new">
-          <button className="btn btn-primary flex items-center gap-1.5 cursor-pointer">
-            <Plus size={16} />
-            <span>{t('new')}</span>
-          </button>
+        <Link href="/sales/quotations/new" className="btn btn-primary flex items-center gap-1.5 cursor-pointer">
+          <Plus size={16} />
+          <span>{t('new')}</span>
         </Link>
       </div>
 

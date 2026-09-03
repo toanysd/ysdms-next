@@ -61,10 +61,8 @@ export function WorkOrderTable({ data }: { data: WorkOrder[] }) {
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
                 <Briefcase size={48} color="var(--border-default)" />
                 <p style={{ color: 'var(--text-muted)', fontWeight: 600, fontSize: 14 }}>Chưa có lệnh sản xuất nào</p>
-                <Link href="/production/work-orders/new">
-                  <button className="btn btn-secondary flex items-center gap-1.5 cursor-pointer mt-2">
-                    Tạo Lệnh Sản Xuất Đầu Tiên
-                  </button>
+                <Link href="/production/work-orders/new" className="btn btn-secondary flex items-center gap-1.5 cursor-pointer mt-2">
+                  Tạo Lệnh Sản Xuất Đầu Tiên
                 </Link>
               </div>
             </td>

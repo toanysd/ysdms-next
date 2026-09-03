@@ -55,10 +55,8 @@ export function QuotationTable({ data }: { data: Quotation[] }) {
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
                 <FileText size={48} color="var(--border-default)" />
                 <p style={{ color: 'var(--text-muted)', fontWeight: 600, fontSize: 14 }}>Chưa có báo giá nào</p>
-                <Link href="/sales/quotations/new">
-                  <button className="btn btn-secondary flex items-center gap-1.5 cursor-pointer mt-2">
-                    Tạo Báo Giá Đầu Tiên
-                  </button>
+                <Link href="/sales/quotations/new" className="btn btn-secondary flex items-center gap-1.5 cursor-pointer mt-2">
+                  Tạo Báo Giá Đầu Tiên
                 </Link>
               </div>
             </td>
