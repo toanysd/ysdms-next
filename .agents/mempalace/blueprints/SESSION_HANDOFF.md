@@ -237,3 +237,20 @@ Danh sách chia sub-phase:
   - Khi tất cả Jobs hoàn thành (`total_jobs = completed_jobs`) ➔ tự động chuyển `work_orders.wo_status` sang `'READY_FOR_PRODUCTION'`.
   - Trigger `trg_sync_wo_status` gắn trên bảng `jobs` (`AFTER INSERT OR UPDATE OF job_status`).
 - **TypeScript Check:** `npx tsc --noEmit` = 0 errors. Commit `81c34a8` đã push lên `origin main`.
+
+## Milestone 10: Shipment & 納品書 (M10-S1) - COMPLETED
+[AN @ 2026-09-03 14:24 JST]
+
+**Thực thi thành công Chỉ thị #034:**
+- **[TASK 0.5 - Schema Verification]:** Kiểm tra DB xác nhận bảng `order_lines` chưa có `remaining_qty` & `shipped_qty`. Đã tạo file migration `supabase/migrations/20260903000004_087_add_order_lines_delivery_fields.sql` để PE apply qua MCP.
+- **[TASK 1 - Fix FilterBar Infinite Re-render]:** Đã sửa `ShipmentFilterBar.tsx` loại bỏ triệt để `searchParams` khỏi dependency array của `useEffect`, dùng `isMounted` ref và local state độc lập.
+- **[TASK 2 - Partial Delivery Engine]:**
+  - Cập nhật `src/app/orders/shipments/actions.ts`: hỗ trợ giao hàng từng phần với guard `qty_shipped <= remaining_qty`.
+  - Cập nhật `order_lines.shipped_qty` lũy kế và `order_lines.remaining_qty` còn lại. Tự động set `line_status = 'PARTIALLY_SHIPPED'` hoặc `'SHIPPED'`.
+  - Tự động hoàn tất đơn hàng (`orders.order_status = 'COMPLETED'`) khi tất cả các line đã xuất hết.
+  - Nâng cấp `ShipmentForm.tsx`: hiển thị tổng đặt, đã xuất, tồn dư; cho phép nhập số lượng xuất đợt này kèm nút "全数出荷" và cảnh báo validation client-side.
+- **[TASK 3 - PDF 納品書 Layout Audit & Patch]:**
+  - Sửa thông tin nhà phát hành thành chính thức: `株式会社 吉田金型製作所` (YSD) tại Kawasaski, Kanagawa (thay cho placeholder Yamada).
+  - Tích hợp con dấu đỏ YSD (`public/stamps/stamp_yoshida.png`) tại khu vực triện đóng.
+  - Phân tách trang phục vụ in ấn A4 chuẩn Nhật: Nửa trên là **「納　品　書」**, nửa dưới là **「納　品　受　領　書」** có ô ký nhận và ngày nhận hàng.
+- **TypeScript Check:** `npx tsc --noEmit` = 0 errors. Commit `d0323c4` đã push lên `origin main`.
