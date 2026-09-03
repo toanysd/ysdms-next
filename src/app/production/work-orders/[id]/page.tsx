@@ -20,8 +20,9 @@ export default async function WorkOrderDetailPage(props: { params: Promise<{ id:
       companies (company_name),
       jobs (
         job_id, job_code, job_name, job_category, job_status, equipment_id,
+        responsible:employees!jobs_responsible_id_fkey (full_name),
         equipment (equipment_type, display_name, equipment_code),
-        job_steps (step_id, step_status)
+        job_steps (step_id, step_name, step_status, step_no)
       )
     `)
     .eq('wo_id', params.id)

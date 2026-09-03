@@ -14,13 +14,17 @@ export const JOB_STEP_TEMPLATES: Record<string, string[]> = {
   FRAME:           ['設計', '加工', '確認'],
 }
 
+const VALID_EQUIPMENT_TYPES = [
+  'MOLD', 'CUTTER_INLINE', 'CUTTER_SEPARATE', 'PRESSURE_BASE', 'WATER_BASE', 'STACKING', 'PLUG', 'FRAME'
+]
+
 export async function generateJobsForWorkOrder(workOrderId: string) {
   const supabase = await createClient()
 
   // 1. Get WO
   const { data: wo, error: woError } = await supabase
     .from('work_orders')
-    .select('wo_id, wo_code, wo_name, product_id, design_revision_id, case_id, company_id, deadline')
+    .select('wo_id, wo_code, wo_name, product_id, design_revision_id, case_id, company_id, deadline, wo_status')
     .eq('wo_id', workOrderId)
     .single()
 
@@ -55,7 +59,6 @@ export async function generateJobsForWorkOrder(workOrderId: string) {
   }
 
   // 3. Find primary MOLD equipment
-  // Look up MOLD via design_revision_id
   let targetEquipments: Array<{
     equipment_id: string
     equipment_code: string
@@ -70,6 +73,7 @@ export async function generateJobsForWorkOrder(workOrderId: string) {
       .select('equipment_id, equipment_code, display_name, equipment_type')
       .eq('design_revision_id', revisionId)
       .eq('equipment_type', 'MOLD')
+      .order('created_at', { ascending: false })
       .limit(1)
       .single()
     mold = moldData
@@ -93,35 +97,52 @@ export async function generateJobsForWorkOrder(workOrderId: string) {
     if (assignments && assignments.length > 0) {
       for (const a of assignments) {
         const rel = a.related_equipment as any
-        if (rel && !targetEquipments.some(e => e.equipment_id === rel.equipment_id)) {
+        if (
+          rel && 
+          VALID_EQUIPMENT_TYPES.includes(rel.equipment_type) &&
+          !targetEquipments.some(e => e.equipment_id === rel.equipment_id)
+        ) {
           targetEquipments.push(rel)
         }
       }
     } else if (revisionId) {
       // Fallback: any other equipment with the same design_revision_id
+      // POINT 1 FIX: Filter strictly by VALID_EQUIPMENT_TYPES and pick at most 1 per auxiliary equipment_type
       const { data: otherEq } = await supabase
         .from('equipment')
         .select('equipment_id, equipment_code, display_name, equipment_type')
         .eq('design_revision_id', revisionId)
+        .in('equipment_type', VALID_EQUIPMENT_TYPES)
         .neq('equipment_id', mold.equipment_id)
+        .order('created_at', { ascending: false })
 
       if (otherEq && otherEq.length > 0) {
+        const includedTypes = new Set<string>(['MOLD'])
         for (const eq of otherEq) {
-          if (!targetEquipments.some(e => e.equipment_id === eq.equipment_id)) {
+          if (!includedTypes.has(eq.equipment_type)) {
             targetEquipments.push(eq)
+            includedTypes.add(eq.equipment_type) // Max 1 per auxiliary type in fallback
           }
         }
       }
     }
   } else if (revisionId) {
-    // If no specific MOLD, fetch all equipment for revision
+    // If no specific MOLD, fetch equipment filtered by VALID_EQUIPMENT_TYPES (max 1 per type)
     const { data: allEq } = await supabase
       .from('equipment')
       .select('equipment_id, equipment_code, display_name, equipment_type')
       .eq('design_revision_id', revisionId)
+      .in('equipment_type', VALID_EQUIPMENT_TYPES)
+      .order('created_at', { ascending: false })
 
     if (allEq && allEq.length > 0) {
-      targetEquipments = allEq
+      const includedTypes = new Set<string>()
+      for (const eq of allEq) {
+        if (!includedTypes.has(eq.equipment_type)) {
+          targetEquipments.push(eq)
+          includedTypes.add(eq.equipment_type)
+        }
+      }
     }
   }
 
@@ -208,11 +229,13 @@ export async function generateJobsForWorkOrder(workOrderId: string) {
     }
   }
 
-  // Update Work Order status to IN_PROGRESS
-  await supabase
-    .from('work_orders')
-    .update({ wo_status: 'IN_PROGRESS' })
-    .eq('wo_id', workOrderId)
+  // POINT 2 FIX: Guard update to IN_PROGRESS only if current status is CONFIRMED or PLANNED
+  if (['CONFIRMED', 'PLANNED'].includes(wo.wo_status)) {
+    await supabase
+      .from('work_orders')
+      .update({ wo_status: 'IN_PROGRESS' })
+      .eq('wo_id', workOrderId)
+  }
 
   revalidatePath(`/production/work-orders/${workOrderId}`)
   revalidatePath('/production/work-orders')
