@@ -49,3 +49,55 @@ export async function createShipmentAction(formData: FormData) {
   revalidatePath('/orders')
   return { success: true }
 }
+
+export async function searchOrderLinesAction(orderSearch: string) {
+  const supabase = await createClient()
+  
+  // 1. Fetch matching orders
+  const { data: orders } = await supabase
+    .from('orders')
+    .select('order_id, order_no')
+    .ilike('order_no', `%${orderSearch}%`)
+    .limit(10)
+  
+  if (!orders || orders.length === 0) {
+    return []
+  }
+  
+  const orderIds = orders.map(o => o.order_id)
+
+  // 2. Fetch order lines with products
+  const { data: lines } = await supabase
+    .from('order_lines')
+    .select(`
+      line_id,
+      order_id,
+      quantity,
+      products (product_name)
+    `)
+    .in('order_id', orderIds)
+    
+  if (!lines) return []
+
+  // 3. Fetch existing shipments to filter out already shipped lines
+  const { data: existingShipments } = await supabase
+    .from('shipments')
+    .select('order_line_id')
+    .in('order_id', orderIds)
+    .not('order_line_id', 'is', null)
+
+  const shippedLineIds = new Set(existingShipments?.map(s => s.order_line_id))
+
+  // 4. Combine and filter
+  const finalLines = lines
+    .filter((l: any) => !shippedLineIds.has(l.line_id))
+    .map((l: any) => ({
+      line_id: l.line_id,
+      order_id: l.order_id,
+      quantity: l.quantity,
+      order_no: orders.find(o => o.order_id === l.order_id)?.order_no || '',
+      product_name: l.products?.product_name || ''
+    }))
+
+  return finalLines
+}

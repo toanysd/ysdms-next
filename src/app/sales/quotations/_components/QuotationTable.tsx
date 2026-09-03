@@ -6,7 +6,7 @@ interface Quotation {
   quotation_id: string
   quotation_no: string
   quotation_type: string | null
-  status: string
+  status: string | null
   quote_date: string
   valid_until: string | null
   total_amount: number | null
@@ -19,14 +19,14 @@ interface Quotation {
 export function QuotationTable({ data }: { data: Quotation[] }) {
   const t = useTranslations('Quotations')
 
-  const getStatusBadge = (st: string) => {
+  const getStatusBadge = (st: string | null) => {
     switch (st) {
       case 'DRAFT': return <span className="badge badge--neutral font-bold">DRAFT</span>
       case 'SENT': return <span className="badge badge--info font-bold">SENT</span>
       case 'ACCEPTED': return <span className="badge badge--success font-bold">ACCEPTED</span>
       case 'REJECTED': return <span className="badge badge--error font-bold">REJECTED</span>
       case 'EXPIRED': return <span className="badge badge--neutral font-bold" style={{ opacity: 0.7 }}>EXPIRED</span>
-      default: return <span className="badge badge--neutral font-bold">{st}</span>
+      default: return <span className="badge badge--neutral font-bold">{st || 'DRAFT'}</span>
     }
   }
 

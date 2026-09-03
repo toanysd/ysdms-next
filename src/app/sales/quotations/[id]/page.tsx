@@ -70,7 +70,7 @@ export default async function QuotationDetailPage(props: { params: Promise<{ id:
             <h1 className="text-[18px] font-bold" style={{ fontFamily: 'monospace', margin: 0 }}>
               {quote.quotation_no}
             </h1>
-            {getStatusBadge(quote.status)}
+            {getStatusBadge(quote.status || 'DRAFT')}
           </div>
         </div>
 

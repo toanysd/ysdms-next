@@ -41,7 +41,19 @@ export default async function QCListPage({
     .order('recorded_at', { ascending: false })
 
   if (search) {
-    query = query.ilike('jobs.job_code', `%${search}%`)
+    const { data: matchedJobs } = await supabase
+      .from('jobs')
+      .select('job_id')
+      .ilike('job_code', `%${search}%`)
+      .limit(100)
+    
+    if (matchedJobs && matchedJobs.length > 0) {
+      const jobIds = matchedJobs.map(j => j.job_id)
+      query = query.in('job_id', jobIds)
+    } else {
+      // Force empty result by querying an impossible UUID
+      query = query.eq('job_id', '00000000-0000-0000-0000-000000000000')
+    }
   }
 
   if (result === 'NG') {
