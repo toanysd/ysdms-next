@@ -201,3 +201,22 @@ Danh sách chia sub-phase:
 - **[API ROUTE]:** Tạo `src/app/api/quotations/[id]/pdf/route.ts` chạy trên Node.js runtime, xuất buffer PDF kèm `Content-Disposition: attachment; filename="QUO-xxxx_RevN.pdf"`.
 - **[UI ACTION]:** Thêm nút `PDFダウンロード` kèm biểu tượng `FileDown` trong BackBar tại `src/app/sales/quotations/[id]/page.tsx`.
 - **TypeScript Check:** `npx tsc --noEmit` = 0 errors. Commit `780c04d` đã push lên `origin main`.
+
+## Milestone 9: Auto Jobs Generation from Work Order Equipment Set (M9-S1) - COMPLETED
+[AN @ 2026-09-03 13:30 JST]
+
+**Thực thi thành công Chỉ thị #031:**
+- **[TASK 0 - Schema Audit]:** 
+  - Xác nhận `equipment.product_id` không tồn tại; `equipment.design_revision_id` tồn tại và liên kết 6,402 thiết bị.
+  - Bảng `equipment_assignments` quản lý quan hệ `primary_equipment_id` (MOLD) ↔ `related_equipment_id` (SET_MEMBER).
+  - 7 giá trị `equipment_type` trong DB: `MOLD`, `CUTTER_INLINE`, `CUTTER_SEPARATE`, `PRESSURE_BASE`, `WATER_BASE`, `STACKING`, `PLUG`.
+- **[TASK 1 - Auto Jobs Engine]:** Tạo `src/app/production/work-orders/actions.ts`:
+  - Hàm `generateJobsForWorkOrder(workOrderId)` phân giải `product_id` và `design_revision_id`.
+  - Tìm khuôn chính MOLD, sau đó tìm các thiết bị phụ thuộc qua `equipment_assignments` (`relationship_type = 'SET_MEMBER'`), với fallback qua cùng `design_revision_id`.
+  - Cơ chế **Idempotent**: kiểm tra `jobs(work_order_id, equipment_id)`, tự động bỏ qua các thiết bị đã được tạo Job trước đó.
+  - Tự động sinh `job_steps` theo template chuẩn YSD: `JOB_STEP_TEMPLATES[equipment_type]`.
+  - Tự động chuyển `work_orders.wo_status` sang `IN_PROGRESS`.
+- **[TASK 2 - UI & Component]:**
+  - Tạo `src/app/production/work-orders/[id]/_components/JobsListSimple.tsx`: hiển thị danh sách Jobs phân tách theo thiết bị, badge loại thiết bị, tiến độ số bước công đoạn (`completedCount / totalCount`), và trạng thái Job.
+  - Trang chi tiết `src/app/production/work-orders/[id]/page.tsx`: tích hợp nút bấm chủ động `「加工指示を発行する」` (Phát hành chỉ thị gia công) khi chưa có Jobs.
+- **TypeScript Check:** `npx tsc --noEmit` = 0 errors. Commit `6ab36a1` đã push lên `origin main`.
