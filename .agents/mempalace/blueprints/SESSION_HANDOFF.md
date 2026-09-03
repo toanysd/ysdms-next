@@ -294,3 +294,26 @@ Danh sách chia sub-phase:
 - **[TASK 3 - Migration 088]:**
   - Tạo file `supabase/migrations/20260903000005_088_extend_dashboard_views.sql` mở rộng view `v_dashboard_executive_kpis` với các cột đếm Work Orders và Shipments.
 - **TypeScript Check:** `npx tsc --noEmit` = 0 errors. Commit `d177d3d` đã push lên `origin main`.
+
+## Milestone 11: Commercial Pipeline & Dashboard Polish (M11-S2) - COMPLETED & MILESTONE 11 CLOSED
+[AN @ 2026-09-03 15:32 JST]
+
+**Thực thi thành công Chỉ thị #038:**
+- **[TASK 0 - Đồng bộ Migration 088 SQL]:**
+  - Cập nhật `supabase/migrations/20260903000005_088_extend_dashboard_views.sql` khớp chính xác với SQL PE đã apply trên Supabase: Thêm `DROP VIEW IF EXISTS` và cast `COUNT(*)::int` cho tất cả 15 cột để tránh lỗi type conflict giữa bigint và integer.
+  - Đã commit riêng: `fix: sync migration 088 SQL with applied version (::int cast + DROP VIEW)` (`94f4efd`).
+- **[TASK 1 - Server Action Pipeline `getDashboardData`]:**
+  - Thêm truy vấn `ordersPipelineData` (lọc theo `created_at >= startOfMonth`) và `shipmentsMonthData` (lọc theo `ship_date >= startOfMonth`).
+  - Tổng hợp dữ liệu phân luồng thương mại `commercialPipeline`:
+    - `newOrdersCount`: Đơn hàng mới (`CONFIRMED` / `DRAFT`).
+    - `inProductionCount`: Đơn hàng / WO đang sản xuất (`IN_PROGRESS`).
+    - `readyToShipCount`: Đơn hàng / WO hoàn tất khuôn dao sẵn sàng dập (`READY_FOR_PRODUCTION`).
+    - `deliveredCount`: Đơn hàng / Giao hàng hoàn tất (`DELIVERED` / `COMPLETED`).
+- **[TASK 2 - UI Widget: 今月の受注・出荷パイプライン]:**
+  - Tích hợp Widget Pipeline 4 giai đoạn nối tiếp bằng mũi tên `→` trên Dashboard:
+    - `① 新規受注` (Xanh dương / CONFIRMED) ➔ Link `/orders`
+    - `② 生産中` (Vàng cam / IN_PROGRESS) ➔ Link `/production/work-orders`
+    - `③ 出荷準備` (Xanh ngọc / READY_FOR_PRD) ➔ Link `/production/work-orders`
+    - `④ 納品完了` (Xanh lục / DELIVERED) ➔ Link `/orders/shipments`
+  - Mỗi thẻ card hỗ trợ hover visual, hiển thị số lượng to rõ nét và click 1 chạm mở thẳng module tương ứng.
+- **TypeScript Check:** `npx tsc --noEmit` = 0 errors. Commit `1fb3d5c` đã push lên `origin main`.
