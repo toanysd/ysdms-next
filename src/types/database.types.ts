@@ -1,4 +1,4 @@
-﻿export type Json =
+export type Json =
   | string
   | number
   | boolean
@@ -6952,8 +6952,10 @@ export type Database = {
           item_type: string
           line_id: string
           line_no: number
+          model_code: string | null
           notes: string | null
           quantity: number | null
+          quantity_text: string | null
           quotation_id: string
           unit_price: number | null
           updated_at: string | null
@@ -6965,8 +6967,10 @@ export type Database = {
           item_type: string
           line_id?: string
           line_no: number
+          model_code?: string | null
           notes?: string | null
           quantity?: number | null
+          quantity_text?: string | null
           quotation_id: string
           unit_price?: number | null
           updated_at?: string | null
@@ -6978,8 +6982,10 @@ export type Database = {
           item_type?: string
           line_id?: string
           line_no?: number
+          model_code?: string | null
           notes?: string | null
           quantity?: number | null
+          quantity_text?: string | null
           quotation_id?: string
           unit_price?: number | null
           updated_at?: string | null
@@ -6999,6 +7005,8 @@ export type Database = {
           case_id: string | null
           company_id: string
           created_at: string | null
+          customer_contact_name: string | null
+          delivery_destination: string | null
           extra_json: Json | null
           file_path: string | null
           notes: string | null
@@ -7008,6 +7016,7 @@ export type Database = {
           quotation_type: string | null
           quote_date: string
           raw_text_snapshot: string | null
+          revision_no: number
           status: string | null
           total_amount: number | null
           updated_at: string | null
@@ -7017,6 +7026,8 @@ export type Database = {
           case_id?: string | null
           company_id: string
           created_at?: string | null
+          customer_contact_name?: string | null
+          delivery_destination?: string | null
           extra_json?: Json | null
           file_path?: string | null
           notes?: string | null
@@ -7026,6 +7037,7 @@ export type Database = {
           quotation_type?: string | null
           quote_date: string
           raw_text_snapshot?: string | null
+          revision_no?: number
           status?: string | null
           total_amount?: number | null
           updated_at?: string | null
@@ -7035,6 +7047,8 @@ export type Database = {
           case_id?: string | null
           company_id?: string
           created_at?: string | null
+          customer_contact_name?: string | null
+          delivery_destination?: string | null
           extra_json?: Json | null
           file_path?: string | null
           notes?: string | null
@@ -7044,6 +7058,7 @@ export type Database = {
           quotation_type?: string | null
           quote_date?: string
           raw_text_snapshot?: string | null
+          revision_no?: number
           status?: string | null
           total_amount?: number | null
           updated_at?: string | null

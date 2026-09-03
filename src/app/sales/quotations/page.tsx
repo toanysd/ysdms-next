@@ -21,7 +21,7 @@ export default async function QuotationsPage(props: { searchParams: Promise<{ se
   let query = supabase
     .from('quotations')
     .select(`
-      quotation_id, quotation_no, quotation_type, status, quote_date, valid_until, total_amount, company_id, case_id,
+      quotation_id, quotation_no, revision_no, customer_contact_name, delivery_destination, quotation_type, status, quote_date, valid_until, total_amount, company_id, case_id,
       companies (company_name),
       business_cases (case_code, title)
     `, { count: 'exact' })

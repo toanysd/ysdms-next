@@ -13,10 +13,15 @@ export default function NewQuotationPage() {
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
 
-  const [lines, setLines] = useState<any[]>([])
+  const [isUntilNextRevision, setIsUntilNextRevision] = useState(true)
+  const [validUntilDate, setValidUntilDate] = useState('')
+
+  const [lines, setLines] = useState<any[]>([
+    { item_type: 'PRODUCT', model_code: '', description: '', quantity: 100, unit_price: 0, quantity_text: '' }
+  ])
 
   const addLine = () => {
-    setLines([...lines, { item_type: 'MOLD', description: '', quantity: 1, unit_price: 0 }])
+    setLines([...lines, { item_type: 'PRODUCT', model_code: '', description: '', quantity: 1, unit_price: 0, quantity_text: '' }])
   }
 
   const removeLine = (index: number) => {
@@ -38,6 +43,11 @@ export default function NewQuotationPage() {
     setError(null)
     const formData = new FormData(e.currentTarget)
     
+    // If checkbox is checked, ensure valid_until is null
+    if (isUntilNextRevision) {
+      formData.delete('valid_until')
+    }
+
     startTransition(async () => {
       const res = await createQuotationAction(formData, lines)
       if (res.success && res.data) {
@@ -58,7 +68,7 @@ export default function NewQuotationPage() {
             {t('back')}
           </button>
           <h1 className="text-[18px] font-bold" style={{ color: 'var(--text-primary)', margin: 0 }}>
-            {t('new')}
+            {t('new')} (Phase 2)
           </h1>
         </div>
       </div>
@@ -77,7 +87,17 @@ export default function NewQuotationPage() {
               <div>
                 <label className="form-label">{t('col_customer')} *</label>
                 <input type="text" name="company_id" className="form-input" placeholder="Company UUID..." required />
-                <span className="text-xs text-slate-500 mt-1 block">Phase 2: Use async search here</span>
+                <span className="text-xs text-slate-500 mt-1 block">Phase 2: Enter customer company ID</span>
+              </div>
+
+              <div>
+                <label className="form-label">客先担当者名 (Customer Contact)</label>
+                <input type="text" name="customer_contact_name" className="form-input" placeholder="VD: 橋本 様, 山田 様..." />
+              </div>
+
+              <div>
+                <label className="form-label">送り先 / 納品先 (Delivery Destination)</label>
+                <input type="text" name="delivery_destination" className="form-input" placeholder="VD: 国内指定場所, 御社指定先..." defaultValue="御社指定先" />
               </div>
               
               <div>
@@ -87,13 +107,19 @@ export default function NewQuotationPage() {
 
               <div>
                 <label className="form-label">{t('col_type')} *</label>
-                <select name="quotation_type" className="form-input" required defaultValue="MOLD_NEW">
-                  <option value="MOLD_NEW">MOLD_NEW</option>
-                  <option value="MOLD_REMAKE">MOLD_REMAKE</option>
-                  <option value="TRAY_REPEAT">TRAY_REPEAT</option>
-                  <option value="SERVICE">SERVICE</option>
-                  <option value="STORAGE_FEE">STORAGE_FEE</option>
+                <select name="quotation_type" className="form-input" required defaultValue="TRAY_NEW">
+                  <option value="TRAY_NEW">新規トレイ (TRAY_NEW)</option>
+                  <option value="TRAY_REPEAT">規格・既存トレイ (TRAY_REPEAT)</option>
+                  <option value="MOLD_NEW">金型一式 (MOLD_NEW)</option>
+                  <option value="MOLD_REMAKE">金型再作製・改造 (MOLD_REMAKE)</option>
+                  <option value="SERVICE">試作・保管料・加工 (SERVICE)</option>
+                  <option value="OTHER">その他 (OTHER)</option>
                 </select>
+              </div>
+
+              <div>
+                <label className="form-label">版数 / 改訂 (Revision)</label>
+                <input type="number" name="revision_no" className="form-input" defaultValue={1} min={1} />
               </div>
 
               <div>
@@ -103,13 +129,42 @@ export default function NewQuotationPage() {
 
               <div>
                 <label className="form-label">{t('col_valid_until')}</label>
-                <input type="date" name="valid_until" className="form-input" />
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center gap-2">
+                    <input 
+                      type="checkbox" 
+                      id="untilNextRevision" 
+                      checked={isUntilNextRevision} 
+                      onChange={(e) => {
+                        setIsUntilNextRevision(e.target.checked)
+                        if (e.target.checked) setValidUntilDate('')
+                      }} 
+                    />
+                    <label htmlFor="untilNextRevision" className="text-sm font-semibold text-slate-700 cursor-pointer">
+                      次回価格改定時まで (Until next revision)
+                    </label>
+                  </div>
+                  {!isUntilNextRevision && (
+                    <input 
+                      type="date" 
+                      name="valid_until" 
+                      className="form-input" 
+                      value={validUntilDate} 
+                      onChange={(e) => setValidUntilDate(e.target.value)} 
+                    />
+                  )}
+                </div>
               </div>
             </div>
 
             <div className="mt-4">
-              <label className="form-label">Notes</label>
-              <textarea name="notes" className="form-textarea" rows={3}></textarea>
+              <label className="form-label">備考・特記事項 (Notes / Terms)</label>
+              <textarea 
+                name="notes" 
+                className="form-textarea" 
+                rows={3}
+                defaultValue={"・この御見積り価格には消費税は含まれておりません。\n・納期はご下命後、通常1週間程度頂いております。\n・サンプルトレイは無償にて2枚お届け可能です。"}
+              ></textarea>
             </div>
           </div>
 
@@ -126,19 +181,21 @@ export default function NewQuotationPage() {
             <table className="data-table">
               <thead>
                 <tr>
-                  <th style={{ width: '5%' }}>{t('col_line_no')}</th>
-                  <th style={{ width: '15%' }}>{t('col_item_type')}</th>
-                  <th style={{ width: '35%' }}>{t('col_desc')}</th>
+                  <th style={{ width: '4%' }}>{t('col_line_no')}</th>
+                  <th style={{ width: '12%' }}>型番 (Model Code)</th>
+                  <th style={{ width: '12%' }}>{t('col_item_type')}</th>
+                  <th style={{ width: '32%' }}>{t('col_desc')}</th>
                   <th style={{ width: '10%' }}>{t('col_qty')}</th>
-                  <th style={{ width: '15%' }}>{t('col_unit_price')}</th>
-                  <th style={{ width: '15%', textAlign: 'right' }}>Amount</th>
+                  <th style={{ width: '10%' }}>数量表示 (Text)</th>
+                  <th style={{ width: '12%' }}>{t('col_unit_price')}</th>
+                  <th style={{ width: '13%', textAlign: 'right' }}>Amount</th>
                   <th style={{ width: '5%' }}></th>
                 </tr>
               </thead>
               <tbody>
                 {lines.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="text-center py-8 text-slate-400">
+                    <td colSpan={9} className="text-center py-8 text-slate-400">
                       No lines added. Click "+ Add Line" to begin.
                     </td>
                   </tr>
@@ -150,23 +207,32 @@ export default function NewQuotationPage() {
                       <tr key={index}>
                         <td className="text-center font-bold text-slate-500">{index + 1}</td>
                         <td>
+                          <input 
+                            type="text" 
+                            className="form-input text-sm px-2 py-1" 
+                            placeholder="型番 (VD: H-020-1, KSP-200 R2)"
+                            value={line.model_code || ''}
+                            onChange={(e) => updateLine(index, 'model_code', e.target.value)}
+                          />
+                        </td>
+                        <td>
                           <select 
                             className="form-input text-sm px-2 py-1" 
                             value={line.item_type}
                             onChange={(e) => updateLine(index, 'item_type', e.target.value)}
                           >
-                            <option value="MOLD">MOLD</option>
-                            <option value="PRODUCT">PRODUCT</option>
-                            <option value="MATERIAL">MATERIAL</option>
-                            <option value="SERVICE">SERVICE</option>
-                            <option value="OTHER">OTHER</option>
+                            <option value="PRODUCT">PRODUCT (製品)</option>
+                            <option value="MOLD">MOLD (設備・金型)</option>
+                            <option value="MATERIAL">MATERIAL (材料)</option>
+                            <option value="SERVICE">SERVICE (試作・加工)</option>
+                            <option value="OTHER">OTHER (その他)</option>
                           </select>
                         </td>
                         <td>
                           <input 
                             type="text" 
                             className="form-input text-sm px-2 py-1" 
-                            placeholder="Description..."
+                            placeholder="品名・仕様 (VD: 461×292.5 耐摩耗PS 1.2mm)"
                             value={line.description}
                             onChange={(e) => updateLine(index, 'description', e.target.value)}
                             required
@@ -184,9 +250,19 @@ export default function NewQuotationPage() {
                         </td>
                         <td>
                           <input 
+                            type="text" 
+                            className="form-input text-sm px-2 py-1 text-center" 
+                            placeholder="一式, 枚..."
+                            value={line.quantity_text || ''}
+                            onChange={(e) => updateLine(index, 'quantity_text', e.target.value)}
+                          />
+                        </td>
+                        <td>
+                          <input 
                             type="number" 
                             className="form-input text-sm px-2 py-1 text-right" 
                             min="0"
+                            step="any"
                             value={line.unit_price}
                             onChange={(e) => updateLine(index, 'unit_price', e.target.value)}
                             required

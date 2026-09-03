@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, ArrowUpFromLine, FileText, Calendar, Edit } from 'lucide-react'
+import { ArrowLeft, ArrowUpFromLine, FileText, Calendar, Edit, MapPin, UserCheck } from 'lucide-react'
 import { getTranslations } from 'next-intl/server'
 
 export const dynamic = 'force-dynamic'
@@ -33,14 +33,14 @@ export default async function QuotationDetailPage(props: { params: Promise<{ id:
     .eq('quotation_id', quote.quotation_id)
     .order('line_no', { ascending: true })
 
-  const getStatusBadge = (st: string) => {
+  const getStatusBadge = (st: string | null) => {
     switch (st) {
       case 'DRAFT': return <span className="badge badge--neutral font-bold">DRAFT</span>
       case 'SENT': return <span className="badge badge--info font-bold">SENT</span>
       case 'ACCEPTED': return <span className="badge badge--success font-bold">ACCEPTED</span>
       case 'REJECTED': return <span className="badge badge--error font-bold">REJECTED</span>
       case 'EXPIRED': return <span className="badge badge--neutral font-bold" style={{ opacity: 0.7 }}>EXPIRED</span>
-      default: return <span className="badge badge--neutral font-bold">{st}</span>
+      default: return <span className="badge badge--neutral font-bold">{st || 'DRAFT'}</span>
     }
   }
 
@@ -67,9 +67,20 @@ export default async function QuotationDetailPage(props: { params: Promise<{ id:
           
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, borderLeft: '1px solid var(--border-default)', paddingLeft: 16 }}>
             <FileText size={20} color="var(--accent)" />
-            <h1 className="text-[18px] font-bold" style={{ fontFamily: 'monospace', margin: 0 }}>
-              {quote.quotation_no}
-            </h1>
+            <div className="flex items-center gap-2">
+              <h1 className="text-[18px] font-bold" style={{ fontFamily: 'monospace', margin: 0 }}>
+                {quote.quotation_no}
+              </h1>
+              {quote.revision_no && quote.revision_no > 1 ? (
+                <span className="badge badge--warning text-xs px-2 py-0.5 font-mono">
+                  Rev.{quote.revision_no}
+                </span>
+              ) : (
+                <span className="badge badge--neutral text-xs px-2 py-0.5 font-mono text-slate-500">
+                  Rev.1
+                </span>
+              )}
+            </div>
             {getStatusBadge(quote.status || 'DRAFT')}
           </div>
         </div>
@@ -90,13 +101,34 @@ export default async function QuotationDetailPage(props: { params: Promise<{ id:
           <div className="grid grid-cols-4 gap-6">
             <div>
               <div className="text-xs font-semibold text-slate-500 mb-1">{t('col_customer')}</div>
-              <div className="font-bold">{quote.companies?.company_name || '-'}</div>
+              <div className="font-bold text-[14px]">{quote.companies?.company_name || '-'}</div>
+              {quote.customer_contact_name && (
+                <div className="text-xs text-slate-600 flex items-center gap-1 mt-0.5">
+                  <UserCheck size={12} className="text-slate-400" />
+                  <span>宛先: {quote.customer_contact_name}</span>
+                </div>
+              )}
+            </div>
+
+            <div>
+              <div className="text-xs font-semibold text-slate-500 mb-1">送り先 / 納品先</div>
+              <div className="font-bold text-[13px] flex items-center gap-1 text-slate-800">
+                <MapPin size={14} className="text-slate-400 shrink-0" />
+                <span>{quote.delivery_destination || '御社指定先'}</span>
+              </div>
             </div>
             
             <div>
               <div className="text-xs font-semibold text-slate-500 mb-1">{t('col_type')}</div>
               <div className="font-bold">
                 <span className="badge badge--neutral">{quote.quotation_type}</span>
+              </div>
+            </div>
+
+            <div>
+              <div className="text-xs font-semibold text-slate-500 mb-1">版数 (Revision)</div>
+              <div className="font-mono font-bold text-slate-800">
+                Rev.{quote.revision_no || 1}
               </div>
             </div>
 
@@ -112,7 +144,13 @@ export default async function QuotationDetailPage(props: { params: Promise<{ id:
               <div className="text-xs font-semibold text-slate-500 mb-1">{t('col_valid_until')}</div>
               <div className="font-bold flex items-center gap-2">
                 <Calendar size={14} className="text-slate-400" />
-                {quote.valid_until ? new Date(quote.valid_until).toISOString().split('T')[0] : '-'}
+                {quote.valid_until ? (
+                  new Date(quote.valid_until).toISOString().split('T')[0]
+                ) : (
+                  <span className="text-emerald-700 font-semibold text-xs bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                    次回価格改定時まで
+                  </span>
+                )}
               </div>
             </div>
           </div>
@@ -131,8 +169,10 @@ export default async function QuotationDetailPage(props: { params: Promise<{ id:
               )}
               {quote.notes && (
                 <div className={!quote.case_id ? "col-span-2" : ""}>
-                  <div className="text-xs font-semibold text-slate-500 mb-1">Notes</div>
-                  <div className="text-sm whitespace-pre-wrap text-slate-700">{quote.notes}</div>
+                  <div className="text-xs font-semibold text-slate-500 mb-1">備考・特記事項 (Notes / Terms)</div>
+                  <div className="text-sm whitespace-pre-wrap text-slate-700 bg-slate-50 p-3 rounded border border-slate-100 font-mono text-xs">
+                    {quote.notes}
+                  </div>
                 </div>
               )}
             </div>
@@ -146,28 +186,38 @@ export default async function QuotationDetailPage(props: { params: Promise<{ id:
           <table className="data-table">
             <thead>
               <tr>
-                <th style={{ width: '5%', textAlign: 'center' }}>{t('col_line_no')}</th>
-                <th style={{ width: '15%' }}>{t('col_item_type')}</th>
-                <th style={{ width: '40%' }}>{t('col_desc')}</th>
-                <th style={{ width: '10%', textAlign: 'right' }}>{t('col_qty')}</th>
-                <th style={{ width: '15%', textAlign: 'right' }}>{t('col_unit_price')}</th>
-                <th style={{ width: '15%', textAlign: 'right' }}>Amount</th>
+                <th style={{ width: '4%', textAlign: 'center' }}>{t('col_line_no')}</th>
+                <th style={{ width: '14%' }}>型番 (Model Code)</th>
+                <th style={{ width: '12%' }}>{t('col_item_type')}</th>
+                <th style={{ width: '38%' }}>品名・仕様 (Description)</th>
+                <th style={{ width: '10%', textAlign: 'right' }}>数量 (Quantity)</th>
+                <th style={{ width: '11%', textAlign: 'right' }}>{t('col_unit_price')}</th>
+                <th style={{ width: '11%', textAlign: 'right' }}>Amount</th>
               </tr>
             </thead>
             <tbody>
               {(!lines || lines.length === 0) ? (
                 <tr>
-                  <td colSpan={6} className="text-center py-6 text-slate-400">No lines</td>
+                  <td colSpan={7} className="text-center py-6 text-slate-400">No lines</td>
                 </tr>
               ) : (
                 lines.map((line) => (
                   <tr key={line.line_id}>
                     <td className="text-center font-bold text-slate-500">{line.line_no}</td>
+                    <td className="font-mono font-semibold text-slate-800">
+                      {line.model_code || '-'}
+                    </td>
                     <td>
-                      <span className="badge badge--neutral">{line.item_type}</span>
+                      <span className="badge badge--neutral text-xs">{line.item_type}</span>
                     </td>
                     <td>{line.description}</td>
-                    <td className="text-right font-mono">{line.quantity}</td>
+                    <td className="text-right font-mono">
+                      {line.quantity_text ? (
+                        <span className="font-semibold text-slate-700">{line.quantity_text}</span>
+                      ) : (
+                        line.quantity
+                      )}
+                    </td>
                     <td className="text-right font-mono">{formatCurrency(line.unit_price)}</td>
                     <td className="text-right font-mono font-bold">{formatCurrency(line.amount)}</td>
                   </tr>
@@ -183,6 +233,9 @@ export default async function QuotationDetailPage(props: { params: Promise<{ id:
                 <span className="font-mono font-bold text-slate-900 text-2xl">
                   {formatCurrency(quote.total_amount)}
                 </span>
+              </div>
+              <div className="text-right text-[11px] text-slate-400 mt-1">
+                ※ この御見積り価格には消費税は含まれておりません
               </div>
             </div>
           </div>

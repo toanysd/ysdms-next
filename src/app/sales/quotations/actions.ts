@@ -6,16 +6,19 @@ import { revalidatePath } from 'next/cache'
 export async function createQuotationAction(formData: FormData, lines: any[]) {
   const supabase = await createClient()
 
-  // 1. Get user (for created_by if needed)
+  // 1. Get user (for prepared_by if needed)
   const { data: { user } } = await supabase.auth.getUser()
 
   // 2. Parse form
   const company_id = formData.get('company_id') as string
-  const case_id = formData.get('case_id') as string || null
+  const customer_contact_name = (formData.get('customer_contact_name') as string) || null
+  const delivery_destination = (formData.get('delivery_destination') as string) || null
+  const case_id = (formData.get('case_id') as string) || null
   const quotation_type = formData.get('quotation_type') as string
   const quote_date = formData.get('quote_date') as string
-  const valid_until = formData.get('valid_until') as string || null
-  const notes = formData.get('notes') as string || null
+  const valid_until = (formData.get('valid_until') as string) || null
+  const revision_no = Number(formData.get('revision_no')) || 1
+  const notes = (formData.get('notes') as string) || null
 
   if (!company_id || !quotation_type || !quote_date) {
     return { success: false, error: 'Missing required fields' }
@@ -26,16 +29,25 @@ export async function createQuotationAction(formData: FormData, lines: any[]) {
     return acc + (Number(line.quantity) || 0) * (Number(line.unit_price) || 0)
   }, 0)
 
-  // Generate quotation_no (dummy format: QUO-YYMMDD-XXXX)
-  const dateStr = new Date().toISOString().slice(2, 10).replace(/-/g, '')
-  const randomStr = Math.floor(1000 + Math.random() * 9000)
-  const quotation_no = `QUO-${dateStr}-${randomStr}`
+  // Safe sequence generation for quotation_no (TASK 5)
+  const todayStart = new Date().toISOString().slice(0, 10)
+  const dateStr = todayStart.replace(/-/g, '').slice(2) // YYMMDD
+  const { count } = await supabase
+    .from('quotations')
+    .select('*', { count: 'exact', head: true })
+    .gte('created_at', todayStart)
+
+  const seq = String((count || 0) + 1).padStart(4, '0')
+  const quotation_no = `QUO-${dateStr}-${seq}`
 
   // 3. Insert header
   const { data: quote, error: quoteError } = await supabase
     .from('quotations')
     .insert({
       quotation_no,
+      revision_no,
+      customer_contact_name,
+      delivery_destination,
       company_id,
       case_id,
       quotation_type,
@@ -58,6 +70,8 @@ export async function createQuotationAction(formData: FormData, lines: any[]) {
     const linesToInsert = lines.map((line, index) => ({
       quotation_id: quote.quotation_id,
       line_no: index + 1,
+      model_code: line.model_code || null,
+      quantity_text: line.quantity_text || null,
       item_type: line.item_type || 'OTHER',
       description: line.description,
       quantity: Number(line.quantity) || 0,

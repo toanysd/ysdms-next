@@ -7,6 +7,9 @@ import { Calendar, Hash, FileText } from 'lucide-react'
 interface Quotation {
   quotation_id: string
   quotation_no: string
+  revision_no?: number
+  customer_contact_name?: string | null
+  delivery_destination?: string | null
   quotation_type: string | null
   status: string | null
   quote_date: string
@@ -41,13 +44,13 @@ export function QuotationTable({ data }: { data: Quotation[] }) {
     <table className="data-table">
       <thead>
         <tr>
-          <th style={{ width: '15%' }}>{t('col_code')}</th>
-          <th style={{ width: '20%' }}>{t('col_customer')}</th>
+          <th style={{ width: '18%' }}>{t('col_code')}</th>
+          <th style={{ width: '22%' }}>{t('col_customer')}</th>
           <th style={{ width: '15%' }}>{t('col_case')}</th>
-          <th style={{ width: '10%' }}>{t('col_type')}</th>
-          <th style={{ width: '15%', textAlign: 'right' }}>{t('col_amount')}</th>
-          <th style={{ width: '10%', textAlign: 'center' }}>{t('col_status')}</th>
-          <th style={{ width: '15%', textAlign: 'right' }}>{t('col_date')}</th>
+          <th style={{ width: '12%' }}>{t('col_type')}</th>
+          <th style={{ width: '13%', textAlign: 'right' }}>{t('col_amount')}</th>
+          <th style={{ width: '8%', textAlign: 'center' }}>{t('col_status')}</th>
+          <th style={{ width: '12%', textAlign: 'right' }}>{t('col_date')}</th>
         </tr>
       </thead>
       <tbody>
@@ -68,12 +71,30 @@ export function QuotationTable({ data }: { data: Quotation[] }) {
             return (
               <tr key={quote.quotation_id}>
                 <td>
-                  <Link href={`/sales/quotations/${quote.quotation_id}`} style={{ color: 'var(--accent)', fontWeight: 700, fontFamily: 'monospace', display: 'flex', alignItems: 'center', gap: 4 }}>
-                    <Hash size={14} />
-                    {quote.quotation_no}
-                  </Link>
+                  <div className="flex items-center gap-1.5">
+                    <Link href={`/sales/quotations/${quote.quotation_id}`} style={{ color: 'var(--accent)', fontWeight: 700, fontFamily: 'monospace', display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <Hash size={14} />
+                      {quote.quotation_no}
+                    </Link>
+                    {quote.revision_no && quote.revision_no > 1 ? (
+                      <span className="badge badge--warning text-[10px] px-1 py-0 font-mono">
+                        Rev.{quote.revision_no}
+                      </span>
+                    ) : (
+                      <span className="badge badge--neutral text-[10px] px-1 py-0 font-mono text-slate-400">
+                        Rev.1
+                      </span>
+                    )}
+                  </div>
                 </td>
-                <td style={{ fontWeight: 600 }}>{quote.companies?.company_name || '-'}</td>
+                <td style={{ fontWeight: 600 }}>
+                  <div>{quote.companies?.company_name || '-'}</div>
+                  {quote.customer_contact_name && (
+                    <div className="text-xs text-slate-500 font-normal">
+                      宛先: {quote.customer_contact_name}
+                    </div>
+                  )}
+                </td>
                 <td>
                   {quote.business_cases ? (
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
@@ -89,7 +110,7 @@ export function QuotationTable({ data }: { data: Quotation[] }) {
                   ) : '-'}
                 </td>
                 <td>
-                  <span className="badge badge--neutral">{quote.quotation_type || '-'}</span>
+                  <span className="badge badge--neutral text-xs">{quote.quotation_type || '-'}</span>
                 </td>
                 <td style={{ textAlign: 'right', fontWeight: 600, fontFamily: 'monospace' }}>
                   {formatCurrency(quote.total_amount)}
