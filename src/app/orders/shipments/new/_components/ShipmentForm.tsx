@@ -3,8 +3,8 @@
 import { useTranslations } from 'next-intl'
 import { useRouter } from 'next/navigation'
 import { useState, useEffect } from 'react'
-import { createClient } from '@/lib/supabase/client'
 import { Save } from 'lucide-react'
+import { createShipmentAction, searchOrderLinesAction } from '../../actions'
 
 type DeliverySite = {
   site_id: string
@@ -22,7 +22,6 @@ type OrderLineDetail = {
 export function ShipmentForm({ deliverySites }: { deliverySites: DeliverySite[] }) {
   const t = useTranslations('Shipment')
   const router = useRouter()
-  const supabase = createClient()
 
   const [loading, setLoading] = useState(false)
   
@@ -48,80 +47,33 @@ export function ShipmentForm({ deliverySites }: { deliverySites: DeliverySite[] 
       return
     }
     const fetchLines = async () => {
-      // 1. Fetch matching orders
-      const { data: orders } = await supabase
-        .from('orders')
-        .select('order_id, order_no')
-        .ilike('order_no', `%${orderSearch}%`)
-        .limit(10)
-      
-      if (!orders || orders.length === 0) {
-        setAvailableLines([])
-        return
-      }
-      
-      const orderIds = orders.map(o => o.order_id)
-
-      // 2. Fetch order lines with products
-      const { data: lines } = await supabase
-        .from('order_lines')
-        .select(`
-          line_id,
-          order_id,
-          quantity,
-          products (product_name)
-        `)
-        .in('order_id', orderIds)
-        
-      if (!lines) return
-
-      // 3. Fetch existing shipments to filter out already shipped lines
-      const { data: existingShipments } = await supabase
-        .from('shipments')
-        .select('order_line_id')
-        .in('order_id', orderIds)
-        .not('order_line_id', 'is', null)
-
-      const shippedLineIds = new Set(existingShipments?.map(s => s.order_line_id))
-
-      // 4. Combine and filter
-      const finalLines: OrderLineDetail[] = lines
-        .filter((l: any) => !shippedLineIds.has(l.line_id))
-        .map((l: any) => ({
-          line_id: l.line_id,
-          order_id: l.order_id,
-          quantity: l.quantity,
-          order_no: orders.find(o => o.order_id === l.order_id)?.order_no || '',
-          product_name: l.products?.product_name || ''
-        }))
-
-      setAvailableLines(finalLines)
+      const results = await searchOrderLinesAction(orderSearch)
+      setAvailableLines(results)
     }
 
     const timer = setTimeout(fetchLines, 400)
     return () => clearTimeout(timer)
-  }, [orderSearch, supabase])
+  }, [orderSearch])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!selectedLine || !shipDate || !deliveryMethod) return
     
     setLoading(true)
-    const { error } = await supabase.from('shipments').insert({
-      order_id: selectedLine.order_id,
-      order_line_id: selectedLine.line_id,
-      ship_date: shipDate,
-      delivery_site_id: deliverySiteId || null,
-      delivery_method: deliveryMethod,
-      delivery_note_no: deliveryNoteNo || null,
-      notes: notes || null,
-      status: 'SHIPPED', // Default standard
-      shipment_type: 'physical'
-    })
+    const formData = new FormData()
+    formData.append('order_line_id', selectedLine.line_id)
+    formData.append('order_id', selectedLine.order_id)
+    formData.append('ship_date', shipDate)
+    if (deliverySiteId) formData.append('delivery_site_id', deliverySiteId)
+    formData.append('delivery_method', deliveryMethod)
+    if (deliveryNoteNo) formData.append('delivery_note_no', deliveryNoteNo)
+    if (notes) formData.append('notes', notes)
+
+    const result = await createShipmentAction(formData)
 
     setLoading(false)
-    if (error) {
-      alert(error.message)
+    if (!result.success) {
+      alert(result.error)
     } else {
       router.push('/orders/shipments')
       router.refresh()
