@@ -14,6 +14,9 @@
 - **MỌI câu trả lời** PHẢI kết thúc bằng: `TRẢ LỜI TỪ AN`
 - Nếu KHÔNG có dòng này → AI chưa nạp luật → Người dùng nhắc nhở ngay
 - Áp dụng cho TẤT CẢ model (Gemini, Claude, bất kỳ model nào)
+- **QUY TẮC ĐÓNG KHỐI BÁO CÁO GỬI PE (BẮT BUỘC - 1-CLICK COPY):**
+  - Toàn bộ nội dung báo cáo, kế hoạch, phân tích hoặc câu trả lời cần chuyển tiếp cho PE **BẮT BUỘC PHẢI ĐÓNG GÓI TRỌN VẸN TRONG 1 KHỐI CODE BLOCK DUY NHẤT** (code block markdown).
+  - Tuyệt đối không để nội dung rời rạc khiến người dùng phải copy nhiều lần. Khối code block này phải được đặt ở **DƯỚI CÙNG** của câu trả lời để giao diện hiển thị sẵn nút "Copy" 1-click thuận tiện nhất cho người dùng.
 - **QUY TẮC GIT VÀ CẬP NHẬT GITHUB**: 
   - **MÃ NGUỒN (Code/UI/Logic):** KHÔNG tự động git push mã nguồn trừ khi có YÊU CẦU TRỰC TIẾP từ người dùng.
   - **TÀI LIỆU (Docs/Reports/Plans):** **BẮT BUỘC TỰ ĐỘNG `git add`, `git commit`, `git push`** mọi kết quả phân tích, bản kế hoạch (implementation_plan.md), báo cáo dry-run, ADR, và các file cần thảo luận lên GitHub ngay lập tức để hệ thống PE cùng đọc và phân tích chéo.
