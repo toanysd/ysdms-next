@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Pagination } from '@/components/ui/Pagination'
-import { Search, Loader2, ArrowUp, ArrowDown, ArrowUpDown, AlertTriangle, Box, Layers } from 'lucide-react'
+import { Search, Loader2, ArrowUp, ArrowDown, ArrowUpDown, AlertTriangle, Box, Layers, PackagePlus } from 'lucide-react'
 import { useSearchHistory } from '@/hooks/useSearchHistory'
 import { SearchSuggestions } from '@/components/ui/SearchSuggestions'
 import Link from 'next/link'
@@ -16,9 +16,36 @@ const STATUS_LABELS: Record<string, { ja: string; color: string; bg: string }> =
   returned:  { ja: '返品',   color: 'var(--status-info)',    bg: 'color-mix(in srgb, var(--status-info) 12%, transparent)' },
 }
 
-function StatCard({ ja, value, unit, icon, color }: { ja: string; value: string | number; unit?: string; icon: React.ReactNode; color: string }) {
+function StatCard({
+  ja,
+  value,
+  unit,
+  icon,
+  color,
+  onClick,
+  active,
+}: {
+  ja: string
+  value: string | number
+  unit?: string
+  icon: React.ReactNode
+  color: string
+  onClick?: () => void
+  active?: boolean
+}) {
   return (
-    <div className="card-flat" style={{ padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 10 }}>
+    <div
+      onClick={onClick}
+      className={`card-flat ${onClick ? 'cursor-pointer hover:border-slate-400 transition-all' : ''}`}
+      style={{
+        padding: '10px 14px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: 10,
+        border: active ? `2px solid ${color}` : undefined,
+        background: active ? `color-mix(in srgb, ${color} 8%, transparent)` : undefined,
+      }}
+    >
       <div style={{ width: 36, height: 36, borderRadius: 8, background: `color-mix(in srgb, ${color} 12%, transparent)`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         {icon}
       </div>
@@ -27,7 +54,7 @@ function StatCard({ ja, value, unit, icon, color }: { ja: string; value: string 
           {value}{unit && <span style={{ fontSize: 11, fontWeight: 400, color: 'var(--text-muted)', marginLeft: 2 }}>{unit}</span>}
         </div>
         <div style={{ fontSize: 10, color: 'var(--text-muted)', fontFamily: 'var(--font-jp)', lineHeight: 1.2 }}>
-          {ja}
+          {ja} {active && <span style={{ color, fontWeight: 700 }}>[抽出中]</span>}
         </div>
       </div>
     </div>
@@ -52,6 +79,7 @@ export default function PlasticsInventoryPage() {
   const { history, addToHistory, removeFromHistory, clearHistory } = useSearchHistory('search_plastic_inventory')
   const [statusFilter, setStatusFilter] = useState('ALL')
   const [familyFilter, setFamilyFilter] = useState('ALL')
+  const [onlyLowStock, setOnlyLowStock] = useState(false)
 
   // Sort
   const [sortCol, setSortCol] = useState('current_length_m')
@@ -82,7 +110,7 @@ export default function PlasticsInventoryPage() {
         const active = allRolls.filter(r => r.status === 'in_stock' || r.status === 'in_use')
         setTotalRolls(active.length)
         setTotalMeters(Math.round(active.reduce((sum, r) => sum + (r.current_length_m || 0), 0)))
-        setLowStockCount(active.filter(r => r.current_length_m < 50).length)
+        setLowStockCount(active.filter(r => (r.current_length_m || 0) <= 50).length)
         setInUseCount(allRolls.filter(r => r.status === 'in_use').length)
       }
     }
@@ -107,6 +135,9 @@ export default function PlasticsInventoryPage() {
     if (familyFilter !== 'ALL') {
       query = query.ilike('plastic_master.plastic_family', `%${familyFilter}%`)
     }
+    if (onlyLowStock) {
+      query = query.lte('current_length_m', 50)
+    }
 
     // Sort
     if (sortCol.startsWith('plastic_master.')) {
@@ -125,7 +156,7 @@ export default function PlasticsInventoryPage() {
       setTotalRecords(count || 0)
     }
     setLoading(false)
-  }, [debouncedSearch, statusFilter, familyFilter, page, sortCol, sortDir, supabase])
+  }, [debouncedSearch, statusFilter, familyFilter, onlyLowStock, page, sortCol, sortDir, supabase])
 
   useEffect(() => { fetchRolls() }, [fetchRolls])
 
@@ -160,13 +191,82 @@ export default function PlasticsInventoryPage() {
 
   return (
     <div className="flex flex-col gap-3">
+      {/* ── PageHeader (TASK 3) ── */}
+      <div className="card-flat" style={{ padding: '10px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div className="flex items-center gap-2">
+          <Layers size={20} style={{ color: 'var(--accent)' }} />
+          <div>
+            <h1 className="text-[15px] font-bold text-slate-900" style={{ margin: 0 }}>
+              プラスチック原反・ロール在庫管理 (Roll Inventory)
+            </h1>
+            <span className="text-[11px] text-slate-500">
+              各 cuộn nhựa theo dõi theo barcode, chiều dài thực tế và nhà máy lưu kho
+            </span>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Link href="/plastics/inventory/new">
+            <button className="btn btn-primary" style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, height: 32, padding: '0 12px', fontWeight: 700 }}>
+              <PackagePlus size={15} />
+              <span>入荷登録</span>
+            </button>
+          </Link>
+        </div>
+      </div>
+
       {/* Stats Row */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10 }}>
         <StatCard ja="総ロール数" value={totalRolls} icon={<Box size={18} style={{ color: 'var(--accent)' }} />} color="var(--accent)" />
         <StatCard ja="総在庫" value={totalMeters.toLocaleString()} unit="m" icon={<Layers size={18} style={{ color: 'var(--status-info)' }} />} color="var(--status-info)" />
-        <StatCard ja="在庫低下 (≤50m)" value={lowStockCount} icon={<AlertTriangle size={18} style={{ color: 'var(--status-warning)' }} />} color="var(--status-warning)" />
+        <StatCard
+          ja="在庫低下 (≤50m)"
+          value={lowStockCount}
+          icon={<AlertTriangle size={18} style={{ color: lowStockCount > 0 ? '#DC2626' : 'var(--status-warning)' }} />}
+          color={lowStockCount > 0 ? '#DC2626' : 'var(--status-warning)'}
+          onClick={() => { setOnlyLowStock(!onlyLowStock); setPage(1) }}
+          active={onlyLowStock}
+        />
         <StatCard ja="使用中" value={inUseCount} icon={<Loader2 size={18} style={{ color: 'var(--status-success)' }} />} color="var(--status-success)" />
       </div>
+
+      {/* Low Stock Alert Banner (TASK 2) */}
+      {lowStockCount > 0 && (
+        <div
+          style={{
+            padding: '10px 14px',
+            borderRadius: 8,
+            background: onlyLowStock ? '#FEF3C7' : '#FFFBEB',
+            border: '1px solid #FCD34D',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <AlertTriangle size={18} style={{ color: '#D97706', flexShrink: 0 }} />
+            <span style={{ fontSize: 12, fontWeight: 700, color: '#92400E' }}>
+              ⚠️ 残量50m以下のロールが {lowStockCount} 本あります（在庫補充または交換をご検討ください）
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={() => { setOnlyLowStock(!onlyLowStock); setPage(1) }}
+            style={{
+              background: onlyLowStock ? '#B45309' : '#D97706',
+              color: '#FFFFFF',
+              border: 'none',
+              borderRadius: 4,
+              padding: '4px 12px',
+              fontSize: 11,
+              fontWeight: 700,
+              cursor: 'pointer',
+            }}
+          >
+            {onlyLowStock ? '全件表示に戻す' : '残量50m以下を抽出'}
+          </button>
+        </div>
+      )}
 
       {/* Search + Filters */}
       <div className="card-flat" style={{ padding: '8px 12px' }}>
@@ -200,6 +300,15 @@ export default function PlasticsInventoryPage() {
             {['PET', 'PS', 'PP', 'PVC'].map(f => <option key={f} value={f}>{f}</option>)}
           </select>
 
+          {onlyLowStock && (
+            <button
+              onClick={() => { setOnlyLowStock(false); setPage(1) }}
+              className="btn btn-secondary text-[11px] px-2 py-1 h-auto font-bold text-amber-700"
+            >
+              ✕ 残量50m以下絞込を解除
+            </button>
+          )}
+
           <div className="text-[12px] text-[var(--text-muted)] whitespace-nowrap ml-auto" style={{ fontFamily: 'var(--font-jp)' }}>
             {totalRecords} 件
           </div>
@@ -218,75 +327,119 @@ export default function PlasticsInventoryPage() {
                 <th style={{ padding: '6px 8px', fontSize: 10, fontWeight: 700, color: 'var(--text-muted)', textAlign: 'center', borderBottom: '1px solid var(--border-default)', fontFamily: 'var(--font-jp)' }}>厚さ×幅</th>
                 <th style={{ padding: '6px 8px', fontSize: 10, fontWeight: 700, color: 'var(--text-muted)', textAlign: 'center', borderBottom: '1px solid var(--border-default)', fontFamily: 'var(--font-jp)' }}>色</th>
                 <ThSort col="current_length_m" ja="残り (m)" w={80} align="right" />
-                <ThSort col="status" ja="ステータス" w={80} />
-                <ThSort col="location" ja="保管場所" w={90} />
-                <th style={{ padding: '6px 8px', fontSize: 10, fontWeight: 700, color: 'var(--text-muted)', borderBottom: '1px solid var(--border-default)', fontFamily: 'var(--font-jp)' }}>入荷番号</th>
-                <th style={{ padding: '6px 8px', fontSize: 10, fontWeight: 700, color: 'var(--text-muted)', borderBottom: '1px solid var(--border-default)', fontFamily: 'var(--font-jp)' }}>入荷日</th>
+                <ThSort col="nominal_length_m" ja="当初 (m)" w={80} align="right" />
+                <th style={{ padding: '6px 8px', fontSize: 10, fontWeight: 700, color: 'var(--text-muted)', textAlign: 'center', borderBottom: '1px solid var(--border-default)', fontFamily: 'var(--font-jp)' }}>消化率</th>
+                <ThSort col="status" ja="状態" w={80} align="center" />
+                <ThSort col="location" ja="工場・場所" w={90} />
+                <ThSort col="lot_no" ja="ロットNo" w={110} />
               </tr>
             </thead>
             <tbody>
-              {loading && (
-                <tr><td colSpan={10} style={{ padding: 32, textAlign: 'center', color: 'var(--text-muted)', fontSize: 12 }}>
-                  <Loader2 size={16} className="animate-spin inline-block mr-2" /> 読み込み中...
-                </td></tr>
-              )}
-              {!loading && rolls.length === 0 && (
-                <tr><td colSpan={10} style={{ padding: 32, textAlign: 'center', color: 'var(--text-muted)', fontSize: 12 }}>
-                  データがありません
-                </td></tr>
-              )}
-              {!loading && rolls.map((r, idx) => {
-                const pm = r.plastic_master as any
-                const pr = r.plastic_receipt as any
-                const st = STATUS_LABELS[r.status] || { ja: r.status || '—', color: 'var(--text-muted)', bg: 'var(--bg-surface-2)' }
-                const colorJa = COLOR_JA[pm?.color_name_normalized] || pm?.color_code_raw || '—'
-                const isLow = r.current_length_m < 50
+              {loading ? (
+                <tr>
+                  <td colSpan={11} style={{ textAlign: 'center', padding: 40, color: 'var(--text-muted)' }}>
+                    <Loader2 size={20} className="animate-spin" style={{ margin: '0 auto 8px' }} />
+                    ロールデータを読み込み中...
+                  </td>
+                </tr>
+              ) : rolls.length === 0 ? (
+                <tr>
+                  <td colSpan={11} style={{ textAlign: 'center', padding: 40, color: 'var(--text-muted)' }}>
+                    データが見つかりません
+                  </td>
+                </tr>
+              ) : (
+                rolls.map((r) => {
+                  const m = r.plastic_master || {}
+                  const nominal = r.nominal_length_m || r.received_length_m || 1
+                  const current = r.current_length_m || 0
+                  const usedPct = Math.min(100, Math.max(0, Math.round(((nominal - current) / nominal) * 100)))
+                  const isLow = current <= 50
+                  const st = STATUS_LABELS[r.status] || { ja: r.status, color: 'var(--text-muted)', bg: 'var(--bg-surface-2)' }
 
-                return (
-                  <tr key={r.id} style={{ borderBottom: '1px solid var(--border-subtle)', background: idx % 2 === 0 ? 'transparent' : 'var(--bg-surface-2)' }}>
-                    {/* Roll barcode */}
-                    <td style={{ padding: '5px 8px', fontSize: 10, fontFamily: 'monospace', fontWeight: 600, color: 'var(--text-secondary)' }}>
-                      {r.roll_barcode}
-                    </td>
-                    {/* Mã chuẩn — hyperlink */}
-                    <td style={{ padding: '5px 8px', fontSize: 11, fontFamily: 'monospace', fontWeight: 700 }}>
-                      <Link href={`/plastics/master/${r.plastic_id}`} style={{ color: 'var(--accent)', textDecoration: 'none' }}>
-                        {pm?.plastic_code || '—'}
-                      </Link>
-                    </td>
-                    {/* Family */}
-                    <td style={{ padding: '5px 8px', fontSize: 11, fontWeight: 600 }}>{pm?.plastic_family || '—'}</td>
-                    {/* Kích thước */}
-                    <td style={{ padding: '5px 8px', fontSize: 11, textAlign: 'center', fontFamily: 'monospace', color: 'var(--text-secondary)' }}>
-                      {pm?.thickness_mm ?? '—'} × {pm?.width_mm ?? '—'}
-                    </td>
-                    {/* Màu */}
-                    <td style={{ padding: '5px 8px', fontSize: 11, textAlign: 'center', fontFamily: 'var(--font-jp)' }}>{colorJa}</td>
-                    {/* Tồn */}
-                    <td style={{
-                      padding: '5px 8px', fontSize: 13, fontWeight: 700, textAlign: 'right', fontFamily: 'monospace',
-                      color: isLow ? 'var(--status-warning)' : 'var(--text-primary)',
-                    }}>
-                      {r.current_length_m}
-                      {isLow && <AlertTriangle size={10} style={{ display: 'inline-block', marginLeft: 3, verticalAlign: 'middle' }} />}
-                    </td>
-                    {/* Status */}
-                    <td style={{ padding: '5px 8px' }}>
-                      <span style={{ fontSize: 9, fontWeight: 700, padding: '2px 6px', borderRadius: 10, color: st.color, background: st.bg, fontFamily: 'var(--font-jp)' }}>{st.ja}</span>
-                    </td>
-                    {/* Location */}
-                    <td style={{ padding: '5px 8px', fontSize: 11, color: 'var(--text-secondary)' }}>{r.location || r.warehouse_location || '—'}</td>
-                    {/* Receipt no */}
-                    <td style={{ padding: '5px 8px', fontSize: 10, fontFamily: 'monospace', color: 'var(--text-muted)' }}>{pr?.receipt_no || '—'}</td>
-                    {/* Receipt date */}
-                    <td style={{ padding: '5px 8px', fontSize: 11, color: 'var(--text-secondary)' }}>{pr?.receipt_date || '—'}</td>
-                  </tr>
-                )
-              })}
+                  return (
+                    <tr key={r.id} style={{ borderBottom: '1px solid var(--border-default)', background: isLow ? '#FFFBEB' : undefined }}>
+                      {/* Roll Barcode */}
+                      <td style={{ padding: '6px 8px', fontFamily: 'monospace', fontWeight: 700, fontSize: 12 }}>
+                        <span style={{ color: 'var(--accent)' }}>{r.roll_barcode}</span>
+                      </td>
+
+                      {/* Plastic Code */}
+                      <td style={{ padding: '6px 8px', fontSize: 11, fontWeight: 600 }}>
+                        <Link href={`/plastics/master/${r.plastic_id}`} style={{ color: 'var(--text-primary)', textDecoration: 'none' }}>
+                          {m.plastic_code || '—'}
+                        </Link>
+                      </td>
+
+                      {/* Family */}
+                      <td style={{ padding: '6px 8px', fontSize: 11, fontWeight: 700, fontFamily: 'monospace' }}>
+                        <span className="badge badge--neutral" style={{ fontSize: 9 }}>{m.plastic_family || '—'}</span>
+                      </td>
+
+                      {/* Specs */}
+                      <td style={{ padding: '6px 8px', fontSize: 11, textAlign: 'center', fontFamily: 'monospace' }}>
+                        {m.thickness_mm ? `${m.thickness_mm}t` : '—'} × {m.width_mm ? `${m.width_mm}` : '—'}
+                      </td>
+
+                      {/* Color */}
+                      <td style={{ padding: '6px 8px', fontSize: 10, textAlign: 'center' }}>
+                        {COLOR_JA[m.color_name_normalized?.toLowerCase()] || m.color_name_normalized || '—'}
+                      </td>
+
+                      {/* Current Length (Remaining) */}
+                      <td style={{ padding: '6px 8px', textAlign: 'right', fontFamily: 'monospace', fontWeight: 800, fontSize: 12, color: isLow ? '#DC2626' : 'var(--text-primary)' }}>
+                        {current.toLocaleString()}m
+                        {isLow && <span style={{ fontSize: 9, marginLeft: 3 }}>⚠️</span>}
+                      </td>
+
+                      {/* Nominal Length */}
+                      <td style={{ padding: '6px 8px', textAlign: 'right', fontFamily: 'monospace', fontSize: 11, color: 'var(--text-muted)' }}>
+                        {nominal.toLocaleString()}m
+                      </td>
+
+                      {/* Used Progress */}
+                      <td style={{ padding: '6px 8px', width: 90 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                          <div style={{ flex: 1, height: 4, background: '#E2E8F0', borderRadius: 2, overflow: 'hidden' }}>
+                            <div style={{ width: `${usedPct}%`, height: '100%', background: isLow ? '#DC2626' : 'var(--accent)' }} />
+                          </div>
+                          <span style={{ fontSize: 9, fontFamily: 'monospace', color: 'var(--text-muted)', width: 26, textAlign: 'right' }}>{usedPct}%</span>
+                        </div>
+                      </td>
+
+                      {/* Status */}
+                      <td style={{ padding: '6px 8px', textAlign: 'center' }}>
+                        <span style={{ fontSize: 9, fontWeight: 700, padding: '2px 6px', borderRadius: 4, background: st.bg, color: st.color }}>
+                          {st.ja}
+                        </span>
+                      </td>
+
+                      {/* Location */}
+                      <td style={{ padding: '6px 8px', fontSize: 11 }}>
+                        {r.location || '—'}
+                      </td>
+
+                      {/* Lot No */}
+                      <td style={{ padding: '6px 8px', fontSize: 11, fontFamily: 'monospace', color: 'var(--text-muted)' }}>
+                        {r.lot_no || '—'}
+                      </td>
+                    </tr>
+                  )
+                })
+              )}
             </tbody>
           </table>
         </div>
-        <Pagination currentPage={page} totalRecords={totalRecords} pageSize={PAGE_SIZE} onPageChange={setPage} />
+
+        {/* Pagination */}
+        <div style={{ padding: '8px 12px', display: 'flex', justifyContent: 'flex-end', borderTop: '1px solid var(--border-default)' }}>
+          <Pagination
+            page={page}
+            totalRecords={totalRecords}
+            pageSize={PAGE_SIZE}
+            onPageChange={(p) => setPage(p)}
+          />
+        </div>
       </div>
     </div>
   )
