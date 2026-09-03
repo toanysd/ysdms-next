@@ -143,3 +143,24 @@ Danh sách chia sub-phase:
 ### Rule Reminder
 - database.types.ts KHONG ph?i SSOT ? verify qua information_schema
 - M?i FK verify trong migration: query information_schema tr??c khi push
+
+## Milestone 7: Hybrid Sales (Quotations) & Work Orders (M7-S1, M7-S2) - CLOSED
+[AN @ 2026-09-03 09:58 JST]
+
+**Thực thi thành công #024 (Work Orders Refactor):**
+- Đã đập bỏ list page cũ, áp dụng Server Component + Pagination (`.range`).
+- Thêm Client FilterBar debounce 300ms.
+- Update fallback logic cho khách hàng (`work_orders.company_id` -> `products.company_id`).
+- Đã thêm i18n cho `ja.json` & `vi.json`.
+
+**Thực thi thành công #025 (Quotation Module New):**
+- Đã build 3 trang: `/sales/quotations`, `/sales/quotations/new`, và `/sales/quotations/[id]`.
+- Form tạo báo giá mới dynamic cho lines (thêm/xóa hàng) + tính tổng tự động.
+- Server action `createQuotationAction` batch insert lines.
+- Tsc zero errors. Đã push thành công.
+
+**Tech Debt tồn đọng chuyển M8:**
+- TD-010: Thêm try/catch cho `JSON.parse(measurementData)` trong QC.
+- Export PDF Báo Giá (Phase 2 của Quotations).
+- Phân hệ Nhựa (P0 Inventory).
+- Auto-create Job từ WO (ADR-003).
