@@ -220,3 +220,20 @@ Danh sách chia sub-phase:
   - Tạo `src/app/production/work-orders/[id]/_components/JobsListSimple.tsx`: hiển thị danh sách Jobs phân tách theo thiết bị, badge loại thiết bị, tiến độ số bước công đoạn (`completedCount / totalCount`), và trạng thái Job.
   - Trang chi tiết `src/app/production/work-orders/[id]/page.tsx`: tích hợp nút bấm chủ động `「加工指示を発行する」` (Phát hành chỉ thị gia công) khi chưa có Jobs.
 - **TypeScript Check:** `npx tsc --noEmit` = 0 errors. Commit `6ab36a1` đã push lên `origin main`.
+
+## Milestone 9: Jobs Progress UI & Lifecycle Sync Trigger (M9-S2) - COMPLETED
+[AN @ 2026-09-03 13:42 JST]
+
+**Thực thi thành công Chỉ thị #032 & Phản hồi Review Kỹ Thuật M9-S1:**
+- **[POINT 1 - Fallback Filter & Dedup]:** Đã thêm `VALID_EQUIPMENT_TYPES` (8 loại thiết bị chuẩn) vào `actions.ts`. Trong trường hợp fallback theo `design_revision_id`, hệ thống tự động lọc tối đa 1 thiết bị cho mỗi loại phụ thuộc (1 CUTTER, 1 STACKING, 1 PLUG...) để ngăn chặn triệt để nguy cơ tạo ra 50+ Jobs từ dữ liệu legacy trùng lặp.
+- **[POINT 2 - Status Guard]:** Đã bổ sung guard check `['CONFIRMED', 'PLANNED'].includes(wo.wo_status)`. Chỉ chuyển sang `IN_PROGRESS` nếu WO đang ở trạng thái chuẩn bị; tuyệt đối không kéo ngược WO đang `COMPLETED` hay `CANCELLED`.
+- **[TASK 1 - Jobs Progress UI]:** Nâng cấp `JobsListSimple.tsx`:
+  - Thanh tiến độ tổng quan: hiển thị `X/Y Jobs 完了 (Z%)` kèm visual progress bar.
+  - Thiết kế Pill Badge màu sắc nhận diện thiết bị (🔵 MOLD, 🟡 CUTTER, 📦 STACK, ⚪ PLUG, ⚙️ BASE).
+  - Thanh tiến độ công đoạn con (Step progress bar) kèm số bước hoàn thành (`X/Y 工程`).
+  - Hiển thị tên nhân sự phụ trách (`responsible:employees(full_name)`).
+- **[TASK 2 - Lifecycle Sync Trigger (DB Level)]:** Tạo file migration `supabase/migrations/20260903000003_086_wo_auto_complete_trigger.sql`:
+  - Function `sync_work_order_status()`: tự động đếm `total_jobs` và `completed_jobs` của `work_order_id`.
+  - Khi tất cả Jobs hoàn thành (`total_jobs = completed_jobs`) ➔ tự động chuyển `work_orders.wo_status` sang `'READY_FOR_PRODUCTION'`.
+  - Trigger `trg_sync_wo_status` gắn trên bảng `jobs` (`AFTER INSERT OR UPDATE OF job_status`).
+- **TypeScript Check:** `npx tsc --noEmit` = 0 errors. Commit `81c34a8` đã push lên `origin main`.
