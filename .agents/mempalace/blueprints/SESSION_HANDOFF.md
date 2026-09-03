@@ -167,3 +167,22 @@ Danh sách chia sub-phase:
 
 ### M7 Closure Notes & Tech Debt
 - **TD-011**: QuotationList search - Migrate from 2-step lookup to Postgres embedded filter syntax (`companies!inner(company_name.ilike.%search%)`) to avoid `.in()` scaling limits.
+
+## Milestone 8: Sales Quotations Phase 2 (M8-S1) - COMPLETED
+[AN @ 2026-09-03 11:10 JST]
+
+**Thực thi thành công Chỉ thị #028:**
+- **Migration 085** (`20260903000002_085_add_quotation_phase2_fields.sql`): Thêm `revision_no`, `customer_contact_name`, `delivery_destination` vào `quotations`; thêm `model_code`, `quantity_text` vào `quotation_lines`; tạo index `idx_quotations_revision`.
+- **Safe quotation_no Generation:** Thay thế `Math.random()` bằng sequence an toàn theo ngày (`QUO-YYMMDD-NNNN`) đếm theo số lượng quotation tạo trong ngày.
+- **Form Tạo Mới (`/sales/quotations/new`):**
+  - Thêm 客先担当者名 (`customer_contact_name`), 送り先 (`delivery_destination`), 版数 (`revision_no`).
+  - Thêm checkbox '次回価格改定時まで' -> disable và clear field `valid_until`.
+  - Bảng line items: thêm cột 型番 (`model_code`) và 数量表示 (`quantity_text` như '一式').
+- **QuotationTable & Detail View:**
+  - Hiển thị badge `Rev.N` cạnh mã báo giá.
+  - Hiển thị khách hàng kèm người phụ trách (宛先).
+  - Detail overview hiển thị đủ 6 trường Phase 2, hiển thị '次回価格改定時まで' khi `valid_until` null.
+  - Bảng lines hiển thị riêng cột 型番 (Model Code) và hỗ trợ text số lượng.
+
+**Tech Debt ghi nhận:**
+- **TD-012:** LOT pricing (báo giá cùng sản phẩm chia 4–8 bậc số lượng với đơn giá giảm dần) - chuyển M9+.
