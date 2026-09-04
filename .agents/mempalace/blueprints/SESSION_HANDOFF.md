@@ -432,3 +432,15 @@ Danh sách chia sub-phase:
 - **[TypeScript & Types]:**
   - Cập nhật 6 cột mới của migration 089 vào `production_schedules` (Row, Insert, Update) trong `database.types.ts`.
   - Kiểm tra `npx tsc --noEmit` = 0 errors.
+
+## Milestone 13 Closed & Security Hardening Sprint (Migration 091 Prepared)
+[AN @ 2026-09-04 09:56 JST]
+
+- **[Milestone 13]:** Đóng chính thức trọn vẹn cả Sprint 1 (8/8 PASS) và Sprint 2 (16/16 PASS).
+- **[Security Hardening Plan & Migration 091]:**
+  - Soạn thảo `supabase/migrations/20260904000002_091_security_hardening.sql` xử lý toàn bộ 4 nhóm cảnh báo của Supabase Security Advisor:
+    1. `[URGENT]` Chuyển `v_tray_schedule_gantt` và `v_dashboard_executive_kpis` sang `SET (security_invoker = true)` để tôn trọng RLS của người dùng gọi.
+    2. `[HIGH]` `REVOKE EXECUTE ... FROM anon, public` trên 5 hàm SECURITY DEFINER nhạy cảm (`fn_sync_invoice_payment`, `fn_transition_product_lifecycle`, `hide_company`, `promote_company_to_ssot`, `remap_company_fks`). Chỉ cho phép `authenticated` và `service_role`.
+    3. `[MEDIUM]` Thiết lập RLS policies `Allow authenticated full access` cho 11 bảng đang bật RLS nhưng thiếu policy (`design_task_logs`, `employee_skills`, `forming_daily_logs`, `grinding_daily_logs`, `inspection_daily_logs`, `payroll_records`, `press_daily_logs`, `shipment_lots`, `sm_captures`, `sm_devices`, `transport_daily_logs`).
+    4. `[LOW]` Khóa chặt `SET search_path = public` trên các hàm/trigger chống schema injection.
+  - Commit: `4670206` đã push lên `origin main`.
