@@ -474,3 +474,18 @@ Danh sách chia sub-phase:
     - 🟡 WARN (Auth leaked password): **1** (Supabase Dashboard toggle ⚪)
   - **4/6 categories hoàn toàn CLEAN**. Toàn bộ rủi ro bảo mật thực tế đã được triệt tiêu 100%.
 - **Trạng thái hệ thống:** Sẵn sàng 100% để mở **Milestone 14**.
+
+## Milestone 14 Kickoff — ADR-007 Accepted & Migration 093 Prepared
+[AN & PE @ 2026-09-04 15:35 JST]
+
+- **[Quyết định kiến trúc ADR-007]:**
+  - Anh Thoan và PE chấp thuận Phương án A+B (Dual-Sprint Milestone 14).
+  - Đã commit và push `docs/adr/ADR-007_shopfloor-tablet-cockpit-and-equipment-lifecycle.md` (commit `3d4c0a6`).
+  - Sprint 1 (M14-S1): Shopfloor Tablet Cockpit tại `/production/floor` (touch-first, auto nhận diện máy qua localStorage, 3-touch flow, gợi ý tiêu hao nhựa).
+  - Sprint 2 (M14-S2): Daily Logs & Equipment Lifecycle (`forming_daily_logs`, `press_daily_logs`, Dashboard vòng đời `/equipment/lifecycle`, cảnh báo ngưỡng mài dao/bảo dưỡng khuôn).
+- **[Migration 093 Prepared]:**
+  - File: `supabase/migrations/20260904000004_093_shopfloor_and_equipment_lifecycle.sql`.
+  - 1. Thêm cột `schedule_id UUID` vào `forming_daily_logs` và `press_daily_logs` (kèm index).
+  - 2. Thêm cột `maintenance_shot_threshold` và `shots_at_last_maintenance` vào bảng `equipment` (backfill ngưỡng chuẩn: CUTTER 50k, MOLD 100k, PLUG 80k).
+  - 3. Tạo VIEW `v_equipment_lifecycle_status` với `security_invoker = true` làm SSOT cảnh báo bảo dưỡng.
+- **Trạng thái:** Sẵn sàng để PE review và apply qua MCP.
