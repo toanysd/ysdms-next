@@ -121,13 +121,13 @@ Danh sách chia sub-phase:
 ## Session 2026-09-03 (sang) ? M6 FULLY CLOSED
 
 ### Tech Debt Cleared
-- TD-006: CHECK quantity_ng >= 0 �� Applied migration 084 ?
+- TD-006: CHECK quantity_ng >= 0 �� Applied migration 084 ?
 - TD-007: database.types.ts regenerated ?
 - TD-008: await createClient() confirmed ?
-- TD-009: CLOSED �� Replaced by Server Actions C-1/C-2/C-3
+- TD-009: CLOSED �� Replaced by Server Actions C-1/C-2/C-3
 
 ### Phase C Delivered
-- C-1: jobs/actions.ts patched (NEW �� IN_PROGRESS fallback)
+- C-1: jobs/actions.ts patched (NEW �� IN_PROGRESS fallback)
 - C-2: production/qc/actions.ts (submitOutgoingQCAction)
 - C-3: orders/shipments/actions.ts (createShipmentAction)
 - ShipmentForm.tsx wired to Server Action (inline client removed)
@@ -458,3 +458,24 @@ Danh sách chia sub-phase:
     - 8/8 Functions đã khóa chặt `SET search_path = public`.
   - **Bài học kinh nghiệm (Lesson Learned):** Khi viết migration có `ALTER FUNCTION`, luôn truy vấn `pg_get_function_identity_arguments(p.oid)` từ `pg_proc` để đối chiếu chính xác thứ tự tham số thay vì nhớ từ code.
 - **Trạng thái hệ thống:** Đạt chứng nhận **Clean Security Pass** — Toàn bộ Milestone 13 và Security Hardening Sprint đã CLOSED. Sẵn sàng khởi động **Milestone 14**.
+
+## Security Hardening Patch — Migration 092 Prepared (Post-091 Residuals)
+[AN @ 2026-09-04 10:40 JST]
+
+- **[Nội dung Migration 092]:**
+  - Tạo `supabase/migrations/20260904000003_092_security_hardening_patch.sql`.
+  - **1. Revoke anon EXECUTE trên 2 trigger functions:**
+    - `public.fn_trg_product_lifecycle_audit()`
+    - `public.trg_product_lifecycle_audit()`
+  - **2. Khóa search_path = public trên 10 functions tồn đọng:**
+    - `public.update_quotation_lines_updated_at()`
+    - `public.update_material_stock_modtime()`
+    - `public.update_work_orders_updated_at()`
+    - `public.fn_trg_product_lifecycle_audit()`
+    - `public.trg_product_lifecycle_audit()`
+    - `public.sync_job_overall_progress()`
+    - `public.update_updated_at()`
+    - `public.rpc_confirm_work_order(uuid, uuid)` — Đã verify signature chính xác 2 tham số UUID (`p_wo_id`, `p_confirmed_by`) từ Migration 076/076b và `database.types.ts`.
+    - `public.rpc_start_job(uuid)` — Đã verify signature chính xác 1 tham số UUID (`p_job_id`) từ Migration 077 và `database.types.ts`.
+    - `public.sync_work_order_status()`
+- **Trạng thái:** Sẵn sàng apply trên Supabase Production.
