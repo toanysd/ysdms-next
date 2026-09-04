@@ -8367,6 +8367,44 @@ export type Database = {
       }
     }
     Views: {
+      v_tray_schedule_gantt: {
+        Row: {
+          schedule_id: string
+          schedule_date: string
+          scheduled_start: string | null
+          scheduled_end: string | null
+          shift: string | null
+          status: string | null
+          planned_quantity: number | null
+          actual_quantity: number | null
+          notes: string | null
+          machine_id: string | null
+          machine_code: string | null
+          machine_name: string | null
+          machine_group: string | null
+          product_id: string | null
+          product_code: string | null
+          product_name_internal: string | null
+          product_name: string | null
+          work_order_id: string | null
+          wo_no: string | null
+          wo_code: string | null
+          wo_name: string | null
+          order_id: string | null
+          order_no: string | null
+          requested_delivery: string | null
+          order_status: string | null
+          roll_id: string | null
+          roll_barcode: string | null
+          plastic_grade: string | null
+          roll_remaining_m: number | null
+          roll_status: string | null
+          operator_id: string | null
+          operator_name: string | null
+          operator_short: string | null
+        }
+        Relationships: []
+      }
       material_inventory_v2: {
         Row: {
           available_m: number | null

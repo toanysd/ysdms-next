@@ -380,3 +380,29 @@ Danh sách chia sub-phase:
 - **[T3 - Migration 090]:** Soạn thảo `supabase/migrations/20260904000001_090_v_tray_schedule_gantt.sql`. Fix bẫy schema: `work_orders` dùng `wo_code` (không có cột `wo_no`), view đã alias `wo.wo_code AS wo_no` và `wo.wo_code`. Đã test query thành công.
 - **[T3.5 - Seed Data Thực Tế]:** Tạo `scripts/seed-tray-schedule.mjs` và thực thi seed thành công **30 bản ghi lịch dập** vào `production_schedules` phủ đều 14 máy, phân bổ ca 8 tiếng (`scheduled_start`, `scheduled_end`), shift DAY/NIGHT, kết nối động với `work_orders`, `products`, `rolls`, `employees`.
 - **Commit:** `ce0004b` đã push lên `origin main`.
+
+## Milestone 13: Tray Production Schedule (M13-S1 Complete: T4, T5, T6)
+[AN @ 2026-09-04 09:10 JST]
+
+- **[T4 - Component TrayScheduleGantt]:**
+  - Xây dựng `src/components/production/TrayScheduleGantt.tsx`:
+    - Truy vấn trực tiếp view `v_tray_schedule_gantt` kết hợp danh sách 14 máy dập (`machines`).
+    - Render 14 dòng máy dập cố định (`MACH-1` đến `MACH-14`) với nhãn máy bên trái sticky.
+    - Timeline cuộn ngang mượt mà, phân chia theo từng ngày (`110px/ngày`) kèm 2 ca 昼 (08-20h) và 夜 (20-08h).
+    - Tính toán vị trí bar chính xác theo `scheduled_start` và `scheduled_end`.
+    - Màu sắc trạng thái trực quan: `PLANNED` (xanh dương), `IN_PROGRESS` (vàng hổ phách), `DONE` (xanh lục), `OVERDUE` (đỏ).
+    - Tooltip nổi tương tác hiển thị đầy đủ **7 trường dữ liệu bắt buộc**: WO, Mã SP, Kế hoạch/Thực tế khay, Nhựa, Cuộn màng & số mét còn lại, Deadline giao hàng, Tên thợ/operator.
+    - Click vào thanh bar mở modal xem chi tiết lệnh dập.
+    - Bộ lọc đa năng: Điều hướng ngày (7日前 / 7日後 / Hôm nay), chọn nhanh (今週 / 2週間 / 1ヶ月), lọc máy, lọc trạng thái, tìm kiếm tức thì.
+- **[T5 - Component TrayScheduleGrid]:**
+  - Xây dựng `src/components/production/TrayScheduleGrid.tsx`:
+    - Bảng dữ liệu chi tiết **11 cột chuẩn spec PE**: Ngày dập (`MM/DD`), Ca dập (🌞 DAY / 🌙 NIGHT badge), Máy dập (`MACH-X X号機`), Mã SP (link sang product master), Chỉ thị No (`wo_code`), SL Kế hoạch (`#,###`), SL Thực tế + thanh tiến độ %, Nhựa & Cuộn màng, Thợ vận hành, Deadline giao hàng (badge đỏ cảnh báo nếu ≤ 3 ngày), Trạng thái badge.
+    - Sắp xếp động tăng/giảm trên các cột ngày, máy, kế hoạch.
+    - Ô tìm kiếm debounce 300ms theo mã SP, mã WO, cuộn màng, thợ dập.
+- **[T6 - Tích hợp 3-Tab vào /production/schedule/page.tsx]:**
+  - Nâng cấp `src/app/production/schedule/page.tsx` với thanh điều hướng 3 Tab:
+    - **Tab 1: 🗜️ 成型機スケジュール [14機]** (Mặc định - Tray Schedule Gantt)
+    - **Tab 2: 📋 成型指示一覧** (Tray Schedule Grid DataTable)
+    - **Tab 3: 🛠️ 金型・設計工程** (Bảo tồn nguyên vẹn 100% component Tooling Gantt cũ)
+- **[Verification]:** `npx tsc --noEmit` = 0 errors.
+- **[Commit]:** `2af710f` — `feat(M13): Tray Production Schedule — Gantt + Grid + 3-tab integration` đã push lên `origin main`.
