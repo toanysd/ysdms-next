@@ -406,3 +406,29 @@ Danh sách chia sub-phase:
     - **Tab 3: 🛠️ 金型・設計工程** (Bảo tồn nguyên vẹn 100% component Tooling Gantt cũ)
 - **[Verification]:** `npx tsc --noEmit` = 0 errors.
 - **[Commit]:** `2af710f` — `feat(M13): Tray Production Schedule — Gantt + Grid + 3-tab integration` đã push lên `origin main`.
+
+## Milestone 13: Tray Production Schedule (M13-S2 Complete: T7 + T8 + T9 + T10)
+[AN @ 2026-09-04 09:38 JST]
+
+- **[T8 - Shipment Countdown Integration]:**
+  - Tích hợp logic đếm ngược `getDeadlineUrgency(requested_delivery)` hiển thị nhãn: `期限超` (đỏ đậm), `残X日` (đỏ/vàng/xanh theo độ khẩn cấp).
+  - Hiển thị trực tiếp trên thanh bar Gantt, tooltip chi tiết và cột 納期 trong Grid.
+  - Bổ sung thanh cảnh báo `UrgentSummaryBanner` ở đầu Tab 1 thống kê số lượng đơn hàng cần giao trong 7 ngày và số ca dập có nguy cơ trễ hạn.
+- **[T7 - Plastic Roll Inventory Panel]:**
+  - Tạo `src/components/production/PlasticRollPanel.tsx` (Sidebar dock bên phải 320px, có nút gập/mở).
+  - Sắp xếp cuộn theo mức độ ưu tiên: Cuộn nguy cấp `current_length_m < 500m` lên đầu với badge `⚠️ 補充急`.
+  - Công thức ước tính số khay còn lại qua bước dập `feed_length_mm` từ `machines`.
+  - Tương tác thông minh: Click vào cuộn màng trên sidebar sẽ kích hoạt `highlightRollId`, làm nổi bật thanh bar dập tương ứng trên Gantt và làm mờ các bar khác.
+  - Chỉ hiển thị ở Tab 1 và Tab 2, tự động ẩn ở Tab 3 (Tooling).
+- **[T9 - Machine Utilization Heatmap]:**
+  - Tạo `src/components/production/MachineHeatmap.tsx`: Ma trận 196 ô (`14 máy × 14 ngày`).
+  - Phân màu mật độ sản lượng theo 5 mức từ trắng (&lt;0), xanh nhạt (&lt;5k), xanh vừa (5-8k), xanh đậm (8-15k) đến xanh navy (≥15k đầy tải 2 ca).
+  - Bấm vào bất kỳ ô nào trên heatmap sẽ tự động nhảy sang Tab 2 (`tray-grid`) và lọc chính xác vào máy + ngày đó.
+  - Nút chuyển đổi giao diện `[📊 ガントチャート]` ↔ `[🔥 稼働ヒートマップ]` đặt tại PageHeader.
+- **[T10 - Quick Schedule Create Modal]:**
+  - Tạo `src/components/production/QuickScheduleModal.tsx`: Nút `[+ 成型指示登録]` tại PageHeader mở modal tạo nhanh lịch dập.
+  - Tự động tính toán `scheduled_start` và `scheduled_end` chuẩn mực theo ca ngày 昼 (08-16h) và ca đêm 夜 (20-04h).
+  - Insert trực tiếp vào `production_schedules` và trigger `refreshKey` reload dữ liệu trên cả Gantt và Grid.
+- **[TypeScript & Types]:**
+  - Cập nhật 6 cột mới của migration 089 vào `production_schedules` (Row, Insert, Update) trong `database.types.ts`.
+  - Kiểm tra `npx tsc --noEmit` = 0 errors.

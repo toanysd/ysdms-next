@@ -4,11 +4,24 @@ import React, { useState, useEffect, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import TrayScheduleGantt from '@/components/production/TrayScheduleGantt'
 import TrayScheduleGrid from '@/components/production/TrayScheduleGrid'
+import PlasticRollPanel from '@/components/production/PlasticRollPanel'
+import MachineHeatmap from '@/components/production/MachineHeatmap'
+import QuickScheduleModal from '@/components/production/QuickScheduleModal'
 // Import existing Tooling / Mold Gantt chart component — 100% preserved
 import { GanttChart } from './_components/GanttChart'
-import { Calendar, Layers, Wrench, Loader2 } from 'lucide-react'
+import {
+  Calendar,
+  Layers,
+  Wrench,
+  Loader2,
+  PlusCircle,
+  BarChart3,
+  Flame,
+  X,
+} from 'lucide-react'
 
 type TabId = 'tray-gantt' | 'tray-grid' | 'tooling-gantt'
+type ViewMode = 'gantt' | 'heatmap'
 
 interface TabConfig {
   id: TabId
@@ -44,7 +57,14 @@ export default function ProductionSchedulePage() {
   const supabase = createClient()
   const [activeTab, setActiveTab] = useState<TabId>('tray-gantt')
 
-  // Date range for Tray Gantt & Grid: default today - 2 days to today + 12 days (14 days)
+  // ── Lifted State for Sprint 2 ──
+  const [viewMode, setViewMode] = useState<ViewMode>('gantt') // Tab 1: gantt or heatmap (T9)
+  const [highlightRollId, setHighlightRollId] = useState<string | null>(null) // T7 roll highlight
+  const [gridFilter, setGridFilter] = useState<{ machineId?: string; machineCode?: string; date?: string } | null>(null) // T9 heatmap click
+  const [isQuickCreateOpen, setIsQuickCreateOpen] = useState(false) // T10 quick modal
+  const [refreshKey, setRefreshKey] = useState(0) // reload trigger on new schedule
+
+  // Date range for Tray Gantt & Grid: default today to today + 14 days
   const todayStr = useMemo(() => new Date().toISOString().split('T')[0], [])
   const defaultTrayStart = todayStr
   const defaultTrayEnd = useMemo(() => {
@@ -129,14 +149,72 @@ export default function ProductionSchedulePage() {
               生産・成型機スケジュール (Production & Machine Schedule)
             </h1>
             <span className="text-[11px] text-slate-500">
-              真空成型機14台の稼働スケジュール管理および金型設計製作工程の一元化 (M13)
+              真空成型機14台の稼働スケジュール管理・原反引当・稼働ヒートマップ一元化 (M13-S2)
             </span>
           </div>
         </div>
 
-        {/* Status indicator */}
+        {/* Action Buttons in PageHeader */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span className="badge badge--neutral" style={{ fontSize: 11, fontFamily: 'monospace' }}>
+          {/* View mode toggle button when in Tab 1 (T9) */}
+          {activeTab === 'tray-gantt' && (
+            <div style={{ display: 'flex', background: '#F1F5F9', padding: 2, borderRadius: 6, border: '1px solid #CBD5E1' }}>
+              <button
+                onClick={() => setViewMode('gantt')}
+                style={{
+                  padding: '4px 10px',
+                  borderRadius: 4,
+                  fontSize: 11,
+                  fontWeight: 700,
+                  border: 'none',
+                  cursor: 'pointer',
+                  background: viewMode === 'gantt' ? '#FFFFFF' : 'transparent',
+                  color: viewMode === 'gantt' ? 'var(--accent)' : '#64748B',
+                  boxShadow: viewMode === 'gantt' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 4,
+                }}
+              >
+                <BarChart3 size={13} />
+                <span>ガントチャート</span>
+              </button>
+              <button
+                onClick={() => setViewMode('heatmap')}
+                style={{
+                  padding: '4px 10px',
+                  borderRadius: 4,
+                  fontSize: 11,
+                  fontWeight: 700,
+                  border: 'none',
+                  cursor: 'pointer',
+                  background: viewMode === 'heatmap' ? '#FFFFFF' : 'transparent',
+                  color: viewMode === 'heatmap' ? '#D97706' : '#64748B',
+                  boxShadow: viewMode === 'heatmap' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 4,
+                }}
+              >
+                <Flame size={13} />
+                <span>稼働ヒートマップ</span>
+              </button>
+            </div>
+          )}
+
+          {/* Quick Schedule Create Button (T10) */}
+          {activeTab !== 'tooling-gantt' && (
+            <button
+              onClick={() => setIsQuickCreateOpen(true)}
+              className="btn btn-primary"
+              style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, height: 32, padding: '0 12px', fontWeight: 700 }}
+            >
+              <PlusCircle size={15} />
+              <span>成型指示登録</span>
+            </button>
+          )}
+
+          <span className="badge badge--neutral" style={{ fontSize: 10, fontFamily: 'monospace' }}>
             Live DB v_tray_schedule_gantt
           </span>
         </div>
@@ -198,40 +276,83 @@ export default function ProductionSchedulePage() {
         })}
       </div>
 
-      {/* ── Tab Content Area ── */}
-      <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-        {/* Tab 1: 成型機スケジュール (Gantt Timeline) */}
-        {activeTab === 'tray-gantt' && (
-          <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-            <TrayScheduleGantt startDate={defaultTrayStart} endDate={defaultTrayEnd} />
-          </div>
-        )}
+      {/* ── Tab Content Area + Side Panel ── */}
+      <div style={{ flex: 1, overflow: 'hidden', display: 'flex' }}>
+        {/* Main Content Pane */}
+        <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+          {/* Tab 1: 成型機スケジュール (Gantt or Heatmap) */}
+          {activeTab === 'tray-gantt' && (
+            <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+              {viewMode === 'gantt' ? (
+                <TrayScheduleGantt
+                  startDate={defaultTrayStart}
+                  endDate={defaultTrayEnd}
+                  highlightRollId={highlightRollId}
+                  refreshKey={refreshKey}
+                />
+              ) : (
+                <MachineHeatmap
+                  startDate={defaultTrayStart}
+                  endDate={defaultTrayEnd}
+                  onCellClick={(mCode, date) => {
+                    setActiveTab('tray-grid')
+                    setGridFilter({ machineCode: mCode, date })
+                  }}
+                  refreshKey={refreshKey}
+                />
+              )}
+            </div>
+          )}
 
-        {/* Tab 2: 成型指示一覧 (Grid DataTable) */}
-        {activeTab === 'tray-grid' && (
-          <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-            <TrayScheduleGrid startDate={defaultTrayStart} endDate={defaultTrayEnd} />
-          </div>
-        )}
-
-        {/* Tab 3: 金型・設計工程 (Tooling Gantt Cũ — Bảo toàn 100%) */}
-        {activeTab === 'tooling-gantt' && (
-          <div className="card-flat" style={{ flex: 1, padding: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-            {loadingTooling ? (
-              <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, color: '#64748B' }}>
-                <Loader2 size={22} className="animate-spin" />
-                <span>金型工程データを読込中...</span>
-              </div>
-            ) : (
-              <GanttChart
-                jobs={toolingJobs}
-                startDate={defaultToolingFrom}
-                endDate={defaultToolingTo}
+          {/* Tab 2: 成型指示一覧 (Grid DataTable) */}
+          {activeTab === 'tray-grid' && (
+            <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+              <TrayScheduleGrid
+                startDate={defaultTrayStart}
+                endDate={defaultTrayEnd}
+                gridFilter={gridFilter}
+                onClearFilter={() => setGridFilter(null)}
+                refreshKey={refreshKey}
               />
-            )}
-          </div>
+            </div>
+          )}
+
+          {/* Tab 3: 金型・設計工程 (Tooling Gantt Cũ — Bảo toàn 100%) */}
+          {activeTab === 'tooling-gantt' && (
+            <div className="card-flat" style={{ flex: 1, padding: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+              {loadingTooling ? (
+                <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, color: '#64748B' }}>
+                  <Loader2 size={22} className="animate-spin" />
+                  <span>金型工程データを読込中...</span>
+                </div>
+              ) : (
+                <GanttChart
+                  jobs={toolingJobs}
+                  startDate={defaultToolingFrom}
+                  endDate={defaultToolingTo}
+                />
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* ── T7: Plastic Roll Inventory Panel (Docked Right Sidebar) ── */}
+        {/* Only rendered in Tab 1 (tray-gantt) and Tab 2 (tray-grid), NOT in Tab 3 (tooling) */}
+        {activeTab !== 'tooling-gantt' && (
+          <PlasticRollPanel
+            onRollSelect={(rId) => setHighlightRollId(rId)}
+            highlightedRollId={highlightRollId}
+            refreshKey={refreshKey}
+          />
         )}
       </div>
+
+      {/* ── T10: Quick Schedule Create Modal ── */}
+      <QuickScheduleModal
+        isOpen={isQuickCreateOpen}
+        onClose={() => setIsQuickCreateOpen(false)}
+        onSuccess={() => setRefreshKey((k) => k + 1)}
+      />
     </div>
   )
 }

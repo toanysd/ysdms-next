@@ -6693,46 +6693,64 @@ export type Database = {
       }
       production_schedules: {
         Row: {
+          actual_quantity: number | null
           created_at: string | null
           machine_id: string
           mold_id: string | null
           notes: string | null
+          operator_id: string | null
           order_line_id: string | null
           planned_quantity: number | null
           product_id: string | null
+          roll_id: string | null
           schedule_date: string
           schedule_id: string
+          scheduled_end: string | null
+          scheduled_start: string | null
           shift: string | null
           status: string | null
           updated_at: string | null
+          work_order_id: string | null
         }
         Insert: {
+          actual_quantity?: number | null
           created_at?: string | null
           machine_id: string
           mold_id?: string | null
           notes?: string | null
+          operator_id?: string | null
           order_line_id?: string | null
           planned_quantity?: number | null
           product_id?: string | null
+          roll_id?: string | null
           schedule_date: string
           schedule_id?: string
+          scheduled_end?: string | null
+          scheduled_start?: string | null
           shift?: string | null
           status?: string | null
           updated_at?: string | null
+          work_order_id?: string | null
         }
         Update: {
+          actual_quantity?: number | null
           created_at?: string | null
           machine_id?: string
           mold_id?: string | null
           notes?: string | null
+          operator_id?: string | null
           order_line_id?: string | null
           planned_quantity?: number | null
           product_id?: string | null
+          roll_id?: string | null
           schedule_date?: string
           schedule_id?: string
+          scheduled_end?: string | null
+          scheduled_start?: string | null
           shift?: string | null
           status?: string | null
           updated_at?: string | null
+          work_order_id?: string | null
         }
         Relationships: [
           {

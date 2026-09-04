@@ -17,11 +17,16 @@ import {
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
+  X,
 } from 'lucide-react'
+import { getDeadlineUrgency } from './TrayScheduleGantt'
 
 interface TrayScheduleGridProps {
   startDate: string
   endDate: string
+  gridFilter?: { machineId?: string; machineCode?: string; date?: string } | null
+  onClearFilter?: () => void
+  refreshKey?: number
 }
 
 interface TrayScheduleRow {
@@ -70,6 +75,9 @@ const STATUS_BADGES: Record<string, { bg: string; text: string; label: string }>
 export default function TrayScheduleGrid({
   startDate: initStartDate,
   endDate: initEndDate,
+  gridFilter,
+  onClearFilter,
+  refreshKey,
 }: TrayScheduleGridProps) {
   const supabase = createClient()
 
@@ -82,6 +90,19 @@ export default function TrayScheduleGrid({
   const [selectedStatus, setSelectedStatus] = useState<string>('ALL')
   const [searchQuery, setSearchQuery] = useState<string>('')
   const [debouncedSearch, setDebouncedSearch] = useState<string>('')
+
+  // Sync external gridFilter from Heatmap click (T9)
+  useEffect(() => {
+    if (gridFilter) {
+      if (gridFilter.machineCode) {
+        setSelectedMachine(gridFilter.machineCode)
+      }
+      if (gridFilter.date) {
+        setRangeStart(gridFilter.date)
+        setRangeEnd(gridFilter.date)
+      }
+    }
+  }, [gridFilter])
 
   // Sorting
   const [sortField, setSortField] = useState<string>('schedule_date')
@@ -103,13 +124,32 @@ export default function TrayScheduleGrid({
   // Load Machines
   useEffect(() => {
     async function loadMachines() {
-      const { data } = await supabase
-        .from('machines')
-        .select('machine_id, machine_code, machine_name')
-        .eq('is_active', true)
-        .order('machine_code', { ascending: true })
-
-      if (data) setMachines(data)
+      const distinctMap = new Map<string, { machine_id: string; machine_code: string; machine_name: string }>()
+      for (let i = 1; i <= 14; i++) {
+        distinctMap.set(`MACH-${i}`, {
+          machine_id: `MACH-${i}`,
+          machine_code: `MACH-${i}`,
+          machine_name: `${i}号機`,
+        })
+      }
+      const { data } = await supabase.from('v_tray_schedule_gantt').select('machine_id, machine_code, machine_name')
+      if (data) {
+        for (const item of data) {
+          if (item.machine_code) {
+            distinctMap.set(item.machine_code, {
+              machine_id: item.machine_id || item.machine_code,
+              machine_code: item.machine_code,
+              machine_name: item.machine_name || item.machine_code,
+            })
+          }
+        }
+      }
+      const sorted = Array.from(distinctMap.values()).sort((a, b) => {
+        const numA = parseInt(a.machine_code.replace(/\D/g, '')) || 0
+        const numB = parseInt(b.machine_code.replace(/\D/g, '')) || 0
+        return numA - numB
+      })
+      setMachines(sorted)
     }
     loadMachines()
   }, [supabase])
@@ -147,7 +187,7 @@ export default function TrayScheduleGrid({
 
   useEffect(() => {
     fetchScheduleRows()
-  }, [fetchScheduleRows])
+  }, [fetchScheduleRows, refreshKey])
 
   // Filtered rows by search query
   const filteredRows = useMemo(() => {
@@ -182,17 +222,59 @@ export default function TrayScheduleGrid({
     }
   }
 
-  // Check if requested delivery is urgent (<= 3 days)
-  const isUrgentDeadline = (dateStr: string | null) => {
-    if (!dateStr) return false
-    const d = new Date(dateStr).getTime()
-    const now = Date.now()
-    const diffDays = (d - now) / (1000 * 3600 * 24)
-    return diffDays >= 0 && diffDays <= 3
-  }
-
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', gap: 8, background: '#FFFFFF' }}>
+      {/* ── Active Heatmap Filter Banner ── */}
+      {gridFilter && (
+        <div
+          style={{
+            padding: '6px 14px',
+            background: '#EFF6FF',
+            border: '1px solid #BFDBFE',
+            borderRadius: 6,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            fontSize: 11,
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span style={{ fontWeight: 700, color: '#1E40AF' }}>
+              🎯 ヒートマップ絞込適用中:
+            </span>
+            {gridFilter.machineCode && (
+              <span className="badge badge--info" style={{ fontSize: 10 }}>
+                成型機: {gridFilter.machineCode}
+              </span>
+            )}
+            {gridFilter.date && (
+              <span className="badge badge--neutral" style={{ fontSize: 10 }}>
+                日付: {gridFilter.date}
+              </span>
+            )}
+          </div>
+          {onClearFilter && (
+            <button
+              onClick={onClearFilter}
+              style={{
+                border: 'none',
+                background: 'none',
+                cursor: 'pointer',
+                color: '#1E40AF',
+                fontWeight: 700,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 2,
+                fontSize: 11,
+              }}
+            >
+              <X size={12} />
+              <span>絞込解除</span>
+            </button>
+          )}
+        </div>
+      )}
+
       {/* ── Filter Bar ── */}
       <div
         className="card-flat"
@@ -257,7 +339,7 @@ export default function TrayScheduleGrid({
           >
             <option value="ALL">全機械 (14台)</option>
             {machines.map((m) => (
-              <option key={m.machine_id} value={m.machine_code}>
+              <option key={m.machine_code} value={m.machine_code}>
                 {m.machine_code} {m.machine_name}
               </option>
             ))}
@@ -363,8 +445,8 @@ export default function TrayScheduleGrid({
                 {/* 9. 担当 */}
                 <th style={{ width: 100, padding: '8px 10px', fontSize: 11 }}>担当オペ</th>
 
-                {/* 10. 納期 */}
-                <th style={{ width: 95, padding: '8px 10px', fontSize: 11, textAlign: 'center' }}>納期 (締切)</th>
+                {/* 10. 納期 (T8: Urgency badge) */}
+                <th style={{ width: 110, padding: '8px 10px', fontSize: 11, textAlign: 'center' }}>納期 (締切)</th>
 
                 {/* 11. 状態 */}
                 <th style={{ width: 85, padding: '8px 10px', fontSize: 11, textAlign: 'center' }}>状態</th>
@@ -391,7 +473,7 @@ export default function TrayScheduleGrid({
                   const pct = planned > 0 ? Math.min(100, Math.round((actual / planned) * 100)) : 0
 
                   const st = STATUS_BADGES[r.status || 'PLANNED'] || STATUS_BADGES.PLANNED
-                  const isUrgent = isUrgentDeadline(r.requested_delivery)
+                  const urgency = getDeadlineUrgency(r.requested_delivery)
 
                   // Format schedule_date MM/DD
                   const dObj = new Date(r.schedule_date + 'T00:00:00Z')
@@ -541,24 +623,29 @@ export default function TrayScheduleGrid({
                         </div>
                       </td>
 
-                      {/* 10. 納期 (Deadline) */}
+                      {/* 10. 納期 (T8: Urgency badge) */}
                       <td style={{ padding: '8px 10px', textAlign: 'center' }}>
                         {r.requested_delivery ? (
-                          <span
-                            style={{
-                              fontSize: 10,
-                              fontFamily: 'monospace',
-                              fontWeight: 700,
-                              padding: '2px 6px',
-                              borderRadius: 4,
-                              background: isUrgent ? '#FEF2F2' : '#F8FAFC',
-                              color: isUrgent ? '#DC2626' : '#475569',
-                              border: isUrgent ? '1px solid #FECACA' : '1px solid #E2E8F0',
-                            }}
-                          >
-                            {r.requested_delivery}
-                            {isUrgent && <span style={{ marginLeft: 2 }}>⚠️</span>}
-                          </span>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
+                            <span style={{ fontSize: 10, fontFamily: 'monospace', fontWeight: 700, color: '#0F172A' }}>
+                              {r.requested_delivery}
+                            </span>
+                            {urgency && (
+                              <span
+                                style={{
+                                  fontSize: 8,
+                                  fontWeight: 800,
+                                  padding: '1px 4px',
+                                  borderRadius: 2,
+                                  background: urgency.bg,
+                                  color: urgency.text,
+                                  border: `1px solid ${urgency.border}`,
+                                }}
+                              >
+                                {urgency.label}
+                              </span>
+                            )}
+                          </div>
                         ) : (
                           <span style={{ fontSize: 11, color: '#94A3B8' }}>—</span>
                         )}

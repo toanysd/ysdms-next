@@ -14,13 +14,17 @@ import {
   User,
   Package,
   Layers,
+  AlertTriangle,
   AlertCircle,
+  TrendingUp,
 } from 'lucide-react'
 
 interface TrayScheduleGanttProps {
   startDate: string // 'YYYY-MM-DD'
   endDate: string   // 'YYYY-MM-DD'
   machineGroup?: string
+  highlightRollId?: string | null
+  refreshKey?: number
 }
 
 interface Machine {
@@ -73,10 +77,35 @@ const STATUS_COLORS: Record<string, { bg: string; border: string; text: string; 
   OVERDUE:     { bg: '#EF4444', border: '#DC2626', text: '#FFFFFF', label: '遅延 (OVERDUE)' },
 }
 
+// ── T8: Shipment Countdown Helper ──
+export function getDeadlineUrgency(requestedDelivery: string | null) {
+  if (!requestedDelivery) return null
+  const d = new Date(requestedDelivery + 'T00:00:00Z')
+  const now = new Date()
+  now.setUTCHours(0, 0, 0, 0)
+  const diffDays = Math.ceil((d.getTime() - now.getTime()) / (1000 * 3600 * 24))
+
+  if (diffDays < 0) {
+    return { label: '期限超', text: '#FFFFFF', bg: '#B91C1C', border: '#991B1B', priority: 0 }
+  }
+  if (diffDays <= 2) {
+    return { label: `残${diffDays}日`, text: '#FFFFFF', bg: '#DC2626', border: '#B91C1C', priority: 1 }
+  }
+  if (diffDays <= 5) {
+    return { label: `残${diffDays}日`, text: '#78350F', bg: '#FDE68A', border: '#F59E0B', priority: 2 }
+  }
+  if (diffDays <= 14) {
+    return { label: `残${diffDays}日`, text: '#14532D', bg: '#BBF7D0', border: '#22C55E', priority: 3 }
+  }
+  return null
+}
+
 export default function TrayScheduleGantt({
   startDate: initStartDate,
   endDate: initEndDate,
   machineGroup: initMachineGroup,
+  highlightRollId,
+  refreshKey,
 }: TrayScheduleGanttProps) {
   const supabase = createClient()
 
@@ -101,13 +130,39 @@ export default function TrayScheduleGantt({
   // Fetch Machines (14 machines)
   useEffect(() => {
     async function loadMachines() {
-      const { data } = await supabase
-        .from('machines')
+      // Fetch via view or machines table to ensure 14 machines are covered
+      const { data: viewData } = await supabase
+        .from('v_tray_schedule_gantt')
         .select('machine_id, machine_code, machine_name, machine_group')
-        .eq('is_active', true)
-        .order('machine_code', { ascending: true })
-
-      if (data) setMachines(data)
+      
+      const distinctMap = new Map<string, Machine>()
+      // Seed default 14 machines fallback
+      for (let i = 1; i <= 14; i++) {
+        distinctMap.set(`MACH-${i}`, {
+          machine_id: `MACH-${i}`,
+          machine_code: `MACH-${i}`,
+          machine_name: `${i}号機`,
+          machine_group: null,
+        })
+      }
+      if (viewData) {
+        for (const item of viewData) {
+          if (item.machine_code) {
+            distinctMap.set(item.machine_code, {
+              machine_id: item.machine_id || item.machine_code,
+              machine_code: item.machine_code,
+              machine_name: item.machine_name || item.machine_code,
+              machine_group: item.machine_group,
+            })
+          }
+        }
+      }
+      const sorted = Array.from(distinctMap.values()).sort((a, b) => {
+        const numA = parseInt(a.machine_code.replace(/\D/g, '')) || 0
+        const numB = parseInt(b.machine_code.replace(/\D/g, '')) || 0
+        return numA - numB
+      })
+      setMachines(sorted)
     }
     loadMachines()
   }, [supabase])
@@ -139,7 +194,7 @@ export default function TrayScheduleGantt({
 
   useEffect(() => {
     loadSchedules()
-  }, [loadSchedules])
+  }, [loadSchedules, refreshKey])
 
   // Compute Days array for Gantt timeline
   const daysArray = useMemo(() => {
@@ -190,8 +245,8 @@ export default function TrayScheduleGantt({
     return machines.filter((m) => m.machine_code === selectedMachine)
   }, [machines, selectedMachine])
 
-  // Map schedules by machine_id
-  const schedulesByMachine = useMemo(() => {
+  // Map schedules by machine_code
+  const schedulesByMachineCode = useMemo(() => {
     const map: Record<string, TrayScheduleItem[]> = {}
     for (const item of schedules) {
       if (searchQuery.trim()) {
@@ -203,18 +258,70 @@ export default function TrayScheduleGantt({
           item.operator_name?.toLowerCase().includes(q)
         if (!match) continue
       }
-      if (!map[item.machine_id]) map[item.machine_id] = []
-      map[item.machine_id].push(item)
+      const code = item.machine_code || 'OTHER'
+      if (!map[code]) map[code] = []
+      map[code].push(item)
     }
     return map
   }, [schedules, searchQuery])
+
+  // ── T8: Urgent Summary Calculation ──
+  const urgentSummary = useMemo(() => {
+    let upcoming7DaysCount = 0
+    let criticalCount = 0 // <= 2 days or overdue
+
+    for (const s of schedules) {
+      if (s.requested_delivery) {
+        const urgency = getDeadlineUrgency(s.requested_delivery)
+        if (urgency) {
+          upcoming7DaysCount++
+          if (urgency.priority <= 1) {
+            criticalCount++
+          }
+        }
+      }
+    }
+    return { upcoming7DaysCount, criticalCount }
+  }, [schedules])
 
   // Width constant for each day column in px
   const DAY_COL_WIDTH = 110
   const totalTimelineWidth = daysArray.length * DAY_COL_WIDTH
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', gap: 8, background: '#FFFFFF' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', gap: 6, background: '#FFFFFF' }}>
+      {/* ── T8: Urgent Summary Banner ── */}
+      {urgentSummary.upcoming7DaysCount > 0 && (
+        <div
+          style={{
+            padding: '6px 14px',
+            borderRadius: 6,
+            background: urgentSummary.criticalCount > 0 ? '#FEF2F2' : '#FFFBEB',
+            border: urgentSummary.criticalCount > 0 ? '1px solid #FECACA' : '1px solid #FDE68A',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            fontSize: 11,
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <AlertTriangle
+              size={15}
+              style={{ color: urgentSummary.criticalCount > 0 ? '#DC2626' : '#D97706', flexShrink: 0 }}
+            />
+            <span style={{ fontWeight: 700, color: urgentSummary.criticalCount > 0 ? '#991B1B' : '#92400E' }}>
+              ⚠️ 今後7日間の出荷予定: <strong>{urgentSummary.upcoming7DaysCount}</strong> 件
+              {urgentSummary.criticalCount > 0 && (
+                <span style={{ marginLeft: 6, color: '#DC2626' }}>
+                  — 🔴 <strong>{urgentSummary.criticalCount}</strong> 件が期限迫る (残2日以内または期限超過)
+                </span>
+              )}
+            </span>
+          </div>
+          <span style={{ fontSize: 10, color: '#64748B' }}>納品遅延防止のため成型優先度をご確認ください</span>
+        </div>
+      )}
+
       {/* ── Toolbar & Filter Controls ── */}
       <div
         className="card-flat"
@@ -301,7 +408,7 @@ export default function TrayScheduleGantt({
           >
             <option value="ALL">全機械 (14台)</option>
             {machines.map((m) => (
-              <option key={m.machine_id} value={m.machine_code}>
+              <option key={m.machine_code} value={m.machine_code}>
                 {m.machine_code} {m.machine_name}
               </option>
             ))}
@@ -349,6 +456,11 @@ export default function TrayScheduleGantt({
             <span style={{ color: '#334155' }}>{v.label}</span>
           </div>
         ))}
+        {highlightRollId && (
+          <span className="badge badge--warning" style={{ fontSize: 10 }}>
+            ⚡ 原反ロール {highlightRollId.slice(0, 8)}... を強調表示中
+          </span>
+        )}
         <span style={{ color: '#94A3B8', marginLeft: 'auto' }}>
           合計: <strong>{schedules.length}</strong> 件の成型スケジュール
         </span>
@@ -421,7 +533,7 @@ export default function TrayScheduleGantt({
             <div style={{ flex: 1, overflowY: 'hidden' }}>
               {displayMachines.map((m) => (
                 <div
-                  key={m.machine_id}
+                  key={m.machine_code}
                   style={{
                     height: 52,
                     borderBottom: '1px solid #E2E8F0',
@@ -575,11 +687,11 @@ export default function TrayScheduleGantt({
 
                 {/* Machine Schedule Rows */}
                 {displayMachines.map((m) => {
-                  const machineItems = schedulesByMachine[m.machine_id] || []
+                  const machineItems = schedulesByMachineCode[m.machine_code] || []
 
                   return (
                     <div
-                      key={m.machine_id}
+                      key={m.machine_code}
                       style={{
                         height: 52,
                         borderBottom: '1px solid #E2E8F0',
@@ -590,7 +702,6 @@ export default function TrayScheduleGantt({
                       {machineItems.map((item) => {
                         // Calculate bar position based on scheduled_start / end
                         const timelineStartMs = new Date(rangeStart + 'T00:00:00Z').getTime()
-                        const totalDays = daysArray.length
 
                         const startMs = item.scheduled_start
                           ? new Date(item.scheduled_start).getTime()
@@ -616,6 +727,13 @@ export default function TrayScheduleGantt({
                         const colKey = isOverdue ? 'OVERDUE' : item.status || 'PLANNED'
                         const colorInfo = STATUS_COLORS[colKey] || STATUS_COLORS.PLANNED
 
+                        // T8: Countdown Urgency
+                        const urgency = getDeadlineUrgency(item.requested_delivery)
+
+                        // T7: Highlight check
+                        const isRollMatched = highlightRollId && item.roll_id === highlightRollId
+                        const isDimmed = highlightRollId && !isRollMatched
+
                         return (
                           <div
                             key={item.schedule_id}
@@ -636,7 +754,9 @@ export default function TrayScheduleGantt({
                               top: 8,
                               height: 36,
                               background: colorInfo.bg,
-                              border: `1px solid ${colorInfo.border}`,
+                              border: isRollMatched
+                                ? '2px solid #FFFFFF'
+                                : `1px solid ${colorInfo.border}`,
                               borderRadius: 5,
                               color: colorInfo.text,
                               padding: '2px 6px',
@@ -645,13 +765,16 @@ export default function TrayScheduleGantt({
                               display: 'flex',
                               flexDirection: 'column',
                               justifyContent: 'center',
-                              boxShadow: '0 1px 3px rgba(0,0,0,0.15)',
-                              transition: 'transform 0.1s, box-shadow 0.1s',
-                              zIndex: 5,
+                              boxShadow: isRollMatched
+                                ? '0 0 10px #3B82F6, 0 2px 6px rgba(0,0,0,0.3)'
+                                : '0 1px 3px rgba(0,0,0,0.15)',
+                              transition: 'all 0.15s ease',
+                              opacity: isDimmed ? 0.25 : 1,
+                              zIndex: isRollMatched ? 25 : 5,
                             }}
                             className="hover:scale-[1.02] hover:shadow-md"
                           >
-                            {/* Bar Line 1: Product / WO + Shift badge */}
+                            {/* Bar Line 1: Product / WO + Shift badge + T8 Urgency badge */}
                             <div
                               style={{
                                 display: 'flex',
@@ -665,23 +788,40 @@ export default function TrayScheduleGantt({
                               <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                 {item.product_code || item.wo_code || '指示'}
                               </span>
-                              <span
-                                style={{
-                                  fontSize: 8,
-                                  background: 'rgba(0,0,0,0.2)',
-                                  padding: '1px 3px',
-                                  borderRadius: 2,
-                                }}
-                              >
-                                {item.shift === 'NIGHT' ? '夜' : '昼'}
-                              </span>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                                {urgency && (
+                                  <span
+                                    style={{
+                                      fontSize: 8,
+                                      fontWeight: 800,
+                                      padding: '1px 3px',
+                                      borderRadius: 2,
+                                      background: urgency.bg,
+                                      color: urgency.text,
+                                      border: `1px solid ${urgency.border}`,
+                                    }}
+                                  >
+                                    {urgency.label}
+                                  </span>
+                                )}
+                                <span
+                                  style={{
+                                    fontSize: 8,
+                                    background: 'rgba(0,0,0,0.25)',
+                                    padding: '1px 3px',
+                                    borderRadius: 2,
+                                  }}
+                                >
+                                  {item.shift === 'NIGHT' ? '夜' : '昼'}
+                                </span>
+                              </div>
                             </div>
 
                             {/* Bar Line 2: Quantity */}
                             <div
                               style={{
                                 fontSize: 9,
-                                opacity: 0.9,
+                                opacity: 0.95,
                                 fontFamily: 'monospace',
                                 whiteSpace: 'nowrap',
                                 overflow: 'hidden',
@@ -702,7 +842,7 @@ export default function TrayScheduleGantt({
         </div>
       </div>
 
-      {/* ── Hover Tooltip (7 trường bắt buộc) ── */}
+      {/* ── Hover Tooltip (7 trường bắt buộc + T8 Deadline Urgency) ── */}
       {hoveredItem && (
         <div
           style={{
@@ -718,7 +858,7 @@ export default function TrayScheduleGantt({
             zIndex: 9999,
             pointerEvents: 'none',
             boxShadow: '0 8px 24px rgba(0,0,0,0.25)',
-            width: 280,
+            width: 290,
             display: 'flex',
             flexDirection: 'column',
             gap: 4,
@@ -747,7 +887,7 @@ export default function TrayScheduleGantt({
             </span>
           </div>
 
-          {/* 7 trường dữ liệu bắt buộc */}
+          {/* 7 trường dữ liệu bắt buộc + Countdown */}
           <div style={{ display: 'grid', gridTemplateColumns: '70px 1fr', gap: '2px 6px', marginTop: 2 }}>
             <span style={{ color: '#94A3B8' }}>WO:</span>
             <span style={{ fontWeight: 700, fontFamily: 'monospace' }}>{hoveredItem.item.wo_code || '—'}</span>
@@ -769,10 +909,30 @@ export default function TrayScheduleGantt({
               {hoveredItem.item.roll_remaining_m ? ` (${hoveredItem.item.roll_remaining_m}m)` : ''}
             </span>
 
-            <span style={{ color: '#94A3B8' }}>納品納期:</span>
-            <span style={{ color: '#F87171', fontWeight: 700 }}>
-              {hoveredItem.item.requested_delivery || '未定'}
-            </span>
+            <span style={{ color: '#94A3B8' }}>出荷納期:</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              <span style={{ color: '#F87171', fontWeight: 700 }}>
+                {hoveredItem.item.requested_delivery || '未定'}
+              </span>
+              {(() => {
+                const urg = getDeadlineUrgency(hoveredItem.item.requested_delivery)
+                if (!urg) return null
+                return (
+                  <span
+                    style={{
+                      fontSize: 9,
+                      fontWeight: 800,
+                      padding: '1px 4px',
+                      borderRadius: 2,
+                      background: urg.bg,
+                      color: urg.text,
+                    }}
+                  >
+                    {urg.label}
+                  </span>
+                )
+              })()}
+            </div>
 
             <span style={{ color: '#94A3B8' }}>作業担当:</span>
             <span>{hoveredItem.item.operator_name || hoveredItem.item.operator_short || '未割当'}</span>
@@ -854,7 +1014,27 @@ export default function TrayScheduleGantt({
               <span>{selectedItem.operator_name || '未割当'}</span>
 
               <span style={{ color: '#64748B' }}>出荷納期:</span>
-              <span style={{ color: '#DC2626', fontWeight: 700 }}>{selectedItem.requested_delivery || '未定'}</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span style={{ color: '#DC2626', fontWeight: 700 }}>{selectedItem.requested_delivery || '未定'}</span>
+                {(() => {
+                  const urg = getDeadlineUrgency(selectedItem.requested_delivery)
+                  if (!urg) return null
+                  return (
+                    <span
+                      style={{
+                        fontSize: 9,
+                        fontWeight: 800,
+                        padding: '1px 5px',
+                        borderRadius: 3,
+                        background: urg.bg,
+                        color: urg.text,
+                      }}
+                    >
+                      {urg.label}
+                    </span>
+                  )
+                })()}
+              </div>
 
               <span style={{ color: '#64748B' }}>備考:</span>
               <span style={{ color: '#475569' }}>{selectedItem.notes || '特記事項なし'}</span>
