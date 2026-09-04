@@ -95,4 +95,4 @@ ALTER FUNCTION public.promote_company_to_ssot(uuid, uuid) SET search_path = publ
 ALTER FUNCTION public.remap_company_fks(uuid, uuid, uuid) SET search_path = public;
 ALTER FUNCTION public.generate_case_code() SET search_path = public;
 ALTER FUNCTION public.generate_wo_code() SET search_path = public;
-ALTER FUNCTION public.rpc_adjust_roll(numeric, text, text, uuid, text) SET search_path = public;
+ALTER FUNCTION public.rpc_adjust_roll(uuid, numeric, text, text, text) SET search_path = public;

@@ -444,3 +444,17 @@ Danh sách chia sub-phase:
     3. `[MEDIUM]` Thiết lập RLS policies `Allow authenticated full access` cho 11 bảng đang bật RLS nhưng thiếu policy (`design_task_logs`, `employee_skills`, `forming_daily_logs`, `grinding_daily_logs`, `inspection_daily_logs`, `payroll_records`, `press_daily_logs`, `shipment_lots`, `sm_captures`, `sm_devices`, `transport_daily_logs`).
     4. `[LOW]` Khóa chặt `SET search_path = public` trên các hàm/trigger chống schema injection.
   - Commit: `4670206` đã push lên `origin main`.
+
+## Security Hardening Sprint — Migration 091 APPLIED & CLOSED
+[AN @ 2026-09-04 10:33 JST]
+
+- **[Nghiệm thu Migration 091]:**
+  - PE đã apply thành công Migration 091 trên Supabase Production.
+  - Sửa lỗi signature: `rpc_adjust_roll(uuid, numeric, text, text, text)` (đã cập nhật vào file migration trong repo).
+  - Trạng thái bảo mật sạch toàn diện:
+    - 2/2 Views chuyển sang `security_invoker = true` (`v_tray_schedule_gantt`, `v_dashboard_executive_kpis`).
+    - 5/5 RPCs nhạy cảm đã thu hồi quyền `anon`, chỉ cấp cho `authenticated` và `service_role`.
+    - 11/11 Bảng kích hoạt RLS đã có policy `Allow authenticated full access`.
+    - 8/8 Functions đã khóa chặt `SET search_path = public`.
+  - **Bài học kinh nghiệm (Lesson Learned):** Khi viết migration có `ALTER FUNCTION`, luôn truy vấn `pg_get_function_identity_arguments(p.oid)` từ `pg_proc` để đối chiếu chính xác thứ tự tham số thay vì nhớ từ code.
+- **Trạng thái hệ thống:** Đạt chứng nhận **Clean Security Pass** — Toàn bộ Milestone 13 và Security Hardening Sprint đã CLOSED. Sẵn sàng khởi động **Milestone 14**.
