@@ -372,3 +372,11 @@ Danh sách chia sub-phase:
   - Tính toán: `totalAvailableM` (tổng mét khả dụng toàn công ty), `uniqueSpecsCount` (số quy cách màng), `lowStockMaterialCount` (số quy cách dưới 500m).
   - Tích hợp hàng KPI mới **「材料在庫 (Material Inventory Cockpit)」** trên Dashboard ngay cuối Tầng 1 với 3 thẻ chỉ số và link liên thông sang kho cuộn.
 - **TypeScript Check:** `npx tsc --noEmit` = 0 errors. Commit: `cdee97e` và `0540a33` đã push lên `origin main`.
+
+## Milestone 13: Tray Production Schedule (M13-S1 Kickoff & T3/T3.5)
+[AN @ 2026-09-04 09:01 JST]
+
+- **[Xác nhận Migration 089]:** Đã kiểm tra trực tiếp trên Supabase: `production_schedules` đã có đầy đủ 6 cột mới (`scheduled_start`, `scheduled_end`, `work_order_id`, `operator_id`, `roll_id`, `actual_quantity`), và `material_consumption_logs.production_lot_id` đã gỡ bỏ NOT NULL thành công.
+- **[T3 - Migration 090]:** Soạn thảo `supabase/migrations/20260904000001_090_v_tray_schedule_gantt.sql`. Fix bẫy schema: `work_orders` dùng `wo_code` (không có cột `wo_no`), view đã alias `wo.wo_code AS wo_no` và `wo.wo_code`. Đã test query thành công.
+- **[T3.5 - Seed Data Thực Tế]:** Tạo `scripts/seed-tray-schedule.mjs` và thực thi seed thành công **30 bản ghi lịch dập** vào `production_schedules` phủ đều 14 máy, phân bổ ca 8 tiếng (`scheduled_start`, `scheduled_end`), shift DAY/NIGHT, kết nối động với `work_orders`, `products`, `rolls`, `employees`.
+- **Commit:** `ce0004b` đã push lên `origin main`.
