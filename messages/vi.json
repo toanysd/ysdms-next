@@ -476,7 +476,8 @@
       "quickCreate": "⚡ Tạo/Sửa nhanh 1-Trang",
       "productCenter": "📊 Trung tâm dữ liệu SP",
       "dataSync": "Data Sync Center",
-      "workOrders": "Lệnh sản xuất"
+      "workOrders": "Lệnh sản xuất",
+      "locations": "Vị trí giá kệ"
     },
     "bottom": {
       "reports": "Báo cáo thống kê",
@@ -4644,5 +4645,64 @@
     "kcs8Items": "Lỗi kiểm tra KCS (8 nhóm)",
     "noRecords": "Không có bản ghi",
     "uninspectedLabel": "Chưa KCS"
+  },
+  "EquipmentLocations": {
+    "title": "Quản lý Vị trí & Giá Kệ",
+    "subtitle": "Trực quan hóa giá kệ (90 kệ, 12 khu vực) và tầng lưu trữ khuôn, dao, đồ gá",
+    "refresh": "Làm mới",
+    "loadingLocations": "Đang tải dữ liệu vị trí giá kệ...",
+    "kpi": {
+      "totalRacks": "Tổng số giá kệ",
+      "totalLayers": "Tổng số tầng kệ",
+      "storedEquipment": "Thiết bị đang lưu trữ",
+      "occupancyRate": "Tỷ lệ lấp đầy tầng"
+    },
+    "filter": {
+      "searchPlaceholder": "Tìm mã kệ, mã khuôn, mã thiết bị...",
+      "allZones": "Tất cả khu vực",
+      "allZonesShort": "Tất cả",
+      "statusAll": "Tất cả trạng thái",
+      "statusInUse": "Đang có thiết bị",
+      "statusEmpty": "Kệ trống",
+      "clearFilter": "Xóa bộ lọc"
+    },
+    "zones": {
+      "MR": "Phòng máy 6 (MR)",
+      "2F": "Tầng 2 / Gác xép (2F)",
+      "CS": "Khu để thùng chứa (CS)",
+      "GT": "Cổng vào / Cửa ra vào (GT)",
+      "OF": "Trước văn phòng (OF)",
+      "MD": "Xưởng khuôn / Gia công (MD)",
+      "PS": "Khu máy dập / Ép (PS)",
+      "TC": "Cạnh máy chấm công (TC)",
+      "MT": "Kho vật liệu tầng 1 (MT)",
+      "M8": "Cạnh máy 8 & bàn máy 7 (M8)",
+      "TW": "Khu máy Đài Loan (TW)",
+      "SC": "Bãi phế liệu (SC)",
+      "SP": "Chưa xác định / Đặc biệt (SP)"
+    },
+    "rackCard": {
+      "legacyRef": "Mã cũ",
+      "miniShelfTitle": "Tình trạng tầng",
+      "layersOccupied": "tầng đang dùng",
+      "equipmentUnit": "thiết bị",
+      "emptyShelf": "Trống",
+      "viewDetails": "Xem chi tiết",
+      "noRacksFound": "Không tìm thấy giá kệ phù hợp",
+      "noRacksFoundSub": "Vui lòng thay đổi điều kiện tìm kiếm hoặc bộ lọc khu vực"
+    },
+    "detail": {
+      "back": "Quay lại",
+      "backToList": "DS Vị trí",
+      "legacyRef": "Mã cũ",
+      "totalLayers": "Số tầng",
+      "totalEquipment": "Số thiết bị",
+      "searchInRackPlaceholder": "Tìm kiếm trong kệ này...",
+      "visualShelfTitle": "Mô phỏng kệ đứng trực quan & phân bổ tầng",
+      "shelfOrderHint": "(Hiển thị từ tầng trên cùng xuống tầng dưới cùng theo thực tế)",
+      "layerLabel": "Tầng {number}",
+      "equipmentUnit": "thiết bị",
+      "emptyLayerSlot": "Tầng này hiện chưa có thiết bị nào đang lưu trữ (Trống)"
+    }
   }
 }

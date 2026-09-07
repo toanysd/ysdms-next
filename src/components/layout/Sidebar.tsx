@@ -12,7 +12,7 @@ import {
   BarChart3, Settings, ChevronRight,
   Search, GanttChart, ExternalLink, Box, Columns3, Menu, X, Pin, DatabaseZap,
   Briefcase, ClipboardList, ScanLine, HardDriveDownload, Receipt, CreditCard,
-  TrendingUp
+  TrendingUp, MapPin
 } from 'lucide-react'
 
 type NavItem = {
@@ -79,7 +79,7 @@ const NAV_SECTIONS: NavSection[] = [
       { href: '/equipment/cutting-dies', icon: Scissors, tKey: 'items.cuttingDies' },
       { href: '/equipment/auxiliary', icon: Cog, tKey: 'items.auxiliary' },
       { href: '/maintenance', icon: Wrench, tKey: 'items.maintenance' },
-      { href: '/master/racks', icon: Grid3X3, tKey: 'items.racks' },
+      { href: '/equipment/locations', icon: MapPin, tKey: 'items.locations' },
       { href: '/equipment/lifecycle', icon: Archive, tKey: 'items.lifecycle' },
       { href: '/equipment/plastics', icon: Package, tKey: 'items.plastics' },
       { href: '/worklogs', icon: ClipboardList, tKey: 'items.worklogs' },

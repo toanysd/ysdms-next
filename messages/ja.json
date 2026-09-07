@@ -476,7 +476,8 @@
       "quickCreate": "⚡ 1ページ一括登録・編集",
       "productCenter": "📊 製品データセンター",
       "dataSync": "データ同期",
-      "workOrders": "作業指示書"
+      "workOrders": "作業指示書",
+      "locations": "保管棚・位置"
     },
     "bottom": {
       "reports": "レポート・集計",
@@ -4644,5 +4645,64 @@
     "kcs8Items": "KCS検査不良 (8項目)",
     "noRecords": "データがありません",
     "uninspectedLabel": "未検査"
+  },
+  "EquipmentLocations": {
+    "title": "保管位置・ラック管理",
+    "subtitle": "金型・抜型・治具の保管ラック（全90台・12エリア）および棚段の可視化",
+    "refresh": "再読み込み",
+    "loadingLocations": "位置情報を読み込み中...",
+    "kpi": {
+      "totalRacks": "総ラック数",
+      "totalLayers": "総棚段数",
+      "storedEquipment": "保管中設備",
+      "occupancyRate": "棚使用率"
+    },
+    "filter": {
+      "searchPlaceholder": "ラック・型番・設備コード検索...",
+      "allZones": "すべてのエリア",
+      "allZonesShort": "すべて",
+      "statusAll": "すべてのステータス",
+      "statusInUse": "設備あり (使用中)",
+      "statusEmpty": "空きラック",
+      "clearFilter": "クリア"
+    },
+    "zones": {
+      "MR": "6号機室 (MR)",
+      "2F": "2F / ロフト / 成形 (2F)",
+      "CS": "ケース置き場 (CS)",
+      "GT": "出入口・会社入口 (GT)",
+      "OF": "事務所前 (OF)",
+      "MD": "金型部門・機械前 (MD)",
+      "PS": "プレス機周辺 (PS)",
+      "TC": "タイムカード隣 (TC)",
+      "MT": "材料置場 1F (MT)",
+      "M8": "8号機隣・テーブル (M8)",
+      "TW": "台湾機エリア (TW)",
+      "SC": "スクラップ置場 (SC)",
+      "SP": "特殊・未確認 (SP)"
+    },
+    "rackCard": {
+      "legacyRef": "旧コード",
+      "miniShelfTitle": "棚段状況",
+      "layersOccupied": "段使用中",
+      "equipmentUnit": "点",
+      "emptyShelf": "空き",
+      "viewDetails": "詳細を見る",
+      "noRacksFound": "該当するラックがありません",
+      "noRacksFoundSub": "検索条件やゾーンフィルターを変更してください"
+    },
+    "detail": {
+      "back": "戻る",
+      "backToList": "位置一覧",
+      "legacyRef": "旧コード",
+      "totalLayers": "段数",
+      "totalEquipment": "保管設備数",
+      "searchInRackPlaceholder": "このラック内を検索...",
+      "visualShelfTitle": "立体棚ビジュアル・段割配置",
+      "shelfOrderHint": "（上段から下段へ実物配置通り表示）",
+      "layerLabel": "第 {number} 段",
+      "equipmentUnit": "点",
+      "emptyLayerSlot": "この棚段には現在保管されている設備はありません（空き）"
+    }
   }
 }

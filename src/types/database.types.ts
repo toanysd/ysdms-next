@@ -7173,7 +7173,9 @@ export type Database = {
           location_in_factory: string | null
           notes: string | null
           rack_code: string
+          rack_code_new: string | null
           rack_name: string | null
+          zone_code: string | null
         }
         Insert: {
           created_at?: string | null
@@ -7182,7 +7184,9 @@ export type Database = {
           location_in_factory?: string | null
           notes?: string | null
           rack_code: string
+          rack_code_new?: string | null
           rack_name?: string | null
+          zone_code?: string | null
         }
         Update: {
           created_at?: string | null
@@ -7191,7 +7195,9 @@ export type Database = {
           location_in_factory?: string | null
           notes?: string | null
           rack_code?: string
+          rack_code_new?: string | null
           rack_name?: string | null
+          zone_code?: string | null
         }
         Relationships: []
       }
