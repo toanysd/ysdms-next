@@ -47,3 +47,26 @@
 - **Quy tắc 4e (Giới hạn thảo luận):** Khi thảo luận đạt ~20 lượt, PE tự động nhắc nhở và tạo ngữ cảnh chuyển tiếp chuẩn để copy sang thảo luận mới.
 
 ---
+
+## Milestone 16 — Equipment Location & Transfer Module
+**Status: COMPLETED** | 2026-09-07
+
+### Deliverables
+- Migration 096: ADR-008 Rack Code Convention (90 racks → 12 zones, 380 layers, 4,761 equipment backfilled)
+- S1 commit `7197ce1`: Location Browser `/equipment/locations` + Visual Shelf `/equipment/locations/[rackId]`
+- S2 commit `9eac225`: Transfer Module (LocationMoveModal, LocationTab, TransferTab, VisualShelfView integration)
+
+### Architecture decisions recorded
+- ADR-008 (2026-09-07, APPROVED): Rack Code Convention `{ZONE}-{NN}` / Layer `{RACK_CODE}-L{N}`
+  - 12 zones: MR, 2F, CS, GT, OF, MD, PS, TC, MT, M8, TW, SC, SP
+  - Backward-compatible: `rack_code` legacy (①②...) preserved in DB
+
+### Schema changes (Migration 096)
+- `racks`: +`rack_code_new` TEXT, +`zone_code` TEXT
+- `rack_layers`: +`layer_code` TEXT
+- `equipment`: backfilled `current_rack_layer_id` (4,761 rows)
+- 4 indexes created
+
+### Next milestone candidate
+- M17: QR Code scan integration (gắn QR lên khuôn → scan di chuyển tầng kệ)
+- M17 alt: Transfer approval workflow (phê duyệt trước khi 金型返却)
