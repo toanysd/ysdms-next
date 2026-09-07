@@ -9,54 +9,42 @@ CONTEXT KHỞI ĐẦU THẢO LUẬN — DỰ ÁN ysdms-next
   Project ID   : iirezrszalmecsslbruo (ap-northeast-1, Tokyo)
 - Tài liệu SSOT: SCHEMA_REFERENCE.md | PE_AN_COORDINATION_LOG.md
 - Coding rules : CLAUDE.md | AGENTS.md | AI_SYSTEM_RULES.md
+- Remote Head  : `1c6ad7e` (feat(qr): M17-S1 Equipment QR Code generation and print module)
 
 ## 2. VAI TRÒ
 - PE (Perplexity) : Trưởng dự án / Kiến trúc / Review & Phê duyệt
 - AN (Antigravity): Kỹ sư triển khai / DB Migration / Kiểm thử E2E
 - Thoan           : Product Owner — Cầu nối điều phối PE ↔ AN
 
-## 3. TRẠNG THÁI CÁC PHASES (Cập nhật 2026-08-20)
-- Phase R1  : ✅ ĐÃ ĐÓNG (Schema Truth Alignment & Cleanup)
-- Phase R2  : ✅ ĐÃ ĐÓNG (Atomic RPC + Session Guard Trigger)
-- Phase R3  : ✅ ĐÃ ĐÓNG (Product 360° View + Dashboard Sản Xuất)
-- Phase R4  : ✅ ĐÃ ĐÓNG (Báo Giá 見積書 + Giao Hàng 納品書 + Refactor Unified Equipment SSOT)
-- Phase R5  : 🚀 ĐANG MỞ (Công Nợ, Thanh Toán, Dashboard & E2E)
-  - Sprint R5-S1: ✅ ĐÃ NGHIỆM THU (Phân hệ Công Nợ, Hóa Đơn & View `v_customer_debt_summary`)
-  - Sprint R5-S2: ✅ ĐÃ NGHIỆM THU (E2E Testing Khép Kín Vòng Đời Order-to-Cash 6/6 cases)
-  - Sprint R5-S3: ✅ ĐÃ NGHIỆM THU (Executive Dashboard 2 Tầng: Sản Xuất Live DB & Thương Mại/Công Nợ + 3 SQL Views Server-side)
-  - Chỉ thị #018, #019, #020, #021, #022, #023: ✅ ĐÃ ĐÓNG HOÀN TOÀN.
+## 3. TRẠNG THÁI CÁC MILESTONES (Cập nhật 2026-09-07)
+- Phase R1 - R5 : ✅ ĐÃ ĐÓNG HOÀN TOÀN (Schema, RPC, Lifecycle, Báo Giá, Giao Hàng, Công Nợ, Executive Dashboard)
+- Milestone 15  : ✅ ĐÃ NGHIỆM THU (Quality QC, Daily Inspection Logs, NG Trend Analysis, Monthly QC PDF — Migrations 093, 094, 095)
+- Milestone 16  : ✅ ĐÃ NGHIỆM THU (Location Browser & Transfer Module — ADR-008, 12 Zones, 90 Kệ, 380 Tầng, 4,761 Thiết bị backfill — Migration 096)
+- Milestone 17 — Equipment QR Code & AR Locator:
+  - Sprint M17-S1: ✅ ĐÃ NGHIỆM THU CHÍNH THỨC (commit `1c6ad7e` — Engine QR `qrcode`, 3 kích thước 30/40/50mm, In tem lẻ, In A4 hàng loạt, Tích hợp Header, LocationTab, VisualShelfView)
+  - Sprint M17-S2: 🚀 ĐANG TRIỂN KHAI (Chỉ thị #025 — Camera AR Equipment Locator dùng `jsQR`, Multi-region 6 vùng, Visual Locator AR Overlay, Tích hợp Scan-to-Move trong `LocationMoveModal`, Sidebar link `/equipment/scan`)
 
-## 4. GHI CHÚ BACKLOG & PHÁT HIỆN KỸ THUẬT
-- **Backlog 1 (Dữ liệu tiến độ Jobs):** Cột `jobs.overall_progress` = 0 trên toàn bộ 2,197 bản ghi lịch sử — cần bổ sung trigger/logic cập nhật tiến độ khi `job_status` chuyển sang `COMPLETED`, hoặc điều chỉnh nghiệp vụ.
-- **Backlog 2 (Dữ liệu thương mại lịch sử):** Toàn bộ bảng `orders`, `quotations`, `invoices` đang có 0 bản ghi do là phân hệ mới. Dữ liệu lịch sử phân tán trong các file Excel/PDF tại `source_data/納品書_注文/` (SMK, JAE, KYD, IRI, MCT, NLC, SJI) — sẵn sàng cho kế hoạch migration/import dữ liệu thật.
+## 4. KIẾN TRÚC CỐT LÕI (BẮT BUỘC TUÂN THỦ)
+- **ADR-001:** Unified SSOT `equipment` (8 loại thiết bị, quan hệ N:N `equipment_assignments` cho bộ SET gá lắp & dùng chung SHARED).
+- **ADR-002:** Luồng sản xuất 4 cấp (`work_orders` → `jobs` → `job_steps` → `work_logs`).
+- **ADR-008:** Rack Code Convention `{ZONE}-{NN}` / Layer `{RACK_CODE}-L{N}` (12 zones, 380 layers).
+- **M17 Standard:** Prefix `{M, C, P, W, B, S, F}` cho từng loại thiết bị. Payload: Short `{TypePrefix}-{equipment_code}` (Tem xưởng) và Web URL (Tài liệu). Thư viện S2 là `jsQR` (không dùng `html5-qrcode`).
 
 ## 5. QUY TẮC PHỐI HỢP BẮT BUỘC
+4a. QUY TẮC BẮT BUỘC CỦA AN
+  - Mọi câu trả lời của AN BẮT BUỘC bắt đầu và kết thúc bằng: `TRẢ LỜI TỪ AN`.
+  - Mọi báo cáo/kế hoạch gửi PE BẮT BUỘC đóng gói trọn vẹn trong 1 code block markdown duy nhất ở cuối câu trả lời (1-click copy).
 
-4a. QUY TẮC ĐÁNH SỐ CÂU TRẢ LỜI
-  - PE đánh số: [PE — Câu trả lời số N]
-  - AN đánh số: [AN — Câu trả lời số N]
-  - Số N tiếp nối liên tục xuyên suốt các thảo luận.
-  - AN tự ghi [AN — Câu trả lời số N] ở ĐẦU VÀ CUỐI mỗi câu trả lời.
+4b. QUY TẮC XÁC MINH DB & REMOTE GIT
+  - PE luôn xác minh trực tiếp Supabase Live DB (project `iirezrszalmecsslbruo`) và commit trên GitHub remote sau mỗi deliverable.
 
-4b. QUY TẮC KHUNG CHỈ THỊ CHO AN
-  - Mọi chỉ thị PE gửi AN đều phải nằm trong khung kẻ bằng ═══ để Thoan có thể copy nhanh toàn bộ.
-
-4c. QUY TẮC XÁC MINH DB
-  - PE luôn xác minh trực tiếp Supabase Live DB (project `iirezrszalmecsslbruo`) sau mỗi migration/deliverable.
-  - Không nghiệm thu chính thức nếu chưa verify DB.
-
-4d. QUY TẮC MINH BẠCH NGUỒN TÀI LIỆU
-  - Trích dẫn tài liệu nội bộ trên máy local cần ghi chú rõ `[LOCAL — chưa commit]`.
-
-4e. QUY TẮC GIỚI HẠN THẢO LUẬN
+4c. QUY TẮC GIỚI HẠN THẢO LUẬN (Quy tắc 4e)
   - Khi thảo luận đạt ~20 lượt, PE/AN tự động nhắc nhở và tạo ngữ cảnh chuyển tiếp chuẩn để mở thảo luận mới.
 
 ═══════════════════════════════════════════════════════════════
 
-## 6. SỐ THỨ TỰ CHO THẢO LUẬN MỚI
-- Câu trả lời tiếp theo của PE : **số 37 (hoặc số 38)**
-- Câu trả lời tiếp theo của AN : **số 38**
+## 6. NHIỆM VỤ TIẾP THEO CHO THẢO LUẬN MỚI
+1. Mở đầu bằng nội dung tài liệu này để nạp đầy đủ context.
+2. AN trình bày bản Kế hoạch Triển khai (Implementation Plan) cho **Milestone 17 Sprint 2: Camera AR Equipment Locator** theo **Chỉ thị #025**.
+3. PE phê duyệt kế hoạch để AN tiến hành code, verify Quality Gates (TypeScript 0 error, i18n clean), commit và push main.
 
-## 7. ĐỊNH HƯỚNG MỞ ĐẦU THẢO LUẬN MỚI
-1. Mở đầu bằng `SESSION_STARTER.md` này để nạp đầy đủ context chuẩn.
-2. PE & anh Thoan định hướng nhiệm vụ tiếp theo của Phase R5 (Kế hoạch Import dữ liệu đơn hàng lịch sử hoặc Mở Sprint R5-S4 / R6).
