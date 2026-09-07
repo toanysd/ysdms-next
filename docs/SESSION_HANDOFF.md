@@ -1,4 +1,4 @@
-# SESSION HANDOFF — 2026-09-04 (Context Reset Checkpoint)
+# SESSION HANDOFF — 2026-09-07 (Milestone 14 Kickoff)
 
 > **Mục đích:** Tài liệu này là nguồn sự thật duy nhất khi bắt đầu phiên thảo luận mới.
 > PE = Perplexity (Project Engineer — phân tích, kiến trúc, ra quyết định).
@@ -11,12 +11,17 @@
 
 | Hạng mục | Trạng thái |
 |---|---|
-| Kiến trúc cốt lõi (ADR-001~003) | ✅ APPROVED & LOCKED |
+| Kiến trúc cốt lõi (ADR-001~003, ADR-007) | ✅ APPROVED & LOCKED |
+| M13 — Tray Schedule Cockpit | ✅ NGHIỆM THU |
+| Security Hardening (M091–M092) | ✅ Clean Pass (0 errors, 0 anon callable) |
+| Migration 089–093 | ✅ Applied to production |
+| ADR-007 (M14 Shopfloor + Lifecycle) | ✅ COMMITTED |
 | Phase D — Legacy Migration | ✅ 100% DONE (physical_molds & cutters đã drop) |
 | Dữ liệu thương mại | ✅ 2,396 orders / 7,299 lines / ~10M trays imported |
 | Dữ liệu thiết bị | ✅ 657 orphan linked — 75 còn PENDING MANUAL REVIEW |
-| TypeScript build | ✅ 0 errors (sau commit bc91e56) |
+| TypeScript build | ✅ 0 errors (sau commit 87f6fd2) |
 | i18n | ✅ 0 missing keys |
+| Last verified commit | `87f6fd2` (2026-09-04) |
 
 ---
 
@@ -37,13 +42,17 @@ work_orders → jobs → job_steps → work_logs
 - Mỗi equipment type tạo 1 job riêng.
 - Gantt dùng 2-Pass Date Query (jobs + job_steps).
 
+### ADR-007: Shopfloor Tablet Cockpit & Equipment Lifecycle (M14 Dual-Sprint)
+- **Sprint 1 (M14-S1):** Route `/production/floor` — Touch-optimized, auto nhận diện máy qua `localStorage`. Luồng 3 bước: Bắt đầu → Gá cuộn nhựa → Kết thúc & Báo sản lượng. Gợi ý tiêu hao: `suggested_m = (actual_quantity × feed_length_mm) / 1000`.
+- **Sprint 2 (M14-S2):** Daily logs (`forming_daily_logs`, `press_daily_logs`) với checklist 7 thiết bị và phân loại 7 nhóm lỗi NG (A→G). Ngưỡng cảnh báo tuổi thọ dao/khuôn: CUTTER 40k/50k shots, MOLD 80k/100k shots, PLUG 60k/80k shots.
+
 ### Product-Centric SSOT
 - `products` = MoldMaster (KHÔNG dùng `mold_masters` trong code mới).
 - Mọi entity đều liên kết ngược về `product_id`.
 
 ---
 
-## 3. SCHEMA KEY TABLES (Production State)
+## 3. SCHEMA KEY TABLES & VIEWS (Production State)
 
 ```
 companies, products, design_revisions
@@ -54,10 +63,14 @@ invoices, invoice_lines, invoice_payments
 quotations, quotation_lines
 company_calendar
 plastic_master, plastic_receipt_roll
+production_schedules, material_consumption_logs
 production_orders, production_lots
 aluminum_blanks
 design_approval_logs, sample_requests, product_lifecycle_logs
-forming_logs, press_logs, grinding_logs, inspection_daily_logs
+forming_daily_logs, press_daily_logs, grinding_daily_logs, inspection_daily_logs
+
+Views (security_invoker = true):
+v_tray_schedule_gantt, v_equipment_lifecycle_status, v_dashboard_executive_kpis
 ```
 
 **Bảng đã DROP:** `physical_molds`, `cutters`.
@@ -74,7 +87,10 @@ forming_logs, press_logs, grinding_logs, inspection_daily_logs
 | R6 | Backfill job.overall_progress, Import 7,299 order lines thương mại | ✅ DONE |
 | R7 | Product stubs (134), recover 1,022 order lines NOT_FOUND | ✅ DONE |
 | Phase D | Migration toàn bộ FK physical_molds→equipment, Drop legacy tables | ✅ DONE |
-| Daily Ops | Grinding, Inspection, Forming, Press daily logs modules | ✅ DONE |
+| M8~M12 | Quotations PDF, Auto Jobs Engine, Shipment + 納品書, KPI Cockpit, Plastic WMS | ✅ DONE |
+| M13 | Tray Production Schedule (14-Machine Gantt, Grid, Heatmap, Roll Panel, Quick Schedule) | ✅ DONE |
+| Security | Security Hardening Sprint (Migrations 091 & 092 — Clean Security Pass) | ✅ DONE |
+| Daily Ops | Grinding, Inspection, Forming, Press daily logs foundation (Migration 093 applied) | ✅ DONE |
 
 ---
 
@@ -83,7 +99,7 @@ forming_logs, press_logs, grinding_logs, inspection_daily_logs
 ### 🔴 PENDING MANUAL REVIEW (cần Anh Thoan)
 1. **75 thiết bị mồ côi từ Access** — Review danh sách tại `docs/reports/live_remediation_result_031.md`. Xác nhận khuôn thật hay dữ liệu rác.
 2. **172 product codes chưa giải quyết** — Mã số thuần số + unknown prefix, cần xác nhận nghiệp vụ.
-3. **Security: Rotate Supabase service_role key** — Key cũ (`sb_secret_C2xqkH1...`) đã từng xuất hiện trong Git local history → cần vào Supabase Dashboard → Settings → API → Rotate Service Role Key → revoke key cũ.
+3. **Security: Rotate Supabase service_role key** — Key cũ (`sb_secret_C2xqkH1...`) đã từng xuất hiện trong Git local history → vào Supabase Dashboard → Settings → API → Rotate Service Role Key (Anh Thoan ghi nhận: xử lý sau khi ổn định vận hành).
 
 ### 🟡 PENDING TECHNICAL (AN thực hiện khi được approve)
 4. **`TechnicalReviewForm.tsx` UX upgrade** — Chuyển `mold_id` + `cutting_die_id` từ raw UUID text input → dropdown select fetch từ `equipment`.
@@ -91,10 +107,11 @@ forming_logs, press_logs, grinding_logs, inspection_daily_logs
 6. **RLS policies** — `material_stock`, `work_orders` chưa có RLS. Postponed bởi Product Owner.
 
 ### 🟢 FEATURE BACKLOG (ưu tiên tiếp theo)
-7. **Location/Transfer Module** — `LocationMoveModule.tsx`, `LocationTab.tsx`, `TransferTab.tsx` đã có Group A fallback logic (commit `bc91e56`). Cần hoàn chỉnh UX.
-8. **Production Schedule tích hợp thực tế** — Liên kết `production_orders` / `production_lots` với Gantt.
-9. **QC Module mở rộng** — `inspection_daily_logs` → báo cáo NG trends.
-10. **Mobile-first Worklog** — Tối ưu UI nhập nhật ký trên điện thoại tại xưởng.
+7. **Milestone 14 Sprint 1: Shopfloor Tablet Cockpit (`/production/floor`)** — Touch-first UI cho 14 máy dập khay (`MACH-1` → `MACH-14`), auto nhận diện máy qua `localStorage`, quy trình 3-touch (Bắt đầu → Gá cuộn → Kết thúc & báo sản lượng), gợi ý tiêu hao nhựa tự động theo `feed_length_mm` | 🚀 **IN PROGRESS**
+8. **Milestone 14 Sprint 2: Daily Logs & Equipment Lifecycle (`/production/daily-logs`, `/equipment/lifecycle`)** — Checklist 7 thiết bị đầu ca, 7 nhóm lỗi NG (A→G), Shot count auto từ cavity khuôn, Dashboard vòng đời thiết bị với ngưỡng cảnh báo CUTTER 40k/50k shots, MOLD 80k/100k shots | ⏳ **PLANNED**
+9. **Location/Transfer Module** — `LocationMoveModule.tsx`, `LocationTab.tsx`, `TransferTab.tsx` đã có Group A fallback logic. Cần hoàn chỉnh UX.
+10. **QC Module mở rộng** — `inspection_daily_logs` → báo cáo NG trends.
+11. **Mobile-first Worklog** — Tối ưu UI nhập nhật ký trên điện thoại tại xưởng.
 
 ---
 
@@ -116,7 +133,7 @@ forming_logs, press_logs, grinding_logs, inspection_daily_logs
 
 ### Nguồn sự thật
 - Schema: `docs/SCHEMA_REFERENCE.md` (KHÔNG dùng README.md)
-- ADR: `docs/adr/ADR-001`, `ADR-002`, `ADR-003`
+- ADR: `docs/adr/ADR-001`, `ADR-002`, `ADR-003`, `ADR-007`
 - Coordination: `docs/PE_AN_COORDINATION_LOG.md`
 
 ---
@@ -131,7 +148,7 @@ forming_logs, press_logs, grinding_logs, inspection_daily_logs
 | Stack | Next.js 14, TypeScript, Supabase, Tailwind CSS, next-intl |
 | i18n | `messages/ja.json` + `messages/vi.json` |
 | Main branch | `main` |
-| Last verified commit | `bc91e56` (Group A Fallback Logic — 2026-08-26) |
+| Last verified commit | `87f6fd2` (M14 Migration 093 & ADR-007 — 2026-09-04) |
 
 ---
 
@@ -139,10 +156,10 @@ forming_logs, press_logs, grinding_logs, inspection_daily_logs
 
 Bạn là AN (Executing Agent). Đây là dự án **ysdms-next** — hệ thống quản lý sản xuất khay nhựa cho YSD (Yoshida Package).
 
-**Kiến trúc:** Unified `equipment` table (ADR-001), luồng 4 cấp work_orders→jobs→job_steps→work_logs (ADR-002), product-centric SSOT.
+**Kiến trúc:** Unified `equipment` table (ADR-001), luồng 4 cấp work_orders→jobs→job_steps→work_logs (ADR-002), product-centric SSOT, Shopfloor Tablet & Equipment Lifecycle (ADR-007).
 
-**Phase D đã hoàn tất 100%:** `physical_molds` và `cutters` đã DROP khỏi DB. Mọi query PHẢI dùng `equipment`.
+**Trạng thái hiện tại:** Milestone 13 đã nghiệm thu hoàn tất. Security Hardening Sprint đã Clean Pass (0 errors). Migration 089–093 đã apply thành công trên Production.
 
-**Việc tiếp theo:** Xem Backlog Section 5. Hỏi PE (Perplexity) để nhận Directive trước khi thực thi bất kỳ thay đổi nào.
+**Nhiệm vụ đang thực hiện:** Milestone 14 Sprint 1 — Triển khai Shopfloor Tablet Cockpit tại `/production/floor` theo Directive từ PE.
 
 **Verify trước khi commit:** `npx tsc --noEmit` (0 errors) + `node scripts/check_translations.mjs` (0 missing keys).
