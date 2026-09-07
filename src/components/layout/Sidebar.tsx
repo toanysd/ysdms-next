@@ -11,7 +11,8 @@ import {
   Building2, Users, Database, Server, Grid3X3,
   BarChart3, Settings, ChevronRight,
   Search, GanttChart, ExternalLink, Box, Columns3, Menu, X, Pin, DatabaseZap,
-  Briefcase, ClipboardList, ScanLine, HardDriveDownload, Receipt, CreditCard
+  Briefcase, ClipboardList, ScanLine, HardDriveDownload, Receipt, CreditCard,
+  TrendingUp
 } from 'lucide-react'
 
 type NavItem = {
@@ -104,6 +105,7 @@ const NAV_SECTIONS: NavSection[] = [
     id: 'd5', icon: ShieldCheck, tKey: 'sections.quality', color: '#EF4444',
     items: [
       { href: '/quality', icon: Home, tKey: 'items.overview', exact: true },
+      { href: '/quality/ng-trends', icon: TrendingUp, tKey: 'items.ngTrends' },
       { href: '/quality/inspections', icon: ScanLine, tKey: 'items.inspections' },
       { href: '/quality/lot-inspections', icon: ShieldCheck, tKey: 'items.lotInspections' },
       { href: '/quality/defects', icon: AlertTriangle, tKey: 'items.defects' },
