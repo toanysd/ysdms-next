@@ -14,7 +14,7 @@
 | Kiến trúc cốt lõi (ADR-001~003, ADR-007) | ✅ APPROVED & LOCKED |
 | M13 — Tray Schedule Cockpit | ✅ NGHIỆM THU |
 | M14-S1 — Shopfloor Tablet Cockpit (/production/floor) | ✅ NGHIỆM THU (Pushed) |
-| M14-S2 — Equipment Lifecycle & Daily Logs View | ✅ CODE COMPLETE |
+| M14-S2 — Equipment Lifecycle & Daily Logs View | ✅ NGHIỆM THU (Pushed) |
 | M14 Shift Policy Lock (Day Shift Only) | ✅ LOCKED |
 | Security Hardening (M091–M092) | ✅ Clean Pass (0 errors, 0 anon callable) |
 | Migration 089–094 | ✅ Applied to production |
@@ -22,9 +22,9 @@
 | Phase D — Legacy Migration | ✅ 100% DONE (physical_molds & cutters đã drop) |
 | Dữ liệu thương mại | ✅ 2,396 orders / 7,299 lines / ~10M trays imported |
 | Dữ liệu thiết bị | ✅ 657 orphan linked — 75 còn PENDING MANUAL REVIEW |
-| TypeScript build | ✅ 0 errors (sau commit 87f6fd2) |
+| TypeScript build | ✅ 0 errors (sau commit f6ac506) |
 | i18n | ✅ 0 missing keys |
-| Last verified commit | `87f6fd2` (2026-09-04) |
+| Last verified commit | `f6ac506` (2026-09-07) |
 
 ---
 
@@ -94,6 +94,7 @@ v_tray_schedule_gantt, v_equipment_lifecycle_status, v_dashboard_executive_kpis
 | M13 | Tray Production Schedule (14-Machine Gantt, Grid, Heatmap, Roll Panel, Quick Schedule) | ✅ DONE |
 | Security | Security Hardening Sprint (Migrations 091 & 092 — Clean Security Pass) | ✅ DONE |
 | Daily Ops | Grinding, Inspection, Forming, Press daily logs foundation (Migration 093 applied) | ✅ DONE |
+| M14 | Shopfloor Execution & Equipment Lifecycle (Tablet /production/floor, /production/daily-logs, /equipment/lifecycle) | ✅ NGHIỆM THU |
 
 ---
 
@@ -151,7 +152,7 @@ v_tray_schedule_gantt, v_equipment_lifecycle_status, v_dashboard_executive_kpis
 | Stack | Next.js 14, TypeScript, Supabase, Tailwind CSS, next-intl |
 | i18n | `messages/ja.json` + `messages/vi.json` |
 | Main branch | `main` |
-| Last verified commit | `87f6fd2` (M14 Migration 093 & ADR-007 — 2026-09-04) |
+| Last verified commit | `f6ac506` (M14 Sprint 1 + Sprint 2 — 2026-09-07) |
 
 ---
 
@@ -161,8 +162,9 @@ Bạn là AN (Executing Agent). Đây là dự án **ysdms-next** — hệ thố
 
 **Kiến trúc:** Unified `equipment` table (ADR-001), luồng 4 cấp work_orders→jobs→job_steps→work_logs (ADR-002), product-centric SSOT, Shopfloor Tablet & Equipment Lifecycle (ADR-007).
 
-**Trạng thái hiện tại:** Milestone 13 đã nghiệm thu hoàn tất. Security Hardening Sprint đã Clean Pass (0 errors). Migration 089–093 đã apply thành công trên Production.
+**Trạng thái hiện tại:** Milestone 13 & Milestone 14 đã nghiệm thu hoàn tất. Security Hardening Sprint đã Clean Pass (0 errors). Migration 089–094 đã apply thành công trên Production. Cả 2 sprints của M14 (Sprint 1: `/production/floor` và Sprint 2: `/equipment/lifecycle`, `/production/daily-logs`) đã commit và push thành công lên GitHub `origin/main`.
 
-**Nhiệm vụ đang thực hiện:** Milestone 14 Sprint 1 — Triển khai Shopfloor Tablet Cockpit tại `/production/floor` theo Directive từ PE.
+**Nhiệm vụ tiếp theo:** Sẵn sàng nhận Directive tiếp theo từ PE cho Milestone 15 hoặc các hạng mục Backlog (Location/Transfer Module, QC NG Trends, hoặc Mobile-first Worklog).
 
 **Verify trước khi commit:** `npx tsc --noEmit` (0 errors) + `node scripts/check_translations.mjs` (0 missing keys).
+
