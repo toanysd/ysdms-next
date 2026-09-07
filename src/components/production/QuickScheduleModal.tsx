@@ -103,20 +103,11 @@ export default function QuickScheduleModal({
   if (!isOpen) return null
 
   // Calculate start & end ISO timestamps based on shift
-  const calculateShiftTimes = (date: string, s: 'DAY' | 'NIGHT') => {
-    if (s === 'DAY') {
-      return {
-        start: `${date}T08:00:00+09:00`,
-        end: `${date}T16:00:00+09:00`,
-      }
-    } else {
-      const d = new Date(date + 'T00:00:00Z')
-      d.setUTCDate(d.getUTCDate() + 1)
-      const nextDate = d.toISOString().split('T')[0]
-      return {
-        start: `${date}T20:00:00+09:00`,
-        end: `${nextDate}T04:00:00+09:00`,
-      }
+  // TODO(future): multi-shift support — add shift selector when night shift is introduced
+  const calculateShiftTimes = (date: string) => {
+    return {
+      start: `${date}T08:00:00+09:00`,
+      end: `${date}T17:00:00+09:00`,
     }
   }
 
@@ -134,7 +125,7 @@ export default function QuickScheduleModal({
     }
 
     setLoading(true)
-    const times = calculateShiftTimes(scheduleDate, shift)
+    const times = calculateShiftTimes(scheduleDate)
 
     const insertPayload = {
       machine_id: machineId,
@@ -262,83 +253,19 @@ export default function QuickScheduleModal({
             </div>
           </div>
 
-          {/* Row 2: Shift Radio & Planned Qty */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-            <div>
-              <label className="form-label" style={{ fontSize: 11, fontWeight: 700 }}>
-                シフト (直) <span style={{ color: '#DC2626' }}>*</span>
-              </label>
-              <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
-                <label
-                  style={{
-                    flex: 1,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: 6,
-                    padding: '6px 8px',
-                    borderRadius: 6,
-                    border: shift === 'DAY' ? '2px solid #D97706' : '1px solid #CBD5E1',
-                    background: shift === 'DAY' ? '#FEF3C7' : '#FFFFFF',
-                    cursor: 'pointer',
-                    fontSize: 11,
-                    fontWeight: 700,
-                    color: shift === 'DAY' ? '#92400E' : '#475569',
-                  }}
-                >
-                  <input
-                    type="radio"
-                    name="shift"
-                    value="DAY"
-                    checked={shift === 'DAY'}
-                    onChange={() => setShift('DAY')}
-                    style={{ display: 'none' }}
-                  />
-                  <span>🌞 昼直 (08-16h)</span>
-                </label>
-
-                <label
-                  style={{
-                    flex: 1,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: 6,
-                    padding: '6px 8px',
-                    borderRadius: 6,
-                    border: shift === 'NIGHT' ? '2px solid #4338CA' : '1px solid #CBD5E1',
-                    background: shift === 'NIGHT' ? '#EEF2FF' : '#FFFFFF',
-                    cursor: 'pointer',
-                    fontSize: 11,
-                    fontWeight: 700,
-                    color: shift === 'NIGHT' ? '#3730A3' : '#475569',
-                  }}
-                >
-                  <input
-                    type="radio"
-                    name="shift"
-                    value="NIGHT"
-                    checked={shift === 'NIGHT'}
-                    onChange={() => setShift('NIGHT')}
-                    style={{ display: 'none' }}
-                  />
-                  <span>🌙 夜直 (20-04h)</span>
-                </label>
-              </div>
-            </div>
-
-            <div>
-              <label className="form-label" style={{ fontSize: 11, fontWeight: 700 }}>
-                計画数量 (枚)
-              </label>
-              <input
-                type="number"
-                step="500"
-                className="form-input text-xs w-full"
-                value={plannedQty}
-                onChange={(e) => setPlannedQty(parseInt(e.target.value) || 0)}
-              />
-            </div>
+          {/* Row 2: Planned Qty (shift locked to day per PO decision) */}
+          {/* TODO(future): multi-shift support — add shift selector when night shift is introduced */}
+          <div>
+            <label className="form-label" style={{ fontSize: 11, fontWeight: 700 }}>
+              計画数量 (枚) <span style={{ color: '#DC2626' }}>*</span>
+            </label>
+            <input
+              type="number"
+              step="500"
+              className="form-input text-xs w-full"
+              value={plannedQty}
+              onChange={(e) => setPlannedQty(parseInt(e.target.value) || 0)}
+            />
           </div>
 
           {/* Row 3: Product & Work Order */}

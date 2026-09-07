@@ -444,7 +444,7 @@ export default function PlasticRollPanel({
                     }}
                   >
                     <span>使用中: {roll.assignedMachine}</span>
-                    <span>{roll.assignedDate} ({roll.assignedShift})</span>
+                    <span>{roll.assignedDate}</span>
                   </div>
                 )}
               </div>

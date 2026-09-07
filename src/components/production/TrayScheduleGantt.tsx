@@ -175,6 +175,7 @@ export default function TrayScheduleGantt({
       .select('*')
       .gte('schedule_date', rangeStart)
       .lte('schedule_date', rangeEnd)
+      .or('shift.eq.day,shift.eq.DAY,shift.is.null')
       .order('machine_code', { ascending: true })
       .order('scheduled_start', { ascending: true })
 
@@ -644,10 +645,9 @@ export default function TrayScheduleGantt({
                       )}
                     </div>
 
-                    {/* Sub-shift (昼 8-20h / 夜 20-8h) */}
-                    <div style={{ height: 18, display: 'flex', fontSize: 9, color: '#64748B', textAlign: 'center' }}>
-                      <div style={{ flex: 1, borderRight: '1px dashed #E2E8F0', lineHeight: '18px' }}>昼 (8-20)</div>
-                      <div style={{ flex: 1, lineHeight: '18px' }}>夜 (20-8)</div>
+                    {/* Shift (昼直 08:00 - 17:00) */}
+                    <div style={{ height: 18, fontSize: 9, color: '#64748B', textAlign: 'center', lineHeight: '18px' }}>
+                      昼直 (08:00 - 17:00)
                     </div>
                   </div>
                 ))}
@@ -804,16 +804,6 @@ export default function TrayScheduleGantt({
                                     {urgency.label}
                                   </span>
                                 )}
-                                <span
-                                  style={{
-                                    fontSize: 8,
-                                    background: 'rgba(0,0,0,0.25)',
-                                    padding: '1px 3px',
-                                    borderRadius: 2,
-                                  }}
-                                >
-                                  {item.shift === 'NIGHT' ? '夜' : '昼'}
-                                </span>
                               </div>
                             </div>
 
@@ -988,9 +978,9 @@ export default function TrayScheduleGantt({
                 {selectedItem.machine_code} ({selectedItem.machine_name})
               </span>
 
-              <span style={{ color: '#64748B' }}>予定日時 / Ca:</span>
+              <span style={{ color: '#64748B' }}>予定日時:</span>
               <span style={{ fontFamily: 'monospace' }}>
-                {selectedItem.schedule_date} ({selectedItem.shift === 'DAY' ? '🌞 昼直 08:00-16:00' : '🌙 夜直 20:00-04:00'})
+                {selectedItem.schedule_date} (昼直 08:00-17:00)
               </span>
 
               <span style={{ color: '#64748B' }}>指示No (WO):</span>

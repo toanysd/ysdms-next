@@ -1701,6 +1701,7 @@ export type Database = {
           legacy_specs: Json | null
           manufacturing_date: string | null
           material_spec: string | null
+          maintenance_shot_threshold: number | null
           mold_master_id: string | null
           mold_type: string | null
           notes: string | null
@@ -1711,6 +1712,7 @@ export type Database = {
           returned_date: string | null
           shared_note: string | null
           shared_with_code: string | null
+          shots_at_last_maintenance: number | null
           sub_type: string | null
           updated_at: string | null
           updated_by: string | null
@@ -1741,6 +1743,7 @@ export type Database = {
           legacy_id?: string | null
           legacy_physical_mold_id?: string | null
           legacy_specs?: Json | null
+          maintenance_shot_threshold?: number | null
           manufacturing_date?: string | null
           material_spec?: string | null
           mold_master_id?: string | null
@@ -1753,6 +1756,7 @@ export type Database = {
           returned_date?: string | null
           shared_note?: string | null
           shared_with_code?: string | null
+          shots_at_last_maintenance?: number | null
           sub_type?: string | null
           updated_at?: string | null
           updated_by?: string | null
@@ -1783,6 +1787,7 @@ export type Database = {
           legacy_id?: string | null
           legacy_physical_mold_id?: string | null
           legacy_specs?: Json | null
+          maintenance_shot_threshold?: number | null
           manufacturing_date?: string | null
           material_spec?: string | null
           mold_master_id?: string | null
@@ -1795,6 +1800,7 @@ export type Database = {
           returned_date?: string | null
           shared_note?: string | null
           shared_with_code?: string | null
+          shots_at_last_maintenance?: number | null
           sub_type?: string | null
           updated_at?: string | null
           updated_by?: string | null
@@ -2338,6 +2344,7 @@ export type Database = {
           qty_ng_g: number | null
           qty_ok: number
           roll_barcode: string | null
+          schedule_id: string | null
           start_time: string | null
           updated_at: string | null
         }
@@ -2367,6 +2374,7 @@ export type Database = {
           qty_ng_g?: number | null
           qty_ok?: number
           roll_barcode?: string | null
+          schedule_id?: string | null
           start_time?: string | null
           updated_at?: string | null
         }
@@ -5780,6 +5788,7 @@ export type Database = {
           product_id: string | null
           qty_ng: number | null
           qty_ok: number
+          schedule_id: string | null
           shot_count: number | null
           start_time: string | null
           updated_at: string | null
@@ -5797,6 +5806,7 @@ export type Database = {
           product_id?: string | null
           qty_ng?: number | null
           qty_ok?: number
+          schedule_id?: string | null
           shot_count?: number | null
           start_time?: string | null
           updated_at?: string | null
@@ -5814,6 +5824,7 @@ export type Database = {
           product_id?: string | null
           qty_ng?: number | null
           qty_ok?: number
+          schedule_id?: string | null
           shot_count?: number | null
           start_time?: string | null
           updated_at?: string | null
@@ -8495,6 +8506,21 @@ export type Database = {
           avg_progress: number | null
           count: number | null
           job_status: string | null
+        }
+        Relationships: []
+      }
+      v_equipment_lifecycle_status: {
+        Row: {
+          equipment_id: string | null
+          equipment_code: string | null
+          display_name: string | null
+          equipment_type: string | null
+          maintenance_shot_threshold: number | null
+          shots_at_last_maintenance: number | null
+          total_shots: number | null
+          current_shots_since_service: number | null
+          pct_life_used: number | null
+          lifecycle_status: 'NORMAL' | 'WARNING' | 'OVERDUE' | null
         }
         Relationships: []
       }

@@ -162,6 +162,7 @@ export default function TrayScheduleGrid({
       .select('*')
       .gte('schedule_date', rangeStart)
       .lte('schedule_date', rangeEnd)
+      .or('shift.eq.day,shift.eq.DAY,shift.is.null')
 
     if (selectedMachine !== 'ALL') {
       query = query.eq('machine_code', selectedMachine)
@@ -405,10 +406,7 @@ export default function TrayScheduleGrid({
                   </div>
                 </th>
 
-                {/* 2. シフト */}
-                <th style={{ width: 75, padding: '8px 6px', fontSize: 11, textAlign: 'center' }}>シフト</th>
-
-                {/* 3. 機械 */}
+                {/* 2. 機械 */}
                 <th
                   onClick={() => handleSort('machine_code')}
                   style={{ width: 110, padding: '8px 10px', fontSize: 11, cursor: 'pointer', userSelect: 'none' }}
@@ -419,13 +417,13 @@ export default function TrayScheduleGrid({
                   </div>
                 </th>
 
-                {/* 4. 品番 */}
+                {/* 3. 品番 */}
                 <th style={{ width: 130, padding: '8px 10px', fontSize: 11 }}>品番 (Product)</th>
 
-                {/* 5. 指示No */}
+                {/* 4. 指示No */}
                 <th style={{ width: 110, padding: '8px 10px', fontSize: 11 }}>指示No (WO)</th>
 
-                {/* 6. 計画数 */}
+                {/* 5. 計画数 */}
                 <th
                   onClick={() => handleSort('planned_quantity')}
                   style={{ width: 95, padding: '8px 10px', fontSize: 11, textAlign: 'right', cursor: 'pointer', userSelect: 'none' }}
@@ -436,33 +434,33 @@ export default function TrayScheduleGrid({
                   </div>
                 </th>
 
-                {/* 7. 実績数 */}
+                {/* 6. 実績数 */}
                 <th style={{ width: 100, padding: '8px 10px', fontSize: 11, textAlign: 'right' }}>実績数 (%)</th>
 
-                {/* 8. 材料 / 原反 */}
+                {/* 7. 材料 / 原反 */}
                 <th style={{ width: 160, padding: '8px 10px', fontSize: 11 }}>材料 / 原反ロール</th>
 
-                {/* 9. 担当 */}
+                {/* 8. 担当 */}
                 <th style={{ width: 100, padding: '8px 10px', fontSize: 11 }}>担当オペ</th>
 
-                {/* 10. 納期 (T8: Urgency badge) */}
+                {/* 9. 納期 (T8: Urgency badge) */}
                 <th style={{ width: 110, padding: '8px 10px', fontSize: 11, textAlign: 'center' }}>納期 (締切)</th>
 
-                {/* 11. 状態 */}
+                {/* 10. 状態 */}
                 <th style={{ width: 85, padding: '8px 10px', fontSize: 11, textAlign: 'center' }}>状態</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={11} style={{ textAlign: 'center', padding: 50, color: 'var(--text-muted)' }}>
+                  <td colSpan={10} style={{ textAlign: 'center', padding: 50, color: 'var(--text-muted)' }}>
                     <Loader2 size={22} className="animate-spin" style={{ margin: '0 auto 8px' }} />
                     成型スケジュールを読み込み中...
                   </td>
                 </tr>
               ) : filteredRows.length === 0 ? (
                 <tr>
-                  <td colSpan={11} style={{ textAlign: 'center', padding: 50, color: 'var(--text-muted)' }}>
+                  <td colSpan={10} style={{ textAlign: 'center', padding: 50, color: 'var(--text-muted)' }}>
                     指定期間のスケジュールは見つかりませんでした
                   </td>
                 </tr>
@@ -493,38 +491,7 @@ export default function TrayScheduleGrid({
                         {formattedDate}
                       </td>
 
-                      {/* 2. シフト */}
-                      <td style={{ padding: '8px 6px', textAlign: 'center' }}>
-                        {r.shift === 'NIGHT' ? (
-                          <span
-                            style={{
-                              fontSize: 10,
-                              fontWeight: 700,
-                              padding: '2px 5px',
-                              borderRadius: 4,
-                              background: '#1E1B4B',
-                              color: '#C7D2FE',
-                            }}
-                          >
-                            🌙 夜直
-                          </span>
-                        ) : (
-                          <span
-                            style={{
-                              fontSize: 10,
-                              fontWeight: 700,
-                              padding: '2px 5px',
-                              borderRadius: 4,
-                              background: '#FEF3C7',
-                              color: '#B45309',
-                            }}
-                          >
-                            🌞 昼直
-                          </span>
-                        )}
-                      </td>
-
-                      {/* 3. 機械 */}
+                      {/* 2. 機械 */}
                       <td style={{ padding: '8px 10px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                           <span style={{ fontFamily: 'monospace', fontWeight: 800, fontSize: 11, color: '#0F172A' }}>

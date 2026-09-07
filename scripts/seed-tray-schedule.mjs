@@ -72,15 +72,14 @@ async function seedTraySchedules() {
     targetDate.setUTCDate(baseDate.getUTCDate() + dayOffset);
     const dateStr = targetDate.toISOString().split('T')[0];
 
-    // Shift: Xen kẽ DAY và NIGHT
-    const isDay = i % 2 === 0;
-    const shift = isDay ? 'DAY' : 'NIGHT';
+    // Shift: Locked to day per PO decision 2026-09-07
+    const shift = 'day';
 
     const startTime = new Date(targetDate);
-    startTime.setUTCHours(isDay ? 8 : 20, 0, 0, 0);
+    startTime.setUTCHours(8, 0, 0, 0);
 
     const endTime = new Date(startTime);
-    endTime.setUTCHours(startTime.getUTCHours() + 8, 0, 0, 0);
+    endTime.setUTCHours(17, 0, 0, 0);
 
     // Status: Một số ca hôm nay hoặc quá khứ là IN_PROGRESS / DONE, còn lại PLANNED
     let status = 'PLANNED';
