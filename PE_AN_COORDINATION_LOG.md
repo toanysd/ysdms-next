@@ -70,3 +70,27 @@
 ### Next milestone candidate
 - M17: QR Code scan integration (gắn QR lên khuôn → scan di chuyển tầng kệ)
 - M17 alt: Transfer approval workflow (phê duyệt trước khi 金型返却)
+
+---
+
+## Milestone 17 — Equipment QR Code & AR Locator
+**Status: S1 COMPLETED** | 2026-09-07
+
+### Sprint 1: QR Generation & Single/Mass Print
+- Zero DB migration (Frontend 100%).
+- Type Prefix Standard: M=MOLD, C=CUTTER, P=PLUG, W=WATER_BASE, B=PRESSURE_BASE, S=STACKING, F=FRAME.
+- Dual Payload Modes: Short `{TypePrefix}-{equipment_code}` (Tem xưởng) & Web URL `{BASE_URL}/equipment/molds/{equipment_id}` (Tài liệu).
+- `QRCodeDisplay.tsx`: Local canvas generator (`qrcode`), crisp rendering, 30/40/50mm responsive sizes, standardized 4-line label anatomy.
+- `QRCodeModal.tsx`: Single tag modal with 3 action buttons (🖨️ In lẻ qua popup độc lập, ⬇️ Tải ảnh PNG, 📋 Sao chép clipboard).
+- `QRBatchPrintSheet.tsx`: Multi-selection A4 batch print sheet with dynamic CSS grid, automatic pagination (`page-break-inside: avoid`), toggle columns (code, name, location).
+- Header & Tab integrations:
+  - `MoldDetailHeader.tsx`: Nút `QRコード` mở modal trực tiếp.
+  - `LocationTab.tsx`: Thumbnail QR 64×64 bấm để phóng to / in.
+  - `VisualShelfView.tsx`: Nút `一括印刷 (全段)` trên Rack Header, nút `In tầng này` trên mỗi Layer Bar, nút `QR` trên từng thiết bị.
+- Scanner Stub: `/equipment/scan/page.tsx` (Route placeholder sẵn sàng cho M17-S2 Camera AR scanner).
+
+### Quality Gates Verified:
+- TypeScript `npx tsc --noEmit`: ✅ 0 errors
+- Translations `check_translations.mjs`: ✅ 0 missing keys
+- Bilingual hardcode scan: ✅ Clean
+

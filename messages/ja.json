@@ -4782,6 +4782,35 @@
       "thTo": "移動先会社",
       "thOperator": "担当者",
       "thNotes": "備考"
+    },
+    "qr": {
+      "singleTitle": "QRコード表示・印刷",
+      "batchTitle": "QRコード一括印刷 (A4シート)",
+      "tagSize": "サイズ",
+      "size30": "30 × 30 mm (小)",
+      "size40": "40 × 40 mm (標準)",
+      "size50": "50 × 50 mm (大)",
+      "format": "形式",
+      "formatShort": "現場用 (短縮コード)",
+      "formatUrl": "ドキュメント用 (URL)",
+      "printBtn": "印刷",
+      "downloadBtn": "ダウンロード",
+      "copyBtn": "コピー",
+      "copied": "コピー完了",
+      "close": "閉じる",
+      "batchPrintAll": "一括印刷 (全段)",
+      "batchPrintLayer": "この段を印刷",
+      "batchPrintBtn": "印刷プレビュー (A4)",
+      "selectedCount": "{count} 件選択中",
+      "selectAll": "全選択",
+      "deselectAll": "全解除",
+      "showCode": "機器コード表示",
+      "showName": "機器名表示",
+      "showLocation": "保管棚表示",
+      "noEquipmentToPrint": "印刷対象の設備がありません",
+      "scanTitle": "QRコード・カメラリーダー",
+      "scanSubtitle": "M17-S2 にてカメラによるマルチスキャン＆AR棚段検知機能を実装予定",
+      "backToLocations": "保管位置一覧へ戻る"
     }
   }
 }

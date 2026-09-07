@@ -12,6 +12,7 @@ import {
   RefreshCw,
   MoveRight,
   Inbox,
+  QrCode,
 } from 'lucide-react'
 import type { MoldDetailData } from '../page'
 import {
@@ -19,12 +20,15 @@ import {
   type LocationMoveLogItem,
 } from '@/app/equipment/locations/actions'
 import LocationMoveModal from '@/app/equipment/locations/_components/LocationMoveModal'
+import QRCodeDisplay from '@/components/equipment/QRCodeDisplay'
+import QRCodeModal from '@/components/equipment/QRCodeModal'
 
 export function LocationTab({ mold }: { mold: MoldDetailData }) {
   const t = useTranslations('EquipmentLocations.tab')
   const [logs, setLogs] = useState<LocationMoveLogItem[]>([])
   const [loading, setLoading] = useState(true)
   const [modalOpen, setModalOpen] = useState(false)
+  const [qrModalOpen, setQrModalOpen] = useState(false)
 
   const fetchHistory = useCallback(async () => {
     if (!mold?.equipment_id) return
@@ -85,15 +89,42 @@ export function LocationTab({ mold }: { mold: MoldDetailData }) {
             </div>
           </div>
 
-          {/* Action: Open Move Modal */}
-          <button
-            type="button"
-            onClick={() => setModalOpen(true)}
-            className="btn btn-primary text-[12px] py-1.5 px-3.5 flex items-center gap-1.5 font-semibold shadow-sm"
-          >
-            <MoveRight size={14} />
-            <span>{t('changeRackBtn')}</span>
-          </button>
+          <div className="flex items-center gap-2.5">
+            {/* Clickable QR Thumbnail 64x64 */}
+            <button
+              type="button"
+              onClick={() => setQrModalOpen(true)}
+              className="p-1 rounded-lg border border-slate-200 bg-white hover:border-teal-500 hover:shadow-sm transition-all flex flex-col items-center gap-0.5 group cursor-pointer"
+              title="QRコード拡大・印刷"
+            >
+              <div className="w-12 h-12 flex items-center justify-center overflow-hidden">
+                <QRCodeDisplay
+                  equipmentCode={mold.equipment_code}
+                  equipmentType={mold.mold_type || 'MOLD'}
+                  equipmentId={mold.equipment_id}
+                  productName={mold.display_name}
+                  currentLayerCode={rackLayer?.layer_code}
+                  size={30}
+                  showBorder={false}
+                  className="!w-12 !h-12 !min-w-[48px] !min-h-[48px] !p-0 pointer-events-none"
+                />
+              </div>
+              <span className="text-[8.5px] font-bold text-slate-500 group-hover:text-teal-700 flex items-center gap-0.5">
+                <QrCode size={9} />
+                <span>QR</span>
+              </span>
+            </button>
+
+            {/* Action: Open Move Modal */}
+            <button
+              type="button"
+              onClick={() => setModalOpen(true)}
+              className="btn btn-primary text-[12px] py-1.5 px-3.5 flex items-center gap-1.5 font-semibold shadow-sm"
+            >
+              <MoveRight size={14} />
+              <span>{t('changeRackBtn')}</span>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -212,6 +243,21 @@ export function LocationTab({ mold }: { mold: MoldDetailData }) {
             keeper_company_name: mold.keeper_company?.company_name,
           }}
           defaultTab="RACK"
+        />
+      )}
+
+      {/* 4. QR Code Modal */}
+      {qrModalOpen && (
+        <QRCodeModal
+          isOpen={qrModalOpen}
+          onClose={() => setQrModalOpen(false)}
+          equipment={{
+            equipmentId: mold.equipment_id,
+            equipmentCode: mold.equipment_code,
+            equipmentType: mold.mold_type || 'MOLD',
+            displayName: mold.display_name,
+            currentLayerCode: rackLayer?.layer_code,
+          }}
         />
       )}
     </div>

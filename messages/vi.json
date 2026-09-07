@@ -4782,6 +4782,35 @@
       "thTo": "Đơn vị nhận",
       "thOperator": "Người thực hiện",
       "thNotes": "Ghi chú"
+    },
+    "qr": {
+      "singleTitle": "Mã QR Thiết Bị",
+      "batchTitle": "In Thẻ QR Hàng Loạt (Khổ A4)",
+      "tagSize": "Kích thước tem",
+      "size30": "30 × 30 mm (Nhỏ)",
+      "size40": "40 × 40 mm (Tiêu chuẩn)",
+      "size50": "50 × 50 mm (Lớn)",
+      "format": "Định dạng",
+      "formatShort": "Tem dán xưởng (Mã ngắn)",
+      "formatUrl": "Tài liệu (Đường link URL)",
+      "printBtn": "In tem",
+      "downloadBtn": "Tải ảnh",
+      "copyBtn": "Sao chép",
+      "copied": "Đã sao chép",
+      "close": "Đóng",
+      "batchPrintAll": "In QR toàn bộ kệ",
+      "batchPrintLayer": "In tầng này",
+      "batchPrintBtn": "Tạo bản in A4",
+      "selectedCount": "Đã chọn {count} thiết bị",
+      "selectAll": "Chọn tất cả",
+      "deselectAll": "Bỏ chọn tất cả",
+      "showCode": "Hiện mã thiết bị",
+      "showName": "Hiện tên thiết bị",
+      "showLocation": "Hiện vị trí tầng kệ",
+      "noEquipmentToPrint": "Không có thiết bị nào để in",
+      "scanTitle": "Đầu Đọc Camera & Mã QR",
+      "scanSubtitle": "Tính năng quét camera đa vùng và AR định vị tầng kệ sẽ ra mắt trong M17-S2",
+      "backToLocations": "Về danh mục vị trí"
     }
   }
 }

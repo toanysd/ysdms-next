@@ -1,14 +1,17 @@
 'use client'
 
+import { useState } from 'react'
 import {
-  Box, Building2, MapPin, Pencil, Tag, Layers, Scale, RefreshCw, FileCog
+  Box, Building2, MapPin, Pencil, Tag, Layers, Scale, RefreshCw, FileCog, QrCode
 } from 'lucide-react'
 import Link from 'next/link'
 import { useTranslations } from 'next-intl'
 import type { MoldDetailData } from './page'
+import QRCodeModal from '@/components/equipment/QRCodeModal'
 
 export function MoldDetailHeader({ mold, isEditing, setIsEditing, onOpenReviseModal }: { mold: MoldDetailData; isEditing: boolean; setIsEditing: (v: boolean) => void; onOpenReviseModal?: () => void }) {
   const t = useTranslations()
+  const [qrModalOpen, setQrModalOpen] = useState(false)
 
   const STATUS_LABELS: Record<string, { label: string; badgeClass: string }> = {
     ACTIVE:      { label: t('Equipment.statusActive'),      badgeClass: 'badge badge--success' },
@@ -74,6 +77,15 @@ export function MoldDetailHeader({ mold, isEditing, setIsEditing, onOpenReviseMo
 
         {!isEditing && (
           <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
+            <button
+              type="button"
+              className="btn btn-secondary text-xs font-bold flex items-center gap-1.5"
+              onClick={() => setQrModalOpen(true)}
+              title="QRコード表示・印刷"
+            >
+              <QrCode size={14} className="text-teal-600" />
+              <span>QRコード</span>
+            </button>
             {onOpenReviseModal && (
               <button className="btn btn-secondary text-xs font-bold" onClick={onOpenReviseModal}>
                 <RefreshCw size={14} />
@@ -178,6 +190,19 @@ export function MoldDetailHeader({ mold, isEditing, setIsEditing, onOpenReviseMo
           </span>
         )}
       </div>
+      {qrModalOpen && (
+        <QRCodeModal
+          isOpen={qrModalOpen}
+          onClose={() => setQrModalOpen(false)}
+          equipment={{
+            equipmentId: mold.equipment_id,
+            equipmentCode: mold.equipment_code,
+            equipmentType: mold.mold_type || 'MOLD',
+            displayName: mold.display_name,
+            currentLayerCode: mold.rack_layers?.layer_code,
+          }}
+        />
+      )}
     </div>
   )
 }

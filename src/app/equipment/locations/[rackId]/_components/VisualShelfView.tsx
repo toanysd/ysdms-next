@@ -17,9 +17,15 @@ import {
   AlertTriangle,
   Wrench,
   MoveRight,
+  Printer,
+  QrCode,
 } from 'lucide-react'
 import type { RackDetailWithLayers, RackEquipmentItem } from '../../actions'
 import LocationMoveModal from '../../_components/LocationMoveModal'
+import QRCodeModal from '@/components/equipment/QRCodeModal'
+import QRBatchPrintSheet, {
+  type EquipmentPrintItem,
+} from '@/components/equipment/QRBatchPrintSheet'
 
 interface Props {
   data: RackDetailWithLayers
@@ -29,8 +35,12 @@ export default function VisualShelfView({ data }: Props) {
   const router = useRouter()
   const t = useTranslations('EquipmentLocations.detail')
   const tZones = useTranslations('EquipmentLocations.zones')
+  const tQr = useTranslations('EquipmentLocations.qr')
   const [filterQuery, setFilterQuery] = useState('')
   const [moveTargetEquipment, setMoveTargetEquipment] = useState<any | null>(null)
+  const [batchPrintItems, setBatchPrintItems] = useState<EquipmentPrintItem[] | null>(null)
+  const [batchPrintTitle, setBatchPrintTitle] = useState<string>('')
+  const [selectedQrEquipment, setSelectedQrEquipment] = useState<any | null>(null)
 
   const rack = data.rack
 
@@ -63,6 +73,44 @@ export default function VisualShelfView({ data }: Props) {
   const totalFilteredEquipment = useMemo(() => {
     return filteredLayers.reduce((sum, l) => sum + l.equipment.length, 0)
   }, [filteredLayers])
+
+  // All equipment on this entire rack for batch printing
+  const allRackEquipment = useMemo<EquipmentPrintItem[]>(() => {
+    const list: EquipmentPrintItem[] = []
+    data.layers.forEach((l) => {
+      l.equipment.forEach((eq) => {
+        list.push({
+          equipmentId: eq.equipment_id,
+          equipmentCode: eq.equipment_code,
+          equipmentType: eq.equipment_type,
+          displayName: eq.display_name,
+          currentLayerCode: l.layer_code,
+          layerNumber: l.layer_number,
+        })
+      })
+    })
+    return list
+  }, [data.layers])
+
+  const handleOpenBatchPrint = (target: 'ALL' | string) => {
+    if (target === 'ALL') {
+      setBatchPrintItems(allRackEquipment)
+      setBatchPrintTitle(`${rack.rack_code_new} — ${tQr('batchPrintAll')}`)
+    } else {
+      const layer = data.layers.find((l) => l.id === target)
+      if (!layer) return
+      const layerItems: EquipmentPrintItem[] = layer.equipment.map((eq) => ({
+        equipmentId: eq.equipment_id,
+        equipmentCode: eq.equipment_code,
+        equipmentType: eq.equipment_type,
+        displayName: eq.display_name,
+        currentLayerCode: layer.layer_code,
+        layerNumber: layer.layer_number,
+      }))
+      setBatchPrintItems(layerItems)
+      setBatchPrintTitle(`${layer.layer_code}`)
+    }
+  }
 
   const getTypeBadgeClass = (type: string) => {
     switch (type) {
@@ -185,18 +233,33 @@ export default function VisualShelfView({ data }: Props) {
           </div>
         </div>
 
-        {/* Stats */}
-        <div className="flex items-center gap-4 bg-slate-50 p-2.5 rounded-lg border border-slate-200">
-          <div className="text-center px-2">
-            <div className="text-[10px] uppercase font-bold text-slate-500">{t('totalLayers')}</div>
-            <div className="text-[18px] font-bold text-slate-800 font-mono">{data.total_layers}</div>
-          </div>
-          <div className="w-px h-7 bg-slate-200" />
-          <div className="text-center px-2">
-            <div className="text-[10px] uppercase font-bold text-slate-500">{t('totalEquipment')}</div>
-            <div className="text-[18px] font-bold text-teal-700 font-mono">
-              {totalFilteredEquipment}{' '}
-              {filterQuery && <span className="text-[11px] text-slate-400 font-normal">/ {data.total_equipment}</span>}
+        {/* Actions & Stats */}
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Batch Print entire rack button */}
+          <button
+            type="button"
+            onClick={() => handleOpenBatchPrint('ALL')}
+            disabled={allRackEquipment.length === 0}
+            className="btn btn-secondary text-[12px] font-bold flex items-center gap-1.5 py-2 px-3.5 shadow-sm text-teal-800 border-slate-300 hover:bg-teal-50/50"
+            title={tQr('batchPrintAll')}
+          >
+            <Printer size={15} className="text-teal-600" />
+            <span>{tQr('batchPrintAll')}</span>
+          </button>
+
+          {/* Stats */}
+          <div className="flex items-center gap-4 bg-slate-50 p-2.5 rounded-lg border border-slate-200">
+            <div className="text-center px-2">
+              <div className="text-[10px] uppercase font-bold text-slate-500">{t('totalLayers')}</div>
+              <div className="text-[18px] font-bold text-slate-800 font-mono">{data.total_layers}</div>
+            </div>
+            <div className="w-px h-7 bg-slate-200" />
+            <div className="text-center px-2">
+              <div className="text-[10px] uppercase font-bold text-slate-500">{t('totalEquipment')}</div>
+              <div className="text-[18px] font-bold text-teal-700 font-mono">
+                {totalFilteredEquipment}{' '}
+                {filterQuery && <span className="text-[11px] text-slate-400 font-normal">/ {data.total_equipment}</span>}
+              </div>
             </div>
           </div>
         </div>
@@ -238,6 +301,17 @@ export default function VisualShelfView({ data }: Props) {
                   </div>
 
                   <div className="flex items-center gap-2">
+                    {hasEquipment && (
+                      <button
+                        type="button"
+                        onClick={() => handleOpenBatchPrint(layer.id)}
+                        className="btn btn-secondary text-[10.5px] font-semibold py-0.5 px-2 flex items-center gap-1 text-slate-700 hover:bg-slate-200"
+                        title={tQr('batchPrintLayer')}
+                      >
+                        <Printer size={11} className="text-teal-600" />
+                        <span>{tQr('batchPrintLayer')}</span>
+                      </button>
+                    )}
                     <span
                       className={`text-[11px] font-bold px-2 py-0.5 rounded-full font-mono ${
                         hasEquipment ? 'bg-teal-100 text-teal-800' : 'bg-slate-200 text-slate-600'
@@ -298,25 +372,45 @@ export default function VisualShelfView({ data }: Props) {
                               )}
                             </div>
 
-                            <button
-                              type="button"
-                              onClick={() =>
-                                setMoveTargetEquipment({
-                                  equipment_id: eq.equipment_id,
-                                  equipment_code: eq.equipment_code,
-                                  display_name: eq.display_name,
-                                  current_rack_layer_id: layer.id,
-                                  current_layer_code: layer.layer_code,
-                                  current_rack_code: rack.rack_code_new,
-                                  current_location_in_factory: rack.location_in_factory,
-                                })
-                              }
-                              className="btn btn-secondary text-[10px] py-0.5 px-2 flex items-center gap-1 font-semibold text-teal-700 hover:bg-teal-50"
-                              title={t('moveBtn')}
-                            >
-                              <MoveRight size={11} />
-                              <span>{t('moveBtn')}</span>
-                            </button>
+                            <div className="flex items-center gap-1">
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setSelectedQrEquipment({
+                                    equipmentId: eq.equipment_id,
+                                    equipmentCode: eq.equipment_code,
+                                    equipmentType: eq.equipment_type,
+                                    displayName: eq.display_name,
+                                    currentLayerCode: layer.layer_code,
+                                  })
+                                }
+                                className="btn btn-secondary text-[10px] py-0.5 px-1.5 flex items-center gap-1 font-semibold text-slate-700 hover:bg-slate-100"
+                                title={tQr('singlePrint')}
+                              >
+                                <QrCode size={11} className="text-teal-600" />
+                                <span>QR</span>
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setMoveTargetEquipment({
+                                    equipment_id: eq.equipment_id,
+                                    equipment_code: eq.equipment_code,
+                                    display_name: eq.display_name,
+                                    current_rack_layer_id: layer.id,
+                                    current_layer_code: layer.layer_code,
+                                    current_rack_code: rack.rack_code_new,
+                                    current_location_in_factory: rack.location_in_factory,
+                                  })
+                                }
+                                className="btn btn-secondary text-[10px] py-0.5 px-2 flex items-center gap-1 font-semibold text-teal-700 hover:bg-teal-50"
+                                title={t('moveBtn')}
+                              >
+                                <MoveRight size={11} />
+                                <span>{t('moveBtn')}</span>
+                              </button>
+                            </div>
                           </div>
                         </div>
                       ))}
@@ -342,6 +436,25 @@ export default function VisualShelfView({ data }: Props) {
             router.refresh()
           }}
           equipment={moveTargetEquipment}
+        />
+      )}
+
+      {/* Batch Print Sheet */}
+      {batchPrintItems && (
+        <QRBatchPrintSheet
+          isOpen={!!batchPrintItems}
+          onClose={() => setBatchPrintItems(null)}
+          items={batchPrintItems}
+          title={batchPrintTitle}
+        />
+      )}
+
+      {/* Single QR Modal */}
+      {selectedQrEquipment && (
+        <QRCodeModal
+          isOpen={!!selectedQrEquipment}
+          onClose={() => setSelectedQrEquipment(null)}
+          equipment={selectedQrEquipment}
         />
       )}
     </div>
