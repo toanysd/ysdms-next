@@ -347,3 +347,310 @@ export async function getRackDetailWithLayers(
     total_layers: sortedLayers.length,
   }
 }
+
+export interface SelectorLookups {
+  racks: {
+    id: string
+    rack_code: string
+    rack_code_new: string
+    zone_code: string
+    location_in_factory: string
+    layers: {
+      id: string
+      layer_number: number
+      layer_code: string
+    }[]
+  }[]
+  employees: {
+    employee_id: string
+    employee_code: string
+    employee_name: string
+  }[]
+  companies: {
+    company_id: string
+    company_code: string
+    company_name: string
+  }[]
+  zones: string[]
+}
+
+export async function getSelectorLookups(): Promise<SelectorLookups> {
+  const supabase = await createClient()
+
+  const [racksRes, empsRes, compsRes] = await Promise.all([
+    supabase
+      .from('racks')
+      .select(`
+        id,
+        rack_code,
+        rack_code_new,
+        zone_code,
+        location_in_factory,
+        rack_layers (
+          id,
+          layer_number,
+          layer_code
+        )
+      `)
+      .order('rack_code_new', { ascending: true }),
+    supabase
+      .from('employees')
+      .select('employee_id, employee_code, employee_name')
+      .eq('is_active', true)
+      .order('employee_name', { ascending: true }),
+    supabase
+      .from('companies')
+      .select('company_id, company_code, company_name')
+      .eq('is_active', true)
+      .order('company_name', { ascending: true }),
+  ])
+
+  const zonesSet = new Set<string>()
+  const racks = (racksRes.data || []).map((r: any) => {
+    const zone = r.zone_code || 'SP'
+    zonesSet.add(zone)
+    const sortedLayers = (r.rack_layers || [])
+      .map((l: any) => ({
+        id: l.id,
+        layer_number: l.layer_number,
+        layer_code: l.layer_code || `${r.rack_code_new || r.rack_name}-L${l.layer_number}`,
+      }))
+      .sort((a: any, b: any) => a.layer_number - b.layer_number)
+
+    return {
+      id: r.id,
+      rack_code: r.rack_code || '—',
+      rack_code_new: r.rack_code_new || r.rack_name || '—',
+      zone_code: zone,
+      location_in_factory: r.location_in_factory || '—',
+      layers: sortedLayers,
+    }
+  })
+
+  const zoneOrder = [
+    'MR', '2F', 'CS', 'GT', 'OF', 'MD', 'PS', 'TC', 'MT', 'M8', 'TW', 'SC', 'SP',
+  ]
+  const sortedZones = Array.from(zonesSet).sort((a, b) => {
+    const ia = zoneOrder.indexOf(a)
+    const ib = zoneOrder.indexOf(b)
+    if (ia !== -1 && ib !== -1) return ia - ib
+    return a.localeCompare(b)
+  })
+
+  return {
+    racks,
+    employees: empsRes.data || [],
+    companies: compsRes.data || [],
+    zones: sortedZones,
+  }
+}
+
+export async function moveEquipmentLocation(params: {
+  equipmentId: string
+  oldRackLayerId: string | null
+  newRackLayerId: string
+  employeeId?: string | null
+  notes?: string | null
+}): Promise<{ success: boolean; error?: string }> {
+  const supabase = await createClient()
+
+  if (!params.equipmentId || !params.newRackLayerId) {
+    return { success: false, error: 'Thiếu equipmentId hoặc newRackLayerId' }
+  }
+
+  // 1. Update equipment current_rack_layer_id
+  const { error: updateErr } = await supabase
+    .from('equipment')
+    .update({
+      current_rack_layer_id: params.newRackLayerId,
+    })
+    .eq('equipment_id', params.equipmentId)
+
+  if (updateErr) {
+    console.error('Error updating equipment location:', updateErr)
+    return { success: false, error: updateErr.message }
+  }
+
+  // 2. Insert into asset_location_logs
+  const { error: logErr } = await supabase.from('asset_location_logs').insert({
+    asset_id: params.equipmentId,
+    asset_type: 'EQUIPMENT',
+    old_rack_layer_id: params.oldRackLayerId || null,
+    new_rack_layer_id: params.newRackLayerId,
+    moved_by: params.employeeId || null,
+    moved_at: new Date().toISOString(),
+    notes: params.notes || null,
+  })
+
+  if (logErr) {
+    console.warn('Warning inserting asset_location_logs:', logErr)
+  }
+
+  return { success: true }
+}
+
+export async function transferEquipmentCompany(params: {
+  equipmentId: string
+  fromCompanyId: string | null
+  toCompanyId: string
+  employeeId?: string | null
+  shipDate?: string
+  notes?: string | null
+  itemName?: string | null
+}): Promise<{ success: boolean; error?: string }> {
+  const supabase = await createClient()
+
+  if (!params.equipmentId || !params.toCompanyId) {
+    return { success: false, error: 'Thiếu equipmentId hoặc toCompanyId' }
+  }
+
+  // 1. Update equipment keeper_company_id
+  const { error: updateErr } = await supabase
+    .from('equipment')
+    .update({
+      keeper_company_id: params.toCompanyId,
+    })
+    .eq('equipment_id', params.equipmentId)
+
+  if (updateErr) {
+    console.error('Error updating equipment keeper company:', updateErr)
+    return { success: false, error: updateErr.message }
+  }
+
+  // 2. Insert into equipment_ship_logs
+  const { error: logErr } = await supabase.from('equipment_ship_logs').insert({
+    equipment_id: params.equipmentId,
+    from_company_id: params.fromCompanyId || null,
+    to_company_id: params.toCompanyId,
+    ship_date: params.shipDate || new Date().toISOString().slice(0, 10),
+    ship_item_name: params.itemName || null,
+    employee_id: params.employeeId || null,
+    notes: params.notes || null,
+  })
+
+  if (logErr) {
+    console.warn('Warning inserting equipment_ship_logs:', logErr)
+  }
+
+  return { success: true }
+}
+
+export async function returnEquipmentToOwner(params: {
+  equipmentId: string
+  ownerCompanyId: string
+  currentKeeperCompanyId: string
+  employeeId?: string | null
+  notes?: string | null
+  itemName?: string | null
+}): Promise<{ success: boolean; error?: string }> {
+  return transferEquipmentCompany({
+    equipmentId: params.equipmentId,
+    fromCompanyId: params.currentKeeperCompanyId,
+    toCompanyId: params.ownerCompanyId,
+    employeeId: params.employeeId,
+    shipDate: new Date().toISOString().slice(0, 10),
+    notes: params.notes ? `[金型返却] ${params.notes}` : '[金型返却] Trả khuôn cho khách hàng',
+    itemName: params.itemName,
+  })
+}
+
+export interface LocationMoveLogItem {
+  id: string
+  moved_at: string | null
+  notes: string | null
+  moved_by_name: string | null
+  old_layer_code: string | null
+  old_rack_code: string | null
+  new_layer_code: string | null
+  new_rack_code: string | null
+}
+
+export async function getLocationMoveLogs(
+  equipmentId: string,
+  limit = 10
+): Promise<LocationMoveLogItem[]> {
+  const supabase = await createClient()
+
+  const { data, error } = await supabase
+    .from('asset_location_logs')
+    .select(`
+      id,
+      moved_at,
+      notes,
+      employees!asset_location_logs_moved_by_fkey(employee_name),
+      old_layer:rack_layers!asset_location_logs_old_rack_layer_id_fkey(
+        layer_code,
+        racks(rack_code_new, rack_code)
+      ),
+      new_layer:rack_layers!asset_location_logs_new_rack_layer_id_fkey(
+        layer_code,
+        racks(rack_code_new, rack_code)
+      )
+    `)
+    .eq('asset_id', equipmentId)
+    .order('moved_at', { ascending: false })
+    .limit(limit)
+
+  if (error || !data) {
+    console.error('Error fetching location move logs:', error)
+    return []
+  }
+
+  return data.map((d: any) => ({
+    id: d.id,
+    moved_at: d.moved_at,
+    notes: d.notes,
+    moved_by_name: d.employees?.employee_name || null,
+    old_layer_code: d.old_layer?.layer_code || null,
+    old_rack_code: d.old_layer?.racks?.rack_code_new || d.old_layer?.racks?.rack_code || null,
+    new_layer_code: d.new_layer?.layer_code || null,
+    new_rack_code: d.new_layer?.racks?.rack_code_new || d.new_layer?.racks?.rack_code || null,
+  }))
+}
+
+export interface EquipmentShipLogItem {
+  ship_log_id: string
+  ship_date: string
+  ship_item_name: string | null
+  notes: string | null
+  from_company_name: string | null
+  to_company_name: string | null
+  employee_name: string | null
+}
+
+export async function getEquipmentShipLogs(
+  equipmentId: string,
+  limit = 10
+): Promise<EquipmentShipLogItem[]> {
+  const supabase = await createClient()
+
+  const { data, error } = await supabase
+    .from('equipment_ship_logs')
+    .select(`
+      ship_log_id,
+      ship_date,
+      ship_item_name,
+      notes,
+      from_company:companies!equipment_ship_logs_from_company_id_fkey(company_name),
+      to_company:companies!equipment_ship_logs_to_company_id_fkey(company_name),
+      employees!equipment_ship_logs_employee_id_fkey(employee_name)
+    `)
+    .eq('equipment_id', equipmentId)
+    .order('ship_date', { ascending: false })
+    .limit(limit)
+
+  if (error || !data) {
+    console.error('Error fetching equipment ship logs:', error)
+    return []
+  }
+
+  return data.map((d: any) => ({
+    ship_log_id: d.ship_log_id,
+    ship_date: d.ship_date,
+    ship_item_name: d.ship_item_name,
+    notes: d.notes,
+    from_company_name: d.from_company?.company_name || null,
+    to_company_name: d.to_company?.company_name || null,
+    employee_name: d.employees?.employee_name || null,
+  }))
+}

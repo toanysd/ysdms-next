@@ -16,8 +16,10 @@ import {
   CheckCircle2,
   AlertTriangle,
   Wrench,
+  MoveRight,
 } from 'lucide-react'
 import type { RackDetailWithLayers, RackEquipmentItem } from '../../actions'
+import LocationMoveModal from '../../_components/LocationMoveModal'
 
 interface Props {
   data: RackDetailWithLayers
@@ -28,6 +30,7 @@ export default function VisualShelfView({ data }: Props) {
   const t = useTranslations('EquipmentLocations.detail')
   const tZones = useTranslations('EquipmentLocations.zones')
   const [filterQuery, setFilterQuery] = useState('')
+  const [moveTargetEquipment, setMoveTargetEquipment] = useState<any | null>(null)
 
   const rack = data.rack
 
@@ -286,12 +289,34 @@ export default function VisualShelfView({ data }: Props) {
 
                           {/* Status and footer */}
                           <div className="pt-2 mt-1 border-t border-slate-100 flex items-center justify-between text-[10px]">
-                            <span className={`badge ${getStatusBadgeClass(eq.device_status)} text-[10px] py-0 px-1.5`}>
-                              {eq.device_status || 'NORMAL'}
-                            </span>
-                            {eq.usage_status && (
-                              <span className="text-slate-500 font-mono text-[10px]">{eq.usage_status}</span>
-                            )}
+                            <div className="flex items-center gap-1.5">
+                              <span className={`badge ${getStatusBadgeClass(eq.device_status)} text-[10px] py-0 px-1.5`}>
+                                {eq.device_status || 'NORMAL'}
+                              </span>
+                              {eq.usage_status && (
+                                <span className="text-slate-500 font-mono text-[10px]">{eq.usage_status}</span>
+                              )}
+                            </div>
+
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setMoveTargetEquipment({
+                                  equipment_id: eq.equipment_id,
+                                  equipment_code: eq.equipment_code,
+                                  display_name: eq.display_name,
+                                  current_rack_layer_id: layer.id,
+                                  current_layer_code: layer.layer_code,
+                                  current_rack_code: rack.rack_code_new,
+                                  current_location_in_factory: rack.location_in_factory,
+                                })
+                              }
+                              className="btn btn-secondary text-[10px] py-0.5 px-2 flex items-center gap-1 font-semibold text-teal-700 hover:bg-teal-50"
+                              title={t('moveBtn')}
+                            >
+                              <MoveRight size={11} />
+                              <span>{t('moveBtn')}</span>
+                            </button>
                           </div>
                         </div>
                       ))}
@@ -306,6 +331,19 @@ export default function VisualShelfView({ data }: Props) {
           })}
         </div>
       </div>
+
+      {/* Move Location Modal */}
+      {moveTargetEquipment && (
+        <LocationMoveModal
+          isOpen={!!moveTargetEquipment}
+          onClose={() => setMoveTargetEquipment(null)}
+          onSuccess={() => {
+            setMoveTargetEquipment(null)
+            router.refresh()
+          }}
+          equipment={moveTargetEquipment}
+        />
+      )}
     </div>
   )
 }

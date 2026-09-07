@@ -1,347 +1,219 @@
 'use client'
 
-import { MapPin, ArrowDownUp, Clock, User, Building2, LogIn, LogOut, Navigation } from 'lucide-react'
-import { useEffect, useState, useCallback } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import React, { useEffect, useState, useCallback } from 'react'
 import { useTranslations } from 'next-intl'
+import {
+  MapPin,
+  Layers,
+  ArrowRight,
+  Clock,
+  User,
+  CheckCircle2,
+  RefreshCw,
+  MoveRight,
+  Inbox,
+} from 'lucide-react'
 import type { MoldDetailData } from '../page'
-
-type StatusLog = {
-  log_id: string
-  status: string | null
-  logged_at: string | null
-  notes: string | null
-  destination_id: string | null
-  employee_id: string | null
-  destinations?: { destination_name: string } | null
-  employees?: { employee_name: string; employee_code: string } | null
-}
-
-type LocationLog = {
-  id: string
-  moved_at: string | null
-  notes: string | null
-  moved_by: string | null
-  old_rack_layer_id: string | null
-  new_rack_layer_id: string | null
-  old_rack_layer?: { layer_code: string; racks: { rack_code: string } | null } | null
-  new_rack_layer?: { layer_code: string; racks: { rack_code: string } | null } | null
-  employees?: { employee_name: string } | null
-}
-
-type Employee = { employee_id: string; employee_code: string; employee_name: string }
-type RackLayer = { id: string; layer_code: string; racks: { rack_code: string } | null }
+import {
+  getLocationMoveLogs,
+  type LocationMoveLogItem,
+} from '@/app/equipment/locations/actions'
+import LocationMoveModal from '@/app/equipment/locations/_components/LocationMoveModal'
 
 export function LocationTab({ mold }: { mold: MoldDetailData }) {
-  const t = useTranslations()
-  const supabase = createClient()
-  const [statusLogs, setStatusLogs] = useState<StatusLog[]>([])
-  const [locationLogs, setLocationLogs] = useState<LocationLog[]>([])
+  const t = useTranslations('EquipmentLocations.tab')
+  const [logs, setLogs] = useState<LocationMoveLogItem[]>([])
   const [loading, setLoading] = useState(true)
+  const [modalOpen, setModalOpen] = useState(false)
 
-  // Modal states
-  const [employees, setEmployees] = useState<Employee[]>([])
-  const [rackLayers, setRackLayers] = useState<RackLayer[]>([])
-  
-  const [checkModalType, setCheckModalType] = useState<'IN' | 'OUT' | null>(null)
-  const [locModalOpen, setLocModalOpen] = useState(false)
-  
-  const [selectedEmp, setSelectedEmp] = useState('')
-  const [selectedRackLayer, setSelectedRackLayer] = useState('')
-  const [notes, setNotes] = useState('')
-  const [saving, setSaving] = useState(false)
-
-  const fetchLogs = useCallback(async () => {
+  const fetchHistory = useCallback(async () => {
+    if (!mold?.equipment_id) return
     setLoading(true)
-    const [statusRes, locRes] = await Promise.all([
-      supabase
-        .from('equipment_status_logs')
-        .select('*, destinations(destination_name), employees(employee_name, employee_code)')
-        // @ts-ignore - TODO: fix in Phase D equipment migration
-        .eq('legacy_mold_id', mold.equipment_id)
-        .order('logged_at', { ascending: false })
-        .range(0, 29),
-      supabase
-        .from('asset_location_logs')
-        .select(`
-          *,
-          old_rack_layer:rack_layers!asset_location_logs_old_rack_layer_id_fkey(layer_code, racks(rack_code)),
-          new_rack_layer:rack_layers!asset_location_logs_new_rack_layer_id_fkey(layer_code, racks(rack_code)),
-          employees!asset_location_logs_moved_by_fkey(employee_name)
-        `)
-        .eq('asset_id', mold.equipment_id)
-        .order('moved_at', { ascending: false })
-        .range(0, 29),
-    ])
-    setStatusLogs((statusRes.data as any[]) || [])
-    setLocationLogs((locRes.data as any[]) || [])
-    setLoading(false)
-  }, [mold.equipment_id, supabase])
-
-  useEffect(() => { fetchLogs() }, [fetchLogs])
-
-  const fetchLookups = async () => {
-    if (employees.length === 0) {
-      const { data: empData } = await supabase.from('employees').select('employee_id, employee_code, employee_name').order('employee_name')
-      if (empData) setEmployees(empData)
+    try {
+      const res = await getLocationMoveLogs(mold.equipment_id, 10)
+      setLogs(res)
+    } catch (err) {
+      console.error('Failed to fetch location move logs:', err)
+    } finally {
+      setLoading(false)
     }
-    if (rackLayers.length === 0) {
-      const { data: rackData } = await supabase.from('rack_layers').select('id, layer_code, racks(rack_code)')
-      if (rackData) setRackLayers(rackData as any[])
-    }
-  }
+  }, [mold?.equipment_id])
 
-  const openCheckModal = (type: 'IN' | 'OUT') => {
-    fetchLookups()
-    setCheckModalType(type)
-    setSelectedEmp('')
-    setNotes('')
-  }
+  useEffect(() => {
+    fetchHistory()
+  }, [fetchHistory])
 
-  const openLocModal = () => {
-    fetchLookups()
-    setLocModalOpen(true)
-    setSelectedRackLayer(mold.current_rack_layer_id || '')
-    setSelectedEmp('')
-    setNotes('')
-  }
-
-  const handleCheckInOut = async () => {
-    if (!selectedEmp) return alert(t('Equipment.valEmployeeReq'))
-    setSaving(true)
-    
-    const { error } = await supabase.from('equipment_status_logs').insert({
-      // @ts-ignore - TODO: Phase D
-      legacy_mold_id: mold.equipment_id,
-      status: checkModalType || 'IN',
-      employee_id: selectedEmp,
-      notes: notes || null
-    })
-    
-    if (!error) {
-      const usage = checkModalType === 'IN' ? 'IN_STOCK' : 'OUT_OF_STOCK'
-      await supabase.from('equipment').update({ usage_status: usage === 'IN_STOCK' ? 'IN' : 'OUT' } as any).eq('equipment_id', mold.equipment_id)
-      setCheckModalType(null)
-      window.location.reload()
-    } else {
-      alert(error.message)
-      setSaving(false)
-    }
-  }
-
-  const handleLocChange = async () => {
-    if (!selectedRackLayer || !selectedEmp) return alert(t('Equipment.valLocAndEmpReq'))
-    if (selectedRackLayer === mold.current_rack_layer_id) return alert(t('Equipment.valLocUnchanged'))
-    setSaving(true)
-    
-    const { error } = await supabase.from('asset_location_logs').insert({
-      asset_id: mold.equipment_id,
-      asset_type: 'MOLD',
-      old_rack_layer_id: mold.current_rack_layer_id,
-      new_rack_layer_id: selectedRackLayer,
-      moved_by: selectedEmp,
-      notes: notes || null
-    })
-    
-    if (!error) {
-      await supabase.from('equipment').update({ current_rack_layer_id: selectedRackLayer } as any).eq('equipment_id', mold.equipment_id)
-      setLocModalOpen(false)
-      window.location.reload()
-    } else {
-      alert(error.message)
-      setSaving(false)
-    }
-  }
+  const rackLayer = mold.rack_layers
+  const rack = rackLayer?.racks
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-      {/* Check IN/OUT History */}
-      <div className="card-flat" style={{ padding: 0 }}>
-        <div style={{
-          padding: '10px 14px', borderBottom: '1px solid var(--border-default)',
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        }}>
-          <h3 style={{ margin: 0, fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>
-            <ArrowDownUp size={14} style={{ marginRight: 6, verticalAlign: -2, color: 'var(--accent)' }} />
-            {t('Equipment.checkInOutHistory')}
-          </h3>
-          <div style={{ display: 'flex', gap: 6 }}>
-            <button className="btn text-xs font-bold" style={{ borderColor: 'var(--status-success)', color: 'var(--status-success)' }} onClick={() => openCheckModal('IN')}>
-              <LogIn size={14} />
-              {t('Equipment.checkIn')}
-            </button>
-            <button className="btn text-xs font-bold" style={{ borderColor: 'var(--status-error)', color: 'var(--status-error)' }} onClick={() => openCheckModal('OUT')}>
-              <LogOut size={14} />
-              {t('Equipment.checkOut')}
-            </button>
-          </div>
-        </div>
-        <div style={{ maxHeight: 400, overflowY: 'auto' }}>
-          {loading ? (
-            <div style={{ padding: 20, textAlign: 'center', fontSize: 12, color: 'var(--text-muted)' }}>{t('Common.loading')}</div>
-          ) : statusLogs.length === 0 ? (
-            <div style={{ padding: 20, textAlign: 'center', fontSize: 12, color: 'var(--text-muted)' }}>
-              {t('Common.noData')}
+    <div className="flex flex-col gap-4">
+      {/* 1. Current Storage Location Card */}
+      <div
+        className="card-flat p-4"
+        style={{ borderLeft: '4px solid var(--accent)', background: 'var(--bg-surface)' }}
+      >
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div
+              className="w-11 h-11 rounded-lg flex items-center justify-center shrink-0"
+              style={{ background: 'var(--tint-teal-bg)', color: 'var(--accent)' }}
+            >
+              <MapPin size={22} />
             </div>
-          ) : (
-            statusLogs.map(log => (
-              <div key={log.log_id} style={{
-                padding: '8px 14px', borderBottom: '1px solid var(--border-subtle)',
-                display: 'flex', alignItems: 'center', gap: 10,
-              }}>
-                <span className={log.status === 'IN' ? 'badge badge--success font-mono font-bold' : 'badge badge--error font-mono font-bold'}>
-                  {log.status}
+            <div>
+              <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+                {t('currentLocationTitle')}
+              </div>
+              <div className="flex items-baseline gap-2 mt-0.5">
+                <span className="text-[20px] font-extrabold font-mono text-slate-900">
+                  {rackLayer?.layer_code || '—'}
                 </span>
-                <span style={{ fontSize: 12, color: 'var(--text-muted)', minWidth: 80, fontFamily: 'monospace' }}>
-                  {log.logged_at ? new Date(log.logged_at).toLocaleDateString('ja-JP') : '—'}
-                </span>
-                <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)' }}>
-                  {log.employees?.employee_name || ''}
-                </span>
-                {log.notes && (
-                  <span style={{ fontSize: 11, color: 'var(--text-muted)', marginLeft: 'auto' }}>
-                    {log.notes}
+                {rack && (
+                  <span className="text-[12px] font-medium text-slate-600 bg-slate-100 px-2 py-0.5 rounded">
+                    {rack.rack_code} {rack.rack_name ? `(${rack.rack_name})` : ''}
                   </span>
                 )}
               </div>
-            ))
-          )}
-        </div>
-      </div>
+              <div className="text-[12px] text-slate-600 mt-1 flex items-center gap-1.5">
+                <Layers size={13} className="text-teal-600" />
+                <span>
+                  {rack?.location_in_factory || t('noLocationAssigned')}
+                  {rackLayer?.layer_number != null && ` — Tầng ${rackLayer.layer_number}`}
+                </span>
+              </div>
+            </div>
+          </div>
 
-      {/* Location Change History */}
-      <div className="card-flat" style={{ padding: 0 }}>
-        <div style={{
-          padding: '10px 14px', borderBottom: '1px solid var(--border-default)',
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        }}>
-          <h3 style={{ margin: 0, fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>
-            <MapPin size={14} style={{ marginRight: 6, verticalAlign: -2, color: 'var(--accent)' }} />
-            {t('Equipment.locationHistory')}
-          </h3>
-          <button className="btn btn-primary text-xs font-bold" onClick={openLocModal}>
-            <Navigation size={14} />
-            {t('Equipment.changeLocation')}
+          {/* Action: Open Move Modal */}
+          <button
+            type="button"
+            onClick={() => setModalOpen(true)}
+            className="btn btn-primary text-[12px] py-1.5 px-3.5 flex items-center gap-1.5 font-semibold shadow-sm"
+          >
+            <MoveRight size={14} />
+            <span>{t('changeRackBtn')}</span>
           </button>
         </div>
-        
-        {/* Current Location Highlight */}
-        <div style={{ padding: '8px 14px', background: 'var(--bg-surface-2)', borderBottom: '1px solid var(--border-default)', display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ fontSize: 12, color: 'var(--text-muted)', fontWeight: 600 }}>{t('Equipment.currentLocation')}:</span>
-          <span className="font-mono font-bold text-[13px] text-[var(--accent)]">
-            {mold.rack_layers ? `${mold.rack_layers.racks?.rack_code || '?'}-${mold.rack_layers.layer_code}` : t('Common.unregistered')}
-          </span>
-        </div>
-
-        <div style={{ maxHeight: 350, overflowY: 'auto' }}>
-          {loading ? (
-            <div style={{ padding: 20, textAlign: 'center', fontSize: 12, color: 'var(--text-muted)' }}>{t('Common.loading')}</div>
-          ) : locationLogs.length === 0 ? (
-            <div style={{ padding: 20, textAlign: 'center', fontSize: 12, color: 'var(--text-muted)' }}>
-              {t('Common.noData')}
-            </div>
-          ) : (
-            locationLogs.map(log => (
-              <div key={log.id} style={{
-                padding: '8px 14px', borderBottom: '1px solid var(--border-subtle)',
-                display: 'flex', alignItems: 'center', gap: 10,
-              }}>
-                <span style={{ fontSize: 12, color: 'var(--text-muted)', minWidth: 80, fontFamily: 'monospace' }}>
-                  {log.moved_at ? new Date(log.moved_at).toLocaleDateString('ja-JP') : '—'}
-                </span>
-                <span style={{ fontSize: 12, color: 'var(--text-primary)', fontFamily: 'monospace', fontWeight: 600 }}>
-                  {log.old_rack_layer
-                    ? `${log.old_rack_layer.racks?.rack_code || '?'}-${log.old_rack_layer.layer_code}`
-                    : '—'
-                  }
-                </span>
-                <span style={{ fontSize: 12, color: 'var(--accent)' }}>→</span>
-                <span style={{ fontSize: 12, color: 'var(--accent)', fontWeight: 700, fontFamily: 'monospace' }}>
-                  {log.new_rack_layer
-                    ? `${log.new_rack_layer.racks?.rack_code || '?'}-${log.new_rack_layer.layer_code}`
-                    : '—'
-                  }
-                </span>
-                <span style={{ fontSize: 12, color: 'var(--text-muted)', fontWeight: 600 }}>
-                  {log.employees?.employee_name || ''}
-                </span>
-              </div>
-            ))
-          )}
-        </div>
       </div>
 
-      {/* Check IN/OUT Modal */}
-      {checkModalType && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={() => setCheckModalType(null)}>
-          <div className="bg-[var(--bg-surface)] rounded-lg shadow-xl w-[400px] border border-[var(--border-default)]" onClick={e => e.stopPropagation()}>
-            <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border-default)' }}>
-              <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: checkModalType === 'IN' ? 'var(--status-success)' : 'var(--status-error)' }}>
-                {checkModalType === 'IN' ? t('Equipment.checkIn') : t('Equipment.checkOut')}
-              </h3>
-            </div>
-            <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
-              <div>
-                <label className="form-label">{t('Equipment.operator')} <span style={{ color: 'red' }}>*</span></label>
-                <select className="form-input" value={selectedEmp} onChange={e => setSelectedEmp(e.target.value)}>
-                  <option value="">{t('Common.selectPlaceholder')}</option>
-                  {employees.map(e => <option key={e.employee_id} value={e.employee_id}>{e.employee_code} - {e.employee_name}</option>)}
-                </select>
-              </div>
-              <div>
-                <label className="form-label">{t('Equipment.ghiChu')}</label>
-                <textarea className="form-textarea" value={notes} onChange={e => setNotes(e.target.value)} rows={3} />
-              </div>
-            </div>
-            <div style={{ padding: '12px 16px', borderTop: '1px solid var(--border-default)', display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
-              <button className="btn btn-secondary" onClick={() => setCheckModalType(null)} disabled={saving}>{t('Common.cancel')}</button>
-              <button className="btn btn-primary" onClick={handleCheckInOut} disabled={saving}>
-                {saving ? t('Common.saving') : t('Common.save')}
-              </button>
-            </div>
+      {/* 2. Recent Movement Logs (Asset Location Logs) */}
+      <div className="card-flat p-4">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <Clock size={16} className="text-slate-500" />
+            <h3 className="text-[14px] font-bold text-slate-900">{t('moveHistoryTitle')}</h3>
+            <span className="text-[11px] text-slate-400">({t('recent10Rows')})</span>
           </div>
+          <button
+            onClick={fetchHistory}
+            disabled={loading}
+            className="btn btn-secondary text-[11px] py-0.5 px-2 flex items-center gap-1 text-slate-600"
+            title="Refresh"
+          >
+            <RefreshCw size={11} className={loading ? 'animate-spin' : ''} />
+            <span>{t('refresh')}</span>
+          </button>
         </div>
-      )}
 
-      {/* Location Modal */}
-      {locModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={() => setLocModalOpen(false)}>
-          <div className="bg-[var(--bg-surface)] rounded-lg shadow-xl w-[400px] border border-[var(--border-default)]" onClick={e => e.stopPropagation()}>
-            <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border-default)' }}>
-              <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: 'var(--text-primary)' }}>
-                {t('Equipment.changeLocation')}
-              </h3>
-            </div>
-            <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
-              <div>
-                <label className="form-label">{t('Equipment.newLocation')} <span style={{ color: 'red' }}>*</span></label>
-                <select className="form-input" value={selectedRackLayer} onChange={e => setSelectedRackLayer(e.target.value)}>
-                  <option value="">{t('Common.selectPlaceholder')}</option>
-                  {rackLayers.map(r => <option key={r.id} value={r.id}>{r.racks?.rack_code}-{r.layer_code}</option>)}
-                </select>
-              </div>
-              <div>
-                <label className="form-label">{t('Equipment.operator')} <span style={{ color: 'red' }}>*</span></label>
-                <select className="form-input" value={selectedEmp} onChange={e => setSelectedEmp(e.target.value)}>
-                  <option value="">{t('Common.selectPlaceholder')}</option>
-                  {employees.map(e => <option key={e.employee_id} value={e.employee_id}>{e.employee_code} - {e.employee_name}</option>)}
-                </select>
-              </div>
-              <div>
-                <label className="form-label">{t('Equipment.ghiChu')}</label>
-                <textarea className="form-textarea" value={notes} onChange={e => setNotes(e.target.value)} rows={3} />
-              </div>
-            </div>
-            <div style={{ padding: '12px 16px', borderTop: '1px solid var(--border-default)', display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
-              <button className="btn btn-secondary" onClick={() => setLocModalOpen(false)} disabled={saving}>{t('Common.cancel')}</button>
-              <button className="btn btn-primary" onClick={handleLocChange} disabled={saving}>
-                {saving ? t('Common.saving') : t('Common.save')}
-              </button>
-            </div>
+        {loading ? (
+          <div className="p-8 text-center text-slate-400 text-[12px] flex flex-col items-center gap-1.5">
+            <RefreshCw size={20} className="animate-spin text-teal-600" />
+            <span>{t('loadingHistory')}</span>
           </div>
-        </div>
+        ) : logs.length === 0 ? (
+          <div className="p-8 text-center text-slate-400 border border-dashed border-slate-200 rounded-lg flex flex-col items-center justify-center">
+            <Inbox size={32} className="opacity-40 mb-1.5" />
+            <div className="text-[13px] font-medium text-slate-600">{t('noHistoryLogs')}</div>
+            <div className="text-[11px] text-slate-400 mt-0.5">{t('noHistoryLogsSub')}</div>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="data-table w-full text-[12px]">
+              <thead>
+                <tr>
+                  <th style={{ width: 140 }}>{t('thDate')}</th>
+                  <th>{t('thFrom')}</th>
+                  <th style={{ width: 30 }}></th>
+                  <th>{t('thTo')}</th>
+                  <th>{t('thOperator')}</th>
+                  <th>{t('thNotes')}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {logs.map((log) => (
+                  <tr key={log.id} className="hover:bg-slate-50/80">
+                    <td className="font-mono text-slate-600 whitespace-nowrap">
+                      {log.moved_at ? log.moved_at.slice(0, 16).replace('T', ' ') : '—'}
+                    </td>
+                    <td>
+                      {log.old_layer_code ? (
+                        <div className="flex items-center gap-1 font-mono">
+                          <span className="font-bold text-slate-700">{log.old_layer_code}</span>
+                          {log.old_rack_code && (
+                            <span className="text-[10px] text-slate-400">({log.old_rack_code})</span>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-slate-400 font-mono">—</span>
+                      )}
+                    </td>
+                    <td className="text-center text-slate-400">
+                      <ArrowRight size={13} className="inline text-teal-600" />
+                    </td>
+                    <td>
+                      {log.new_layer_code ? (
+                        <div className="flex items-center gap-1 font-mono">
+                          <span className="font-bold text-teal-800 bg-teal-50 px-1.5 py-0.5 rounded">
+                            {log.new_layer_code}
+                          </span>
+                          {log.new_rack_code && (
+                            <span className="text-[10px] text-slate-500">({log.new_rack_code})</span>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-slate-400 font-mono">—</span>
+                      )}
+                    </td>
+                    <td className="text-slate-700 font-medium">
+                      {log.moved_by_name || '—'}
+                    </td>
+                    <td className="text-slate-600 max-w-[200px] truncate" title={log.notes || ''}>
+                      {log.notes || '—'}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* 3. Location Move Modal */}
+      {modalOpen && (
+        <LocationMoveModal
+          isOpen={modalOpen}
+          onClose={() => setModalOpen(false)}
+          onSuccess={() => {
+            fetchHistory()
+            window.location.reload()
+          }}
+          equipment={{
+            equipment_id: mold.equipment_id,
+            equipment_code: mold.equipment_code,
+            display_name: mold.display_name,
+            current_rack_layer_id: mold.current_rack_layer_id,
+            current_layer_code: rackLayer?.layer_code,
+            current_rack_code: rack?.rack_code,
+            current_location_in_factory: rack?.location_in_factory,
+            company_id: (mold as any).company_id,
+            owner_company_name: mold.mold_revisions?.products?.companies?.company_name,
+            keeper_company_id: mold.keeper_company_id,
+            keeper_company_name: mold.keeper_company?.company_name,
+          }}
+          defaultTab="RACK"
+        />
       )}
     </div>
   )
 }
-
