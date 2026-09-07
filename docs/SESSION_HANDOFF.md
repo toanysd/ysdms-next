@@ -1,4 +1,4 @@
-# SESSION HANDOFF — 2026-09-07 (Milestone 14 Kickoff)
+# SESSION HANDOFF — 2026-09-07 (Milestone 15 Closed)
 
 > **Mục đích:** Tài liệu này là nguồn sự thật duy nhất khi bắt đầu phiên thảo luận mới.
 > PE = Perplexity (Project Engineer — phân tích, kiến trúc, ra quyết định).
@@ -13,18 +13,19 @@
 |---|---|
 | Kiến trúc cốt lõi (ADR-001~003, ADR-007) | ✅ APPROVED & LOCKED |
 | M13 — Tray Schedule Cockpit | ✅ NGHIỆM THU |
-| M14-S1 — Shopfloor Tablet Cockpit (/production/floor) | ✅ NGHIỆM THU (Pushed) |
-| M14-S2 — Equipment Lifecycle & Daily Logs View | ✅ NGHIỆM THU (Pushed) |
+| M14 — Shopfloor Execution & Equipment Lifecycle | ✅ NGHIỆM THU (Pushed) |
+| M15-S1 — NG Trend Analysis (/quality/ng-trends) | ✅ NGHIỆM THU (Pushed) |
+| M15-S2 — Inspection KCS & Monthly QC PDF (/quality/inspection) | ✅ NGHIỆM THU (Pushed) |
 | M14 Shift Policy Lock (Day Shift Only) | ✅ LOCKED |
 | Security Hardening (M091–M092) | ✅ Clean Pass (0 errors, 0 anon callable) |
-| Migration 089–094 | ✅ Applied to production |
+| Migration 089–095 | ✅ Applied to production |
 | ADR-007 (M14 Shopfloor + Lifecycle) | ✅ COMMITTED |
 | Phase D — Legacy Migration | ✅ 100% DONE (physical_molds & cutters đã drop) |
 | Dữ liệu thương mại | ✅ 2,396 orders / 7,299 lines / ~10M trays imported |
 | Dữ liệu thiết bị | ✅ 657 orphan linked — 75 còn PENDING MANUAL REVIEW |
-| TypeScript build | ✅ 0 errors (sau commit f6ac506) |
+| TypeScript build | ✅ 0 errors (sau commit fee9be0) |
 | i18n | ✅ 0 missing keys |
-| Last verified commit | `f6ac506` (2026-09-07) |
+| Last verified commit | `fee9be0` (2026-09-07) |
 
 ---
 
@@ -70,7 +71,7 @@ production_schedules, material_consumption_logs
 production_orders, production_lots
 aluminum_blanks
 design_approval_logs, sample_requests, product_lifecycle_logs
-forming_daily_logs, press_daily_logs, grinding_daily_logs, inspection_daily_logs
+forming_daily_logs, press_daily_logs, grinding_daily_logs, inspection_daily_logs (schedule_id linked via M095)
 
 Views (security_invoker = true):
 v_tray_schedule_gantt, v_equipment_lifecycle_status, v_dashboard_executive_kpis
@@ -95,6 +96,7 @@ v_tray_schedule_gantt, v_equipment_lifecycle_status, v_dashboard_executive_kpis
 | Security | Security Hardening Sprint (Migrations 091 & 092 — Clean Security Pass) | ✅ DONE |
 | Daily Ops | Grinding, Inspection, Forming, Press daily logs foundation (Migration 093 applied) | ✅ DONE |
 | M14 | Shopfloor Execution & Equipment Lifecycle (Tablet /production/floor, /production/daily-logs, /equipment/lifecycle) | ✅ NGHIỆM THU |
+| M15 | QC Intelligence Module (/quality/ng-trends, /quality/inspection, Monthly QC PDF) | ✅ NGHIỆM THU |
 
 ---
 
@@ -113,8 +115,8 @@ v_tray_schedule_gantt, v_equipment_lifecycle_status, v_dashboard_executive_kpis
 ### 🟢 FEATURE BACKLOG (ưu tiên tiếp theo)
 7. **Milestone 14 Sprint 1: Shopfloor Tablet Cockpit (`/production/floor`)** — Touch-first UI cho 14 máy dập khay (`MACH-1` → `MACH-14`), auto nhận diện máy qua `localStorage`, quy trình 3-touch (Bắt đầu → Gá cuộn → Kết thúc & báo sản lượng), gợi ý tiêu hao nhựa tự động theo `feed_length_mm` | ✅ **DONE**
 8. **Milestone 14 Sprint 2: Daily Logs & Equipment Lifecycle (`/production/daily-logs`, `/equipment/lifecycle`)** — Dashboard vòng đời thiết bị với ngưỡng cảnh báo CUTTER 40k/50k shots, MOLD 80k/100k shots, nút Bảo trì xong, và View tổng hợp daily logs | ✅ **DONE**
-9. **Location/Transfer Module** — `LocationMoveModule.tsx`, `LocationTab.tsx`, `TransferTab.tsx` đã có Group A fallback logic. Cần hoàn chỉnh UX.
-10. **QC Module mở rộng** — `inspection_daily_logs` → báo cáo NG trends.
+9. **Milestone 15: QC Intelligence Module (`/quality/ng-trends`, `/quality/inspection`)** — Phân tích xu hướng phế phẩm NG Trends, xếp hạng máy & sản phẩm, đối soát KCS dập vs kiểm tra ngoại quan, xuất báo cáo Monthly QC PDF | ✅ **DONE**
+10. **Location/Transfer Module** — `LocationMoveModule.tsx`, `LocationTab.tsx`, `TransferTab.tsx` đã có Group A fallback logic. Cần hoàn chỉnh UX.
 11. **Mobile-first Worklog** — Tối ưu UI nhập nhật ký trên điện thoại tại xưởng.
 
 ---
@@ -152,7 +154,7 @@ v_tray_schedule_gantt, v_equipment_lifecycle_status, v_dashboard_executive_kpis
 | Stack | Next.js 14, TypeScript, Supabase, Tailwind CSS, next-intl |
 | i18n | `messages/ja.json` + `messages/vi.json` |
 | Main branch | `main` |
-| Last verified commit | `f6ac506` (M14 Sprint 1 + Sprint 2 — 2026-09-07) |
+| Last verified commit | `fee9be0` (M15 Sprint 1 + Sprint 2 + Migration 095 — 2026-09-07) |
 
 ---
 
@@ -160,11 +162,11 @@ v_tray_schedule_gantt, v_equipment_lifecycle_status, v_dashboard_executive_kpis
 
 Bạn là AN (Executing Agent). Đây là dự án **ysdms-next** — hệ thống quản lý sản xuất khay nhựa cho YSD (Yoshida Package).
 
-**Kiến trúc:** Unified `equipment` table (ADR-001), luồng 4 cấp work_orders→jobs→job_steps→work_logs (ADR-002), product-centric SSOT, Shopfloor Tablet & Equipment Lifecycle (ADR-007).
+**Kiến trúc:** Unified `equipment` table (ADR-001), luồng 4 cấp work_orders→jobs→job_steps→work_logs (ADR-002), product-centric SSOT, Shopfloor Tablet & Equipment Lifecycle (ADR-007), QC Intelligence (M15).
 
-**Trạng thái hiện tại:** Milestone 13 & Milestone 14 đã nghiệm thu hoàn tất. Security Hardening Sprint đã Clean Pass (0 errors). Migration 089–094 đã apply thành công trên Production. Cả 2 sprints của M14 (Sprint 1: `/production/floor` và Sprint 2: `/equipment/lifecycle`, `/production/daily-logs`) đã commit và push thành công lên GitHub `origin/main`.
+**Trạng thái hiện tại:** Milestone 13, Milestone 14, và Milestone 15 đã nghiệm thu hoàn tất. Security Hardening Sprint đã Clean Pass (0 errors). Migration 089–095 đã apply thành công trên Production. Toàn bộ tính năng M15 (Sprint 1: `/quality/ng-trends`, Sprint 2: `/quality/inspection`, và API Monthly QC PDF `/api/qc/monthly-report/pdf`) đã commit và push thành công lên GitHub `origin/main`.
 
-**Nhiệm vụ tiếp theo:** Sẵn sàng nhận Directive tiếp theo từ PE cho Milestone 15 hoặc các hạng mục Backlog (Location/Transfer Module, QC NG Trends, hoặc Mobile-first Worklog).
+**Nhiệm vụ tiếp theo:** Sẵn sàng nhận Directive tiếp theo từ PE cho Milestone 16 hoặc các hạng mục Backlog (Location/Transfer Module, Mobile-first Worklog, hoặc TechnicalReviewForm UX upgrade).
 
 **Verify trước khi commit:** `npx tsc --noEmit` (0 errors) + `node scripts/check_translations.mjs` (0 missing keys).
 
