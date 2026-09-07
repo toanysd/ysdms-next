@@ -29,3 +29,5 @@ Ví dụ: `ADR-001_unified-equipment-table.md`, `ADR-002_work-order-option-c.md`
 | ADR-004 | 2026-08-18 | APPROVED | Deprecate physical_molds/cutters FK |
 | ADR-005 | 2026-08-20 | APPROVED | Company Entity Unification and Classification |
 | ADR-006 | 2026-08-29 | APPROVED | Multi-Perspective Schedule View & Gantt Tree Structure |
+| ADR-007 | 2026-09-04 | APPROVED | Shopfloor Tablet Cockpit & Equipment Lifecycle (Milestone 14) |
+| ADR-008 | 2026-09-07 | APPROVED | Rack & Layer Code Convention (Milestone 16) |
