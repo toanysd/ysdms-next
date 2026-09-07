@@ -13,8 +13,10 @@
 |---|---|
 | Kiến trúc cốt lõi (ADR-001~003, ADR-007) | ✅ APPROVED & LOCKED |
 | M13 — Tray Schedule Cockpit | ✅ NGHIỆM THU |
+| M14-S1 — Shopfloor Tablet Cockpit (/production/floor) | ✅ CODE COMPLETE |
+| M14 Shift Policy Lock (Day Shift Only) | ✅ LOCKED |
 | Security Hardening (M091–M092) | ✅ Clean Pass (0 errors, 0 anon callable) |
-| Migration 089–093 | ✅ Applied to production |
+| Migration 089–094 | ✅ Applied (089-093 prod, 094 prepared) |
 | ADR-007 (M14 Shopfloor + Lifecycle) | ✅ COMMITTED |
 | Phase D — Legacy Migration | ✅ 100% DONE (physical_molds & cutters đã drop) |
 | Dữ liệu thương mại | ✅ 2,396 orders / 7,299 lines / ~10M trays imported |
@@ -107,7 +109,7 @@ v_tray_schedule_gantt, v_equipment_lifecycle_status, v_dashboard_executive_kpis
 6. **RLS policies** — `material_stock`, `work_orders` chưa có RLS. Postponed bởi Product Owner.
 
 ### 🟢 FEATURE BACKLOG (ưu tiên tiếp theo)
-7. **Milestone 14 Sprint 1: Shopfloor Tablet Cockpit (`/production/floor`)** — Touch-first UI cho 14 máy dập khay (`MACH-1` → `MACH-14`), auto nhận diện máy qua `localStorage`, quy trình 3-touch (Bắt đầu → Gá cuộn → Kết thúc & báo sản lượng), gợi ý tiêu hao nhựa tự động theo `feed_length_mm` | 🚀 **IN PROGRESS**
+7. **Milestone 14 Sprint 1: Shopfloor Tablet Cockpit (`/production/floor`)** — Touch-first UI cho 14 máy dập khay (`MACH-1` → `MACH-14`), auto nhận diện máy qua `localStorage`, quy trình 3-touch (Bắt đầu → Gá cuộn → Kết thúc & báo sản lượng), gợi ý tiêu hao nhựa tự động theo `feed_length_mm` | ✅ **DONE**
 8. **Milestone 14 Sprint 2: Daily Logs & Equipment Lifecycle (`/production/daily-logs`, `/equipment/lifecycle`)** — Checklist 7 thiết bị đầu ca, 7 nhóm lỗi NG (A→G), Shot count auto từ cavity khuôn, Dashboard vòng đời thiết bị với ngưỡng cảnh báo CUTTER 40k/50k shots, MOLD 80k/100k shots | ⏳ **PLANNED**
 9. **Location/Transfer Module** — `LocationMoveModule.tsx`, `LocationTab.tsx`, `TransferTab.tsx` đã có Group A fallback logic. Cần hoàn chỉnh UX.
 10. **QC Module mở rộng** — `inspection_daily_logs` → báo cáo NG trends.
