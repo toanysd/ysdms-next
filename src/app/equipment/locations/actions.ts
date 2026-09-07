@@ -654,3 +654,231 @@ export async function getEquipmentShipLogs(
     employee_name: d.employees?.employee_name || null,
   }))
 }
+
+export interface ScannedEquipmentResult {
+  equipment_id: string
+  equipment_code: string
+  display_name: string
+  equipment_type: string
+  device_status: string | null
+  usage_status: string | null
+  current_rack_layer_id: string | null
+  current_layer_code: string | null
+  current_rack_code: string | null
+  current_rack_name: string | null
+  current_zone_code: string | null
+  current_location_in_factory: string | null
+  company_id: string | null
+  owner_company_name: string | null
+  keeper_company_id: string | null
+  keeper_company_name: string | null
+}
+
+export interface ScannedLayerResult {
+  layer_id: string
+  layer_code: string
+  layer_number: number
+  rack_id: string
+  rack_code: string
+  rack_code_new: string
+  rack_name: string
+  zone_code: string
+  location_in_factory: string
+  equipment_count: number
+}
+
+export type ScannedQRResolution =
+  | { type: 'EQUIPMENT'; data: ScannedEquipmentResult }
+  | { type: 'LAYER'; data: ScannedLayerResult }
+  | { type: 'UNKNOWN'; raw: string; error?: string }
+
+export async function resolveScannedQRCode(rawPayload: string): Promise<ScannedQRResolution> {
+  const payload = rawPayload.trim()
+  if (!payload) {
+    return { type: 'UNKNOWN', raw: rawPayload, error: 'Empty payload' }
+  }
+
+  const supabase = await createClient()
+
+  // 1. Kiểm tra UUID pattern trước (cả trong URL và chuỗi trần)
+  const uuidRegex = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i
+  const uuidMatch = payload.match(uuidRegex)
+  if (uuidMatch) {
+    const matchedUuid = uuidMatch[0]
+    const { data: eqData, error: eqErr } = await supabase
+      .from('equipment')
+      .select(`
+        equipment_id,
+        equipment_code,
+        display_name,
+        equipment_type,
+        device_status,
+        usage_status,
+        current_rack_layer_id,
+        company_id,
+        keeper_company_id,
+        owner:companies!equipment_company_id_fkey(company_name),
+        keeper:companies!equipment_keeper_company_id_fkey(company_name),
+        rack_layers(
+          id,
+          layer_number,
+          layer_code,
+          racks(
+            id,
+            rack_code,
+            rack_code_new,
+            rack_name,
+            zone_code,
+            location_in_factory
+          )
+        )
+      `)
+      .or(`equipment_id.eq.${matchedUuid},qr_uuid.eq.${matchedUuid}`)
+      .maybeSingle()
+
+    if (!eqErr && eqData) {
+      const rl: any = eqData.rack_layers
+      const rk: any = rl?.racks
+      return {
+        type: 'EQUIPMENT',
+        data: {
+          equipment_id: eqData.equipment_id,
+          equipment_code: eqData.equipment_code,
+          display_name: eqData.display_name,
+          equipment_type: eqData.equipment_type,
+          device_status: eqData.device_status,
+          usage_status: eqData.usage_status,
+          current_rack_layer_id: eqData.current_rack_layer_id,
+          current_layer_code: rl?.layer_code || null,
+          current_rack_code: rk?.rack_code_new || rk?.rack_code || null,
+          current_rack_name: rk?.rack_name || null,
+          current_zone_code: rk?.zone_code || null,
+          current_location_in_factory: rk?.location_in_factory || null,
+          company_id: eqData.company_id,
+          owner_company_name: (eqData.owner as any)?.company_name || null,
+          keeper_company_id: eqData.keeper_company_id,
+          keeper_company_name: (eqData.keeper as any)?.company_name || null,
+        },
+      }
+    }
+  }
+
+  // 2. Kiểm tra Rack Layer Code (/^[A-Z0-9]{2}-\d{2}-L\d+$/i)
+  const layerRegex = /^[A-Z0-9]{2}-\d{2}-L\d+$/i
+  if (layerRegex.test(payload)) {
+    const { data: layerData, error: layerErr } = await supabase
+      .from('rack_layers')
+      .select(`
+        id,
+        layer_number,
+        layer_code,
+        racks(
+          id,
+          rack_code,
+          rack_code_new,
+          rack_name,
+          zone_code,
+          location_in_factory
+        )
+      `)
+      .ilike('layer_code', payload)
+      .maybeSingle()
+
+    if (!layerErr && layerData) {
+      const rk: any = layerData.racks
+      const { count } = await supabase
+        .from('equipment')
+        .select('*', { count: 'exact', head: true })
+        .eq('current_rack_layer_id', layerData.id)
+
+      return {
+        type: 'LAYER',
+        data: {
+          layer_id: layerData.id,
+          layer_code: layerData.layer_code,
+          layer_number: layerData.layer_number,
+          rack_id: rk?.id || '',
+          rack_code: rk?.rack_code || '',
+          rack_code_new: rk?.rack_code_new || '',
+          rack_name: rk?.rack_name || '',
+          zone_code: rk?.zone_code || '',
+          location_in_factory: rk?.location_in_factory || '',
+          equipment_count: count || 0,
+        },
+      }
+    }
+  }
+
+  // 3. Kiểm tra Short Code (/^[MCPWBSF]-[A-Z0-9_\-]+$/i) hoặc mã thiết bị
+  let targetCode = payload
+  const shortCodeRegex = /^[MCPWBSF]-([A-Z0-9_\-]+)$/i
+  const shortMatch = payload.match(shortCodeRegex)
+  if (shortMatch) {
+    targetCode = shortMatch[1]
+  }
+
+  // Truy vấn tìm equipment theo targetCode hoặc nguyên payload
+  const { data: codeEqData, error: codeEqErr } = await supabase
+    .from('equipment')
+    .select(`
+      equipment_id,
+      equipment_code,
+      display_name,
+      equipment_type,
+      device_status,
+      usage_status,
+      current_rack_layer_id,
+      company_id,
+      keeper_company_id,
+      owner:companies!equipment_company_id_fkey(company_name),
+      keeper:companies!equipment_keeper_company_id_fkey(company_name),
+      rack_layers(
+        id,
+        layer_number,
+        layer_code,
+        racks(
+          id,
+          rack_code,
+          rack_code_new,
+          rack_name,
+          zone_code,
+          location_in_factory
+        )
+      )
+    `)
+    .or(`equipment_code.ilike.${targetCode},equipment_code.ilike.${payload}`)
+    .maybeSingle()
+
+  if (!codeEqErr && codeEqData) {
+    const rl: any = codeEqData.rack_layers
+    const rk: any = rl?.racks
+    return {
+      type: 'EQUIPMENT',
+      data: {
+        equipment_id: codeEqData.equipment_id,
+        equipment_code: codeEqData.equipment_code,
+        display_name: codeEqData.display_name,
+        equipment_type: codeEqData.equipment_type,
+        device_status: codeEqData.device_status,
+        usage_status: codeEqData.usage_status,
+        current_rack_layer_id: codeEqData.current_rack_layer_id,
+        current_layer_code: rl?.layer_code || null,
+        current_rack_code: rk?.rack_code_new || rk?.rack_code || null,
+        current_rack_name: rk?.rack_name || null,
+        current_zone_code: rk?.zone_code || null,
+        current_location_in_factory: rk?.location_in_factory || null,
+        company_id: codeEqData.company_id,
+        owner_company_name: (codeEqData.owner as any)?.company_name || null,
+        keeper_company_id: codeEqData.keeper_company_id,
+        keeper_company_name: (codeEqData.keeper as any)?.company_name || null,
+      },
+    }
+  }
+
+  // 4. Fallback: không tìm thấy
+  return {
+    type: 'UNKNOWN',
+    raw: payload,
+  }
+}
+

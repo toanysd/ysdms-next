@@ -14,13 +14,16 @@ import {
   CheckCircle2,
   AlertTriangle,
   RotateCcw,
+  QrCode,
 } from 'lucide-react'
+import MiniLayerQRScannerModal from '@/components/equipment/qr/MiniLayerQRScannerModal'
 import {
   getSelectorLookups,
   moveEquipmentLocation,
   transferEquipmentCompany,
   returnEquipmentToOwner,
   type SelectorLookups,
+  type ScannedLayerResult,
 } from '../actions'
 
 interface Props {
@@ -52,6 +55,7 @@ export default function LocationMoveModal({
 }: Props) {
   const t = useTranslations('EquipmentLocations.modal')
   const tZones = useTranslations('EquipmentLocations.zones')
+  const tScanner = useTranslations('EquipmentLocations.scanner')
 
   const [activeTab, setActiveTab] = useState<'RACK' | 'COMPANY'>(defaultTab)
   const [lookups, setLookups] = useState<SelectorLookups | null>(null)
@@ -71,6 +75,19 @@ export default function LocationMoveModal({
   const [shipDate, setShipDate] = useState<string>(new Date().toISOString().slice(0, 10))
   const [companyEmployeeId, setCompanyEmployeeId] = useState<string>('')
   const [companyNotes, setCompanyNotes] = useState<string>('')
+
+  // Scanner state
+  const [isScannerOpen, setIsScannerOpen] = useState(false)
+
+  const handleLayerDetected = (scanned: ScannedLayerResult) => {
+    setSelectedZone(scanned.zone_code)
+    setSelectedRackId(scanned.rack_id)
+    setSelectedLayerId(scanned.layer_id)
+    setMessage({
+      type: 'success',
+      text: tScanner('scannedLayerApplied', { code: scanned.layer_code, rack: scanned.rack_name }),
+    })
+  }
 
   // Load lookups on mount / open
   useEffect(() => {
@@ -346,6 +363,24 @@ export default function LocationMoveModal({
           ) : activeTab === 'RACK' ? (
             /* TAB 1: RACK LAYER CHANGE FORM */
             <form onSubmit={handleRackMoveSubmit} className="flex flex-col gap-3.5">
+              {/* Scan-to-Move Quick Action */}
+              <div className="bg-teal-50/80 p-2.5 rounded-lg border border-teal-200 flex items-center justify-between gap-2 shadow-sm">
+                <div className="flex items-center gap-2">
+                  <QrCode size={16} className="text-teal-700 shrink-0" />
+                  <span className="text-xs font-semibold text-teal-900">
+                    {tScanner('scanToMoveTitle')}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsScannerOpen(true)}
+                  className="btn btn-primary text-xs py-1 px-3 flex items-center gap-1.5 font-bold shadow-sm"
+                >
+                  <QrCode size={13} />
+                  <span>{tScanner('scanLayerBtn')}</span>
+                </button>
+              </div>
+
               {/* Step 1: Zone Select */}
               <div>
                 <label className="form-label text-[12px] font-semibold text-slate-700 block mb-1">
@@ -593,6 +628,13 @@ export default function LocationMoveModal({
           )}
         </div>
       </div>
+
+      {/* Mini Layer QR Scanner Modal */}
+      <MiniLayerQRScannerModal
+        isOpen={isScannerOpen}
+        onClose={() => setIsScannerOpen(false)}
+        onLayerDetected={handleLayerDetected}
+      />
     </div>
   )
 }

@@ -22,7 +22,7 @@ CONTEXT KHỞI ĐẦU THẢO LUẬN — DỰ ÁN ysdms-next
 - Milestone 16  : ✅ ĐÃ NGHIỆM THU (Location Browser & Transfer Module — ADR-008, 12 Zones, 90 Kệ, 380 Tầng, 4,761 Thiết bị backfill — Migration 096)
 - Milestone 17 — Equipment QR Code & AR Locator:
   - Sprint M17-S1: ✅ ĐÃ NGHIỆM THU CHÍNH THỨC (commit `1c6ad7e` — Engine QR `qrcode`, 3 kích thước 30/40/50mm, In tem lẻ, In A4 hàng loạt, Tích hợp Header, LocationTab, VisualShelfView)
-  - Sprint M17-S2: 🚀 ĐANG TRIỂN KHAI (Chỉ thị #025 — Camera AR Equipment Locator dùng `jsQR`, Multi-region 6 vùng, Visual Locator AR Overlay, Tích hợp Scan-to-Move trong `LocationMoveModal`, Sidebar link `/equipment/scan`)
+  - Sprint M17-S2: ✅ ĐÃ HOÀN THÀNH TRIỂN KHAI (Chỉ thị #025 — Camera AR Equipment Locator dùng `jsQR`, Multi-region 6 vùng, Visual Locator AR Overlay, Tích hợp Scan-to-Move trong `LocationMoveModal`, Sidebar link `/equipment/scan`)
 
 ## 4. KIẾN TRÚC CỐT LÕI (BẮT BUỘC TUÂN THỦ)
 - **ADR-001:** Unified SSOT `equipment` (8 loại thiết bị, quan hệ N:N `equipment_assignments` cho bộ SET gá lắp & dùng chung SHARED).

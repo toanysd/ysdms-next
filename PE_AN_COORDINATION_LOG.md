@@ -74,7 +74,7 @@
 ---
 
 ## Milestone 17 — Equipment QR Code & AR Locator
-**Status: S1 COMPLETED** | 2026-09-07
+**Status: COMPLETED (S1 + S2)** | 2026-09-07
 
 ### Sprint 1: QR Generation & Single/Mass Print
 - Zero DB migration (Frontend 100%).
@@ -89,8 +89,19 @@
   - `VisualShelfView.tsx`: Nút `一括印刷 (全段)` trên Rack Header, nút `In tầng này` trên mỗi Layer Bar, nút `QR` trên từng thiết bị.
 - Scanner Stub: `/equipment/scan/page.tsx` (Route placeholder sẵn sàng cho M17-S2 Camera AR scanner).
 
+### Sprint 2: Camera AR Equipment Locator & Scan-to-Move
+- Zero DB migration (Frontend 100% + Server Action).
+- Library: `jsqr` pure JavaScript/Canvas QR decoder (thay thế hoàn toàn `html5-qrcode`).
+- `CameraARScanner.tsx`: Engine camera với throttled loop (~70ms interval), ma trận 6 vùng HUD Grid trực quan, Web Audio API Synthesizer (880Hz/1760Hz beep), điều khiển đèn Flash/Torch và đổi camera trước/sau.
+- `ScannerAROverlay.tsx`: Giao diện HUD 6 vùng, Target Locate Mode (`?find=CODE` hoặc ô tìm kiếm với hiệu ứng Emerald Glow & `MATCH FOUND`), AR Drawer chi tiết thiết bị / tầng kệ kèm nút hành động.
+- `MiniLayerQRScannerModal.tsx`: Modal quét QR mini tối ưu hóa thao tác gán tầng kệ nhanh.
+- `LocationMoveModal.tsx`: Tích hợp Scan-to-Move tự động nhận diện và gán tức thì Zone, Rack, Layer khi quét tem tầng kệ.
+- `actions.ts`: Bổ sung Server Action `resolveScannedQRCode` tuân thủ nghiêm ngặt thứ tự ưu tiên: UUID -> Layer Code (`^[A-Z0-9]{2}-\d{2}-L\d+$`) -> Short Code (`^[MCPWBSF]-[A-Z0-9_\-]+$`) -> Fallback Unknown.
+- Navigation: Thêm link `ARスキャナー / Quét QR AR` (`/equipment/scan`) vào Sidebar nhóm Thiết bị (`sections.equipment`).
+
 ### Quality Gates Verified:
 - TypeScript `npx tsc --noEmit`: ✅ 0 errors
 - Translations `check_translations.mjs`: ✅ 0 missing keys
 - Bilingual hardcode scan: ✅ Clean
+
 

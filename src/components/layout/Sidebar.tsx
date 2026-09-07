@@ -80,6 +80,7 @@ const NAV_SECTIONS: NavSection[] = [
       { href: '/equipment/auxiliary', icon: Cog, tKey: 'items.auxiliary' },
       { href: '/maintenance', icon: Wrench, tKey: 'items.maintenance' },
       { href: '/equipment/locations', icon: MapPin, tKey: 'items.locations' },
+      { href: '/equipment/scan', icon: ScanLine, tKey: 'items.scan' },
       { href: '/equipment/lifecycle', icon: Archive, tKey: 'items.lifecycle' },
       { href: '/equipment/plastics', icon: Package, tKey: 'items.plastics' },
       { href: '/worklogs', icon: ClipboardList, tKey: 'items.worklogs' },
