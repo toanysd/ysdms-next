@@ -1,73 +1,107 @@
-# Implementation Plan — Milestone 16 Sprint 1: Location Browser (`/equipment/locations`)
+# Implementation Plan — Milestone 17 Sprint 1: QR Code Generation & Print
 
-Xây dựng hệ thống Trực quan hóa và Quản lý Kệ - Tầng kho lưu trữ thiết bị (`/equipment/locations`) theo chuẩn định danh ADR-008 (`{ZONE}-{NUMBER}` và `{RACK_CODE}-L{N}`) kết nối trực tiếp với 90 kệ, 380 tầng và 4,549 thiết bị thực tế tại xưởng YSD.
+Triển khai Phân hệ **Tạo & In Mã QR Thiết Bị (Khuôn & Dao Cắt)** theo Chỉ thị #024 đã được PE phê duyệt và tinh chỉnh sát với thực tế xưởng YSD.
 
-## User Review Required
+---
+
+## 1. User Review Required
 
 > [!IMPORTANT]
-> - **Migration 096** (`20260907000003_096_rack_code_new_convention.sql`) đã được AN tạo, commit và đẩy lên nhánh `main` (commit `bf539e4`). PE cần chạy lệnh apply migration qua MCP trên Supabase Production.
-> - Sau khi Migration 096 được áp dụng, 90 kệ sẽ có `zone_code` (12 zone) và `rack_code_new` (VD: `MR-01`), 380 tầng có `layer_code` (VD: `MR-01-L1`), và 4,549 thiết bị sẽ được tự động liên kết `current_rack_layer_id`.
-> - Giao diện hiển thị `rack_code` cũ (ký tự vòng tròn `①`, `②`...) dạng badge phụ bên cạnh mã mới `MR-01` để nhân viên xưởng đối chiếu chuyển tiếp không bị bỡ ngỡ.
+> - **Không thay đổi Database Schema:** M17-S1 thuần front-end, sử dụng thư viện `qrcode` (local canvas/svg renderer) và đọc dữ liệu sẵn có từ bảng `equipment` (`equipment_code`, `equipment_type`, `equipment_id`, `display_name`, `current_rack_layer_id`).
+> - **Hỗ trợ 2 định dạng mã hóa (Toggle):**
+>   1. `Tem dán xưởng (Mã siêu ngắn - Mặc định)`: `{TypePrefix}-{equipment_code}` (VD: `M-ARK001-4`, `C-K102`). Ít hạt ma trận, mật độ thấp, đọc cực nhạy ở cự ly 1.5–2m trên tablet.
+>   2. `Tài liệu Web (URL)`: `https://{BASE_URL}/equipment/molds/{equipment_id}` (Mở trực tiếp trên smartphone khi scan tài liệu).
+> - **Prefix Table bất biến:**
+>   - `M`: `MOLD` (4,736 chiếc)
+>   - `C`: `CUTTER_SEPARATE` & `CUTTER_INLINE` (1,731 chiếc)
+>   - `P`: `PLUG` (6 chiếc)
+>   - `W`: `WATER_BASE` (9 chiếc)
+>   - `B`: `PRESSURE_BASE` (14 chiếc)
+>   - `S`: `STACKING` (1 chiếc)
+>   - `F`: `FRAME` (0 chiếc)
+> - **3 kích thước tem dán:** 30×30 mm (nhỏ), 40×40 mm (tiêu chuẩn), 50×50 mm (lớn).
+> - **Khổ in chuẩn A4 (Grid):** Tự động dàn trang `@media print` với viền cắt nét đứt `0.5px dotted #999` để công nhân cắt dán vào khuôn.
 
 ---
 
-## Proposed Changes
+## 2. Proposed Changes
 
-### Phân hệ Kệ - Tầng Kho Thiết Bị (Equipment Locations)
+### Dependencies & Setup
+#### `package.json`
+- Cài đặt `qrcode` và `@types/qrcode`.
 
-#### [NEW] `src/app/equipment/locations/page.tsx`
-- **Mục đích:** Trang tổng quan Danh mục Vị trí Kệ - Tầng kho YSD.
-- **Tính năng:**
-  - **4 KPI Cards:** Tổng số Kệ (90), Tổng số Tầng (380), Tổng thiết bị đang lưu trữ, Tỷ lệ lấp đầy (% Occupancy).
-  - **Filter Bar:** Dropdown lọc 12 Zone xưởng (`MR`, `M8`, `TW`, `OF`, `MD`, `TC`, `GT`, `PS`, `MT`, `SC`, `2F`, `CS`, `SP`), ô tìm kiếm nhanh mã thiết bị / tên khuôn / mã kệ, bộ lọc trạng thái (Tất cả / Đang có khuôn / Còn trống).
-  - **Rack Grid View:** Lưới hiển thị các kệ theo Zone. Mỗi Card kệ hiển thị:
-    - Mã mới `rack_code_new` (VD: `MR-01`) nổi bật.
-    - Mã cũ `① (01)` mờ nhỏ bên cạnh.
-    - Tên khu vực `location_in_factory`.
-    - Thanh đo sức chứa mini (Visual layer dots/bars).
-    - Số lượng thiết bị đang cất giữ.
-    - Nút / Link click vào chi tiết kệ `/equipment/locations/[rackId]`.
+---
 
-#### [NEW] `src/app/equipment/locations/[rackId]/page.tsx`
-- **Mục đích:** Trang chi tiết Kệ & Mô phỏng Kệ đứng nhiều tầng (Visual Shelf View).
-- **Tính năng:**
-  - **BackBar:** `← 戻る (Back)` + `↑ 一覧 (Vị trí kho)`.
-  - **Kệ Header:** `rack_code_new`, mã cũ `rack_code`, `zone_code`, `location_in_factory`, sức chứa & tỷ lệ sử dụng.
-  - **Visual Shelf Layout:** Mô phỏng kệ thực tế (xếp tầng từ Tầng N ở trên cùng xuống Tầng 1 ở dưới cùng).
-  - **Mỗi tầng kệ (`rack_layer`):**
-    - Nhãn tầng: `MR-01-L1` (Tầng 1), số lượng thiết bị.
-    - Danh sách thẻ thiết bị đang đặt tại tầng đó: Mã thiết bị (`equipment_code` hyperlink tới `/equipment/[id]`), Tên hiển thị (`display_name`), Loại (`equipment_type`), Tình trạng (`device_status`).
-    - Nút thao tác nhanh "Đổi vị trí" (chuẩn bị cho Sprint 2).
+### New Components & Pages
 
-#### [NEW] `src/app/equipment/locations/actions.ts`
-- **Mục đích:** Server Actions truy vấn dữ liệu Kệ, Tầng, Thiết bị và Zone.
-- **Functions:**
-  - `getLocationOverview(filters)`: Lấy danh sách 90 kệ kèm count tầng và count thiết bị, thống kê KPI tổng hợp.
-  - `getRackDetailWithLayers(rackId)`: Lấy chi tiết 1 kệ, toàn bộ các tầng (`rack_layers`) và danh sách thiết bị (`equipment`) đang đặt tại từng tầng.
+#### [NEW] `src/components/equipment/QRCodeDisplay.tsx`
+- Component render tem QR đơn lẻ:
+  - Canvas QR code độ nét cao.
+  - Prefix table bất biến (`M`, `C`, `P`, `W`, `B`, `S`, `F`).
+  - Anatomy tem in:
+    - QR canvas ở giữa.
+    - Dòng 1 (Header): `[Loại] Mã thiết bị` (VD: `[金型] ARK001-4`, font mono bold).
+    - Dòng 2 (Sub): Tên sản phẩm / khuôn (max 20 chars, truncate với `…`).
+    - Dòng 3 (Location): Mã tầng kệ hiện tại (VD: `MR-01-L2`).
+    - Viền: `0.5px dotted #999`.
 
-#### [NEW] Components hỗ trợ
-- `src/app/equipment/locations/_components/LocationFilterBar.tsx`: Thanh lọc Zone, tìm kiếm và trạng thái.
-- `src/app/equipment/locations/_components/LocationKpiCards.tsx`: 4 thẻ chỉ số KPI vị trí kho.
-- `src/app/equipment/locations/_components/RackCardGrid.tsx`: Lưới hiển thị danh sách kệ.
-- `src/app/equipment/locations/[rackId]/_components/VisualShelfView.tsx`: Giao diện mô phỏng kệ đứng trực quan.
+#### [NEW] `src/components/equipment/QRCodeModal.tsx`
+- Modal xem và thao tác trên tem QR đơn lẻ:
+  - Toggle kích thước: 30mm / 40mm / 50mm.
+  - Toggle định dạng: Tem xưởng (Ngắn) vs Tài liệu (URL).
+  - 3 nút hành động:
+    - 🖨️ **In tem lẻ:** Mở print dialog chuyên biệt chỉ in đúng con tem.
+    - ⬇️ **Tải ảnh PNG:** Lưu file ảnh tem để gửi đối tác hoặc lưu trữ.
+    - 📋 **Copy ảnh vào Clipboard:** Dùng `navigator.clipboard.write([ClipboardItem])` để paste ngay vào tài liệu/Excel.
 
-#### [MODIFY] `src/components/layout/Sidebar.tsx`
-- Đăng ký route `/equipment/locations` trong Section `d3` (Phòng Khuôn) với icon `MapPin`.
+#### [NEW] `src/components/equipment/QRBatchPrintSheet.tsx`
+- Modal & Giao diện in hàng loạt A4:
+  - Nhận danh sách `items` thiết bị.
+  - Bộ chọn kích thước tem (30mm, 40mm, 50mm) và định dạng (Short vs URL).
+  - Checkboxes tùy chọn hiển thị: Hiện mã, Hiện tên, Hiện vị trí kệ.
+  - Danh sách checklist: Cho phép chọn tất cả / bỏ chọn / tích chọn từng thiết bị cần in.
+  - Nút **"印刷プレビュー / In A4"**:
+    - Dàn trang CSS Grid `auto-fill minmax(${size}mm, 1fr)`.
+    - Định dạng in chuẩn `@page { size: A4 portrait; margin: 10mm; }`.
+    - Tránh gãy trang giữa chừng (`page-break-inside: avoid;`).
+
+#### [NEW] `src/app/equipment/scan/page.tsx`
+- Route stub cho phân hệ Quét Camera (S2):
+  - Hiển thị placeholder thông báo chức năng quét camera AR đang hoàn thiện cho Sprint 2.
+  - Tránh lỗi 404 khi người dùng truy cập.
+
+---
+
+### Modifications in Existing Views
+
+#### [MODIFY] `src/app/equipment/molds/[id]/MoldDetailHeader.tsx`
+- Thêm nút bấm **`QRコード`** (icon `QrCode` từ `lucide-react`) cạnh nút Sửa / Bản sửa đổi.
+- Bấm nút mở `QRCodeModal` nạp sẵn thông tin của khuôn đang xem.
+
+#### [MODIFY] `src/app/equipment/molds/[id]/tabs/LocationTab.tsx`
+- Thêm thumbnail QR (64×64px) trong thẻ "Vị trí lưu kho" (`Current Storage Location Card`).
+- Bấm vào thumbnail mở `QRCodeModal` phóng to.
+
+#### [MODIFY] `src/app/equipment/locations/[rackId]/_components/VisualShelfView.tsx`
+- Thêm nút **"一括印刷 (In QR cả kệ)"** trên thanh tiêu đề của Kệ.
+- Thêm nút icon mini **"In tầng này"** trên thanh tiêu đề của từng tầng kệ.
+- Thêm nút icon **"QR"** trên từng thẻ thiết bị trong tầng.
+- Tích hợp `QRBatchPrintSheet` và `QRCodeModal`.
 
 #### [MODIFY] `messages/ja.json` & `messages/vi.json`
-- Bổ sung namespace `EquipmentLocations` phục vụ đa ngôn ngữ hoàn chỉnh.
+- Bổ sung nhóm dịch `EquipmentLocations.qr` cho các thao tác in, chọn kích cỡ, định dạng tem.
 
 ---
 
-## Verification Plan
+## 3. Verification Plan
 
-### Automated Tests & Quality Gates
-- **TypeScript:** `npx tsc --noEmit` $\rightarrow$ 0 errors.
-- **i18n Check:** `node scripts/check_translations.mjs` $\rightarrow$ 0 missing keys.
-- **Bilingual Scan:** Đảm bảo không hardcode text song ngữ trong các component mới.
+### Automated Checks
+- `npm install qrcode @types/qrcode`
+- `npx tsc --noEmit` ➔ Bắt buộc 0 errors
+- `node scripts/check_translations.mjs` ➔ Bắt buộc 0 missing keys
+- `node scripts/find_hardcoded_bilingual.mjs` ➔ Clean
 
 ### Manual Verification
-1. Truy cập `/equipment/locations`: Xác nhận hiển thị đủ 90 kệ phân bổ vào đúng 12 Zone (`MR`, `M8`, `TW`, `OF`, `MD`, `TC`, `GT`, `PS`, `MT`, `SC`, `2F`, `CS`, `SP`).
-2. Lọc Zone: Bấm lọc `MR` $\rightarrow$ hiển thị đúng 12 kệ của Phòng máy 6 (`MR-01` $\rightarrow$ `MR-12`).
-3. Click vào Kệ `MR-01` $\rightarrow$ navigate `/equipment/locations/[rackId]`: Xác nhận hiển thị các tầng `MR-01-L1` $\rightarrow$ `MR-01-L5` dạng kệ đứng trực quan và các khuôn/dao đang đặt tại đó.
-4. Click mã khuôn $\rightarrow$ chuyển hướng chính xác đến trang chi tiết thiết bị `/equipment/[id]`.
+1. Mở `/equipment/molds/[id]`, kiểm tra nút "QRコード" trên Header và thumbnail QR trong Tab Vị trí ➔ kiểm tra in tem đơn lẻ, tải PNG, copy clipboard.
+2. Mở `/equipment/locations/[rackId]`, kiểm tra nút "一括印刷" và "In tầng này" ➔ kiểm tra danh sách checklist lọc, kiểm tra preview in A4 đúng kích thước 30/40/50mm.
+3. Truy cập `/equipment/scan` ➔ kiểm tra trang placeholder hiển thị mượt mà không lỗi 404.
