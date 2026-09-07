@@ -277,6 +277,48 @@ FK:  taken_by          UUID → employees(employee_id)
 
 ---
 
+## 🔑 Bảng `equipment_loans` — Quản Lý Mượn / Trả / Gia Công Ngoài Khuôn & Dao Cắt (Milestone 18 - Migration 097)
+
+Quản lý toàn diện hồ sơ và vòng đời xuất khuôn, dao cắt ra ngoài nhà máy YSD (Cho mượn `BORROW`, Trả khuôn `RETURN`, Gửi sửa chữa/gia công ngoài `REPAIR_OUT`).
+
+```
+PK:  loan_id                 UUID DEFAULT gen_random_uuid()
+     loan_code               TEXT UNIQUE NOT NULL  ← Format 'LN-YYYYMMDD-NNN' (auto-generated via trigger trg_set_equipment_loan_code)
+     loan_type               TEXT NOT NULL         ← 'BORROW' | 'RETURN' | 'REPAIR_OUT'
+     status                  TEXT NOT NULL DEFAULT 'PENDING_APPROVAL'  ← 'PENDING_APPROVAL' | 'APPROVED' | 'REJECTED' | 'IN_TRANSIT' | 'RETURNED' | 'CANCELLED'
+FK:  equipment_id            UUID → equipment(equipment_id) ON DELETE RESTRICT NOT NULL
+FK:  from_company_id         UUID → companies(company_id) ON DELETE RESTRICT (default YSD)
+FK:  to_company_id           UUID → companies(company_id) ON DELETE RESTRICT NOT NULL
+FK:  requested_by            UUID → employees(employee_id) ON DELETE SET NULL
+FK:  approved_by             UUID → employees(employee_id) ON DELETE SET NULL
+     approved_at             TIMESTAMPTZ
+     rejection_reason        TEXT
+     loan_date               DATE NOT NULL DEFAULT CURRENT_DATE
+     scheduled_return_date   DATE  ← Bắt buộc với BORROW/REPAIR_OUT, NULL với RETURN (CHECK chk_scheduled_return_date)
+     actual_return_date      DATE
+FK:  returned_received_by    UUID → employees(employee_id) ON DELETE SET NULL
+     destination_address     TEXT
+     contact_person          TEXT
+     contact_phone           TEXT
+     purpose                 TEXT
+     condition_on_loan       TEXT
+     condition_on_return     TEXT
+     condition_notes         TEXT
+     qr_doc_code             TEXT
+     created_at              TIMESTAMPTZ DEFAULT now()
+     updated_at              TIMESTAMPTZ DEFAULT now()
+```
+
+### View `v_equipment_loans_summary`
+- View tổng hợp JOIN `equipment`, `companies` (to/from), `employees` (requested/approved/returned_received).
+- Tự động tính toán trường `days_overdue` (`INTEGER`) và `is_overdue` (`BOOLEAN`) realtime theo `scheduled_return_date < CURRENT_DATE`.
+
+### Atomic RPC Functions:
+1. `fn_dispatch_equipment_loan(p_loan_id, p_employee_id, p_notes)`: Xuất kho chuyển sang `IN_TRANSIT`, cập nhật `equipment.keeper_company_id = to_company_id` và ghi `equipment_ship_logs`.
+2. `fn_complete_equipment_loan_return(p_loan_id, p_employee_id, p_new_rack_layer_id, p_condition_on_return, p_notes)`: Hoàn trả nhập kho sang `RETURNED`, cập nhật `equipment.keeper_company_id = YSD`, cập nhật vị trí tầng kệ và ghi `asset_location_logs`.
+
+---
+
 ## 🔑 Bảng `work_orders` — Lệnh Sản Xuất / Chế Tạo Khuôn Tổng Thể (Tầng 1 - ADR-002)
 
 > **Quy tắc WO Legacy vs. WO Mới (Cập nhật 2026-09-01)**

@@ -1910,6 +1910,133 @@ export type Database = {
           },
         ]
       }
+      equipment_loans: {
+        Row: {
+          actual_return_date: string | null
+          approved_at: string | null
+          approved_by: string | null
+          condition_notes: string | null
+          condition_on_loan: string | null
+          condition_on_return: string | null
+          contact_person: string | null
+          contact_phone: string | null
+          created_at: string
+          destination_address: string | null
+          equipment_id: string
+          from_company_id: string | null
+          loan_code: string
+          loan_date: string
+          loan_id: string
+          loan_type: string
+          purpose: string | null
+          qr_doc_code: string | null
+          rejection_reason: string | null
+          requested_by: string | null
+          returned_received_by: string | null
+          scheduled_return_date: string | null
+          status: string
+          to_company_id: string
+          updated_at: string
+        }
+        Insert: {
+          actual_return_date?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          condition_notes?: string | null
+          condition_on_loan?: string | null
+          condition_on_return?: string | null
+          contact_person?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          destination_address?: string | null
+          equipment_id: string
+          from_company_id?: string | null
+          loan_code?: string
+          loan_date?: string
+          loan_id?: string
+          loan_type: string
+          purpose?: string | null
+          qr_doc_code?: string | null
+          rejection_reason?: string | null
+          requested_by?: string | null
+          returned_received_by?: string | null
+          scheduled_return_date?: string | null
+          status?: string
+          to_company_id: string
+          updated_at?: string
+        }
+        Update: {
+          actual_return_date?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          condition_notes?: string | null
+          condition_on_loan?: string | null
+          condition_on_return?: string | null
+          contact_person?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          destination_address?: string | null
+          equipment_id?: string
+          from_company_id?: string | null
+          loan_code?: string
+          loan_date?: string
+          loan_id?: string
+          loan_type?: string
+          purpose?: string | null
+          qr_doc_code?: string | null
+          rejection_reason?: string | null
+          requested_by?: string | null
+          returned_received_by?: string | null
+          scheduled_return_date?: string | null
+          status?: string
+          to_company_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "equipment_loans_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["employee_id"]
+          },
+          {
+            foreignKeyName: "equipment_loans_equipment_id_fkey"
+            columns: ["equipment_id"]
+            isOneToOne: false
+            referencedRelation: "equipment"
+            referencedColumns: ["equipment_id"]
+          },
+          {
+            foreignKeyName: "equipment_loans_from_company_id_fkey"
+            columns: ["from_company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "equipment_loans_requested_by_fkey"
+            columns: ["requested_by"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["employee_id"]
+          },
+          {
+            foreignKeyName: "equipment_loans_returned_received_by_fkey"
+            columns: ["returned_received_by"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["employee_id"]
+          },
+          {
+            foreignKeyName: "equipment_loans_to_company_id_fkey"
+            columns: ["to_company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["company_id"]
+          },
+        ]
+      }
       equipment_history: {
         Row: {
           action_date: string
@@ -8530,8 +8657,76 @@ export type Database = {
         }
         Relationships: []
       }
+      v_equipment_loans_summary: {
+        Row: {
+          actual_return_date: string | null
+          approved_at: string | null
+          approved_by_id: string | null
+          approved_by_name: string | null
+          condition_notes: string | null
+          condition_on_loan: string | null
+          condition_on_return: string | null
+          contact_person: string | null
+          contact_phone: string | null
+          created_at: string | null
+          current_rack_layer_id: string | null
+          days_overdue: number | null
+          destination_address: string | null
+          equipment_code: string | null
+          equipment_current_keeper_id: string | null
+          equipment_id: string | null
+          equipment_name: string | null
+          equipment_type: string | null
+          from_company_code: string | null
+          from_company_id: string | null
+          from_company_name: string | null
+          is_overdue: boolean | null
+          loan_code: string | null
+          loan_date: string | null
+          loan_id: string | null
+          loan_type: string | null
+          purpose: string | null
+          qr_doc_code: string | null
+          rejection_reason: string | null
+          requested_by_id: string | null
+          requested_by_name: string | null
+          returned_received_by_id: string | null
+          returned_received_by_name: string | null
+          scheduled_return_date: string | null
+          status: string | null
+          to_company_code: string | null
+          to_company_id: string | null
+          to_company_name: string | null
+          updated_at: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
+      fn_generate_equipment_loan_code: {
+        Args: {
+          p_date?: string
+        }
+        Returns: string
+      }
+      fn_dispatch_equipment_loan: {
+        Args: {
+          p_loan_id: string
+          p_employee_id: string
+          p_notes?: string
+        }
+        Returns: Json
+      }
+      fn_complete_equipment_loan_return: {
+        Args: {
+          p_loan_id: string
+          p_employee_id: string
+          p_new_rack_layer_id?: string
+          p_condition_on_return?: string
+          p_notes?: string
+        }
+        Returns: Json
+      }
       calculate_plastic_mrp_v2: {
         Args: { p_end_date: string; p_start_date: string }
         Returns: {

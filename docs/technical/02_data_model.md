@@ -667,6 +667,27 @@ design_masters, design_projects, mold_designs
 
 ---
 
-*Cập nhật lần cuối: 2026-08-06*
-*Phiên bản: 1.2*
+## 13. Phân Hệ Quản Lý Mượn / Trả / Gia Công Ngoài Thiết Bị — `equipment_loans` (Milestone 18 - 2026-09-07)
+
+### 13.1 Mô hình Dữ liệu Bảng `equipment_loans`
+Quản lý vòng đời lưu chuyển khuôn, dao cắt ra bên ngoài nhà máy YSD với 3 loại nghiệp vụ:
+- `BORROW`: Cho mượn ra ngoài (khách mượn thử nghiệm, sản xuất thử).
+- `RETURN`: Trả khuôn chính thức (`金型返却` — kết thúc vòng đời/hợp đồng).
+- `REPAIR_OUT`: Gửi sửa chữa/mài dao/gia công CNC/phủ teflon bên thứ 3.
+
+**Vòng đời 6 trạng thái:**
+`PENDING_APPROVAL` (Chờ duyệt) $\rightarrow$ `APPROVED` (Đã duyệt) / `REJECTED` (Từ chối) $\rightarrow$ `IN_TRANSIT` (Đang xuất kho mượn) $\rightarrow$ `RETURNED` (Đã hoàn trả về YSD) / `CANCELLED` (Hủy phiếu).
+
+### 13.2 Quy Tắc Ràng Buộc & Tự Động Hóa
+1. **Auto Mã Phiếu:** Function `fn_generate_equipment_loan_code` tự sinh `LN-YYYYMMDD-001` per-day, đảm bảo không trùng lặp khi ghi nhận đồng thời.
+2. **Ràng buộc Hạn trả:** CHECK constraint `chk_scheduled_return_date` bắt buộc `scheduled_return_date IS NOT NULL` với `BORROW` và `REPAIR_OUT`; chỉ `RETURN` được phép để trống.
+3. **Đồng bộ Keeper & Kho:**
+   - Khi xuất kho (`dispatch`): Tự động cập nhật `equipment.keeper_company_id = to_company_id` và ghi `equipment_ship_logs`.
+   - Khi hoàn trả (`return`): Tự động cập nhật `equipment.keeper_company_id = YSD`, cất vào vị trí kệ tầng mới (nếu có) và ghi `asset_location_logs`.
+4. **View Realtime `v_equipment_loans_summary`:** Tự động tính toán số ngày quá hạn `days_overdue` (`(CURRENT_DATE - scheduled_return_date)::INTEGER`) và cờ `is_overdue` (`BOOLEAN`).
+
+---
+
+*Cập nhật lần cuối: 2026-09-07 (Milestone 18 Sprint 1 - Migration 097)*  
+*Phiên bản: 1.3*
 

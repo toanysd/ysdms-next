@@ -104,4 +104,31 @@
 - Translations `check_translations.mjs`: ✅ 0 missing keys
 - Bilingual hardcode scan: ✅ Clean
 
+---
+
+## Milestone 18 — Mold Loan & Return Workflow + PDF Engine (金型借用・返却管理)
+**Status: SPRINT 1 COMPLETED** | 2026-09-07
+
+### Sprint 1: Database Migration 097 & Workflow Engine
+- Chỉ thị: #026
+- Migration 097 (`20260907000004_097_equipment_loans.sql`):
+  - Bảng mới `equipment_loans` quản lý 3 loại phiếu (`BORROW`, `RETURN`, `REPAIR_OUT`) và 6 trạng thái (`PENDING_APPROVAL`, `APPROVED`, `REJECTED`, `IN_TRANSIT`, `RETURNED`, `CANCELLED`).
+  - FK `equipment_id` có `ON DELETE RESTRICT`.
+  - PE Adjustment #1: Function `fn_generate_equipment_loan_code(p_date)` và Trigger `trg_set_equipment_loan_code` tự động sinh mã dạng `LN-YYYYMMDD-001` per-day, xử lý chống va chạm.
+  - PE Adjustment #2: CHECK constraint `chk_scheduled_return_date` bắt buộc `scheduled_return_date IS NOT NULL` với BORROW/REPAIR_OUT; chỉ RETURN được phép NULL.
+  - View SQL `v_equipment_loans_summary` tính toán tự động số ngày quá hạn `days_overdue` (`(CURRENT_DATE - scheduled_return_date)::INTEGER`) và cờ `is_overdue` realtime.
+  - Atomic RPC Function `fn_dispatch_equipment_loan`: Đóng gói trong 1 transaction cập nhật trạng thái `IN_TRANSIT`, cập nhật `equipment.keeper_company_id = to_company_id`, và ghi log `equipment_ship_logs`.
+  - Atomic RPC Function `fn_complete_equipment_loan_return`: Đóng gói cập nhật trạng thái `RETURNED`, hoàn trả `equipment.keeper_company_id = YSD`, cập nhật vị trí kệ mới và ghi `asset_location_logs`.
+  - RLS policies kích hoạt đầy đủ.
+- Backend / Server Actions (`src/app/equipment/loans/`):
+  - `types.ts`: Khai báo types chuẩn TypeScript cho loans entity, input forms, KPI summaries.
+  - `actions.ts`: 8 Server Actions (`getEquipmentLoans`, `getEquipmentLoanDetail`, `getEquipmentLoanKpis`, `createEquipmentLoan`, `approveEquipmentLoan`, `rejectEquipmentLoan`, `dispatchEquipmentLoan`, `completeEquipmentLoanReturn`).
+- Documentation:
+  - Cập nhật `SCHEMA_REFERENCE.md` với định nghĩa bảng `equipment_loans`, View `v_equipment_loans_summary`, và 2 atomic RPCs.
+- Quality Gates & Verification:
+  - Live DB E2E test script `scripts/test_loans_workflow.mjs` chạy thành công 100% qua tất cả các bước: Tạo phiếu `LN-20260907-001` $\rightarrow$ View summary $\rightarrow$ Approve $\rightarrow$ Dispatch (Keeper sync) $\rightarrow$ Complete Return (Keeper restore & rack move) $\rightarrow$ Cleanup.
+  - TypeScript `npx tsc --noEmit`: ✅ 0 errors
+  - Translations `check_translations.mjs`: ✅ 0 missing keys
+
+
 
