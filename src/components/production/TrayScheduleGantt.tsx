@@ -882,16 +882,16 @@ export default function TrayScheduleGantt({
             <span style={{ color: '#94A3B8' }}>WO:</span>
             <span style={{ fontWeight: 700, fontFamily: 'monospace' }}>{hoveredItem.item.wo_code || '—'}</span>
 
-            <span style={{ color: '#94A3B8' }}>品番 (SP):</span>
+            <span style={{ color: '#94A3B8' }}>品番:</span>
             <span style={{ fontWeight: 700, color: '#FCD34D' }}>{hoveredItem.item.product_code || '—'}</span>
 
             <span style={{ color: '#94A3B8' }}>計画/実績:</span>
             <span>
-              {(hoveredItem.item.planned_quantity || 0).toLocaleString()} / {(hoveredItem.item.actual_quantity || 0).toLocaleString()} khay
+              {(hoveredItem.item.planned_quantity || 0).toLocaleString()} / {(hoveredItem.item.actual_quantity || 0).toLocaleString()}
             </span>
 
-            <span style={{ color: '#94A3B8' }}>材料 (Nhựa):</span>
-            <span>{hoveredItem.item.plastic_grade || 'PET 0.5t'}</span>
+            <span style={{ color: '#94A3B8' }}>材料:</span>
+            <span>{hoveredItem.item.plastic_grade || '—'}</span>
 
             <span style={{ color: '#94A3B8' }}>原反ロール:</span>
             <span style={{ fontFamily: 'monospace', color: '#86EFAC' }}>
