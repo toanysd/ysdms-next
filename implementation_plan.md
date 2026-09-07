@@ -1,81 +1,73 @@
-# Implementation Plan — Milestone 15 Sprint 1: NG Trend Analysis (/quality/ng-trends)
+# Implementation Plan — Milestone 16 Sprint 1: Location Browser (`/equipment/locations`)
 
-Build the **QC Intelligence: NG Trend Analysis** dashboard at `/quality/ng-trends` to analyze and visualize defect data generated from thermoforming operations (`forming_daily_logs`).
+Xây dựng hệ thống Trực quan hóa và Quản lý Kệ - Tầng kho lưu trữ thiết bị (`/equipment/locations`) theo chuẩn định danh ADR-008 (`{ZONE}-{NUMBER}` và `{RACK_CODE}-L{N}`) kết nối trực tiếp với 90 kệ, 380 tầng và 4,549 thiết bị thực tế tại xưởng YSD.
 
 ## User Review Required
 
 > [!IMPORTANT]
-> - **Zero Schema Migration for Sprint 1**: All queries leverage existing tables `forming_daily_logs`, `production_schedules`, `machines`, and `products`.
-> - **Threshold Persistence**: Alert threshold defaults to `3.0%` and is persisted locally in `localStorage['ysd_ng_threshold']`.
-> - **Navigation Alignment**: Registered under Sidebar Section `d5` (Phòng QC) as `/quality/ng-trends` with key `items.ngTrends`.
+> - **Migration 096** (`20260907000003_096_rack_code_new_convention.sql`) đã được AN tạo, commit và đẩy lên nhánh `main` (commit `bf539e4`). PE cần chạy lệnh apply migration qua MCP trên Supabase Production.
+> - Sau khi Migration 096 được áp dụng, 90 kệ sẽ có `zone_code` (12 zone) và `rack_code_new` (VD: `MR-01`), 380 tầng có `layer_code` (VD: `MR-01-L1`), và 4,549 thiết bị sẽ được tự động liên kết `current_rack_layer_id`.
+> - Giao diện hiển thị `rack_code` cũ (ký tự vòng tròn `①`, `②`...) dạng badge phụ bên cạnh mã mới `MR-01` để nhân viên xưởng đối chiếu chuyển tiếp không bị bỡ ngỡ.
+
+---
 
 ## Proposed Changes
 
-### 1. Internationalization (i18n)
+### Phân hệ Kệ - Tầng Kho Thiết Bị (Equipment Locations)
 
-#### [MODIFY] [messages/ja.json](file:///d:/AntiGravity_Workspace/apps/ysdms-nextgen/messages/ja.json)
-#### [MODIFY] [messages/vi.json](file:///d:/AntiGravity_Workspace/apps/ysdms-nextgen/messages/vi.json)
-- Add `items.ngTrends` under navigation items.
-- Add comprehensive `"NgTrends"` namespace for title, filters, KPI cards, charts, ranking tables, threshold alert, and Pareto summary.
+#### [NEW] `src/app/equipment/locations/page.tsx`
+- **Mục đích:** Trang tổng quan Danh mục Vị trí Kệ - Tầng kho YSD.
+- **Tính năng:**
+  - **4 KPI Cards:** Tổng số Kệ (90), Tổng số Tầng (380), Tổng thiết bị đang lưu trữ, Tỷ lệ lấp đầy (% Occupancy).
+  - **Filter Bar:** Dropdown lọc 12 Zone xưởng (`MR`, `M8`, `TW`, `OF`, `MD`, `TC`, `GT`, `PS`, `MT`, `SC`, `2F`, `CS`, `SP`), ô tìm kiếm nhanh mã thiết bị / tên khuôn / mã kệ, bộ lọc trạng thái (Tất cả / Đang có khuôn / Còn trống).
+  - **Rack Grid View:** Lưới hiển thị các kệ theo Zone. Mỗi Card kệ hiển thị:
+    - Mã mới `rack_code_new` (VD: `MR-01`) nổi bật.
+    - Mã cũ `① (01)` mờ nhỏ bên cạnh.
+    - Tên khu vực `location_in_factory`.
+    - Thanh đo sức chứa mini (Visual layer dots/bars).
+    - Số lượng thiết bị đang cất giữ.
+    - Nút / Link click vào chi tiết kệ `/equipment/locations/[rackId]`.
 
----
+#### [NEW] `src/app/equipment/locations/[rackId]/page.tsx`
+- **Mục đích:** Trang chi tiết Kệ & Mô phỏng Kệ đứng nhiều tầng (Visual Shelf View).
+- **Tính năng:**
+  - **BackBar:** `← 戻る (Back)` + `↑ 一覧 (Vị trí kho)`.
+  - **Kệ Header:** `rack_code_new`, mã cũ `rack_code`, `zone_code`, `location_in_factory`, sức chứa & tỷ lệ sử dụng.
+  - **Visual Shelf Layout:** Mô phỏng kệ thực tế (xếp tầng từ Tầng N ở trên cùng xuống Tầng 1 ở dưới cùng).
+  - **Mỗi tầng kệ (`rack_layer`):**
+    - Nhãn tầng: `MR-01-L1` (Tầng 1), số lượng thiết bị.
+    - Danh sách thẻ thiết bị đang đặt tại tầng đó: Mã thiết bị (`equipment_code` hyperlink tới `/equipment/[id]`), Tên hiển thị (`display_name`), Loại (`equipment_type`), Tình trạng (`device_status`).
+    - Nút thao tác nhanh "Đổi vị trí" (chuẩn bị cho Sprint 2).
 
-### 2. Navigation & Sidebar
+#### [NEW] `src/app/equipment/locations/actions.ts`
+- **Mục đích:** Server Actions truy vấn dữ liệu Kệ, Tầng, Thiết bị và Zone.
+- **Functions:**
+  - `getLocationOverview(filters)`: Lấy danh sách 90 kệ kèm count tầng và count thiết bị, thống kê KPI tổng hợp.
+  - `getRackDetailWithLayers(rackId)`: Lấy chi tiết 1 kệ, toàn bộ các tầng (`rack_layers`) và danh sách thiết bị (`equipment`) đang đặt tại từng tầng.
 
-#### [MODIFY] [src/components/layout/Sidebar.tsx](file:///d:/AntiGravity_Workspace/apps/ysdms-nextgen/src/components/layout/Sidebar.tsx)
-- Add `{ href: '/quality/ng-trends', icon: TrendingUp, tKey: 'items.ngTrends' }` to Section `d5` (Phòng QC).
+#### [NEW] Components hỗ trợ
+- `src/app/equipment/locations/_components/LocationFilterBar.tsx`: Thanh lọc Zone, tìm kiếm và trạng thái.
+- `src/app/equipment/locations/_components/LocationKpiCards.tsx`: 4 thẻ chỉ số KPI vị trí kho.
+- `src/app/equipment/locations/_components/RackCardGrid.tsx`: Lưới hiển thị danh sách kệ.
+- `src/app/equipment/locations/[rackId]/_components/VisualShelfView.tsx`: Giao diện mô phỏng kệ đứng trực quan.
 
----
+#### [MODIFY] `src/components/layout/Sidebar.tsx`
+- Đăng ký route `/equipment/locations` trong Section `d3` (Phòng Khuôn) với icon `MapPin`.
 
-### 3. Server Actions & Backend Queries
-
-#### [NEW] [src/app/quality/ng-trends/actions.ts](file:///d:/AntiGravity_Workspace/apps/ysdms-nextgen/src/app/quality/ng-trends/actions.ts)
-- `getNgTrendsInitialData(dateFrom: string, dateTo: string)`:
-  - Fetches active machines for the filter dropdown.
-  - Queries `forming_daily_logs` in date range with joins to `production_schedules(machine_id, machines(...))` and `products(...)`.
-  - Calculates summary metrics, time series (daily/weekly), group breakdown (A→G), machine ranking, and product ranking.
-- Server-side grouping by `day`, `week`, `month`.
-
----
-
-### 4. UI Components
-
-#### [NEW] [src/app/quality/ng-trends/_components/NgTrendFilterBar.tsx](file:///d:/AntiGravity_Workspace/apps/ysdms-nextgen/src/app/quality/ng-trends/_components/NgTrendFilterBar.tsx)
-- Date range picker (30 days default, 7/30/90 presets, custom date).
-- Machine selector (`ALL` + `MACH-1`..`MACH-14`).
-- Defect group selector (`ALL` + `A`..`G`).
-- NG threshold input (`3.0%` default, saved to `localStorage['ysd_ng_threshold']`).
-
-#### [NEW] [src/app/quality/ng-trends/_components/NgTrendKpiCards.tsx](file:///d:/AntiGravity_Workspace/apps/ysdms-nextgen/src/app/quality/ng-trends/_components/NgTrendKpiCards.tsx)
-- 4 KPI cards:
-  1. 良品合計 / Total OK (`qty_ok`)
-  2. 不良合計 / Total NG (`sum ng_a..ng_g`)
-  3. 不良率 / NG Rate % (highlighted with error/warning badge when exceeding threshold)
-  4. 最多不良グループ / Top Defect Group (Group name, count, % of total NG)
-
-#### [NEW] [src/app/quality/ng-trends/_components/NgTrendCharts.tsx](file:///d:/AntiGravity_Workspace/apps/ysdms-nextgen/src/app/quality/ng-trends/_components/NgTrendCharts.tsx)
-- Recharts Line Chart: NG rate over time with dashed red `<ReferenceLine>` for threshold.
-- Recharts Stacked Bar Chart: Breakdown of 7 NG categories (`qty_ng_a` → `qty_ng_g`) over time, by machine, or by product.
-
-#### [NEW] [src/app/quality/ng-trends/_components/NgRankingTables.tsx](file:///d:/AntiGravity_Workspace/apps/ysdms-nextgen/src/app/quality/ng-trends/_components/NgRankingTables.tsx)
-- Side-by-side grid:
-  - Machine NG Ranking table (Machine, OK, NG, NG Rate %, Alert Badge).
-  - Product NG Ranking table (Product Code, Product Name, OK, NG, NG Rate %).
-  - Bottom Pareto row showing cumulative percentage of defect groups A→G.
-
-#### [NEW] [src/app/quality/ng-trends/page.tsx](file:///d:/AntiGravity_Workspace/apps/ysdms-nextgen/src/app/quality/ng-trends/page.tsx)
-- Main page entry point, coordinating state between FilterBar, KpiCards, Charts, and RankingTables.
+#### [MODIFY] `messages/ja.json` & `messages/vi.json`
+- Bổ sung namespace `EquipmentLocations` phục vụ đa ngôn ngữ hoàn chỉnh.
 
 ---
 
 ## Verification Plan
 
-### Automated Verification
-- `npx tsc --noEmit`: Ensure 0 TypeScript errors.
-- `node scripts/check_translations.mjs`: Ensure 0 missing keys in both `ja.json` and `vi.json`.
-- `node scripts/find_hardcoded_bilingual.mjs`: Verify clean bilingual formatting.
+### Automated Tests & Quality Gates
+- **TypeScript:** `npx tsc --noEmit` $\rightarrow$ 0 errors.
+- **i18n Check:** `node scripts/check_translations.mjs` $\rightarrow$ 0 missing keys.
+- **Bilingual Scan:** Đảm bảo không hardcode text song ngữ trong các component mới.
 
 ### Manual Verification
-- Verify that filtering by date range correctly recalculates KPIs, charts, and rankings.
-- Verify that adjusting the threshold input dynamically triggers alert badges and updates the chart reference line.
-- Verify that toggling between Time, Machine, and Product in the Stacked Bar Chart renders properly without runtime errors.
+1. Truy cập `/equipment/locations`: Xác nhận hiển thị đủ 90 kệ phân bổ vào đúng 12 Zone (`MR`, `M8`, `TW`, `OF`, `MD`, `TC`, `GT`, `PS`, `MT`, `SC`, `2F`, `CS`, `SP`).
+2. Lọc Zone: Bấm lọc `MR` $\rightarrow$ hiển thị đúng 12 kệ của Phòng máy 6 (`MR-01` $\rightarrow$ `MR-12`).
+3. Click vào Kệ `MR-01` $\rightarrow$ navigate `/equipment/locations/[rackId]`: Xác nhận hiển thị các tầng `MR-01-L1` $\rightarrow$ `MR-01-L5` dạng kệ đứng trực quan và các khuôn/dao đang đặt tại đó.
+4. Click mã khuôn $\rightarrow$ chuyển hướng chính xác đến trang chi tiết thiết bị `/equipment/[id]`.
