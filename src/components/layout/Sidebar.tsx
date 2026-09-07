@@ -106,7 +106,7 @@ const NAV_SECTIONS: NavSection[] = [
     items: [
       { href: '/quality', icon: Home, tKey: 'items.overview', exact: true },
       { href: '/quality/ng-trends', icon: TrendingUp, tKey: 'items.ngTrends' },
-      { href: '/quality/inspections', icon: ScanLine, tKey: 'items.inspections' },
+      { href: '/quality/inspection', icon: ScanLine, tKey: 'items.inspections' },
       { href: '/quality/lot-inspections', icon: ShieldCheck, tKey: 'items.lotInspections' },
       { href: '/quality/defects', icon: AlertTriangle, tKey: 'items.defects' },
     ]
