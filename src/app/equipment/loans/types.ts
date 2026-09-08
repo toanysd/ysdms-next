@@ -1,9 +1,12 @@
 // ==============================================================================
 // Equipment Loans & Return Workflow Engine Types
-// Milestone 18 Sprint 1: Chỉ thị #026
+// Milestone 18: ADR-009 & Chỉ thị #026
 // ==============================================================================
 
-export type LoanType = 'BORROW' | 'RETURN' | 'REPAIR_OUT';
+export type LoanType =
+  | 'CUSTOMER_LOAN'
+  | 'RETURN_TO_CUSTOMER'
+  | 'OUTSOURCE_PROCESSING';
 
 export type LoanStatus =
   | 'PENDING_APPROVAL'
@@ -26,6 +29,8 @@ export interface EquipmentLoanItem {
   condition_on_return: string | null;
   condition_notes: string | null;
   qr_doc_code: string | null;
+  photo_overall_url: string | null;
+  photo_nameplate_url: string | null;
   destination_address: string | null;
   contact_person: string | null;
   contact_phone: string | null;
@@ -35,12 +40,14 @@ export interface EquipmentLoanItem {
   updated_at: string;
   days_overdue: number;
   is_overdue: boolean;
+  has_valid_loan_document: boolean;
   equipment_id: string;
   equipment_code: string;
   equipment_name: string | null;
   equipment_type: string;
   current_rack_layer_id: string | null;
   equipment_current_keeper_id: string | null;
+  equipment_owner_company_id: string | null;
   to_company_id: string;
   to_company_code: string | null;
   to_company_name: string;
@@ -57,10 +64,11 @@ export interface EquipmentLoanItem {
 
 export interface LoanKpiSummary {
   total: number;
+  custodyCount: number;
   pendingApproval: number;
   inTransit: number;
   overdue: number;
-  returnedThisMonth: number;
+  completedThisMonth: number;
 }
 
 export interface CreateLoanInput {
@@ -77,6 +85,8 @@ export interface CreateLoanInput {
   purpose?: string | null;
   condition_on_loan?: string | null;
   condition_notes?: string | null;
+  photo_overall_url?: string | null;
+  photo_nameplate_url?: string | null;
 }
 
 export interface ApproveLoanInput {

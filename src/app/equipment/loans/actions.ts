@@ -2,7 +2,7 @@
 
 // ==============================================================================
 // Equipment Loans & Return Workflow Engine — Server Actions
-// Milestone 18 Sprint 1: Chỉ thị #026
+// Milestone 18: ADR-009 & Migration 098
 // ==============================================================================
 
 import { createClient } from '@/lib/supabase/server';
@@ -39,7 +39,7 @@ export async function getEquipmentLoans(
   if (params.search && params.search.trim()) {
     const s = params.search.trim();
     query = query.or(
-      `loan_code.ilike.%${s}%,equipment_code.ilike.%${s}%,equipment_name.ilike.%${s}%,to_company_name.ilike.%${s}%,contact_person.ilike.%${s}%,purpose.ilike.%${s}%`
+      `loan_code.ilike.%${s}%,equipment_code.ilike.%${s}%,equipment_name.ilike.%${s}%,to_company_name.ilike.%${s}%,from_company_name.ilike.%${s}%,contact_person.ilike.%${s}%,purpose.ilike.%${s}%`
     );
   }
 
@@ -108,22 +108,24 @@ export async function getEquipmentLoanDetail(
 
 /**
  * 3. Get KPI summary for equipment loans dashboard
+ * Key Metric: custodyCount = Số lượng khuôn khách hàng gửi YSD giữ hộ đang active
  */
 export async function getEquipmentLoanKpis(): Promise<LoanKpiSummary> {
   const supabase = await createClient();
 
   const { data, error } = await supabase
     .from('v_equipment_loans_summary')
-    .select('status, is_overdue, actual_return_date');
+    .select('loan_type, status, is_overdue, actual_return_date, equipment_id');
 
   if (error) {
     console.error('Error fetching loan KPIs:', error);
     return {
       total: 0,
+      custodyCount: 0,
       pendingApproval: 0,
       inTransit: 0,
       overdue: 0,
-      returnedThisMonth: 0,
+      completedThisMonth: 0,
     };
   }
 
@@ -132,36 +134,49 @@ export async function getEquipmentLoanKpis(): Promise<LoanKpiSummary> {
     .toISOString()
     .slice(0, 10);
 
+  const custodyEquipments = new Set<string>();
   let pendingApproval = 0;
   let inTransit = 0;
   let overdue = 0;
-  let returnedThisMonth = 0;
+  let completedThisMonth = 0;
 
   for (const item of data || []) {
     if (item.status === 'PENDING_APPROVAL') pendingApproval++;
     if (item.status === 'IN_TRANSIT') inTransit++;
     if (item.is_overdue) overdue++;
+
+    // Custody calculation: CUSTOMER_LOAN currently in effect (APPROVED or IN_TRANSIT)
+    if (
+      item.loan_type === 'CUSTOMER_LOAN' &&
+      (item.status === 'APPROVED' || item.status === 'IN_TRANSIT') &&
+      item.equipment_id
+    ) {
+      custodyEquipments.add(item.equipment_id);
+    }
+
     if (
       item.status === 'RETURNED' &&
       item.actual_return_date &&
       item.actual_return_date >= firstDayOfMonthStr
     ) {
-      returnedThisMonth++;
+      completedThisMonth++;
     }
   }
 
   return {
     total: data?.length || 0,
+    custodyCount: custodyEquipments.size,
     pendingApproval,
     inTransit,
     overdue,
-    returnedThisMonth,
+    completedThisMonth,
   };
 }
 
 /**
  * 4. Create new equipment loan proposal
  * Auto generates loan_code (LN-YYYYMMDD-NNN) via database trigger
+ * Automatically assigns from/to according to ADR-009 physical flow
  */
 export async function createEquipmentLoan(
   input: CreateLoanInput
@@ -169,20 +184,17 @@ export async function createEquipmentLoan(
   try {
     const supabase = await createClient();
 
-    // Validation PE Adjustment #2: BORROW & REPAIR_OUT require scheduled_return_date
-    if (input.loan_type !== 'RETURN' && !input.scheduled_return_date) {
+    // Validation: scheduled_return_date is mandatory unless loan_type is RETURN_TO_CUSTOMER
+    if (input.loan_type !== 'RETURN_TO_CUSTOMER' && !input.scheduled_return_date) {
       return {
         success: false,
         error:
-          'Hạn hoàn trả dự kiến (scheduled_return_date) là bắt buộc đối với phiếu Cho mượn (BORROW) và Sửa ngoài (REPAIR_OUT).',
+          'Hạn hoàn trả dự kiến (scheduled_return_date) là bắt buộc đối với phiếu Mượn/Giữ hộ (CUSTOMER_LOAN) và Gia công ngoài (OUTSOURCE_PROCESSING).',
       };
     }
 
     if (!input.equipment_id) {
       return { success: false, error: 'Chưa chọn thiết bị / khuôn.' };
-    }
-    if (!input.to_company_id) {
-      return { success: false, error: 'Chưa chọn đối tác / công ty tiếp nhận.' };
     }
 
     // Check if equipment is currently in an active loan
@@ -201,16 +213,48 @@ export async function createEquipmentLoan(
       };
     }
 
-    // Determine from_company_id (default to YSD if not specified)
+    // Lookup YSD company
+    const { data: ysdCompany } = await supabase
+      .from('companies')
+      .select('company_id')
+      .eq('company_code', 'YSD')
+      .maybeSingle();
+
+    const ysdId = ysdCompany?.company_id;
+
+    // Lookup equipment owner company
+    const { data: eqData } = await supabase
+      .from('equipment')
+      .select('company_id, keeper_company_id')
+      .eq('equipment_id', input.equipment_id)
+      .single();
+
     let fromCompanyId = input.from_company_id;
-    if (!fromCompanyId) {
-      const { data: ysdCompany } = await supabase
-        .from('companies')
-        .select('company_id')
-        .eq('company_code', 'YSD')
-        .maybeSingle();
-      if (ysdCompany) {
-        fromCompanyId = ysdCompany.company_id;
+    let toCompanyId = input.to_company_id;
+
+    if (input.loan_type === 'CUSTOMER_LOAN') {
+      // Khách hàng -> YSD
+      toCompanyId = ysdId || input.to_company_id;
+      if (!fromCompanyId) {
+        fromCompanyId = eqData?.company_id || null;
+      }
+      if (!fromCompanyId) {
+        return { success: false, error: 'Chưa xác định được Khách hàng sở hữu khuôn.' };
+      }
+    } else if (input.loan_type === 'RETURN_TO_CUSTOMER') {
+      // YSD -> Khách hàng
+      fromCompanyId = ysdId || null;
+      if (!toCompanyId) {
+        toCompanyId = eqData?.company_id || '';
+      }
+      if (!toCompanyId) {
+        return { success: false, error: 'Chưa xác định được Khách hàng tiếp nhận hoàn trả.' };
+      }
+    } else if (input.loan_type === 'OUTSOURCE_PROCESSING') {
+      // YSD -> Vendor
+      fromCompanyId = ysdId || null;
+      if (!toCompanyId) {
+        return { success: false, error: 'Chưa chọn Xưởng gia công / Vendor đối tác.' };
       }
     }
 
@@ -219,7 +263,7 @@ export async function createEquipmentLoan(
       .insert({
         equipment_id: input.equipment_id,
         loan_type: input.loan_type,
-        to_company_id: input.to_company_id,
+        to_company_id: toCompanyId,
         from_company_id: fromCompanyId || null,
         loan_date: input.loan_date || new Date().toISOString().slice(0, 10),
         scheduled_return_date: input.scheduled_return_date || null,
@@ -230,6 +274,8 @@ export async function createEquipmentLoan(
         purpose: input.purpose || null,
         condition_on_loan: input.condition_on_loan || null,
         condition_notes: input.condition_notes || null,
+        photo_overall_url: input.photo_overall_url || null,
+        photo_nameplate_url: input.photo_nameplate_url || null,
         status: 'PENDING_APPROVAL',
       })
       .select()
@@ -355,10 +401,7 @@ export async function rejectEquipmentLoan(
 
 /**
  * 7. Dispatch equipment loan (Xuất kho -> IN_TRANSIT)
- * Calls atomic PostgreSQL RPC fn_dispatch_equipment_loan to guarantee:
- * - equipment_loans.status = 'IN_TRANSIT'
- * - equipment.keeper_company_id = to_company_id
- * - equipment_ship_logs insert
+ * Calls atomic PostgreSQL RPC fn_dispatch_equipment_loan per ADR-009
  */
 export async function dispatchEquipmentLoan(
   input: DispatchLoanInput
@@ -395,13 +438,8 @@ export async function dispatchEquipmentLoan(
 }
 
 /**
- * 8. Complete equipment loan return (Hoàn trả nhập kho -> RETURNED)
- * Calls atomic PostgreSQL RPC fn_complete_equipment_loan_return to guarantee:
- * - equipment_loans.status = 'RETURNED'
- * - actual_return_date = CURRENT_DATE
- * - equipment.keeper_company_id = YSD (or from_company_id)
- * - equipment.current_rack_layer_id updated if new_rack_layer_id provided
- * - asset_location_logs insert if moved to new shelf
+ * 8. Complete equipment loan return (Hoàn tất bàn giao / Nhập hoàn trả -> RETURNED)
+ * Calls atomic PostgreSQL RPC fn_complete_equipment_loan_return per ADR-009
  */
 export async function completeEquipmentLoanReturn(
   input: CompleteReturnInput
@@ -429,7 +467,7 @@ export async function completeEquipmentLoanReturn(
     if (!res?.success) {
       return {
         success: false,
-        error: res?.error || 'Lỗi hoàn trả nhập kho không xác định',
+        error: res?.error || 'Lỗi hoàn trả không xác định',
       };
     }
 
@@ -444,3 +482,134 @@ export async function completeEquipmentLoanReturn(
     return { success: false, error: msg };
   }
 }
+
+/**
+ * 9. Fetch equipment candidates for loan proposal modal
+ */
+export async function getEquipmentCandidates(search?: string): Promise<
+  {
+    equipment_id: string;
+    equipment_code: string;
+    display_name: string;
+    equipment_type: string;
+    owner_company_id: string | null;
+    owner_company_name: string | null;
+  }[]
+> {
+  const supabase = await createClient();
+  let query = supabase
+    .from('equipment')
+    .select('equipment_id, equipment_code, display_name, equipment_type, company_id, companies!equipment_company_id_fkey(company_name)')
+    .in('equipment_type', ['MOLD', 'CUTTER_SEPARATE', 'CUTTER_INLINE'])
+    .order('equipment_code')
+    .limit(30);
+
+  if (search && search.trim()) {
+    const s = search.trim();
+    query = query.or(`equipment_code.ilike.%${s}%,display_name.ilike.%${s}%`);
+  }
+
+  const { data, error } = await query;
+  if (error) {
+    console.error('Error fetching equipment candidates:', error);
+    return [];
+  }
+
+  return (data || []).map((item: any) => ({
+    equipment_id: item.equipment_id,
+    equipment_code: item.equipment_code,
+    display_name: item.display_name,
+    equipment_type: item.equipment_type,
+    owner_company_id: item.company_id,
+    owner_company_name: item.companies?.company_name || null,
+  }));
+}
+
+/**
+ * 10. Fetch companies list (Customer or Supplier/Vendor)
+ */
+export async function getCompaniesForLoan(): Promise<
+  {
+    company_id: string;
+    company_code: string;
+    company_name: string;
+    is_ysd: boolean;
+  }[]
+> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from('companies')
+    .select('company_id, company_code, company_name')
+    .order('company_code');
+
+  if (error) {
+    console.error('Error fetching companies:', error);
+    return [];
+  }
+
+  return (data || []).map((c) => ({
+    company_id: c.company_id,
+    company_code: c.company_code,
+    company_name: c.company_name,
+    is_ysd: c.company_code === 'YSD',
+  }));
+}
+
+/**
+ * 11. Fetch employees list for loan actions
+ */
+export async function getEmployeesForLoan(): Promise<
+  {
+    employee_id: string;
+    employee_code: string | null;
+    employee_name: string;
+  }[]
+> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from('employees')
+    .select('employee_id, employee_code, employee_name')
+    .order('employee_name');
+
+  if (error) {
+    console.error('Error fetching employees:', error);
+    return [];
+  }
+
+  return (data || []).map((e) => ({
+    employee_id: e.employee_id,
+    employee_code: e.employee_code,
+    employee_name: e.employee_name,
+  }));
+}
+
+/**
+ * 12. Fetch rack layers for returning equipment to storage
+ */
+export async function getRackLayersForReturn(): Promise<
+  {
+    id: string;
+    layer_code: string;
+    rack_code: string;
+    rack_name: string | null;
+  }[]
+> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from('rack_layers')
+    .select('id, layer_code, racks(rack_code, rack_name)')
+    .order('layer_code');
+
+  if (error) {
+    console.error('Error fetching rack layers:', error);
+    return [];
+  }
+
+  return (data || []).map((rl: any) => ({
+    id: rl.id,
+    layer_code: rl.layer_code,
+    rack_code: rl.racks?.rack_code || '---',
+    rack_name: rl.racks?.rack_name || null,
+  }));
+}
+

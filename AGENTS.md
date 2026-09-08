@@ -301,7 +301,7 @@ Khi tạo route mới, PHẢI thêm vào `src/components/layout/Sidebar.tsx`:
 | Business Cases | `/cases` | ✅ Built | P0 |
 | Báo giá PDF | `/orders/quotations` | 🔨 In Progress | P0 |
 | 棚卸 Kiểm kê khuôn | `/equipment/lifecycle` | ✅ Exists | P1 |
-| 借用書 Giấy mượn | `/cases?type=loan` | ⬜ Planned | P1 |
+| 借用書・金型返却 | `/equipment/loans` | ✅ Built (M18) | P1 |
 | 納品書 Phiếu giao | `/orders/shipments` | ⬜ Planned | P1 |
 | Nippo 日報 | `/worklog` | ✅ Exists | P2 |
 

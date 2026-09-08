@@ -629,6 +629,60 @@ FK:  created_by        UUID → auth.users(id)
      overdue_count     INT (Số hóa đơn quá hạn chưa thanh toán)
 ```
 
+
+---
+
+## 🗄️ QUẢN LÝ MƯỢN / TRẢ / KÝ GỬI THIẾT BỊ (Milestone 18 — ADR-009)
+
+### `equipment_loans` — Bảng quản lý mượn, trả, ký gửi và gia công ngoài thiết bị
+```
+PK:  loan_id               UUID DEFAULT gen_random_uuid()
+     loan_code             TEXT UNIQUE NOT NULL (LN-YYYYMMDD-NNN qua trigger)
+FK:  equipment_id          UUID NOT NULL → equipment(equipment_id) ON DELETE RESTRICT
+     loan_type             TEXT NOT NULL CHECK ('CUSTOMER_LOAN' | 'RETURN_TO_CUSTOMER' | 'OUTSOURCE_PROCESSING')
+     status                TEXT NOT NULL DEFAULT 'PENDING_APPROVAL' CHECK ('PENDING_APPROVAL' | 'APPROVED' | 'REJECTED' | 'IN_TRANSIT' | 'RETURNED' | 'CANCELLED')
+FK:  from_company_id       UUID → companies(company_id)
+FK:  to_company_id         UUID NOT NULL → companies(company_id)
+     loan_date             DATE NOT NULL DEFAULT CURRENT_DATE
+     scheduled_return_date DATE (Bắt buộc với CUSTOMER_LOAN & OUTSOURCE_PROCESSING)
+     actual_return_date    DATE
+FK:  requested_by          UUID → employees(employee_id)
+FK:  approved_by           UUID → employees(employee_id)
+     approved_at           TIMESTAMPTZ
+     rejection_reason      TEXT
+FK:  returned_received_by  UUID → employees(employee_id)
+     purpose               TEXT
+     condition_on_loan     TEXT
+     condition_on_return   TEXT
+     condition_notes       TEXT
+     photo_overall_url     TEXT (Ảnh toàn cảnh kèm biển tên Kanban)
+     photo_nameplate_url   TEXT (Ảnh cận cảnh nameplate/mã khắc tài sản khách)
+     qr_doc_code           TEXT (QR định danh phiếu)
+     destination_address   TEXT
+     contact_person        TEXT
+     contact_phone         TEXT
+     created_at            TIMESTAMPTZ NOT NULL DEFAULT now()
+     updated_at            TIMESTAMPTZ NOT NULL DEFAULT now()
+```
+
+### `v_equipment_loans_summary` — View tổng hợp phiếu mượn trả kèm tính toán quá hạn & cờ chứng từ
+```
+     loan_id, loan_code, loan_type, status, loan_date, scheduled_return_date, actual_return_date,
+     purpose, condition_on_loan, condition_on_return, condition_notes, qr_doc_code,
+     photo_overall_url, photo_nameplate_url, destination_address, contact_person, contact_phone,
+     approved_at, rejection_reason, created_at, updated_at,
+     days_overdue          INT (Số ngày quá hạn tính từ CURRENT_DATE - scheduled_return_date)
+     is_overdue            BOOLEAN (TRUE nếu chưa RETURNED/CANCELLED và đã quá hạn)
+     has_valid_loan_document BOOLEAN (TRUE nếu thiết bị có phiếu APPROVED hoặc IN_TRANSIT đang lưu hành — phục vụ kiểm kê hàng năm)
+     equipment_id, equipment_code, equipment_name, equipment_type, current_rack_layer_id,
+     equipment_current_keeper_id, equipment_owner_company_id,
+     to_company_id, to_company_code, to_company_name,
+     from_company_id, from_company_code, from_company_name,
+     requested_by_id, requested_by_name,
+     approved_by_id, approved_by_name,
+     returned_received_by_id, returned_received_by_name
+```
+
 ---
 
 ## ⛔ BẢNG & CỘT ĐÃ DEPRECATED / DROPPED (TUYỆT ĐỐI KHÔNG DÙNG)

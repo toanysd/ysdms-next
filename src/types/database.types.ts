@@ -1928,6 +1928,8 @@ export type Database = {
           loan_date: string
           loan_id: string
           loan_type: string
+          photo_nameplate_url: string | null
+          photo_overall_url: string | null
           purpose: string | null
           qr_doc_code: string | null
           rejection_reason: string | null
@@ -1955,6 +1957,8 @@ export type Database = {
           loan_date?: string
           loan_id?: string
           loan_type: string
+          photo_nameplate_url?: string | null
+          photo_overall_url?: string | null
           purpose?: string | null
           qr_doc_code?: string | null
           rejection_reason?: string | null
@@ -1982,6 +1986,8 @@ export type Database = {
           loan_date?: string
           loan_id?: string
           loan_type?: string
+          photo_nameplate_url?: string | null
+          photo_overall_url?: string | null
           purpose?: string | null
           qr_doc_code?: string | null
           rejection_reason?: string | null
@@ -8676,15 +8682,19 @@ export type Database = {
           equipment_current_keeper_id: string | null
           equipment_id: string | null
           equipment_name: string | null
+          equipment_owner_company_id: string | null
           equipment_type: string | null
           from_company_code: string | null
           from_company_id: string | null
           from_company_name: string | null
+          has_valid_loan_document: boolean | null
           is_overdue: boolean | null
           loan_code: string | null
           loan_date: string | null
           loan_id: string | null
           loan_type: string | null
+          photo_nameplate_url: string | null
+          photo_overall_url: string | null
           purpose: string | null
           qr_doc_code: string | null
           rejection_reason: string | null
