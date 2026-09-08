@@ -362,7 +362,7 @@ FK:  outsource_company   UUID → companies(company_id)
 FK:  case_id             UUID → business_cases(id)
      job_code            TEXT UNIQUE NOT NULL   ← (VD: 'JOB-TOW004-8981', 'DES-TOW004-01')
      job_name            TEXT NOT NULL          ← (VD: 'TOW-004: 新規金型製作')
-     job_category        TEXT                   ← 'MOLD_NEW' | 'MOLD_MODIFY' | 'CUTTER_NEW' | 'EQUIPMENT_NEW' | 'EQUIPMENT_REPAIR' | 'MAINTENANCE' | 'DESIGN' | 'INTERNAL_OPS' | 'OTHER'
+     job_category        TEXT                   ← 'THERMOFORMING' | 'MOLD_NEW' | 'MOLD_MODIFY' | 'CUTTER_NEW' | 'EQUIPMENT_NEW' | 'EQUIPMENT_REPAIR' | 'MAINTENANCE' | 'DESIGN' | 'INTERNAL_OPS' | 'OTHER'
      start_date          TIMESTAMPTZ            ← Ngày bắt đầu
      target_completion_date DATE                ← 🏁 完成目標日 (3 ngày làm việc trước ngày xuất hàng khay)
      mold_deadline       TIMESTAMPTZ            ← 🚚 指示納期 / 払出期日 (Bàn giao cho xưởng định hình)
@@ -422,6 +422,8 @@ FK:  machine_id           UUID → machines(machine_id)
      hours_spent          NUMERIC(6,2) NOT NULL  ← Số giờ thực tế (hỗ trợ in phiếu A4 và đóng dấu Hanko)
      planned_hours        NUMERIC(6,2)
      is_finished          BOOLEAN DEFAULT false  ← Đã hoàn thành công đoạn chưa?
+     quantity_done        INTEGER                ← 良品生産数 (Bắt buộc với THERMOFORMING)
+     quantity_ng          INTEGER DEFAULT 0      ← 不良数
      description          TEXT                   ← Chi tiết công việc
      notes                TEXT
 ```

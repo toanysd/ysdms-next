@@ -2,6 +2,7 @@
 
 import React, { useState, useMemo } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { 
   ClipboardList, 
   Clock, 
@@ -11,19 +12,26 @@ import {
   Calendar, 
   User, 
   Cpu, 
-  ExternalLink 
+  ExternalLink,
+  Plus
 } from 'lucide-react'
 import { useTranslations } from 'next-intl'
+import { WorklogFormShared } from '@/components/worklogs/WorklogFormShared'
 import type { WorkOrderWorklogItem } from '../../types'
 
 interface TabWorklogsProps {
   woId: string
   worklogs: WorkOrderWorklogItem[]
+  jobs?: any[]
 }
 
-export function TabWorklogs({ woId, worklogs }: TabWorklogsProps) {
+export function TabWorklogs({ woId, worklogs, jobs }: TabWorklogsProps) {
   const t = useTranslations('WorkOrders')
+  const tWorklogs = useTranslations('Worklogs')
+  const router = useRouter()
   const [searchTerm, setSearchTerm] = useState('')
+  const [showCreateModal, setShowCreateModal] = useState(false)
+  const [selectedJobForModal, setSelectedJobForModal] = useState<string | undefined>(undefined)
 
   // Aggregate KPIs
   const stats = useMemo(() => {
@@ -148,16 +156,32 @@ export function TabWorklogs({ woId, worklogs }: TabWorklogsProps) {
             </span>
           </div>
 
-          <div style={{ position: 'relative', width: 260 }}>
-            <Search size={14} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-            <input
-              type="text"
-              placeholder="検索（作業者、工程、機械...）"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="form-input"
-              style={{ paddingLeft: 30, fontSize: 12, height: 32 }}
-            />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{ position: 'relative', width: 240 }}>
+              <Search size={14} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+              <input
+                type="text"
+                placeholder="検索（作業者、工程、機械...）"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="form-input"
+                style={{ paddingLeft: 30, fontSize: 12, height: 32 }}
+              />
+            </div>
+
+            <button
+              type="button"
+              className="btn btn-primary"
+              style={{ fontSize: 12.5, padding: '5px 14px', display: 'flex', alignItems: 'center', gap: 6, height: 32, flexShrink: 0 }}
+              onClick={() => {
+                const defaultJob = jobs?.find(j => (j.job_types?.category === 'THERMOFORMING' || j.job_category === 'THERMOFORMING')) || jobs?.[0]
+                setSelectedJobForModal(defaultJob?.job_id)
+                setShowCreateModal(true)
+              }}
+            >
+              <Plus size={14} />
+              <span>{tWorklogs('recordNippo')}</span>
+            </button>
           </div>
         </div>
 
@@ -283,6 +307,21 @@ export function TabWorklogs({ woId, worklogs }: TabWorklogsProps) {
         )}
 
       </div>
+
+      {/* ── Modal: Record Production Worklog ── */}
+      {showCreateModal && (
+        <WorklogFormShared
+          mode="modal"
+          workOrderId={woId}
+          defaultJobId={selectedJobForModal}
+          jobCategory="THERMOFORMING"
+          onCancel={() => setShowCreateModal(false)}
+          onSuccess={() => {
+            setShowCreateModal(false)
+            router.refresh()
+          }}
+        />
+      )}
 
     </div>
   )

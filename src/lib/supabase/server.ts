@@ -28,3 +28,27 @@ export async function createClient() {
     }
   )
 }
+
+/**
+ * Service Role Supabase Client for privileged server operations (Step Completion cascade, background jobs)
+ * Bypasses RLS to ensure cascading updates on jobs/job_steps/work_orders succeed deterministically.
+ */
+export function createServerSupabaseClient() {
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+  if (!serviceKey) {
+    console.warn('[Supabase Server] SUPABASE_SERVICE_ROLE_KEY is not defined, falling back to anon')
+  }
+  return createServerClient<Database>(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    serviceKey || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return []
+        },
+        setAll() {},
+      },
+    }
+  )
+}
+

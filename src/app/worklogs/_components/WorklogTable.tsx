@@ -4,7 +4,7 @@ import { useTranslations } from 'next-intl'
 import Link from 'next/link'
 import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 import { useCallback, useMemo, useState, useTransition } from 'react'
-import { ArrowDown, ArrowUp, ArrowUpDown, ClipboardList, Clock, Filter, X } from 'lucide-react'
+import { ArrowDown, ArrowUp, ArrowUpDown, ClipboardList, Clock, Filter, X, Cpu } from 'lucide-react'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 type Employee = { employee_id: string; employee_code: string; full_name: string | null }
@@ -16,12 +16,21 @@ type WorklogRow = {
   hours_spent: number | null
   is_finished: boolean | null
   notes: string | null
+  quantity_done?: number | null
+  quantity_ng?: number | null
+  machine?: { machine_id: string; machine_code: string; machine_name: string } | null
   job_step: {
     step_id: string
     step_no: number | null
     step_name: string | null
     deadline: string | null
-    job: { job_id: string; job_code: string; job_name: string | null } | null
+    job: {
+      job_id: string
+      job_code: string
+      job_name: string | null
+      work_order_id?: string | null
+      work_order?: { wo_id: string; wo_code: string } | null
+    } | null
   } | null
   employee: { employee_id: string; employee_code: string; full_name: string | null } | null
 }
@@ -32,6 +41,7 @@ type Filters = {
   dateFrom: string | null
   dateTo: string | null
   statusFilter: string
+  woFilter?: string | null
 }
 
 type Props = {
@@ -63,22 +73,23 @@ function formatHours(h: number | null) {
 }
 
 // ── Sorting helpers ───────────────────────────────────────────────────────────
-type SortKey = 'work_date' | 'job_code' | 'step' | 'employee' | 'hours' | 'job_total' | 'status' | null
+type SortKey = 'work_date' | 'job_code' | 'step' | 'employee' | 'hours' | 'quantity_done' | 'job_total' | 'status' | null
 type SortDir = 'asc' | 'desc'
 
 function getSortValue(log: WorklogRow, key: SortKey, hoursByJob: Record<string, number>): string | number {
   switch (key) {
-    case 'work_date':  return log.work_date ?? ''
-    case 'job_code':   return log.job_step?.job?.job_code ?? ''
-    case 'step':       return log.job_step?.step_no ?? 0
-    case 'employee':   return log.employee?.employee_code ?? ''
-    case 'hours':      return log.hours_spent ?? 0
+    case 'work_date':     return log.work_date ?? ''
+    case 'job_code':      return log.job_step?.job?.job_code ?? ''
+    case 'step':          return log.job_step?.step_no ?? 0
+    case 'employee':      return log.employee?.employee_code ?? ''
+    case 'hours':         return log.hours_spent ?? 0
+    case 'quantity_done': return log.quantity_done ?? 0
     case 'job_total': {
       const jid = log.job_step?.job?.job_id
       return jid ? (hoursByJob[jid] ?? 0) : 0
     }
-    case 'status':     return log.is_finished ? 1 : 0
-    default:           return ''
+    case 'status':        return log.is_finished ? 1 : 0
+    default:              return ''
   }
 }
 
@@ -144,7 +155,7 @@ export default function WorklogTable({
   const hasFilters = !!(
     filters.jobFilter || filters.empFilter ||
     filters.dateFrom  || filters.dateTo    ||
-    filters.statusFilter !== 'all'
+    filters.statusFilter !== 'all' || filters.woFilter
   )
 
   return (
@@ -228,6 +239,21 @@ export default function WorklogTable({
             <option value="in_progress">{t('Worklogs.statusInProgress')}</option>
           </select>
 
+          {/* WO Filter Chip */}
+          {filters.woFilter && (
+            <span className="badge badge--info" style={{ display: 'inline-flex', alignItems: 'center', gap: 4, height: 28, padding: '0 8px' }}>
+              <span>WO Filter</span>
+              <button
+                type="button"
+                onClick={() => updateParams({ wo_id: null })}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'inherit', padding: 0, display: 'flex', alignItems: 'center' }}
+                title="Xóa lọc WO"
+              >
+                <X size={12} />
+              </button>
+            </span>
+          )}
+
           {hasFilters && (
             <button
               className="btn-secondary"
@@ -252,7 +278,7 @@ export default function WorklogTable({
         >
           <thead>
             <tr>
-              <th style={{ width: 110, cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSort('work_date')}>
+              <th style={{ width: 100, cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSort('work_date')}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                   {t('Worklogs.ngayLam')}
                   <SortIcon col="work_date" />
@@ -270,26 +296,38 @@ export default function WorklogTable({
                   <SortIcon col="step" />
                 </div>
               </th>
+              <th style={{ width: 110 }}>
+                {t('Worklogs.colMachine')}
+              </th>
               <th style={{ cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSort('employee')}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                   {t('Worklogs.nhanVien')}
                   <SortIcon col="employee" />
                 </div>
               </th>
-              <th style={{ width: 90, textAlign: 'right', cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSort('hours')}>
+              <th style={{ width: 85, textAlign: 'right', cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSort('hours')}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 4 }}>
                   {t('Worklogs.gio')}
                   <SortIcon col="hours" />
                 </div>
               </th>
-              <th style={{ width: 130, textAlign: 'right', cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSort('job_total')}>
+              <th style={{ width: 90, textAlign: 'right', cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSort('quantity_done')}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 4 }}>
+                  {t('Worklogs.colQuantityDone')}
+                  <SortIcon col="quantity_done" />
+                </div>
+              </th>
+              <th style={{ width: 80, textAlign: 'right' }}>
+                {t('Worklogs.colQuantityNg')}
+              </th>
+              <th style={{ width: 100, textAlign: 'right', cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSort('job_total')}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 4 }}>
                   <Clock size={12} />
                   {t('Worklogs.tongjob')}
                   <SortIcon col="job_total" />
                 </div>
               </th>
-              <th style={{ width: 115, cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSort('status')}>
+              <th style={{ width: 90, cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSort('status')}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                   {t('Worklogs.trangThai')}
                   <SortIcon col="status" />
@@ -303,7 +341,7 @@ export default function WorklogTable({
           <tbody>
             {logs.length === 0 ? (
               <tr>
-                <td colSpan={8} style={{ textAlign: 'center', padding: 48, color: 'var(--text-secondary)' }}>
+                <td colSpan={11} style={{ textAlign: 'center', padding: 48, color: 'var(--text-secondary)' }}>
                   {t('Worklogs.khongCoDuLieu')}
                 </td>
               </tr>
@@ -321,19 +359,36 @@ export default function WorklogTable({
                       {formatDate(log.work_date)}
                     </td>
                     <td>
-                      {log.job_step?.job ? (
-                        <Link
-                          href={`/equipment/jobs/${log.job_step.job.job_id}`}
-                          style={{ color: 'var(--accent)', fontWeight: 700, fontFamily: 'monospace', fontSize: 13, textDecoration: 'none' }}
-                        >
-                          {log.job_step.job.job_code}
-                          {log.job_step.job.job_name && (
-                            <span style={{ fontWeight: 400, fontFamily: 'inherit', color: 'var(--text-secondary)', marginLeft: 4 }}>
-                              {log.job_step.job.job_name}
-                            </span>
-                          )}
-                        </Link>
-                      ) : '—'}
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                        {log.job_step?.job?.work_order && (
+                          <Link
+                            href={`/production/work-orders/${log.job_step.job.work_order.wo_id}`}
+                            className="badge badge--neutral"
+                            style={{ 
+                              fontSize: 10.5, 
+                              padding: '1px 5px', 
+                              fontFamily: 'monospace', 
+                              textDecoration: 'none', 
+                              width: 'fit-content' 
+                            }}
+                          >
+                            {log.job_step.job.work_order.wo_code}
+                          </Link>
+                        )}
+                        {log.job_step?.job ? (
+                          <Link
+                            href={`/equipment/jobs/${log.job_step.job.job_id}`}
+                            style={{ color: 'var(--accent)', fontWeight: 700, fontFamily: 'monospace', fontSize: 13, textDecoration: 'none' }}
+                          >
+                            {log.job_step.job.job_code}
+                            {log.job_step.job.job_name && (
+                              <span style={{ fontWeight: 400, fontFamily: 'inherit', color: 'var(--text-secondary)', marginLeft: 4 }}>
+                                {log.job_step.job.job_name}
+                              </span>
+                            )}
+                          </Link>
+                        ) : '—'}
+                      </div>
                     </td>
                     <td style={{ fontSize: 13 }}>
                       {log.job_step ? (
@@ -342,6 +397,17 @@ export default function WorklogTable({
                           {log.job_step.step_name ?? ''}
                         </span>
                       ) : '—'}
+                    </td>
+                    {/* Machine */}
+                    <td style={{ fontSize: 12 }}>
+                      {log.machine ? (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                          <Cpu size={12} color="var(--text-muted)" />
+                          <span style={{ fontWeight: 600 }}>{log.machine.machine_name}</span>
+                        </div>
+                      ) : (
+                        <span style={{ color: 'var(--text-muted)' }}>—</span>
+                      )}
                     </td>
                     <td style={{ fontSize: 13 }}>
                       {log.employee ? (
@@ -355,9 +421,25 @@ export default function WorklogTable({
                         </>
                       ) : '—'}
                     </td>
+                    {/* Hours */}
                     <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontSize: 13, fontWeight: 700, fontFamily: 'monospace' }}>
                       {formatHours(log.hours_spent)}
                     </td>
+                    {/* Quantity Done */}
+                    <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontSize: 13, fontWeight: 700, fontFamily: 'monospace', color: 'var(--status-success)' }}>
+                      {log.quantity_done != null ? log.quantity_done.toLocaleString() : '—'}
+                    </td>
+                    {/* Quantity NG */}
+                    <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontSize: 13, fontFamily: 'monospace' }}>
+                      {log.quantity_ng != null && log.quantity_ng > 0 ? (
+                        <span className="badge badge--error" style={{ fontSize: 11, fontWeight: 700 }}>
+                          {log.quantity_ng}
+                        </span>
+                      ) : (
+                        <span style={{ color: 'var(--text-muted)' }}>0</span>
+                      )}
+                    </td>
+                    {/* Job Total */}
                     <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', color: 'var(--text-secondary)', fontSize: 13, fontWeight: 700, fontFamily: 'monospace' }}>
                       {jobTotal !== null ? formatHours(jobTotal) : '—'}
                     </td>

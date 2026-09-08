@@ -207,7 +207,7 @@ export function WorkOrderDetailContent({
         )}
 
         {activeTab === 'worklogs' && (
-          <TabWorklogs woId={wo.wo_id} worklogs={worklogs} />
+          <TabWorklogs woId={wo.wo_id} worklogs={worklogs} jobs={jobs} />
         )}
       </div>
 

@@ -6,11 +6,12 @@ import { createClient } from '@/lib/supabase/client'
 import {
   Calendar, User, Clock, CheckCircle2,
   Layers, FileText, AlertCircle, Loader2,
-  X, Save, Sparkles, Plus, Check, Briefcase, Settings
+  X, Save, Sparkles, Plus, Check, Briefcase, Settings, Cpu
 } from 'lucide-react'
 import { SearchableSelect } from '@/components/ui/SearchableSelect'
 import { createQuickJob } from '@/app/actions/mold-job'
 import { ProcessingCodesManagerModal } from '@/components/worklogs/ProcessingCodesManagerModal'
+import { saveWorklogRecord } from '@/app/worklogs/_actions/createWorklog'
 
 // ── Types ────────────────────────────────────────────────────────────────────
 export type WorklogFormSharedProps = {
@@ -20,6 +21,10 @@ export type WorklogFormSharedProps = {
   preloadedSteps?: JobStepOption[]
   /** Data ban đầu khi edit */
   initialData?: WorklogInitialData | null
+  /** Job Category (MOLD_SHOP, THERMOFORMING, GENERAL...) - nếu truyền vào thì ưu tiên */
+  jobCategory?: string
+  /** Work Order ID nếu gọi từ context Work Order */
+  workOrderId?: string
   /** Chế độ hiển thị */
   mode: 'page' | 'modal'
   onSuccess: (redirectPath?: string) => void
@@ -37,12 +42,16 @@ export type WorklogInitialData = {
   processing_code_id?: number | null
   description?: string | null
   notes?: string | null
+  quantity_done?: number | null
+  quantity_ng?: number | null
+  machine_id?: string | null
 }
 
 type Employee = { value: string; label: string }
 type JobOption = { value: string; label: string }
 type JobStepOption = { step_id: string; step_no: number | null; step_name: string | null; job_id: string }
 type JobType = { job_type_id: string; job_type_name_ja: string; job_type_name_vi: string }
+type MachineOption = { value: string; label: string; code: string; type: string }
 
 const QUICK_HOURS = [0.5, 1.0, 1.5, 2.0, 3.0, 4.0, 6.0, 8.0]
 const STORAGE_KEY_LAST_WORKER = 'ysdms_last_selected_worker_id'
@@ -52,6 +61,8 @@ export function WorklogFormShared({
   defaultJobId,
   preloadedSteps,
   initialData,
+  jobCategory,
+  workOrderId,
   mode,
   onSuccess,
   onCancel,
@@ -83,6 +94,17 @@ export function WorklogFormShared({
   )
   const [customDescription, setCustomDescription] = useState<string>(initialData?.description || '')
   const [notes, setNotes] = useState<string>(initialData?.notes || '')
+
+  // Nippo V2 Production Fields (Thermoforming)
+  const [machineId, setMachineId] = useState<string>(initialData?.machine_id || '')
+  const [quantityDone, setQuantityDone] = useState<string>(
+    initialData?.quantity_done != null ? String(initialData.quantity_done) : ''
+  )
+  const [quantityNg, setQuantityNg] = useState<string>(
+    initialData?.quantity_ng != null ? String(initialData.quantity_ng) : '0'
+  )
+  const [machines, setMachines] = useState<MachineOption[]>([])
+  const [currentJobCategory, setCurrentJobCategory] = useState<string>(jobCategory || '')
 
   // Dropdown Lists
   const [employees, setEmployees] = useState<Employee[]>([])
@@ -126,7 +148,7 @@ export function WorklogFormShared({
     }
   }
 
-  // ── Load Employees, Jobs, Processing Codes ──────────────────────────────────
+  // ── Load Employees, Jobs, Processing Codes, Machines ────────────────────────
   useEffect(() => {
     async function loadMeta() {
       // 1. Employees
@@ -151,7 +173,7 @@ export function WorklogFormShared({
       if (!isJobLocked) {
         const { data: jobList } = await supabase
           .from('jobs')
-          .select('job_id, job_code, job_name, job_category')
+          .select('job_id, job_code, job_name, job_category, job_type_id, job_types(category)')
           .order('job_code')
         if (jobList) {
           setRawJobs(jobList)
@@ -179,6 +201,21 @@ export function WorklogFormShared({
 
       // 4. Processing Codes (with department_code for filtering)
       await loadProcessingCodes()
+
+      // 5. Machines
+      const { data: machs } = await supabase
+        .from('machines')
+        .select('machine_id, machine_code, machine_name, machine_type')
+        .eq('is_active', true)
+        .order('machine_code')
+      if (machs) {
+        setMachines(machs.map(m => ({
+          value: m.machine_id,
+          label: `[${m.machine_code}] ${m.machine_name}`,
+          code: m.machine_code,
+          type: m.machine_type
+        })))
+      }
     }
     loadMeta()
   }, [supabase, isJobLocked, initialData, employeeId])
@@ -223,21 +260,47 @@ export function WorklogFormShared({
     loadSteps()
   }, [selectedJobId, supabase, isJobLocked, preloadedSteps, stepId])
 
-  // ── Auto-filter department when Job changes ──────────────────────────────
+  // ── Auto-filter department & detect Job category when Job changes ────────
   useEffect(() => {
-    if (!selectedJobId || rawJobs.length === 0) return
-    const job = rawJobs.find((j: any) => j.job_id === selectedJobId)
-    if (!job) return
-    if (job.job_category === 'DESIGN') {
-      setDepartmentFilter('DESIGN')
-    } else if (['MOLD_NEW', 'MOLD_MODIFY', 'CUTTER_NEW', 'EQUIPMENT_NEW', 'EQUIPMENT_REPAIR'].includes(job.job_category)) {
-      setDepartmentFilter('MOLD_SHOP')
-    } else if (job.job_category === 'INTERNAL_OPS' || job.job_category === 'MAINTENANCE') {
-      setDepartmentFilter('GENERAL')
-    } else {
-      setDepartmentFilter('ALL')
+    if (!selectedJobId) {
+      if (!jobCategory) setCurrentJobCategory('')
+      return
     }
-  }, [selectedJobId, rawJobs])
+
+    const matchedJob = rawJobs.find((j: any) => j.job_id === selectedJobId)
+    const derivedCat = (matchedJob?.job_types as any)?.category || matchedJob?.job_category || jobCategory || ''
+
+    if (derivedCat) {
+      setCurrentJobCategory(derivedCat)
+      if (derivedCat === 'THERMOFORMING') {
+        setDepartmentFilter('PRODUCTION')
+      } else if (derivedCat === 'DESIGN') {
+        setDepartmentFilter('DESIGN')
+      } else if (['MOLD_NEW', 'MOLD_MODIFY', 'CUTTER_NEW', 'EQUIPMENT_NEW', 'EQUIPMENT_REPAIR'].includes(derivedCat)) {
+        setDepartmentFilter('MOLD_SHOP')
+      } else if (derivedCat === 'INTERNAL_OPS' || derivedCat === 'MAINTENANCE') {
+        setDepartmentFilter('GENERAL')
+      } else {
+        setDepartmentFilter('ALL')
+      }
+    } else {
+      async function fetchJobCategory() {
+        const { data: jobRow } = await supabase
+          .from('jobs')
+          .select('job_id, job_category, job_types(category)')
+          .eq('job_id', selectedJobId)
+          .single()
+        if (jobRow) {
+          const cat = (jobRow.job_types as any)?.category || jobRow.job_category || ''
+          setCurrentJobCategory(cat)
+          if (cat === 'THERMOFORMING') {
+            setDepartmentFilter('PRODUCTION')
+          }
+        }
+      }
+      fetchJobCategory()
+    }
+  }, [selectedJobId, rawJobs, jobCategory, supabase])
 
   // ── Filtered processing codes by department ──────────────────────────────
   const filteredProcessingCodes = useMemo(() => {
@@ -248,16 +311,31 @@ export function WorklogFormShared({
     })
   }, [processingCodes, rawCodes, departmentFilter])
 
-  // ── Submit ────────────────────────────────────────────────────────────────
+  // Realtime Thermoforming KPI Calculations
+  const numDone = quantityDone !== '' ? parseInt(quantityDone, 10) : 0
+  const numNg = quantityNg !== '' ? parseInt(quantityNg, 10) : 0
+  const totalProduced = (isNaN(numDone) ? 0 : numDone) + (isNaN(numNg) ? 0 : numNg)
+  const ngRate = totalProduced > 0 && !isNaN(numDone) && !isNaN(numNg)
+    ? ((numNg / totalProduced) * 100).toFixed(1)
+    : '0.0'
+
+  // ── Submit with Step Completion Engine ──────────────────────────────────
   const handleSave = async () => {
     setError(null)
-    if (!workDate) return setError('Vui lòng chọn ngày làm việc')
-    if (!employeeId) return setError('Vui lòng chọn người thực hiện')
-    if (!selectedJobId) return setError('Vui lòng chọn Job gia công')
-    if (!stepId) return setError('Vui lòng chọn công đoạn')
+    if (!workDate) return setError(t('validation.reqWorkDate'))
+    if (!employeeId) return setError(t('validation.reqEmployee'))
+    if (!selectedJobId) return setError(t('validation.reqJob'))
+    if (!stepId) return setError(t('validation.reqStep'))
     const hours = hoursSpent ? parseFloat(hoursSpent) : null
     if (!hours || isNaN(hours) || hours <= 0) {
-      return setError('Vui lòng nhập số giờ làm việc hợp lệ')
+      return setError(t('validation.reqHours'))
+    }
+
+    if (currentJobCategory === 'THERMOFORMING') {
+      const qty = quantityDone !== '' ? parseInt(quantityDone, 10) : null
+      if (qty === null || isNaN(qty) || qty < 0) {
+        return setError(t('validation.reqQuantityDone'))
+      }
     }
 
     // Determine description: either from selected processing code or custom description
@@ -272,7 +350,8 @@ export function WorklogFormShared({
     }
 
     setLoading(true)
-    const payload = {
+    const res = await saveWorklogRecord({
+      log_id: initialData?.log_id,
       job_id: selectedJobId,
       job_step_id: stepId || null,
       employee_id: employeeId,
@@ -282,19 +361,15 @@ export function WorklogFormShared({
       processing_code_id: codeId,
       description: desc || null,
       notes: notes.trim() || null,
-    }
-
-    let err: any = null
-    if (isEdit && initialData?.log_id) {
-      const res = await supabase.from('work_logs').update(payload).eq('log_id', initialData.log_id)
-      err = res.error
-    } else {
-      const res = await supabase.from('work_logs').insert([payload])
-      err = res.error
-    }
+      quantity_done: quantityDone !== '' ? parseInt(quantityDone, 10) : null,
+      quantity_ng: quantityNg !== '' ? parseInt(quantityNg, 10) : 0,
+      machine_id: machineId || null,
+    })
 
     setLoading(false)
-    if (err) return setError(err.message)
+    if (!res.success) {
+      return setError(res.error || 'Lỗi khi lưu nhật ký')
+    }
     onSuccess(mode === 'page' ? '/worklogs' : undefined)
   }
 
@@ -545,6 +620,119 @@ export function WorklogFormShared({
           </div>
         </div>
       </div>
+
+      {/* ── SECTION 2.5: Production Results (Thermoforming Only) ── */}
+      {currentJobCategory === 'THERMOFORMING' && (
+        <div
+          style={{
+            border: '1px solid var(--border-default)',
+            borderRadius: 8,
+            background: '#fff',
+            overflow: 'hidden',
+          }}
+        >
+          <div
+            style={{
+              padding: '7px 14px',
+              background: 'var(--tint-orange-bg, rgba(249, 115, 22, 0.1))',
+              borderBottom: '1px solid var(--tint-orange-border, rgba(249, 115, 22, 0.2))',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              fontSize: 12,
+              fontWeight: 700,
+              color: 'var(--status-warning, #D97706)',
+            }}
+          >
+            <Cpu size={14} />
+            <span>{t('productionResultsThermoforming')} (Sản lượng sản xuất định hình)</span>
+          </div>
+
+          <div style={{ padding: 14, display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {/* Row 1: Machine Selection */}
+            <div>
+              <label className="form-label" style={{ fontSize: 11.5, fontWeight: 700 }}>
+                {t('machine')} <span style={{ color: 'red' }}>*</span>
+              </label>
+              <select
+                className="form-input"
+                style={{ fontSize: 12.5, fontWeight: 600, height: 36 }}
+                value={machineId}
+                onChange={(e) => setMachineId(e.target.value)}
+              >
+                <option value="">{t('selectMachine')}</option>
+                {machines
+                  .filter(m => m.type === '成形' || !m.type)
+                  .map(m => (
+                    <option key={m.value} value={m.value}>{m.label}</option>
+                  ))}
+              </select>
+            </div>
+
+            {/* Row 2: Quantity Done & NG & Realtime Badge */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 140px', gap: 12, alignItems: 'end' }}>
+              <div>
+                <label className="form-label" style={{ fontSize: 11.5, fontWeight: 700 }}>
+                  {t('quantityDone')} <span style={{ color: 'red' }}>*</span>
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  step="1"
+                  className="form-input font-mono"
+                  style={{ fontSize: 15, fontWeight: 800, height: 36, color: 'var(--status-success)' }}
+                  placeholder="0"
+                  value={quantityDone}
+                  onChange={(e) => setQuantityDone(e.target.value)}
+                />
+              </div>
+
+              <div>
+                <label className="form-label" style={{ fontSize: 11.5, fontWeight: 700 }}>
+                  {t('quantityNg')}
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  step="1"
+                  className="form-input font-mono"
+                  style={{ fontSize: 15, fontWeight: 800, height: 36, color: numNg > 0 ? 'var(--status-error)' : 'inherit' }}
+                  placeholder="0"
+                  value={quantityNg}
+                  onChange={(e) => setQuantityNg(e.target.value)}
+                />
+              </div>
+
+              {/* Realtime KPI Pill */}
+              <div
+                style={{
+                  height: 36,
+                  padding: '4px 8px',
+                  borderRadius: 6,
+                  background: 'var(--bg-muted, #F8FAFC)',
+                  border: '1px solid var(--border-default)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'center',
+                }}
+              >
+                <div style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 600 }}>
+                  {t('totalProduced')}: <span style={{ fontFamily: 'monospace', fontWeight: 700 }}>{totalProduced.toLocaleString()}</span>
+                </div>
+                <div style={{ fontSize: 11, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <span>{t('ngRate')}:</span>
+                  <span
+                    className={Number(ngRate) > 5 ? 'badge badge--error' : Number(ngRate) > 0 ? 'badge badge--warning' : 'badge badge--success'}
+                    style={{ fontSize: 10, padding: '1px 5px', fontFamily: 'monospace' }}
+                  >
+                    {ngRate}%
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── SECTION 3: Processing Code & Notes ── */}
       <div
