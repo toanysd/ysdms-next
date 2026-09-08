@@ -1,6 +1,10 @@
 import { Client } from 'pg';
 
-const connectionString = "postgresql://postgres.iirezrszalmecsslbruo:Ysd%401621toan@aws-1-ap-northeast-1.pooler.supabase.com:5432/postgres";
+const connectionString = process.env.DATABASE_URL;
+if (!connectionString) {
+  console.error("DATABASE_URL is not set. Run with: node --env-file=.env.local scripts/test_wo_set.mjs");
+  process.exit(1);
+}
 const client = new Client({ connectionString });
 
 async function main() {

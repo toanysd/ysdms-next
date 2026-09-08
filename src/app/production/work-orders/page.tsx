@@ -1,79 +1,100 @@
-import { createClient } from '@/lib/supabase/server'
-import { Briefcase } from 'lucide-react'
-import { getTranslations } from 'next-intl/server'
+import React from 'react'
+import { getWorkOrders } from './actions'
+import { WorkOrderHeader } from './_components/WorkOrderHeader'
+import { WorkOrderKpiCards } from './_components/WorkOrderKpiCards'
 import { WorkOrderFilterBar } from './_components/WorkOrderFilterBar'
 import { WorkOrderTable } from './_components/WorkOrderTable'
 import { Pagination } from '@/components/ui/Pagination'
 
 export const dynamic = 'force-dynamic'
 
-export default async function WorkOrdersPage(props: { searchParams: Promise<{ search?: string, status?: string, type?: string, page?: string }> }) {
+interface WorkOrdersPageProps {
+  searchParams: Promise<{
+    search?: string
+    status?: string
+    page?: string
+  }>
+}
+
+export default async function WorkOrdersPage(props: WorkOrdersPageProps) {
   const searchParams = await props.searchParams
-  const supabase = await createClient()
-  const t = await getTranslations('WorkOrders')
+  const page = parseInt(searchParams.page || '1', 10)
+  const pageSize = 50
 
-  const PAGE_SIZE = 50
-  const currentPage = parseInt(searchParams.page || '1', 10)
-  const from = (currentPage - 1) * PAGE_SIZE
-  const to = from + PAGE_SIZE - 1
-
-  let query = supabase
-    .from('work_orders')
-    .select(`
-      wo_id, wo_code, wo_name, wo_type, wo_status, start_date, deadline, priority, company_id, product_id,
-      companies (company_name),
-      products (product_name, company_id, companies!products_company_id_fkey (company_name))
-    `, { count: 'exact' })
-    .order('created_at', { ascending: false })
-    .range(from, to)
-
-  if (searchParams.search) {
-    query = query.ilike('wo_code', `%${searchParams.search}%`)
-  }
-  if (searchParams.status) {
-    query = query.eq('wo_status', searchParams.status)
-  }
-  if (searchParams.type) {
-    query = query.eq('wo_type', searchParams.type)
-  }
-
-  const { data: wos, count, error } = await query
-  const totalItems = count || 0
+  const { items, total, kpis, error } = await getWorkOrders({
+    search: searchParams.search,
+    status: searchParams.status,
+    page,
+    pageSize,
+  })
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', gap: '12px' }}>
-      {/* Page Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0, padding: '16px 20px', background: 'var(--bg-surface)', borderBottom: '1px solid var(--border-default)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <Briefcase size={20} color="var(--accent)" />
-          <h1 className="text-[18px] font-bold" style={{ color: 'var(--text-primary)', margin: 0 }}>
-            {t('title')}
-          </h1>
-        </div>
-        <a href="/production/work-orders/new" className="btn btn-primary flex items-center gap-1.5 cursor-pointer">
-          <Briefcase size={16} />
-          <span>{t('new')}</span>
-        </a>
-      </div>
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        height: '100%',
+        gap: '12px',
+      }}
+    >
+      {/* 1. Page Header */}
+      <WorkOrderHeader totalCount={total} />
 
-      {/* FilterBar */}
-      <WorkOrderFilterBar 
-        initialSearch={searchParams.search} 
+      {/* 2. KPI Cards */}
+      <WorkOrderKpiCards kpis={kpis} activeStatus={searchParams.status} />
+
+      {/* 3. Filter Bar */}
+      <WorkOrderFilterBar
+        initialSearch={searchParams.search}
         initialStatus={searchParams.status}
-        initialType={searchParams.type}
       />
 
-      {/* Content Area */}
-      <div style={{ flex: 1, overflow: 'auto', padding: '0 20px', paddingBottom: 20 }}>
-        <div className="card-flat" style={{ display: 'flex', flexDirection: 'column', minHeight: '100%' }}>
-          <WorkOrderTable data={wos || []} />
-          
-          <div className="mt-auto pt-4 pb-2 border-t px-4">
-            <Pagination 
-              currentPage={currentPage}
-              totalRecords={totalItems}
-              pageSize={PAGE_SIZE}
-              baseUrl={`/production/work-orders?search=${searchParams.search || ''}&status=${searchParams.status || ''}&type=${searchParams.type || ''}`}
+      {/* 4. Table Area */}
+      <div
+        style={{
+          flex: 1,
+          overflow: 'auto',
+          padding: '0 16px',
+          paddingBottom: 16,
+        }}
+      >
+        <div
+          className="card-flat"
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            minHeight: '100%',
+            backgroundColor: 'var(--bg-surface)',
+          }}
+        >
+          {error && (
+            <div
+              style={{
+                padding: '10px 14px',
+                backgroundColor: '#FEF2F2',
+                color: '#DC2626',
+                fontSize: 12,
+                borderBottom: '1px solid #FECACA',
+              }}
+            >
+              エラー: {error}
+            </div>
+          )}
+
+          <WorkOrderTable data={items} />
+
+          <div
+            style={{
+              marginTop: 'auto',
+              padding: '12px 16px',
+              borderTop: '1px solid var(--border-default)',
+            }}
+          >
+            <Pagination
+              currentPage={page}
+              totalRecords={total}
+              pageSize={pageSize}
+              baseUrl={`/production/work-orders?search=${searchParams.search || ''}&status=${searchParams.status || ''}`}
             />
           </div>
         </div>

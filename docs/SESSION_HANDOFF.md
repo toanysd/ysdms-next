@@ -17,11 +17,12 @@
 | M16 — Equipment Location & Transfer Module (ADR-008) | ✅ NGHIỆM THU (commit `9eac225`) |
 | M17 — Equipment QR Code & Camera AR Locator (Chỉ thị #025) | ✅ NGHIỆM THU (commit `226a680`) |
 | M18 — Mold Custody, Loans & Return Workflow + 3 PDF Engines (Chỉ thị #026, ADR-009) | ✅ NGHIỆM THU (commit `bea1e2d`) |
-| Migration 089–098 | ✅ Applied to production |
+| M19 — Work Orders UI & SET Resolution + PDF Engine (Chỉ thị #027, #028, ADR-010) | ✅ HOÀN THÀNH (Sẵn sàng nghiệm thu) |
+| Migration 089–099 | ✅ Applied to production |
 | TypeScript build | ✅ 0 errors |
 | i18n | ✅ 0 missing keys |
-| Last verified commit | `bea1e2d` (2026-09-08) |
-| Next Milestone | **TBD** — Chờ PE ban hành |
+| Last verified commit | `831e88f` (M19 Phase B1 Migration 099) |
+| Next Step | PE Nghiệm thu M19 & Đóng Milestone 19 |
 
 ---
 
