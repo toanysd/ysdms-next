@@ -484,15 +484,24 @@ FK:  delivery_site_id UUID → delivery_sites(site_id)
 
 **`shipments`**
 ```
-PK:  shipment_id      UUID
-FK:  order_id         UUID → orders(order_id) NOT NULL
-FK:  delivery_site_id UUID → delivery_sites(site_id)
-     ship_date        DATE NOT NULL
-     delivery_date    DATE
-     delivery_note_no TEXT
-     carrier          TEXT
-     tracking_no      TEXT
-     status           TEXT  ('SHIPPED' | 'IN_TRANSIT' | 'DELIVERED' | 'RETURNED')
+PK:  shipment_id       UUID PRIMARY KEY
+FK:  work_order_id     UUID → work_orders(wo_id) NULL (M101 / ADR-012: WO-direct shipments)
+FK:  order_id          UUID → orders(order_id) NULL
+FK:  order_line_id     UUID → order_lines(line_id) NULL
+FK:  delivery_site_id  UUID → delivery_sites(site_id) NULL
+FK:  shipped_by        UUID → employees(employee_id) NULL
+     ship_date         DATE NOT NULL
+     delivery_method   TEXT (Phương thức vận chuyển)
+     tracking_no       TEXT (Mã vận đơn)
+     delivery_note_no  TEXT (Mã số phiếu 納品書, e.g. DN-YYYYMMDD-NNN)
+     invoice_no        TEXT (Mã hóa đơn)
+     status            TEXT ('PREPARING' | 'SHIPPED' | 'DELIVERED' | 'RETURNED')
+     shipment_type     TEXT ('STANDARD' | 'DIRECT' | 'SAMPLE')
+     service_desc      TEXT
+     document_template TEXT
+     notes             TEXT
+     created_at        TIMESTAMPTZ DEFAULT now()
+     updated_at        TIMESTAMPTZ DEFAULT now()
 ```
 
 ---

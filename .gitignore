@@ -44,6 +44,8 @@ test_tables.py
 add_col.js
 /test-results/
 /playwright-report/
+scripts/temp/
+scripts/_temp*
 
 # Scratch / Debug / Legacy (dọn dẹp 2026-07-15)
 /scratch/
@@ -66,6 +68,8 @@ temp_ai/
 
 # User requested exclusions
 /supabase/
+!/supabase/migrations/
+!/supabase/migrations/*.sql
 /tham_khao/
 /business_docs/
 /release/

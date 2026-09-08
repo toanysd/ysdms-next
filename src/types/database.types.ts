@@ -7617,6 +7617,7 @@ export type Database = {
           status: string | null
           tracking_no: string | null
           updated_at: string | null
+          work_order_id: string | null
         }
         Insert: {
           created_at?: string | null
@@ -7636,6 +7637,7 @@ export type Database = {
           status?: string | null
           tracking_no?: string | null
           updated_at?: string | null
+          work_order_id?: string | null
         }
         Update: {
           created_at?: string | null
@@ -7655,6 +7657,7 @@ export type Database = {
           status?: string | null
           tracking_no?: string | null
           updated_at?: string | null
+          work_order_id?: string | null
         }
         Relationships: [
           {
@@ -7684,6 +7687,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "employees"
             referencedColumns: ["employee_id"]
+          },
+          {
+            foreignKeyName: "shipments_work_order_id_fkey"
+            columns: ["work_order_id"]
+            isOneToOne: false
+            referencedRelation: "work_orders"
+            referencedColumns: ["wo_id"]
           },
         ]
       }
