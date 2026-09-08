@@ -1,8 +1,8 @@
 # ADR-010: Work Order UI & Thermoforming Equipment SET Resolution (Chỉ thị Sản xuất Khay & Bộ Thiết bị SET)
 
-**Trạng thái:** APPROVED (Chính thức phê duyệt)  
+**Trạng thái:** APPROVED  
 **Ngày dự thảo:** 2026-09-08  
-**Ngày phê duyệt:** 2026-09-08 10:15 JST  
+**Ngày phê duyệt:** 2026-09-08 | **Người phê duyệt:** PE + Anh Thoan  
 **Tác giả:** AN (Antigravity Architect)  
 **Người quyết định:** Anh Thoan (Product Owner), PE (Perplexity Engineer)  
 **Chỉ thị căn cứ:** Chỉ thị #027 (Milestone 19: Work Orders UI & Equipment SET Resolution)  
