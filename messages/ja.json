@@ -489,10 +489,14 @@
     "sections": {
       "office": "事務・管理",
       "design": "設計部",
-      "equipment": "金型・設備部",
+      "equipment": "金型・設備",
       "thermoforming": "成形部",
       "quality": "品質管理部 (QC)",
-      "materials": "資材管理"
+      "materials": "原材料・資材",
+      "business": "営業・受注",
+      "production": "生産管理",
+      "logistics": "出荷・在庫",
+      "system": "システム管理"
     },
     "items": {
       "overview": "概要",
@@ -538,7 +542,13 @@
       "dataSync": "データ同期",
       "workOrders": "工程指示票 (WO)",
       "locations": "保管棚・位置",
-      "scan": "ARスキャナー"
+      "scan": "ARスキャナー",
+      "cadDesigns": "CAD図面・技術",
+      "quality": "品質管理 (QC)",
+      "equipment": "設備・治具",
+      "inventory": "製品在庫",
+      "master": "マスターデータ",
+      "settings": "システム設定"
     },
     "bottom": {
       "reports": "レポート・集計",
@@ -3079,7 +3089,13 @@
       "orderManagementDesc": "注文管理と出荷日程",
       "customerMaster": "得意先マスター",
       "customerMasterDesc": "顧客企業・納品先一覧"
-    }
+    },
+    "quickActionsTitle": "クイック操作 (3-Click Rule)",
+    "quickActionsSubtitle": "日常業務への最短ショートカット",
+    "btnCreateWO": "+ 製造指示作成 (WO)",
+    "btnTodayWorklog": "📋 本日の日報 (Nippo)",
+    "btnRegisterShipment": "🚚 出荷登録 (Shipment)",
+    "btnCheckInventory": "📊 在庫確認 (Inventory)"
   },
   "Mrp": {
     "title": "MRP 材料所要量計算",

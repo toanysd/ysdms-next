@@ -1,12 +1,19 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { Save, AlertCircle, Search, Calendar, FileText, CheckCircle2 } from 'lucide-react'
 import { searchProductsAction, getProductDetailsAction, createWorkOrderAction } from '../actions'
 
 export function WorkOrderForm() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const paramOrderId = searchParams.get('order_id')
+  const paramOrderNo = searchParams.get('order_no')
+  const paramProductId = searchParams.get('product_id')
+  const paramWoName = searchParams.get('wo_name')
+  const paramDeadline = searchParams.get('deadline')
+
   const [loading, setLoading] = useState(false)
   const [errorMsg, setErrorMsg] = useState('')
 
@@ -21,14 +28,36 @@ export function WorkOrderForm() {
   // Form State
   const [form, setForm] = useState({
     wo_code: `WO-${new Date().getFullYear()}${(new Date().getMonth()+1).toString().padStart(2,'0')}-${Math.floor(Math.random() * 10000).toString().padStart(4,'0')}`,
-    wo_name: '',
+    wo_name: paramWoName || '',
     wo_type: 'NEW_SET',
     priority: 5,
-    deadline: '',
+    deadline: paramDeadline || '',
     notes: '',
     design_revision_id: null as string | null,
     company_id: null as string | null,
+    order_id: paramOrderId || null as string | null,
   })
+
+  // Pre-load product if product_id is in query params
+  useEffect(() => {
+    if (paramProductId && !selectedProduct) {
+      getProductDetailsAction(paramProductId).then(details => {
+        if (details && details.product_id) {
+          setSelectedProduct({
+            product_id: details.product_id,
+            product_code: details.product_code,
+            product_name: details.product_name,
+          })
+          setForm(prev => ({
+            ...prev,
+            design_revision_id: details.revision_id,
+            company_id: details.company_id,
+            wo_name: prev.wo_name || (paramWoName || `新規金型製作 ${details.product_code}`),
+          }))
+        }
+      })
+    }
+  }, [paramProductId])
 
   // Debounce search
   useEffect(() => {
@@ -110,6 +139,19 @@ export function WorkOrderForm() {
         <h2 className="text-[16px] font-bold mb-6" style={{ color: 'var(--text-primary)', borderBottom: '1px solid var(--border-default)', paddingBottom: 12 }}>
           Khởi Tạo Work Order
         </h2>
+
+        {/* Banner liên kết Đơn hàng nếu có order_id */}
+        {form.order_id && (
+          <div className="card-flat mb-4" style={{ background: 'var(--tint-blue-bg)', borderColor: 'var(--accent)', padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 10, borderRadius: 6 }}>
+            <FileText size={18} style={{ color: 'var(--accent)', flexShrink: 0 }} />
+            <div style={{ fontSize: 13, color: 'var(--text-primary)' }}>
+              <strong>受注連携 (Đơn hàng liên kết):</strong> Lệnh sản xuất này sẽ được tự động liên kết với Đơn hàng{' '}
+              <span style={{ fontFamily: 'monospace', fontWeight: 700, color: 'var(--accent)' }}>
+                {paramOrderNo || form.order_id.slice(0, 8)}
+              </span>
+            </div>
+          </div>
+        )}
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
           

@@ -1,5 +1,6 @@
 export const dynamic = 'force-dynamic'
 
+import { Suspense } from 'react'
 import { ArrowLeft, ArrowUpFromLine } from 'lucide-react'
 import Link from 'next/link'
 import { WorkOrderForm } from './_components/WorkOrderForm'
@@ -30,7 +31,9 @@ export default function NewWorkOrderPage() {
 
       {/* Content Area */}
       <div style={{ flex: 1, overflow: 'auto', padding: '0 4px', paddingTop: 16 }}>
-        <WorkOrderForm />
+        <Suspense fallback={<div className="p-4 text-center text-sm text-slate-500">Đang tải biểu mẫu...</div>}>
+          <WorkOrderForm />
+        </Suspense>
       </div>
     </div>
   )

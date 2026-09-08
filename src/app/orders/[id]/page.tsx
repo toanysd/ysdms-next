@@ -1,6 +1,6 @@
 import { getTranslations } from 'next-intl/server'
 import Link from 'next/link'
-import { ArrowLeft, ArrowUpFromLine, Truck } from 'lucide-react'
+import { ArrowLeft, ArrowUpFromLine, Truck, ClipboardList } from 'lucide-react'
 import { BackButton } from './_components/BackButton'
 import { createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
@@ -61,6 +61,21 @@ export default async function OrderDetailPage(props: {
     }
   }
 
+  // Pre-fill parameters for Work Order Shortcut
+  const firstLine = orderLines && orderLines.length > 0 ? orderLines[0] : null
+  const productId = firstLine?.product_id || ''
+  const woName = order.order_no ? `受注 ${order.order_no}${firstLine?.products?.product_name ? ' - ' + firstLine.products.product_name : ''}` : ''
+  const deadline = order.requested_delivery ? String(order.requested_delivery).split('T')[0] : ''
+
+  const woParams = new URLSearchParams()
+  woParams.set('order_id', order.order_id)
+  if (order.order_no) woParams.set('order_no', order.order_no)
+  if (order.company_id) woParams.set('company_id', order.company_id)
+  if (productId) woParams.set('product_id', productId)
+  if (woName) woParams.set('wo_name', woName)
+  if (deadline) woParams.set('deadline', deadline)
+  const newWoUrl = `/production/work-orders/new?${woParams.toString()}`
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', gap: '12px' }}>
       
@@ -80,15 +95,29 @@ export default async function OrderDetailPage(props: {
           </div>
         </div>
 
-        {/* Nút phát hành 納品書 */}
-        {order.order_status !== 'CANCELLED' && (
-          <Link href={`/orders/shipments/new?order_id=${order.order_id}`}>
-            <button className="btn btn-primary flex items-center gap-1.5 text-xs px-3 py-1.5 h-auto cursor-pointer">
-              <Truck size={14} />
-              <span>納品書を発行する</span>
-            </button>
-          </Link>
-        )}
+        {/* Actions: Tạo WO & Phát hành 納品書 */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          {order.order_status !== 'CANCELLED' && (
+            <>
+              <Link href={newWoUrl}>
+                <button
+                  className="btn btn-secondary flex items-center gap-1.5 text-xs px-3 py-1.5 h-auto cursor-pointer"
+                  style={{ borderColor: 'var(--accent)', color: 'var(--accent)', fontWeight: 600 }}
+                  title="Tạo Lệnh sản xuất (WO) liên kết trực tiếp với đơn hàng này"
+                >
+                  <ClipboardList size={14} />
+                  <span>▶ 製造指示票(WO)を作成</span>
+                </button>
+              </Link>
+              <Link href={`/orders/shipments/new?order_id=${order.order_id}`}>
+                <button className="btn btn-primary flex items-center gap-1.5 text-xs px-3 py-1.5 h-auto cursor-pointer">
+                  <Truck size={14} />
+                  <span>納品書を発行する</span>
+                </button>
+              </Link>
+            </>
+          )}
+        </div>
       </div>
 
       {/* ── Order Header Form ── */}

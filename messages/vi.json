@@ -489,10 +489,14 @@
     "sections": {
       "office": "Văn phòng",
       "design": "Phòng Thiết kế",
-      "equipment": "Phòng Khuôn",
+      "equipment": "Khuôn & Thiết bị",
       "thermoforming": "Phòng Định hình",
       "quality": "Phòng QC",
-      "materials": "Quản lý Vật tư"
+      "materials": "Vật tư & Nhựa",
+      "business": "Kinh doanh",
+      "production": "Sản xuất",
+      "logistics": "Xuất hàng & Kho",
+      "system": "Hệ thống"
     },
     "items": {
       "overview": "Tổng quan",
@@ -538,7 +542,13 @@
       "dataSync": "Data Sync Center",
       "workOrders": "Chỉ thị sản xuất (WO)",
       "locations": "Vị trí giá kệ",
-      "scan": "Quét QR AR"
+      "scan": "Quét QR AR",
+      "cadDesigns": "Bản vẽ CAD",
+      "quality": "Chất lượng (QC)",
+      "equipment": "Thiết bị & Khuôn",
+      "inventory": "Tồn kho",
+      "master": "Danh mục Master",
+      "settings": "Cài đặt hệ thống"
     },
     "bottom": {
       "reports": "Báo cáo thống kê",
@@ -3079,7 +3089,13 @@
       "orderManagementDesc": "Quản lý đơn hàng khách và kế hoạch xuất hàng",
       "customerMaster": "Danh mục Khách hàng",
       "customerMasterDesc": "Danh bạ khách hàng doanh nghiệp và nơi giao"
-    }
+    },
+    "quickActionsTitle": "Thao Tác Nhanh (Quy Tắc 3-Click)",
+    "quickActionsSubtitle": "Lối tắt trực tiếp đến nghiệp vụ thường nhật",
+    "btnCreateWO": "+ Tạo Lệnh Sản Xuất (WO)",
+    "btnTodayWorklog": "📋 Nhật Ký Hôm Nay (Nippo)",
+    "btnRegisterShipment": "🚚 Đăng Ký Giao Hàng",
+    "btnCheckInventory": "📊 Kiểm Tra Tồn Kho"
   },
   "Mrp": {
     "title": "Tính toán nhu cầu Vật tư (MRP)",

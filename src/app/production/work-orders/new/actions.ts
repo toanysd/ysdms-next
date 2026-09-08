@@ -23,22 +23,26 @@ export async function searchProductsAction(query: string) {
 export async function getProductDetailsAction(productId: string) {
   const supabase = await createClient()
   
-  // Get active design revision
+  // Get active or latest design revision
   const { data: rev } = await supabase
     .from('design_revisions')
     .select('revision_id, revision_number')
     .eq('product_id', productId)
-    .eq('status', 'APPROVED')
-    .single()
+    .order('revision_number', { ascending: false })
+    .limit(1)
+    .maybeSingle()
 
-  // Get customer info
+  // Get product + customer info
   const { data: prod } = await supabase
     .from('products')
-    .select('company_id, companies!products_company_id_fkey(company_name)')
+    .select('product_id, product_code, product_name, company_id, companies!products_company_id_fkey(company_name)')
     .eq('product_id', productId)
     .single()
 
   return {
+    product_id: prod?.product_id || productId,
+    product_code: prod?.product_code || '',
+    product_name: prod?.product_name || '',
     revision_id: rev?.revision_id || null,
     revision_number: rev?.revision_number || null,
     company_id: prod?.company_id || null,
@@ -73,6 +77,7 @@ export async function createWorkOrderAction(payload: any) {
       product_id: payload.product_id,
       design_revision_id: payload.design_revision_id,
       company_id: payload.company_id,
+      order_id: payload.order_id || null,
       wo_type: payload.wo_type,
       wo_status: 'PLANNED',
       deadline: payload.deadline,

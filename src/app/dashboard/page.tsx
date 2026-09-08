@@ -8,7 +8,7 @@ import {
   ExternalLink, RefreshCw, BarChart3, TrendingUp,
   AlertTriangle, CheckCircle2, Clock, DollarSign,
   CreditCard, ShieldAlert, Sparkles, Layers, ArrowRight,
-  Factory, Eye
+  Factory, Eye, Truck, ClipboardList, ClipboardEdit
 } from 'lucide-react'
 import { getDashboardData, ExecutiveDashboardData } from '@/app/actions/dashboard'
 
@@ -170,6 +170,121 @@ export default function ExecutiveDashboardPage() {
           >
             <FileText size={14} />
             <span>{t('createQuotationBtn')}</span>
+          </Link>
+        </div>
+      </div>
+
+      {/* ─────────────────────────────────────────────────────────────────── */}
+      {/* 🚀 QUICK ACTIONS (3-Click Rule — M22)                                */}
+      {/* ─────────────────────────────────────────────────────────────────── */}
+      <div className="card-flat" style={{ padding: '12px 16px', background: 'var(--bg-surface)', border: '1px solid var(--border-default)', borderRadius: 8, flexShrink: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <Sparkles size={14} style={{ color: 'var(--accent)' }} />
+            <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '0.02em' }}>
+              {t('quickActionsTitle')}
+            </span>
+          </div>
+          <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
+            {t('quickActionsSubtitle')}
+          </span>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10 }}>
+          {/* Action 1: Tạo WO */}
+          <Link
+            href="/production/work-orders/new"
+            className="btn btn-secondary"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 8,
+              padding: '10px 12px',
+              height: 'auto',
+              background: 'var(--tint-teal-bg, #F0FDFA)',
+              borderColor: 'var(--accent, #0D9488)',
+              color: 'var(--accent, #0D9488)',
+              fontWeight: 700,
+              fontSize: 13,
+              textDecoration: 'none',
+              borderRadius: 6,
+            }}
+          >
+            <Plus size={16} />
+            <span>{t('btnCreateWO')}</span>
+          </Link>
+
+          {/* Action 2: Nhật ký hôm nay */}
+          <Link
+            href="/worklogs"
+            className="btn btn-secondary"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 8,
+              padding: '10px 12px',
+              height: 'auto',
+              background: 'var(--tint-purple-bg, #FAF5FF)',
+              borderColor: '#A855F7',
+              color: '#7C3AED',
+              fontWeight: 700,
+              fontSize: 13,
+              textDecoration: 'none',
+              borderRadius: 6,
+            }}
+          >
+            <ClipboardEdit size={16} />
+            <span>{t('btnTodayWorklog')}</span>
+          </Link>
+
+          {/* Action 3: Xuất hàng */}
+          <Link
+            href="/shipments"
+            className="btn btn-secondary"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 8,
+              padding: '10px 12px',
+              height: 'auto',
+              background: 'var(--tint-blue-bg, #EFF6FF)',
+              borderColor: '#3B82F6',
+              color: '#2563EB',
+              fontWeight: 700,
+              fontSize: 13,
+              textDecoration: 'none',
+              borderRadius: 6,
+            }}
+          >
+            <Truck size={16} />
+            <span>{t('btnRegisterShipment')}</span>
+          </Link>
+
+          {/* Action 4: Tồn kho */}
+          <Link
+            href="/inventory"
+            className="btn btn-secondary"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 8,
+              padding: '10px 12px',
+              height: 'auto',
+              background: 'var(--tint-orange-bg, #FFFBEB)',
+              borderColor: '#F59E0B',
+              color: '#D97706',
+              fontWeight: 700,
+              fontSize: 13,
+              textDecoration: 'none',
+              borderRadius: 6,
+            }}
+          >
+            <Package size={16} />
+            <span>{t('btnCheckInventory')}</span>
           </Link>
         </div>
       </div>
