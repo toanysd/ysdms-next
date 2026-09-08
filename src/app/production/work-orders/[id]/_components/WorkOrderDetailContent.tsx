@@ -3,12 +3,13 @@
 import React, { useState, useEffect } from 'react'
 import { useSearchParams, useRouter, usePathname } from 'next/navigation'
 import { useTranslations } from 'next-intl'
-import { Info, Layers, Wrench, ClipboardList, CheckCircle2, AlertTriangle } from 'lucide-react'
+import { Info, Layers, Wrench, ClipboardList, CheckCircle2, AlertTriangle, Truck } from 'lucide-react'
 import { WorkOrderDetailHeader } from './WorkOrderDetailHeader'
 import { TabOverview } from './TabOverview'
 import { TabEquipmentSet } from './TabEquipmentSet'
 import { TabJobs } from './TabJobs'
 import { TabWorklogs } from './TabWorklogs'
+import { TabShipment } from './TabShipment'
 import type { WOEquipmentSetResult, WorkOrderWorklogItem, WOStatus } from '../../types'
 
 interface WorkOrderDetailContentProps {
@@ -32,7 +33,7 @@ export function WorkOrderDetailContent({
 
   useEffect(() => {
     const tabParam = searchParams?.get('tab')
-    if (tabParam && ['equipment_set', 'overview', 'jobs', 'worklogs'].includes(tabParam)) {
+    if (tabParam && ['equipment_set', 'overview', 'jobs', 'worklogs', 'shipments'].includes(tabParam)) {
       setActiveTab(tabParam)
     }
   }, [searchParams])
@@ -190,6 +191,31 @@ export function WorkOrderDetailContent({
             </span>
           )}
         </button>
+
+        {/* Tab 5: 出荷・納品 (Shipments - M21) */}
+        <button
+          type="button"
+          onClick={() => handleTabChange('shipments')}
+          className={`tab-item ${activeTab === 'shipments' ? 'tab-item--active active' : ''}`}
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+            padding: '10px 14px',
+            fontSize: 13,
+            fontWeight: activeTab === 'shipments' ? 700 : 500,
+            borderBottom: activeTab === 'shipments' ? '2px solid var(--accent)' : '2px solid transparent',
+            color: activeTab === 'shipments' ? 'var(--accent)' : 'var(--text-secondary)',
+            background: 'none',
+            borderTop: 'none',
+            borderLeft: 'none',
+            borderRight: 'none',
+            cursor: 'pointer'
+          }}
+        >
+          <Truck size={15} />
+          <span>{t('tabShipments')}</span>
+        </button>
       </div>
 
       {/* ── 3. Tab Content Area ── */}
@@ -208,6 +234,15 @@ export function WorkOrderDetailContent({
 
         {activeTab === 'worklogs' && (
           <TabWorklogs woId={wo.wo_id} worklogs={worklogs} jobs={jobs} />
+        )}
+
+        {activeTab === 'shipments' && (
+          <TabShipment
+            woId={wo.wo_id}
+            woCode={wo.wo_code}
+            productName={wo.product?.product_name || wo.product?.product_name_internal}
+            totalProduced={worklogs.reduce((acc, l) => acc + (Number(l.quantity_done) || 0), 0)}
+          />
         )}
       </div>
 

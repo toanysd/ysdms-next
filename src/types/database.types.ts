@@ -7618,6 +7618,7 @@ export type Database = {
           tracking_no: string | null
           updated_at: string | null
           work_order_id: string | null
+          shipped_quantity: number | null
         }
         Insert: {
           created_at?: string | null
@@ -7638,6 +7639,7 @@ export type Database = {
           tracking_no?: string | null
           updated_at?: string | null
           work_order_id?: string | null
+          shipped_quantity?: number | null
         }
         Update: {
           created_at?: string | null
@@ -7658,6 +7660,7 @@ export type Database = {
           tracking_no?: string | null
           updated_at?: string | null
           work_order_id?: string | null
+          shipped_quantity?: number | null
         }
         Relationships: [
           {
