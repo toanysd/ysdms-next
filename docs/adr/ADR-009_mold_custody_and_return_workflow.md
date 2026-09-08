@@ -1,9 +1,8 @@
 # ADR-009: Mold Custody, Borrowing & Return Workflow (金型借用・預託・返却管理)
 
-**Trạng thái:** PROPOSED (Chờ PE & Anh Thoan phê duyệt)  
-**Ngày:** 2026-09-07  
-**Người đề xuất:** AN (AI Assistant), PE (Perplexity Engineer)  
-**Người quyết định:** Anh Thoan (Product Owner)  
+**Trạng thái:** APPROVED  
+**Ngày phê duyệt:** 2026-09-08  
+**Người quyết định:** Anh Thoan (Product Owner), PE (Perplexity Engineer)  
 **Bối cảnh:** Làm rõ bản chất pháp lý và vận hành xưởng YSD đối với khuôn mẫu khách hàng: Khách hàng (JAE, SMK, SHI, Asahi...) là bên sở hữu tài sản cố định (`固定資産`), YSD là bên mượn / nhận gửi giữ (`借用者` / `預託先`) để phục vụ dập định hình khay nhựa.
 
 ---
