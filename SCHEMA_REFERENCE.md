@@ -683,6 +683,29 @@ FK:  returned_received_by  UUID → employees(employee_id)
      returned_received_by_id, returned_received_by_name
 ```
 
+### `v_work_order_equipment_set` — View phân giải bộ thiết bị SET cho Work Order (Milestone 19 - ADR-010)
+```
+     wo_id, wo_code, wo_name, wo_status, product_id, design_revision_id,
+     equipment_id, equipment_code, equipment_name, equipment_type,
+     device_status, usage_status,
+     owner_company_id, owner_company_name, keeper_company_id, keeper_company_name,
+     current_rack_layer_id, layer_code, rack_code, zone_code,
+     assignment_type       TEXT ('PRIMARY_MOLD' | 'SET_MEMBER' | 'CAD_REVISION_MATCH')
+     readiness_status      TEXT ('READY' | 'IN_USE' | 'MAINTENANCE' | 'LOANED_OUT' | 'MISSING_RACK' | 'NOT_READY')
+     active_loan_code      TEXT (Mã phiếu mượn nếu đang active)
+     loan_scheduled_return_date DATE
+```
+
+### `fn_get_wo_equipment_set(p_wo_id UUID)` — RPC phân giải 3 tầng SET thiết bị và đánh giá readiness
+```
+     Trả về JSON:
+     - wo_id, wo_code, wo_name, wo_status, product_id, product_code, product_name, design_code, plastic_type_designed, cutline_length, cutline_width
+     - primary_mold: thông tin khuôn dập chính kèm vị trí tầng kệ & readiness_status
+     - set_members: danh sách các thiết bị thành viên trực tiếp (dao cắt, khung, chày...)
+     - suggested_shared: danh sách gợi ý các phụ trợ dùng chung (WATER_BASE, FRAME) tương thích cav_type
+     - summary: total_items, ready_items, has_mold, has_cutter, is_all_ready
+```
+
 ---
 
 ## ⛔ BẢNG & CỘT ĐÃ DEPRECATED / DROPPED (TUYỆT ĐỐI KHÔNG DÙNG)

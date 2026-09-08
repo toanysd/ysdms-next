@@ -8711,8 +8711,43 @@ export type Database = {
         }
         Relationships: []
       }
+      v_work_order_equipment_set: {
+        Row: {
+          wo_id: string
+          wo_code: string
+          wo_name: string
+          wo_status: string
+          product_id: string | null
+          design_revision_id: string | null
+          equipment_id: string
+          equipment_code: string
+          equipment_name: string
+          equipment_type: string
+          device_status: string | null
+          usage_status: string | null
+          owner_company_id: string | null
+          owner_company_name: string | null
+          keeper_company_id: string | null
+          keeper_company_name: string | null
+          current_rack_layer_id: string | null
+          layer_code: string | null
+          rack_code: string | null
+          zone_code: string | null
+          assignment_type: string
+          readiness_status: 'READY' | 'IN_USE' | 'MAINTENANCE' | 'LOANED_OUT' | 'MISSING_RACK' | 'NOT_READY'
+          active_loan_code: string | null
+          loan_scheduled_return_date: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
+      fn_get_wo_equipment_set: {
+        Args: {
+          p_wo_id: string
+        }
+        Returns: Json
+      }
       fn_generate_equipment_loan_code: {
         Args: {
           p_date?: string
