@@ -32,3 +32,4 @@ Ví dụ: `ADR-001_unified-equipment-table.md`, `ADR-002_work-order-option-c.md`
 | ADR-007 | 2026-09-04 | APPROVED | Shopfloor Tablet Cockpit & Equipment Lifecycle (Milestone 14) |
 | ADR-008 | 2026-09-07 | APPROVED | Rack & Layer Code Convention (Milestone 16) |
 | ADR-009 | 2026-09-08 | APPROVED | Mold Custody, Borrowing & Return Workflow (Milestone 18) |
+| ADR-010 | 2026-09-08 | PROPOSED | Work Order UI & Equipment SET Resolution (Milestone 19) |
