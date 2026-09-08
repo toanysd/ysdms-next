@@ -2,26 +2,19 @@
 
 ---
 
-## Trạng thái hiện tại (2026-08-20)
-- **Phase R1 (Schema cleanup):** ĐÃ ĐÓNG
-- **Phase R2 (Approval/Sample lifecycle, Atomic RPC + Session Guard):** ĐÃ ĐÓNG
-- **Phase R3 (Product 360° View + Dashboard Lệnh SX):** ĐÃ ĐÓNG HOÀN TOÀN ✅
-- **Phase R4 (Báo Giá Quotations + Giao Hàng Shipments + Tech Debt Cleanup):** ĐÃ ĐÓNG CHÍNH THỨC ✅
-  - Sprint R4-S1 (Phân hệ Báo Giá 見積書 + Engine Tính Giá + Xuất PDF): ✅ ĐÃ NGHIỆM THU
-  - Sprint R4-S2 (Phân hệ Giao Hàng 納品書 + Tạo Đợt Xuất 1-Click + Xuất PDF): ✅ ĐÃ NGHIỆM THU
-  - Sprint R4-S3 (Clean Tech Debt + Refactor Unified Equipment SSOT): ✅ ĐÃ NGHIỆM THU
-- **Phase R5 (Công Nợ / Thanh Toán / Báo Cáo Tổng Hợp / E2E Testing):** ĐANG MỞ 🚀
-  - Sprint R5-S1 (Phân hệ Công Nợ & Thanh Toán + Hóa đơn + View v_customer_debt_summary): ✅ ĐÃ NGHIỆM THU CHÍNH THỨC (2026-08-20)
-  - Sprint R5-S2 (E2E Testing & Khép Kín Vòng Đời Order-to-Cash trên Live DB): ✅ ĐÃ NGHIỆM THU CHÍNH THỨC (2026-08-20)
-  - Sprint R5-S3 (Executive Dashboard 2 Tầng: Sản Xuất Live DB & Thương Mại/Công Nợ): ✅ ĐÃ NGHIỆM THU CHÍNH THỨC (2026-08-20)
+## Trạng thái hiện tại (2026-09-08)
+- **Phase R1 - R5:** ĐÃ ĐÓNG HOÀN TOÀN ✅
+- **Milestone 14 (Shopfloor Tablet Cockpit & Equipment Lifecycle):** ĐÃ ĐÓNG HOÀN TOÀN ✅ (2026-09-07)
+- **Milestone 15 (QC Intelligence Module & Monthly QC Report):** ĐÃ ĐÓNG HOÀN TOÀN ✅ (2026-09-07)
+- **Milestone 16 (Equipment Location & Transfer Module - ADR-008):** ĐÃ ĐÓNG HOÀN TOÀN ✅ (2026-09-07)
+- **Milestone 17 (Equipment QR Code & Camera AR Locator - Chỉ thị #025):** ĐÃ ĐÓNG HOÀN TOÀN ✅ (2026-09-07)
+- **Milestone 18 (Mold Custody, Loans & Return Workflow + 3 PDF Engines - ADR-009 & Chỉ thị #026):** ĐÃ ĐÓNG HOÀN TOÀN ✅ (2026-09-08)
+  - Sprint M18-S1 (Migration 097 + Workflow Engine): ✅ ĐÃ NGHIỆM THU (commit `8e49097`)
+  - Sprint M18-S2 (Migration 098 + UI Dashboard/Detail + 3 PDF Engines): ✅ ĐÃ NGHIỆM THU (commit `bea1e2d`)
 
 ## Chỉ thị đã hoàn thành & đóng
-- **#018:** ĐÃ ĐÓNG CHÍNH THỨC ✅ (Sprint R5-S1 nghiệm thu thành công trên Live DB).
-- **#019:** ĐÃ ĐÓNG CHÍNH THỨC ✅ (Sprint R5-S2 E2E 6/6 test cases pass 100%).
-- **#020:** ĐÃ ĐÓNG CHÍNH THỨC ✅ (Đã xóa sạch 100% test data `TEST_E2E_%` trên Live DB, verify COUNT = 0).
-- **#021:** ĐÃ ĐÓNG CHÍNH THỨC ✅ (Executive Dashboard R5-S3 hoàn thành Phần A & Phần B, kèm Empty State & Demo Mode).
-- **#022:** ĐÃ ĐÓNG CHÍNH THỨC ✅ (Sửa triệt để lỗi giới hạn 1.000 dòng bằng Server SQL Views `v_equipment_type_summary`, `v_job_status_summary`, `v_dashboard_executive_kpis`).
-- **#023:** ĐÃ ĐÓNG CHÍNH THỨC ✅ (Đồng bộ SESSION_STARTER.md chuẩn bị chuyển giao sang thread thảo luận mới theo Quy tắc 4e).
+- **#025:** ĐÃ ĐÓNG CHÍNH THỨC ✅ (Milestone 17 Sprint 2 Camera AR Equipment Locator).
+- **#026:** ĐÃ ĐÓNG CHÍNH THỨC ✅ (Milestone 18 Sprint 1 & Sprint 2 Mold Custody, Loans & Return Workflow).
 
 ## Kiến trúc cốt lõi đã xác lập
 - **ADR-001:** Unified SSOT `equipment` (8 loại thiết bị, quan hệ N:N `equipment_assignments` cho bộ SET gá lắp & dùng chung SHARED)
@@ -106,29 +99,46 @@
 
 ---
 
-## Milestone 18 — Mold Loan & Return Workflow + PDF Engine (金型借用・返却管理)
-**Status: SPRINT 1 COMPLETED** | 2026-09-07
+## Milestone 18 — Mold Custody, Loans & Return Workflow + 3 PDF Engines (金型借用・返却管理)
+**Status: COMPLETED (S1 + S2)** | 2026-09-08
 
 ### Sprint 1: Database Migration 097 & Workflow Engine
 - Chỉ thị: #026
 - Migration 097 (`20260907000004_097_equipment_loans.sql`):
-  - Bảng mới `equipment_loans` quản lý 3 loại phiếu (`BORROW`, `RETURN`, `REPAIR_OUT`) và 6 trạng thái (`PENDING_APPROVAL`, `APPROVED`, `REJECTED`, `IN_TRANSIT`, `RETURNED`, `CANCELLED`).
-  - FK `equipment_id` có `ON DELETE RESTRICT`.
-  - PE Adjustment #1: Function `fn_generate_equipment_loan_code(p_date)` và Trigger `trg_set_equipment_loan_code` tự động sinh mã dạng `LN-YYYYMMDD-001` per-day, xử lý chống va chạm.
-  - PE Adjustment #2: CHECK constraint `chk_scheduled_return_date` bắt buộc `scheduled_return_date IS NOT NULL` với BORROW/REPAIR_OUT; chỉ RETURN được phép NULL.
-  - View SQL `v_equipment_loans_summary` tính toán tự động số ngày quá hạn `days_overdue` (`(CURRENT_DATE - scheduled_return_date)::INTEGER`) và cờ `is_overdue` realtime.
-  - Atomic RPC Function `fn_dispatch_equipment_loan`: Đóng gói trong 1 transaction cập nhật trạng thái `IN_TRANSIT`, cập nhật `equipment.keeper_company_id = to_company_id`, và ghi log `equipment_ship_logs`.
-  - Atomic RPC Function `fn_complete_equipment_loan_return`: Đóng gói cập nhật trạng thái `RETURNED`, hoàn trả `equipment.keeper_company_id = YSD`, cập nhật vị trí kệ mới và ghi `asset_location_logs`.
-  - RLS policies kích hoạt đầy đủ.
-- Backend / Server Actions (`src/app/equipment/loans/`):
-  - `types.ts`: Khai báo types chuẩn TypeScript cho loans entity, input forms, KPI summaries.
-  - `actions.ts`: 8 Server Actions (`getEquipmentLoans`, `getEquipmentLoanDetail`, `getEquipmentLoanKpis`, `createEquipmentLoan`, `approveEquipmentLoan`, `rejectEquipmentLoan`, `dispatchEquipmentLoan`, `completeEquipmentLoanReturn`).
-- Documentation:
-  - Cập nhật `SCHEMA_REFERENCE.md` với định nghĩa bảng `equipment_loans`, View `v_equipment_loans_summary`, và 2 atomic RPCs.
-- Quality Gates & Verification:
-  - Live DB E2E test script `scripts/test_loans_workflow.mjs` chạy thành công 100% qua tất cả các bước: Tạo phiếu `LN-20260907-001` $\rightarrow$ View summary $\rightarrow$ Approve $\rightarrow$ Dispatch (Keeper sync) $\rightarrow$ Complete Return (Keeper restore & rack move) $\rightarrow$ Cleanup.
-  - TypeScript `npx tsc --noEmit`: ✅ 0 errors
-  - Translations `check_translations.mjs`: ✅ 0 missing keys
+  - Bảng mới `equipment_loans` quản lý 3 loại phiếu và 6 trạng thái.
+  - Function `fn_generate_equipment_loan_code(p_date)` và Trigger `trg_set_equipment_loan_code` tự động sinh mã dạng `LN-YYYYMMDD-001` per-day.
+  - CHECK constraint `chk_scheduled_return_date` bắt buộc `scheduled_return_date IS NOT NULL`.
+  - View SQL `v_equipment_loans_summary` tính toán `days_overdue` và cờ `is_overdue` realtime.
+  - Atomic RPC Functions `fn_dispatch_equipment_loan` & `fn_complete_equipment_loan_return`.
+- Commit S1: `8e49097`
+
+### Sprint 2: Migration 098 + UI Dashboard/Detail + 3 PDF Engines (ADR-009 APPROVED)
+- **ADR-009 (2026-09-08, APPROVED):** Xác lập bản chất pháp lý khuôn là tài sản cố định của khách hàng (客先固定資産); YSD là bên mượn/giữ hộ (借用者/預託先).
+- **Migration 098 (`20260908000001_098_equipment_loans_semantic_and_photos.sql`):**
+  - Chuẩn hóa dứt khoát 3 giá trị `loan_type`: `CUSTOMER_LOAN` (Khách → YSD), `RETURN_TO_CUSTOMER` (YSD → Khách), `OUTSOURCE_PROCESSING` (YSD → Vendor).
+  - Bổ sung 2 trường ảnh kiểm toán: `photo_overall_url` (toàn cảnh kèm biển tên) và `photo_nameplate_url` (cận cảnh nameplate).
+  - Bổ sung cờ `has_valid_loan_document` trong `v_equipment_loans_summary` phục vụ kiểm kê hàng năm (`貸与設備棚卸調査`).
+  - Cập nhật 2 RPCs phân luồng keeper đúng chuẩn ADR-009.
+- **PDF Engine (`MoldLoanPDFDocument.tsx` + `/api/equipment/loans/[id]/pdf`):**
+  - Khổ A4 Portrait, font Noto Sans JP, format chuẩn Nhật Bản.
+  - 3 Mẫu biểu: `金型借用書 (兼 預り証)`, `金型返却書`, `金型加工送付状`.
+  - Banner định danh `撮影用看板` + 2 khung ảnh kiểm toán + Con dấu pháp nhân YSD (`株式会社 YSD`).
+- **Giao diện Dashboard & Chi tiết (`/equipment/loans`):**
+  - Page Anatomy 3 lớp: Header compact, 4 KPI cards (nổi bật `預託保管中 (客先型)` tính distinct khuôn khách giữ hộ), 6 Filter Tabs, Bảng dữ liệu Rule 7.1 sắp xếp mới nhất, hyperlink `loan_code`.
+  - Modals: `CreateLoanModal` (tự động khóa chiều di chuyển From/To chuẩn ADR-009), `ApproveModal`, `RejectModal`, `DispatchModal`, `ReturnCheckInModal` (chọn tầng kệ kho cất giữ).
+  - Trang chi tiết `/equipment/loans/[id]`: Paper Style Spec Layout (RULE-UI-10), xem ảnh kiểm toán, in/tải PDF trực tiếp.
+  - Sidebar: Đăng ký menu `金型借用・返却` (icon `ArrowLeftRight`).
+  - i18n: Bổ sung 100% keys dịch đối xứng trong `messages/ja.json` & `messages/vi.json`.
+- Commit S2: `bea1e2d`
+
+### Quality Gates Verified:
+- TypeScript `npx tsc --noEmit`: ✅ 0 errors
+- Translations `check_translations.mjs`: ✅ 0 missing keys
+- Bilingual hardcode scan: ✅ Clean
+- Live DB E2E Workflow Test: ✅ Passed 100% (3 flows)
+
+### Next Milestone:
+- **TBD** — Chờ PE ban hành định hướng và chỉ thị tiếp theo.
 
 
 

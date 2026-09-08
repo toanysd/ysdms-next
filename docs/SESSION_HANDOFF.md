@@ -1,4 +1,4 @@
-# SESSION HANDOFF — 2026-09-07 (Milestone 15 Closed)
+# SESSION HANDOFF — 2026-09-08 (Milestone 18 Closed)
 
 > **Mục đích:** Tài liệu này là nguồn sự thật duy nhất khi bắt đầu phiên thảo luận mới.
 > PE = Perplexity (Project Engineer — phân tích, kiến trúc, ra quyết định).
@@ -11,21 +11,17 @@
 
 | Hạng mục | Trạng thái |
 |---|---|
-| Kiến trúc cốt lõi (ADR-001~003, ADR-007) | ✅ APPROVED & LOCKED |
-| M13 — Tray Schedule Cockpit | ✅ NGHIỆM THU |
+| Kiến trúc cốt lõi (ADR-001~003, ADR-007, ADR-008, ADR-009) | ✅ APPROVED & LOCKED |
 | M14 — Shopfloor Execution & Equipment Lifecycle | ✅ NGHIỆM THU (Pushed) |
-| M15-S1 — NG Trend Analysis (/quality/ng-trends) | ✅ NGHIỆM THU (Pushed) |
-| M15-S2 — Inspection KCS & Monthly QC PDF (/quality/inspection) | ✅ NGHIỆM THU (Pushed) |
-| M14 Shift Policy Lock (Day Shift Only) | ✅ LOCKED |
-| Security Hardening (M091–M092) | ✅ Clean Pass (0 errors, 0 anon callable) |
-| Migration 089–095 | ✅ Applied to production |
-| ADR-007 (M14 Shopfloor + Lifecycle) | ✅ COMMITTED |
-| Phase D — Legacy Migration | ✅ 100% DONE (physical_molds & cutters đã drop) |
-| Dữ liệu thương mại | ✅ 2,396 orders / 7,299 lines / ~10M trays imported |
-| Dữ liệu thiết bị | ✅ 657 orphan linked — 75 còn PENDING MANUAL REVIEW |
-| TypeScript build | ✅ 0 errors (sau commit fee9be0) |
+| M15 — NG Trend Analysis & Inspection QC PDF | ✅ NGHIỆM THU (Pushed) |
+| M16 — Equipment Location & Transfer Module (ADR-008) | ✅ NGHIỆM THU (commit `9eac225`) |
+| M17 — Equipment QR Code & Camera AR Locator (Chỉ thị #025) | ✅ NGHIỆM THU (commit `226a680`) |
+| M18 — Mold Custody, Loans & Return Workflow + 3 PDF Engines (Chỉ thị #026, ADR-009) | ✅ NGHIỆM THU (commit `bea1e2d`) |
+| Migration 089–098 | ✅ Applied to production |
+| TypeScript build | ✅ 0 errors |
 | i18n | ✅ 0 missing keys |
-| Last verified commit | `fee9be0` (2026-09-07) |
+| Last verified commit | `bea1e2d` (2026-09-08) |
+| Next Milestone | **TBD** — Chờ PE ban hành |
 
 ---
 
@@ -154,7 +150,7 @@ v_tray_schedule_gantt, v_equipment_lifecycle_status, v_dashboard_executive_kpis
 | Stack | Next.js 14, TypeScript, Supabase, Tailwind CSS, next-intl |
 | i18n | `messages/ja.json` + `messages/vi.json` |
 | Main branch | `main` |
-| Last verified commit | `fee9be0` (M15 Sprint 1 + Sprint 2 + Migration 095 — 2026-09-07) |
+| Last verified commit | `bea1e2d` (M18 Sprint 2 Mold Custody & 3 PDF Engines — 2026-09-08) |
 
 ---
 
@@ -162,11 +158,15 @@ v_tray_schedule_gantt, v_equipment_lifecycle_status, v_dashboard_executive_kpis
 
 Bạn là AN (Executing Agent). Đây là dự án **ysdms-next** — hệ thống quản lý sản xuất khay nhựa cho YSD (Yoshida Package).
 
-**Kiến trúc:** Unified `equipment` table (ADR-001), luồng 4 cấp work_orders→jobs→job_steps→work_logs (ADR-002), product-centric SSOT, Shopfloor Tablet & Equipment Lifecycle (ADR-007), QC Intelligence (M15).
+**Kiến trúc cốt lõi:** Unified `equipment` table (ADR-001), luồng 4 cấp work_orders→jobs→job_steps→work_logs (ADR-002), Shopfloor Tablet & Equipment Lifecycle (ADR-007), QC Intelligence (M15), Rack Code Convention 12 zones (ADR-008), Mold Custody & Return Legal Workflow (ADR-009).
 
-**Trạng thái hiện tại:** Milestone 13, Milestone 14, và Milestone 15 đã nghiệm thu hoàn tất. Security Hardening Sprint đã Clean Pass (0 errors). Migration 089–095 đã apply thành công trên Production. Toàn bộ tính năng M15 (Sprint 1: `/quality/ng-trends`, Sprint 2: `/quality/inspection`, và API Monthly QC PDF `/api/qc/monthly-report/pdf`) đã commit và push thành công lên GitHub `origin/main`.
+**Trạng thái hiện tại:** 
+- Milestone 16 (Equipment Location & Transfer), Milestone 17 (QR Code & Camera AR Locator), và Milestone 18 (Mold Custody, Loans & Return Workflow + 3 PDF Engines) đã được nghiệm thu và đóng hoàn toàn.
+- Migration 098 đã apply thành công trên Live DB.
+- Commit mới nhất: `bea1e2d`.
+- Quality Gates: TypeScript 0 errors, i18n 0 missing keys, bilingual scan clean.
 
-**Nhiệm vụ tiếp theo:** Sẵn sàng nhận Directive tiếp theo từ PE cho Milestone 16 hoặc các hạng mục Backlog (Location/Transfer Module, Mobile-first Worklog, hoặc TechnicalReviewForm UX upgrade).
+**Nhiệm vụ tiếp theo:** Sẵn sàng nhận Directive / Định hướng tiếp theo từ PE cho Milestone mới (Floor Monitor Realtime, Shot Counter Maintenance, Data Ingestion đơn hàng lịch sử...).
 
 **Verify trước khi commit:** `npx tsc --noEmit` (0 errors) + `node scripts/check_translations.mjs` (0 missing keys).
 
