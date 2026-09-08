@@ -714,12 +714,46 @@ FK:  returned_received_by  UUID → employees(employee_id)
      - primary_mold: thông tin khuôn dập chính kèm vị trí tầng kệ & readiness_status
      - set_members: danh sách các thiết bị thành viên trực tiếp (dao cắt, khung, chày...)
      - suggested_shared: danh sách gợi ý các phụ trợ dùng chung (WATER_BASE, FRAME) tương thích cav_type
-     - summary: total_items, ready_items, has_mold, has_cutter, is_all_ready
+### `fn_get_shipment_delivery_note(p_shipment_id UUID)` — RPC lấy dữ liệu in 納品書 (Milestone 21 - Migration 103)
+```
+     Trả về JSONB đầy đủ để render 納品書 PDF (A4 2 liên chuẩn Nhật):
+     - s.*: thông tin đợt xuất hàng (shipment_id, ship_date, shipped_quantity, delivery_note_no, delivery_method, tracking_no, notes, status)
+     - WO-direct: wo_code, wo_name, wo_status, product_name, product_name_internal, product_code, plastic_type_designed (SSOT), alt_plastic_type, revision_number, wo_company_name
+     - Order-based: order_no, customer_order_no, order_company_name, order_lines (array)
+     - Delivery Site: site_name, site_address, site_tel
 ```
 
 ---
 
+## 🔑 Bảng `shipments` & Storage `delivery-docs` — Quản Lý Giao Hàng & 納品書 (Milestone 21)
+
+```
+PK:  shipment_id          UUID DEFAULT gen_random_uuid()
+FK:  work_order_id        UUID → work_orders(wo_id) ON DELETE SET NULL (Luồng WO-direct, Migration 101)
+FK:  order_id             UUID → orders(order_id) ON DELETE SET NULL (Luồng Order-based)
+FK:  order_line_id        UUID → order_lines(line_id) ON DELETE SET NULL
+FK:  delivery_site_id     UUID → delivery_sites(site_id) ON DELETE SET NULL
+FK:  shipped_by           UUID → employees(employee_id) ON DELETE SET NULL
+     ship_date            DATE NOT NULL DEFAULT CURRENT_DATE
+     shipped_quantity     INTEGER (Migration 102)
+     delivery_note_no     TEXT (Format 'DN-YYYYMMDD-NNN')
+     delivery_method      TEXT (e.g. '自社便・トラック')
+     tracking_no          TEXT
+     invoice_no           TEXT
+     status               TEXT DEFAULT 'SHIPPED'
+     shipment_type        TEXT DEFAULT 'physical' ('physical' | 'service' | 'mixed')
+     notes                TEXT
+```
+
+Storage Bucket `delivery-docs`:
+- Private bucket lưu trữ file PDF 納品書 (`{shipment_id}/{delivery_note_no}.pdf`).
+- Giới hạn 10MB/file, MIME type: `application/pdf`.
+- Quản lý metadata liên kết qua bảng `shipment_required_docs` (`doc_type = 'delivery_note'`).
+
+---
+
 ## ⛔ BẢNG & CỘT ĐÃ DEPRECATED / DROPPED (TUYỆT ĐỐI KHÔNG DÙNG)
+
 
 | Tên Bảng / Cột | Trạng Thái | Thay Thế Bằng | Lý Do |
 |---|---|---|---|

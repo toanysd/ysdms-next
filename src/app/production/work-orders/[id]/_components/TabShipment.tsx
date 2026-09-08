@@ -299,22 +299,24 @@ export function TabShipment({
 
                   {/* Action: PDF */}
                   <td style={{ textAlign: 'center' }}>
-                    <span
-                      className="badge badge--neutral"
-                      title="Sprint M21-B で実装予定"
+                    <a
+                      href={`/api/shipments/${s.shipment_id}/pdf`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="btn btn-secondary btn-sm"
                       style={{
                         display: 'inline-flex',
                         alignItems: 'center',
                         gap: 4,
                         fontSize: 11,
                         padding: '3px 8px',
-                        cursor: 'not-allowed',
-                        opacity: 0.8
+                        textDecoration: 'none',
                       }}
+                      title="納品書PDFを表示・印刷"
                     >
                       <FileText size={12} />
-                      <span>{t('pdfPendingM21B')}</span>
-                    </span>
+                      <span>{t('viewPdfBtn')}</span>
+                    </a>
                   </td>
                 </tr>
               ))}
