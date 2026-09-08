@@ -1,7 +1,8 @@
 # ADR-010: Work Order UI & Thermoforming Equipment SET Resolution (Chỉ thị Sản xuất Khay & Bộ Thiết bị SET)
 
-**Trạng thái:** PROPOSED (Dự thảo — Chờ PE phê duyệt)  
+**Trạng thái:** APPROVED (Chính thức phê duyệt)  
 **Ngày dự thảo:** 2026-09-08  
+**Ngày phê duyệt:** 2026-09-08 10:15 JST  
 **Tác giả:** AN (Antigravity Architect)  
 **Người quyết định:** Anh Thoan (Product Owner), PE (Perplexity Engineer)  
 **Chỉ thị căn cứ:** Chỉ thị #027 (Milestone 19: Work Orders UI & Equipment SET Resolution)  
@@ -39,7 +40,7 @@ Hiện tại, hệ thống gặp các hạn chế sau:
 
 ## 2. Quyết Định Kiến Trúc (Architectural Decisions)
 
-### Quyết định 1: Thuật toán 3 Tầng Phân Giải SET Thiết Bị (3-Tier SET Resolution Logic)
+### Quyết định 1: Thuật toán 3 Tầng Phân Giải SET Thiết Bị (3-Tier SET Resolution Logic) & Phân Tách View / RPC
 Khi một `work_order` được tạo cho một sản phẩm (`product_id`) với bản vẽ thiết kế (`design_revision_id`), hệ thống tự động phân giải (resolve) bộ SET thiết bị theo thuật toán 3 tầng ưu tiên:
 
 ```mermaid
@@ -50,38 +51,40 @@ flowchart TD
     
     T1 -- Có --> SET1["✅ Lấy các thiết bị đã liên kết cố định:\nCUTTER, BASE, FRAME, PLUG, STACKING"]
     
-    T1 -- Không / Còn thiếu --> T2{"Tầng 2: Tìm thiết bị có cùng\ndesign_revision_id?"}
+    T1 -- Chưa có CUTTER --> T2{"Tầng 2: Tìm CUTTER có cùng\ndesign_revision_id?"}
     
-    T2 -- Có --> SET2["✅ Tự động gom MOLD + CUTTER\ncùng bản vẽ CAD"]
+    T2 -- Có --> SET2["✅ Tự động gom CUTTER cùng bản vẽ CAD"]
     
-    T2 --> T3{"Tầng 3: Thiết bị phụ trợ dùng chung\n(WATER_BASE, FRAME, STACKING)\ntheo CAV Type & Kích thước?"}
+    T1 --> T3{"Tầng 3 (Chỉ trong RPC):\nGợi ý Thiết bị phụ trợ dùng chung\n(WATER_BASE, FRAME) theo CAV/Kích thước?"}
+    T2 --> T3
     
-    T3 -- Khớp CAV/Size --> SET3["💡 Gợi ý Đế/Khung tương thích\nsẵn có trong kho YSD"]
+    T3 -- Khớp CAV/Size --> SUGGEST["💡 Đưa vào mảng suggested_shared riêng trong JSON\n(Tránh bùng nổ số dòng trong SQL View)"]
     
-    SET1 --> EVAL["Đánh giá trạng thái sẵn sàng (Readiness Assessment)\nKiểm tra: device_status, usage_status, current_rack_layer_id, equipment_loans"]
+    SET1 --> EVAL["Đánh giá trạng thái sẵn sàng (Readiness Assessment)\nKiểm tra: device_status = 'NORMAL', usage_status IN ('STORAGE','IN_STOCK'), rack_layer, loans"]
     SET2 --> EVAL
-    SET3 --> EVAL
     EVAL --> UI["Hiển thị Bảng SET Thiết Bị trên Work Order\n+ Cột Kệ Kho (Scan AR)\n+ Badge Trạng Thái (Xanh/Đỏ/Vàng)"]
 ```
 
 1. **Tầng 1 (Explicit N:N - Gán cố định):**
    - Tìm các bản ghi trong `equipment_assignments` có `primary_equipment_id = MOLD.equipment_id` và `relationship_type = 'SET_MEMBER'`.
    - Lấy chính xác các thiết bị liên kết (`related_equipment_id`).
-2. **Tầng 2 (CAD Revision Matching - Cùng bản vẽ):**
-   - Nếu Tầng 1 chưa có dao cắt hoặc phụ trợ, hệ thống quét bảng `equipment` tìm các bản ghi có cùng `design_revision_id` với MOLD (thường dao cắt được kỹ thuật tạo cùng revision với khuôn).
+2. **Tầng 2 (CAD Revision Matching - Cùng bản vẽ thiết kế):**
+   - Nếu Tầng 1 chưa có dao cắt (`CUTTER_INLINE` hoặc `CUTTER_SEPARATE`), hệ thống quét bảng `equipment` tìm các bản ghi dao cắt có cùng `design_revision_id` với MOLD (thường dao cắt được kỹ thuật tạo cùng revision với khuôn).
+   - Được thể hiện trong cả View `v_work_order_equipment_set` (qua logic fallback) và RPC `fn_get_wo_equipment_set`.
 3. **Tầng 3 (Compatible Shared Auxiliary - Tương thích cỡ CAV/máy):**
    - Với `WATER_BASE`, `PRESSURE_BASE`, `FRAME`: Dựa vào `cav_type_id` hoặc kích thước cutline (`cutline_length_mm × cutline_width_mm`) từ `design_revisions` để đề xuất các bộ Base/Khung dùng chung sẵn có của YSD.
+   - **Quy tắc hiệu năng:** Tầng 3 được thực hiện **DUY NHẤT trong RPC `fn_get_wo_equipment_set`** và trả về trong mảng `suggested_shared` riêng biệt của JSON payload. **KHÔNG** đưa Tầng 3 vào View SQL để tránh bùng nổ tổ hợp Cartesian product (nhiều WO × nhiều bộ Base dùng chung).
 
 ---
 
 ### Quyết định 2: Ma Trận Đánh Giá Trạng Thái Sẵn Sàng (Readiness Assessment Matrix)
 Mỗi thiết bị trong SET sau khi phân giải sẽ được hệ thống gán 1 trạng thái sẵn sàng trực quan:
 
-| Trạng thái Readiness | Biểu tượng & Màu | Điều kiện kỹ thuật | Ý nghĩa với xưởng sản xuất |
+| Trạng thái Readiness | Biểu tượng & Màu | Điều kiện kỹ thuật chuẩn schema | Ý nghĩa với xưởng sản xuất |
 |---|---|---|---|
-| **`READY`** | 🟢 **Sẵn sàng** | `device_status = 'ACTIVE'`<br>AND `usage_status = 'IN_STOCK'`<br>AND `current_rack_layer_id IS NOT NULL`<br>AND `keeper_company_id = YSD`<br>AND không có phiếu mượn đang active | Đang nằm đúng vị trí kệ kho, đầy đủ điều kiện lấy ra lắp máy dập ngay. |
+| **`READY`** | 🟢 **Sẵn sàng** | `(device_status = 'NORMAL' OR device_status IS NULL)`<br>AND `usage_status IN ('STORAGE', 'IN_STOCK', 'ACTIVE')`<br>AND `current_rack_layer_id IS NOT NULL`<br>AND `keeper_company_id = YSD`<br>AND không có phiếu mượn đang active | Đang nằm đúng vị trí kệ kho, đầy đủ điều kiện lấy ra lắp máy dập ngay. |
 | **`IN_USE`** | 🔵 **Đang trên máy** | `usage_status = 'IN_USE'` | Thiết bị đang được gá trên máy dập cho một lệnh sản xuất khác. |
-| **`MAINTENANCE`** | 🟡 **Đang bảo dưỡng** | `device_status = 'MAINTENANCE'`<br>OR `shots >= maintenance_shot_threshold` | Đang trong xưởng khuôn để sửa, làm sạch, mài dao hoặc vượt ngưỡng shot quy định. |
+| **`MAINTENANCE`** | 🟡 **Đang bảo dưỡng** | `device_status IN ('MAINTENANCE', 'REPAIRING', 'DAMAGED')`<br>OR `shots >= maintenance_shot_threshold` | Đang trong xưởng khuôn để sửa, làm sạch, mài dao hoặc hư hỏng. |
 | **`LOANED_OUT`** | 🟠 **Đang ở ngoài** | Có phiếu trong `equipment_loans` đang `APPROVED` hoặc `IN_TRANSIT`<br>OR `keeper_company_id <> YSD` | Khuôn/dao đang gửi ngoài (khách mượn lại hoặc gửi đi mài/phủ teflon). |
 | **`MISSING_RACK`** | ⚪ **Chưa gán kệ** | `current_rack_layer_id IS NULL` | Thiết bị đang ở kho YSD nhưng chưa quét QR định vị tầng kệ (cần rà soát kho). |
 | **`MISSING`** | 🔴 **Chưa có thiết bị** | Không tìm thấy thiết bị tương ứng trong DB | Chưa có dao cắt hoặc chưa đăng ký thiết bị (cần tạo mới hoặc gán liên kết). |
@@ -125,9 +128,64 @@ Mỗi thiết bị trong SET sau khi phân giải sẽ được hệ thống gá
 ## 3. Thiết Kế Cơ Sở Dữ Liệu Dự Kiến (Migration 099 Preview)
 
 ### 3.1 View `v_work_order_equipment_set`
-View SQL tổng hợp mối quan hệ giữa Work Order và toàn bộ thiết bị trong SET:
+View SQL tổng hợp mối quan hệ giữa Work Order và các thiết bị SET (Tầng 1 và Tầng 2 Fallback):
 ```sql
 CREATE OR REPLACE VIEW public.v_work_order_equipment_set AS
+WITH wo_primary_mold AS (
+  SELECT 
+    wo.wo_id,
+    wo.wo_code,
+    wo.wo_name,
+    wo.wo_status,
+    wo.product_id,
+    wo.design_revision_id,
+    m.equipment_id AS mold_equipment_id
+  FROM public.work_orders wo
+  LEFT JOIN public.equipment m 
+    ON m.design_revision_id = wo.design_revision_id 
+    AND m.equipment_type = 'MOLD'
+),
+resolved_equipment AS (
+  -- 1. Khuôn chính (MOLD)
+  SELECT 
+    w.wo_id,
+    w.mold_equipment_id AS equipment_id,
+    'PRIMARY_MOLD'::text AS assignment_type
+  FROM wo_primary_mold w
+  WHERE w.mold_equipment_id IS NOT NULL
+
+  UNION ALL
+
+  -- 2. Tầng 1: Các thiết bị liên kết cố định trong equipment_assignments (SET_MEMBER)
+  SELECT 
+    w.wo_id,
+    ea.related_equipment_id AS equipment_id,
+    ea.relationship_type AS assignment_type
+  FROM wo_primary_mold w
+  JOIN public.equipment_assignments ea 
+    ON ea.primary_equipment_id = w.mold_equipment_id 
+    AND ea.relationship_type = 'SET_MEMBER'
+
+  UNION ALL
+
+  -- 3. Tầng 2: Fallback CUTTER cùng design_revision_id khi Tầng 1 chưa có bản ghi assignment
+  SELECT 
+    w.wo_id,
+    c.equipment_id,
+    'CAD_REVISION_MATCH'::text AS assignment_type
+  FROM wo_primary_mold w
+  JOIN public.equipment c 
+    ON c.design_revision_id = w.design_revision_id 
+    AND c.equipment_type IN ('CUTTER_INLINE', 'CUTTER_SEPARATE')
+  WHERE NOT EXISTS (
+    SELECT 1 
+    FROM public.equipment_assignments ea2
+    JOIN public.equipment eq2 ON eq2.equipment_id = ea2.related_equipment_id
+    WHERE ea2.primary_equipment_id = w.mold_equipment_id 
+      AND ea2.relationship_type = 'SET_MEMBER'
+      AND eq2.equipment_type IN ('CUTTER_INLINE', 'CUTTER_SEPARATE')
+  )
+)
 SELECT
   wo.wo_id,
   wo.wo_code,
@@ -149,40 +207,33 @@ SELECT
   rl.layer_code,
   r.rack_code_new AS rack_code,
   r.zone_code,
-  -- Phân loại quan hệ SET
-  COALESCE(ea.relationship_type, 
-    CASE WHEN eq.equipment_id = mold.equipment_id THEN 'PRIMARY_MOLD' ELSE 'DERIVED_SET' END
-  ) AS assignment_type,
+  re.assignment_type,
   -- Đánh giá trạng thái sẵn sàng (Readiness)
   CASE
-    WHEN loan.loan_id IS NOT NULL OR eq.keeper_company_id <> ysd.company_id THEN 'LOANED_OUT'
-    WHEN eq.device_status = 'MAINTENANCE' THEN 'MAINTENANCE'
+    WHEN loan.loan_id IS NOT NULL OR (eq.keeper_company_id IS NOT NULL AND eq.keeper_company_id <> ysd.company_id) THEN 'LOANED_OUT'
+    WHEN eq.device_status IN ('MAINTENANCE', 'REPAIRING', 'DAMAGED') THEN 'MAINTENANCE'
     WHEN eq.usage_status = 'IN_USE' THEN 'IN_USE'
-    WHEN eq.device_status = 'ACTIVE' AND eq.usage_status = 'IN_STOCK' AND eq.current_rack_layer_id IS NOT NULL THEN 'READY'
+    WHEN (eq.device_status = 'NORMAL' OR eq.device_status IS NULL) 
+         AND eq.usage_status IN ('STORAGE', 'IN_STOCK', 'ACTIVE') 
+         AND eq.current_rack_layer_id IS NOT NULL THEN 'READY'
     WHEN eq.current_rack_layer_id IS NULL THEN 'MISSING_RACK'
     ELSE 'NOT_READY'
   END AS readiness_status
-FROM public.work_orders wo
--- Join tìm MOLD chính
-LEFT JOIN public.equipment mold 
-  ON mold.design_revision_id = wo.design_revision_id AND mold.equipment_type = 'MOLD'
--- Join qua equipment_assignments (Tầng 1) hoặc fallback cùng design_revision_id (Tầng 2)
-LEFT JOIN public.equipment_assignments ea 
-  ON ea.primary_equipment_id = mold.equipment_id AND ea.relationship_type = 'SET_MEMBER'
-LEFT JOIN public.equipment eq 
-  ON eq.equipment_id = COALESCE(ea.related_equipment_id, mold.equipment_id)
+FROM resolved_equipment re
+JOIN public.work_orders wo ON wo.wo_id = re.wo_id
+JOIN public.equipment eq ON eq.equipment_id = re.equipment_id
 LEFT JOIN public.rack_layers rl ON rl.id = eq.current_rack_layer_id
 LEFT JOIN public.racks r ON r.id = rl.rack_id
 LEFT JOIN public.companies ysd ON ysd.company_code = 'YSD'
--- Kiểm tra có đang cho mượn không
 LEFT JOIN public.equipment_loans loan 
   ON loan.equipment_id = eq.equipment_id AND loan.status IN ('APPROVED', 'IN_TRANSIT');
 ```
 
 ### 3.2 Hàm RPC `fn_get_wo_equipment_set(p_wo_id UUID)`
-Hàm trả về cấu trúc JSON phân cấp hoàn chỉnh cho giao diện:
+Hàm trả về cấu trúc JSON phân cấp hoàn chỉnh cho giao diện, tích hợp Tầng 3 gợi ý thiết bị phụ trợ dùng chung:
 - `primary_mold`: Thông tin khuôn dập chính.
-- `set_members`: Mảng các thiết bị thành viên (Cutter, Water Base, Pressure Base, Frame, Stacking, Plug).
+- `set_members`: Mảng các thiết bị thành viên trực tiếp (Cutter, Base, Frame từ Tầng 1 và Tầng 2).
+- `suggested_shared`: **(Tầng 3)** Mảng danh sách các thiết bị Đế nước / Khung kẹp dùng chung của YSD tương thích với `cav_type_id` hoặc kích thước cutline của bản vẽ, gợi ý để kỹ thuật viên gán nhanh vào SET nếu chưa có.
 - `summary`: Số lượng thiết bị yêu cầu, số lượng đã sẵn sàng (`ready_count / total_required`), cờ `is_all_ready` (boolean).
 
 ---
