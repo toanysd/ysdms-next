@@ -33,13 +33,14 @@ export interface TrayPricingParams {
   productId: string
   productCode: string
   productName: string
+  companyCode?: string         // Mã khách hàng (e.g. 'AMP' cho quy tắc khoán cố định)
   plasticType: string          // e.g. 'PS(N)', 'PET(CL)', 'PP(N)'
   thicknessMm: number          // e.g. 0.5, 0.6, 0.8
   cavityCount: number          // Số khoang dập
   externalLengthMm: number     // Chiều dài khay/khuôn
   externalWidthMm: number      // Chiều rộng khay/khuôn
   lotQuantity: number          // Quy mô LOT dập (e.g. 1000, 5000)
-  packagingQuantity?: number   // Số khay/thùng carton (mặc định 150)
+  packagingQuantity?: number   // Số khay/thùng carton (tự động gợi ý nếu để trống)
   factoryFloor?: '1F' | '2F'   // Khu xưởng dập (mặc định '1F')
 }
 
@@ -139,12 +140,13 @@ export function calculateTrayPrice(params: TrayPricingParams) {
   // (d) Chi phí vật liệu mỗi khay
   const materialCost = (scrapRate * matSpec.density * filmWidthM * feedPitchM * thicknessMm * matSpec.basePrice * markupFactor) / cavityCount
 
-  // (e) Chi phí đóng gói & vận chuyển
-  const packagingCost = 1000 / packagingQuantity
+  // (e) Chi phí đóng gói & vận chuyển (với quy tắc đóng gói theo kích thước khay)
+  const effectivePackagingQty = packagingQuantity || getDefaultPackagingQuantity(externalLengthMm, externalWidthMm)
+  const packagingCost = 1000 / effectivePackagingQty
 
-  // (f) Chi phí gia công dập theo LOT
+  // (f) Chi phí gia công dập theo LOT & bảng đơn giá giờ máy YSD
   const cycleRate = getFormingCycleRate(factoryFloor, plasticType, thicknessMm) // shot/h
-  const hourlyRate = getMachiningHourlyRate(plasticType, lotQuantity)          // ¥/h
+  const hourlyRate = getMachiningHourlyRate(plasticType, lotQuantity, params.companyCode) // ¥/h
   const machineHours = (lotQuantity / cycleRate) + 0.5                          // +0.5h setup
   const formingCost = (machineHours * hourlyRate) / lotQuantity
 
@@ -158,9 +160,65 @@ export function calculateTrayPrice(params: TrayPricingParams) {
     formingCost,
     rawUnitPrice,
     finalUnitPrice,
+    effectivePackagingQty,
+    hourlyRate,
+    cycleRate,
     feedPitchMm: externalLengthMm + 15,
     filmWidthMm: externalWidthMm + 40
   }
+}
+
+/**
+ * C. Bảng Tra cứu Đơn giá Giờ máy Dập định hình (getMachiningHourlyRate)
+ * Trích xuất từ: 見積り計算書(新）.xlsx (R16-R20) & 見積り計算式.xls (R1-R5)
+ */
+export function getMachiningHourlyRate(
+  plasticType: string,
+  lotQuantity: number,
+  companyCode?: string
+): number {
+  // 1. Khách hàng AMP khoán đơn giá cố định toàn bộ
+  if (companyCode === 'AMP' || companyCode?.includes('AMP')) {
+    return 12000 // ¥12,000 / h
+  }
+
+  const pType = plasticType.toUpperCase()
+
+  // 2. Phân loại vật liệu PP
+  if (pType.includes('PP')) {
+    if (lotQuantity >= 10000) return 10000 // Lot 10,000+: ¥10,000/h
+    if (lotQuantity >= 3000) return 12000  // Lot 3,000 - 9,999: ¥12,000/h
+    return 15000                           // Lot < 3,000: ¥15,000/h
+  }
+
+  // 3. Phân loại vật liệu PS / PET (và các loại khác)
+  if (lotQuantity >= 10000) return 10000   // Lot 10,000+: ¥10,000/h
+  if (lotQuantity >= 5000) return 12000    // Lot 5,000 - 9,999: ¥12,000/h
+  if (lotQuantity >= 3000) return 13000    // Lot 3,000 - 4,999: ¥13,000/h
+  if (lotQuantity >= 2000) return 14000    // Lot 2,000 - 2,999: ¥14,000/h
+  return 15000                             // Lot < 2,000 (1,000 pcs): ¥15,000/h
+}
+
+/**
+ * D. Quy tắc Xác định Số lượng Đóng thùng Mặc định theo Kích thước Khay
+ * Phục vụ: Tính chi phí bao bì và vận chuyển (1,000 JPY / số khay mỗi thùng)
+ */
+export function getDefaultPackagingQuantity(
+  lengthMm: number,
+  widthMm: number
+): number {
+  const maxDim = Math.max(lengthMm, widthMm)
+
+  if (maxDim > 450) {
+    return 50   // Khay rất lớn (>450mm): 50 khay / thùng carton
+  }
+  if (maxDim > 300) {
+    return 100  // Khay lớn (300mm - 450mm): 100 khay / thùng carton
+  }
+  if (maxDim > 200) {
+    return 150  // Khay tiêu chuẩn (200mm - 300mm): 150 khay / thùng carton
+  }
+  return 250    // Khay nhỏ (<= 200mm): 250 khay / thùng carton
 }
 ```
 
