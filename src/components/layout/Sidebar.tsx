@@ -3,8 +3,11 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
-  Home, Briefcase, FileText, Factory, ClipboardList, ClipboardEdit, ShieldCheck,
-  Wrench, DatabaseZap, Box, PenTool, Cog, Truck, Package, Layers, Calculator,
+  Home, ClipboardEdit, Briefcase, FileText, FileSpreadsheet,
+  ClipboardList, GanttChart, Columns3, Factory,
+  ShieldCheck, TrendingUp, ScanLine,
+  Wrench, Box, MapPin, ArrowLeftRight, Archive, PenTool,
+  Truck, Package, Layers, Calculator,
   Database, Settings, ChevronRight, Pin
 } from 'lucide-react'
 
@@ -25,6 +28,7 @@ type NavSection = {
 
 const NAV_TOP: NavItem[] = [
   { href: '/dashboard', icon: Home, tKey: 'top.dashboard' },
+  { href: '/worklogs', icon: ClipboardEdit, tKey: 'top.worklogs' },
 ]
 
 const NAV_SECTIONS: NavSection[] = [
@@ -34,6 +38,7 @@ const NAV_SECTIONS: NavSection[] = [
     items: [
       { href: '/cases', icon: Briefcase, tKey: 'items.cases' },
       { href: '/orders', icon: FileText, tKey: 'items.orders' },
+      { href: '/orders/quotations', icon: FileSpreadsheet, tKey: 'items.quotations' },
     ]
   },
   // ── 2. 生産管理 (Production) ──────────────────────────────────────────
@@ -41,33 +46,37 @@ const NAV_SECTIONS: NavSection[] = [
     id: 'production', icon: Factory, tKey: 'sections.production', color: '#8B5CF6',
     items: [
       { href: '/production/work-orders', icon: ClipboardList, tKey: 'items.workOrders' },
-      { href: '/worklogs', icon: ClipboardEdit, tKey: 'items.worklogs' },
-      { href: '/quality', icon: ShieldCheck, tKey: 'items.quality' },
+      { href: '/production/schedule', icon: GanttChart, tKey: 'items.schedule' },
+      { href: '/production/kanban', icon: Columns3, tKey: 'items.kanban' },
+      { href: '/production/floor', icon: Factory, tKey: 'items.floor' },
     ]
   },
-  // ── 3. 金型・設備 (Equipment) ─────────────────────────────────────────
+  // ── 3. 品質管理 (Quality) ─────────────────────────────────────────────
+  {
+    id: 'quality', icon: ShieldCheck, tKey: 'sections.quality', color: '#EF4444',
+    items: [
+      { href: '/quality/ng-trends', icon: TrendingUp, tKey: 'items.ngTrends' },
+      { href: '/quality/inspection', icon: ScanLine, tKey: 'items.inspections' },
+    ]
+  },
+  // ── 4. 金型・設備 (Equipment) ─────────────────────────────────────────
   {
     id: 'equipment', icon: Wrench, tKey: 'sections.equipment', color: '#EA8C1C',
     items: [
-      { href: '/product-center', icon: DatabaseZap, tKey: 'items.productCenter' },
-      { href: '/equipment', icon: Box, tKey: 'items.equipment' },
+      { href: '/equipment/molds', icon: Box, tKey: 'items.molds' },
+      { href: '/equipment/locations', icon: MapPin, tKey: 'items.locations' },
+      { href: '/equipment/loans', icon: ArrowLeftRight, tKey: 'items.loans' },
+      { href: '/equipment/lifecycle', icon: Archive, tKey: 'items.lifecycle' },
       { href: '/engineering', icon: PenTool, tKey: 'items.cadDesigns' },
-      { href: '/maintenance', icon: Cog, tKey: 'items.maintenance' },
     ]
   },
-  // ── 4. 出荷・在庫 (Logistics) ─────────────────────────────────────────
+  // ── 5. 出荷・資材 (Logistics & Materials) ─────────────────────────────
   {
     id: 'logistics', icon: Truck, tKey: 'sections.logistics', color: '#10B981',
     items: [
       { href: '/shipments', icon: Truck, tKey: 'items.shipments' },
       { href: '/inventory', icon: Package, tKey: 'items.inventory' },
-    ]
-  },
-  // ── 5. 原材料・資材 (Materials) ───────────────────────────────────────
-  {
-    id: 'materials', icon: Layers, tKey: 'sections.materials', color: '#EAB308',
-    items: [
-      { href: '/plastics', icon: Layers, tKey: 'items.plastics' },
+      { href: '/plastics/inventory', icon: Layers, tKey: 'items.plasticsInventory' },
       { href: '/mrp', icon: Calculator, tKey: 'items.mrp' },
     ]
   },
