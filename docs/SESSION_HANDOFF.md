@@ -28,10 +28,11 @@
 | M24-C — Quotation Detail UI & Convert Modal (Chỉ thị #051) | ✅ NGHIỆM THU (commit `ba45b7f`) |
 | M24-D — Quotation PDF Engine & Print Preview (Chỉ thị #051) | ✅ NGHIỆM THU & TESTED E2E (Sprint D) |
 | Milestone 24 — Quotation-to-Order Pipeline (A+B+C+D) | ✅ CLOSED & HOÀN TẤT 100% |
+| Module Quy chuẩn Tính toán Báo giá (`docs/quotations/`) | ✅ HOÀN THÀNH — 5 tài liệu SSOT căn cứ phôi Excel gốc YSD |
 | Migration 089–105 | ✅ Applied to production |
 | TypeScript build | ✅ 0 errors |
 | i18n | ✅ 0 missing keys |
-| Next Step | Kính trình PE & Anh Thoan nghiệm thu M24; Tiếp nhận chỉ thị tiếp theo (M23-B / M25) |
+| Next Step | Kính trình PE & Anh Thoan nghiệm thu Hồ sơ Quy chuẩn Báo giá; Tiếp nhận chỉ thị tiếp theo (M23-B / M26) |
 
 ---
 
@@ -175,10 +176,14 @@ Bạn là AN (Executing Agent). Đây là dự án **ysdms-next** — hệ thố
   * Sprint A (commit `368af31`): Migration 105 applied trên Live DB, cập nhật `SCHEMA_REFERENCE.md`, dự thảo `ADR-013`, bổ sung 3 trường tiền đề cho M23-B trên `products`.
   * Sprint B (commit `20fdba6`): 3 Server Actions (`convertQuotationToOrderAction`, `updateQuotationStatusAction`, `getQuotationDetailAction`) trong `src/app/orders/quotations/actions.ts`.
   * Sprint C (commit `ba45b7f`): Giao diện chi tiết Báo giá `/orders/quotations/[id]` (Server Component theo RULE-UI-10 Paper style, Status Badge 6 màu chuẩn, Converted banner, Read-only lock) và Client Component `ConvertModal.tsx` với flow chuyển đổi nguyên tử sang Đơn hàng. Đã loại bỏ 100% `(as any)` trong `actions.ts`.
-  * Sprint D (Hoàn tất): A4 Portrait PDF Quotation Engine (`QuotationPDF.tsx` + `/api/quotations/[id]/pdf/route.ts`) chuẩn phôi biểu mẫu thực tế Yoshida Package. Đầy đủ bảng tài chính 3 dòng (Tiểu kế, Thuế 10%, Tổng thanh toán), Hanko 3 ô 96px có dấu đỏ Yoshida, bind người phụ trách động từ DB (xóa bỏ hardcode), liên kết thông số CAD SSOT từ `design_revisions`. Đã test E2E render PDF và Live DB queries pass 100%.
+  * Sprint D (commit `06f6b66`): A4 Portrait PDF Quotation Engine (`QuotationPDF.tsx` + `/api/quotations/[id]/pdf/route.ts`) chuẩn phôi biểu mẫu thực tế Yoshida Package. Đầy đủ bảng tài chính 3 dòng (Tiểu kế, Thuế 10%, Tổng thanh toán), Hanko 3 ô 96px có dấu đỏ Yoshida, bind người phụ trách động từ DB (xóa bỏ hardcode), liên kết thông số CAD SSOT từ `design_revisions`. Đã test E2E render PDF và Live DB queries pass 100%.
+- Module Quy chuẩn Tính toán Báo giá (`docs/quotations/` — HOÀN THÀNH ✅):
+  * Biên soạn và hệ thống hóa 5 tài liệu kỹ thuật SSOT căn cứ 100% phôi tính toán thực tế của YSD (`金型見積もり基準.xls`, `金型見積計算書.xlsx`, `見積り計算書(新）.xlsx`, `見積原価計算書フォーマットver6.xlsx`).
+  * Chuẩn hóa ma trận giá khuôn (¥170k~¥320k), chính sách chiết khấu theo LOT khay (giảm ¥10k~¥30k), công thức khay 3 trụ cột (vật liệu: Loss 1.05, Pitch L+15mm, Film W+40mm; đóng gói thùng; dập máy chiết khấu theo LOT).
+  * Lập hồ sơ đặc tả nâng cấp `quotation-engine.ts` chuẩn bị sẵn sàng cho Milestone 26.
 - Quality Gates: TypeScript 0 errors, i18n 0 missing keys.
 
-**Nhiệm vụ tiếp theo:** Kính trình PE và Anh Thoan nghiệm thu toàn diện Milestone 24; sẵn sàng triển khai Milestone tiếp theo theo chỉ thị.
+**Nhiệm vụ tiếp theo:** Kính trình PE và Anh Thoan phê duyệt nghiệm thu hồ sơ quy chuẩn tính toán báo giá; sẵn sàng triển khai Milestone tiếp theo theo chỉ đạo (M23-B hoặc M26).
 
 **Verify trước khi commit:** `npx tsc --noEmit` (0 errors) + `node scripts/check_translations.mjs` (0 missing keys).
 

@@ -1344,3 +1344,12 @@ ebaseline...).
     * Query Live DB pass 100% trên bảng `quotations` và liên kết foreign keys.
   - Quality Gates: `npx tsc --noEmit` 0 errors, `scripts/check_translations.mjs` 0 missing keys.
 
+- **[2026-09-09] Module Quy chuẩn Tính toán Báo giá (docs/quotations/) — COMPLETED ✅**
+  - Hệ thống hóa toàn bộ công thức tính toán báo giá (`計算式`), định mức khuôn mẫu và giá thành khay nhựa từ 100% phôi Excel thực tế của Yoshida Package (`金型見積もり基準.xls`, `金型見積計算書.xlsx`, `見積り計算書(新）.xlsx`, `見積原価計算書フォーマットver6.xlsx`, `価格改定計算用2024.6.26.xlsx`):
+    * `docs/quotations/README.md`: Tổng quan module, bản đồ tài liệu, căn cứ pháp lý kỹ thuật và liên kết DB schema V5.
+    * `docs/quotations/01_MOLD_PRICING_STANDARD.md`: Ma trận giá khuôn chuẩn (天フランジ vs スカート付き, 汎用 vs 専用, カット寸新規 vs 既存) từ ¥170k~¥320k; Phân rã 9 hạng mục chi phí; Bảng chiết khấu tiền khuôn theo LOT đặt khay (giảm ¥10k/¥20k/¥30k); Xử lý 3 nghiệp vụ đặc biệt (khuôn thử có phí ¥15k~¥20k, miễn phí `free_sample_trial`, báo giá đơn lẻ `MOLD`).
+    * `docs/quotations/02_TRAY_PRICING_CALCULATION_FORMULA.md`: Quy chuẩn công thức 3 trụ cột (Vật liệu: Loss 1.05, Bước tiến Pitch = L + 15mm, Khổ màng W + 40mm, Markup 1.2; Bao bì vận chuyển 1,000¥/thùng; Gia công dập máy chiết khấu giờ máy từ 15k/h xuống 10k/h theo LOT). Quy tắc làm tròn lên `Math.ceil()`.
+    * `docs/quotations/03_COST_BREAKDOWN_STANDARD_V6.md`: Chuẩn phân rã 14 thành phần chi phí chuyên nghiệp (Format Ver6) phục vụ kiểm toán giá các tập đoàn lớn (Fujitsu, Rapidus, TE...).
+    * `docs/quotations/04_ENGINE_IMPLEMENTATION_SPEC_M26.md`: Đặc tả kỹ thuật chi tiết nâng cấp `src/lib/quotation-engine.ts` trong Milestone 26 (chuyển đổi hằng số tĩnh sang Master Lookup & Dynamic Calculation).
+  - Đồng bộ cơ sở tri thức: Cập nhật `docs/02_BUSINESS_PROCESS_CATALOG.md` và `.agents/mempalace/knowledge/quotation_pricing_formulas.md`.
+

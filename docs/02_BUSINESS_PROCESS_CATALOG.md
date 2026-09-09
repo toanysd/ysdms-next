@@ -40,14 +40,15 @@
 
 | # | Quy trình | Mô tả | Edge Cases | Trạng thái |
 |---|---|---|---|---|
-| BP-04 | **Báo giá khay tiêu chuẩn** | Dùng template `見積り原紙`, giá tính theo **công thức tính giá đã tài liệu hóa** (見積り計算式) gồm 14 thành phần: 加工費→材料費→管理費→利益→梱包→物流→償却 | Nhiều mức giá theo lot (20/50/100 tấm). Có file `見積り計算式.xls/xlsm` chứa công thức tính | ✅ quotations |
-| BP-05 | **Báo giá khay mới (khuôn mới)** | Gồm: phí thiết kế + phí khuôn + phí sample + phí khay | Phí thử nghiệm pocket có thể miễn phí | ✅ quotation_lines |
-| BP-06 | **Báo giá lot bổ sung** | KH đặt thêm lot cho sản phẩm đã có | Giá có thể khác lot đầu | 🟡 Partial |
-| BP-07 | **Cải giá (価格改定)** | Điều chỉnh giá hàng năm theo chi phí nguyên liệu | File theo dõi tình trạng gửi thông báo cho từng KH | ⬜ Chưa |
-| BP-08 | **Tính giá thành (原価計算)** | 6 phiên bản template (ver6 là mới nhất) | File `見積り計算式.xlsm` có VBA macro | ⬜ Chưa |
+| BP-04 | **Báo giá khay tiêu chuẩn** | Dùng template `見積り原紙`, giá tính theo **quy chuẩn 3 trụ cột YSD** (`docs/quotations/02_TRAY_PRICING_CALCULATION_FORMULA.md`): (d) Vật liệu (Loss 1.05, Pitch L+15mm) + (e) Bao bì vận chuyển + (f) Dập theo LOT | Chiết khấu giờ máy theo quy mô LOT (1k~10k khay). Làm tròn lên `Math.ceil()` | ✅ Đã chuẩn hóa hồ sơ (`docs/quotations/`) |
+| BP-05 | **Báo giá khay mới (khuôn mới)** | Tính theo **Ma trận Giá chuẩn khuôn YSD** (`docs/quotations/01_MOLD_PRICING_STANDARD.md`): Phân loại 天フランジ/スカート付き, 汎用/専用, Dao mới/Dao cũ (¥170k~¥320k) | Chiết khấu tiền khuôn theo LOT khay (giảm ¥10k~¥30k). Xử lý khuôn thử miễn phí (`free_sample_trial`) | ✅ Đã chuẩn hóa hồ sơ (`docs/quotations/`) |
+| BP-06 | **Báo giá lot bổ sung** | KH đặt thêm lot cho sản phẩm đã có — đơn giá khay tự động điều chỉnh theo bảng giờ máy theo LOT | Đơn giá khay giảm theo quy mô LOT dập | ✅ Đã chuẩn hóa hồ sơ (`docs/quotations/`) |
+| BP-07 | **Cải giá (価格改定)** | Điều chỉnh giá theo biến động giá hạt nhựa nguyên liệu (Căn cứ `計算/価格改定計算用2024.6.26.xlsx`) | Bù trừ biên động giá vật liệu `変動比: 1.2` | ✅ Đã chuẩn hóa hồ sơ (`docs/quotations/`) |
+| BP-08 | **Tính giá thành chi tiết (原価計算)** | Chuẩn phân rã 14 thành phần chi phí (`docs/quotations/03_COST_BREAKDOWN_STANDARD_V6.md` - Format Ver6) | Phục vụ kiểm toán giá các tập đoàn lớn (Fujitsu, Rapidus, TE...) | ✅ Đã chuẩn hóa hồ sơ (`docs/quotations/`) |
 
-> [!WARNING]
-> **6 phiên bản template báo giá** đang tồn tại song song (`.doc`, `.docx`, `.xls`, `.xlsx`, `.xlsm`, `.pdf`). Cần chuẩn hóa thành 1 template duy nhất trong YSDMS.
+> [!NOTE]
+> **Toàn bộ quy chuẩn và công thức tính toán báo giá đã được hệ thống hóa đầy đủ thành module hồ sơ kỹ thuật chuyên biệt tại:** [`docs/quotations/`](file:///d:/AntiGravity_Workspace/apps/ysdms-nextgen/docs/quotations/README.md) phục vụ triển khai Auto-Pricing Engine trong Milestone 26.
+
 
 ### 1.3 Đơn hàng (受注)
 
