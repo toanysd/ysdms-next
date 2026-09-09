@@ -18,11 +18,17 @@
 | M17 — Equipment QR Code & Camera AR Locator (Chỉ thị #025) | ✅ NGHIỆM THU (commit `226a680`) |
 | M18 — Mold Custody, Loans & Return Workflow + 3 PDF Engines (Chỉ thị #026, ADR-009) | ✅ NGHIỆM THU (commit `bea1e2d`) |
 | M19 — Work Orders UI & SET Resolution + PDF Engine (Chỉ thị #027, #028, #029, ADR-010) | ✅ NGHIỆM THU & PUSHED (commit `c2531b4`) |
-| M20 — Nippo V2 Production Worklog & Step Completion Engine (Chỉ thị #030~034, ADR-011) | ✅ APPROVED & CLEANED UP (Sẵn sàng Push) |
-| Migration 089–100 | ✅ Applied to production |
+| M20 — Nippo V2 Production Worklog & Step Completion Engine (Chỉ thị #030~034, ADR-011) | ✅ NGHIỆM THU & PUSHED |
+| M21 — Work Order Direct Shipment & 納品書 Delivery Note PDF (Chỉ thị #039, ADR-012) | ✅ NGHIỆM THU & PUSHED (commit `128fb58f`) |
+| M22 — Navigation Architecture V2 & Order->WO Shortcut (Chỉ thị #044, #045) | ✅ NGHIỆM THU & PUSHED |
+| M23-A — Finished Goods Inventory Engine & Low Stock Alert (Chỉ thị #046, #047) | ✅ NGHIỆM THU & PUSHED |
+| Sidebar V3 FINAL — Comprehensive Departmental Architecture (Chỉ thị #050) | ✅ NGHIỆM THU & PUSHED (commit `321aa4c`) |
+| M24-A — DB Schema & Atomic RPC Pipeline (Chỉ thị #051, Migration 105) | ✅ NGHIỆM THU & PUSHED (commit `368af31`) |
+| M24-B — Server Actions Pipeline (convert, updateStatus, getDetail) | ✅ NGHIỆM THU (commit hiện tại) |
+| Migration 089–105 | ✅ Applied to production |
 | TypeScript build | ✅ 0 errors |
 | i18n | ✅ 0 missing keys |
-| Next Step | Push commit M20 lên GitHub main theo chỉ thị PE |
+| Next Step | Triển khai M24-C: UI /orders/quotations/[id] & Confirmation Modal |
 
 ---
 
@@ -162,15 +168,14 @@ Bạn là AN (Executing Agent). Đây là dự án **ysdms-next** — hệ thố
 **Kiến trúc cốt lõi:** Unified `equipment` table (ADR-001), luồng 4 cấp work_orders→jobs→job_steps→work_logs (ADR-002), Shopfloor Tablet & Equipment Lifecycle (ADR-007), QC Intelligence (M15), Rack Code Convention 12 zones (ADR-008), Mold Custody & Return Legal Workflow (ADR-009), Work Order Equipment SET Resolution 3-Tier Algorithm & Gatekeeper (ADR-010).
 
 **Trạng thái hiện tại:** 
-- Milestone 16, 17, 18, 19, và Milestone 20 (Nippo V2 Production Worklog & Step Completion Engine) đã được PE APPROVED chính thức.
-- Migration 100 đã apply thành công trên Live DB (`job_type_id = 11`, `category = 'THERMOFORMING'`).
-- Test data trên production (`JOB-TH-LIVE-001`, `step 41ad0522`, `log 46e3df81`) đã được dọn sạch sẽ 100%.
-- Server Action `createWorklog.ts` đã chuyển sang dùng `createServerSupabaseClient()` với `SUPABASE_SERVICE_ROLE_KEY` cho Step Completion Engine cascade.
-- Bổ sung `QG-X: PE Live DB Verification` vào `docs/QA_STANDARDS.md`.
+- Milestone 24 (Quotation-to-Order Pipeline):
+  * Sprint A (commit `368af31`): Migration 105 applied trên Live DB, cập nhật `SCHEMA_REFERENCE.md`, dự thảo `ADR-013`, bổ sung 3 trường tiền đề cho M23-B trên `products`.
+  * Sprint B: 3 Server Actions (`convertQuotationToOrderAction`, `updateQuotationStatusAction`, `getQuotationDetailAction`) trong `src/app/orders/quotations/actions.ts`. Đã kiểm thử E2E Live DB đạt 100% test cases (Status guards, Atomic conversion sang Đơn hàng, Duplicate guard).
 - Quality Gates: TypeScript 0 errors, i18n 0 missing keys.
 
-**Nhiệm vụ tiếp theo:** Thực hiện Git commit & push Milestone 20 theo phê duyệt của PE và chỉ thị của Anh Thoan.
+**Nhiệm vụ tiếp theo:** Thực hiện Git commit & push Sprint B lên GitHub main theo chỉ đạo của PE & Anh Thoan. Chuẩn bị triển khai Sprint C (UI `/orders/quotations/[id]` và Confirmation Modal).
 
 **Verify trước khi commit:** `npx tsc --noEmit` (0 errors) + `node scripts/check_translations.mjs` (0 missing keys).
+
 
 
