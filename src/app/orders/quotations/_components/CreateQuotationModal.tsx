@@ -59,6 +59,7 @@ export function CreateQuotationModal({ isOpen, onClose, onSuccess }: CreateQuota
   const [isExistingCutter, setIsExistingCutter] = useState(false)
   const [moldConstruction, setMoldConstruction] = useState<'TOP_FLANGE' | 'SKIRTED'>('TOP_FLANGE')
   const [moldApplication, setMoldApplication] = useState<'STANDARD' | 'DEDICATED'>('STANDARD')
+  const [targetLotInput, setTargetLotInput] = useState<number>(5000)
   const [toastNotification, setToastNotification] = useState<{
     message: string
     description?: string
@@ -152,7 +153,7 @@ export function CreateQuotationModal({ isOpen, onClose, onSuccess }: CreateQuota
     const company = companies.find((c) => c.company_id === selectedCompanyId)
     const companyCode = company?.company_code
 
-    const targetLot = 5000 // Standard baseline lot for quotation
+    const targetLot = Number(targetLotInput) > 0 ? Number(targetLotInput) : 5000
     const moldResult = calculateMoldPrice(latestRev, {
       constructionType: moldConstruction,
       applicationType: moldApplication,
@@ -168,15 +169,33 @@ export function CreateQuotationModal({ isOpen, onClose, onSuccess }: CreateQuota
     const dim = resolveDimensions(latestRev)
     const plastic = resolvePlasticSpec(latestRev)
 
+    // M26-D: Slim down extra_json payload (exclude appliedRevision & large legacy_specs JSONB)
     setCalculatedExtra({
-      moldCalc: moldResult,
-      trayCalc: trayResult,
-      appliedRevision: latestRev,
       moldOptions: {
         constructionType: moldConstruction,
         applicationType: moldApplication,
         isExistingCutter,
         freeSampleTrial,
+        targetLot,
+      },
+      moldCalc: {
+        moldBasePrice: moldResult.moldBasePrice,
+        cutterPrice: moldResult.cutterPrice,
+        plugPrice: moldResult.plugPrice,
+        samplePrice: moldResult.samplePrice,
+        lotDiscount: moldResult.lotDiscount,
+        totalToolingPrice: moldResult.totalToolingPrice,
+      },
+      trayCalc: {
+        sheetWidthMm: trayResult.sheetWidthMm,
+        feedPitchMm: trayResult.feedPitchMm,
+        weightPerPcsGrams: trayResult.weightPerPcsGrams,
+        rawMaterialCostPerPcs: trayResult.rawMaterialCostPerPcs,
+        formingProcessCostPerPcs: trayResult.formingProcessCostPerPcs,
+        packingCostPerPcs: trayResult.packingCostPerPcs,
+        estimatedUnitPrice: trayResult.estimatedUnitPrice,
+        suggestedSellingPrice: trayResult.suggestedSellingPrice,
+        effectivePackagingQty: trayResult.effectivePackagingQty,
       },
     })
 
@@ -576,6 +595,55 @@ export function CreateQuotationModal({ isOpen, onClose, onSuccess }: CreateQuota
                     サンプル無償提供 (¥0)
                   </span>
                 </label>
+
+                {/* Planned Order Lot Input */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <span style={{ color: 'var(--text-muted)' }}>発注予定ロット:</span>
+                  <input
+                    type="number"
+                    min={1}
+                    step={1000}
+                    value={targetLotInput}
+                    onChange={(e) => setTargetLotInput(Math.max(1, parseInt(e.target.value) || 0))}
+                    className="form-input"
+                    style={{ width: 75, height: 24, padding: '0 6px', fontSize: 11, textAlign: 'right', fontWeight: 700 }}
+                  />
+                  <span style={{ color: 'var(--text-muted)', fontSize: 10 }}>枚</span>
+                </div>
+              </div>
+            )}
+
+            {/* M26: Tray Pricing Options (when quotationType is TRAY) */}
+            {quotationType === 'TRAY' && (
+              <div
+                style={{
+                  padding: '8px 10px',
+                  background: 'rgba(255, 255, 255, 0.75)',
+                  borderRadius: 4,
+                  border: '1px dashed var(--tint-teal-border, #99f6e4)',
+                  display: 'flex',
+                  flexWrap: 'wrap',
+                  alignItems: 'center',
+                  gap: 14,
+                  fontSize: 11,
+                }}
+              >
+                <span style={{ fontWeight: 700, color: 'var(--tint-teal-text, #0f766e)', display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <Layers size={13} /> トレイ設定:
+                </span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <span style={{ color: 'var(--text-muted)' }}>発注予定ロット:</span>
+                  <input
+                    type="number"
+                    min={1}
+                    step={1000}
+                    value={targetLotInput}
+                    onChange={(e) => setTargetLotInput(Math.max(1, parseInt(e.target.value) || 0))}
+                    className="form-input"
+                    style={{ width: 75, height: 24, padding: '0 6px', fontSize: 11, textAlign: 'right', fontWeight: 700 }}
+                  />
+                  <span style={{ color: 'var(--text-muted)', fontSize: 10 }}>枚</span>
+                </div>
               </div>
             )}
 
