@@ -3,13 +3,17 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
-  Home, ClipboardEdit, Briefcase, FileText, FileSpreadsheet,
-  ClipboardList, GanttChart, Columns3, Factory,
-  ShieldCheck, TrendingUp, ScanLine,
-  Wrench, Box, MapPin, ArrowLeftRight, Archive, PenTool,
-  Truck, Package, Layers, Calculator,
-  Database, Settings, ChevronRight, Pin
+  Home, ClipboardEdit, DatabaseZap,
+  Briefcase, FileText, FileSpreadsheet, Receipt, CreditCard, Truck, Calculator,
+  PenTool, Layers, Box,
+  LayoutDashboard, Settings, CalendarRange, GanttChart, ClipboardList, Scissors,
+  MapPin, ArrowLeftRight, Archive, ScanLine, Wrench,
+  Columns3, Factory, Server,
+  TrendingUp, ShieldCheck, AlertTriangle,
+  Package,
+  Database, Pin, ChevronRight
 } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 
 type NavItem = {
   href: string
@@ -29,68 +33,87 @@ type NavSection = {
 const NAV_TOP: NavItem[] = [
   { href: '/dashboard', icon: Home, tKey: 'top.dashboard' },
   { href: '/worklogs', icon: ClipboardEdit, tKey: 'top.worklogs' },
+  { href: '/product-center', icon: DatabaseZap, tKey: 'top.productCenter' },
 ]
 
 const NAV_SECTIONS: NavSection[] = [
-  // ── 1. 営業・受注 (Business) ──────────────────────────────────────────
+  // ── 1. 営業・管理 (Văn phòng / Kinh doanh) ───────────────────────────
   {
     id: 'business', icon: Briefcase, tKey: 'sections.business', color: '#3B82F6',
     items: [
       { href: '/cases', icon: Briefcase, tKey: 'items.cases' },
       { href: '/orders', icon: FileText, tKey: 'items.orders' },
       { href: '/orders/quotations', icon: FileSpreadsheet, tKey: 'items.quotations' },
+      { href: '/orders/invoices', icon: Receipt, tKey: 'items.invoices' },
+      { href: '/orders/debt', icon: CreditCard, tKey: 'items.debt' },
+      { href: '/shipments', icon: Truck, tKey: 'items.shipments' },
+      { href: '/mrp', icon: Calculator, tKey: 'items.mrp' },
     ]
   },
-  // ── 2. 生産管理 (Production) ──────────────────────────────────────────
+  // ── 2. 設計部 (Phòng Thiết kế) ───────────────────────────────────────
   {
-    id: 'production', icon: Factory, tKey: 'sections.production', color: '#8B5CF6',
+    id: 'design', icon: PenTool, tKey: 'sections.design', color: '#14B8A6',
+    items: [
+      { href: '/engineering', icon: PenTool, tKey: 'items.cadDesigns', exact: true },
+      { href: '/engineering/designs', icon: Layers, tKey: 'items.designs' },
+      { href: '/equipment/aluminum', icon: Box, tKey: 'items.aluminum' },
+    ]
+  },
+  // ── 3. 金型部 (Phòng Khuôn) ──────────────────────────────────────────
+  {
+    id: 'equipment', icon: Wrench, tKey: 'sections.equipment', color: '#EA8C1C',
+    items: [
+      { href: '/equipment/dashboard', icon: LayoutDashboard, tKey: 'items.moldDashboard', exact: true },
+      { href: '/equipment/unified', icon: Layers, tKey: 'items.equipmentUnified' },
+      { href: '/equipment/molds', icon: Box, tKey: 'items.molds' },
+      { href: '/equipment/jobs', icon: Settings, tKey: 'items.jobs' },
+      { href: '/equipment/schedule', icon: CalendarRange, tKey: 'items.moldSchedule' },
+      { href: '/production/mold-orders', icon: ClipboardList, tKey: 'items.moldOrders' },
+      { href: '/equipment/cutting-dies', icon: Scissors, tKey: 'items.cuttingDies' },
+      { href: '/equipment/locations', icon: MapPin, tKey: 'items.locations' },
+      { href: '/equipment/loans', icon: ArrowLeftRight, tKey: 'items.loans' },
+      { href: '/equipment/lifecycle', icon: Archive, tKey: 'items.lifecycle' },
+      { href: '/equipment/scan', icon: ScanLine, tKey: 'items.scan' },
+      { href: '/maintenance', icon: Wrench, tKey: 'items.maintenance' },
+    ]
+  },
+  // ── 4. 成形部 (Phòng Định hình / Dập) ─────────────────────────────────
+  {
+    id: 'thermoforming', icon: Factory, tKey: 'sections.thermoforming', color: '#8B5CF6',
     items: [
       { href: '/production/work-orders', icon: ClipboardList, tKey: 'items.workOrders' },
-      { href: '/production/schedule', icon: GanttChart, tKey: 'items.schedule' },
+      { href: '/production/schedule', icon: GanttChart, tKey: 'items.productionSchedule' },
       { href: '/production/kanban', icon: Columns3, tKey: 'items.kanban' },
       { href: '/production/floor', icon: Factory, tKey: 'items.floor' },
+      { href: '/production-instructions', icon: FileText, tKey: 'items.productionInstructions' },
+      { href: '/master/machines', icon: Server, tKey: 'items.machines' },
     ]
   },
-  // ── 3. 品質管理 (Quality) ─────────────────────────────────────────────
+  // ── 5. 品質部 (Phòng QC) ─────────────────────────────────────────────
   {
     id: 'quality', icon: ShieldCheck, tKey: 'sections.quality', color: '#EF4444',
     items: [
       { href: '/quality/ng-trends', icon: TrendingUp, tKey: 'items.ngTrends' },
       { href: '/quality/inspection', icon: ScanLine, tKey: 'items.inspections' },
+      { href: '/quality/lot-inspections', icon: ShieldCheck, tKey: 'items.lotInspections' },
+      { href: '/quality/defects', icon: AlertTriangle, tKey: 'items.defects' },
     ]
   },
-  // ── 4. 金型・設備 (Equipment) ─────────────────────────────────────────
+  // ── 6. 資材・物流 (Vật tư & Kho) ─────────────────────────────────────
   {
-    id: 'equipment', icon: Wrench, tKey: 'sections.equipment', color: '#EA8C1C',
+    id: 'materials', icon: Package, tKey: 'sections.materials', color: '#EAB308',
     items: [
-      { href: '/equipment/molds', icon: Box, tKey: 'items.molds' },
-      { href: '/equipment/locations', icon: MapPin, tKey: 'items.locations' },
-      { href: '/equipment/loans', icon: ArrowLeftRight, tKey: 'items.loans' },
-      { href: '/equipment/lifecycle', icon: Archive, tKey: 'items.lifecycle' },
-      { href: '/engineering', icon: PenTool, tKey: 'items.cadDesigns' },
-    ]
-  },
-  // ── 5. 出荷・資材 (Logistics & Materials) ─────────────────────────────
-  {
-    id: 'logistics', icon: Truck, tKey: 'sections.logistics', color: '#10B981',
-    items: [
-      { href: '/shipments', icon: Truck, tKey: 'items.shipments' },
       { href: '/inventory', icon: Package, tKey: 'items.inventory' },
-      { href: '/plastics/inventory', icon: Layers, tKey: 'items.plasticsInventory' },
-      { href: '/mrp', icon: Calculator, tKey: 'items.mrp' },
-    ]
-  },
-  // ── 6. システム管理 (System) ─────────────────────────────────────────
-  {
-    id: 'system', icon: Settings, tKey: 'sections.system', color: '#64748B',
-    items: [
-      { href: '/master', icon: Database, tKey: 'items.master' },
-      { href: '/settings', icon: Settings, tKey: 'items.settings' },
+      { href: '/plastics/inventory', icon: Archive, tKey: 'items.plasticsInventory' },
+      { href: '/plastics/master', icon: Layers, tKey: 'items.plasticsMaster' },
     ]
   },
 ]
 
-import { useTranslations } from 'next-intl'
+const NAV_BOTTOM: NavItem[] = [
+  { href: '/reports/daily-worklog', icon: ClipboardEdit, tKey: 'bottom.dailyWorklog' },
+  { href: '/master', icon: Database, tKey: 'items.master', exact: true },
+]
 
 export default function Sidebar() {
   const t = useTranslations('Navigation')
@@ -143,7 +166,7 @@ export default function Sidebar() {
           </button>
           <div className={`flex flex-col ml-3 transition-opacity duration-300 ${isSidebarOpen ? 'opacity-100' : 'opacity-0'}`}>
             <span className="text-white font-bold text-[13px] leading-tight whitespace-nowrap">YSDMS</span>
-            <span className="text-white/80 text-[10px] leading-tight whitespace-nowrap">NextGen v2.0</span>
+            <span className="text-white/80 text-[10px] leading-tight whitespace-nowrap">NextGen v3.0</span>
           </div>
         </div>
       </div>
@@ -151,7 +174,7 @@ export default function Sidebar() {
       {/* Navigation */}
       <nav className="flex-1 py-2 flex flex-col overflow-y-auto overflow-x-hidden custom-scrollbar">
 
-        {/* Top: Dashboard, 日報 */}
+        {/* Top: Dashboard, 日報, 製品センター */}
         <div className="flex flex-col gap-0.5 mb-1">
           {NAV_TOP.map(item => {
             const active = isActive(item.href, item.exact)
@@ -233,6 +256,28 @@ export default function Sidebar() {
             )
           })}
         </div>
+
+        {/* Bottom: Reports, Master */}
+        <div className="mx-3 my-1" style={{ borderTop: '1px solid var(--border-subtle)' }} />
+        <div className="flex flex-col gap-0.5 mt-1">
+          {NAV_BOTTOM.map(item => {
+            const active = isActive(item.href, item.exact)
+            return (
+              <Link key={item.href} href={item.href}
+                className={`nav-item ${active ? 'nav-item--active' : ''}`}
+                title={t(item.tKey)}
+              >
+                <div className="w-[32px] flex justify-center shrink-0">
+                  <item.icon size={16} style={{ color: active ? 'var(--accent)' : 'var(--text-muted)' }} />
+                </div>
+                <div className={`flex flex-col justify-center whitespace-nowrap ml-2 transition-opacity duration-300 ${isSidebarOpen ? 'opacity-100' : 'opacity-0'}`}>
+                  <span className="text-[12px] font-semibold leading-tight" style={{ color: active ? 'var(--accent)' : 'var(--text-primary)', fontFamily: 'var(--font-jp)' }}>{t(item.tKey)}</span>
+                </div>
+              </Link>
+            )
+          })}
+        </div>
+
       </nav>
     </aside>
   )
