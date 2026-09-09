@@ -25,11 +25,13 @@
 | Sidebar V3 FINAL — Comprehensive Departmental Architecture (Chỉ thị #050) | ✅ NGHIỆM THU & PUSHED (commit `321aa4c`) |
 | M24-A — DB Schema & Atomic RPC Pipeline (Chỉ thị #051, Migration 105) | ✅ NGHIỆM THU & PUSHED (commit `368af31`) |
 | M24-B — Server Actions Pipeline (convert, updateStatus, getDetail) | ✅ NGHIỆM THU & PUSHED (commit `20fdba6`) |
-| M24-C — Quotation Detail UI & Convert Modal (Chỉ thị #051) | ✅ NGHIỆM THU (commit hiện tại) |
+| M24-C — Quotation Detail UI & Convert Modal (Chỉ thị #051) | ✅ NGHIỆM THU (commit `ba45b7f`) |
+| M24-D — Quotation PDF Engine & Print Preview (Chỉ thị #051) | ✅ NGHIỆM THU & TESTED E2E (Sprint D) |
+| Milestone 24 — Quotation-to-Order Pipeline (A+B+C+D) | ✅ CLOSED & HOÀN TẤT 100% |
 | Migration 089–105 | ✅ Applied to production |
 | TypeScript build | ✅ 0 errors |
 | i18n | ✅ 0 missing keys |
-| Next Step | Triển khai M24-D: PDF Quotation Template & Print Preview |
+| Next Step | Kính trình PE & Anh Thoan nghiệm thu M24; Tiếp nhận chỉ thị tiếp theo (M23-B / M25) |
 
 ---
 
@@ -169,13 +171,14 @@ Bạn là AN (Executing Agent). Đây là dự án **ysdms-next** — hệ thố
 **Kiến trúc cốt lõi:** Unified `equipment` table (ADR-001), luồng 4 cấp work_orders→jobs→job_steps→work_logs (ADR-002), Shopfloor Tablet & Equipment Lifecycle (ADR-007), QC Intelligence (M15), Rack Code Convention 12 zones (ADR-008), Mold Custody & Return Legal Workflow (ADR-009), Work Order Equipment SET Resolution 3-Tier Algorithm & Gatekeeper (ADR-010).
 
 **Trạng thái hiện tại:** 
-- Milestone 24 (Quotation-to-Order Pipeline):
+- Milestone 24 (Quotation-to-Order Pipeline — FULL PIPELINE CLOSED ✅):
   * Sprint A (commit `368af31`): Migration 105 applied trên Live DB, cập nhật `SCHEMA_REFERENCE.md`, dự thảo `ADR-013`, bổ sung 3 trường tiền đề cho M23-B trên `products`.
   * Sprint B (commit `20fdba6`): 3 Server Actions (`convertQuotationToOrderAction`, `updateQuotationStatusAction`, `getQuotationDetailAction`) trong `src/app/orders/quotations/actions.ts`.
-  * Sprint C: Giao diện chi tiết Báo giá `/orders/quotations/[id]` (Server Component theo RULE-UI-10 Paper style, Status Badge 6 màu chuẩn, Converted banner, Read-only lock) và Client Component `ConvertModal.tsx` với flow chuyển đổi nguyên tử sang Đơn hàng. Đã loại bỏ 100% `(as any)` trong `actions.ts`.
+  * Sprint C (commit `ba45b7f`): Giao diện chi tiết Báo giá `/orders/quotations/[id]` (Server Component theo RULE-UI-10 Paper style, Status Badge 6 màu chuẩn, Converted banner, Read-only lock) và Client Component `ConvertModal.tsx` với flow chuyển đổi nguyên tử sang Đơn hàng. Đã loại bỏ 100% `(as any)` trong `actions.ts`.
+  * Sprint D (Hoàn tất): A4 Portrait PDF Quotation Engine (`QuotationPDF.tsx` + `/api/quotations/[id]/pdf/route.ts`) chuẩn phôi biểu mẫu thực tế Yoshida Package. Đầy đủ bảng tài chính 3 dòng (Tiểu kế, Thuế 10%, Tổng thanh toán), Hanko 3 ô 96px có dấu đỏ Yoshida, bind người phụ trách động từ DB (xóa bỏ hardcode), liên kết thông số CAD SSOT từ `design_revisions`. Đã test E2E render PDF và Live DB queries pass 100%.
 - Quality Gates: TypeScript 0 errors, i18n 0 missing keys.
 
-**Nhiệm vụ tiếp theo:** Kính trình PE phê duyệt Sprint C và triển khai Sprint D (PDF Báo giá A4 Portrait chuẩn Nhật).
+**Nhiệm vụ tiếp theo:** Kính trình PE và Anh Thoan nghiệm thu toàn diện Milestone 24; sẵn sàng triển khai Milestone tiếp theo theo chỉ thị.
 
 **Verify trước khi commit:** `npx tsc --noEmit` (0 errors) + `node scripts/check_translations.mjs` (0 missing keys).
 

@@ -1,7 +1,7 @@
 # 📒 SỔ CÁI DỰ ÁN — YSDMS NextGen
-> Cập nhật lần cuối: 2026-09-09 (Hoàn tất triển khai Milestone: Sidebar V3 FINAL theo Chỉ thị #050 - Commit 321aa4c)
-> Phiên bản Schema: V5 / Unified Equipment Architecture + Migrations 100-104B
-> Trạng thái: Milestone Sidebar V3 FINAL COMPLETED ✅ — 44 links thật theo 6 nhóm phòng ban YSD (Commit 321aa4c)
+> Cập nhật lần cuối: 2026-09-09 (Hoàn tất toàn diện Milestone 24: Quotation-to-Order Pipeline [Sprints A, B, C, D] — Chỉ thị #051)
+> Phiên bản Schema: V5 / Unified Equipment Architecture + Migrations 100-105
+> Trạng thái: Milestone 24 COMPLETED ✅ — Báo giá sang Đơn hàng nguyên tử + A4 PDF Engine chuẩn Nhật
 
 ---
 
@@ -1325,5 +1325,22 @@ ebaseline...).
   - Client Component `QuotationHeaderActions.tsx`: Quản lý nút bấm 「受注確定」(khi APPROVED), chuyển trạng thái nhanh (DRAFT/SENT), xuất file PDF.
   - Loại bỏ hoàn toàn 5 lần `(as any)` trong `src/app/orders/quotations/actions.ts`, typed an toàn với `SupabaseClient`.
   - Đồng bộ đa ngôn ngữ: Cập nhật đầy đủ các keys `statusBadge`, `convertModal`, `banner` trong `messages/ja.json` và `messages/vi.json`.
+  - Quality Gates: `npx tsc --noEmit` 0 errors, `scripts/check_translations.mjs` 0 missing keys.
+
+- **[2026-09-09] Milestone 24: Quotation-to-Order Pipeline — Sprint D: A4 Portrait PDF Engine (Chỉ thị #051 — COMPLETED ✅)**
+  - Chuẩn hóa biểu mẫu theo phôi thực tế YSD (`source_data/Form lien quan/`):
+    * Header: Số hiệu báo giá (`No. QT-XXXX`), Ngày báo giá, Tiêu đề trang trọng `御　見　積　書`, Thông tin nhà máy Yoshida Package kèm số điện thoại/FAX và con dấu đỏ Yoshida tại ô 承認.
+    * Bảng Hanko 3 ô (`承認 | 審査 | 作成`, rộng 96px).
+    * Dynamic Issuer: Xóa bỏ hardcode `小林 一弘`, bind động từ `employees.employee_name` hoặc `prepared_by_name`.
+    * Cột `品名・仕様`: Tích hợp thông số kỹ thuật CAD SSOT từ `design_revisions` (`design_code`, `plastic_type_designed`, `external_length_mm × external_width_mm`) chuẩn RULE-DATA-01.
+    * Bảng tổng tài chính 3 dòng: `小計 (税抜)` (Tiểu kế chưa thuế), `消費税 (10%)` (Thuế VAT), `御見積合計 (税込)` (Tổng thanh toán có thuế - font 14px Bold accent) kèm câu ghi chú điều kiện thuế tiêu chuẩn YSD.
+    * Ghi chú và điều khoản thanh toán: `お支払条件`, `有効期限`, `納入場所`, `サンプルトレイ` hiển thị đầy đủ theo đúng format nguyên gốc.
+  - API Route (`src/app/api/quotations/[id]/pdf/route.ts`):
+    * Bypass RLS qua `createServerSupabaseClient() as SupabaseClient` server-side an toàn.
+    * JOIN sâu 2 cấp: `companies`, `employees`, `quotation_lines`, `products`, `design_revisions`.
+    * Stream PDF buffer trực tiếp về client qua `@react-pdf/renderer` v4.5.1 với font NotoSansJP và asset stamp_yoshida.png.
+  - Kiểm thử E2E Live DB & Render Engine:
+    * Render PDF buffer thành công (42,571 bytes), font CJK hiển thị sắc nét, không vỡ layout.
+    * Query Live DB pass 100% trên bảng `quotations` và liên kết foreign keys.
   - Quality Gates: `npx tsc --noEmit` 0 errors, `scripts/check_translations.mjs` 0 missing keys.
 
