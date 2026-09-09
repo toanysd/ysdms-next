@@ -1272,7 +1272,49 @@
     "col_unit_price": "Đơn Giá",
     "tab_overview": "Tổng Quan",
     "tab_lines": "Chi Tiết",
-    "back": "Quay Lại"
+    "back": "Quay Lại",
+    "btn_convert": "Xác nhận Đơn hàng",
+    "view_order": "Xem chi tiết đơn",
+    "statusBadge": {
+      "DRAFT": "Bản nháp",
+      "SENT": "Đã gửi",
+      "APPROVED": "Đã duyệt",
+      "CONVERTED": "Đã tạo đơn",
+      "REJECTED": "Từ chối",
+      "EXPIRED": "Hết hạn"
+    },
+    "convertModal": {
+      "title": "Xác nhận Đơn hàng (Chuyển sang Sản xuất)",
+      "summary": "Xác nhận báo giá này để tạo Đơn hàng chính thức (Order). Các dòng chi tiết báo giá sẽ được tự động sao chép sang chi tiết đơn hàng.",
+      "confirm": "Xác nhận tạo đơn",
+      "cancel": "Hủy bỏ",
+      "converting": "Đang xử lý tạo đơn...",
+      "success": "Đã tạo đơn hàng thành công. Đang chuyển hướng..."
+    },
+    "banner": {
+      "convertedTo": "Báo giá này đã được chuyển thành đơn hàng. Mã đơn: "
+    }
+  },
+  "quotations": {
+    "statusBadge": {
+      "DRAFT": "Bản nháp",
+      "SENT": "Đã gửi",
+      "APPROVED": "Đã duyệt",
+      "CONVERTED": "Đã tạo đơn",
+      "REJECTED": "Từ chối",
+      "EXPIRED": "Hết hạn"
+    },
+    "convertModal": {
+      "title": "Xác nhận Đơn hàng (Chuyển sang Sản xuất)",
+      "summary": "Xác nhận báo giá này để tạo Đơn hàng chính thức (Order). Các dòng chi tiết báo giá sẽ được tự động sao chép sang chi tiết đơn hàng.",
+      "confirm": "Xác nhận tạo đơn",
+      "cancel": "Hủy bỏ",
+      "converting": "Đang xử lý tạo đơn...",
+      "success": "Đã tạo đơn hàng thành công. Đang chuyển hướng..."
+    },
+    "banner": {
+      "convertedTo": "Báo giá này đã được chuyển thành đơn hàng. Mã đơn: "
+    }
   },
   "Planning": {
     "Toolbar": {

@@ -24,11 +24,12 @@
 | M23-A — Finished Goods Inventory Engine & Low Stock Alert (Chỉ thị #046, #047) | ✅ NGHIỆM THU & PUSHED |
 | Sidebar V3 FINAL — Comprehensive Departmental Architecture (Chỉ thị #050) | ✅ NGHIỆM THU & PUSHED (commit `321aa4c`) |
 | M24-A — DB Schema & Atomic RPC Pipeline (Chỉ thị #051, Migration 105) | ✅ NGHIỆM THU & PUSHED (commit `368af31`) |
-| M24-B — Server Actions Pipeline (convert, updateStatus, getDetail) | ✅ NGHIỆM THU (commit hiện tại) |
+| M24-B — Server Actions Pipeline (convert, updateStatus, getDetail) | ✅ NGHIỆM THU & PUSHED (commit `20fdba6`) |
+| M24-C — Quotation Detail UI & Convert Modal (Chỉ thị #051) | ✅ NGHIỆM THU (commit hiện tại) |
 | Migration 089–105 | ✅ Applied to production |
 | TypeScript build | ✅ 0 errors |
 | i18n | ✅ 0 missing keys |
-| Next Step | Triển khai M24-C: UI /orders/quotations/[id] & Confirmation Modal |
+| Next Step | Triển khai M24-D: PDF Quotation Template & Print Preview |
 
 ---
 
@@ -170,10 +171,11 @@ Bạn là AN (Executing Agent). Đây là dự án **ysdms-next** — hệ thố
 **Trạng thái hiện tại:** 
 - Milestone 24 (Quotation-to-Order Pipeline):
   * Sprint A (commit `368af31`): Migration 105 applied trên Live DB, cập nhật `SCHEMA_REFERENCE.md`, dự thảo `ADR-013`, bổ sung 3 trường tiền đề cho M23-B trên `products`.
-  * Sprint B: 3 Server Actions (`convertQuotationToOrderAction`, `updateQuotationStatusAction`, `getQuotationDetailAction`) trong `src/app/orders/quotations/actions.ts`. Đã kiểm thử E2E Live DB đạt 100% test cases (Status guards, Atomic conversion sang Đơn hàng, Duplicate guard).
+  * Sprint B (commit `20fdba6`): 3 Server Actions (`convertQuotationToOrderAction`, `updateQuotationStatusAction`, `getQuotationDetailAction`) trong `src/app/orders/quotations/actions.ts`.
+  * Sprint C: Giao diện chi tiết Báo giá `/orders/quotations/[id]` (Server Component theo RULE-UI-10 Paper style, Status Badge 6 màu chuẩn, Converted banner, Read-only lock) và Client Component `ConvertModal.tsx` với flow chuyển đổi nguyên tử sang Đơn hàng. Đã loại bỏ 100% `(as any)` trong `actions.ts`.
 - Quality Gates: TypeScript 0 errors, i18n 0 missing keys.
 
-**Nhiệm vụ tiếp theo:** Thực hiện Git commit & push Sprint B lên GitHub main theo chỉ đạo của PE & Anh Thoan. Chuẩn bị triển khai Sprint C (UI `/orders/quotations/[id]` và Confirmation Modal).
+**Nhiệm vụ tiếp theo:** Kính trình PE phê duyệt Sprint C và triển khai Sprint D (PDF Báo giá A4 Portrait chuẩn Nhật).
 
 **Verify trước khi commit:** `npx tsc --noEmit` (0 errors) + `node scripts/check_translations.mjs` (0 missing keys).
 

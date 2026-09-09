@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { createServerSupabaseClient, createClient } from '@/lib/supabase/server'
+import type { SupabaseClient } from '@supabase/supabase-js'
 
 // ── Types ─────────────────────────────────────────────────────────────
 
@@ -112,8 +113,8 @@ export async function convertQuotationToOrderAction(
     }
 
     // 2. Dùng Service Role Client để thực thi RPC cấp cao (ghi đồng thời orders, order_lines, quotations)
-    const serviceClient = createServerSupabaseClient()
-    const { data, error } = await (serviceClient as any).rpc('fn_convert_quotation_to_order', {
+    const serviceClient = createServerSupabaseClient() as SupabaseClient
+    const { data, error } = await serviceClient.rpc('fn_convert_quotation_to_order', {
       p_quotation_id: quotationId,
       p_user_id: userId,
     })
@@ -189,10 +190,10 @@ export async function updateQuotationStatusAction(
   }
 
   try {
-    const serviceClient = createServerSupabaseClient()
+    const serviceClient = createServerSupabaseClient() as SupabaseClient
 
     // 1. Kiểm tra trạng thái hiện tại
-    const { data: current, error: fetchErr } = await (serviceClient as any)
+    const { data: current, error: fetchErr } = await serviceClient
       .from('quotations')
       .select('quotation_id, status, quotation_no, converted_order_id')
       .eq('quotation_id', quotationId)
@@ -219,7 +220,7 @@ export async function updateQuotationStatusAction(
     }
 
     // 2. Cập nhật trạng thái
-    const { error: updateErr } = await (serviceClient as any)
+    const { error: updateErr } = await serviceClient
       .from('quotations')
       .update({
         status: newStatus,
@@ -261,10 +262,10 @@ export async function getQuotationDetailAction(
   }
 
   try {
-    const serviceClient = createServerSupabaseClient()
+    const serviceClient = createServerSupabaseClient() as SupabaseClient
 
     // 1. Fetch Header với các bảng quan hệ
-    const { data: quote, error: qErr } = await (serviceClient as any)
+    const { data: quote, error: qErr } = await serviceClient
       .from('quotations')
       .select(`
         quotation_id, quotation_no, revision_no, quote_date, valid_until,
@@ -288,7 +289,7 @@ export async function getQuotationDetailAction(
     }
 
     // 2. Fetch Lines với sản phẩm và bản vẽ CAD
-    const { data: lines, error: lErr } = await (serviceClient as any)
+    const { data: lines, error: lErr } = await serviceClient
       .from('quotation_lines')
       .select(`
         line_id, line_no, item_type, model_code, description,
@@ -309,8 +310,8 @@ export async function getQuotationDetailAction(
     }
 
     const detail: QuotationDetail = {
-      ...quote,
-      lines: (lines || []).map((l: any) => ({
+      ...(quote as unknown as Omit<QuotationDetail, 'lines'>),
+      lines: ((lines || []) as unknown as QuotationLineDetail[]).map((l) => ({
         ...l,
         quantity: Number(l.quantity) || 1,
         unit_price: Number(l.unit_price) || 0,

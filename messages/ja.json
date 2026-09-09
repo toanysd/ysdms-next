@@ -1437,7 +1437,49 @@
     "col_unit_price": "単価",
     "tab_overview": "概要",
     "tab_lines": "明細",
-    "back": "戻る"
+    "back": "戻る",
+    "btn_convert": "受注確定",
+    "view_order": "注文詳細へ",
+    "statusBadge": {
+      "DRAFT": "下書き",
+      "SENT": "送付済み",
+      "APPROVED": "承認済み",
+      "CONVERTED": "受注確定",
+      "REJECTED": "却下",
+      "EXPIRED": "期限切れ"
+    },
+    "convertModal": {
+      "title": "受注確定（製造手配へ移行）",
+      "summary": "この見積書を受注確定し、正式な製造・販売注文（Order）を作成します。作成後は見積書の明細が注文明細として引き継がれます。",
+      "confirm": "受注確定する",
+      "cancel": "キャンセル",
+      "converting": "受注処理中...",
+      "success": "受注確定が完了しました。注文画面へ移動します。"
+    },
+    "banner": {
+      "convertedTo": "この見積書は受注確定済みです。注文番号: "
+    }
+  },
+  "quotations": {
+    "statusBadge": {
+      "DRAFT": "下書き",
+      "SENT": "送付済み",
+      "APPROVED": "承認済み",
+      "CONVERTED": "受注確定",
+      "REJECTED": "却下",
+      "EXPIRED": "期限切れ"
+    },
+    "convertModal": {
+      "title": "受注確定（製造手配へ移行）",
+      "summary": "この見積書を受注確定し、正式な製造・販売注文（Order）を作成します。作成後は見積書の明細が注文明細として引き継がれます。",
+      "confirm": "受注確定する",
+      "cancel": "キャンセル",
+      "converting": "受注処理中...",
+      "success": "受注確定が完了しました。注文画面へ移動します。"
+    },
+    "banner": {
+      "convertedTo": "この見積書は受注確定済みです。注文番号: "
+    }
   },
   "Jobs": {},
   "Inventory": {

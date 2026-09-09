@@ -1310,3 +1310,20 @@ ebaseline...).
   - Kiểm thử E2E Live DB: Script kiểm thử thực thi trên Supabase Production xác nhận hoạt động 100% chính xác của toàn bộ guards và luồng chuyển đổi. Đã dọn dẹp sạch sẽ 100% dữ liệu kiểm thử.
   - Tuân thủ quy tắc Sprint B: Tuyệt đối không chỉnh sửa bất kỳ file UI `.tsx` nào.
   - Quality Gates: TypeScript `npx tsc --noEmit` 0 errors, `scripts/check_translations.mjs` 0 missing keys.
+
+- **[2026-09-09] Milestone 24: Quotation-to-Order Pipeline — Sprint C: UI & Convert Modal (Chỉ thị #051 — COMPLETED ✅)**
+  - Tái cấu trúc Trang chi tiết Báo giá (`src/app/orders/quotations/[id]/page.tsx`):
+    * Server Component đọc dữ liệu trực tiếp qua `getQuotationDetailAction(id)` (loại bỏ hoàn toàn `useEffect` và client fetch).
+    * Page Anatomy chuẩn Rule 2 & 3: BackBar compact, Quotation No nổi bật, Revision badge, Status Badge 6 màu chuẩn.
+    * Converted Banner: Tự động xuất hiện khi `status === 'CONVERTED'`, hiển thị rõ `✅ Đã tạo ORD-XXXXXX → [Xem đơn hàng]` kèm link trực tiếp sang `/orders/[order_id]`.
+    * RULE-UI-10 Paper Style Layout: Khối thông tin khách hàng, ngày tháng, hạn hiệu lực, người liên hệ, bảng chi tiết `quotation_lines` kết nối sản phẩm và bản vẽ CAD SSOT, khối tài chính chân trang (Subtotal, Tax 10%, Grand Total).
+    * Read-only Lock: Khóa toàn bộ thao tác chỉnh sửa khi báo giá đã `CONVERTED`.
+  - Client Component `ConvertModal.tsx` (`src/app/orders/quotations/[id]/ConvertModal.tsx`):
+    * Hiển thị tóm tắt 4 dòng (Khách hàng, Số báo giá, Số mặt hàng, Tổng tiền).
+    * Gọi `convertQuotationToOrderAction` qua `useTransition`, xử lý trạng thái chờ và error boundary tại chỗ.
+    * Tự động chuyển hướng sang `/orders/[order_id]` khi thành công.
+  - Client Component `QuotationHeaderActions.tsx`: Quản lý nút bấm 「受注確定」(khi APPROVED), chuyển trạng thái nhanh (DRAFT/SENT), xuất file PDF.
+  - Loại bỏ hoàn toàn 5 lần `(as any)` trong `src/app/orders/quotations/actions.ts`, typed an toàn với `SupabaseClient`.
+  - Đồng bộ đa ngôn ngữ: Cập nhật đầy đủ các keys `statusBadge`, `convertModal`, `banner` trong `messages/ja.json` và `messages/vi.json`.
+  - Quality Gates: `npx tsc --noEmit` 0 errors, `scripts/check_translations.mjs` 0 missing keys.
+
