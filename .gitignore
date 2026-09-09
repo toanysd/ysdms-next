@@ -67,7 +67,7 @@ temp_ai/
 *.txt
 
 # User requested exclusions
-/supabase/
+/supabase/*
 !/supabase/migrations/
 !/supabase/migrations/*.sql
 /tham_khao/

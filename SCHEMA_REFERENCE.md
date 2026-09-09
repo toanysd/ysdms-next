@@ -752,6 +752,24 @@ Storage Bucket `delivery-docs`:
 
 ---
 
+## 📦 VIEW `v_product_stock_summary` — Finished Goods Inventory Engine (Milestone 23-A)
+
+```
+Nguồn SSOT:
+- work_logs (wl.quantity_done) → jobs → work_orders → products (total_produced)
+- shipments (s.shipped_quantity, status IN ('SHIPPED', 'DELIVERED')) → work_orders → products (total_shipped)
+- current_stock = GREATEST(0, total_produced - total_shipped)
+- low_stock_threshold = 500
+- stock_status:
+    - 'OUT_OF_STOCK' (current_stock = 0)
+    - 'LOW_STOCK'    (current_stock <= 500)
+    - 'IN_STOCK'     (current_stock > 500)
+Lọc mặc định: products.product_status = 'ACTIVE'
+Migration: 104-B (20260909000002_104_b_v_product_stock_summary.sql)
+```
+
+---
+
 ## ⛔ BẢNG & CỘT ĐÃ DEPRECATED / DROPPED (TUYỆT ĐỐI KHÔNG DÙNG)
 
 

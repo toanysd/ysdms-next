@@ -566,6 +566,14 @@ products (Master Entity)
 
 *(Chi tiết xem `SCHEMA_REFERENCE.md`)*
 
+### v_product_stock_summary (View — Milestone 23-A)
+
+> Single Source of Truth về tồn kho thành phẩm.
+> - `total_produced`: SUM(quantity_done) từ `work_logs` (loại THERMOFORMING qua `jobs` → `work_orders` → `products`)
+> - `total_shipped`: SUM(shipped_quantity) từ `shipments` (status 'SHIPPED'/'DELIVERED' qua `work_orders` → `products`)
+> - `current_stock`: GREATEST(0, total_produced - total_shipped)
+> - `stock_status`: 'OUT_OF_STOCK' (0), 'LOW_STOCK' (<=500), 'IN_STOCK' (>500)
+
 ---
 
 ## 9. Enums & Constants
