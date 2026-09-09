@@ -34,4 +34,5 @@ Ví dụ: `ADR-001_unified-equipment-table.md`, `ADR-002_work-order-option-c.md`
 | ADR-009 | 2026-09-08 | APPROVED | Mold Custody, Borrowing & Return Workflow (Milestone 18) |
 | ADR-010 | 2026-09-08 | APPROVED | Work Order UI & Equipment SET Resolution (Milestone 19) |
 | ADR-011 | 2026-09-08 | APPROVED | Nippo V2 — Production Worklog Enhancement (Milestone 20) |
-| ADR-012 | 2026-09-08 | PROPOSED | Shipments & 納品書 Delivery Engine (Milestone 21) |
+| ADR-012 | 2026-09-08 | APPROVED | Shipments & 納品書 Delivery Engine (Milestone 21) |
+| ADR-013 | 2026-09-09 | DRAFT | Thuật toán Đối soát & Khớp Bán tự động cho 561 Work Orders Mồ Côi |

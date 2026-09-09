@@ -430,6 +430,96 @@ FK:  machine_id           UUID → machines(machine_id)
 
 ---
 
+## 🔑 Bảng `quotations` — Báo Giá Khách Hàng (Quotation Header)
+
+```
+PK:  quotation_id          UUID
+FK:  company_id            UUID → companies(company_id) NOT NULL
+FK:  case_id               UUID → business_cases(id)
+FK:  prepared_by           UUID → employees(employee_id)
+FK:  converted_order_id    UUID → orders(order_id) ON DELETE SET NULL  ← M24: Đơn hàng được tạo từ báo giá này
+     quotation_no          TEXT UNIQUE NOT NULL  ← Mã báo giá (VD: QT-20260909-001)
+     revision_no           INTEGER NOT NULL DEFAULT 1
+     quote_date            DATE NOT NULL
+     valid_until           DATE
+     total_amount          NUMERIC(12,2)
+     status                TEXT NOT NULL DEFAULT 'DRAFT' ← 'DRAFT' | 'SENT' | 'APPROVED' | 'CONVERTED' | 'REJECTED' | 'EXPIRED'
+     customer_contact_name TEXT
+     delivery_destination  TEXT
+     converted_at          TIMESTAMPTZ           ← Thời điểm chuyển thành đơn hàng
+     notes                 TEXT
+     created_at            TIMESTAMPTZ DEFAULT now()
+     updated_at            TIMESTAMPTZ DEFAULT now()
+```
+
+---
+
+## 🔑 Bảng `quotation_lines` — Chi Tiết Mặt Hàng Báo Giá
+
+```
+PK:  line_id               UUID
+FK:  quotation_id          UUID → quotations(quotation_id) NOT NULL
+FK:  product_id            UUID → products(product_id) ON DELETE SET NULL          ← M24: Liên kết sản phẩm YSD
+FK:  design_revision_id    UUID → design_revisions(revision_id) ON DELETE SET NULL ← M24: Tham chiếu bản vẽ CAD
+     line_no               INTEGER NOT NULL
+     item_type             TEXT DEFAULT 'MOLD'   ← 'MOLD' | 'TRAY' | 'CUTTER' | 'SERVICE' | 'OTHER'
+     model_code            TEXT                  ← Mã model / mã khuôn / mã SP
+     description           TEXT                  ← Tên hàng / quy cách chi tiết
+     quantity              NUMERIC(12,2) NOT NULL DEFAULT 1
+     quantity_text         TEXT                  ← Quy cách số lượng hiển thị (VD: '1 set', '10,000 pcs')
+     unit_price            NUMERIC(12,2) NOT NULL DEFAULT 0
+     amount                NUMERIC(12,2) NOT NULL DEFAULT 0
+     notes                 TEXT
+     created_at            TIMESTAMPTZ DEFAULT now()
+     updated_at            TIMESTAMPTZ DEFAULT now()
+```
+
+---
+
+## 🔑 Bảng `orders` — Đơn Đặt Hàng Chính Thức
+
+```
+PK:  order_id                    UUID
+FK:  company_id                  UUID → companies(company_id) NOT NULL
+FK:  converted_from_quotation_id UUID → quotations(quotation_id) ON DELETE SET NULL ← M24: Báo giá nguồn
+     order_no                    TEXT UNIQUE NOT NULL  ← Mã đơn hàng (VD: ORD-20260909-CUST)
+     order_date                  DATE NOT NULL
+     requested_delivery          DATE
+     order_status                TEXT DEFAULT 'CONFIRMED' ← 'DRAFT' | 'CONFIRMED' | 'IN_PRODUCTION' | 'SHIPPED' | 'CLOSED' | 'CANCELLED'
+     order_type                  TEXT                  ← 'PRODUCT' | 'MOLD'
+     company_po                  TEXT                  ← Mã PO từ khách hàng
+     customer_order_no           TEXT
+     notes                       TEXT
+     created_at                  TIMESTAMPTZ DEFAULT now()
+     updated_at                  TIMESTAMPTZ DEFAULT now()
+```
+
+---
+
+## 🔑 Bảng `order_lines` — Chi Tiết Dòng Đơn Hàng
+
+```
+PK:  line_id               UUID
+FK:  order_id              UUID → orders(order_id) ON DELETE CASCADE NOT NULL
+FK:  product_id            UUID → products(product_id) NOT NULL
+FK:  design_revision_id    UUID → design_revisions(revision_id) ON DELETE SET NULL ← M24: Bảo lưu CAD revision
+FK:  quotation_line_id     UUID → quotation_lines(line_id) ON DELETE SET NULL      ← M24: Liên kết dòng báo giá nguồn
+FK:  delivery_site_id      UUID → delivery_sites(site_id)
+     line_no               INTEGER NOT NULL
+     quantity              INTEGER NOT NULL
+     unit                  TEXT DEFAULT 'PCS'
+     unit_price            NUMERIC(12,2)         ← M24: Đơn giá thỏa thuận từ báo giá
+     total_amount          NUMERIC(12,2)         ← M24: Thành tiền thỏa thuận từ báo giá
+     due_date              DATE
+     ship_date             DATE
+     line_status           TEXT DEFAULT 'CONFIRMED'
+     notes                 TEXT
+     created_at            TIMESTAMPTZ DEFAULT now()
+     updated_at            TIMESTAMPTZ DEFAULT now()
+```
+
+---
+
 ## 📋 Phase Log — Order/Customer Phase (CLOSED 2026-09-01)
 ### Migrations đã apply production
 - **070** (2026-09-01): `orders.order_status` DEFAULT → 'DRAFT', thêm CHECK constraint 6 giá trị, bật RLS
