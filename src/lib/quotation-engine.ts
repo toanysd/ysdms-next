@@ -95,34 +95,6 @@ export interface TrayUnitPriceResult {
   breakdownSummary: string
 }
 
-// ── BACKWARD COMPATIBILITY: Re-export constants ─────────────────────────────
-export const PRICE_CONSTANTS = {
-  ALUMINUM_COST_PER_CM3: 12.5,
-  CNC_MACHINING_RATE_PER_CM2: 18.0,
-  CAVITY_FACTOR_COST: 4500,
-  SEPARATE_CUTTER_BASE: 45000,
-  INLINE_CUTTER_BASE: 25000,
-  PLUG_BASE_COST: 30000,
-  PLASTIC_PRICE_PER_KG: {
-    PET: 265,
-    PP: 285,
-    PS: 285,
-    PLA: 550,
-    DEFAULT: 285,
-  } as Record<string, number>,
-  PLASTIC_DENSITY: {
-    PET: 1.34,
-    PP: 0.91,
-    PS: 1.05,
-    PLA: 1.25,
-    DEFAULT: 1.05,
-  } as Record<string, number>,
-  FORMING_COST_PER_SHOT: 5.5,
-  PACKING_COST_PER_PCS: 0.8,
-  MARGIN_SCRAP_RATE: 0.05,
-  STANDARD_PROFIT_MARGIN: 0.20,
-}
-
 // ── HELPER: Resolve CAD Dimensions with Legacy JSONB Fallback ──────────────
 /**
  * M26: Fix NULL fallback from legacy_specs JSONB.
@@ -290,11 +262,17 @@ export function calculateMoldPrice(
   const totalToolingPrice = moldBasePrice + cutterPrice + plugPrice + samplePrice
 
   const typeDesc = `${constructionType === 'TOP_FLANGE' ? '天フランジ' : 'スカート付き'}${applicationType === 'STANDARD' ? '汎用' : '専用'}`
-  const cutterDesc = isExistingCutter ? '既存刃使用' : '刃新規'
+  const cutterDesc = isExistingCutter
+    ? '既存刃使用'
+    : rev.has_separate_cutter
+    ? '別体抜型(+¥45,000)'
+    : 'インライン抜型一式含む'
   const discountDesc = lotDiscount > 0 ? ` (ロット特別値引き -¥${lotDiscount.toLocaleString()})` : ''
-  const sampleDesc = freeSampleTrial ? 'サンプル無償' : `試作¥${samplePrice.toLocaleString()}`
+  const separateCutterNote = cutterPrice > 0 ? ` + 別体抜型: ¥${cutterPrice.toLocaleString()}` : ''
+  const plugNote = plugPrice > 0 ? ` + プラグ治具: ¥${plugPrice.toLocaleString()}` : ''
+  const sampleDesc = freeSampleTrial ? 'サンプル無償提供' : `試作成形: ¥${samplePrice.toLocaleString()}`
 
-  const breakdownSummary = `【${typeDesc}金型一式・${cutterDesc}】¥${moldBasePrice.toLocaleString()}${discountDesc} + ${sampleDesc} (外寸: ${length}x${width}x${height}mm Cavity x${cavityCount})`
+  const breakdownSummary = `【${typeDesc}金型一式・${cutterDesc}】¥${moldBasePrice.toLocaleString()}${discountDesc}${separateCutterNote}${plugNote} + ${sampleDesc} (外寸: ${length}x${width}x${height}mm Cavity x${cavityCount})`
 
   return {
     moldBasePrice,
@@ -376,7 +354,7 @@ export function calculateTrayUnitPrice(
   // M26: Làm tròn LÊN số nguyên gần nhất (Math.ceil) theo chuẩn YSD gốc
   const suggestedSellingPrice = Math.ceil(estimatedUnitPrice)
 
-  const breakdownSummary = `【3 trụ cột】材料費(d): ¥${rawMaterialCostPerPcs.toFixed(2)} (${spec.label} ${thicknessMm}mm ${weightPerPcsGrams.toFixed(1)}g) + 梱包運賃(e): ¥${packingCostPerPcs.toFixed(2)} (${effectivePackagingQty}枚/箱) + 成形加工費(f): ¥${formingProcessCostPerPcs.toFixed(2)} (Lot ${lotQuantity.toLocaleString()}枚, ¥${hourlyRate.toLocaleString()}/h) = ¥${suggestedSellingPrice}/枚`
+  const breakdownSummary = `【三本柱積算】材料費(d): ¥${rawMaterialCostPerPcs.toFixed(2)} (${spec.label} ${thicknessMm}mm ${weightPerPcsGrams.toFixed(1)}g) + 梱包運賃(e): ¥${packingCostPerPcs.toFixed(2)} (${effectivePackagingQty}枚/箱) + 成形加工費(f): ¥${formingProcessCostPerPcs.toFixed(2)} (Lot ${lotQuantity.toLocaleString()}枚, ¥${hourlyRate.toLocaleString()}/h) = ¥${suggestedSellingPrice}/枚`
 
   return {
     sheetWidthMm,
