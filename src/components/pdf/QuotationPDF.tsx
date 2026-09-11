@@ -295,6 +295,132 @@ const styles = StyleSheet.create({
     fontWeight: 700,
     color: '#334155',
   },
+  appendixMeta: {
+    marginBottom: 8,
+    fontSize: 8,
+    color: '#334155',
+    lineHeight: 1.35,
+  },
+  breakdownSummaryBanner: {
+    padding: 6,
+    backgroundColor: '#f0fdfa',
+    borderWidth: 1,
+    borderColor: '#0D9488',
+    borderRadius: 3,
+    marginBottom: 10,
+  },
+  breakdownSummaryTitle: {
+    fontSize: 8.5,
+    fontWeight: 700,
+    color: '#0f766e',
+    marginBottom: 2,
+  },
+  breakdownSummaryFormula: {
+    fontSize: 8,
+    color: '#134e4a',
+    fontWeight: 700,
+  },
+  noteBadgeBlock: {
+    marginBottom: 4,
+    paddingBottom: 2,
+    borderBottomWidth: 0.5,
+    borderBottomColor: '#cbd5e1',
+  },
+  noteBadgeText: {
+    fontSize: 7.5,
+    fontWeight: 700,
+    color: '#0f766e',
+    marginBottom: 1,
+  },
+  inlineTrayFormulaBlock: {
+    marginBottom: 4,
+    padding: 3,
+    backgroundColor: '#f0fdfa',
+    borderRadius: 2,
+    borderWidth: 0.5,
+    borderColor: '#99f6e4',
+  },
+  inlineTrayFormulaText: {
+    fontSize: 7,
+    fontWeight: 700,
+    color: '#0f766e',
+  },
+  specGridContainer: {
+    borderWidth: 1,
+    borderColor: '#cbd5e1',
+    backgroundColor: '#f8fafc',
+    padding: 6,
+    marginBottom: 8,
+  },
+  specGridTitle: {
+    fontSize: 8,
+    fontWeight: 700,
+    color: '#1e293b',
+    marginBottom: 4,
+    borderBottomWidth: 0.5,
+    borderBottomColor: '#cbd5e1',
+    paddingBottom: 2,
+  },
+  specGridRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 1.5,
+  },
+  specItem: {
+    width: '49%',
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  specLabel: {
+    width: '44%',
+    fontSize: 7.5,
+    color: '#64748b',
+    fontWeight: 700,
+  },
+  specValue: {
+    width: '56%',
+    fontSize: 7.5,
+    color: '#0f172a',
+    fontWeight: 700,
+  },
+  breakdownTable: {
+    width: '100%',
+    borderWidth: 1,
+    borderColor: '#94a3b8',
+    marginBottom: 8,
+  },
+  breakdownTableHeader: {
+    flexDirection: 'row',
+    backgroundColor: '#f1f5f9',
+    borderBottomWidth: 1,
+    borderBottomColor: '#94a3b8',
+    paddingVertical: 3.5,
+    fontWeight: 700,
+    fontSize: 7.5,
+    color: '#334155',
+  },
+  breakdownTableRow: {
+    flexDirection: 'row',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e2e8f0',
+    paddingVertical: 3.5,
+    alignItems: 'center',
+    fontSize: 7.5,
+  },
+  breakdownTableRowHighlight: {
+    flexDirection: 'row',
+    borderBottomWidth: 1,
+    borderBottomColor: '#99f6e4',
+    paddingVertical: 4.5,
+    alignItems: 'center',
+    fontSize: 7.5,
+    backgroundColor: '#f0fdfa',
+  },
+  breakdownColNo: { width: '5%', textAlign: 'center' },
+  breakdownColItem: { width: '25%', paddingHorizontal: 4, fontWeight: 700, color: '#0f172a' },
+  breakdownColBasis: { width: '48%', paddingHorizontal: 4, color: '#475569' },
+  breakdownColPrice: { width: '22%', textAlign: 'right', paddingRight: 6, fontWeight: 700, color: '#0f172a' },
+  breakdownColPriceHighlight: { width: '22%', textAlign: 'right', paddingRight: 6, fontWeight: 700, color: '#0D9488', fontSize: 8.5 },
 })
 
 export interface QuotationPDFLine {
@@ -311,6 +437,37 @@ export interface QuotationPDFLine {
   external_width_mm?: number | null
 }
 
+export interface QuotationExtraJson {
+  moldOptions?: {
+    constructionType?: 'TOP_FLANGE' | 'SKIRTED'
+    applicationType?: 'STANDARD' | 'DEDICATED'
+    isExistingCutter?: boolean
+    freeSampleTrial?: boolean
+    targetLot?: number
+  }
+  moldCalc?: {
+    moldBasePrice?: number
+    cutterPrice?: number
+    plugPrice?: number
+    samplePrice?: number
+    lotDiscount?: number
+    totalToolingPrice?: number
+    isExistingCutter?: boolean
+    freeSampleTrial?: boolean
+  }
+  trayCalc?: {
+    sheetWidthMm?: number
+    feedPitchMm?: number
+    weightPerPcsGrams?: number
+    rawMaterialCostPerPcs?: number
+    formingProcessCostPerPcs?: number
+    packingCostPerPcs?: number
+    estimatedUnitPrice?: number
+    suggestedSellingPrice?: number
+    effectivePackagingQty?: number
+  }
+}
+
 export interface QuotationPDFProps {
   data: {
     quotation_no: string
@@ -321,6 +478,8 @@ export interface QuotationPDFProps {
     delivery_destination?: string | null
     total_amount?: number | null
     notes?: string | null
+    quotation_type?: string | null
+    extra_json?: QuotationExtraJson | any | null
     prepared_by_name?: string | null
     companies?: { company_name: string } | null
     employees?: { employee_name: string } | null
@@ -332,6 +491,18 @@ export function QuotationPDF({ data }: QuotationPDFProps) {
   const companyName = data.companies?.company_name || '御中'
   const lines = data.quotation_lines || []
   const stampPath = path.join(process.cwd(), 'public/stamps/stamp_yoshida.png')
+
+  // M27-A: Unpack extra_json from M26 Auto-Pricing Engine
+  const extra = (data.extra_json || {}) as QuotationExtraJson
+  const { moldOptions, moldCalc, trayCalc } = extra
+  const isFreeSample = Boolean(moldOptions?.freeSampleTrial || moldCalc?.freeSampleTrial)
+  const isExistingCutter = Boolean(moldOptions?.isExistingCutter || moldCalc?.isExistingCutter)
+  const lotDiscount = moldCalc?.lotDiscount || 0
+
+  const hasTrayCalc = Boolean(
+    trayCalc &&
+    (data.quotation_type === 'TRAY' || data.quotation_type === 'SET' || !data.quotation_type)
+  )
 
   // Dynamic Issuer Representative (No hardcoding)
   const preparedByName = data.employees?.employee_name || data.prepared_by_name || '営業担当'
@@ -501,6 +672,33 @@ export function QuotationPDF({ data }: QuotationPDFProps) {
         {/* Terms & Notes (Theo phôi thực tế YSD) */}
         <View style={styles.termsSection}>
           <Text style={{ fontWeight: 700, marginBottom: 2 }}>【備考・特記事項】</Text>
+
+          {/* M27-A: Special Mold & Sample Notes */}
+          {(isFreeSample || isExistingCutter || lotDiscount > 0) && (
+            <View style={styles.noteBadgeBlock}>
+              {isFreeSample && (
+                <Text style={styles.noteBadgeText}>※ 試作サンプル無償提供 (2〜10枚)</Text>
+              )}
+              {isExistingCutter && (
+                <Text style={styles.noteBadgeText}>※ 既存抜型使用 (抜型費用 ¥0)</Text>
+              )}
+              {lotDiscount > 0 && (
+                <Text style={styles.noteBadgeText}>
+                  ※ 発注ロット特別値引き -¥{lotDiscount.toLocaleString()} 適用済
+                </Text>
+              )}
+            </View>
+          )}
+
+          {/* M27-A: Inline 3-Pillar Tray Formula if Tray Calc exists */}
+          {hasTrayCalc && trayCalc && (
+            <View style={styles.inlineTrayFormulaBlock}>
+              <Text style={styles.inlineTrayFormulaText}>
+                【単価内訳】材料費 ¥{trayCalc.rawMaterialCostPerPcs != null ? trayCalc.rawMaterialCostPerPcs.toFixed(2) : '-'} + 梱包運賃 ¥{trayCalc.packingCostPerPcs != null ? trayCalc.packingCostPerPcs.toFixed(2) : '-'} + 成形加工費 ¥{trayCalc.formingProcessCostPerPcs != null ? trayCalc.formingProcessCostPerPcs.toFixed(2) : '-'} = ¥{(trayCalc.suggestedSellingPrice || trayCalc.estimatedUnitPrice)?.toLocaleString() || '-'}/枚 (税抜)
+              </Text>
+            </View>
+          )}
+
           <Text>
             {data.notes
               ? data.notes
@@ -509,6 +707,184 @@ export function QuotationPDF({ data }: QuotationPDFProps) {
           <Text style={styles.closing}>以上、宜しくお願い申し上げます。</Text>
         </View>
       </Page>
+
+      {/* Page 2: Appendix - Technical Cost Breakdown (when trayCalc exists) */}
+      {hasTrayCalc && trayCalc && (
+        <Page size="A4" style={styles.page}>
+          {/* Top Header: Company Branding & Quotation No */}
+          <View style={styles.topHeader}>
+            <View style={styles.companyLogoArea}>
+              <Text style={styles.companyEnglishName}>YOSHIDA PACKAGE CO.,LTD.</Text>
+              <Text style={styles.companySubInfo}>
+                5-36-6 MINAMIKASE SAIWAIKU KAWASAKI JAPAN 〒212-0055\nTEL. 044-588-1621   FAX. 044-588-7000
+              </Text>
+            </View>
+            <View style={styles.quoteNoArea}>
+              <Text style={styles.quoteNoText}>No. {data.quotation_no}</Text>
+              <Text style={styles.revisionBadge}>
+                別紙付録: 技術積算明細書 (Rev.{data.revision_no || 1})
+              </Text>
+            </View>
+          </View>
+
+          {/* Title */}
+          <View style={styles.titleContainer}>
+            <Text style={styles.mainTitle}>御見積内訳書（技術積算明細）</Text>
+          </View>
+
+          {/* Appendix Meta */}
+          <View style={styles.appendixMeta}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 3 }}>
+              <Text style={{ fontWeight: 700, fontSize: 10 }}>宛先: {companyName} 御中</Text>
+              <Text>発行日: {formatDisplayDate(data.quote_date)}</Text>
+            </View>
+            <Text style={{ fontSize: 7.5, color: '#64748b' }}>
+              ※ 本書は、成形トレイ単価の技術積算基準（材料費・梱包運賃・成形加工費）に基づく詳細内訳明細です。
+            </Text>
+          </View>
+
+          {/* 3-Pillar Formula Banner */}
+          <View style={styles.breakdownSummaryBanner}>
+            <Text style={styles.breakdownSummaryTitle}>【成形トレイ単価積算 3本柱内訳サマリー】</Text>
+            <Text style={styles.breakdownSummaryFormula}>
+              材料費 ¥{trayCalc.rawMaterialCostPerPcs != null ? trayCalc.rawMaterialCostPerPcs.toFixed(2) : '-'} + 梱包運賃 ¥{trayCalc.packingCostPerPcs != null ? trayCalc.packingCostPerPcs.toFixed(2) : '-'} + 成形加工費 ¥{trayCalc.formingProcessCostPerPcs != null ? trayCalc.formingProcessCostPerPcs.toFixed(2) : '-'} = ¥{(trayCalc.suggestedSellingPrice || trayCalc.estimatedUnitPrice)?.toLocaleString() || '-'}/枚 (税抜)
+            </Text>
+          </View>
+
+          {/* Technical Specifications Grid */}
+          <View style={styles.specGridContainer}>
+            <Text style={styles.specGridTitle}>1. 設計・技術諸元 (Technical Specifications)</Text>
+            <View style={styles.specGridRow}>
+              <View style={styles.specItem}>
+                <Text style={styles.specLabel}>対象製品/型番:</Text>
+                <Text style={styles.specValue}>{lines[0]?.model_code || lines[0]?.description || '-'}</Text>
+              </View>
+              <View style={styles.specItem}>
+                <Text style={styles.specLabel}>使用材料/規格:</Text>
+                <Text style={styles.specValue}>{lines[0]?.plastic_type_designed || '-'}</Text>
+              </View>
+            </View>
+            <View style={styles.specGridRow}>
+              <View style={styles.specItem}>
+                <Text style={styles.specLabel}>原反シート幅:</Text>
+                <Text style={styles.specValue}>
+                  {trayCalc.sheetWidthMm != null ? `${trayCalc.sheetWidthMm} mm` : '-'}
+                </Text>
+              </View>
+              <View style={styles.specItem}>
+                <Text style={styles.specLabel}>送りピッチ (L+15):</Text>
+                <Text style={styles.specValue}>
+                  {trayCalc.feedPitchMm != null ? `${trayCalc.feedPitchMm} mm` : '-'}
+                </Text>
+              </View>
+            </View>
+            <View style={styles.specGridRow}>
+              <View style={styles.specItem}>
+                <Text style={styles.specLabel}>1枚当り重量:</Text>
+                <Text style={styles.specValue}>
+                  {trayCalc.weightPerPcsGrams != null ? `${trayCalc.weightPerPcsGrams.toFixed(2)} g` : '-'}
+                </Text>
+              </View>
+              <View style={styles.specItem}>
+                <Text style={styles.specLabel}>基準梱包入数:</Text>
+                <Text style={styles.specValue}>
+                  {trayCalc.effectivePackagingQty != null ? `${trayCalc.effectivePackagingQty.toLocaleString()} 枚/箱` : '-'}
+                </Text>
+              </View>
+            </View>
+            <View style={styles.specGridRow}>
+              <View style={styles.specItem}>
+                <Text style={styles.specLabel}>見積対象ロット:</Text>
+                <Text style={styles.specValue}>
+                  {moldOptions?.targetLot != null ? `${Number(moldOptions.targetLot).toLocaleString()} 枚` : '-'}
+                </Text>
+              </View>
+              <View style={styles.specItem}>
+                <Text style={styles.specLabel}>製品外寸 (L×W):</Text>
+                <Text style={styles.specValue}>
+                  {lines[0]?.external_length_mm && lines[0]?.external_width_mm
+                    ? `${lines[0].external_length_mm} × ${lines[0].external_width_mm} mm`
+                    : '-'}
+                </Text>
+              </View>
+            </View>
+          </View>
+
+          {/* 3-Pillar Cost Breakdown Table */}
+          <View style={styles.breakdownTable}>
+            <View style={styles.breakdownTableHeader}>
+              <Text style={styles.breakdownColNo}>#</Text>
+              <Text style={styles.breakdownColItem}>原価構成項目 (Cost Element)</Text>
+              <Text style={styles.breakdownColBasis}>算出基準・仕様 (Basis / Calculation)</Text>
+              <Text style={styles.breakdownColPrice}>単価 (¥/枚・税抜)</Text>
+            </View>
+
+            <View style={styles.breakdownTableRow}>
+              <Text style={styles.breakdownColNo}>1</Text>
+              <Text style={styles.breakdownColItem}>材料費 (Material Cost)</Text>
+              <Text style={styles.breakdownColBasis}>
+                原反重量 ({trayCalc.weightPerPcsGrams != null ? trayCalc.weightPerPcsGrams.toFixed(2) : '-'}g) × 原反単価 × 材料変動比率(1.2)
+              </Text>
+              <Text style={styles.breakdownColPrice}>
+                {trayCalc.rawMaterialCostPerPcs != null ? `¥${trayCalc.rawMaterialCostPerPcs.toFixed(2)}` : '-'}
+              </Text>
+            </View>
+
+            <View style={styles.breakdownTableRow}>
+              <Text style={styles.breakdownColNo}>2</Text>
+              <Text style={styles.breakdownColItem}>梱包・運送費 (Packaging & Freight)</Text>
+              <Text style={styles.breakdownColBasis}>
+                基準ダンボール・内装PE袋・納品運賃 ({trayCalc.effectivePackagingQty || '-'}枚/箱換算)
+              </Text>
+              <Text style={styles.breakdownColPrice}>
+                {trayCalc.packingCostPerPcs != null ? `¥${trayCalc.packingCostPerPcs.toFixed(2)}` : '-'}
+              </Text>
+            </View>
+
+            <View style={styles.breakdownTableRow}>
+              <Text style={styles.breakdownColNo}>3</Text>
+              <Text style={styles.breakdownColItem}>成形加工費 (Forming Process)</Text>
+              <Text style={styles.breakdownColBasis}>
+                成形機段取・成形サイクルタイム・電力・直接労務費 (基準能率)
+              </Text>
+              <Text style={styles.breakdownColPrice}>
+                {trayCalc.formingProcessCostPerPcs != null ? `¥${trayCalc.formingProcessCostPerPcs.toFixed(2)}` : '-'}
+              </Text>
+            </View>
+
+            <View style={styles.breakdownTableRow}>
+              <Text style={styles.breakdownColNo}></Text>
+              <Text style={styles.breakdownColItem}>積算原価小計 (Estimated Cost)</Text>
+              <Text style={styles.breakdownColBasis}>上記 1〜3 構成要素の合計積算額</Text>
+              <Text style={styles.breakdownColPrice}>
+                {trayCalc.estimatedUnitPrice != null ? `¥${trayCalc.estimatedUnitPrice.toFixed(2)}` : '-'}
+              </Text>
+            </View>
+
+            <View style={styles.breakdownTableRowHighlight}>
+              <Text style={styles.breakdownColNo}></Text>
+              <Text style={styles.breakdownColItem}>御見積単価 (Suggested Price)</Text>
+              <Text style={styles.breakdownColBasis}>端数切り上げ処理 (Math.ceil) 適用後の正式提出単価</Text>
+              <Text style={styles.breakdownColPriceHighlight}>
+                {trayCalc.suggestedSellingPrice != null
+                  ? `¥${trayCalc.suggestedSellingPrice.toLocaleString()}`
+                  : (trayCalc.estimatedUnitPrice != null ? `¥${Math.ceil(trayCalc.estimatedUnitPrice).toLocaleString()}` : '-')}
+              </Text>
+            </View>
+          </View>
+
+          {/* Appendix Terms & Notes */}
+          <View style={styles.termsSection}>
+            <Text style={{ fontWeight: 700, marginBottom: 2 }}>【積算に関する特記事項】</Text>
+            <Text>
+              ・本積算明細書は、最新の原反シート規格および標準成形条件に基づいて算出したものです。\n
+              ・発注ロット数や梱包形態（小分け包装等）に変更がある場合、単価が変動することがあります。\n
+              ・原材料（プラスチック樹脂）の急激な市況変動が生じた場合、事前に協議の上、価格改定をお願いすることがございます。
+            </Text>
+            <Text style={styles.closing}>株式会社 ヨシダパッケージ</Text>
+          </View>
+        </Page>
+      )}
     </Document>
   )
 }
