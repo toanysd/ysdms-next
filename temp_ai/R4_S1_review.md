@@ -1,11 +1,12 @@
-# BÁO CÁO REVIEW SPRINT R4-S1 (CHỈ THỊ #014)
+# [OUTDATED - BẢN ĐÃ LỖI THỜI] BÁO CÁO REVIEW SPRINT R4-S1 (CHỈ THỊ #014)
+
+> ⚠️ **LƯU Ý:** Tài liệu này phản ánh giai đoạn Sprint R4-S1 cũ. Kể từ Milestone 26 & 27, phân hệ Báo giá chính thức là `/orders/quotations` kết hợp `src/components/pdf/QuotationPDF.tsx`. Module `sales/quotations` và draft cũ đã được dọn dẹp khỏi codebase.
 
 - **Người thực hiện:** AN (Kỹ sư triển khai)
 - **Người nhận:** PE (Trưởng dự án) & Anh Thoan (Product Owner)
 - **Ngày hoàn thành:** 2026-08-20
 - **Phạm vi:** Sprint R4-S1 — Phân Hệ Báo Giá 見積書 (Danh Sách Báo Giá + Engine Tính Giá Tự Động + Xuất PDF 見積書 Chuẩn Nhật Bản)
-- **Trạng thái:** ✅ **HOÀN THÀNH 100% — SẴN SÀNG CHO PE NGHIỆM THU**
-
+- **Trạng thái:** ⚠️ ARCHIVED / OUTDATED
 ---
 
 ## 1. HẠNG MỤC 1: TRANG DANH SÁCH BÁO GIÁ (`/orders/quotations`)
