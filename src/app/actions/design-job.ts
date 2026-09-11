@@ -112,7 +112,7 @@ export async function createDesignJobAction(
             product_id: input.product_id,
             design_revision_id: input.design_revision_id || null,
             company_id: input.company_id || null,
-            job_status: 'NEW',
+            job_status: 'PENDING',
             overall_progress: 0,
             priority: 5,
             start_date: new Date().toISOString().split('T')[0],

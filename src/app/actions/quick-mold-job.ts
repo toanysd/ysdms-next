@@ -309,7 +309,7 @@ export async function createQuickMoldJobWorkflow(input: QuickMoldJobInput) {
           assigned_to: s.assigned_to || null,
           deadline: s.deadline || jobInput.deadline || null,
           notes: s.notes || null,
-          step_status: 'PLANNED',
+          step_status: 'PENDING',
           manufacture_location: jobInput.manufacture_location || null,
         }))
 
@@ -542,7 +542,7 @@ export async function updateQuickMoldJobWorkflow(jobId: string, input: any) {
         assigned_to: s.assigned_to || null,
         deadline: s.deadline || null,
         notes: s.notes || null,
-        step_status: 'PLANNED',
+        step_status: 'PENDING',
       }))
       await supabase.from('job_steps').insert(stepsPayload)
     }

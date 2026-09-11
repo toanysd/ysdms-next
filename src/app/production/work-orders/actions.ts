@@ -528,8 +528,8 @@ export async function generateJobsForWorkOrder(workOrderId: string) {
     }
   }
 
-  // Update WO status to IN_PROGRESS if confirmed or planned
-  if (['CONFIRMED', 'PLANNED'].includes(wo.wo_status)) {
+  // Update WO status to IN_PROGRESS if planned
+  if (wo.wo_status === 'PLANNED') {
     await supabase
       .from('work_orders')
       .update({ wo_status: 'IN_PROGRESS' })

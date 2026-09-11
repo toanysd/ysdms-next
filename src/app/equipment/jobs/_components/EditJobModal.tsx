@@ -43,7 +43,7 @@ export function EditJobModal({
   const [formData, setFormData] = useState({
     job_code: '',
     job_name: '',
-    job_status: 'NOT_STARTED',
+    job_status: 'PENDING',
     job_category: 'NEW',
     deadline: '',
     responsible_id: '',
@@ -73,7 +73,7 @@ export function EditJobModal({
     setFormData({
       job_code: job.job_code || '',
       job_name: job.job_name || '',
-      job_status: job.job_status || 'NOT_STARTED',
+      job_status: job.job_status || 'PENDING',
       job_category: job.job_category || job.wo_type || 'NEW',
       deadline: formattedDeadline,
       responsible_id: job.responsible_id || '',
@@ -216,7 +216,7 @@ export function EditJobModal({
                   value={formData.job_status}
                   onChange={(e) => setFormData({ ...formData, job_status: e.target.value })}
                 >
-                  <option value="NOT_STARTED">未着手 (Not Started)</option>
+                  <option value="PENDING">未着手・待機中 (Pending)</option>
                   <option value="IN_PROGRESS">進行中 (In Progress)</option>
                   <option value="COMPLETED">完了 (Completed)</option>
                   <option value="ON_HOLD">保留 (On Hold)</option>

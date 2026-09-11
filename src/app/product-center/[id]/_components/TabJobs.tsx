@@ -193,7 +193,7 @@ export function TabJobs({ productId, productCode }: TabJobsProps) {
             job_id: j.job_id,
             job_code: j.job_code,
             job_name: j.job_name || '名称未設定',
-            job_status: j.job_status || 'NEW',
+            job_status: j.job_status || 'PENDING',
             job_category: j.job_category,
             job_type_id: j.job_type_id,
             estimated_hours: j.estimated_hours != null ? Number(j.estimated_hours) : null,

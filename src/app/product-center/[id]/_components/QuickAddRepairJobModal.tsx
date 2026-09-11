@@ -101,7 +101,7 @@ export function QuickAddRepairJobModal({
           job_name: jobTitle.trim(),
           product_id: productId,
           equipment_id: equipment.equipment_id,
-          job_status: 'NEW',
+          job_status: 'PENDING',
           job_category: jobCategory,
           deadline: deadline || null,
           mold_deadline: deadline || null,

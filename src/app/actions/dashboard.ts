@@ -263,7 +263,7 @@ export async function getDashboardData(): Promise<ExecutiveDashboardData> {
           products (product_code, product_name),
           companies (company_name)
         `)
-        .in('wo_status', ['IN_PROGRESS', 'CONFIRMED', 'READY_FOR_PRODUCTION', 'PLANNED'])
+        .in('wo_status', ['IN_PROGRESS', 'READY_FOR_PRODUCTION', 'PLANNED'])
         .order('updated_at', { ascending: false })
         .limit(6),
 
@@ -327,7 +327,7 @@ export async function getDashboardData(): Promise<ExecutiveDashboardData> {
       totalWorkOrders: totalWOs,
       inProgressCount: woCounts['IN_PROGRESS'] || 0,
       readyForProductionCount: woCounts['READY_FOR_PRODUCTION'] || 0,
-      plannedCount: (woCounts['PLANNED'] || 0) + (woCounts['CONFIRMED'] || 0),
+      plannedCount: woCounts['PLANNED'] || 0,
       completedCount: woCounts['COMPLETED'] || 0,
     }
 
@@ -625,7 +625,7 @@ export async function getEquipmentDashboardData(filterMode: 'TODAY_WEEK' | 'IN_P
       { count: unlinkedJobsCount },
       { count: totalCuttersCount },
     ] = await Promise.all([
-      supabase.from('jobs').select('*', { count: 'exact', head: true }).in('job_status', ['IN_PROGRESS', 'NEW']),
+      supabase.from('jobs').select('*', { count: 'exact', head: true }).in('job_status', ['IN_PROGRESS', 'PENDING']),
       supabase.from('jobs').select('*', { count: 'exact', head: true }).lt('deadline', todayStr).neq('job_status', 'COMPLETED'),
       supabase.from('jobs').select('*', { count: 'exact', head: true }).is('equipment_id', null),
       supabase.from('equipment').select('*', { count: 'exact', head: true }).in('equipment_type', ['CUTTER_SEPARATE', 'CUTTER_INLINE']),

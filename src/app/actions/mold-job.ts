@@ -154,7 +154,7 @@ export async function createMoldJobAction(input: CreateMoldJobInput) {
             mold_deadline: input.mold_deadline || null,
             ship_date: input.ship_date || null,
             priority: input.priority ?? 5,
-            job_status: 'NEW',
+            job_status: 'PENDING',
             overall_progress: 0,
             notes: input.notes || null,
         })
@@ -263,7 +263,7 @@ export async function createQuickJob(input: CreateQuickJobInput): Promise<{
             job_name: input.job_name.trim(),
             job_type_id: input.job_type_id,
             responsible_id: input.responsible_id || null,
-            job_status: 'NEW',
+            job_status: 'PENDING',
             overall_progress: 0,
             priority: 5,
             notes: notesValue,
@@ -652,7 +652,7 @@ export async function updateJobStepStatus(
             .from('jobs')
             .update({
                 overall_progress: progress,
-                job_status: progress >= 100 ? 'COMPLETED' : progress > 0 ? 'IN_PROGRESS' : 'NEW',
+                job_status: progress >= 100 ? 'COMPLETED' : progress > 0 ? 'IN_PROGRESS' : 'PENDING',
                 updated_at: new Date().toISOString()
             })
             .eq('job_id', updatedStep.job_id)

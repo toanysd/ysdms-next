@@ -36,9 +36,10 @@ type JobRow = {
 }
 
 const STATUS_LABELS: Record<string, { key: string; color: string }> = {
-  NEW:         { key: 'NEW',         color: 'var(--status-info)' },
+  PENDING:     { key: 'PENDING',     color: 'var(--status-info)' },
   IN_PROGRESS: { key: 'IN_PROGRESS', color: 'var(--status-warning)' },
   COMPLETED:   { key: 'COMPLETED',   color: 'var(--status-success)' },
+  ON_HOLD:     { key: 'ON_HOLD',     color: 'var(--status-purple, #8b5cf6)' },
   CANCELLED:   { key: 'CANCELLED',   color: 'var(--text-muted)' },
 }
 
@@ -212,9 +213,10 @@ function JobsPageContent() {
 
   const getJobStatusLabel = (key: string) => {
     switch (key) {
-      case 'NEW': return t('statusLabels.NEW')
+      case 'PENDING': return t('statusLabels.PENDING') || '待機中'
       case 'IN_PROGRESS': return t('statusLabels.IN_PROGRESS')
       case 'COMPLETED': return t('statusLabels.COMPLETED')
+      case 'ON_HOLD': return t('statusLabels.ON_HOLD') || '保留'
       case 'CANCELLED': return t('statusLabels.CANCELLED')
       default: return key
     }
@@ -352,7 +354,7 @@ function JobsPageContent() {
                 </tr>
               ) : (
                 jobs.map(job => {
-                  const st = STATUS_LABELS[job.job_status || ''] || STATUS_LABELS['NEW']
+                  const st = STATUS_LABELS[job.job_status || ''] || STATUS_LABELS['PENDING']
                   return (
                     <tr key={job.job_id}>
                       <td>

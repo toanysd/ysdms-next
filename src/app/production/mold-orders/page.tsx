@@ -433,7 +433,7 @@ export default function MoldWorkOrdersPage() {
           product_id: finalProduct.product_id,
           deadline: reqMoldingDate ? `${reqMoldingDate}T12:00:00Z` : null,
           mold_deadline: reqMoldDate ? `${reqMoldDate}T12:00:00Z` : null,
-          job_status: 'NEW'
+          job_status: 'PENDING'
         })
         .select('*')
         .single();

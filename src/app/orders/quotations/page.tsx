@@ -32,7 +32,8 @@ interface QuotationItem {
 const STATUS_BADGE: Record<string, { labelJA: string; badgeClass: string; bg: string; color: string }> = {
   DRAFT: { labelJA: '下書き (Draft)', badgeClass: 'badge badge--neutral', bg: '#F1F5F9', color: '#475569' },
   SENT: { labelJA: '送付済 (Sent)', badgeClass: 'badge badge--info', bg: '#EFF6FF', color: '#2563EB' },
-  ACCEPTED: { labelJA: '受注承諾 (Accepted)', badgeClass: 'badge badge--success', bg: '#ECFDF5', color: '#059669' },
+  APPROVED: { labelJA: '承認済 (Approved)', badgeClass: 'badge badge--success', bg: '#ECFDF5', color: '#059669' },
+  CONVERTED: { labelJA: '受注済 (Converted)', badgeClass: 'badge badge--success', bg: '#ECFDF5', color: '#059669' },
   REJECTED: { labelJA: '失注 (Rejected)', badgeClass: 'badge badge--error', bg: '#FEF2F2', color: '#DC2626' },
   EXPIRED: { labelJA: '期限切れ (Expired)', badgeClass: 'badge badge--warning', bg: '#FFFBEB', color: '#D97706' },
 }
@@ -93,22 +94,22 @@ export default function QuotationsPage() {
   }, [quotations, searchQuery, statusFilter, typeFilter])
 
   // Summary Metrics
-  const { totalQuotes, totalAmount, sentCount, acceptedCount } = useMemo(() => {
+  const { totalQuotes, totalAmount, sentCount, approvedCount } = useMemo(() => {
     let amt = 0
     let sent = 0
-    let acc = 0
+    let approved = 0
 
     quotations.forEach((q) => {
       amt += Number(q.total_amount) || 0
       if (q.status === 'SENT') sent++
-      if (q.status === 'ACCEPTED') acc++
+      if (q.status === 'APPROVED' || q.status === 'CONVERTED') approved++
     })
 
     return {
       totalQuotes: quotations.length,
       totalAmount: amt,
       sentCount: sent,
-      acceptedCount: acc,
+      approvedCount: approved,
     }
   }, [quotations])
 
@@ -185,32 +186,45 @@ export default function QuotationsPage() {
 
         <div className="card-flat" style={{ padding: '10px 14px', borderLeft: '4px solid #059669', background: '#ECFDF5' }}>
           <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', marginBottom: 2 }}>
-            🎉 {t('accepted')} (Đã Chốt / Đặt Hàng)
+            🎉 承認済 (Đã Duyệt / Đặt Hàng)
           </div>
           <div style={{ fontSize: 18, fontWeight: 800, fontFamily: 'monospace', color: '#059669' }}>
-            {loading ? '...' : `${acceptedCount} 件`}
+            {loading ? '...' : `${approvedCount} 件`}
           </div>
         </div>
       </div>
 
-      {/* ── 3. Filter Bar ── */}
-      <div className="card-flat" style={{ padding: '8px 12px', display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', flexShrink: 0 }}>
+      {/* ── 3. Filters Bar ── */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 12,
+          padding: '8px 12px',
+          backgroundColor: 'var(--bg-surface)',
+          borderRadius: 6,
+          border: '1px solid var(--border-default)',
+          flexShrink: 0,
+          flexWrap: 'wrap',
+        }}
+      >
         {/* Search */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1, minWidth: 220 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, minWidth: 200, maxWidth: 350 }}>
           <Search size={14} style={{ color: 'var(--text-muted)' }} />
           <input
             type="text"
+            placeholder={t('searchPlaceholder')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="見積番号、得意先名で検索..."
             className="form-input"
-            style={{ height: 28, fontSize: 12 }}
+            style={{ height: 28, fontSize: 12, width: '100%' }}
           />
         </div>
 
         {/* Status Filter */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)' }}>{t('quotationStatus')}:</span>
+          <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)' }}>{t('status')}:</span>
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
@@ -220,8 +234,10 @@ export default function QuotationsPage() {
             <option value="ALL">すべて (All Status)</option>
             <option value="DRAFT">下書き (Draft)</option>
             <option value="SENT">送付済 (Sent)</option>
-            <option value="ACCEPTED">受注承諾 (Accepted)</option>
+            <option value="APPROVED">承認済 (Approved)</option>
+            <option value="CONVERTED">受注済 (Converted)</option>
             <option value="REJECTED">失注 (Rejected)</option>
+            <option value="EXPIRED">期限切れ (Expired)</option>
           </select>
         </div>
 

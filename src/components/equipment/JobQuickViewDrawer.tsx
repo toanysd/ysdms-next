@@ -17,7 +17,7 @@ interface JobQuickViewDrawerProps {
 }
 
 const getStatusOptions = (t: any) => [
-  { value: 'NEW', label: t('jobStatus.NEW'), color: 'var(--status-info)' },
+  { value: 'PENDING', label: t('jobStatus.PENDING') || '待機中', color: 'var(--status-info)' },
   { value: 'IN_PROGRESS', label: t('jobStatus.IN_PROGRESS'), color: 'var(--status-warning)' },
   { value: 'COMPLETED', label: t('jobStatus.COMPLETED'), color: 'var(--status-success)' },
   { value: 'ON_HOLD', label: t('jobStatus.ON_HOLD'), color: 'var(--text-muted)' },
@@ -59,7 +59,7 @@ export function JobQuickViewDrawer({ job, onClose, onOpenStepEdit, onJobUpdated 
   const [targetCompletionDate, setTargetCompletionDate] = useState('')
   const [moldDeadline, setMoldDeadline] = useState('')
   const [shipDate, setShipDate] = useState('')
-  const [jobStatus, setJobStatus] = useState('NEW')
+  const [jobStatus, setJobStatus] = useState('PENDING')
   const [notes, setNotes] = useState('')
 
   // Load Job Types from DB
@@ -81,7 +81,7 @@ export function JobQuickViewDrawer({ job, onClose, onOpenStepEdit, onJobUpdated 
       setTargetCompletionDate(job.target_completion_date?.split('T')[0] || '')
       setMoldDeadline(job.mold_deadline?.split('T')[0] || '')
       setShipDate(job.ship_date?.split('T')[0] || '')
-      setJobStatus(job.job_status || 'NEW')
+      setJobStatus(job.job_status || 'PENDING')
       setNotes((job as any).notes || '')
       setIsEditing(false)
       setActiveTab('steps')
@@ -209,7 +209,7 @@ export function JobQuickViewDrawer({ job, onClose, onOpenStepEdit, onJobUpdated 
     setPriority(job.priority || 5)
     setMoldDeadline(job.mold_deadline?.split('T')[0] || '')
     setShipDate(job.ship_date?.split('T')[0] || '')
-    setJobStatus(job.job_status || 'NEW')
+    setJobStatus(job.job_status || 'PENDING')
     setNotes((job as any).notes || '')
   }
 

@@ -128,9 +128,9 @@ export function calculateAutoSchedule(
 
   // Sort jobs: IN_PROGRESS first (highest priority), then NEW by nearest deadline
   clonedJobs.sort((a, b) => {
-    const statusOrder: Record<string, number> = { IN_PROGRESS: 0, NEW: 1, COMPLETED: 2, CANCELLED: 3 }
-    const oa = statusOrder[a.job_status || 'NEW'] ?? 1
-    const ob = statusOrder[b.job_status || 'NEW'] ?? 1
+    const statusOrder: Record<string, number> = { IN_PROGRESS: 0, PENDING: 1, NEW: 1, COMPLETED: 2, CANCELLED: 3 }
+    const oa = statusOrder[a.job_status || 'PENDING'] ?? 1
+    const ob = statusOrder[b.job_status || 'PENDING'] ?? 1
     if (oa !== ob) return oa - ob
     // Same status: sort by deadline (earliest first)
     const da = a.mold_deadline ? new Date(a.mold_deadline).getTime() : Infinity
@@ -145,7 +145,7 @@ export function calculateAutoSchedule(
   today.setHours(0, 0, 0, 0)
 
   for (const job of clonedJobs) {
-    const jobStatus = job.job_status || 'NEW'
+    const jobStatus = job.job_status || 'PENDING'
 
     // ──────────────────────────────────────────────────────────────────────
     // CASE 1: COMPLETED or CANCELLED — Skip entirely

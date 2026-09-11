@@ -1337,7 +1337,7 @@ export default function QuickCreateMoldJobPage() {
                     <strong style={{ color: 'var(--accent)', fontFamily: 'monospace' }}>[{job.job_code}]</strong>
                     <span style={{ marginLeft: 6, color: 'var(--text-primary)' }}>{job.job_name}</span>
                   </div>
-                  <span className="badge badge--info" style={{ fontSize: 9 }}>{job.job_status || 'NEW'}</span>
+                  <span className="badge badge--info" style={{ fontSize: 9 }}>{job.job_status || 'PENDING'}</span>
                 </div>
               ))}
             </div>

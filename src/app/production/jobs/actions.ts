@@ -37,9 +37,9 @@ export async function addWorkLogAction(formData: FormData) {
     return { success: false, error: 'Bắt buộc chọn người thực hiện (employee)' }
   }
 
-  // 1. Check if step is NOT_STARTED and needs auto-update to IN_PROGRESS
+  // 1. Check if step is PENDING / NOT_STARTED and needs auto-update to IN_PROGRESS
   const stepStatus = formData.get('step_status') as string
-  if (stepStatus === 'NOT_STARTED') {
+  if (stepStatus === 'PENDING' || stepStatus === 'NOT_STARTED') {
     const todayStr = new Date().toISOString().split('T')[0]
     await supabase.from('job_steps').update({
       step_status: 'IN_PROGRESS',
@@ -88,11 +88,11 @@ export async function addWorkLogAction(formData: FormData) {
         completed_date: todayStr
       }).eq('job_id', jobId)
     } else {
-      // NEW → IN_PROGRESS khi có ít nhất 1 step done
+      // PENDING → IN_PROGRESS khi có ít nhất 1 step done
       await supabase.from('jobs')
         .update({ job_status: 'IN_PROGRESS' })
         .eq('job_id', jobId)
-        .eq('job_status', 'NEW')  // chỉ update nếu còn NEW, tránh overwrite COMPLETED
+        .in('job_status', ['PENDING', 'NEW'])  // chỉ update nếu còn PENDING/NEW, tránh overwrite COMPLETED
     }
   }
 

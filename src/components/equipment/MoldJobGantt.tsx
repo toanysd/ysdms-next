@@ -133,6 +133,7 @@ function formatStatusText(code?: string) {
 }
 
 const JOB_STATUS: Record<string, { color: string; progressColor: string }> = {
+  PENDING:     { color: 'var(--accent)', progressColor: 'var(--accent)' },
   NEW:         { color: 'var(--accent)', progressColor: 'var(--accent)' },
   IN_PROGRESS: { color: 'var(--accent)', progressColor: 'var(--accent)' },
   COMPLETED:   { color: 'var(--accent)', progressColor: 'var(--accent)' },
@@ -266,7 +267,7 @@ const TaskRow = React.memo(function TaskRow({
   let statusColor = 'var(--text-muted)'
   let statusText = '-'
   if (t.type === 'project') {
-    statusText = formatStatusText(t.originalJob?.job_status || 'NEW')
+    statusText = formatStatusText(t.originalJob?.job_status || 'PENDING')
     if (statusText === '完了') statusColor = 'var(--status-success)'
     else if (statusText === '進行中') statusColor = 'var(--status-warning)'
     else statusColor = 'var(--status-info)'
@@ -1404,7 +1405,7 @@ export default function MoldJobGantt({ workOrders = [], jobs, employees = [], ma
       // If no tracks match the filter for this product, skip it
       if (presentTracks.length === 0) return
 
-      const s = JOB_STATUS[primaryJob.job_status || 'NEW'] || JOB_STATUS.NEW
+      const s = JOB_STATUS[primaryJob.job_status || 'PENDING'] || JOB_STATUS.PENDING || JOB_STATUS.NEW
       
       let projStart = new Date(8640000000000000)
       let projEnd = new Date(-8640000000000000)

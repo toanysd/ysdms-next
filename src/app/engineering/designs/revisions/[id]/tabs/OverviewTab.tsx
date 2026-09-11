@@ -339,7 +339,7 @@ export function OverviewTab({
                     <span className="text-[12px] font-bold font-mono text-[var(--accent)] hover:underline">{job.job_code}</span>
                     <span className="text-[10px] text-[var(--text-muted)] truncate max-w-[150px]">{job.job_name}</span>
                   </div>
-                  <span className="text-[9px] badge badge--neutral">{job.job_status || 'NEW'}</span>
+                  <span className="text-[9px] badge badge--neutral">{job.job_status || 'PENDING'}</span>
                 </Link>
               ))
             )}

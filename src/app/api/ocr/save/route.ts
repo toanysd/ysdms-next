@@ -938,7 +938,7 @@ export async function POST(request: NextRequest) {
               job_code: jobCode,
               job_name: jobName,
               equipment_id: equipmentId,
-              job_status: 'NEW',
+              job_status: 'PENDING',
               job_type_id: jobTypeId,
               job_category: jobCategory,
               ...commonJobFields,
@@ -1103,7 +1103,7 @@ export async function POST(request: NextRequest) {
               product_id: productId,
               design_revision_id: revisionId,
               company_id: companyId,
-              job_status: 'NEW',
+              job_status: 'PENDING',
               overall_progress: 0,
               priority: 5,
               start_date: new Date().toISOString().split('T')[0],
@@ -1120,11 +1120,11 @@ export async function POST(request: NextRequest) {
           if (newDesJob) {
             const desSteps = hasProto
               ? [
-                  { job_id: newDesJob.job_id, step_no: 1, step_name: '試作金型作成', step_status: 'NOT_STARTED', track: 'DESIGN', deadline: moldDeadline || null, target_completion_date: targetCompletionDate || null, notes: '試作金型作成' },
-                  { job_id: newDesJob.job_id, step_no: 2, step_name: '本型設計', step_status: 'NOT_STARTED', track: 'DESIGN', deadline: moldDeadline || null, target_completion_date: targetCompletionDate || null, notes: '本型設計' }
+                  { job_id: newDesJob.job_id, step_no: 1, step_name: '試作金型作成', step_status: 'PENDING', track: 'DESIGN', deadline: moldDeadline || null, target_completion_date: targetCompletionDate || null, notes: '試作金型作成' },
+                  { job_id: newDesJob.job_id, step_no: 2, step_name: '本型設計', step_status: 'PENDING', track: 'DESIGN', deadline: moldDeadline || null, target_completion_date: targetCompletionDate || null, notes: '本型設計' }
                 ]
               : [
-                  { job_id: newDesJob.job_id, step_no: 1, step_name: '本型設計', step_status: 'NOT_STARTED', track: 'DESIGN', deadline: moldDeadline || null, target_completion_date: targetCompletionDate || null, notes: '本型設計' }
+                  { job_id: newDesJob.job_id, step_no: 1, step_name: '本型設計', step_status: 'PENDING', track: 'DESIGN', deadline: moldDeadline || null, target_completion_date: targetCompletionDate || null, notes: '本型設計' }
                 ]
 
             await supabase.from('job_steps').insert(desSteps)
