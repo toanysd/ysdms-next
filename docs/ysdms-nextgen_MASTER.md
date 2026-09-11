@@ -1,7 +1,8 @@
 # 📒 SỔ CÁI DỰ ÁN — YSDMS NextGen
-> Cập nhật lần cuối: 2026-09-09 (Hoàn tất toàn diện Milestone 24: Quotation-to-Order Pipeline [Sprints A, B, C, D] — Chỉ thị #051)
-> Phiên bản Schema: V5 / Unified Equipment Architecture + Migrations 100-105
-> Trạng thái: Milestone 24 COMPLETED ✅ — Báo giá sang Đơn hàng nguyên tử + A4 PDF Engine chuẩn Nhật
+> Cập nhật lần cuối: 2026-09-11 (Đóng Milestone 28 — Giai đoạn A: DB Enum Integrity & Agent Mailbox Setup)
+> Phiên bản Schema: V5 / Unified Equipment Architecture + Migrations 100-105 + Migration M28A (v2.1)
+> Trạng thái: Milestone 28A CLOSED ✅ (Commit `dccda76`) | Mở Milestone 28B: Work Order Cockpit
+
 
 ---
 
@@ -1373,5 +1374,22 @@ ebaseline...).
   - Hồ sơ kiến trúc: Ban hành `docs/adr/ADR-014_order-to-work-order-auto-creation.md` (APPROVED).
   - Kiểm thử E2E Live DB và dọn dẹp dữ liệu sạch sẽ 100%.
   - Commit SHA: `07f51ecd31e5d56d5dfa5e1e106677903a841d73` (`07f51ec`) trên `origin/main`.
+
+- **[2026-09-11] Milestone 28 — Giai đoạn A: DB Enum Integrity & Agent Mailbox Setup (CLOSED ✅)**
+  - Siết chặt 5 DB CHECK constraints trên Live Supabase production:
+    * `quotations.status IN ('DRAFT', 'SUBMITTED', 'ACCEPTED', 'REJECTED', 'CONVERTED')`
+    * `quotations.quotation_type IN ('SET', 'MOLD', 'TRAY')`
+    * `work_orders.wo_status IN ('DRAFT', 'PENDING', 'IN_PROGRESS', 'READY_FOR_PRODUCTION', 'COMPLETED', 'CANCELLED')`
+    * `jobs.job_status IN ('PENDING', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED')`
+    * `job_steps.step_status IN ('PENDING', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED')`
+  - Chuẩn hóa 2 hàm RPC PostgreSQL:
+    * `rpc_confirm_work_order`: gán canonical `'PENDING'` (thay vì legacy `'PLANNED'`).
+    * `rpc_start_job`: chấp nhận `'PENDING'` / `'IN_PROGRESS'`, gán bước đầu tiên `'PENDING'` (thay vì legacy `'NOT_STARTED'`).
+  - Dọn dẹp dữ liệu legacy trên Supabase: 1 job `NEW` -> `PENDING`, 1 step `NOT_STARTED` -> `PENDING`.
+  - Refactor 18 file mã nguồn frontend/backend, loại bỏ triệt để các enum legacy (`NEW`, `NOT_STARTED`, `CONFIRMED`, `ACCEPTED` cho jobs/steps/wo).
+  - Triển khai hạ tầng Agent Mailbox tại `docs/mailbox/` (`README.md`, `OUTBOX_PE.md`, `OUTBOX_AN.md`) theo mô hình bất đối xứng Single-Writer.
+  - Quality Gate: `npx tsc --noEmit` đạt 0 errors.
+  - Commit SHA: `dccda764f1a3cb47e21da68e57ef4a96c0fa34ce` (`dccda76`).
+
 
 
