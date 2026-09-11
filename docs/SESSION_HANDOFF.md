@@ -161,7 +161,8 @@ v_tray_schedule_gantt, v_equipment_lifecycle_status, v_dashboard_executive_kpis
 | Stack | Next.js 14, TypeScript, Supabase, Tailwind CSS, next-intl |
 | i18n | `messages/ja.json` + `messages/vi.json` |
 | Main branch | `main` |
-| Last verified commit | `c2531b4` (M19 Work Orders UI & SET Resolution + PDF Engine — 2026-09-08) |
+| Last verified commit | `07f51ecd31e5d56d5dfa5e1e106677903a841d73` (Milestone 27B: Order to Work Order Auto-Creation — 2026-09-11) |
+
 
 ---
 
@@ -185,9 +186,14 @@ Bạn là AN (Executing Agent). Đây là dự án **ysdms-next** — hệ thố
 
 ---
 
-## 9. CẬP NHẬT MILESTONE 27 — GIAI ĐOẠN B (2026-09-11 14:55 JST)
+## 9. MILESTONE 27 — GIAI ĐOẠN B: WORK ORDER → JOB LINKING (CLOSED ✅)
+- **Thời điểm nghiệm thu:** 2026-09-11 15:42 JST
+- **Commit SHA đã nghiệm thu:** `07f51ecd31e5d56d5dfa5e1e106677903a841d73` (`07f51ec`)
+- **HEAD Git hiện tại trên `origin/main`:** `07f51ecd31e5d56d5dfa5e1e106677903a841d73`
+- **Hồ sơ kiến trúc:** `docs/adr/ADR-014_order-to-work-order-auto-creation.md` (APPROVED)
 
-### 9.1. Trạng thái Triển khai Bước 1: Order → Work Order → Jobs Auto-Creation
+### 9.1. Trạng thái Triển khai: Order → Work Order → Jobs Auto-Creation (Đã hoàn tất)
+
 - Đã bổ sung Server Action `createWorkOrderFromOrderAction(orderId)` tại `src/app/orders/[id]/actions.ts`:
   * Ràng buộc trạng thái: Chỉ cho phép tạo khi `orders.order_status IN ('CONFIRMED', 'IN_PRODUCTION')`.
   * Ràng buộc Idempotency: Kiểm tra không cho phép tạo trùng lặp nếu Order đã có WO liên kết.

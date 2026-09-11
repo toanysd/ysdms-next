@@ -1353,3 +1353,25 @@ ebaseline...).
     * `docs/quotations/04_ENGINE_IMPLEMENTATION_SPEC_M26.md`: Đặc tả kỹ thuật chi tiết nâng cấp `src/lib/quotation-engine.ts` trong Milestone 26 (chuyển đổi hằng số tĩnh sang Master Lookup & Dynamic Calculation).
   - Đồng bộ cơ sở tri thức: Cập nhật `docs/02_BUSINESS_PROCESS_CATALOG.md` và `.agents/mempalace/knowledge/quotation_pricing_formulas.md`.
 
+- **[2026-09-10] Milestone 26: Quotation Auto-Pricing Engine Upgrade (COMPLETED ✅)**
+  - Nâng cấp `quotation-engine.ts` và `pricing-constants.ts`: Pitch L+15, Film W+40, Ma trận khuôn chuẩn YSD, Chiết khấu Lot, Mẫu thử miễn phí, Math.ceil cho đơn giá.
+  - UI Modal Binding: 4 controls cấu hình khuôn trong `CreateQuotationModal.tsx`.
+  - Vitest test suite `tests/pricing_engine.test.ts` đạt 12/12 PASS.
+
+- **[2026-09-11] Milestone 27 — Giai đoạn A: Quotation PDF Engine Upgrade & Clean-up (COMPLETED ✅)**
+  - Nâng cấp `QuotationPDF.tsx` đọc `extra_json` (moldOptions, moldCalc, trayCalc), render 3 điều kiện ghi chú, phụ lục kỹ thuật Trang 2 `別紙付録: 技術積算明細書`.
+  - Dọn dẹp dứt điểm module orphan `src/app/sales/quotations/` (7 files) và draft cũ `QuotationPDFDocument.tsx` (-1,298 dòng).
+  - HEAD commit: `6a3a80e`.
+
+- **[2026-09-11] Milestone 27 — Giai đoạn B: Work Order → Job Linking (CLOSED ✅)**
+  - Nối hoàn chỉnh chuỗi khép kín ERP: `quotations (APPROVED) → orders (CONFIRMED) → work_orders → jobs → job_steps`.
+  - Server Action `createWorkOrderFromOrderAction(orderId)` tại `src/app/orders/[id]/actions.ts`:
+    * Tự sinh mã `wo_code` bằng RPC Postgres `generate_wo_code()` (`WO-YYYY-NNNNNN`).
+    * Trích xuất `product_id`, `design_revision_id`, `company_id`, `deadline` từ `orders` và `order_lines`.
+    * Kích hoạt tự động `generateJobsForWorkOrder(newWo.wo_id)` tách 1 Job/thiết bị và sinh toàn bộ `job_steps`.
+  - UI `WorkOrderLinker.tsx`: Nút bấm **「製造指示作成」** tại Header Section A và Empty state khi đơn hàng ở trạng thái `CONFIRMED` hoặc `IN_PRODUCTION`. Sửa route sang `/production/work-orders/[id]`.
+  - Hồ sơ kiến trúc: Ban hành `docs/adr/ADR-014_order-to-work-order-auto-creation.md` (APPROVED).
+  - Kiểm thử E2E Live DB và dọn dẹp dữ liệu sạch sẽ 100%.
+  - Commit SHA: `07f51ecd31e5d56d5dfa5e1e106677903a841d73` (`07f51ec`) trên `origin/main`.
+
+
