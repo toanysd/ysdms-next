@@ -29,10 +29,12 @@
 | M24-D — Quotation PDF Engine & Print Preview (Chỉ thị #051) | ✅ NGHIỆM THU & TESTED E2E (Sprint D) |
 | Milestone 24 — Quotation-to-Order Pipeline (A+B+C+D) | ✅ CLOSED & HOÀN TẤT 100% |
 | Module Quy chuẩn Tính toán Báo giá (`docs/quotations/`) | ✅ HOÀN THÀNH — 5 tài liệu SSOT căn cứ phôi Excel gốc YSD |
-| Migration 089–105 | ✅ Applied to production |
+| M27-B — Work Order Auto-Creation from Order (ADR-014) | ✅ CLOSED & PUSHED (commit `07f51ec`) |
+| M28-A — DB Enum Integrity & Agent Mailbox Setup | ✅ CLOSED & PUSHED (commit `dccda76`) |
+| Migration 089–105 + Migration M28A (v2.1) | ✅ Applied to production |
 | TypeScript build | ✅ 0 errors |
 | i18n | ✅ 0 missing keys |
-| Next Step | Kính trình PE & Anh Thoan nghiệm thu Hồ sơ Quy chuẩn Báo giá; Tiếp nhận chỉ thị tiếp theo (M23-B / M26) |
+| Next Step | Đợi quyết định từ Anh Thoan: Option B (Work Order Cockpit) hoặc Option C (Nghiệp vụ mới) |
 
 ---
 
@@ -219,3 +221,29 @@ Bạn là AN (Executing Agent). Đây là dự án **ysdms-next** — hệ thố
    * Tuyệt đối không gán phát biểu cho PE hoặc trích dẫn tài liệu không tồn tại/chưa được kiểm chứng nguồn gốc.
    * Mọi giải trình kỹ thuật phải căn cứ trực tiếp vào dữ liệu và bằng chứng thực nghiệm (code, Git commits, DB queries, test logs) để đảm bảo tính minh bạch và độ tin cậy tuyệt đối của quy trình audit chéo.
 
+---
+
+## 10. MILESTONE 28 — GIAI ĐOẠN A: DB ENUM INTEGRITY & AGENT MAILBOX SETUP (CLOSED ✅)
+- **Thời điểm nghiệm thu:** 2026-09-11 18:15 JST
+- **Commit SHA đã nghiệm thu:** `dccda764f1a3cb47e21da68e57ef4a96c0fa34ce` (`dccda76`)
+- **HEAD Git hiện tại trên `origin/main`:** `dccda764f1a3cb47e21da68e57ef4a96c0fa34ce`
+- **Hồ sơ tham chiếu:** `docs/mailbox/README.md`, Migration `20260911000001_m28a_db_enum_integrity_v2_1.sql`
+
+### 10.1. Nội dung Triển khai & Nghiệm thu
+1. **5 CHECK Constraints siết chặt Enum trên DB sống:**
+   - `quotations.status IN ('DRAFT', 'SUBMITTED', 'ACCEPTED', 'REJECTED', 'CONVERTED')`
+   - `quotations.quotation_type IN ('SET', 'MOLD', 'TRAY')`
+   - `work_orders.wo_status IN ('DRAFT', 'PENDING', 'IN_PROGRESS', 'READY_FOR_PRODUCTION', 'COMPLETED', 'CANCELLED')`
+   - `jobs.job_status IN ('PENDING', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED')`
+   - `job_steps.step_status IN ('PENDING', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED')`
+2. **Chuẩn hóa 2 hàm RPC PostgreSQL:**
+   - `rpc_confirm_work_order`: gán canonical `'PENDING'` (thay vì legacy `'PLANNED'`).
+   - `rpc_start_job`: chấp nhận `'PENDING'` / `'IN_PROGRESS'`, gán bước đầu tiên `'PENDING'` (thay vì legacy `'NOT_STARTED'`).
+3. **Chuẩn hóa dữ liệu legacy trên Supabase production:**
+   - 1 job `NEW` -> `PENDING`, 1 job step `NOT_STARTED` -> `PENDING`, 0 dòng vi phạm `CONFIRMED`.
+4. **Refactor Codebase (18 files):**
+   - Toàn bộ frontend/backend/server actions đã loại bỏ triệt để các enum legacy (`NEW`, `NOT_STARTED`, `CONFIRMED`, `ACCEPTED` cho jobs/steps/wo).
+   - Đã xác nhận `npx tsc --noEmit` đạt 0 errors.
+5. **Hạ tầng Agent Mailbox qua Git:**
+   - Đặt tại `docs/mailbox/` (`README.md`, `OUTBOX_PE.md`, `OUTBOX_AN.md`) theo cơ chế Single-Writer (Bất đối xứng) nhằm loại trừ 100% rủi ro Git merge conflict.
+   - Đã thông tuyến thành công giữa PE và AN qua Git API.
