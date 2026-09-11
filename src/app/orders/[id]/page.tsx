@@ -152,7 +152,12 @@ export default async function OrderDetailPage(props: {
         )}
         
         {activeTab === 'work_orders' && (
-          <WorkOrderLinker orderId={id} linkedWorkOrders={linkedWOs} suggestedWorkOrders={suggestedWOs} />
+          <WorkOrderLinker
+            orderId={id}
+            linkedWorkOrders={linkedWOs}
+            suggestedWorkOrders={suggestedWOs}
+            orderStatus={order.order_status || 'DRAFT'}
+          />
         )}
       </div>
 

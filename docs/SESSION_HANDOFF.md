@@ -183,9 +183,33 @@ Bạn là AN (Executing Agent). Đây là dự án **ysdms-next** — hệ thố
   * Lập hồ sơ đặc tả nâng cấp `quotation-engine.ts` chuẩn bị sẵn sàng cho Milestone 26.
 - Quality Gates: TypeScript 0 errors, i18n 0 missing keys.
 
-**Nhiệm vụ tiếp theo:** Kính trình PE và Anh Thoan phê duyệt nghiệm thu hồ sơ quy chuẩn tính toán báo giá; sẵn sàng triển khai Milestone tiếp theo theo chỉ đạo (M23-B hoặc M26).
+---
 
-**Verify trước khi commit:** `npx tsc --noEmit` (0 errors) + `node scripts/check_translations.mjs` (0 missing keys).
+## 9. CẬP NHẬT MILESTONE 27 — GIAI ĐOẠN B (2026-09-11 14:55 JST)
 
+### 9.1. Trạng thái Triển khai Bước 1: Order → Work Order → Jobs Auto-Creation
+- Đã bổ sung Server Action `createWorkOrderFromOrderAction(orderId)` tại `src/app/orders/[id]/actions.ts`:
+  * Ràng buộc trạng thái: Chỉ cho phép tạo khi `orders.order_status IN ('CONFIRMED', 'IN_PRODUCTION')`.
+  * Ràng buộc Idempotency: Kiểm tra không cho phép tạo trùng lặp nếu Order đã có WO liên kết.
+  * Tự sinh `wo_code` chuẩn bằng RPC `generate_wo_code()` (`WO-YYYY-NNNNNN`).
+  * Tự động giải quyết `product_id`, `design_revision_id`, `company_id`, `deadline` từ `orders` và `order_lines`.
+  * Sau khi tạo WO, tự động gọi ngay `generateJobsForWorkOrder(newWo.wo_id)` để phát hành Jobs & Steps theo 8 loại thiết bị (ADR-002, ADR-003).
+- Cập nhật giao diện `src/app/orders/[id]/_components/WorkOrderLinker.tsx`:
+  * Bổ sung nút **「製造指示作成」** tại Header và Empty state của Tab Lệnh sản xuất.
+  * Đổi đường dẫn router từ `/equipment/jobs/${wo.wo_id}` (sai route) thành `/production/work-orders/${wo.wo_id}` (đúng route chi tiết WO).
+  * Truyền prop `orderStatus` từ `src/app/orders/[id]/page.tsx`.
+- Quality Gate: `npx tsc --noEmit` pass 0 errors; `tests/pricing_engine.test.ts` pass 12/12; `check_translations.mjs` pass 0 missing keys.
 
+### 9.2. Ghi nhận Nợ Kỹ thuật & Mâu thuẫn Cần Xử lý (Technical Debt & Discrepancies)
+1. **Enum DB Chưa Enforce (CHECK constraint):**
+   * Các cột `quotations.status`, `work_orders.wo_status`, `jobs.job_status`, `job_steps.step_status` không có DB CHECK constraint, chỉ được bảo vệ ở tầng TypeScript / Server Action guards. Cần bổ sung migration CHECK constraint khi chuẩn hóa.
+2. **Mâu thuẫn `quotation_type`:**
+   * CHECK constraint thực tế trên DB (Migration `20260821000001_daily_logs_phase_b.sql`):
+     `CHECK (quotation_type IN ('MOLD_NEW', 'MOLD_REMAKE', 'TRAY_REPEAT', 'SERVICE', 'STORAGE_FEE'))`
+   * Trong khi `CreateQuotationModal.tsx` chèn giá trị: `'MOLD' | 'TRAY' | 'SET'`.
+   * Trong `QuotationPDF.tsx`: Điều kiện kích hoạt trang 2 phụ lục: `data.quotation_type === 'TRAY' || data.quotation_type === 'SET' || !data.quotation_type`.
+   * Hiện tại PDF vẫn render được phụ lục nếu `quotation_type` để trống/null (`!data.quotation_type`), nhưng nếu DB lưu `'TRAY_REPEAT'` thì điều kiện `hasTrayCalc` sẽ bị false. Cần migration đồng bộ enum hoặc cập nhật mapper logic.
+3. **Lưu ý Quy trình Làm việc (Workflow & Audit Integrity):**
+   * Tuyệt đối không gán phát biểu cho PE hoặc trích dẫn tài liệu không tồn tại/chưa được kiểm chứng nguồn gốc.
+   * Mọi giải trình kỹ thuật phải căn cứ trực tiếp vào dữ liệu và bằng chứng thực nghiệm (code, Git commits, DB queries, test logs) để đảm bảo tính minh bạch và độ tin cậy tuyệt đối của quy trình audit chéo.
 

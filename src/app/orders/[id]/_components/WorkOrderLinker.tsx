@@ -1,8 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { Link2, Link2Off, Loader2, Search } from 'lucide-react'
-import { linkWorkOrderAction, unlinkWorkOrderAction } from '../actions'
+import { Link2, Link2Off, Loader2, Search, ClipboardList } from 'lucide-react'
+import { linkWorkOrderAction, unlinkWorkOrderAction, createWorkOrderFromOrderAction } from '../actions'
 import { AsyncSearchableSelect } from '@/components/ui/AsyncSearchableSelect'
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
@@ -10,15 +10,34 @@ import Link from 'next/link'
 export function WorkOrderLinker({ 
   orderId, 
   linkedWorkOrders, 
-  suggestedWorkOrders 
+  suggestedWorkOrders,
+  orderStatus
 }: { 
   orderId: string, 
   linkedWorkOrders: any[], 
-  suggestedWorkOrders: any[] 
+  suggestedWorkOrders: any[],
+  orderStatus?: string
 }) {
   const [isProcessing, setIsProcessing] = useState<string | null>(null)
+  const [isCreatingWo, setIsCreatingWo] = useState(false)
   const [manualWoId, setManualWoId] = useState<string | null>(null)
   const supabase = createClient()
+
+  const canCreateWo = (orderStatus === 'CONFIRMED' || orderStatus === 'IN_PRODUCTION') && linkedWorkOrders.length === 0
+
+  const handleCreateWo = async () => {
+    if (!confirm('この受注から製造指示票(Work Order)を発行し、各設備向けJob・工程ステップを自動生成しますか？\n\n(Tự động tạo Lệnh sản xuất và phát hành toàn bộ Jobs & Steps cho đơn hàng này?)')) {
+      return
+    }
+    setIsCreatingWo(true)
+    const res = await createWorkOrderFromOrderAction(orderId)
+    setIsCreatingWo(false)
+    if (!res.success) {
+      alert(`エラー: ${res.error}`)
+    } else {
+      alert(res.message || '製造指示票(WO)と各設備Jobを発行しました。')
+    }
+  }
 
   const handleLink = async (woId: string) => {
     setIsProcessing(woId)
@@ -52,12 +71,61 @@ export function WorkOrderLinker({
       
       {/* ── SECTION A: LINKED WOs ── */}
       <div className="form-section">
-        <div className="form-section-header" style={{ background: 'var(--tint-teal-bg)' }}>
-          <h3 className="form-section-title flex items-center gap-2"><Link2 size={14} /> Đã liên kết ({linkedWorkOrders.length})</h3>
+        <div className="form-section-header" style={{ background: 'var(--tint-teal-bg)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <h3 className="form-section-title flex items-center gap-2">
+            <Link2 size={14} /> Đã liên kết ({linkedWorkOrders.length})
+          </h3>
+          {canCreateWo && (
+            <button
+              type="button"
+              onClick={handleCreateWo}
+              disabled={isCreatingWo}
+              className="btn btn-primary"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                fontSize: 12,
+                fontWeight: 700,
+                padding: '4px 12px',
+                height: 28,
+                backgroundColor: '#059669',
+                borderColor: '#047857',
+              }}
+              title="Tự động tạo Lệnh sản xuất (WO) và phát hành toàn bộ Jobs & Steps gia công"
+            >
+              {isCreatingWo ? <Loader2 size={13} className="animate-spin" /> : <ClipboardList size={13} />}
+              <span>製造指示作成</span>
+            </button>
+          )}
         </div>
         <div className="form-section-body" style={{ padding: 0 }}>
           {linkedWorkOrders.length === 0 ? (
-            <div style={{ padding: 16, textAlign: 'center', color: 'var(--text-muted)' }}>Chưa có lệnh sản xuất nào được liên kết.</div>
+            <div style={{ padding: '24px 16px', textAlign: 'center', color: 'var(--text-muted)' }}>
+              <p style={{ margin: 0, marginBottom: 12, fontSize: 13 }}>Chưa có lệnh sản xuất nào được liên kết với đơn hàng này.</p>
+              {canCreateWo && (
+                <button
+                  type="button"
+                  onClick={handleCreateWo}
+                  disabled={isCreatingWo}
+                  className="btn btn-primary"
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    fontSize: 12,
+                    fontWeight: 700,
+                    padding: '8px 16px',
+                    backgroundColor: '#059669',
+                    borderColor: '#047857',
+                    margin: '0 auto',
+                  }}
+                >
+                  {isCreatingWo ? <Loader2 size={14} className="animate-spin" /> : <ClipboardList size={14} />}
+                  <span>▶ 製造指示作成 (Tạo Lệnh SX & Tự sinh Jobs)</span>
+                </button>
+              )}
+            </div>
           ) : (
             <table className="data-table">
               <thead>
@@ -71,7 +139,7 @@ export function WorkOrderLinker({
               <tbody>
                 {linkedWorkOrders.map(wo => (
                   <tr key={wo.wo_id}>
-                    <td><Link href={`/equipment/jobs/${wo.wo_id}`} className="font-mono text-accent hover:underline font-bold text-[13px]">{wo.wo_code}</Link></td>
+                    <td><Link href={`/production/work-orders/${wo.wo_id}`} className="font-mono text-accent hover:underline font-bold text-[13px]">{wo.wo_code}</Link></td>
                     <td><span className="badge badge--info">{wo.wo_status}</span></td>
                     <td className="font-mono text-[12px]">{wo.created_at ? new Date(wo.created_at).toLocaleDateString('ja-JP') : ''}</td>
                     <td style={{ textAlign: 'center' }}>
@@ -135,7 +203,7 @@ export function WorkOrderLinker({
               <tbody>
                 {suggestedWorkOrders.map(wo => (
                   <tr key={wo.wo_id}>
-                    <td><Link href={`/equipment/jobs/${wo.wo_id}`} className="font-mono text-accent hover:underline font-bold text-[13px]">{wo.wo_code}</Link></td>
+                    <td><Link href={`/production/work-orders/${wo.wo_id}`} className="font-mono text-accent hover:underline font-bold text-[13px]">{wo.wo_code}</Link></td>
                     <td><span className="badge badge--neutral">{wo.wo_status}</span></td>
                     <td className="font-mono text-[12px]">{wo.created_at ? new Date(wo.created_at).toLocaleDateString('ja-JP') : ''}</td>
                     <td style={{ textAlign: 'center' }}>
