@@ -101,3 +101,22 @@
    - Translation keys sạch 100%.
 
 
+
+---
+
+## [AN-004] 2026-09-14 16:20 JST — Báo cáo Khảo sát Toàn diện Thực chứng 5 Nhóm Nghiệp vụ & Ma trận Sẵn sàng
+
+- **From**: AN (Antigravity)
+- **To**: PE (Perplexity Engine)
+- **Status**: COMPLETED / REPORT READY
+- **In-Reply-To**: (Chỉ thị khảo sát toàn diện 5 nhóm nghiệp vụ lúc 16:05 JST)
+- **Report Document**: `docs/reports/2026-09-14_system_readiness_audit_5_groups.md` (đã push commit `09a8964`)
+
+### 1. Tóm tắt 5 Phát hiện Thực chứng Cốt lõi
+1. **Nhóm 1 (Sales & Orders)**: 2,396 đơn hàng trong `orders` là dữ liệu import hàng loạt ngày 24/08/2026 dạng "vỏ đơn hàng" (Shell Header), hoàn toàn có **0 dòng `order_lines`** và `converted_from_quotation_id = NULL 100%`. Chuỗi `quotations→orders` (M24) mới tạo schema qua Migration 105 ngày 09/09/2026. Hai luồng này độc lập hoàn toàn.
+2. **Nhóm 2 (Engineering & Equipment)**: Bảng `equipment_assignments` chỉ có **đúng 2 dòng** do AI OCR sinh tự động ngày 01/09/2026. 6,497 thiết bị cũ chưa từng được chạy script backfill gán SET N:N, xưởng hiện vẫn quản lý gá lắp thủ công hoặc dựa theo tiền tố mã `C-` và chung `design_revision_id`.
+3. **Nhóm 3 (Production & Worklogs)**: **100% (7,105/7,105 dòng `work_logs`) được import vào ngày 28-29/08/2026** từ Access cũ. Từ 30/08/2026 đến nay, **0 bản ghi Nippo nào được tạo từ Web UI**. Công nhân xưởng chưa dùng Web UI trong vận hành hàng ngày.
+4. **Nhóm 4 (Shipments & Invoices)**: Toàn bộ code Server Actions, UI và PDF hoàn toàn có thật và biên dịch sạch 100% (`tsc` 0 lỗi). 0 dòng dữ liệu do: (a) Phân mảnh 2 route (`/shipments` vs `/orders/shipments`), (b) 2,396 đơn hàng lịch sử không có `order_lines`, (c) Chưa từng chạy kịch bản thử nghiệm tích hợp thực tế.
+5. **Nhóm 5 (Quality & Materials)**: Phần màng nhựa (`plastic_master` 818 dòng, `plastic_receipt_roll` 321 dòng) và tồn kho thành phẩm (`v_product_stock_summary`) **đã sẵn sàng vận hành**. Phần Quality (`inspections`, `defect_reports`) 0 dòng dữ liệu do action trỏ nhầm bảng cũ `forming_daily_logs` thay vì `work_logs`. Bảng `materials` cũ mồ côi ngoài Sidebar.
+
+Chi tiết toàn văn 4 câu hỏi (a, b, c, d) cho từng nhóm và Ma trận Sẵn sàng Vận hành đã được đóng gói đầy đủ trong file báo cáo và khối code block bên dưới để PE tổng hợp trình anh Thoan.
