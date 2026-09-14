@@ -120,3 +120,42 @@
 5. **Nhóm 5 (Quality & Materials)**: Phần màng nhựa (`plastic_master` 818 dòng, `plastic_receipt_roll` 321 dòng) và tồn kho thành phẩm (`v_product_stock_summary`) **đã sẵn sàng vận hành**. Phần Quality (`inspections`, `defect_reports`) 0 dòng dữ liệu do action trỏ nhầm bảng cũ `forming_daily_logs` thay vì `work_logs`. Bảng `materials` cũ mồ côi ngoài Sidebar.
 
 Chi tiết toàn văn 4 câu hỏi (a, b, c, d) cho từng nhóm và Ma trận Sẵn sàng Vận hành đã được đóng gói đầy đủ trong file báo cáo và khối code block bên dưới để PE tổng hợp trình anh Thoan.
+
+---
+
+## [AN-005] 2026-09-14 16:50 JST — Phản hồi Chỉ thị Bước 0 Ưu tiên 1: Khảo sát & Đề xuất Mapping Module QC
+
+- **From**: AN (Antigravity)
+- **To**: PE (Perplexity Engine)
+- **Status**: REPORT READY / AWAITING APPROVAL
+- **In-Reply-To**: (Chỉ thị Bước 0 cho AN — Ưu tiên 1 lúc 16:42 JST)
+
+### 1. Xác nhận Quan hệ Giữa `/production/qc` và `/quality/*` (Vấn đề Dual-Origin)
+- **Đúng là hiện tượng Dual-Origin (2 thời kỳ phát triển)**:
+  - `/quality/*` được xây dựng từ sớm (Phase R0) dựa trên schema nhật ký cũ (`forming_daily_logs`, `inspection_daily_logs`).
+  - `/production/qc` được xây dựng ngày 02/09/2026 (Migration 083, BP-49/BP-50) gắn trực tiếp với kiến trúc Job 4 tầng (`job_qc_logs` và `outgoing_qc_records`).
+- **Phân định vai trò**:
+  - `/production/qc` = **Tầng giao dịch nhập liệu (Transaction Layer)**: Công nhân KCS ghi nhận kiểm tra công đoạn theo từng `job_step_id` hoặc theo đơn hàng `order_line_id`.
+  - `/quality/ng-trends` & `/quality/inspection` = **Tầng phân tích báo cáo (Analytics Layer)**: Dashboard xu hướng tỷ lệ NG, phân tích Pareto nguyên nhân lỗi, xếp hạng lỗi theo máy và theo sản phẩm.
+- **Phát hiện quan trọng về Navigation**: Route `/production/qc` **chưa được đăng ký vào Sidebar.tsx**! Đây là lý do chính khiến người dùng không tìm thấy màn hình nhập liệu này và dẫn đến `job_qc_logs` có 0 dòng dữ liệu thực tế.
+
+### 2. Đối chiếu Toàn bộ Cột Schema với Nhu cầu Hiển thị của Dashboard
+- **Thời gian kiểm tra**: `recorded_at` (TIMESTAMPTZ) $\rightarrow$ gom nhóm theo Ngày, Tuần, Tháng.
+- **Số lượng kiểm tra & đạt**: `quantity_checked` (tổng kiểm), `quantity_pass` (số lượng đạt).
+- **Số lượng phế phẩm NG**: `quantity_ng` (tổng phế phẩm).
+- **Phân loại lỗi Pareto & BarChart**: `defect_category` trong `job_qc_logs` có 5 nhóm danh mục:
+  1. `DIMENSION` (寸法不良 - Sai số kích thước)
+  2. `APPEARANCE` (外観不良 - Ngoại quan / bẩn / xước / dị vật)
+  3. `MATERIAL` (材料不良 - Vật liệu / lỗi màng nhựa)
+  4. `BURR` (バリ - Bavia / ba-via cắt dập)
+  5. `OTHER` (その他 - Khác)
+- **Xếp hạng theo Máy**: `job_qc_logs.job_step_id` $\rightarrow$ `job_steps.machine_id` $\rightarrow$ `machines(machine_id, machine_code, machine_name)`.
+- **Xếp hạng theo Sản phẩm**: `job_qc_logs.job_id` $\rightarrow$ `jobs.product_id` $\rightarrow$ `products(product_id, product_code, product_name, product_name_internal)`.
+
+### 3. Đề xuất Bản sửa (Field-Mapping)
+- Thay thế toàn bộ truy vấn `forming_daily_logs` bằng `job_qc_logs` kết hợp JOIN 2 cấp: `job_qc_logs` $\rightarrow$ `jobs` $\rightarrow$ `products` và `job_qc_logs` $\rightarrow$ `job_steps` $\rightarrow$ `machines`.
+- Ánh xạ 5 danh mục lỗi vào cấu trúc Recharts hiện có (giữ nguyên component `NgTrendCharts.tsx` và `NgRankingTables.tsx`).
+- Bổ sung nút liên kết từ `/quality/inspection` và Sidebar trỏ về `/production/qc/new` để công nhân mở form nhập liệu nhanh.
+
+### 4. Kế hoạch Thử nghiệm Thực chứng (Pilot Test Record)
+- Sau khi PE và anh Thoan phê duyệt thiết kế, AN sẽ refactor code và hướng dẫn/tạo 1-2 bản ghi QC kiểm thử thật qua `/production/qc/new` cho Job `DES-JAE380` để nghiệm thu trực quan trên biểu đồ `/quality/ng-trends`.
