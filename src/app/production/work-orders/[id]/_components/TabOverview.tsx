@@ -3,7 +3,8 @@
 import React from 'react'
 import Link from 'next/link'
 import { Calendar, User, Package, FileText, ExternalLink } from 'lucide-react'
-import type { WOEquipmentSetResult } from '../../types'
+import { WorkOrderProgressCockpit } from './WorkOrderProgressCockpit'
+import type { WOEquipmentSetResult, WorkOrderProgress } from '../../types'
 
 interface TabOverviewProps {
   wo: {
@@ -19,18 +20,30 @@ interface TabOverviewProps {
     companies?: { company_name: string; company_code: string; company_id: string } | null
     products?: { product_id: string; product_code: string; product_name: string; product_name_internal?: string } | null
     responsible?: { full_name: string; employee_id: string } | null
+    orders?: { order_id: string; order_no: string; order_status?: string } | null
   }
   equipmentSet?: WOEquipmentSetResult | null
+  progress?: WorkOrderProgress | null
 }
 
-export function TabOverview({ wo, equipmentSet }: TabOverviewProps) {
+export function TabOverview({ wo, equipmentSet, progress }: TabOverviewProps) {
   const comp = wo.companies
   const prod = wo.products
   const resp = wo.responsible
+  const ord = wo.orders
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       
+      {/* ── Section 0: 4-Tier Progress & Hours Cockpit (M28-B) ── */}
+      {progress && (
+        <WorkOrderProgressCockpit
+          progress={progress}
+          deadline={wo.deadline}
+          woStatus={wo.wo_status}
+        />
+      )}
+
       {/* ── Section 1: Basic WO Info ── */}
       <div className="card-flat" style={{ padding: '14px 18px', backgroundColor: 'var(--bg-surface)' }}>
         <div
@@ -73,6 +86,33 @@ export function TabOverview({ wo, equipmentSet }: TabOverviewProps) {
                   style={{ color: 'var(--accent)', textDecoration: 'none' }}
                 >
                   {comp.company_name}
+                </Link>
+              ) : (
+                '—'
+              )}
+            </span>
+          </div>
+
+          {/* Linked Order Row (M28-B) */}
+          <div style={{ display: 'flex', alignItems: 'flex-start' }}>
+            <span style={{ fontSize: 11, color: '#64748B', minWidth: 90, flexShrink: 0 }}>関連受注 (Đơn hàng)</span>
+            <span style={{ fontSize: 13, fontWeight: 700, color: '#0F172A' }}>
+              {ord?.order_id ? (
+                <Link
+                  href={`/orders/${ord.order_id}`}
+                  style={{
+                    color: 'var(--accent)',
+                    textDecoration: 'none',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 4,
+                    fontFamily: 'monospace',
+                  }}
+                  title="受注伝票へ移動"
+                >
+                  <FileText size={13} />
+                  <span>{ord.order_no}</span>
+                  <ExternalLink size={11} />
                 </Link>
               ) : (
                 '—'

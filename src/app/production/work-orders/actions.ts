@@ -7,7 +7,8 @@ import {
   WorkOrderListItem, 
   WorkOrderKpis, 
   WOStatus,
-  WorkOrderWorklogItem
+  WorkOrderWorklogItem,
+  WorkOrderProgress
 } from './types'
 
 export const JOB_STEP_TEMPLATES: Record<string, string[]> = {
@@ -25,7 +26,7 @@ const VALID_EQUIPMENT_TYPES = [
   'MOLD', 'CUTTER_INLINE', 'CUTTER_SEPARATE', 'PRESSURE_BASE', 'WATER_BASE', 'STACKING', 'PLUG', 'FRAME'
 ]
 
-// 1. GET WORK ORDERS (LIST + KPIS + SET SUMMARY)
+// 1. GET WORK ORDERS (LIST + KPIS + SET SUMMARY + PROGRESS & HOURS)
 export async function getWorkOrders(params: {
   search?: string
   status?: string
@@ -76,8 +77,10 @@ export async function getWorkOrders(params: {
         priority,
         company_id,
         product_id,
+        order_id,
         companies:companies!work_orders_company_id_fkey (company_name),
-        products:products!work_orders_product_id_fkey (product_code, product_name)
+        products:products!work_orders_product_id_fkey (product_code, product_name),
+        orders:orders!work_orders_order_id_fkey (order_id, order_no)
       `, { count: 'exact' })
       .order('created_at', { ascending: false })
       .range(from, to)
@@ -122,11 +125,32 @@ export async function getWorkOrders(params: {
       }
     }
 
+    // 1.4 Fetch Progress & Hours for these WOs from View v_work_order_progress (M28-B)
+    const progressMap: Record<string, Partial<WorkOrderProgress>> = {}
+    if (woIds.length > 0) {
+      try {
+        const { data: progressRows } = await (supabase as any)
+          .from('v_work_order_progress')
+          .select('*')
+          .in('wo_id', woIds)
+
+        if (progressRows) {
+          for (const row of progressRows) {
+            progressMap[row.wo_id] = row
+          }
+        }
+      } catch (e) {
+        console.warn('v_work_order_progress query warning:', e)
+      }
+    }
+
     const items: WorkOrderListItem[] = woList.map(w => {
       const comp = Array.isArray(w.companies) ? w.companies[0] : w.companies
       const prod = Array.isArray(w.products) ? w.products[0] : w.products
+      const ord = Array.isArray(w.orders) ? w.orders[0] : w.orders
       const setStats = setSummaryMap[w.wo_id] || { total: 0, ready: 0 }
-      const isOverdue = !!(w.deadline && w.deadline < nowIso && !['COMPLETED', 'CANCELLED'].includes(w.wo_status))
+      const prog = progressMap[w.wo_id] || {}
+      const isOverdue = prog.is_overdue ?? !!(w.deadline && w.deadline < nowIso && !['COMPLETED', 'CANCELLED'].includes(w.wo_status))
 
       return {
         wo_id: w.wo_id,
@@ -142,10 +166,21 @@ export async function getWorkOrders(params: {
         product_id: w.product_id,
         product_code: prod?.product_code || null,
         product_name: prod?.product_name || null,
+        order_id: w.order_id || ord?.order_id || null,
+        order_no: ord?.order_no || prog?.order_no || null,
         total_set_items: setStats.total,
         ready_set_items: setStats.ready,
         is_set_ready: setStats.total > 0 && setStats.ready === setStats.total,
-        is_overdue: isOverdue
+        is_overdue: isOverdue,
+        // M28-B Progress & Hours
+        progress_percent: prog.progress_percent ?? (w.wo_status === 'COMPLETED' ? 100 : 0),
+        sum_planned_hours: Number(prog.sum_planned_hours || 0),
+        sum_actual_hours: Number(prog.sum_actual_hours || 0),
+        variance_hours: Number(prog.variance_hours || 0),
+        total_jobs: prog.total_jobs || 0,
+        completed_jobs: prog.completed_jobs || 0,
+        total_steps: prog.total_steps || 0,
+        completed_steps: prog.completed_steps || 0
       }
     })
 
@@ -160,7 +195,7 @@ export async function getWorkOrders(params: {
   }
 }
 
-// 2. GET WORK ORDER DETAIL
+// 2. GET WORK ORDER DETAIL (JOIN ORDERS VIA work_orders.order_id)
 export async function getWorkOrderDetail(woId: string) {
   const supabase = await createClient()
 
@@ -174,11 +209,12 @@ export async function getWorkOrderDetail(woId: string) {
         revision_id, design_code, revision_number, plastic_type_designed, cutline_length, cutline_width, cav_type_id
       ),
       responsible:employees!work_orders_responsible_id_fkey (employee_id, employee_name),
+      orders:orders!work_orders_order_id_fkey (order_id, order_no, order_status),
       jobs (
         job_id, job_code, job_name, job_category, job_status, equipment_id, start_date, deadline,
         responsible:employees!jobs_responsible_id_fkey (employee_name),
         equipment (equipment_type, display_name, equipment_code),
-        job_steps (step_id, step_name, step_status, step_no)
+        job_steps (step_id, step_name, step_status, step_no, planned_hours, actual_hours)
       )
     `)
     .eq('wo_id', woId)
@@ -189,6 +225,23 @@ export async function getWorkOrderDetail(woId: string) {
   }
 
   return { data }
+}
+
+// 2.1 GET WORK ORDER PROGRESS (FROM VIEW v_work_order_progress)
+export async function getWorkOrderProgress(woId: string): Promise<WorkOrderProgress | null> {
+  try {
+    const supabase = await createClient()
+    const { data, error } = await (supabase as any)
+      .from('v_work_order_progress')
+      .select('*')
+      .eq('wo_id', woId)
+      .single()
+
+    if (error || !data) return null
+    return data as WorkOrderProgress
+  } catch {
+    return null
+  }
 }
 
 // 3. GET WORK ORDER EQUIPMENT SET (RPC CALL WITH STRICT TYPES)

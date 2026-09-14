@@ -1,7 +1,7 @@
 # 📒 SỔ CÁI DỰ ÁN — YSDMS NextGen
-> Cập nhật lần cuối: 2026-09-11 (Đóng Milestone 28 — Giai đoạn A: DB Enum Integrity & Agent Mailbox Setup)
-> Phiên bản Schema: V5 / Unified Equipment Architecture + Migrations 100-105 + Migration M28A (v2.1)
-> Trạng thái: Milestone 28A CLOSED ✅ (Commit `dccda76`) | Mở Milestone 28B: Work Order Cockpit
+> Cập nhật lần cuối: 2026-09-14 (Hoàn tất Milestone 28 — Giai đoạn B: 4-Tier Progress & Work Order Cockpit)
+> Phiên bản Schema: V5 / Unified Equipment Architecture + Migrations 100-105 + Migration M28A (v2.1) + Migrations M28B (View + Security Invoker)
+> Trạng thái: Milestone 28B READY TO CLOSE ✅ | Chuẩn bị Milestone 28C
 
 
 ---
@@ -1390,6 +1390,19 @@ ebaseline...).
   - Triển khai hạ tầng Agent Mailbox tại `docs/mailbox/` (`README.md`, `OUTBOX_PE.md`, `OUTBOX_AN.md`) theo mô hình bất đối xứng Single-Writer.
   - Quality Gate: `npx tsc --noEmit` đạt 0 errors.
   - Commit SHA: `dccda764f1a3cb47e21da68e57ef4a96c0fa34ce` (`dccda76`).
+
+- **[2026-09-14] Milestone 28 — Giai đoạn B: Work Order Cockpit & 4-Tier Progress (COMPLETED ✅)**
+  - Xây dựng View SQL `v_work_order_progress` 4 tầng (`work_orders -> jobs -> job_steps -> work_logs`) với 2 CTE gom nhóm độc lập triệt tiêu bẫy tích Descartes.
+  - Vá bảo mật View `v_work_order_progress`: Thiết lập `security_invoker = true` và `REVOKE anon` (loại bỏ cảnh báo `security_definer_view` từ Supabase Security Advisor).
+  - Hai migration files:
+    * `supabase/migrations/20260911000002_m28b_work_order_progress_view.sql`
+    * `supabase/migrations/20260911000003_m28b_fix_view_security_invoker.sql`
+  - Backend actions & types (`types.ts`, `actions.ts`): bổ sung `WorkOrderProgress`, fetch view tiến độ, liên kết 2 chiều với bảng `orders`.
+  - UI Table (`WorkOrderTable.tsx`): 3 cột mới (Tiến độ %, Giờ công KH/thực tế, Mã đơn hàng liên kết).
+  - UI Cockpit (`WorkOrderProgressCockpit.tsx`, `TabOverview.tsx`, `WorkOrderDetailHeader.tsx`): Cảnh báo trễ hạn (`is_overdue`), 4 Card trực quan theo từng tầng, bảng so sánh giờ công và độ lệch variance.
+  - Đa ngôn ngữ: 12 keys i18n trong `messages/ja.json` & `messages/vi.json`.
+  - Quality Gate: `npx tsc --noEmit` đạt 0 errors.
+
 
 
 

@@ -1,7 +1,7 @@
 export const dynamic = 'force-dynamic'
 
 import { notFound } from 'next/navigation'
-import { getWorkOrderDetail, getWorkOrderEquipmentSet, getWorkOrderWorklogs } from '../actions'
+import { getWorkOrderDetail, getWorkOrderEquipmentSet, getWorkOrderWorklogs, getWorkOrderProgress } from '../actions'
 import { WorkOrderDetailContent } from './_components/WorkOrderDetailContent'
 
 export default async function WorkOrderDetailPage(props: {
@@ -14,7 +14,10 @@ export default async function WorkOrderDetailPage(props: {
     notFound()
   }
 
-  const { data: equipmentSet } = await getWorkOrderEquipmentSet(params.id)
+  const [{ data: equipmentSet }, progress] = await Promise.all([
+    getWorkOrderEquipmentSet(params.id),
+    getWorkOrderProgress(params.id),
+  ])
 
   const jobIds = (wo.jobs || []).map((j: any) => j.job_id)
   const worklogs = jobIds.length > 0 ? await getWorkOrderWorklogs(jobIds) : []
@@ -24,6 +27,7 @@ export default async function WorkOrderDetailPage(props: {
       wo={wo}
       equipmentSet={equipmentSet}
       worklogs={worklogs}
+      progress={progress}
     />
   )
 }

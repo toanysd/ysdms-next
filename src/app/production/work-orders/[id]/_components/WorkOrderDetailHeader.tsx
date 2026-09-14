@@ -11,7 +11,8 @@ import {
   Play, 
   CheckCircle2, 
   AlertTriangle,
-  X
+  X,
+  FileText
 } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { updateWorkOrderStatus } from '../../actions'
@@ -22,6 +23,7 @@ interface WorkOrderDetailHeaderProps {
   woCode: string
   status: WOStatus
   equipmentSet?: WOEquipmentSetResult | null
+  order?: { order_id: string; order_no: string; order_status?: string } | null
 }
 
 export function WorkOrderDetailHeader({
@@ -29,6 +31,7 @@ export function WorkOrderDetailHeader({
   woCode,
   status,
   equipmentSet,
+  order,
 }: WorkOrderDetailHeaderProps) {
   const t = useTranslations('WorkOrders')
   const router = useRouter()
@@ -160,6 +163,29 @@ export function WorkOrderDetailHeader({
               {woCode}
             </h1>
             {getStatusBadge()}
+            {order?.order_id && (
+              <Link
+                href={`/orders/${order.order_id}`}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 4,
+                  padding: '2px 8px',
+                  borderRadius: 12,
+                  fontSize: 11,
+                  fontWeight: 700,
+                  fontFamily: 'monospace',
+                  backgroundColor: '#F0FDFA',
+                  color: 'var(--accent)',
+                  border: '1px solid #CCFBF1',
+                  textDecoration: 'none',
+                }}
+                title="受注伝票を表示"
+              >
+                <FileText size={11} />
+                <span>受注: {order.order_no}</span>
+              </Link>
+            )}
           </div>
         </div>
 

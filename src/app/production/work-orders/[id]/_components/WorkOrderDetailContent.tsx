@@ -10,18 +10,20 @@ import { TabEquipmentSet } from './TabEquipmentSet'
 import { TabJobs } from './TabJobs'
 import { TabWorklogs } from './TabWorklogs'
 import { TabShipment } from './TabShipment'
-import type { WOEquipmentSetResult, WorkOrderWorklogItem, WOStatus } from '../../types'
+import type { WOEquipmentSetResult, WorkOrderWorklogItem, WOStatus, WorkOrderProgress } from '../../types'
 
 interface WorkOrderDetailContentProps {
   wo: any
   equipmentSet: WOEquipmentSetResult | null
   worklogs: WorkOrderWorklogItem[]
+  progress?: WorkOrderProgress | null
 }
 
 export function WorkOrderDetailContent({
   wo,
   equipmentSet,
   worklogs,
+  progress,
 }: WorkOrderDetailContentProps) {
   const t = useTranslations('WorkOrders')
   const searchParams = useSearchParams()
@@ -59,6 +61,7 @@ export function WorkOrderDetailContent({
         woCode={wo.wo_code}
         status={wo.wo_status as WOStatus}
         equipmentSet={equipmentSet}
+        order={wo.orders}
       />
 
       {/* ── 2. Tab Navigation (.tab-nav) ── */}
@@ -225,7 +228,7 @@ export function WorkOrderDetailContent({
         )}
 
         {activeTab === 'overview' && (
-          <TabOverview wo={wo} equipmentSet={equipmentSet} />
+          <TabOverview wo={wo} equipmentSet={equipmentSet} progress={progress} />
         )}
 
         {activeTab === 'jobs' && (

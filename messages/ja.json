@@ -202,7 +202,19 @@
     "noShipments": "出荷履歴がありません",
     "viewPdfBtn": "納品書PDF",
     "pdfPendingM21B": "M21-B 準備中",
-    "notes": "備考"
+    "notes": "備考",
+    "colProgress": "進捗率",
+    "colHours": "工数(予/実)",
+    "colLinkedOrder": "関連受注",
+    "tierProgressTitle": "製造指示 4層進捗コックピット",
+    "tier1Label": "第1層: 製造指示 (WO)",
+    "tier2Label": "第2層: 設備別Job (Jobs)",
+    "tier3Label": "第3層: 工程ステップ (Steps)",
+    "tier4Label": "第4層: 作業実績工数 (Logs)",
+    "plannedHoursLabel": "計画工数",
+    "actualHoursLabel": "実績工数",
+    "varianceHoursLabel": "工数差異",
+    "overdueWarning": "納期遅延警告"
   },
   "TransportModule": {
     "stepEmployee": "担当者を選択",

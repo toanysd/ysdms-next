@@ -74,6 +74,31 @@ export interface WOEquipmentSetResult {
   summary: WOSetSummary
 }
 
+export interface WorkOrderProgress {
+  wo_id: string
+  wo_code: string
+  wo_name: string
+  wo_type: string
+  wo_status: WOStatus
+  start_date: string | null
+  deadline: string | null
+  completed_at: string | null
+  priority: number
+  company_id: string | null
+  product_id: string | null
+  order_id: string | null
+  order_no?: string | null
+  total_jobs: number
+  completed_jobs: number
+  total_steps: number
+  completed_steps: number
+  sum_planned_hours: number
+  sum_actual_hours: number
+  variance_hours: number
+  progress_percent: number
+  is_overdue: boolean
+}
+
 export interface WorkOrderListItem {
   wo_id: string
   wo_code: string
@@ -88,10 +113,21 @@ export interface WorkOrderListItem {
   product_id: string | null
   product_code: string | null
   product_name: string | null
+  order_id: string | null
+  order_no: string | null
   total_set_items: number
   ready_set_items: number
   is_set_ready: boolean
   is_overdue: boolean
+  // M28-B: Fields from v_work_order_progress
+  progress_percent: number
+  sum_planned_hours: number
+  sum_actual_hours: number
+  variance_hours: number
+  total_jobs: number
+  completed_jobs: number
+  total_steps: number
+  completed_steps: number
 }
 
 export interface WorkOrderKpis {

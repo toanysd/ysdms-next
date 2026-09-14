@@ -202,7 +202,19 @@
     "noShipments": "Chưa có lịch sử xuất hàng",
     "viewPdfBtn": "Phiếu giao PDF",
     "pdfPendingM21B": "M21-B Đang chuẩn bị",
-    "notes": "Ghi chú"
+    "notes": "Ghi chú",
+    "colProgress": "Tiến độ",
+    "colHours": "Giờ công (KH/TT)",
+    "colLinkedOrder": "Đơn hàng",
+    "tierProgressTitle": "Cockpit Tiến độ Chỉ thị 4 tầng",
+    "tier1Label": "Tầng 1: Chỉ thị sản xuất (WO)",
+    "tier2Label": "Tầng 2: Job theo thiết bị",
+    "tier3Label": "Tầng 3: Bước công đoạn (Steps)",
+    "tier4Label": "Tầng 4: Nhật ký giờ công (Logs)",
+    "plannedHoursLabel": "Giờ kế hoạch",
+    "actualHoursLabel": "Giờ thực tế",
+    "varianceHoursLabel": "Chênh lệch giờ",
+    "overdueWarning": "Cảnh báo quá hạn"
   },
   "TransportModule": {
     "stepEmployee": "Chọn nhân viên",
