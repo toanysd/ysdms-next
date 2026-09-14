@@ -73,15 +73,49 @@ export interface MachineOption {
   machine_name: string;
 }
 
-const DEFECT_KEYS = [
-  { key: 'qty_ng_a', nameKey: 'groupA' },
-  { key: 'qty_ng_b', nameKey: 'groupB' },
-  { key: 'qty_ng_c', nameKey: 'groupC' },
-  { key: 'qty_ng_d', nameKey: 'groupD' },
-  { key: 'qty_ng_e', nameKey: 'groupE' },
-  { key: 'qty_ng_f', nameKey: 'groupF' },
-  { key: 'qty_ng_g', nameKey: 'groupG' },
+/**
+ * Quy ước ánh xạ 5 nhóm lỗi từ bảng SSOT `job_qc_logs.defect_category` vào Recharts series (`qty_ng_a..g`):
+ * -----------------------------------------------------------------------------------------------------
+ * - qty_ng_a: DIMENSION  (寸法不良 - Sai kích thước / dung sai)
+ * - qty_ng_b: BURR       (バリ - Bavia, ba via cắt)
+ * - qty_ng_c: MATERIAL   (材料不良 - Lỗi nguyên vật liệu / biến dạng phôi)
+ * - qty_ng_d: APPEARANCE (外観不良 - Ngoại quan / trầy xước / vết bẩn)
+ * - qty_ng_e: OTHER      (その他 - Lỗi khác / chưa phân nhóm)
+ * - qty_ng_f: UNASSIGNED (0 - Dự phòng)
+ * - qty_ng_g: UNASSIGNED (0 - Dự phòng)
+ * -----------------------------------------------------------------------------------------------------
+ * Nguồn dữ liệu: Bảng `job_qc_logs` (Migration 083, BP-49), ghi nhận qua UI `/production/qc/new`.
+ */
+export const DEFECT_KEYS = [
+  { key: 'qty_ng_a', nameKey: 'groupA' }, // DIMENSION (寸法不良)
+  { key: 'qty_ng_b', nameKey: 'groupB' }, // BURR (バリ)
+  { key: 'qty_ng_c', nameKey: 'groupC' }, // MATERIAL (材料不良)
+  { key: 'qty_ng_d', nameKey: 'groupD' }, // APPEARANCE (外観不良)
+  { key: 'qty_ng_e', nameKey: 'groupE' }, // OTHER (その他)
 ] as const;
+
+/**
+ * Helper ánh xạ defect_category text (từ job_qc_logs) sang series key tương ứng
+ */
+export function mapDefectToGroupKey(
+  category: string | null | undefined
+): 'qty_ng_a' | 'qty_ng_b' | 'qty_ng_c' | 'qty_ng_d' | 'qty_ng_e' {
+  if (!category) return 'qty_ng_e';
+  const norm = category.toUpperCase().trim();
+  switch (norm) {
+    case 'DIMENSION':
+      return 'qty_ng_a';
+    case 'BURR':
+      return 'qty_ng_b';
+    case 'MATERIAL':
+      return 'qty_ng_c';
+    case 'APPEARANCE':
+      return 'qty_ng_d';
+    case 'OTHER':
+    default:
+      return 'qty_ng_e';
+  }
+}
 
 /**
  * Fetch all active thermoforming machines for the filter dropdown
@@ -102,34 +136,44 @@ export async function getActiveMachines(): Promise<MachineOption[]> {
 }
 
 /**
- * Common fetcher for forming_daily_logs joined with production_schedules & products
+ * Common fetcher for job_qc_logs (SSOT for In-Process QC)
+ * Joined with jobs -> products and job_steps -> machines
  */
-async function fetchRawFormingLogs(dateFrom: string, dateTo: string) {
+async function fetchRawJobQcLogs(dateFrom: string, dateTo: string) {
   const supabase = await createClient();
 
-  const { data, error } = await supabase
-    .from('forming_daily_logs')
+  // Normalize dates to ISO range for TIMESTAMPTZ comparison
+  const startIso = dateFrom.includes('T') ? dateFrom : `${dateFrom}T00:00:00.000Z`;
+  const endIso = dateTo.includes('T') ? dateTo : `${dateTo}T23:59:59.999Z`;
+
+  const { data, error } = await (supabase as any)
+    .from('job_qc_logs')
     .select(`
-      log_id,
-      log_date,
-      qty_ok,
-      qty_ng_a,
-      qty_ng_b,
-      qty_ng_c,
-      qty_ng_d,
-      qty_ng_e,
-      qty_ng_f,
-      qty_ng_g,
-      product_id,
-      schedule_id,
-      products (
+      qc_log_id,
+      recorded_at,
+      quantity_checked,
+      quantity_pass,
+      quantity_ng,
+      defect_category,
+      defect_notes,
+      job_id,
+      job_step_id,
+      jobs (
+        job_id,
+        job_code,
+        job_name,
         product_id,
-        product_code,
-        product_name_internal,
-        product_name
+        products!jobs_product_id_fkey (
+          product_id,
+          product_code,
+          product_name_internal,
+          product_name
+        )
       ),
-      production_schedules!forming_daily_logs_schedule_id_fkey (
-        schedule_id,
+      job_steps (
+        step_id,
+        step_no,
+        step_name,
         machine_id,
         machines (
           machine_id,
@@ -138,12 +182,12 @@ async function fetchRawFormingLogs(dateFrom: string, dateTo: string) {
         )
       )
     `)
-    .gte('log_date', dateFrom)
-    .lte('log_date', dateTo)
-    .order('log_date', { ascending: true });
+    .gte('recorded_at', startIso)
+    .lte('recorded_at', endIso)
+    .order('recorded_at', { ascending: true });
 
   if (error) {
-    console.error('Error fetching forming daily logs:', error);
+    console.error('Error fetching job_qc_logs:', error);
     return [];
   }
 
@@ -159,11 +203,15 @@ export async function getNgTrendTimeSeries(
   machineId?: string,
   groupBy: 'day' | 'week' | 'month' = 'day'
 ): Promise<TimeSeriesPoint[]> {
-  const rawLogs = await fetchRawFormingLogs(dateFrom, dateTo);
+  const rawLogs = await fetchRawJobQcLogs(dateFrom, dateTo);
 
   // Filter by machine if provided
   const logs = machineId
-    ? rawLogs.filter((l) => (l.production_schedules as any)?.machine_id === machineId)
+    ? rawLogs.filter(
+        (l: any) =>
+          l.job_steps?.machine_id === machineId ||
+          l.job_steps?.machines?.machine_id === machineId
+      )
     : rawLogs;
 
   const grouped = new Map<
@@ -184,14 +232,14 @@ export async function getNgTrendTimeSeries(
   >();
 
   for (const log of logs) {
-    const logDate = log.log_date;
-    if (!logDate) continue;
+    const rawDate = log.recorded_at ? String(log.recorded_at).split('T')[0] : '';
+    if (!rawDate) continue;
 
-    let periodKey = logDate;
-    let display = logDate;
+    let periodKey = rawDate;
+    let display = rawDate;
 
     try {
-      const parsedDate = parseISO(logDate);
+      const parsedDate = parseISO(rawDate);
       if (groupBy === 'week') {
         const start = startOfWeek(parsedDate, { weekStartsOn: 1 });
         periodKey = format(start, 'yyyy-MM-dd');
@@ -201,8 +249,8 @@ export async function getNgTrendTimeSeries(
         display = format(parsedDate, 'yyyy年MM月');
       }
     } catch {
-      periodKey = logDate;
-      display = logDate;
+      periodKey = rawDate;
+      display = rawDate;
     }
 
     if (!grouped.has(periodKey)) {
@@ -222,32 +270,24 @@ export async function getNgTrendTimeSeries(
     }
 
     const bucket = grouped.get(periodKey)!;
-    bucket.totalOk += log.qty_ok || 0;
-    bucket.qty_ng_a += log.qty_ng_a || 0;
-    bucket.qty_ng_b += log.qty_ng_b || 0;
-    bucket.qty_ng_c += log.qty_ng_c || 0;
-    bucket.qty_ng_d += log.qty_ng_d || 0;
-    bucket.qty_ng_e += log.qty_ng_e || 0;
-    bucket.qty_ng_f += log.qty_ng_f || 0;
-    bucket.qty_ng_g += log.qty_ng_g || 0;
+    const pass = log.quantity_pass || 0;
+    const ng = log.quantity_ng || 0;
 
-    const rowNg =
-      (log.qty_ng_a || 0) +
-      (log.qty_ng_b || 0) +
-      (log.qty_ng_c || 0) +
-      (log.qty_ng_d || 0) +
-      (log.qty_ng_e || 0) +
-      (log.qty_ng_f || 0) +
-      (log.qty_ng_g || 0);
+    bucket.totalOk += pass;
 
-    const mCode = (log.production_schedules as any)?.machines?.machine_code;
+    if (ng > 0) {
+      const groupKey = mapDefectToGroupKey(log.defect_category);
+      bucket[groupKey] += ng;
+    }
+
+    const mCode = log.job_steps?.machines?.machine_code;
     if (mCode) {
       if (!bucket.machineStats.has(mCode)) {
         bucket.machineStats.set(mCode, { ok: 0, ng: 0 });
       }
       const ms = bucket.machineStats.get(mCode)!;
-      ms.ok += log.qty_ok || 0;
-      ms.ng += rowNg;
+      ms.ok += pass;
+      ms.ng += ng;
     }
   }
 
@@ -299,9 +339,13 @@ export async function getNgGroupBreakdown(
   dateTo: string,
   machineId?: string
 ): Promise<{ summary: NgTrendKpiSummary; groupTotals: Record<string, number> }> {
-  const rawLogs = await fetchRawFormingLogs(dateFrom, dateTo);
+  const rawLogs = await fetchRawJobQcLogs(dateFrom, dateTo);
   const logs = machineId
-    ? rawLogs.filter((l) => (l.production_schedules as any)?.machine_id === machineId)
+    ? rawLogs.filter(
+        (l: any) =>
+          l.job_steps?.machine_id === machineId ||
+          l.job_steps?.machines?.machine_id === machineId
+      )
     : rawLogs;
 
   let totalOk = 0;
@@ -316,14 +360,14 @@ export async function getNgGroupBreakdown(
   };
 
   for (const log of logs) {
-    totalOk += log.qty_ok || 0;
-    groupTotals.qty_ng_a += log.qty_ng_a || 0;
-    groupTotals.qty_ng_b += log.qty_ng_b || 0;
-    groupTotals.qty_ng_c += log.qty_ng_c || 0;
-    groupTotals.qty_ng_d += log.qty_ng_d || 0;
-    groupTotals.qty_ng_e += log.qty_ng_e || 0;
-    groupTotals.qty_ng_f += log.qty_ng_f || 0;
-    groupTotals.qty_ng_g += log.qty_ng_g || 0;
+    const pass = log.quantity_pass || 0;
+    const ng = log.quantity_ng || 0;
+    totalOk += pass;
+
+    if (ng > 0) {
+      const groupKey = mapDefectToGroupKey(log.defect_category);
+      groupTotals[groupKey] += ng;
+    }
   }
 
   const totalNg = Object.values(groupTotals).reduce((a, b) => a + b, 0);
@@ -387,7 +431,7 @@ export async function getMachineNgRanking(
   dateTo: string,
   thresholdPct: number = 3.0
 ): Promise<MachineNgRankingItem[]> {
-  const logs = await fetchRawFormingLogs(dateFrom, dateTo);
+  const logs = await fetchRawJobQcLogs(dateFrom, dateTo);
 
   const machineMap = new Map<
     string,
@@ -401,8 +445,8 @@ export async function getMachineNgRanking(
   >();
 
   for (const log of logs) {
-    const machine = (log.production_schedules as any)?.machines;
-    const machineId = machine?.machine_id || (log.production_schedules as any)?.machine_id || 'UNKNOWN';
+    const machine = log.job_steps?.machines;
+    const machineId = machine?.machine_id || log.job_steps?.machine_id || 'UNKNOWN';
     const machineCode = machine?.machine_code || 'Chưa gán máy';
     const machineName = machine?.machine_name || '';
 
@@ -417,16 +461,8 @@ export async function getMachineNgRanking(
     }
 
     const item = machineMap.get(machineId)!;
-    item.totalOk += log.qty_ok || 0;
-    const rowNg =
-      (log.qty_ng_a || 0) +
-      (log.qty_ng_b || 0) +
-      (log.qty_ng_c || 0) +
-      (log.qty_ng_d || 0) +
-      (log.qty_ng_e || 0) +
-      (log.qty_ng_f || 0) +
-      (log.qty_ng_g || 0);
-    item.totalNg += rowNg;
+    item.totalOk += log.quantity_pass || 0;
+    item.totalNg += log.quantity_ng || 0;
   }
 
   const rankingList: MachineNgRankingItem[] = [];
@@ -462,7 +498,7 @@ export async function getProductNgRanking(
   dateFrom: string,
   dateTo: string
 ): Promise<ProductNgRankingItem[]> {
-  const logs = await fetchRawFormingLogs(dateFrom, dateTo);
+  const logs = await fetchRawJobQcLogs(dateFrom, dateTo);
 
   const productMap = new Map<
     string,
@@ -476,10 +512,11 @@ export async function getProductNgRanking(
   >();
 
   for (const log of logs) {
-    const p = log.products as any;
-    const productId = log.product_id || p?.product_id || 'UNKNOWN';
-    const productCode = p?.product_code || '—';
-    const productName = p?.product_name_internal || p?.product_name || '—';
+    const p = log.jobs?.products;
+    const productId = log.jobs?.product_id || p?.product_id || log.job_id || 'UNKNOWN';
+    const productCode = p?.product_code || log.jobs?.job_code || '—';
+    const productName =
+      p?.product_name_internal || p?.product_name || log.jobs?.job_name || '—';
 
     if (!productMap.has(productId)) {
       productMap.set(productId, {
@@ -492,16 +529,8 @@ export async function getProductNgRanking(
     }
 
     const item = productMap.get(productId)!;
-    item.totalOk += log.qty_ok || 0;
-    const rowNg =
-      (log.qty_ng_a || 0) +
-      (log.qty_ng_b || 0) +
-      (log.qty_ng_c || 0) +
-      (log.qty_ng_d || 0) +
-      (log.qty_ng_e || 0) +
-      (log.qty_ng_f || 0) +
-      (log.qty_ng_g || 0);
-    item.totalNg += rowNg;
+    item.totalOk += log.quantity_pass || 0;
+    item.totalNg += log.quantity_ng || 0;
   }
 
   const rankingList: ProductNgRankingItem[] = [];

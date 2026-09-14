@@ -9,7 +9,7 @@ import {
   LayoutDashboard, Settings, CalendarRange, GanttChart, ClipboardList, Scissors,
   MapPin, ArrowLeftRight, Archive, ScanLine, Wrench,
   Columns3, Factory, Server,
-  TrendingUp, ShieldCheck, AlertTriangle,
+  TrendingUp, ShieldCheck, AlertTriangle, ListChecks,
   Package,
   Database, Pin, ChevronRight
 } from 'lucide-react'
@@ -93,6 +93,7 @@ const NAV_SECTIONS: NavSection[] = [
   {
     id: 'quality', icon: ShieldCheck, tKey: 'sections.quality', color: '#EF4444',
     items: [
+      { href: '/production/qc', icon: ListChecks, tKey: 'items.inProcessQc' },
       { href: '/quality/ng-trends', icon: TrendingUp, tKey: 'items.ngTrends' },
       { href: '/quality/inspection', icon: ScanLine, tKey: 'items.inspections' },
       { href: '/quality/lot-inspections', icon: ShieldCheck, tKey: 'items.lotInspections' },

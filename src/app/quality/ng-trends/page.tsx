@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { TrendingUp, ArrowLeft, ArrowUpFromLine, FileDown } from 'lucide-react';
+import { TrendingUp, ArrowLeft, ArrowUpFromLine, FileDown, Plus } from 'lucide-react';
 import NgTrendFilterBar from './_components/NgTrendFilterBar';
 import NgTrendKpiCards from './_components/NgTrendKpiCards';
 import NgTrendCharts from './_components/NgTrendCharts';
@@ -173,16 +173,27 @@ export default function NgTrendsPage() {
           </div>
         </div>
 
-        {/* Monthly QC PDF Report Button */}
-        <a
-          href={`/api/qc/monthly-report/pdf?month=${startDate.slice(0, 7)}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="btn btn-secondary h-8 px-3 text-[12px] flex items-center gap-1.5 font-semibold text-[var(--accent)] hover:bg-[var(--tint-teal-bg)]"
-        >
-          <FileDown size={15} />
-          <span>{t('downloadMonthlyPdf')}</span>
-        </a>
+        <div className="flex items-center gap-2">
+          {/* Monthly QC PDF Report Button */}
+          <a
+            href={`/api/qc/monthly-report/pdf?month=${startDate.slice(0, 7)}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn btn-secondary h-8 px-3 text-[12px] flex items-center gap-1.5 font-semibold text-[var(--accent)] hover:bg-[var(--tint-teal-bg)]"
+          >
+            <FileDown size={15} />
+            <span>{t('downloadMonthlyPdf')}</span>
+          </a>
+
+          {/* New In-Process QC Record Button */}
+          <Link
+            href="/production/qc/new"
+            className="btn btn-primary h-8 px-3 text-[12px] flex items-center gap-1.5 font-semibold"
+          >
+            <Plus size={15} />
+            <span>{t('addQcBtn')}</span>
+          </Link>
+        </div>
       </div>
 
       {/* 2. Filter Bar */}

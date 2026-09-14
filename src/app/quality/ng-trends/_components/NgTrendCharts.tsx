@@ -27,13 +27,13 @@ interface Props {
 }
 
 const DEFECT_COLORS = {
-  qty_ng_a: '#EF4444', // 成形不良 (Red)
-  qty_ng_b: '#F97316', // 抜きズレ (Orange)
-  qty_ng_c: '#F59E0B', // スタッキング (Amber)
-  qty_ng_d: '#8B5CF6', // 異物 (Purple)
-  qty_ng_e: '#3B82F6', // キズ (Blue)
-  qty_ng_f: '#10B981', // 汚れ (Emerald)
-  qty_ng_g: '#64748B', // その他 (Slate)
+  qty_ng_a: '#EF4444', // DIMENSION - 寸法不良 (Red)
+  qty_ng_b: '#F97316', // BURR - バリ (Orange)
+  qty_ng_c: '#F59E0B', // MATERIAL - 材料不良 (Amber)
+  qty_ng_d: '#8B5CF6', // APPEARANCE - 外観不良 (Purple)
+  qty_ng_e: '#3B82F6', // OTHER - その他 (Blue)
+  qty_ng_f: '#10B981', // 未割当 (Emerald)
+  qty_ng_g: '#64748B', // 未割当 (Slate)
 };
 
 export default function NgTrendCharts({
@@ -248,7 +248,7 @@ export default function NgTrendCharts({
             </h2>
           </div>
           <span className="text-[11px] font-medium text-[var(--text-muted)]">
-            A〜G 7グループ別
+            5大不良区分別 (DIMENSION / BURR / MATERIAL / APPEARANCE / OTHER)
           </span>
         </div>
 
