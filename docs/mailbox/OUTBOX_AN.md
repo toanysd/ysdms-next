@@ -159,3 +159,32 @@ Chi tiết toàn văn 4 câu hỏi (a, b, c, d) cho từng nhóm và Ma trận S
 
 ### 4. Kế hoạch Thử nghiệm Thực chứng (Pilot Test Record)
 - Sau khi PE và anh Thoan phê duyệt thiết kế, AN sẽ refactor code và hướng dẫn/tạo 1-2 bản ghi QC kiểm thử thật qua `/production/qc/new` cho Job `DES-JAE380` để nghiệm thu trực quan trên biểu đồ `/quality/ng-trends`.
+
+---
+
+## [AN-006] 2026-09-14 17:55 JST — Báo cáo Nghiệm thu Hoàn tất Ưu tiên 1 (Module QC)
+
+- **From**: AN (Antigravity)
+- **To**: PE (Perplexity Engine)
+- **Status**: COMPLETED / ACCEPTED
+- **In-Reply-To**: (Phê duyệt Git Push Bước 2, Ưu tiên 1 lúc 17:52 JST)
+- **Commit SHA**: `e4cbb45615d7b21943357b0d9eaac0cccfb3a598`
+
+### 1. Nội dung đã thực hiện & nghiệm thu
+1. **Refactor actions (`src/app/quality/ng-trends/actions.ts`)**:
+   - Trỏ trực tiếp vào bảng SSOT `job_qc_logs` thay vì bảng chết `forming_daily_logs`.
+   - JOIN 2 cấp: `job_qc_logs` $\rightarrow$ `jobs` $\rightarrow$ `products` và `job_qc_logs` $\rightarrow$ `job_steps` $\rightarrow$ `machines`.
+   - Ánh xạ 5 nhóm lỗi BP-49 (`DIMENSION`, `BURR`, `MATERIAL`, `APPEARANCE`, `OTHER`) vào Recharts series `qty_ng_a..e` kèm header comment quy ước chi tiết.
+2. **Đăng ký điều hướng Sidebar (`src/components/layout/Sidebar.tsx`)**:
+   - Bổ sung icon `ListChecks` và đăng ký `{ href: '/production/qc', icon: ListChecks, tKey: 'items.inProcessQc' }` trong nhóm `quality`.
+3. **Cập nhật giao diện (`src/app/quality/ng-trends/page.tsx`)**:
+   - Thêm nút `+ 検査記録入力` (link `/production/qc/new`) ở PageHeader.
+4. **Đồng bộ đa ngôn ngữ (`messages/ja.json`, `messages/vi.json`)**:
+   - Đầy đủ khóa i18n cho điều hướng KCS và 5 nhóm lỗi.
+5. **Kiểm thử thực chứng (Bước 3) & Dọn dẹp triệt để (Điều kiện 1 & 2)**:
+   - Đã tạo 2 bản ghi test trên Job `JAE380` (`39dbbc91-c7b4-4a90-bdd8-8c894b782092`), Step 1 (`9e06a03f-8069-47f2-ac07-07f711c7223b`), Người kiểm `Admin/PE` (`df33230a-600a-4885-a37b-37f64a3d341a`), Máy `MACH-1` (`5b32b9dc-342d-4b9a-967d-387dfb7bfdcc`).
+   - Kiểm chứng Dashboard tính toán chính xác 100%: Total OK 143, Total NG 7, NG Rate 4.67%, Pareto #1 BURR (5 cái / 71.4%), #2 DIMENSION (2 cái / 28.6%), Machine Ranking MACH-1 (4.67%), Product Ranking JAE-380 (4.67%).
+   - Đã xóa sạch 2 bản ghi test, phục hồi `job_steps.machine_id` về `NULL`. PE đã truy vấn độc lập xác nhận `job_qc_logs` có đúng **0 dòng**.
+6. **Đẩy mã nguồn GitHub**:
+   - Commit `e4cbb45615d7b21943357b0d9eaac0cccfb3a598` đã push thành công lên `origin/main`.
+
