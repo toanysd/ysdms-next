@@ -109,7 +109,7 @@ export default async function OrderDetailPage(props: {
                   <span>▶ 製造指示票(WO)を作成</span>
                 </button>
               </Link>
-              <Link href={`/orders/shipments/new?order_id=${order.order_id}`}>
+              <Link href={`/shipments/new?order_id=${order.order_id}`}>
                 <button className="btn btn-primary flex items-center gap-1.5 text-xs px-3 py-1.5 h-auto cursor-pointer">
                   <Truck size={14} />
                   <span>納品書を発行する</span>

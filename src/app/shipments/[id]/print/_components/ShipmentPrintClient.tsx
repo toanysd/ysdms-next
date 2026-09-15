@@ -20,24 +20,51 @@ export default function ShipmentPrintClient({ initialData }: { initialData: any 
   // Editable fields
   const [deliveryNoteNo, setDeliveryNoteNo] = useState(initialData.delivery_note_no || '')
   const [shipDate, setShipDate] = useState(formatDate(initialData.ship_date))
-  const [companyName, setCompanyName] = useState(initialData.delivery_sites?.site_name || initialData.orders?.companies?.company_name || '')
-  const [orderNo, setOrderNo] = useState(initialData.orders?.order_no || '')
+  const [companyName, setCompanyName] = useState(
+    initialData.delivery_sites?.site_name ||
+    initialData.orders?.companies?.company_name ||
+    initialData.work_orders?.companies?.company_name ||
+    ''
+  )
+  const [orderNo, setOrderNo] = useState(
+    initialData.orders?.order_no ||
+    initialData.work_orders?.wo_code ||
+    ''
+  )
 
-  // Extract lines from shipment_lots
-  const defaultLines = (initialData.shipment_lots || []).map((lot: any) => {
-    const po = lot.production_lots?.production_orders
-    const ol = po?.order_lines
-    const prd = ol?.products
-    const productName = prd?.customer_product_name || prd?.product_name || ''
-    
-    return {
-      id: lot.shipment_lot_id,
-      productName: productName,
-      quantity: String(lot.qty_shipped || 0),
-      unit: ol?.unit || 'PCS',
-      notes: (lot.production_lots?.lot_no ? `Lot No: ${lot.production_lots.lot_no}` : '') + (lot.carton_count ? ` (${lot.carton_count}箱)` : '')
-    }
-  })
+  // Extract lines from shipment_lots or work_orders
+  const rawLots = initialData.shipment_lots || []
+  let defaultLines: any[] = []
+
+  if (rawLots.length > 0) {
+    defaultLines = rawLots.map((lot: any) => {
+      const po = lot.production_lots?.production_orders
+      const ol = po?.order_lines
+      const prd = ol?.products
+      const productName = prd?.customer_product_name || prd?.product_name || ''
+      
+      return {
+        id: lot.shipment_lot_id,
+        productName: productName,
+        quantity: String(lot.qty_shipped || 0),
+        unit: ol?.unit || 'PCS',
+        notes: (lot.production_lots?.lot_no ? `Lot No: ${lot.production_lots.lot_no}` : '') + (lot.carton_count ? ` (${lot.carton_count}箱)` : '')
+      }
+    })
+  } else if (initialData.work_orders) {
+    const wo = initialData.work_orders
+    const prd = wo.products
+    const productName = prd?.product_name || prd?.product_code || wo.wo_name || '成形品'
+    defaultLines = [
+      {
+        id: `wo-${wo.wo_id}`,
+        productName: productName,
+        quantity: String(initialData.shipped_quantity || 0),
+        unit: 'PCS',
+        notes: `指示書: ${wo.wo_code}`
+      }
+    ]
+  }
 
   // Ensure we always have at least 10 rows for the table layout
   const tableRows = [...defaultLines]
@@ -102,10 +129,10 @@ export default function ShipmentPrintClient({ initialData }: { initialData: any 
 
   return (
     <div className="print-container">
-      {/* ── Action Buttons (Hidden on Print) ── */}
+      {/* ── Action Bar (Hidden on Print) ── */}
       <div className="print-action-bar no-print">
-        <Link href={`/orders/shipments`} style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'var(--accent)', fontSize: 13, textDecoration: 'none' }}>
-          <ArrowLeft size={14} /> 納品一覧に戻る
+        <Link href="/shipments" style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'var(--accent)', fontSize: 13, textDecoration: 'none' }}>
+          <ArrowLeft size={14} /> 出荷一覧に戻る
         </Link>
         <div style={{ flex: 1 }} />
         <button className="btn btn-primary" onClick={() => window.print()} disabled={exporting} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -138,64 +165,40 @@ export default function ShipmentPrintClient({ initialData }: { initialData: any 
           </div>
           
           <div style={{ width: '45%', textAlign: 'right' }}>
-            <div style={{ fontSize: 24, letterSpacing: 8, marginBottom: 15, fontWeight: 'bold', textAlign: 'center' }}>
-              納品書
+            <div style={{ fontSize: 22, fontWeight: 'bold', letterSpacing: 4, marginBottom: 8 }}>納 品 書</div>
+            <div style={{ fontSize: 11, marginBottom: 2 }}>
+              伝票番号: <input type="text" className="editable-input font-mono" style={{ width: 140, textAlign: 'right' }} value={deliveryNoteNo} onChange={e => setDeliveryNoteNo(e.target.value)} />
+            </div>
+            <div style={{ fontSize: 11, marginBottom: 6 }}>
+              納品日: <input type="text" className="editable-input" style={{ width: 140, textAlign: 'right' }} value={shipDate} onChange={e => setShipDate(e.target.value)} />
             </div>
             
-            <table className="print-table" style={{ width: '100%', marginBottom: 15 }}>
-              <tbody>
-                <tr>
-                  <th style={{ width: 80, backgroundColor: '#f5f5f5' }}>伝票No.</th>
-                  <td>
-                    <input 
-                      type="text" 
-                      className="editable-input" 
-                      style={{ textAlign: 'center' }}
-                      value={deliveryNoteNo} 
-                      onChange={e => setDeliveryNoteNo(e.target.value)} 
-                    />
-                  </td>
-                </tr>
-                <tr>
-                  <th style={{ backgroundColor: '#f5f5f5' }}>納品日</th>
-                  <td>
-                    <input 
-                      type="text" 
-                      className="editable-input" 
-                      style={{ textAlign: 'center' }}
-                      value={shipDate} 
-                      onChange={e => setShipDate(e.target.value)} 
-                    />
-                  </td>
-                </tr>
-                <tr>
-                  <th style={{ backgroundColor: '#f5f5f5' }}>受注No.</th>
-                  <td>
-                    <input 
-                      type="text" 
-                      className="editable-input" 
-                      style={{ textAlign: 'center' }}
-                      value={orderNo} 
-                      onChange={e => setOrderNo(e.target.value)} 
-                    />
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+            {/* Issuer Info */}
+            <div style={{ fontSize: 11, lineHeight: 1.4, marginTop: 8 }}>
+              <div style={{ fontWeight: 'bold', fontSize: 13 }}>{YSD_COMPANY_INFO.nameJa}</div>
+              <div>{YSD_COMPANY_INFO.headOffice.postalCode} {YSD_COMPANY_INFO.headOffice.address}</div>
+              <div>TEL: {YSD_COMPANY_INFO.headOffice.tel} / FAX: {YSD_COMPANY_INFO.headOffice.fax}</div>
+            </div>
           </div>
         </div>
 
-        {/* YSD Company Info (Sender) */}
-        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 20 }}>
-          <div style={{ width: '50%', fontSize: 12, lineHeight: 1.6 }}>
-            <div style={{ fontSize: 14, fontWeight: 'bold' }}>{YSD_COMPANY_INFO.nameJa}</div>
-            <div>{YSD_COMPANY_INFO.headOffice.postalCode}</div>
-            <div>{YSD_COMPANY_INFO.headOffice.address}</div>
-            <div>TEL: {YSD_COMPANY_INFO.headOffice.tel}</div>
-            <div>FAX: {YSD_COMPANY_INFO.headOffice.fax}</div>
+        {/* Sub Info & Stamps */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 12 }}>
+          <div style={{ fontSize: 12 }}>
+            <div style={{ marginBottom: 4 }}>
+              注文番号: <input type="text" className="editable-input font-mono" style={{ width: 150, fontWeight: 'bold' }} value={orderNo} onChange={e => setOrderNo(e.target.value)} />
+            </div>
+            <div>
+              受渡場所: <input type="text" className="editable-input" style={{ width: 250 }} defaultValue={initialData.delivery_sites?.site_address || '貴社指定場所'} />
+            </div>
           </div>
-          {/* Stamp area */}
-          <div style={{ display: 'flex', gap: 10, marginLeft: 20 }}>
+
+          {/* Stamp Blocks */}
+          <div style={{ display: 'flex', gap: 4 }}>
+            <div style={{ width: 50, height: 50, border: '1px solid #000', display: 'flex', flexDirection: 'column' }}>
+              <div style={{ borderBottom: '1px solid #000', textAlign: 'center', fontSize: 10, padding: 2 }}>承認</div>
+              <div style={{ flex: 1 }}></div>
+            </div>
             <div style={{ width: 50, height: 50, border: '1px solid #000', display: 'flex', flexDirection: 'column' }}>
               <div style={{ borderBottom: '1px solid #000', textAlign: 'center', fontSize: 10, padding: 2 }}>担当</div>
               <div style={{ flex: 1 }}></div>
@@ -260,10 +263,17 @@ export default function ShipmentPrintClient({ initialData }: { initialData: any 
             ))}
           </tbody>
         </table>
-        
+
         {/* Footer Notes */}
-        <div style={{ marginTop: 20, fontSize: 11, color: '#333' }}>
-          <p>※本状はお買上げ明細書を兼ねております。</p>
+        <div style={{ marginTop: 20, borderTop: '1px solid #000', paddingTop: 8, fontSize: 11 }}>
+          <div style={{ fontWeight: 'bold', marginBottom: 4 }}>【備考・特記事項】</div>
+          <div style={{ color: '#444' }}>
+            <input 
+              type="text" 
+              className="editable-input" 
+              defaultValue={initialData.notes || '受領印を頂戴できますようお願い申し上げます。'} 
+            />
+          </div>
         </div>
 
       </div>

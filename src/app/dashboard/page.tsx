@@ -983,7 +983,7 @@ export default function ExecutiveDashboardPage() {
 
             {/* Step 4: 納品完了 */}
             <Link
-              href="/orders/shipments"
+              href="/shipments"
               style={{ textDecoration: 'none' }}
               className="card-flat hover:border-teal-300 transition-all cursor-pointer"
             >

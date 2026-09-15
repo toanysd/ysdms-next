@@ -43,6 +43,6 @@ export async function submitOutgoingQCAction(formData: FormData) {
     .eq('line_id', orderLineId)
 
   revalidatePath('/production/qc')
-  revalidatePath('/orders/shipments')
+  revalidatePath('/shipments')
   return { success: true, result }
 }

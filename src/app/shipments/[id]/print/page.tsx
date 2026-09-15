@@ -7,11 +7,28 @@ export default async function ShipmentPrintPage({ params }: { params: Promise<{ 
   const { id } = await params
   const supabase = await createClient()
 
-  // Fetch shipment with all related data
+  // Fetch shipment with all related data (both WO-direct and Order-based)
   const { data: shipment, error } = await supabase
     .from('shipments')
     .select(`
       *,
+      work_orders (
+        wo_id,
+        wo_code,
+        wo_name,
+        products (
+          product_id,
+          product_code,
+          product_name,
+          customer_product_name
+        ),
+        companies (
+          company_code,
+          company_name,
+          address,
+          tel
+        )
+      ),
       orders (
         order_id,
         order_no,
@@ -56,7 +73,7 @@ export default async function ShipmentPrintPage({ params }: { params: Promise<{ 
     .single()
 
   if (error || !shipment) {
-    console.error('Failed to fetch shipment:', error)
+    console.error('Failed to fetch shipment for print:', error)
     return notFound()
   }
 

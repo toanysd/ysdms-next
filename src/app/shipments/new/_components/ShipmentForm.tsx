@@ -4,7 +4,7 @@ import { useTranslations } from 'next-intl'
 import { useRouter } from 'next/navigation'
 import { useState, useEffect } from 'react'
 import { Save, AlertCircle } from 'lucide-react'
-import { createShipmentAction, searchOrderLinesAction } from '../../actions'
+import { createShipmentAction, searchOrderLinesAction } from '@/app/shipments/actions'
 
 type DeliverySite = {
   site_id: string
@@ -116,7 +116,7 @@ export function ShipmentForm({ deliverySites, initialOrder, initialLines = [] }:
     if (!result.success) {
       alert(result.error)
     } else {
-      router.push('/orders/shipments')
+      router.push(`/shipments/${result.shipmentId || ''}`)
       router.refresh()
     }
   }

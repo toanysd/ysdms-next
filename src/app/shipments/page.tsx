@@ -124,6 +124,14 @@ export default async function ShipmentsPage({ searchParams }: ShipmentsPageProps
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <Link
+            href="/shipments/new"
+            className="btn btn-primary"
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, padding: '7px 14px' }}
+          >
+            <Plus size={15} />
+            <span>+ 出荷登録 (Shipment)</span>
+          </Link>
           <Link 
             href="/production/work-orders"
             className="btn btn-secondary"
@@ -289,8 +297,14 @@ export default async function ShipmentsPage({ searchParams }: ShipmentsPageProps
                 return (
                   <tr key={s.shipment_id}>
                     {/* Delivery Note No */}
-                    <td style={{ fontWeight: 700, fontFamily: 'monospace', color: 'var(--accent)', fontSize: 13 }}>
-                      {s.delivery_note_no || '—'}
+                    <td style={{ fontWeight: 700, fontFamily: 'monospace', fontSize: 13 }}>
+                      <Link
+                        href={`/shipments/${s.shipment_id}`}
+                        style={{ color: 'var(--accent)', textDecoration: 'none' }}
+                        className="hover:underline"
+                      >
+                        {s.delivery_note_no || 'DN-未採番'}
+                      </Link>
                     </td>
 
                     {/* Ship Date */}
