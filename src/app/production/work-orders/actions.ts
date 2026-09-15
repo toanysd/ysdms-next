@@ -454,7 +454,7 @@ export async function generateJobsForWorkOrder(workOrderId: string) {
   if (mold) {
     targetEquipments.push(mold)
 
-    // 4. Find auxiliary equipment via equipment_assignments (SET_MEMBER)
+    // 4. Find auxiliary equipment via equipment_assignments (SET_MEMBER or SHARED)
     const { data: assignments } = await supabase
       .from('equipment_assignments')
       .select(`
@@ -464,7 +464,7 @@ export async function generateJobsForWorkOrder(workOrderId: string) {
         )
       `)
       .eq('primary_equipment_id', mold.equipment_id)
-      .eq('relationship_type', 'SET_MEMBER')
+      .in('relationship_type', ['SET_MEMBER', 'SHARED'])
 
     if (assignments && assignments.length > 0) {
       for (const a of assignments) {
