@@ -2,6 +2,10 @@
 
 Tài liệu hướng dẫn và đối chiếu thực thi Chốt chặn 2 cho 1.520 cặp Tier 1 còn lại.
 
+> ⚠️ **LƯU Ý LỊCH SỬ QUAN TRỌNG (HISTORICAL REFERENCE ONLY)**:
+> Các file script SQL trong thư mục này (`batch_2a_500.sql`, `batch_2b_500.sql`, `batch_2c_520.sql`, `full_batch_1520.sql`) **KHÔNG PHẢI SCRIPT ĐÃ THỰC THI THẬT TRÊN PRODUCTION**.
+> Dữ liệu thực tế **1.577 dòng** đã được PE trực tiếp phân bổ và thực thi độc lập (qua các lô `AUTO_BACKFILL_TIER1_FULL_LOT1_PE`, `LOT2_PE`, `LOT3_PE`). Thư mục này chỉ được lưu lại làm tài liệu tham khảo lịch sử đối chiếu logic.
+
 ---
 
 ## 1. Câu SQL Nguyên Văn Tính Ra 1.571 Cặp Tier 1 (Gold Match)
