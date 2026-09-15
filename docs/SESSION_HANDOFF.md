@@ -280,6 +280,18 @@ Bạn là AN (Executing Agent). Đây là dự án **ysdms-next** — hệ thố
   * Modal `/equipment/molds/[id]` (thẻ `関連抜型`) hiển thị đầy đủ, chính xác các dao cắt liên kết cho các mã kiểm tra ngẫu nhiên ở cả Lô 2 (`KSP050`, `KSP051`, `KSP053`) và Lô 3 (`SRD001`, `SMK183`, `YCM033`).
   * View `v_work_order_equipment_set` phân giải đúng toàn bộ các dao thuộc SET gá lắp của khuôn cho Work Order.
 - **Tài liệu tham khảo lịch sử:** Thư mục `scripts/backfill_tier1/` đã được bổ sung ghi chú "HISTORICAL REFERENCE ONLY — KHÔNG PHẢI SCRIPT ĐÃ THỰC THI THẬT (Dữ liệu do PE tự viết và thực thi trực tiếp)".
-- **Quyết định từ Anh Thoan về 128 dao Tier 2/3/4:**
-  * **Chính thức chuyển tiếp vào danh mục Nợ kỹ thuật (Technical Debt Backlog)** để xử lý ở giai đoạn kế tiếp theo đúng phê duyệt của Anh Thoan lúc 17:48 JST.
+- **Quyết định từ Anh Thoan về các dao tồn đọng:**
+  * Ban đầu dự kiến chuyển tiếp vào Nợ kỹ thuật, nhưng sau đó **chính thức chuyển thành Ưu tiên 4 MỞ KHẨN CẤP** theo chỉ đạo trực tiếp của Anh Thoan lúc 17:53 JST 2026-09-15.
+
+---
+
+## 14. ƯU TIÊN 4 — XỬ LÝ 154 DAO CẮT TỒN ĐỌNG (TIER 2, 3, 4) (MỞ KHẨN CẤP 🚨)
+- **Thời điểm kích hoạt:** 2026-09-15 17:53 JST (Chỉ đạo trực tiếp từ Anh Thoan và PE).
+- **Mục tiêu:** Rà soát, xử lý và chuẩn hóa toàn bộ 154 dao cắt còn lại trong tổng số 1.731 dao cắt của xưởng YSD chưa có bản ghi `equipment_assignments`.
+- **Phân loại Bước 0 (Khảo sát chi tiết):**
+  * **Tier 2 (Revision Only - 38 dao):** Cùng bản vẽ CAD (`design_revision_id`), nhưng mã/tên mang biến thể hoặc hậu tố cải tiến (`R1`, `R2`, `Plug`, `NO1`, `xx`).
+  * **Tier 3 (Code Only - 30 dao):** Trùng mã/tên xưởng nhưng CAD revision bị NULL (12 dao) hoặc lệch revision với khuôn (18 dao).
+  * **Tier 4 (Unmatched - 86 dao):** Gồm 5 dao phụ trợ đặc thù (nhôm ALCUTTER, dưỡng da, dưỡng gỗ) + 81 dao mã thông thường không tìm thấy khuôn tương ứng trong DB (khuôn đã thanh lý hoặc chưa nhập).
+- **Trạng thái:** BƯỚC 0 KHẢO SÁT CHI TIẾT (Đang thẩm định cùng PE, chưa ghi DB).
+
 
