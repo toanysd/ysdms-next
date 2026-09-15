@@ -247,3 +247,39 @@ Bạn là AN (Executing Agent). Đây là dự án **ysdms-next** — hệ thố
 5. **Hạ tầng Agent Mailbox qua Git:**
    - Đặt tại `docs/mailbox/` (`README.md`, `OUTBOX_PE.md`, `OUTBOX_AN.md`) theo cơ chế Single-Writer (Bất đối xứng) nhằm loại trừ 100% rủi ro Git merge conflict.
    - Đã thông tuyến thành công giữa PE và AN qua Git API.
+
+---
+
+## 11. ƯU TIÊN 1 — MODULE QC NG TRENDS & NHẬP LIỆU KCS (CLOSED ✅)
+- **Thời điểm nghiệm thu:** 2026-09-14 17:52 JST
+- **Commit SHA đã nghiệm thu:** `e4cbb45615d7b21943357b0d9eaac0cccfb3a598`
+- **Nội dung:** Refactor toàn diện module KCS/QC, loại bỏ `job_qc_logs.equipment_id` (tuân thủ RULE-DATA-02), JOIN 2 cấp `job_steps -> jobs -> equipment`, bổ sung trang nhập liệu KCS nhanh `/production/qc/new` và nút điều hướng tại `/quality/ng-trends`. Test và dọn dẹp sạch sẽ 0 dòng rác.
+
+---
+
+## 12. ƯU TIÊN 2 — HỢP NHẤT ROUTE XUẤT HÀNG SHIPMENTS CANONICAL (CLOSED ✅)
+- **Thời điểm nghiệm thu:** 2026-09-15 12:20 JST
+- **Commit SHA đã nghiệm thu:** `fa711521cc932512958a6226d16c67b47d3334d6`
+- **Mailbox Commit HEAD:** `a3ffaf5713f0d0ac308f2ad5164e595d0733a837`
+- **Nội dung:** Hợp nhất `/orders/shipments/` vào route chuẩn `/shipments/` (ADR-012, AGENTS.md Rule 1), server redirects bảo toàn 100% `searchParams`. Kiểm thử thực tế thành công cả 2 luồng WO-direct (`WO-L-1248`) và Order-based (`ORD-20260108-KDS`). Dọn dẹp sạch sẽ nguyên trạng DB.
+
+---
+
+## 13. ƯU TIÊN 3 — CHUẨN HÓA GÁ LẮP SET N:N `equipment_assignments` (TIER 1 CLOSED ✅)
+- **Thời điểm nghiệm thu:** 2026-09-15 17:40 JST
+- **Trạng thái Database:** `equipment_assignments` đạt **1.577 bản ghi** (1.575 cặp Tier 1 được backfill an toàn).
+- **Tính toàn vẹn:** `SELECT related_equipment_id ... HAVING count(*) > 1` = **0 dòng** (không trùng lặp, bảo đảm chuẩn "1 dao – 1 khuôn chính").
+- **Hình thức thực thi:** Do **PE trực tiếp phân bổ và thực thi độc lập** trên Supabase (không dùng 3 file `batch_2a/2b/2c` gốc của AN do phát sinh chênh lệch tích Descartes khi JOIN):
+  * `AI OCR 工程票取込 自動セット設定` (gốc): 2 dòng
+  * `AUTO_BACKFILL_TIER1_PILOT`: 50 dòng
+  * `AUTO_BACKFILL_TIER1_FULL_LOT1_PE`: 509 dòng
+  * `AUTO_BACKFILL_TIER1_FULL_LOT2_PE`: 509 dòng
+  * `AUTO_BACKFILL_TIER1_FULL_LOT3_PE`: 507 dòng
+  * **Tổng cộng**: **1.577 dòng**.
+- **Kiểm tra UI & View:**
+  * Modal `/equipment/molds/[id]` (thẻ `関連抜型`) hiển thị đầy đủ, chính xác các dao cắt liên kết cho các mã kiểm tra ngẫu nhiên ở cả Lô 2 (`KSP050`, `KSP051`, `KSP053`) và Lô 3 (`SRD001`, `SMK183`, `YCM033`).
+  * View `v_work_order_equipment_set` phân giải đúng toàn bộ các dao thuộc SET gá lắp của khuôn cho Work Order.
+- **Tài liệu tham khảo lịch sử:** Thư mục `scripts/backfill_tier1/` đã được bổ sung ghi chú "HISTORICAL REFERENCE ONLY — KHÔNG PHẢI SCRIPT ĐÃ THỰC THI THẬT (Dữ liệu do PE tự viết và thực thi trực tiếp)".
+- **Quyết định từ Anh Thoan về 128 dao Tier 2/3/4:**
+  * **Chính thức chuyển tiếp vào danh mục Nợ kỹ thuật (Technical Debt Backlog)** để xử lý ở giai đoạn kế tiếp theo đúng phê duyệt của Anh Thoan lúc 17:48 JST.
+
