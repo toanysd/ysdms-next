@@ -292,6 +292,21 @@ Bạn là AN (Executing Agent). Đây là dự án **ysdms-next** — hệ thố
   * **Tier 2 (Revision Only - 38 dao):** Cùng bản vẽ CAD (`design_revision_id`), nhưng mã/tên mang biến thể hoặc hậu tố cải tiến (`R1`, `R2`, `Plug`, `NO1`, `xx`).
   * **Tier 3 (Code Only - 30 dao):** Trùng mã/tên xưởng nhưng CAD revision bị NULL (12 dao) hoặc lệch revision với khuôn (18 dao).
   * **Tier 4 (Unmatched - 86 dao):** Gồm 5 dao phụ trợ đặc thù (nhôm ALCUTTER, dưỡng da, dưỡng gỗ) + 81 dao mã thông thường không tìm thấy khuôn tương ứng trong DB (khuôn đã thanh lý hoặc chưa nhập).
-- **Trạng thái:** BƯỚC 0 KHẢO SÁT CHI TIẾT (Đang thẩm định cùng PE, chưa ghi DB).
+
+### 14.1. Pha 1 — Tier 2 (38 dao Revision Only) (CLOSED ✅)
+- **Thời điểm nghiệm thu:** 2026-09-15 18:38 JST
+- **Hình thức thực thi:** PE tự xác minh toàn bộ 38/38 cặp (100% UUID hợp lệ, `design_revision_id` khớp tuyệt đối giữa dao và khuôn), trực tiếp thực thi độc lập trên Supabase production.
+- **Nhãn phân bổ:** `AUTO_BACKFILL_TIER2_PE` (38 dòng).
+- **Trạng thái Database sau Pha 1:** Bảng `equipment_assignments` đạt **1.615 dòng** (2 gốc + 50 pilot + 509 lot 1 + 509 lot 2 + 507 lot 3 + 38 Tier 2).
+- **Ràng buộc toàn vẹn:** `SELECT related_equipment_id ... HAVING count(*) > 1` = **0 dòng** vi phạm (chuẩn "1 dao – 1 khuôn chính").
+
+### 14.2. Pha 2 — Tier 3 (30 dao Code Only / Dùng chung) (TIỀN ĐỀ MIGRATION 🔨)
+- **Điều kiện tiên quyết trước khi thực thi:** Cập nhật View `v_work_order_equipment_set` và logic tạo Work Order (`work-orders/actions.ts`) mở rộng hỗ trợ quan hệ `relationship_type IN ('SET_MEMBER', 'SHARED')`.
+- **Hồ sơ kỹ thuật đã chuẩn bị:**
+  * Migration DDL: `supabase/migrations/20260915000001_support_shared_equipment_in_work_orders.sql`.
+  * Server Action: `src/app/production/work-orders/actions.ts` (dòng 467) đã cập nhật `.in('relationship_type', ['SET_MEMBER', 'SHARED'])`.
+  * Quality Gate: `npx tsc --noEmit` đạt 0 errors.
+- **Trạng thái:** Đang chờ PE thẩm định migration trước khi mở bảng chi tiết 30 dao Tier 3.
+
 
 
