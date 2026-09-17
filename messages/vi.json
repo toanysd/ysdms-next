@@ -1108,6 +1108,7 @@
     },
     "jobStatus": {
       "NEW": "Mới",
+      "PENDING": "Chờ xử lý",
       "IN_PROGRESS": "Đang thực hiện",
       "COMPLETED": "Hoàn thành",
       "ON_HOLD": "Tạm dừng"
@@ -1233,6 +1234,8 @@
     "quotationList": "Danh sách Báo giá",
     "newQuotation": "Tạo báo giá mới",
     "quotationStatus": "Trạng thái",
+    "searchPlaceholder": "Tìm số báo giá, khách hàng, sản phẩm...",
+    "status": "Trạng thái",
     "moldPriceCalc": "Tính giá khuôn & dao cắt",
     "trayUnitPrice": "Tính đơn giá khay nhựa",
     "exportPdf": "Xuất file PDF Báo Giá",
@@ -2311,8 +2314,10 @@
       "noData": "Không có dữ liệu",
       "statusLabels": {
         "NEW": "Mới",
+        "PENDING": "Chờ xử lý",
         "IN_PROGRESS": "Đang làm",
         "COMPLETED": "Hoàn thành",
+        "ON_HOLD": "Tạm dừng",
         "CANCELLED": "Đã huỷ"
       }
     },

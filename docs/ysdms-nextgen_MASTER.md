@@ -1,7 +1,7 @@
 # 📒 SỔ CÁI DỰ ÁN — YSDMS NextGen
-> Cập nhật lần cuối: 2026-09-14 (Hoàn tất Milestone 28 — Giai đoạn B: 4-Tier Progress & Work Order Cockpit)
-> Phiên bản Schema: V5 / Unified Equipment Architecture + Migrations 100-105 + Migration M28A (v2.1) + Migrations M28B (View + Security Invoker)
-> Trạng thái: Milestone 28B READY TO CLOSE ✅ | Chuẩn bị Milestone 28C
+> Cập nhật lần cuối: 2026-09-17 (Đóng toàn diện chuỗi Ưu tiên 1→4: Module QC, Route Shipment, Chuẩn hóa gá lắp SET N:N 1.633 dòng)
+> Phiên bản Schema: V5 / Unified Equipment Architecture + Migrations 100-105 + Migration M28A + Migration 20260915000001 (SHARED Support)
+> Trạng thái: Ưu tiên 1, 2, 3, 4 CLOSED ✅ | Chuyển trọng tâm sang Nghiệp vụ Bộ phận Khuôn theo chỉ đạo Anh Thoan
 
 
 ---
@@ -1402,6 +1402,34 @@ ebaseline...).
   - UI Cockpit (`WorkOrderProgressCockpit.tsx`, `TabOverview.tsx`, `WorkOrderDetailHeader.tsx`): Cảnh báo trễ hạn (`is_overdue`), 4 Card trực quan theo từng tầng, bảng so sánh giờ công và độ lệch variance.
   - Đa ngôn ngữ: 12 keys i18n trong `messages/ja.json` & `messages/vi.json`.
   - Quality Gate: `npx tsc --noEmit` đạt 0 errors.
+
+- **[2026-09-14] Ưu tiên 1: Module QC NG Trends & Nhập liệu KCS (CLOSED ✅)**
+  - Tái cấu trúc toàn diện module QC theo RULE-DATA-02, loại bỏ `job_qc_logs.equipment_id`, query JOIN 2 cấp `job_steps -> jobs -> equipment`.
+  - Bổ sung trang nhập liệu KCS nhanh `/production/qc/new` và nút điều hướng tại `/quality/ng-trends`.
+  - Commit SHA: `e4cbb45615d7b21943357b0d9eaac0cccfb3a598` (`e4cbb45`).
+
+- **[2026-09-15] Ưu tiên 2: Hợp nhất Route Xuất hàng Shipments Canonical (CLOSED ✅)**
+  - Hợp nhất `/orders/shipments/` vào route canonical `/shipments/` (ADR-012, AGENTS.md Rule 1).
+  - Server redirects bảo toàn 100% `searchParams`. Kiểm thử thành công 2 luồng WO-direct và Order-based.
+  - Commit SHA: `fa711521cc932512958a6226d16c67b47d3334d6` (`fa71152`), Mailbox SHA: `a3ffaf5`.
+
+- **[2026-09-15] Ưu tiên 3: Chuẩn hóa gá lắp SET N:N Tier 1 (1.575 dao) (CLOSED ✅)**
+  - Chuẩn hóa quan hệ N:N trong `equipment_assignments` giữa Khuôn (MOLD) và Dao cắt (CUTTER_SEPARATE/CUTTER_INLINE).
+  - PE trực tiếp thực thi 3 lô trên Production với quy tắc "1 dao – 1 khuôn chính" (`HAVING count(*) > 1` = 0).
+  - Tổng số bản ghi đạt 1.577 dòng (2 gốc + 50 pilot + 1.525 Tier 1).
+  - Commit SHA: `2f0be55573321113cf5f544d6a17e6eb9c3f5253` (`2f0be55`), `17a5578`.
+
+- **[2026-09-17] Ưu tiên 4: Xử lý tồn đọng Tier 2, 3A, 3B (56 dao) & Bàn giao kiểm kê 98 dao (CLOSED ✅)**
+  - Mở rộng hạ tầng: Migration `20260915000001_support_shared_equipment_in_work_orders.sql` (View `v_work_order_equipment_set` hỗ trợ `IN ('SET_MEMBER', 'SHARED')`, vá `security_invoker = true`) + `work-orders/actions.ts` dòng 467 (Commit `648e693`).
+  - PE trực tiếp thực thi Production:
+    * Tier 2 (38 dao): Cùng CAD revision, biến thể mã/tên -> gán `SET_MEMBER` (38 dòng).
+    * Tier 3A (2 dao `SSJ013`, `SSJ013-2`): Điền `design_revision_id = 54c6c767-...` từ khuôn anh em `SSJ013-3`, gán `SET_MEMBER` (2 dòng).
+    * Tier 3B (16 dao): Lệch CAD revision -> gán `relationship_type = 'SHARED'` (16 dòng).
+  - Tổng số bản ghi `equipment_assignments` đạt **1.633 dòng** (1.617 `SET_MEMBER` + 16 `SHARED`), đạt tỷ lệ **94,3%** (1.633 / 1.731 dao).
+  - Ràng buộc 1-1 bảo đảm tuyệt đối: 0 dòng vi phạm.
+  - Bàn giao 98 dao còn lại (5,7%) sang quy trình kiểm kê hiện trường tại `docs/technical/inventory_98_unassigned_cutters.md`.
+  - Commit SHA: `a64c936b1c01603499fdd65f2d3bee1a466e8966` (`a64c936`). Ưu tiên 4 chính thức ĐÓNG.
+
 
 
 

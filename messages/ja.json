@@ -1108,6 +1108,7 @@
     },
     "jobStatus": {
       "NEW": "新規",
+      "PENDING": "待機中",
       "IN_PROGRESS": "進行中",
       "COMPLETED": "完了",
       "ON_HOLD": "保留"
@@ -1398,6 +1399,8 @@
     "quotationList": "見積書一覧",
     "newQuotation": "新規見積作成",
     "quotationStatus": "ステータス",
+    "searchPlaceholder": "見積番号・得意先・製品検索...",
+    "status": "ステータス",
     "moldPriceCalc": "金型・抜型価格計算",
     "trayUnitPrice": "トレイ製品単価計算",
     "exportPdf": "見積書PDF出力",
@@ -2311,8 +2314,10 @@
       "noData": "データがありません",
       "statusLabels": {
         "NEW": "新規",
+        "PENDING": "待機中",
         "IN_PROGRESS": "進行中",
         "COMPLETED": "完了",
+        "ON_HOLD": "保留",
         "CANCELLED": "キャンセル"
       }
     },
