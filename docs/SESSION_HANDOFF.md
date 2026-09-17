@@ -321,6 +321,33 @@ Bạn là AN (Executing Agent). Đây là dự án **ysdms-next** — hệ thố
   `docs/technical/inventory_98_unassigned_cutters.md` (bao gồm vị trí kệ kho, UUID, và hướng dẫn đo kiểm kích thước thực tế cho từng dao).
 - **Kết luận:** Ưu tiên 4 chính thức hoàn thành và **ĐÓNG (CLOSED ✅)**.
 
+---
+
+## 15. NGHIỆP VỤ PHÂN XƯỞNG KHUÔN (金型部) — KHẢO SÁT MÃ NGUỒN & KIỂM TOÁN 3 LỖ HỔNG
+
+> **Thời điểm thực hiện:** 2026-09-17 18:55 JST  
+> **Căn cứ chỉ đạo:** Anh Thoan & PE (18:44 JST, 2026-09-17)  
+> **Tài liệu SSOT:** `docs/technical/10_mold_department_business_process_and_data_audit.md`
+
+### 15.1. Khảo sát 3 Lỗ hổng Dữ liệu Lớn
+1. **`work_orders` 100% `OTHER` và `COMPLETED` (1.203 dòng):**
+   - **Gốc rễ:** Do script import MS Access cũ (`import_access_legacy.py` dòng 179) tự sinh WO 1:1 theo Job và hardcode cứng.
+   - **Thực tế:** 1.204 `jobs` con bên dưới phân loại rất chuẩn (`MOLD_NEW`: 911, `EQUIPMENT_NEW`: 226, `CUTTER_NEW`: 16...).
+   - **Giải pháp:** Remap 1.154 dòng về `NEW_SET` (95,9%), 15 dòng về `REPAIR`, 34 dòng về `OTHER`. 1.202 dòng giữ `COMPLETED`, 1 dòng chuyển `PLANNED` (Job `DES-JAE380`).
+2. **`asset_location_logs` chỉ có `MOLD` và `CUTTER` (1.450 dòng) — PHÁT HIỆN SỐC VỀ `asset_id`:**
+   - **Gốc rễ:** File Access `locationlog.csv` chỉ có cột `MoldID` và `CutterID`.
+   - **Phát hiện đột phá của AN:** AN query đối soát trực tiếp và phát hiện **0 / 1.450 (0.0%) bản ghi `asset_id` khớp với `equipment.equipment_id`** (do trỏ vào bảng cũ `physical_molds` & `cutters` đã bị DROP khi lên ADR-001).
+   - **Kiểm chứng cứu vãn 100%:** AN đã test script map ngược qua `id_registry.json` và `equipment.legacy_id` (`M-xxx`, `C-xxx`) -> **1.450 / 1.450 (100.0%) phục hồi chính xác sang `equipment.equipment_id`**.
+3. **`mold_location_history` (0 dòng) và `equipment_loans` (0 dòng):**
+   - `mold_location_history`: Bảng tàn dư thời kỳ prototype sơ khai -> Đánh dấu `DEPRECATED` và DROP ở đợt dọn dẹp tới.
+   - `equipment_loans`: Kiến trúc M18 (ADR-009) đã chuẩn bị xong 100% (schema, UI, PDF), 0 dòng do xưởng chưa bắt đầu thao tác mượn trả trên web -> Sẵn sàng đưa vào vận hành.
+
+### 15.2. Phát hiện Lệch pha Giao diện (Sidebar)
+- `/production/work-orders` (Chỉ thị Khuôn) đang bị đặt nhầm dưới **成形部 (Phòng Định hình)**.
+- Mục **金型部 (Phòng Khuôn)** lại trỏ vào `/production/mold-orders` (trang cũ dùng bảng chết `mold_work_orders` 0 dòng).
+- Cần hoán đổi điều hướng và dọn dẹp trang cũ.
+
+
 
 
 

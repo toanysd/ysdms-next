@@ -1430,6 +1430,15 @@ ebaseline...).
   - Bàn giao 98 dao còn lại (5,7%) sang quy trình kiểm kê hiện trường tại `docs/technical/inventory_98_unassigned_cutters.md`.
   - Commit SHA: `a64c936b1c01603499fdd65f2d3bee1a466e8966` (`a64c936`). Ưu tiên 4 chính thức ĐÓNG.
 
+- **[2026-09-17] Nghiệp vụ Bộ phận Khuôn (金型部): Khảo sát mã nguồn & Kiểm toán 3 Lỗ hổng Dữ liệu**
+  - Fix bug i18n thiếu key `PENDING` trong `Engineering.jobStatus`, pass `check_translations.mjs` 100% (Commit `a4f5076`).
+  - Khảo sát thực tế 1.203 `work_orders`: 100% là `OTHER` / `COMPLETED` do script import MS Access cũ hardcode. Trong khi 1.204 `jobs` con phân loại rất chuẩn (`MOLD_NEW`: 911, `EQUIPMENT_NEW`: 226, `CUTTER_NEW`: 16...). Đề xuất Remap phục hồi 95.9% về `NEW_SET`.
+  - Phát hiện đột phá kiểm toán `asset_location_logs`: Toàn bộ 1.450 dòng có `asset_id` lệch 100% với `equipment.equipment_id` do trỏ vào bảng cũ `physical_molds` & `cutters` đã bị DROP. Kiểm chứng thành công 100.0% (1.450 / 1.450) có thể cứu vãn và map lại chính xác thông qua `id_registry.json` và `equipment.legacy_id`.
+  - Xác nhận `mold_location_history` (0 dòng) đã chết (deprecated); `equipment_loans` (0 dòng) kiến trúc M18 đã sẵn sàng vận hành.
+  - Phát hiện lệch pha Sidebar: `/production/work-orders` đang nằm nhầm dưới 成形部 thay vì 金型部.
+  - Xuất bản hồ sơ kỹ thuật chi tiết: `docs/technical/10_mold_department_business_process_and_data_audit.md`.
+
+
 
 
 
