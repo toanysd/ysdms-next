@@ -300,13 +300,27 @@ Bạn là AN (Executing Agent). Đây là dự án **ysdms-next** — hệ thố
 - **Trạng thái Database sau Pha 1:** Bảng `equipment_assignments` đạt **1.615 dòng** (2 gốc + 50 pilot + 509 lot 1 + 509 lot 2 + 507 lot 3 + 38 Tier 2).
 - **Ràng buộc toàn vẹn:** `SELECT related_equipment_id ... HAVING count(*) > 1` = **0 dòng** vi phạm (chuẩn "1 dao – 1 khuôn chính").
 
-### 14.2. Pha 2 — Tier 3 (30 dao Code Only / Dùng chung) (TIỀN ĐỀ MIGRATION 🔨)
-- **Điều kiện tiên quyết trước khi thực thi:** Cập nhật View `v_work_order_equipment_set` và logic tạo Work Order (`work-orders/actions.ts`) mở rộng hỗ trợ quan hệ `relationship_type IN ('SET_MEMBER', 'SHARED')`.
-- **Hồ sơ kỹ thuật đã chuẩn bị:**
-  * Migration DDL: `supabase/migrations/20260915000001_support_shared_equipment_in_work_orders.sql`.
-  * Server Action: `src/app/production/work-orders/actions.ts` (dòng 467) đã cập nhật `.in('relationship_type', ['SET_MEMBER', 'SHARED'])`.
-  * Quality Gate: `npx tsc --noEmit` đạt 0 errors.
-- **Trạng thái:** Đang chờ PE thẩm định migration trước khi mở bảng chi tiết 30 dao Tier 3.
+### 14.2. Pha 2 — Tier 3 (Nhóm 3A & 3B: 18 dao) (CLOSED ✅)
+- **Thời điểm nghiệm thu:** 2026-09-17 14:50 JST
+- **Hạ tầng đã triển khai:**
+  * Migration `20260915000001_support_shared_equipment_in_work_orders.sql` mở rộng View `v_work_order_equipment_set` hỗ trợ `IN ('SET_MEMBER', 'SHARED')`, vá `security_invoker = true`.
+  * Server Action `work-orders/actions.ts` dòng 467 hỗ trợ `IN ('SET_MEMBER', 'SHARED')` (Commit `648e693`).
+- **Hình thức thực thi dữ liệu:** PE tự thẩm định độc lập 100% UUID và trực tiếp thực thi trên Supabase production:
+  * **Nhóm 3A (2 dao `SSJ013`, `SSJ013-2`):** Điền `design_revision_id = 54c6c767-...` từ khuôn anh em `SSJ013-3`, gán quan hệ `SET_MEMBER`.
+  * **Nhóm 3B (16 dao lệch CAD revision):** Gán quan hệ `relationship_type = 'SHARED'`, nhãn `AUTO_BACKFILL_TIER3_SHARED_PE`.
+- **Trạng thái Database sau Pha 2:** Bảng `equipment_assignments` đạt **1.633 dòng** (1.615 + 2 + 16).
+- **Ràng buộc toàn vẹn:** `SELECT related_equipment_id ... HAVING count(*) > 1` = **0 dòng** vi phạm.
+
+### 14.3. Đóng Chính Thức Ưu Tiên 4 (CLOSED ✅) & Bàn Giao Kiểm Kê Thủ Công
+- **Tổng kết tự động hóa:** Đạt tỷ lệ **94,3%** (1.633 / 1.731 dao cắt đã có quan hệ SET gá lắp hoặc SHARED chính xác).
+- **Phần tồn đọng dài hạn (5,7% - 98 dao):**
+  * **Nhóm 3C (12 dao / 10 khuôn):** Khớp mã/tên xưởng nhưng thiếu CAD revision ở cả 2 phía.
+  * **Tier 4A (5 dao):** Dao phụ trợ đặc thù (nhôm ALCUTTER, dưỡng da, dưỡng gỗ, dao mẫu).
+  * **Tier 4B (81 dao):** Dao sản xuất thông thường không tìm thấy khuôn tương ứng trong hệ thống (khuôn đã thanh lý hoặc chưa nhập).
+- **Hồ sơ bàn giao kiểm kê:** Đã xuất bản tài liệu hướng dẫn kiểm kê hiện trường chi tiết tại:  
+  `docs/technical/inventory_98_unassigned_cutters.md` (bao gồm vị trí kệ kho, UUID, và hướng dẫn đo kiểm kích thước thực tế cho từng dao).
+- **Kết luận:** Ưu tiên 4 chính thức hoàn thành và **ĐÓNG (CLOSED ✅)**.
+
 
 
 
