@@ -347,7 +347,28 @@ Bạn là AN (Executing Agent). Đây là dự án **ysdms-next** — hệ thố
 - Mục **金型部 (Phòng Khuôn)** lại trỏ vào `/production/mold-orders` (trang cũ dùng bảng chết `mold_work_orders` 0 dòng).
 - Cần hoán đổi điều hướng và dọn dẹp trang cũ.
 
+---
 
+## 16. KHẮC PHỤC DỮ LIỆU PHA 1: DRY-RUN ROLLUP VÀ BACKFILL LOCATION LOGS (IN PROGRESS ⏳)
 
+> **Thời điểm:** 2026-09-21 10:25 JST  
+> **Căn cứ chỉ đạo:** PE & Anh Thoan (2026-09-21 10:22 JST)  
+> **File SQL Dry-run:** `docs/technical/remediation_phase1_dry_run.sql`
 
+### 16.1. Giải trình Nguyên nhân Sai lệch Số liệu Rollup Work Orders
+- **Hiện tượng:** AN trước đó báo kỳ vọng: 1.153 `NEW_SET/COMPLETED`, 1 `NEW_SET/PLANNED` (1 job), 34 `OTHER/COMPLETED`, 15 `REPAIR/COMPLETED`. Trong khi PE tự chạy câu SQL độc lập trên Supabase Production ra:
+  * `NEW_SET / COMPLETED`: **1.152 WO** (1.152 jobs)
+  * `NEW_SET / PLANNED`: **1 WO (2 jobs)** — mã `WO-L-1248` (`baa5074d-...`), chứa `DES-JAE380 (DESIGN)` + `JAE380 (MOLD_NEW)`
+  * `OTHER / COMPLETED`: **35 WO** (35 jobs: 25 `OTHER` + 10 `INTERNAL_OPS`)
+  * `REPAIR / COMPLETED`: **15 WO** (15 jobs)
+  * **Tổng cộng: 1.203 Work Orders / 1.204 Jobs**.
+- **Nguyên nhân gốc rễ (Root Cause):**
+  * Do PostgREST API key legacy trên máy Windows bị vô hiệu hóa (`Legacy API keys are disabled` từ 2026-08-26) và DNS IPv6 chặn kết nối direct pooler, AN ở phiên trước không thực thi được câu `SELECT` trực tiếp trên Production mà suy luận phân nhóm bằng tay từ 1.204 jobs.
+  * AN đã suy đoán nhầm rằng "cặp 2 jobs trong 1 Work Order nằm ở nhóm OTHER/INTERNAL_OPS" $\rightarrow$ dẫn đến trừ 1 WO ở nhóm OTHER (thành 34) và gán 1 WO cho DES-JAE380 ở NEW_SET (thành 1.153).
+  * **Thực tế Production do PE phát hiện**: Cặp 2 jobs duy nhất trong 1 Work Order chính là `WO-L-1248` chứa `DES-JAE380` (`DESIGN`) + `JAE380` (`MOLD_NEW`). Cả 2 jobs này đều thuộc định nghĩa `NEW_SET`, và vì job `DES-JAE380` là `PLANNED` nên toàn bộ Work Order này thuộc nhóm `NEW_SET / PLANNED`!
+  * Do đó, nhóm `OTHER / COMPLETED` giữ nguyên vẹn **35 WO** (không có cặp nào), còn nhóm `NEW_SET / COMPLETED` là **1.152 WO**.
+- **Cam kết & Chuẩn hóa:** AN công nhận 100% kết quả thực thi độc lập của PE là Nguồn sự thật duy nhất (SSOT). File script `docs/technical/remediation_phase1_dry_run.sql` đã được chuẩn hóa lại toàn bộ các chú thích kỳ vọng khớp tuyệt đối với số liệu này.
 
+### 16.2. Tiến độ Triển khai
+1. **Spot-check 5 mẫu UUID:** Đã xác minh khớp 100% trên `equipment.legacy_id` (`M-373`, `M-5076`, `M-4494`, `M-5337`, `M-5593`).
+2. **File SQL Dry-run `remediation_phase1_dry_run.sql`:** Chứa đầy đủ 1.130 cặp ánh xạ ánh xạ đại diện cho toàn bộ 1.450 bản ghi `asset_location_logs` + các truy vấn Rollup Work Orders đã cập nhật số liệu chuẩn.
