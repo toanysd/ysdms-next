@@ -489,3 +489,25 @@ Danh sách chia sub-phase:
   - 2. Thêm cột `maintenance_shot_threshold` và `shots_at_last_maintenance` vào bảng `equipment` (backfill ngưỡng chuẩn: CUTTER 50k, MOLD 100k, PLUG 80k).
   - 3. Tạo VIEW `v_equipment_lifecycle_status` với `security_invoker = true` làm SSOT cảnh báo bảo dưỡng.
 - **Trạng thái:** Sẵn sàng để PE review và apply qua MCP.
+
+
+### 16.3. Nghiệm thu Lỗ hổng 1 (work_orders) — CLOSED ✅
+- **Thời điểm nghiệm thu:** 2026-09-21 10:49 JST
+- **Hình thức thực thi:** PE trực tiếp chạy UPDATE remap trên Supabase production và tự xác minh độc lập 2 lần.
+- **Kết quả xác minh thực tế:** Khớp chính xác 100% với kỳ vọng SSOT:
+  * `NEW_SET / COMPLETED`: **1.152** work orders
+  * `NEW_SET / PLANNED`: **1** work order (`WO-L-1248` / `JAE-380`, ID `baa5074d-...`)
+  * `OTHER / COMPLETED`: **35** work orders
+  * `REPAIR / COMPLETED`: **15** work orders
+  * **Tổng cộng:** **1.203** work orders (không còn dòng nào mang giá trị `'OTHER'` mặc định vô nghĩa).
+- **Kết luận:** Lỗ hổng 1 chính thức hoàn thành và **ĐÓNG (CLOSED ✅)**.
+
+### 16.4. Chuyển giao Phần 2B: Khắc phục Lỗ hổng 2 (asset_location_logs - 1.450 bản ghi)
+- **Thời điểm:** 2026-09-21 11:15 JST
+- **Kiểm tra bổ sung của PE:** PE đã kiểm chứng thêm 3 mẫu ngẫu nhiên độc lập (tổng cộng 8/8 mẫu khớp 100% với bảng `equipment`).
+- **Hình thức chuyển giao:** Do công cụ GitHub của PE không tải được toàn bộ file 74.8 KB (1.311 dòng), AN chuyển giao toàn bộ khối SQL `tmp_legacy_asset_map` gồm 1.130 cặp mapping `(old_asset_id, legacy_id)` trực tiếp trong khung chat dưới dạng 1-click copy block:
+  1. `INSERT INTO tmp_legacy_asset_map` (1.130 cặp)
+  2. Truy vấn kiểm tra tỷ lệ khớp (Kỳ vọng: 1.450 / 1.450 - 100.0%)
+  3. Lệnh `UPDATE asset_location_logs` (1.450 bản ghi)
+  4. Truy vấn xác minh toàn vẹn sau UPDATE (Kỳ vọng: 0 bản ghi vi phạm)
+- **Kỳ vọng:** Sẵn sàng cho PE thực thi và chính thức đóng Lỗ hổng 2, hoàn tất toàn bộ Pha 1.
