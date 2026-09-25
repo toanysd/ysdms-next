@@ -209,27 +209,35 @@ export default async function ProductionTrackPage({
   const { data: machines } = await supabase.from('machines').select('*').eq('is_active', true)
   const operators = await getOperators()
 
-  // FETCH MOLDS MAPPED TO THIS PRODUCT ONLY (AUTO-RESOLVE)
-  const { data: moldMappings } = await (supabase as any)
-    .from('products')
+  // FETCH MOLDS MAPPED TO THIS PRODUCT ONLY (AUTO-RESOLVE VIA UNIFIED EQUIPMENT SSOT)
+  const { data: revs } = await supabase
+    .from('design_revisions')
     .select(`
-            mold_revisions (
-                revision_code,
-                physical_molds (
-                    mold_physical_id, system_code, current_rack_layer_id, device_status
-                )
-            )
-        `)
+      revision_code,
+      equipment!equipment_design_revision_id_fkey (
+        equipment_id,
+        equipment_code,
+        current_rack_layer_id,
+        device_status,
+        equipment_type
+      )
+    `)
     .eq('product_id', itemData.product_id)
 
   const availableMolds: any[] = []
-  moldMappings?.forEach((mapping: any) => {
-    mapping.mold_revisions?.forEach((rev: any) => {
-      const physicals = rev.physical_molds || []
-      const physArray = Array.isArray(physicals) ? physicals : [physicals]
-      physArray.forEach((p: any) => {
-        if (p) availableMolds.push({ ...p, revision_code: rev.revision_code })
-      })
+  revs?.forEach((rev: any) => {
+    const equips = rev.equipment || []
+    const equipArray = Array.isArray(equips) ? equips : [equips]
+    equipArray.forEach((e: any) => {
+      if (e && e.equipment_type === 'MOLD') {
+        availableMolds.push({
+          mold_physical_id: e.equipment_id,
+          system_code: e.equipment_code,
+          current_rack_layer_id: e.current_rack_layer_id,
+          device_status: e.device_status,
+          revision_code: rev.revision_code
+        })
+      }
     })
   })
 
