@@ -39,7 +39,7 @@ type WorkLog = {
     job_id: string
     job_code: string
     job_name: string
-    physical_molds: { equipment_code: string } | null
+    equipment: { equipment_code: string } | null
     products: { product_code: string } | null
   } | null
 }
@@ -161,7 +161,7 @@ export function DailyWorklogQuickModal({
           job_id,
           job_code,
           job_name,
-          physical_molds:equipment_id(equipment_code),
+          equipment:equipment_id(equipment_code),
           products:product_id(product_code)
         )
       `)
@@ -342,7 +342,7 @@ export function DailyWorklogQuickModal({
   const getModelCode = (log: WorkLog) => {
     if (!log.jobs) return '-'
     if (log.jobs.job_code === '社内作業') return '社内作業'
-    if (log.jobs.physical_molds?.equipment_code) return log.jobs.physical_molds.equipment_code
+    if (log.jobs.equipment?.equipment_code) return log.jobs.equipment.equipment_code
     if (log.jobs.products?.product_code) return log.jobs.products.product_code
     return log.jobs.job_code
   }

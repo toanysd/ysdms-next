@@ -482,7 +482,7 @@ export function EditStepModal({ step, jobId, nextStepNo = 1, initialLog, mode = 
           job_id,
           job_code,
           job_name,
-          physical_molds:equipment_id(equipment_code),
+          equipment:equipment_id(equipment_code),
           products:product_id(product_code, product_name_internal)
         )
       `)

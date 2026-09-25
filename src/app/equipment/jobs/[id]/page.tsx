@@ -224,7 +224,7 @@ export default function JobDetailPage() {
       </div>
 
       {/* Warning Banner for Unlinked Mold Jobs */}
-      {!job.equipment && !job.physical_molds && !job.job_name.includes('社内作業') && (
+      {!job.equipment && !job.job_name.includes('社内作業') && (
         <div style={{
           padding: '8px 14px',
           borderRadius: 8,
