@@ -1,7 +1,7 @@
 export const dynamic = 'force-dynamic'
 
 import type { Metadata } from 'next'
-import ReportDashboard from './ReportDashboard-v8.5.2-1'
+import ReportDashboard from './ReportDashboard'
 import Link from 'next/link'
 import { ArrowLeft, BarChart3 } from 'lucide-react'
 import { getProductionReport } from '@/app/actions/reports'

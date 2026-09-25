@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
-import MasterDashboard from '@/app/dashboard/MasterDashboard-v8.5.2-1'
+import MasterDashboard from '@/app/dashboard/MasterDashboard'
 import ProductionOverview from '@/components/dashboard/ProductionOverview'
 import { MonthlyRow, DailyRow } from '@/types/dashboard'
 import { Focus, BarChart3 } from 'lucide-react'

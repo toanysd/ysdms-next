@@ -1,7 +1,5 @@
-import FactoryFloorMonitor from './FactoryFloorMonitor-v8.5.2-2'
+import { redirect } from 'next/navigation'
 
-export const dynamic = 'force-dynamic'
-
-export default function Page() {
-    return <FactoryFloorMonitor />
+export default function ActiveProductionPage() {
+  redirect('/production/floor')
 }

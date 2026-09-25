@@ -1,7 +1,7 @@
 'use client'
 import { useState } from 'react'
 import DayPlanGrid from './DayPlanGrid'
-import ExcelPlanGridView from './ExcelPlanGridView-v8.5.2-1'
+import ExcelPlanGridView from './ExcelPlanGridView'
 import { LayoutGrid, List } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 
