@@ -1,7 +1,7 @@
 # 📒 SỔ CÁI DỰ ÁN — YSDMS NextGen
-> Cập nhật lần cuối: 2026-09-17 (Đóng toàn diện chuỗi Ưu tiên 1→4: Module QC, Route Shipment, Chuẩn hóa gá lắp SET N:N 1.633 dòng)
+> Cập nhật lần cuối: 2026-09-25 (Pha 1 Data Remediation CLOSED ✅: 1.203 work_orders + 1.450 asset_location_logs phục hồi 100%)
 > Phiên bản Schema: V5 / Unified Equipment Architecture + Migrations 100-105 + Migration M28A + Migration 20260915000001 (SHARED Support)
-> Trạng thái: Ưu tiên 1, 2, 3, 4 CLOSED ✅ | Chuyển trọng tâm sang Nghiệp vụ Bộ phận Khuôn theo chỉ đạo Anh Thoan
+> Trạng thái: Ưu tiên 1, 2, 3, 4 CLOSED ✅ | Pha 1 Data Remediation CLOSED ✅ | Chờ chỉ đạo định hướng tiếp theo từ Anh Thoan & PE
 
 
 ---
@@ -1437,6 +1437,21 @@ ebaseline...).
   - Xác nhận `mold_location_history` (0 dòng) đã chết (deprecated); `equipment_loans` (0 dòng) kiến trúc M18 đã sẵn sàng vận hành.
   - Phát hiện lệch pha Sidebar: `/production/work-orders` đang nằm nhầm dưới 成形部 thay vì 金型部.
   - Xuất bản hồ sơ kỹ thuật chi tiết: `docs/technical/10_mold_department_business_process_and_data_audit.md`.
+
+- **[2026-09-21 ~ 2026-09-25] Pha 1: Data Remediation — Khắc phục Triệt để Lỗ hổng 1 & Lỗ hổng 2 (CLOSED ✅)**
+  - **Lỗ hổng 1 (`work_orders` - 1.203 dòng):**
+    * PE trực tiếp chạy UPDATE remap trên Supabase production và tự xác minh 2 lần độc lập.
+    * Kết quả khớp chính xác 100%: 1.152 `NEW_SET / COMPLETED`, 1 `NEW_SET / PLANNED` (`WO-L-1248` / `JAE-380`), 35 `OTHER / COMPLETED`, 15 `REPAIR / COMPLETED`. Không còn bản ghi nào mang giá trị `'OTHER'` mặc định sai lệch.
+    * Lỗ hổng 1 chính thức CLOSED ✅ (2026-09-21 10:49 JST).
+  - **Lỗ hổng 2 (`asset_location_logs` - 1.450 dòng mồ côi):**
+    * AN chuyển giao trọn vẹn 1.130 cặp ánh xạ `(old_asset_id -> legacy_id)` qua 3 đợt SQL (380 + 380 + 370 dòng) nạp vào bảng staging `public.staging_legacy_asset_map`.
+    * PE tự kiểm chứng độc lập trên Production: Nạp đủ 1.130 cặp duy nhất; Dry-run trước sửa đạt `match_percentage = 100.00%` (1.450 / 1.450); Chạy UPDATE chính thức trên 1.450 dòng `asset_location_logs.asset_id` trỏ đúng vào `equipment.equipment_id` sống; Xác minh sau update: `remaining_unmatched_logs = 0` (0 dòng mồ côi).
+    * Dọn dẹp sạch sẽ bảng staging. Phân bổ `asset_type`: `MOLD` 1.361 + `CUTTER` 89 = 1.450, khớp tuyệt đối nguyên trạng.
+    * Lỗ hổng 2 chính thức CLOSED ✅ (2026-09-25 09:24 JST).
+  - **Chuẩn hóa Quy trình Bàn giao Dữ liệu Lớn (Operational Protocol):**
+    * GitHub lưu trữ file script làm SSOT và đối soát chọn mẫu (`search_code` / `get_commit`).
+    * Chuyển giao thực thi các payload lớn (>70KB) bằng cách chia lô vừa phải (300–400 dòng/lô) dán trực tiếp trong chat để nạp vào bảng staging Supabase.
+  - **Tổng kết Pha 1:** Toàn bộ dữ liệu cốt lõi của YSDMS NextGen đã đạt độ toàn vẹn 100%, không còn bản ghi rác/mồ côi. Sẵn sàng chuyển giao sang Pha tiếp theo.
 
 
 

@@ -1,4 +1,4 @@
-# SESSION HANDOFF — 2026-09-08 (Milestone 18 Closed)
+# SESSION HANDOFF — 2026-09-25 (Pha 1 Data Remediation Closed)
 
 > **Mục đích:** Tài liệu này là nguồn sự thật duy nhất khi bắt đầu phiên thảo luận mới.
 > PE = Perplexity (Project Engineer — phân tích, kiến trúc, ra quyết định).
@@ -31,10 +31,15 @@
 | Module Quy chuẩn Tính toán Báo giá (`docs/quotations/`) | ✅ HOÀN THÀNH — 5 tài liệu SSOT căn cứ phôi Excel gốc YSD |
 | M27-B — Work Order Auto-Creation from Order (ADR-014) | ✅ CLOSED & PUSHED (commit `07f51ec`) |
 | M28-A — DB Enum Integrity & Agent Mailbox Setup | ✅ CLOSED & PUSHED (commit `dccda76`) |
-| Migration 089–105 + Migration M28A (v2.1) | ✅ Applied to production |
+| Ưu tiên 1 — Module QC NG Trends & Nhập liệu KCS (RULE-DATA-02) | ✅ CLOSED & PUSHED (commit `e4cbb45`) |
+| Ưu tiên 2 — Hợp nhất Route Xuất hàng Canonical (`/shipments/`) | ✅ CLOSED & PUSHED (commit `fa71152`) |
+| Ưu tiên 3 — Chuẩn hóa gá lắp SET N:N Tier 1 (1.575 dao) | ✅ CLOSED & PUSHED (commit `2f0be55`) |
+| Ưu tiên 4 — Chuẩn hóa gá lắp SET Tier 2, 3A, 3B (1.633 dòng) & Bàn giao kiểm kê 98 dao | ✅ CLOSED & PUSHED (commit `a64c936`) |
+| Pha 1 — Data Remediation (`work_orders` + `asset_location_logs`) | ✅ CLOSED & TESTED 100% (2026-09-25) |
+| Migration 089–105 + Migration M28A (v2.1) + SHARED Support | ✅ Applied to production |
 | TypeScript build | ✅ 0 errors |
 | i18n | ✅ 0 missing keys |
-| Next Step | Đợi quyết định từ Anh Thoan: Option B (Work Order Cockpit) hoặc Option C (Nghiệp vụ mới) |
+| Next Step | Chờ quyết định từ Anh Thoan & PE: Lựa chọn Phương án A (Vận hành phòng Khuôn), B (Kiểm kê 98 dao), hoặc C (Nghiệp vụ mới) |
 
 ---
 
@@ -349,11 +354,11 @@ Bạn là AN (Executing Agent). Đây là dự án **ysdms-next** — hệ thố
 
 ---
 
-## 16. KHẮC PHỤC DỮ LIỆU PHA 1: DRY-RUN ROLLUP VÀ BACKFILL LOCATION LOGS (IN PROGRESS ⏳)
+## 16. KHẮC PHỤC DỮ LIỆU PHA 1: DRY-RUN ROLLUP VÀ BACKFILL LOCATION LOGS (CLOSED ✅)
 
-> **Thời điểm:** 2026-09-21 10:25 JST  
-> **Căn cứ chỉ đạo:** PE & Anh Thoan (2026-09-21 10:22 JST)  
-> **File SQL Dry-run:** `docs/technical/remediation_phase1_dry_run.sql`
+> **Thời điểm hoàn thành:** 2026-09-25 09:24 JST  
+> **Căn cứ chỉ đạo & Nghiệm thu:** PE & Anh Thoan (2026-09-21 ~ 2026-09-25)  
+> **File SQL SSOT lưu trữ:** `docs/technical/remediation_phase1_dry_run.sql` (Commit `ce012a9`)
 
 ### 16.1. Giải trình Nguyên nhân Sai lệch Số liệu Rollup Work Orders
 - **Hiện tượng:** AN trước đó báo kỳ vọng: 1.153 `NEW_SET/COMPLETED`, 1 `NEW_SET/PLANNED` (1 job), 34 `OTHER/COMPLETED`, 15 `REPAIR/COMPLETED`. Trong khi PE tự chạy câu SQL độc lập trên Supabase Production ra:
@@ -370,9 +375,8 @@ Bạn là AN (Executing Agent). Đây là dự án **ysdms-next** — hệ thố
 - **Cam kết & Chuẩn hóa:** AN công nhận 100% kết quả thực thi độc lập của PE là Nguồn sự thật duy nhất (SSOT). File script `docs/technical/remediation_phase1_dry_run.sql` đã được chuẩn hóa lại toàn bộ các chú thích kỳ vọng khớp tuyệt đối với số liệu này.
 
 ### 16.2. Tiến độ Triển khai
-1. **Spot-check 5 mẫu UUID:** Đã xác minh khớp 100% trên `equipment.legacy_id` (`M-373`, `M-5076`, `M-4494`, `M-5337`, `M-5593`).
-2. **File SQL Dry-run `remediation_phase1_dry_run.sql`:** Chứa đầy đủ 1.130 cặp ánh xạ ánh xạ đại diện cho toàn bộ 1.450 bản ghi `asset_location_logs` + các truy vấn Rollup Work Orders đã cập nhật số liệu chuẩn.
-
+1. **Spot-check 8 mẫu UUID:** Đã xác minh khớp 100% trên `equipment.legacy_id` (`M-373`, `M-5076`, `M-4494`, `M-5337`, `M-5593` + 3 mẫu ngẫu nhiên độc lập từ PE).
+2. **File SQL SSOT `remediation_phase1_dry_run.sql`:** Chứa đầy đủ 1.130 cặp ánh xạ đại diện cho toàn bộ 1.450 bản ghi `asset_location_logs` + các truy vấn Rollup Work Orders đã cập nhật số liệu chuẩn.
 
 ### 16.3. Nghiệm thu Lỗ hổng 1 (work_orders) — CLOSED ✅
 - **Thời điểm nghiệm thu:** 2026-09-21 10:49 JST
@@ -385,12 +389,39 @@ Bạn là AN (Executing Agent). Đây là dự án **ysdms-next** — hệ thố
   * **Tổng cộng:** **1.203** work orders (không còn dòng nào mang giá trị `'OTHER'` mặc định vô nghĩa).
 - **Kết luận:** Lỗ hổng 1 chính thức hoàn thành và **ĐÓNG (CLOSED ✅)**.
 
-### 16.4. Chuyển giao Phần 2B: Khắc phục Lỗ hổng 2 (asset_location_logs - 1.450 bản ghi)
-- **Thời điểm:** 2026-09-21 11:15 JST
-- **Kiểm tra bổ sung của PE:** PE đã kiểm chứng thêm 3 mẫu ngẫu nhiên độc lập (tổng cộng 8/8 mẫu khớp 100% với bảng `equipment`).
-- **Hình thức chuyển giao:** Do công cụ GitHub của PE không tải được toàn bộ file 74.8 KB (1.311 dòng), AN chuyển giao toàn bộ khối SQL `tmp_legacy_asset_map` gồm 1.130 cặp mapping `(old_asset_id, legacy_id)` trực tiếp trong khung chat dưới dạng 1-click copy block:
-  1. `INSERT INTO tmp_legacy_asset_map` (1.130 cặp)
-  2. Truy vấn kiểm tra tỷ lệ khớp (Kỳ vọng: 1.450 / 1.450 - 100.0%)
-  3. Lệnh `UPDATE asset_location_logs` (1.450 bản ghi)
-  4. Truy vấn xác minh toàn vẹn sau UPDATE (Kỳ vọng: 0 bản ghi vi phạm)
-- **Kỳ vọng:** Sẵn sàng cho PE thực thi và chính thức đóng Lỗ hổng 2, hoàn tất toàn bộ Pha 1.
+### 16.4. Nghiệm thu Lỗ hổng 2 (asset_location_logs) — CLOSED ✅
+- **Thời điểm nghiệm thu:** 2026-09-25 09:24 JST
+- **Hình thức thực thi:** Chuyển giao trọn vẹn 1.130 cặp mapping `(old_asset_id -> legacy_id)` qua 3 đợt SQL chat (380 + 380 + 370 dòng) nạp vào bảng staging `public.staging_legacy_asset_map` trên Supabase production.
+- **Kết quả xác minh thực tế do PE tự kiểm chứng độc lập:**
+  1. Nạp đủ 1.130 cặp ánh xạ, 1.130 UUID duy nhất = 1.130 legacy_id duy nhất.
+  2. Dry-run trước khi update: **`match_percentage = 100.00%`** (1.450 / 1.450).
+  3. Thực thi UPDATE chính thức trên 1.450 dòng `asset_location_logs.asset_id`, trỏ đúng `equipment.equipment_id` sống.
+  4. Xác minh sau UPDATE: **`remaining_unmatched_logs = 0`** (0 dòng mồ côi).
+  5. Dọn dẹp sạch sẽ bảng staging `staging_legacy_asset_map`.
+  6. Phân bổ `asset_type`: `MOLD` 1.361 + `CUTTER` 89 = 1.450, khớp tuyệt đối nguyên trạng.
+- **Kết luận:** Lỗ hổng 2 chính thức hoàn thành và **ĐÓNG (CLOSED ✅)**.
+
+### 16.5. Tổng kết Toàn diện Pha 1 — Data Remediation (CLOSED ✅)
+
+| Lỗ hổng | Trạng thái | Chi tiết nghiệm thu |
+|---|---|---|
+| 1. `work_orders.wo_type/wo_status` sai lệch | **CLOSED ✅** | 1.203 dòng remap đúng theo tính chất công việc thật (1.152 NEW_SET/COMPLETED, 1 NEW_SET/PLANNED, 35 OTHER/COMPLETED, 15 REPAIR/COMPLETED) |
+| 2. `asset_location_logs.asset_id` mồ côi | **CLOSED ✅** | 1.450/1.450 dòng (100.0%) phục hồi sang UUID sống của bảng `equipment`, 0 dòng mồ côi |
+| 3. `mold_location_history` / `equipment_loans` | **ĐÃ GHI NHẬN** | Bảng chết/chưa dùng, chuyển sang phạm vi Pha tiếp theo |
+
+### 16.6. Quy chuẩn Giao tiếp & Bàn giao Dữ liệu Lớn (Operational Protocol)
+- **GitHub (SSOT & Đối soát chọn mẫu):** AN tạo file script, commit và push lên GitHub làm tài liệu kỹ thuật SSOT lưu trữ lâu dài. PE sử dụng `search_code` và `get_commit` để kiểm tra sự tồn tại và đối chiếu chọn mẫu.
+- **Chat SQL Chunks qua Bảng Staging (Thực thi hàng loạt):** Do công cụ GitHub của PE không thể kéo toàn văn các file lớn (>70KB), việc thực thi các payload dữ liệu lớn (hàng nghìn dòng INSERT/UPDATE) trên Supabase được chuẩn hóa bằng cách:
+  * AN chia nhỏ dữ liệu thành các lô SQL vừa phải (300–400 dòng/lô), dán trực tiếp trong khung chat.
+  * PE copy 1-click và chạy nạp vào bảng staging trung gian bền vững (`public.staging_xxx`).
+  * Thực hiện Dry-run kiểm tra tỷ lệ khớp (100%) $\rightarrow$ Thực thi UPDATE $\rightarrow$ Xác minh 0 lỗi $\rightarrow$ DROP bảng staging.
+
+### 16.7. Đề xuất Lộ trình Pha tiếp theo (Chờ Chỉ đạo từ Anh Thoan & PE)
+1. **Phương án A — Chuẩn hóa Vận hành Phân xưởng khuôn (金型部):**
+   - Xử lý dứt điểm Lỗ hổng 3: Đánh dấu `DEPRECATED` và DROP bảng tàn dư `mold_location_history` (0 dòng).
+   - Đưa module mượn trả khuôn `equipment_loans` vào vận hành thực tế tại xưởng (hạ tầng UI, PDF, Schema M18 đã hoàn thiện 100%).
+   - Hoán đổi điều hướng Sidebar: chuyển `/production/work-orders` (Chỉ thị gia công khuôn) về đúng menu **金型部 (Phòng Khuôn)**; dọn dẹp trang cũ `/production/mold-orders` dùng bảng rác `mold_work_orders`.
+2. **Phương án B — Kiểm kê Hiện trường 98 Dao cắt Tồn đọng (Tier 3C & Tier 4):**
+   - Triển khai theo tài liệu bàn giao `docs/technical/inventory_98_unassigned_cutters.md` cho 12 dao Nhóm 3C và 86 dao Tier 4.
+3. **Phương án C — Tiếp tục Chuỗi Nghiệp vụ Báo giá & Xuất hàng:**
+   - Hoàn thiện luồng Báo giá PDF (`/orders/quotations`) hoặc Phiếu giao hàng (`/shipments`).

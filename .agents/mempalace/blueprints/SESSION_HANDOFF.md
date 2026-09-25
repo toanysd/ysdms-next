@@ -502,12 +502,39 @@ Danh sách chia sub-phase:
   * **Tổng cộng:** **1.203** work orders (không còn dòng nào mang giá trị `'OTHER'` mặc định vô nghĩa).
 - **Kết luận:** Lỗ hổng 1 chính thức hoàn thành và **ĐÓNG (CLOSED ✅)**.
 
-### 16.4. Chuyển giao Phần 2B: Khắc phục Lỗ hổng 2 (asset_location_logs - 1.450 bản ghi)
-- **Thời điểm:** 2026-09-21 11:15 JST
-- **Kiểm tra bổ sung của PE:** PE đã kiểm chứng thêm 3 mẫu ngẫu nhiên độc lập (tổng cộng 8/8 mẫu khớp 100% với bảng `equipment`).
-- **Hình thức chuyển giao:** Do công cụ GitHub của PE không tải được toàn bộ file 74.8 KB (1.311 dòng), AN chuyển giao toàn bộ khối SQL `tmp_legacy_asset_map` gồm 1.130 cặp mapping `(old_asset_id, legacy_id)` trực tiếp trong khung chat dưới dạng 1-click copy block:
-  1. `INSERT INTO tmp_legacy_asset_map` (1.130 cặp)
-  2. Truy vấn kiểm tra tỷ lệ khớp (Kỳ vọng: 1.450 / 1.450 - 100.0%)
-  3. Lệnh `UPDATE asset_location_logs` (1.450 bản ghi)
-  4. Truy vấn xác minh toàn vẹn sau UPDATE (Kỳ vọng: 0 bản ghi vi phạm)
-- **Kỳ vọng:** Sẵn sàng cho PE thực thi và chính thức đóng Lỗ hổng 2, hoàn tất toàn bộ Pha 1.
+### 16.4. Nghiệm thu Lỗ hổng 2 (asset_location_logs) — CLOSED ✅
+- **Thời điểm nghiệm thu:** 2026-09-25 09:24 JST
+- **Hình thức thực thi:** Chuyển giao trọn vẹn 1.130 cặp mapping `(old_asset_id -> legacy_id)` qua 3 đợt SQL chat (380 + 380 + 370 dòng) nạp vào bảng staging `public.staging_legacy_asset_map` trên Supabase production.
+- **Kết quả xác minh thực tế do PE tự kiểm chứng độc lập:**
+  1. Nạp đủ 1.130 cặp ánh xạ, 1.130 UUID duy nhất = 1.130 legacy_id duy nhất.
+  2. Dry-run trước khi update: **`match_percentage = 100.00%`** (1.450 / 1.450).
+  3. Thực thi UPDATE chính thức trên 1.450 dòng `asset_location_logs.asset_id`, trỏ đúng `equipment.equipment_id` sống.
+  4. Xác minh sau UPDATE: **`remaining_unmatched_logs = 0`** (0 dòng mồ côi).
+  5. Dọn dẹp sạch sẽ bảng staging `staging_legacy_asset_map`.
+  6. Phân bổ `asset_type`: `MOLD` 1.361 + `CUTTER` 89 = 1.450, khớp tuyệt đối nguyên trạng.
+- **Kết luận:** Lỗ hổng 2 chính thức hoàn thành và **ĐÓNG (CLOSED ✅)**.
+
+### 16.5. Tổng kết Toàn diện Pha 1 — Data Remediation (CLOSED ✅)
+
+| Lỗ hổng | Trạng thái | Chi tiết nghiệm thu |
+|---|---|---|
+| 1. `work_orders.wo_type/wo_status` sai lệch | **CLOSED ✅** | 1.203 dòng remap đúng theo tính chất công việc thật (1.152 NEW_SET/COMPLETED, 1 NEW_SET/PLANNED, 35 OTHER/COMPLETED, 15 REPAIR/COMPLETED) |
+| 2. `asset_location_logs.asset_id` mồ côi | **CLOSED ✅** | 1.450/1.450 dòng (100.0%) phục hồi sang UUID sống của bảng `equipment`, 0 dòng mồ côi |
+| 3. `mold_location_history` / `equipment_loans` | **ĐÃ GHI NHẬN** | Bảng chết/chưa dùng, chuyển sang phạm vi Pha tiếp theo |
+
+### 16.6. Quy chuẩn Giao tiếp & Bàn giao Dữ liệu Lớn (Operational Protocol)
+- **GitHub (SSOT & Đối soát chọn mẫu):** AN tạo file script, commit và push lên GitHub làm tài liệu kỹ thuật SSOT lưu trữ lâu dài. PE sử dụng `search_code` và `get_commit` để kiểm tra sự tồn tại và đối chiếu chọn mẫu.
+- **Chat SQL Chunks qua Bảng Staging (Thực thi hàng loạt):** Do công cụ GitHub của PE không thể kéo toàn văn các file lớn (>70KB), việc thực thi các payload dữ liệu lớn (hàng nghìn dòng INSERT/UPDATE) trên Supabase được chuẩn hóa bằng cách:
+  * AN chia nhỏ dữ liệu thành các lô SQL vừa phải (300–400 dòng/lô), dán trực tiếp trong khung chat.
+  * PE copy 1-click và chạy nạp vào bảng staging trung gian bền vững (`public.staging_xxx`).
+  * Thực hiện Dry-run kiểm tra tỷ lệ khớp (100%) $\rightarrow$ Thực thi UPDATE $\rightarrow$ Xác minh 0 lỗi $\rightarrow$ DROP bảng staging.
+
+### 16.7. Đề xuất Lộ trình Pha tiếp theo (Chờ Chỉ đạo từ Anh Thoan & PE)
+1. **Phương án A — Chuẩn hóa Vận hành Phân xưởng khuôn (金型部):**
+   - Xử lý dứt điểm Lỗ hổng 3: Đánh dấu `DEPRECATED` và DROP bảng tàn dư `mold_location_history` (0 dòng).
+   - Đưa module mượn trả khuôn `equipment_loans` vào vận hành thực tế tại xưởng (hạ tầng UI, PDF, Schema M18 đã hoàn thiện 100%).
+   - Hoán đổi điều hướng Sidebar: chuyển `/production/work-orders` (Chỉ thị gia công khuôn) về đúng menu **金型部 (Phòng Khuôn)**; dọn dẹp trang cũ `/production/mold-orders` dùng bảng rác `mold_work_orders`.
+2. **Phương án B — Kiểm kê Hiện trường 98 Dao cắt Tồn đọng (Tier 3C & Tier 4):**
+   - Triển khai theo tài liệu bàn giao `docs/technical/inventory_98_unassigned_cutters.md` cho 12 dao Nhóm 3C và 86 dao Tier 4.
+3. **Phương án C — Tiếp tục Chuỗi Nghiệp vụ Báo giá & Xuất hàng:**
+   - Hoàn thiện luồng Báo giá PDF (`/orders/quotations`) hoặc Phiếu giao hàng (`/shipments`).
