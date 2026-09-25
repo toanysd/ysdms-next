@@ -50,12 +50,25 @@ export async function middleware(request: NextRequest) {
     return supabaseResponse
   }
 
-  // Allow static assets and API routes
-  if (
-    pathname.startsWith('/_next') ||
-    pathname.startsWith('/api') ||
-    pathname.includes('.')
-  ) {
+  // Allow static assets only (NOT API routes — they must authenticate)
+  if (pathname.startsWith('/_next')) {
+    return supabaseResponse
+  }
+
+  // API routes: require authentication except for specific public endpoints
+  if (pathname.startsWith('/api')) {
+    // Public API endpoints that don't require auth (add webhooks here if needed)
+    const PUBLIC_API_ROUTES = ['/api/health']
+    if (PUBLIC_API_ROUTES.some(route => pathname.startsWith(route))) {
+      return supabaseResponse
+    }
+    // All other API routes require authenticated user
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Unauthorized', message: 'Authentication required' },
+        { status: 401 }
+      )
+    }
     return supabaseResponse
   }
 
