@@ -1,6 +1,4 @@
 'use client'
-
-// @ts-nocheck
 import { useTranslations } from 'next-intl'
 
 import React, { useEffect, useState, useCallback } from 'react'

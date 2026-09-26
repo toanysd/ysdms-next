@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { getTranslations } from 'next-intl/server'
 import Link from 'next/link'
 import { ArrowLeft, Plus, Layers, GitBranch, FlaskConical, CheckCircle2, Clock, FileText, Factory } from 'lucide-react'
@@ -50,7 +49,7 @@ export default async function MoldDetailPage({ params }: Props) {
                 {t('Master.maKhuon')}
               </span>
               <span style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: 16, color: 'var(--text-primary)' }}>
-                {moldBase.mold_master_code}
+                {moldBase.product_code || moldBase.mold_master_code}
               </span>
             </div>
             
@@ -58,7 +57,7 @@ export default async function MoldDetailPage({ params }: Props) {
               <span style={{ color: 'var(--text-muted)', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                 {t('Master.tenKhuon')}
               </span>
-              <span style={{ fontSize: 14 }}>{moldBase.mold_master_name || '—'}</span>
+              <span style={{ fontSize: 14 }}>{moldBase.product_name_internal || moldBase.mold_master_name || '—'}</span>
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -94,9 +93,9 @@ export default async function MoldDetailPage({ params }: Props) {
               <span style={{ color: 'var(--text-muted)', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                 {t('Master.status')}
               </span>
-              {moldBase.status === 'ACTIVE' ? 
+              {(moldBase.product_status || moldBase.status) === 'ACTIVE' ? 
                 (<span className="badge badge--success" style={{ width: 'fit-content' }}>ACTIVE</span>) :
-                (<span className="badge badge--neutral" style={{ width: 'fit-content' }}>{moldBase.status || 'INACTIVE'}</span>)
+                (<span className="badge badge--neutral" style={{ width: 'fit-content' }}>{moldBase.product_status || moldBase.status || 'INACTIVE'}</span>)
               }
             </div>
           </div>
@@ -121,7 +120,7 @@ export default async function MoldDetailPage({ params }: Props) {
               {t('Master.danhSachPhienBanThietKe')}
             </h3>
           </div>
-          <Link href={`/master/mold/${id}/revision/new`}>
+          <Link href={`/master/molds/${id}/revision/new`}>
             <button className="btn btn-primary" style={{ height: 30, padding: '0 12px', fontSize: 12 }}>
               <Plus size={14} />
               {t('Master.maRevision')}
@@ -156,24 +155,26 @@ export default async function MoldDetailPage({ params }: Props) {
               </thead>
               <tbody>
                 {revisions.map((rev: any, index: number) => {
-                  const displayCode = rev.revision_code.replace(/^(.+)-([^-]+)$/, '$1 $2')
-                  const isApproved = !!rev.effective_date
+                  const revCode = rev.design_code || rev.revision_code || 'R1'
+                  const displayCode = revCode.replace(/^(.+)-([^-]+)$/, '$1 $2')
+                  const effectiveDate = rev.approved_date || rev.effective_date || rev.created_at?.slice(0, 10) || null
+                  const isApproved = !!effectiveDate || rev.status === 'APPROVED'
                   
                   return (
                     <tr key={rev.revision_id}>
                       <td style={{ textAlign: 'center', color: 'var(--text-muted)', fontFamily: 'monospace' }}>{index + 1}</td>
                       <td style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: 14 }}>
-                        <Link href={`/master/mold/${id}/revision/${rev.revision_id}`} style={{ color: 'inherit', textDecoration: 'none' }} className="hover:text-[var(--accent)] hover:underline">
+                        <Link href={`/master/molds/${id}/revision/${rev.revision_id}`} style={{ color: 'inherit', textDecoration: 'none' }} className="hover:text-[var(--accent)] hover:underline">
                           {displayCode}
                         </Link>
                       </td>
                       <td>
                         <span className="badge badge--info">
-                          {rev.revision_name}
+                          {rev.design_code || rev.revision_name || 'R1'}
                         </span>
                       </td>
                       <td style={{ color: 'var(--text-secondary)', fontFamily: 'monospace' }}>
-                        {rev.effective_date || '—'}
+                        {effectiveDate || '—'}
                       </td>
                       <td>
                         {isApproved ? (

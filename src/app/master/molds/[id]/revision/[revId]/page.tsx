@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import { MoldRevisionForm } from '../../../_components/MoldRevisionForm'
@@ -11,11 +10,11 @@ export default async function EditMoldRevisionPage({ params }: Props) {
   const { id, revId } = await params
   const supabase = await createClient()
 
-  // Verify the mold_base exists
+  // Verify the product exists
   const { data: moldBase } = await supabase
-    .from('mold_base')
-    .select('id, code, name')
-    .eq('id', id)
+    .from('products')
+    .select('product_id, product_code, product_name_internal')
+    .eq('product_id', id)
     .single()
 
   if (!moldBase) {
@@ -24,10 +23,10 @@ export default async function EditMoldRevisionPage({ params }: Props) {
 
   // Fetch the specific revision
   const { data: revision } = await supabase
-    .from('mold_design_revision')
+    .from('design_revisions')
     .select('*')
-    .eq('id', revId)
-    .eq('mold_base_id', id)
+    .eq('revision_id', revId)
+    .eq('product_id', id)
     .single()
 
   if (!revision) {
@@ -37,8 +36,8 @@ export default async function EditMoldRevisionPage({ params }: Props) {
   return (
     <MoldRevisionForm 
       initialData={revision}
-      moldBaseId={moldBase.id} 
-      moldBaseCode={moldBase.code} 
+      moldBaseId={moldBase.product_id} 
+      moldBaseCode={moldBase.product_code} 
     />
   )
 }
