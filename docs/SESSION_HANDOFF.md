@@ -476,4 +476,12 @@ Bạn là AN (Executing Agent). Đây là dự án **ysdms-next** — hệ thố
 - Chia nhỏ nạp theo lô (500 dòng/batch), cơ chế upsert với khóa chống trùng `(order_id, line_no)`.
 - Chờ PE và Anh Thoan phê duyệt trước khi kích hoạt ghi vào Production.
 
+### 18.5. Kho Lưu trữ SQL Staging Phân lô (`scripts/staging_order_lines/`)
+- AN đã xuất toàn bộ 6.279 dòng ra thư mục `scripts/staging_order_lines/` gồm 19 files:
+  * `00_setup_and_verification.sql`: DDL bảng `staging_order_lines_backfill`, query đối soát FK dry-run, lệnh INSERT vào `order_lines`.
+  * `batch_01.sql` đến `batch_16.sql`: 16 file SQL, mỗi file 400 dòng (~36 KB/file, thấp hơn nhiều giới hạn 70 KB của PE), đảm bảo kéo toàn văn 100% qua GitHub.
+  * `all_batches_combined.sql`: File gộp toàn bộ 6.279 dòng (~567 KB) cho thực thi 1-lần qua CLI/psql.
+  * `README.md`: Bảng thống kê chi tiết từng file, số dòng, kích thước và quy trình thực hiện.
+
+
 
