@@ -425,3 +425,20 @@ Bạn là AN (Executing Agent). Đây là dự án **ysdms-next** — hệ thố
    - Triển khai theo tài liệu bàn giao `docs/technical/inventory_98_unassigned_cutters.md` cho 12 dao Nhóm 3C và 86 dao Tier 4.
 3. **Phương án C — Tiếp tục Chuỗi Nghiệp vụ Báo giá & Xuất hàng:**
    - Hoàn thiện luồng Báo giá PDF (`/orders/quotations`) hoặc Phiếu giao hàng (`/shipments`).
+
+---
+
+## 17. TIẾN ĐỘ THỰC HIỆN KIỂM TOÁN HỆ THỐNG & DỌN DẸP NỢ KỸ THUẬT (2026-09-26)
+
+| Giai đoạn | Hạng mục | Commit SHA | Trạng thái | Ghi chú nghiệm thu |
+|---|---|---|---|---|
+| Phase 0 | Security Hardening (Middleware, Upload, RLS) | `163a15e` | **CLOSED ✅** | PE & Supabase xác minh độc lập |
+| Data | Xóa triệt để Lỗ hổng 3 (`mold_location_history`) | `a49064a` | **CLOSED ✅** | PE chạy `DROP TABLE` trên production |
+| Phase 1 - P1 | Dọn dẹp version suffix `-v8.5.2` (6 files) | `5809833` | **CLOSED ✅** | Xóa rác, chuyển hướng an toàn |
+| Phase 1 - P2 | Chuẩn hóa alias `equipment_id` trong modals | `84bf30c` | **CLOSED ✅** | Khớp 100% schema Single Source of Truth |
+| Phase 1 - P3 | Gỡ `@ts-nocheck` cụm `master/molds/*` (4 files) | `bdc3c9c` | **CLOSED ✅** | `@ts-nocheck` giảm từ 10 xuống 6 files |
+| Phase 1 - P4 | Khắc phục `select('*')`, N+1 queries, `.range()` | (đang thực thi) | **IN PROGRESS ⏳** | Danh mục 8 files đã được PE phê duyệt |
+
+### 📌 Ghi chú Nhắc nhở Quan trọng (Anh Thoan - Product Owner):
+- **Token Rotation Reminder:** Sau khi HOÀN TOÀN HOÀN THÀNH TOÀN BỘ DỰ ÁN, thực hiện rotate/thay đổi Personal Access Token (classic) trên GitHub và cập nhật lại vào biến môi trường `GITHUB_TOKEN` trên Render (`ysd-moldcutter-backend`). Đã lưu vào Sổ cái dự án để tự động nhắc anh Thoan ở bước cuối cùng.
+
