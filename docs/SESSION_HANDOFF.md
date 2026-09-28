@@ -437,8 +437,43 @@ Bạn là AN (Executing Agent). Đây là dự án **ysdms-next** — hệ thố
 | Phase 1 - P1 | Dọn dẹp version suffix `-v8.5.2` (6 files) | `5809833` | **CLOSED ✅** | Xóa rác, chuyển hướng an toàn |
 | Phase 1 - P2 | Chuẩn hóa alias `equipment_id` trong modals | `84bf30c` | **CLOSED ✅** | Khớp 100% schema Single Source of Truth |
 | Phase 1 - P3 | Gỡ `@ts-nocheck` cụm `master/molds/*` (4 files) | `bdc3c9c` | **CLOSED ✅** | `@ts-nocheck` giảm từ 10 xuống 6 files |
-| Phase 1 - P4 | Khắc phục `select('*')`, N+1 queries, `.range()` | (đang thực thi) | **IN PROGRESS ⏳** | Danh mục 8 files đã được PE phê duyệt |
+| Phase 1 - P4 | Khắc phục `select('*')`, N+1 queries, `.range()` | `67434ad` | **CLOSED ✅** | 8 files tối ưu, tsc 0 errors, i18n 0 errors |
 
 ### 📌 Ghi chú Nhắc nhở Quan trọng (Anh Thoan - Product Owner):
 - **Token Rotation Reminder:** Sau khi HOÀN TOÀN HOÀN THÀNH TOÀN BỘ DỰ ÁN, thực hiện rotate/thay đổi Personal Access Token (classic) trên GitHub và cập nhật lại vào biến môi trường `GITHUB_TOKEN` trên Render (`ysd-moldcutter-backend`). Đã lưu vào Sổ cái dự án để tự động nhắc anh Thoan ở bước cuối cùng.
+
+---
+
+## 18. PHƯƠNG ÁN C — KẾT QUẢ ĐIỀU TRA `orders` & KẾ HOẠCH BACKFILL `order_lines` (2026-09-28)
+
+### 18.1. Hiện trạng Xác minh Thực tế trên Supabase Production
+- `orders`: 2.396 dòng (Chỉ chứa Header đơn hàng, mã dạng `ORD-{YYYYMMDD}-{CompanyCode}`, cột `notes` ghi: `Imported from YSDトレー受注一覧 | X lines`).
+- `order_lines`: 0 dòng (trống 100% — nguyên nhân khiến autocomplete `searchOrderLinesAction()` rỗng và luồng tạo Shipment tại `/shipments/new` bị nghẽn).
+- `work_orders`: 1.203 dòng (100% `order_id = NULL`, xuất phát từ Access `db_Khuon_be`, không liên quan đến đơn hàng dập định hình).
+- `jobs`: 1.204 dòng (chỉ thị gia công khuôn).
+
+### 18.2. Truy nguyên Nguồn Dữ liệu Gốc (Root Cause Tracing)
+- Toàn bộ 2.396 đơn hàng trong `orders` được phân tích từ file Excel lịch sử `YSDトレー受注一覧（改2）4-22.xlsx` (bản mới nhất `9-28.xlsx` trên file share `\\SERVER\ysd-folder`) trong đợt chạy ETL Phase R6-S2 (Chỉ đạo #40, #41 ngày 2026-08-24).
+- Toàn bộ chi tiết các dòng sản phẩm gắn liền với các đơn hàng này đã được phân giải đầy đủ trong file artifact `source_data/parse_output_dryrun_v2.json`:
+  * Tổng số đơn: 2.399 đơn (trong đó 2.396 đơn đã nạp vào `orders`).
+  * Tổng số dòng sản phẩm thuộc 2.396 đơn này: **6.279 dòng**.
+  * Tỷ lệ khớp `product_id`: **100% (6.279/6.279 dòng)** đã có sẵn `product_id` hợp lệ.
+  * Tổng số sản phẩm tham chiếu: **713 sản phẩm**.
+  * Toàn vẹn Foreign Key: **100% (713/713 sản phẩm)** tồn tại thực tế trong bảng `products` trên Supabase Production (0 lỗi FK).
+  * Tổng số lượng đặt hàng: **8.701.479 PCS** (6.277 dòng có số lượng cụ thể, 2 dòng mẫu đặc biệt gán mặc định = 1).
+
+### 18.3. Kết quả Dry-Run Đối chiếu Độc lập (Chỉ đọc)
+- Script kiểm chứng: `scripts/dry_run_backfill_order_lines.mjs`.
+- Kết quả đối soát 100% tự động:
+  * Matched orders: 2.396 / 2.396 (100.0%).
+  * Candidate lines: 6.279 dòng.
+  * FK Integrity check: 713 / 713 sản phẩm hợp lệ 100%.
+  * Trạng thái kiểm chứng: **PASSED ✅** (Báo cáo chi tiết tại `docs/reports/2026-09-28_order_lines_investigation_and_backfill_proposal.md`).
+
+### 18.4. Đề xuất Thực thi & An toàn
+- Đã chuẩn bị sẵn script thực thi: `scripts/execute_backfill_order_lines.mjs`.
+- Cơ chế bảo vệ: Bắt buộc truyền cờ `--execute` mới ghi dữ liệu.
+- Chia nhỏ nạp theo lô (500 dòng/batch), cơ chế upsert với khóa chống trùng `(order_id, line_no)`.
+- Chờ PE và Anh Thoan phê duyệt trước khi kích hoạt ghi vào Production.
+
 
