@@ -8,7 +8,7 @@ export async function getMonthlySummary(): Promise<MonthlyRow[]> {
   // Note: v_monthly_summary is a DB view not in generated types
   const { data, error } = await (supabase as any)
     .from('v_monthly_summary')
-    .select('*')
+    .select('month_start, month_label, total_qty, working_days, active_molds, avg_qty_per_day, mold_map_rate_pct, trial_shot_items')
     .order('month_start')
 
   if (error) {
@@ -63,7 +63,7 @@ export async function getMoldPerformanceTop10(): Promise<MoldPerfRow[]> {
   const supabase = await createClient()
   const { data, error } = await (supabase as any)
     .from('v_mold_performance')
-    .select('*')
+    .select('mold_id, mold_code, customer_prefix, total_qty, total_items, active_days, avg_qty_per_day, first_seen, last_seen, trial_shot_count')
     .order('total_qty', { ascending: false })
     .limit(10)
 

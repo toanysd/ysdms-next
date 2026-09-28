@@ -1,4 +1,4 @@
-﻿'use server'
+'use server'
 
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
@@ -7,7 +7,7 @@ export async function getProductionLogsBySchedule(scheduleId: string) {
     const supabase = await createClient()
     const { data, error } = await supabase
         .from('production_logs')
-        .select('*')
+        .select('log_id, po_id, log_date, start_time, end_time, machine_id, operator_id, output_quantity, defect_quantity, lot_id, forming_params_json, notes, created_at')
         .eq('po_id', scheduleId) // using po_id to map to schedule_id
         .order('log_date', { ascending: false })
 

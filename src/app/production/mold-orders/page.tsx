@@ -120,10 +120,10 @@ export default function MoldWorkOrdersPage() {
       if (poErr) throw poErr;
 
       // 2. Fetch lookup data
-      const { data: machData } = await (supabase as any).from('machines').select('*');
-      const { data: moldData } = await (supabase as any).from('equipment').select('*').eq('equipment_type', 'MOLD');
-      const { data: cutData } = await (supabase as any).from('equipment').select('*').in('equipment_type', ['CUTTER_SEPARATE', 'CUTTER_INLINE']);
-      const { data: empData } = await (supabase as any).from('employees').select('*').order('employee_code');
+      const { data: machData } = await (supabase as any).from('machines').select('machine_id, machine_code, machine_name');
+      const { data: moldData } = await (supabase as any).from('equipment').select('equipment_id, equipment_code, display_name').eq('equipment_type', 'MOLD');
+      const { data: cutData } = await (supabase as any).from('equipment').select('equipment_id, equipment_code, display_name').in('equipment_type', ['CUTTER_SEPARATE', 'CUTTER_INLINE']);
+      const { data: empData } = await (supabase as any).from('employees').select('employee_id, employee_name, employee_code').order('employee_code');
 
       setInstructions(poData || []);
       setMachines(machData || []);
@@ -220,7 +220,7 @@ export default function MoldWorkOrdersPage() {
     // Fetch sample submission details
     const { data: sampleData } = await (supabase as any)
       .from('sample_submissions')
-      .select('*')
+      .select('submission_id, box_type, bagging_required, packaging_instructions, free_quantity, sample_quantity, office_quantity')
       .eq('product_id', product?.product_id)
       .limit(1);
 
@@ -407,7 +407,7 @@ export default function MoldWorkOrdersPage() {
           req_mold_date: reqMoldDate || null,
           req_molding_date: reqMoldingDate || null
         })
-        .select('*')
+        .select('mwo_id, po_number')
         .single();
 
       if (poErr) throw poErr;
@@ -435,7 +435,7 @@ export default function MoldWorkOrdersPage() {
           mold_deadline: reqMoldDate ? `${reqMoldDate}T12:00:00Z` : null,
           job_status: 'PENDING'
         })
-        .select('*')
+        .select('job_id, job_code')
         .single();
 
       if (jobErr) throw jobErr;

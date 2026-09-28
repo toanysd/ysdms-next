@@ -332,9 +332,22 @@ export function CenteredQuickJobWizardModal({
       }
 
       if (list.length > 0) {
-        for (let i = 0; i < list.length; i++) {
-          const { count } = await supabase.from('jobs').select('*', { count: 'exact', head: true }).eq('equipment_id', list[i].id)
-          list[i].n_jobs = count || 0
+        const eqIds = list.map(item => item.id).filter(Boolean)
+        if (eqIds.length > 0) {
+          const { data: jobRows } = await supabase
+            .from('jobs')
+            .select('equipment_id')
+            .in('equipment_id', eqIds)
+
+          const countMap: Record<string, number> = {}
+          jobRows?.forEach(j => {
+            if (j.equipment_id) {
+              countMap[j.equipment_id] = (countMap[j.equipment_id] || 0) + 1
+            }
+          })
+          list.forEach(item => {
+            item.n_jobs = countMap[item.id] || 0
+          })
         }
 
         setEquipmentsForRev(list)

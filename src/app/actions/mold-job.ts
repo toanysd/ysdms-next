@@ -562,19 +562,14 @@ export async function getJobsForGantt(searchQuery?: string, fromDate?: string, t
         const batchSize = 50
         for (let i = 0; i < fetchedJobIds.length; i += batchSize) {
             const batch = fetchedJobIds.slice(i, i + batchSize)
-            const logsPromises = batch.map(id => 
-                supabase
-                    .from('work_logs')
-                    .select('log_id, job_step_id, job_id, employee_id, processing_code_id, processing_status_id, work_date, hours_spent, planned_hours, planned_date, is_finished, machine_id, processing_codes(processing_name), employees(employee_name), processing_statuses(status_code)')
-                    .eq('job_id', id)
-                    .limit(1000)
-            )
-            const logsResults = await Promise.all(logsPromises)
-            logsResults.forEach(res => {
-                if (res.data) {
-                    allLogs = allLogs.concat(res.data)
-                }
-            })
+            const { data: batchLogs } = await supabase
+                .from('work_logs')
+                .select('log_id, job_step_id, job_id, employee_id, processing_code_id, processing_status_id, work_date, hours_spent, planned_hours, planned_date, is_finished, machine_id, processing_codes(processing_name), employees(employee_name), processing_statuses(status_code)')
+                .in('job_id', batch)
+                .limit(5000)
+            if (batchLogs) {
+                allLogs = allLogs.concat(batchLogs)
+            }
         }
             
         if (allLogs.length > 0) {

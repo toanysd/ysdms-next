@@ -121,7 +121,7 @@ export default function MachinesPage() {
     setError(null)
     let query = supabase
       .from('machines')
-      .select('*')
+      .select('machine_id, machine_code, machine_name, machine_type, manufacturer, model, max_mold_length, max_mold_width, max_sheet_width, location, machine_group, is_active, notes, created_at, updated_at')
       .order('machine_code', { ascending: true })
 
     if (filterType) query = query.eq('machine_type', filterType)

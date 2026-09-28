@@ -8,7 +8,7 @@ export async function getInspectionsByJob(jobId: string) {
     const supabase = await createClient()
     const { data, error } = await supabase
         .from('tray_inspections')
-        .select('*')
+        .select('inspection_id, job_id, product_id, inspection_type, inspection_stage, pass_fail, inspected_date, inspected_by, issued_date, issued_by, company_approved, company_approved_date, certificate_no, certificate_type, certificate_file, measurement_data, tolerance_data, notes, created_at')
         .eq('job_id', jobId)
         .order('created_at', { ascending: false })
 

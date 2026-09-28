@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { Box, Calculator, Plus, Search, Settings, Trash2, CheckCircle2, AlertTriangle, Layers, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { Pagination } from '@/components/ui/Pagination';
 
 export default function AluminumBlanksPage() {
   const t = useTranslations('Equipment.Aluminum');
@@ -12,6 +13,9 @@ export default function AluminumBlanksPage() {
   const [molds, setMolds] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalRecords, setTotalRecords] = useState(0);
+  const PAGE_SIZE = 50;
 
   // Calc Form State
   const [calcMold, setCalcMold] = useState<any>(null);
@@ -26,10 +30,10 @@ export default function AluminumBlanksPage() {
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
-    fetchData();
+    fetchData(1);
   }, []);
 
-  async function fetchData() {
+  async function fetchData(page = currentPage) {
     setIsLoading(true);
     // Fetch molds for dropdown — dùng equipment (SSOT) thay vì physical_molds (deprecated)
     const { data: eqMoldData } = await supabase
@@ -45,14 +49,19 @@ export default function AluminumBlanksPage() {
       display_name: e.display_name,
     })));
 
-    // Fetch blanks
-    const { data: blankData, error } = await supabase
+    const from = (page - 1) * PAGE_SIZE;
+    const to = from + PAGE_SIZE - 1;
+
+    // Fetch blanks with explicit columns & pagination
+    const { data: blankData, count, error } = await supabase
       .from('aluminum_blanks')
-      .select('*, equipment(equipment_code)')
-      .order('created_at', { ascending: false });
+      .select('id, mold_id, length_mm, width_mm, thickness_mm, blank_type, material_grade, status, created_at, equipment:mold_id(equipment_code)', { count: 'exact' })
+      .order('created_at', { ascending: false })
+      .range(from, to);
     
     if (!error && blankData) {
       setBlanks(blankData);
+      setTotalRecords(count || 0);
     } else {
       console.error(error);
     }
@@ -268,7 +277,7 @@ export default function AluminumBlanksPage() {
               />
             </div>
             <div className="flex gap-2">
-              <span className="badge badge--info">{t('all')} {blanks.length}</span>
+              <span className="badge badge--info">{t('all')} {totalRecords || blanks.length}</span>
               <span className="badge badge--warning">{t('ordered')}</span>
               <span className="badge badge--success">{t('inStock')}</span>
             </div>
@@ -318,6 +327,21 @@ export default function AluminumBlanksPage() {
               </tbody>
             </table>
           </div>
+
+          {/* Pagination Controls */}
+          {totalRecords > 0 && (
+            <div className="p-3 border-t flex justify-end" style={{ borderColor: 'var(--border-subtle)' }}>
+              <Pagination
+                currentPage={currentPage}
+                totalRecords={totalRecords}
+                pageSize={PAGE_SIZE}
+                onPageChange={(p) => {
+                  setCurrentPage(p);
+                  fetchData(p);
+                }}
+              />
+            </div>
+          )}
         </div>
       </div>
 
