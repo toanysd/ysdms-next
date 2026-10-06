@@ -859,6 +859,7 @@ Cuối mỗi ngày làm việc, Quản lý xưởng khuôn đối chiếu qua `/
   7. Đề xuất điều chỉnh hoặc bổ sung luồng thao tác.
   8. Các quyết định cần Minh Chủ Thoan phê duyệt.
 - **Căn cứ quyết định của PE:** Báo cáo tổng hợp này sẽ là căn cứ duy nhất để PE thẩm định và đề xuất bước tiếp theo (sửa nhỏ UI, bổ sung Job/Step chuẩn, mở rộng báo cáo, thiết kế module vật tư, hay lập kế hoạch nạp Access delta có chọn lọc).
+- **Thẩm định & Phê chuẩn từ PE [Stamp: 2026-10-06 18:01 JST]:** PE chính thức phê chuẩn Khung đánh giá chu kỳ Pilot (Đặc tả đã duyệt). Hệ thống chuyển sang giai đoạn vận hành thực tế không can thiệp (uninterrupted observation phase), bảo toàn Production baseline (jobs: 1,205, job_steps: 2,451, work_logs: 7,106).
 
 
 
