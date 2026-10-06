@@ -554,3 +554,38 @@ Bạn là AN (Executing Agent). Đây là dự án **ysdms-next** — hệ thố
   * Script thực thi: `scripts/execute_official_order_lines_insert.mjs` (kèm cờ `--execute` và bọc trong Transaction Rollback an toàn).
   * Quy tắc: Fail-Closed (không dùng `ON CONFLICT DO UPDATE`), Preflight kiểm tra staging=6279 và order_lines=0, Postflight kiểm tra tính toàn vẹn và orphan FK.
 - **Trạng thái:** Dừng lại ở khâu sẵn sàng, chờ PE nghiệm thu scalar và Minh Chủ Thoan duyệt quyền ghi `order_lines`.
+
+## 20. NGHIỆM THU THỰC THI CHÍNH THỨC: NẠP THÀNH CÔNG 6.279 DÒNG VÀO public.order_lines (2026-10-06 14:42 JST)
+
+### 20.1. Căn cứ Phê duyệt
+- **Chỉ thị từ Minh Chủ Thoan:** "Đồng ý cho AN INSERT một lần 6.279 dòng vào public.order_lines, với preflight và postflight audit, transaction fail-closed, không cập nhật xung đột."
+- **Phê duyệt Kỹ thuật từ PE:** Báo cáo "Quyết định PE — Phê duyệt INSERT" lúc 2026-10-06 14:40 JST.
+
+### 20.2. Quá trình Thực thi (Execution Log)
+- **Thời gian thực thi:** 2026-10-06 14:42:25 JST (`2026-10-06T05:42:25.219Z`).
+- **Script thi công:** `node scripts/execute_official_order_lines_insert.mjs --execute`.
+- **Preflight Audit:**
+  * `staging_rows`: 6279 (ĐẠT)
+  * `order_lines_rows`: 0 (ĐẠT)
+  * `missing_orders`: 0 (ĐẠT)
+  * `missing_products`: 0 (ĐẠT)
+  * `duplicate_keys`: 0 (ĐẠT)
+  * `invalid_quantities`: 0 (ĐẠT)
+  * `line_gaps`: 0 (ĐẠT)
+- **Thao tác INSERT:** 1 transaction duy nhất, fail-closed, không dùng `ON CONFLICT DO UPDATE`. Insert đúng 6.279 dòng.
+- **Postflight Audit:**
+  * `inserted_rows`: **6279** (Kỳ vọng: 6279) $\rightarrow$ **ĐẠT**
+  * `order_lines_total`: **6279** (Kỳ vọng: 6279) $\rightarrow$ **ĐẠT**
+  * `quantity_total`: **8.701.481 PCS** (Kỳ vọng: 8.701.481) $\rightarrow$ **ĐẠT**
+  * `duplicate_order_line_keys`: **0** $\rightarrow$ **ĐẠT**
+  * `missing_order_fks`: **0** $\rightarrow$ **ĐẠT**
+  * `missing_product_fks`: **0** $\rightarrow$ **ĐẠT**
+  * `invalid_remaining_qty`: **0** $\rightarrow$ **ĐẠT**
+  * `invalid_shipped_qty`: **0** $\rightarrow$ **ĐẠT**
+  * `invalid_unit_or_status`: **0** $\rightarrow$ **ĐẠT**
+- **Trạng thái Database:** Transaction đã COMMIT thành công 100%.
+
+### 20.3. Phân loại Trạng thái Mới
+- **Bảng `public.order_lines`:** **ĐÃ ÁP DỤNG VÀO SUPABASE & ĐÃ KIỂM THỬ THỰC TẾ** ✅.
+- **Tình trạng nợ kỹ thuật 0 order_lines:** **CHÍNH THỨC ĐƯỢC GIẢI QUYẾT TRIỆT ĐỂ (CLOSED ✅)**.
+- **Các bước tiếp theo:** Chờ PE thẩm tra độc lập trên Supabase và cấp phép mở khâu kiểm thử giao diện Tạo Phiếu Giao Hàng (`/shipments/new`).

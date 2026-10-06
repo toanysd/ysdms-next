@@ -21,10 +21,12 @@ const client = new pg.Client({
 })
 
 async function runOfficialInsert() {
+  const startTime = new Date().toISOString()
   console.log(`============================================================`)
   console.log(`THỰC THI NẠP CHÍNH THỨC TỪ STAGING SANG public.order_lines`)
-  console.log(`Thời gian: ${new Date().toISOString()}`)
-  console.log(`Môi trường: Supabase Production (${envMap.NEXT_PUBLIC_SUPABASE_URL})`)
+  console.log(`Thời gian bắt đầu: ${startTime}`)
+  console.log(`Môi trường: Supabase PostgreSQL (${envMap.NEXT_PUBLIC_SUPABASE_URL})`)
+  console.log(`Phê duyệt: Minh Chủ Thoan & PE (Chỉ thị 2026-10-06 14:40 JST)`)
   console.log(`============================================================\n`)
 
   await client.connect()
@@ -32,23 +34,38 @@ async function runOfficialInsert() {
   try {
     await client.query('BEGIN;')
 
-    // 1. Preflight Audit
-    console.log('[1] Preflight Audit...')
-    const stagingCheck = await client.query('SELECT count(*) AS count FROM public.staging_order_lines_backfill;')
-    const orderLinesCheck = await client.query('SELECT count(*) AS count FROM public.order_lines;')
-    const stagingCount = parseInt(stagingCheck.rows[0].count, 10)
-    const linesCount = parseInt(orderLinesCheck.rows[0].count, 10)
+    // 1. PREFLIGHT AUDIT BẮT BUỘC THEO QUY CHUẨN PE
+    console.log('[1] PREFLIGHT AUDIT TRƯỚC KHI INSERT...')
+    const preflightRes = await client.query(`
+      SELECT json_build_object(
+        'staging_rows', (SELECT count(*) FROM public.staging_order_lines_backfill),
+        'order_lines_rows', (SELECT count(*) FROM public.order_lines),
+        'missing_orders', (SELECT count(*) FROM public.staging_order_lines_backfill s LEFT JOIN public.orders o ON o.order_no = s.order_no WHERE o.order_id IS NULL),
+        'missing_products', (SELECT count(*) FROM public.staging_order_lines_backfill s LEFT JOIN public.products p ON p.product_id = s.product_id WHERE p.product_id IS NULL),
+        'duplicate_keys', (SELECT count(*) FROM (
+          SELECT order_no, line_no FROM public.staging_order_lines_backfill GROUP BY order_no, line_no HAVING count(*) > 1
+        ) dup),
+        'invalid_quantities', (SELECT count(*) FROM public.staging_order_lines_backfill WHERE quantity_normalized <= 0 OR quantity_normalized <> trunc(quantity_normalized)),
+        'line_gaps', (SELECT count(*) FROM (
+          SELECT order_no, line_no, row_number() OVER (PARTITION BY order_no ORDER BY line_no) AS expected_line_no FROM public.staging_order_lines_backfill
+        ) x WHERE line_no <> expected_line_no)
+      ) AS preflight;
+    `)
+    const pre = preflightRes.rows[0].preflight
+    console.log('Preflight results:', JSON.stringify(pre, null, 2))
 
-    if (stagingCount !== 6279) {
-      throw new Error(`PREFLIGHT THẤT BẠI: staging có ${stagingCount} dòng (kỳ vọng 6279)`)
-    }
-    if (linesCount !== 0) {
-      throw new Error(`PREFLIGHT THẤT BẠI: order_lines đang có ${linesCount} dòng (kỳ vọng 0)`)
-    }
-    console.log(`✅ Preflight đạt: staging = 6279, order_lines = 0.\n`)
+    if (pre.staging_rows !== 6279) throw new Error(`PREFLIGHT FAILED: staging_rows = ${pre.staging_rows} (kỳ vọng 6279)`)
+    if (pre.order_lines_rows !== 0) throw new Error(`PREFLIGHT FAILED: order_lines_rows = ${pre.order_lines_rows} (kỳ vọng 0)`)
+    if (pre.missing_orders !== 0) throw new Error(`PREFLIGHT FAILED: missing_orders = ${pre.missing_orders} (kỳ vọng 0)`)
+    if (pre.missing_products !== 0) throw new Error(`PREFLIGHT FAILED: missing_products = ${pre.missing_products} (kỳ vọng 0)`)
+    if (pre.duplicate_keys !== 0) throw new Error(`PREFLIGHT FAILED: duplicate_keys = ${pre.duplicate_keys} (kỳ vọng 0)`)
+    if (pre.invalid_quantities !== 0) throw new Error(`PREFLIGHT FAILED: invalid_quantities = ${pre.invalid_quantities} (kỳ vọng 0)`)
+    if (pre.line_gaps !== 0) throw new Error(`PREFLIGHT FAILED: line_gaps = ${pre.line_gaps} (kỳ vọng 0)`)
 
-    // 2. Insert thực thi (Fail-Closed, không dùng DO UPDATE)
-    console.log('[2] Thực thi INSERT từ staging sang order_lines...')
+    console.log(`✅ Toàn bộ điều kiện Preflight ĐẠT 100%.\n`)
+
+    // 2. THỰC THI INSERT DUY NHẤT (FAIL-CLOSED: KHÔNG DÙNG ON CONFLICT DO UPDATE)
+    console.log('[2] THỰC THI INSERT TỪ STAGING VÀO public.order_lines...')
     const insertSql = `
       INSERT INTO public.order_lines (
         order_id,
@@ -76,56 +93,52 @@ async function runOfficialInsert() {
       ORDER BY o.order_id, s.line_no;
     `
     const insertRes = await client.query(insertSql)
-    console.log(`✅ Đã insert thành công ${insertRes.rowCount} dòng.\n`)
+    const insertedRows = insertRes.rowCount
+    console.log(`✅ Lệnh INSERT đã chạy thành công. Số dòng inserted: ${insertedRows}\n`)
 
-    // 3. Postflight Audit
-    console.log('[3] Postflight Audit...')
-    const postCount = await client.query(`
-      SELECT 
-        count(*) AS total_lines, 
-        sum(quantity) AS total_qty,
-        count(DISTINCT order_id) AS distinct_orders,
-        count(DISTINCT product_id) AS distinct_prods
-      FROM public.order_lines;
-    `)
-    const row = postCount.rows[0]
-    console.log(`- total_lines: ${row.total_lines} (Kỳ vọng: 6279)`)
-    console.log(`- total_qty: ${Number(row.total_qty).toLocaleString()} PCS (Kỳ vọng: 8,701,481)`)
-    console.log(`- distinct_orders: ${row.distinct_orders} (Kỳ vọng: 2396)`)
-    console.log(`- distinct_prods: ${row.distinct_prods} (Kỳ vọng: 713)`)
-
-    // Check duplicate
-    const dupCheck = await client.query(`
-      SELECT order_id, line_no, count(*) FROM public.order_lines GROUP BY order_id, line_no HAVING count(*) > 1;
-    `)
-    if (dupCheck.rowCount > 0) throw new Error(`POSTFLIGHT LỖI: Phát hiện ${dupCheck.rowCount} dòng duplicate!`)
-
-    // Check orphan FK
-    const orphanOrders = await client.query(`
-      SELECT count(*) AS c FROM public.order_lines ol LEFT JOIN public.orders o ON o.order_id = ol.order_id WHERE o.order_id IS NULL;
-    `)
-    const orphanProds = await client.query(`
-      SELECT count(*) AS c FROM public.order_lines ol LEFT JOIN public.products p ON p.product_id = ol.product_id WHERE p.product_id IS NULL;
-    `)
-    if (parseInt(orphanOrders.rows[0].c, 10) > 0 || parseInt(orphanProds.rows[0].c, 10) > 0) {
-      throw new Error(`POSTFLIGHT LỖI: Phát hiện orphan foreign keys!`)
+    if (insertedRows !== 6279) {
+      throw new Error(`INSERT FAILED: Số dòng insert = ${insertedRows} (kỳ vọng 6279)`)
     }
 
-    // Check integrity
-    const integrityCheck = await client.query(`
-      SELECT count(*) AS c FROM public.order_lines 
-      WHERE remaining_qty <> quantity OR shipped_qty <> 0 OR line_status <> 'CONFIRMED' OR unit <> 'PCS';
+    // 3. POSTFLIGHT AUDIT BẮT BUỘC THEO QUY CHUẨN PE
+    console.log('[3] POSTFLIGHT AUDIT SAU INSERT...')
+    const postflightRes = await client.query(`
+      SELECT json_build_object(
+        'inserted_rows', ${insertedRows},
+        'order_lines_total', (SELECT count(*) FROM public.order_lines),
+        'quantity_total', (SELECT sum(quantity) FROM public.order_lines),
+        'duplicate_order_line_keys', (SELECT count(*) FROM (
+          SELECT order_id, line_no FROM public.order_lines GROUP BY order_id, line_no HAVING count(*) > 1
+        ) d),
+        'missing_order_fks', (SELECT count(*) FROM public.order_lines ol LEFT JOIN public.orders o ON o.order_id = ol.order_id WHERE o.order_id IS NULL),
+        'missing_product_fks', (SELECT count(*) FROM public.order_lines ol LEFT JOIN public.products p ON p.product_id = ol.product_id WHERE p.product_id IS NULL),
+        'invalid_remaining_qty', (SELECT count(*) FROM public.order_lines WHERE remaining_qty <> quantity),
+        'invalid_shipped_qty', (SELECT count(*) FROM public.order_lines WHERE shipped_qty <> 0),
+        'invalid_unit_or_status', (SELECT count(*) FROM public.order_lines WHERE unit <> 'PCS' OR line_status <> 'CONFIRMED')
+      ) AS postflight;
     `)
-    if (parseInt(integrityCheck.rows[0].c, 10) > 0) {
-      throw new Error(`POSTFLIGHT LỖI: Phát hiện dòng không đạt trạng thái toàn vẹn!`)
-    }
+    const post = postflightRes.rows[0].postflight
+    console.log('Postflight results (Verbatim Output):')
+    console.log(JSON.stringify(post, null, 2))
 
-    console.log(`✅ Toàn bộ bài kiểm tra Postflight đạt 100%!\n`)
+    // Kiểm tra từng điều kiện postflight
+    if (post.inserted_rows !== 6279) throw new Error(`POSTFLIGHT FAILED: inserted_rows = ${post.inserted_rows}`)
+    if (post.order_lines_total !== 6279) throw new Error(`POSTFLIGHT FAILED: order_lines_total = ${post.order_lines_total}`)
+    if (post.quantity_total !== 8701481) throw new Error(`POSTFLIGHT FAILED: quantity_total = ${post.quantity_total}`)
+    if (post.duplicate_order_line_keys !== 0) throw new Error(`POSTFLIGHT FAILED: duplicate_order_line_keys = ${post.duplicate_order_line_keys}`)
+    if (post.missing_order_fks !== 0) throw new Error(`POSTFLIGHT FAILED: missing_order_fks = ${post.missing_order_fks}`)
+    if (post.missing_product_fks !== 0) throw new Error(`POSTFLIGHT FAILED: missing_product_fks = ${post.missing_product_fks}`)
+    if (post.invalid_remaining_qty !== 0) throw new Error(`POSTFLIGHT FAILED: invalid_remaining_qty = ${post.invalid_remaining_qty}`)
+    if (post.invalid_shipped_qty !== 0) throw new Error(`POSTFLIGHT FAILED: invalid_shipped_qty = ${post.invalid_shipped_qty}`)
+    if (post.invalid_unit_or_status !== 0) throw new Error(`POSTFLIGHT FAILED: invalid_unit_or_status = ${post.invalid_unit_or_status}`)
+
+    console.log(`\n✅ TOÀN BỘ 9 TIÊU CHÍ POSTFLIGHT ĐẠT 100% KỲ VỌNG!`)
     await client.query('COMMIT;')
-    console.log(`🎉 TRANSACTION ĐÃ COMMIT THÀNH CÔNG!`)
+    console.log(`🎉 TRANSACTION ĐÃ COMMIT THÀNH CÔNG LÊN SUPABASE PRODUCTION!`)
+    console.log(`Thời gian hoàn tất: ${new Date().toISOString()}`)
   } catch (err) {
     await client.query('ROLLBACK;')
-    console.error('🚨 ĐÃ ROLLBACK TRANSACTION DO LỖI:', err.message)
+    console.error(`\n🚨 GẶP LỖI — ĐÃ ROLLBACK TOÀN BỘ TRANSACTION:`, err.message)
     process.exit(1)
   } finally {
     await client.end()
