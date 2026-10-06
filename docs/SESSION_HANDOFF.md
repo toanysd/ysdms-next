@@ -976,6 +976,43 @@ Thứ tự nạp cha-con bất biến: `work_orders / jobs -> job_steps -> work_
 - Script thực thi: `scripts/audit_round_a_access_delta.py` & `scripts/generate_round_a_supplement.py`
 - Cam kết: 0 ghi Supabase Production, 0 bảng staging mới.
 
+## 31. KẾT QUẢ KHẢO SÁT & CHUẨN BỊ PAYLOAD STAGING LOCAL (6 STEPS & 5 WORK LOGS) (2026-10-06 19:15 JST)
+
+### 31.1. Căn cứ & Quyết định Phê duyệt
+- **Quyết định của Minh Chủ Thoan [Stamp: 2026-10-06 19:10 JST]:** Đồng ý đề xuất của PE [Stamp: 2026-10-06 19:09 JST]; cho phép AN chuẩn bị payload / dry-run local cho nhóm nhỏ gồm **6 job_steps** thuộc 6 Job cũ đã có trên Supabase và **5 work_logs** gắn vào các step đó.
+- **Ranh giới:** Chưa tạo staging Production; chưa insert/update/delete Production; không xử lý 27 Jobs mới, 55 Steps mới, 138 Logs mới, 93 logs nội bộ, 25 log mã 888, 20 orphan steps, 50 orphan logs.
+- **Mã băm SHA-256 động của tệp Access:** `0ec0f23e05a08178f0294b7f6e6de1bb5ede75feda54cf1bb8d1bb64cbd0cd66`.
+- **Git Commit SHAs:**
+  * Gần nhất: `17a910aab87718f3ed0c9909d5878d6fb5f320f9`
+  * Trước đó: `e723de516de88d058898bcddf83eb06c64b2e0d5`
+  * Trạng thái remote: Nhánh local `main` bảo tồn nguyên vẹn (ahead 22 commits).
+
+### 31.2. Thẩm định Kỹ thuật 6 Steps Ứng viên (tblProcessingDeadline)
+1. Step `4275` (`LEGACY-STEP-4275`): Job `ZA水冷ベース` (`249439b2-e1c6-4b42-ba99-54910d1f8a14`) | Đang có 1 step (`[1]`) -> Đề xuất StepNo **2** | Tên: `金型 (MOLD)` | Status: 8 | Deadline: 2026-10-01 | Ghi chú: `外周削り1mm` | Hash: `540a9208...` | Status: `NEW_SAFE_TO_STAGE`.
+2. Step `4276` (`LEGACY-STEP-4276`): Job `ASH021R2` (`dcaa2eb8-f66b-426d-9bb0-5a4ec7e18d00`) | Đang có 3 steps (`[1, 2, 3]`) -> Đề xuất StepNo **4** | Tên: `スタッキング (STAKING)` | Status: 8 | Deadline: 2026-10-02 | Hash: `366c32a4...` | Status: `NEW_SAFE_TO_STAGE`.
+3. Step `4238` (`LEGACY-STEP-4238`): Job `JAE380` (`39dbbc91-c7b4-4a90-bdd8-8c894b782092`) | Đang có 2 steps (`[1, 2]`) -> Đề xuất StepNo **3** | Tên: `抜型 (CUTTER)` | Status: 8 | Deadline: 2026-09-04 | Hash: `a86bf841...` | Status: `NEW_SAFE_TO_STAGE`.
+4. Step `4241` (`LEGACY-STEP-4241`): Job `KSP227` (`17131b0b-3f8c-40dd-988a-fc1d1c9888bc`) | Đang có 2 steps (`[1, 2]`) -> Đề xuất StepNo **3** | Tên: `抜型 (CUTTER)` | Status: 8 | Deadline: 2026-09-03 | Ghi chú: `KSP-209` | Hash: `89759915...` | Status: `NEW_SAFE_TO_STAGE`.
+5. Step `4251` (`LEGACY-STEP-4251`): Job `MMT021R2` (`c33e3f71-d3b0-48dd-8c34-11ad76a4a195`) | Đang có 2 steps (`[1, 2]`) -> Đề xuất StepNo **3** | Tên: `抜型 (CUTTER)` | Status: 8 | Deadline: NULL | Ghi chú: `MMT-014` | Hash: `29f153a5...` | Status: `NEW_SAFE_TO_STAGE`.
+6. Step `4226` (`LEGACY-STEP-4226`): Job `JAE381` (`f536c3e9-f4a8-4578-837b-174d9f96a7b3`) | Đang có 2 steps (`[1, 2]`) -> Đề xuất StepNo **3** | Tên: `金型 (MOLD)` | Status: 8 | Deadline: 2026-09-04 | Hash: `7c47f4bd...` | Status: `NEW_SAFE_TO_STAGE`.
+
+*Kết quả:* 100% `step_no` không xung đột với các bước hiện có; 100% `legacy_id` chưa tồn tại trong Supabase; cha Job tồn tại hợp lệ.
+
+### 31.3. Thẩm định Kỹ thuật 5 Work Logs Ứng viên (tblWorkLog)
+1. WorkLog `9052` (`LEGACY-LOG-9052`): Gắn Step `4275` (Job `ZA水冷ベース`) | NV: グエン　ダン　トアン (`abe82154-2f81-44ec-b76e-11a2db247fca`) | Mã 14: 演算＆加工 | Ngày: 2026-10-01 | Giờ: 1.50h | Hash: `aff1491b...` | Status: `NEW_SAFE_TO_STAGE`.
+2. WorkLog `8882` (`LEGACY-LOG-8882`): Gắn Step `4226` (Job `JAE381`) | NV: グエン　ダン　トアン (`abe82154-2f81-44ec-b76e-11a2db247fca`) | Mã 10: 金型演算＆加工 | Ngày: 2026-08-31 | Giờ: 2.00h | Hash: `11218fae...` | Status: `NEW_SAFE_TO_STAGE`.
+3. WorkLog `8895` (`LEGACY-LOG-8895`): Gắn Step `4226` (Job `JAE381`) | NV: グエン　ダン　トアン (`abe82154-2f81-44ec-b76e-11a2db247fca`) | Mã 10: 金型演算＆加工 | Ngày: 2026-09-01 | Giờ: 1.00h | Hash: `a97d15cb...` | Status: `NEW_SAFE_TO_STAGE`.
+4. WorkLog `8901` (`LEGACY-LOG-8901`): Gắn Step `4226` (Job `JAE381`) | NV: ダオ　ティ　ジェン (`44d2d142-4173-4e1b-baa3-c888edc7777c`) | Mã 11: 本型穴あけ | Ngày: 2026-09-02 | Giờ: 2.50h | Hash: `bf9c0207...` | Status: `NEW_SAFE_TO_STAGE`.
+5. WorkLog `8920` (`LEGACY-LOG-8920`): Gắn Step `4226` (Job `JAE381`) | NV: ダオ　ティ　ジェン (`44d2d142-4173-4e1b-baa3-c888edc7777c`) | Mã 12: 本型ミガキ | Ngày: 2026-09-04 | Giờ: 2.00h | Hash: `ec6c0ae8...` | Status: `NEW_SAFE_TO_STAGE`.
+
+*Kết quả:* 100% `legacy_id` chưa tồn tại trong Supabase; 100% nhân viên ánh xạ chính xác sang UUID nhân viên thực tế; mã công đoạn chuẩn cơ khí; giờ công và ngày làm việc hợp lệ.
+
+### 31.4. Tệp Lưu trữ & Hồ sơ Bằng chứng
+- Payload JSON kiểm toán local: `scripts/candidate_payload_6steps_5logs.json`
+- Script thực thi kiểm tra: `scripts/inspect_6steps_5logs.py`
+- Báo cáo chi tiết: `docs/reports/2026-10-06_candidate_payload_6steps_5logs_report.md`
+- Baseline Production được bảo toàn tuyệt đối: `jobs: 1,205`, `job_steps: 2,451`, `work_logs: 7,106`.
+
+
 
 
 
