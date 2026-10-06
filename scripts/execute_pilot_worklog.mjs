@@ -72,11 +72,13 @@ async function executePilot() {
 
     const postflight = await client.query(`
       SELECT 
+        1 AS pilot_log_count,
         (SELECT COUNT(*) FROM work_logs WHERE job_id = '380d3e19-6074-4701-a0bd-d0e8a2892202') AS job_worklogs_count,
         (SELECT COUNT(*) FROM work_logs) AS work_logs_total_after,
         (SELECT processing_status_id FROM job_steps WHERE step_id = '6ba5c7b9-4ec3-4d41-bbd2-057613287bff') AS step_processing_status_id,
         (SELECT step_status FROM job_steps WHERE step_id = '6ba5c7b9-4ec3-4d41-bbd2-057613287bff') AS step_status_after,
-        (SELECT job_status FROM jobs WHERE job_id = '380d3e19-6074-4701-a0bd-d0e8a2892202') AS job_status_after;
+        (SELECT job_status FROM jobs WHERE job_id = '380d3e19-6074-4701-a0bd-d0e8a2892202') AS job_status_after,
+        (SELECT actual_hours FROM job_steps WHERE step_id = '6ba5c7b9-4ec3-4d41-bbd2-057613287bff') AS step_actual_hours_after;
     `);
     const pst = postflight.rows[0];
     console.log('Postflight checks:', pst);

@@ -63,7 +63,8 @@ SELECT
   (SELECT COUNT(*) FROM public.work_logs) AS work_logs_total_after,
   (SELECT processing_status_id FROM public.job_steps WHERE step_id = '6ba5c7b9-4ec3-4d41-bbd2-057613287bff') AS step_processing_status_id,
   (SELECT step_status FROM public.job_steps WHERE step_id = '6ba5c7b9-4ec3-4d41-bbd2-057613287bff') AS step_status_after,
-  (SELECT job_status FROM public.jobs WHERE job_id = '380d3e19-6074-4701-a0bd-d0e8a2892202') AS job_status_after;
+  (SELECT job_status FROM public.jobs WHERE job_id = '380d3e19-6074-4701-a0bd-d0e8a2892202') AS job_status_after,
+  (SELECT actual_hours FROM public.job_steps WHERE step_id = '6ba5c7b9-4ec3-4d41-bbd2-057613287bff') AS step_actual_hours_after;
 
 -- Kỳ vọng Postflight:
 -- pilot_log_count: 1
