@@ -533,3 +533,24 @@ Bạn là AN (Executing Agent). Đây là dự án **ysdms-next** — hệ thố
 - **Cam kết an toàn Production:**
   * Bảng `public.order_lines`: **Vẫn giữ nguyên 0 dòng (100% READ-ONLY)**. Tuyệt đối chưa ghi sang bảng chính khi chưa có chỉ đạo tiếp theo.
 - **Trạng thái mới:** ĐÃ ÁP DỤNG VÀO SUPABASE (cho bảng staging) & ĐÃ KIỂM THỬ THỰC TẾ.
+
+### 19.5. Phản hồi Yêu cầu PE (2026-10-06 14:35 JST) — Chuẩn hóa Output & Sẵn sàng Payload
+- **Thực thi truy vấn JSON Scalar duy nhất:** Chạy qua `scripts/output_raw_scalar_audit.mjs` trực tiếp trên database `iirezrszalmecsslbruo.supabase.co`. Kết quả:
+  * `staging_rows`: 6279
+  * `order_lines_rows`: 0
+  * `staging_orders`: 2396
+  * `staging_products`: 713
+  * `normalized_qty`: 8701481
+  * `source_qty`: 8701479
+  * `normalized_rows`: 2
+  * `duplicate_keys`: 0
+  * `missing_orders`: 0
+  * `missing_products`: 0
+  * `product_code_mismatches`: 0
+  * `invalid_quantities`: 0
+  * `line_number_gaps`: 0
+- **Soạn thảo Payload INSERT chính thức (Mục 3.4 PE):**
+  * File SQL: `scripts/prepare_official_backfill_payload.sql`.
+  * Script thực thi: `scripts/execute_official_order_lines_insert.mjs` (kèm cờ `--execute` và bọc trong Transaction Rollback an toàn).
+  * Quy tắc: Fail-Closed (không dùng `ON CONFLICT DO UPDATE`), Preflight kiểm tra staging=6279 và order_lines=0, Postflight kiểm tra tính toàn vẹn và orphan FK.
+- **Trạng thái:** Dừng lại ở khâu sẵn sàng, chờ PE nghiệm thu scalar và Minh Chủ Thoan duyệt quyền ghi `order_lines`.
