@@ -719,5 +719,40 @@ Bạn là AN (Executing Agent). Đây là dự án **ysdms-next** — hệ thố
 - **TypeScript:** `npx tsc --noEmit` $\rightarrow$ **0 errors**.
 - **Đa ngôn ngữ (i18n):** `node scripts/check_translations.mjs` $\rightarrow$ **0 missing keys**.
 
+## 26. ĐẶC TẢ & DRY-RUN 01 PILOT WORK LOG (INTERNAL SHOP 5S) (2026-10-06 17:30 JST)
+
+### 26.1. Bối cảnh & Yêu cầu từ PE & Minh Chủ Thoan
+- Sau khi `JOB-INTERNAL-SHOP` (ID: `380d3e19-6074-4701-a0bd-d0e8a2892202`) và 4 steps PENDING được áp dụng thành công và PE nghiệm thu độc lập lúc 17:20 JST, PE yêu cầu chuẩn bị đặc tả cho 01 pilot work log.
+- Ràng buộc: Tuyệt đối CHƯA ghi Production (Strictly unexecuted), chuẩn bị đầy đủ 10 thông số bắt buộc, không tự tạo mã công việc mới, không can thiệp thủ công `actual_hours` hoặc `status`.
+
+### 26.2. 10 Thông số Chuẩn của Pilot Work Log
+1. `employee_id`: `'abe82154-2f81-44ec-b76e-11a2db247fca'`
+2. `employee_name`: `'グエン　ダン　トアン'` (Nguyễn Đăng Thoan / M09 - Nhân sự chủ chốt xưởng khuôn)
+3. `job_id`: `'380d3e19-6074-4701-a0bd-d0e8a2892202'` (Job nội bộ xưởng khuôn `JOB-INTERNAL-SHOP`)
+4. `job_step_id`: `'6ba5c7b9-4ec3-4d41-bbd2-057613287bff'` (Step 1: `5S・工場清掃`)
+5. `step_name`: `'5S・工場清掃'`
+6. `work_date`: `'2026-10-06'`
+7. `hours_spent`: `1.0` (1 giờ làm việc)
+8. `processing_code_id`: `50` (Mã chuẩn trong danh mục `processing_codes`)
+9. `processing_name`: `'5S'`
+10. `notes`: `'金型工場エリアの5S整理整頓・清掃作業実施（Pilot Work Log）'`
+
+### 26.3. Khảo sát Cơ chế Trigger Database & Engine
+- Bảng `work_logs` có trigger `trigger_update_step_status` thực thi `trg_update_step_status_from_worklogs()`:
+  * Khi chèn 1 dòng work log với `is_finished = false`:
+    - `v_total_groups = 1`, `v_finished_groups = 0`
+    - Tự động cập nhật `job_steps.processing_status_id = 9` (`N.進行中`)
+- Bảng `job_steps` có trigger `trg_update_job_status_from_steps()`:
+  * Do `v_completed_steps = 0`, `jobs.job_status` giữ nguyên `PENDING`.
+- Không có trigger tự động cộng dồn `actual_hours` trong DB; `actual_hours` được tổng hợp khi gọi action hoặc khi step kết thúc (`processStepCompletionEngine`).
+
+### 26.4. Kết quả Thử nghiệm Dry-Run (In-Transaction with Immediate Rollback)
+- **Preflight:** Đủ 4 điều kiện tồn tại (job, step, employee, processing code), 0 work logs tồn tại cho Job, tổng work_logs là 7,105.
+- **Thử nghiệm INSERT:** Thành công 100%, trigger kích hoạt chuyển `step_processing_status_id` thành `9`.
+- **Lập tức ROLLBACK:** Rollback hoàn tất, xác nhận lại baseline Production không đổi:
+  * `work_logs`: Đúng **7,105** dòng.
+  * `step_processing_status_id`: Giữ nguyên **1** (`0.未確認`).
+- **Trạng thái:** Sẵn sàng trình PE và Minh Chủ Thoan duyệt trước khi thực thi.
+
 
 
