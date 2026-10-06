@@ -1040,6 +1040,40 @@ Thứ tự nạp cha-con bất biến: `work_orders / jobs -> job_steps -> work_
 - Payload ứng viên JSON: `scripts/candidate_payload_6steps_5logs.json`
 - Báo cáo chi tiết Markdown: `docs/reports/2026-10-06_candidate_payload_6steps_5logs_report.md`
 
+## 32. KẾT QUẢ TẠO VÀ NẠP STAGING B1 TRÊN SUPABASE PRODUCTION (2026-10-06 19:30 JST)
+
+### 32.1. Căn cứ & Quyết định Phê duyệt
+- **Quyết định của Minh Chủ Thoan [Stamp: 2026-10-06 19:22 JST]:** Cho phép tạo và nạp staging B1 trên Supabase Production cho đúng 6 Step và 5 Work Log đã preflight đạt.
+- **Ranh giới:** Đây là phê duyệt staging B1 riêng biệt, chưa phải phê duyệt insert vào bảng chính (`job_steps`, `work_logs`). 100% không đụng tới 27 Jobs mới, 55 Steps mới, 138 Logs mới, 93 logs nội bộ, 25 log mã 888, 20 orphan steps, 50 orphan logs.
+
+### 32.2. Kết quả Thực thi Tạo & Nạp Staging B1
+- **Tên bảng Staging:** `public.staging_access_delta_b1`.
+- **Số dòng đã nạp:** Đúng **11 dòng** (6 Steps + 5 Work Logs).
+- **Ràng buộc toàn vẹn trên bảng Staging:**
+  * `uq_staging_b1_legacy_id UNIQUE (legacy_id)`: Đảm bảo tính duy nhất và idempotency.
+  * `uq_staging_b1_source_key UNIQUE (source_table, source_primary_key)`: Chống duplicate dữ liệu nguồn.
+- **Đầy đủ 8 trường siêu dữ liệu kiểm toán:** `source_table`, `source_primary_key`, `source_file_sha256`, `source_row_hash`, `legacy_id`, `target_candidate_id`, `validation_status`, `validation_error`.
+
+### 32.3. Báo cáo Kiểm toán Postflight Staging (100% Khớp Kỳ vọng PE)
+- `staging_table_name`: `staging_access_delta_b1`
+- `staging_step_rows`: **6**
+- `staging_work_log_rows`: **5**
+- `duplicate_source_keys`: **0**
+- `duplicate_legacy_ids`: **0**
+- `missing_parent_jobs`: **0**
+- `missing_employees`: **0**
+- `missing_processing_codes`: **0**
+- `invalid_hashes`: **0**
+- `production_jobs_after`: **1,205** (Bảo toàn 100%)
+- `production_job_steps_after`: **2,451** (Bảo toàn 100%)
+- `production_work_logs_after`: **7,106** (Bảo toàn 100%)
+
+### 32.4. Hồ sơ Bằng chứng Kỹ thuật
+- Script nạp staging & audit: `scripts/execute_staging_b1.py`
+- Tệp xuất bản JSON kết quả kiểm toán postflight: `scripts/staging_b1_postflight_audit.json`
+- Báo cáo chi tiết Markdown: `docs/reports/2026-10-06_staging_b1_execution_report.md`
+
+
 
 
 

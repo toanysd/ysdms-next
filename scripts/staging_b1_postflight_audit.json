@@ -1,0 +1,14 @@
+{
+  "staging_table_name": "staging_access_delta_b1",
+  "staging_step_rows": 6,
+  "staging_work_log_rows": 5,
+  "duplicate_source_keys": 0,
+  "duplicate_legacy_ids": 0,
+  "missing_parent_jobs": 0,
+  "missing_employees": 0,
+  "missing_processing_codes": 0,
+  "invalid_hashes": 0,
+  "production_jobs_after": 1205,
+  "production_job_steps_after": 2451,
+  "production_work_logs_after": 7106
+}
