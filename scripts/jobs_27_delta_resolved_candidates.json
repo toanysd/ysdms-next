@@ -1,0 +1,272 @@
+[
+  {
+    "job_id_access": 1251,
+    "job_name_access": "ADY-133 R1",
+    "prefix": "ADY",
+    "candidate_company_id": "4d426b50-b401-47bc-933b-f51370dcd69e",
+    "candidate_company_name": "エーディーワイ（ｽﾋﾟｰﾄﾞｼﾞｬﾊﾟﾝ)☆",
+    "candidate_product_id": null,
+    "candidate_product_name": null,
+    "candidate_equipment_id": null
+  },
+  {
+    "job_id_access": 1252,
+    "job_name_access": "YKW-009",
+    "prefix": "YKW",
+    "candidate_company_id": "c676b2bb-fb82-4f99-b310-3f19ac6b0b03",
+    "candidate_company_name": "(株)ヨコオ",
+    "candidate_product_id": "4676b172-cf1b-46a7-99ce-5728cdaf9af1",
+    "candidate_product_name": "YKW-009",
+    "candidate_equipment_id": "f75faaee-4ac0-4b49-8a06-09c732de0f6d"
+  },
+  {
+    "job_id_access": 1253,
+    "job_name_access": "TOW-005D R2",
+    "prefix": "TOW",
+    "candidate_company_id": "262c5b66-a2fa-4eed-80d0-c0b885d45c75",
+    "candidate_company_name": "東和紙工(株)",
+    "candidate_product_id": "2d2300b7-7771-4e1c-9b9d-e74c0fdcac21",
+    "candidate_product_name": "TOW-005D",
+    "candidate_equipment_id": null
+  },
+  {
+    "job_id_access": 1254,
+    "job_name_access": "SSK-011 R3",
+    "prefix": "SSK",
+    "candidate_company_id": "9698ebd8-2a00-4272-9f7e-ee4dd3bc07be",
+    "candidate_company_name": "(株)三泗計測機",
+    "candidate_product_id": null,
+    "candidate_product_name": null,
+    "candidate_equipment_id": null
+  },
+  {
+    "job_id_access": 1255,
+    "job_name_access": "CHG-019 D",
+    "prefix": "CHG",
+    "candidate_company_id": "50b8e78b-ec3c-424c-8ac9-a3948e84f503",
+    "candidate_company_name": "CHG",
+    "candidate_product_id": null,
+    "candidate_product_name": null,
+    "candidate_equipment_id": null
+  },
+  {
+    "job_id_access": 1256,
+    "job_name_access": "DIC-064 2面",
+    "prefix": "DIC",
+    "candidate_company_id": "46779df5-53c5-4184-95af-8b137d275b1b",
+    "candidate_company_name": "(株)大一",
+    "candidate_product_id": "ff489213-8af1-4856-9341-19353eb42ed4",
+    "candidate_product_name": "DIC-064",
+    "candidate_equipment_id": null
+  },
+  {
+    "job_id_access": 1257,
+    "job_name_access": "MTM-194 R3",
+    "prefix": "MTM",
+    "candidate_company_id": "9ce59084-bd9f-46e4-a0cd-7f85b2e050a6",
+    "candidate_company_name": "ミツミ電機☆",
+    "candidate_product_id": "be0241ce-396f-4fa7-baaa-bf8c5b7cf522",
+    "candidate_product_name": "MTM-194",
+    "candidate_equipment_id": null
+  },
+  {
+    "job_id_access": 1258,
+    "job_name_access": "CHG-020 D",
+    "prefix": "CHG",
+    "candidate_company_id": "50b8e78b-ec3c-424c-8ac9-a3948e84f503",
+    "candidate_company_name": "CHG",
+    "candidate_product_id": null,
+    "candidate_product_name": null,
+    "candidate_equipment_id": null
+  },
+  {
+    "job_id_access": 1259,
+    "job_name_access": "CHG-016D R4",
+    "prefix": "CHG",
+    "candidate_company_id": "50b8e78b-ec3c-424c-8ac9-a3948e84f503",
+    "candidate_company_name": "CHG",
+    "candidate_product_id": null,
+    "candidate_product_name": null,
+    "candidate_equipment_id": null
+  },
+  {
+    "job_id_access": 1260,
+    "job_name_access": "JAE-382",
+    "prefix": "JAE",
+    "candidate_company_id": "5551651a-6ff6-4ba8-bef4-af2b61e8632a",
+    "candidate_company_name": "日本航空電子工業株式会社",
+    "candidate_product_id": null,
+    "candidate_product_name": null,
+    "candidate_equipment_id": null
+  },
+  {
+    "job_id_access": 1261,
+    "job_name_access": "CHG-017 DR4",
+    "prefix": "CHG",
+    "candidate_company_id": "50b8e78b-ec3c-424c-8ac9-a3948e84f503",
+    "candidate_company_name": "CHG",
+    "candidate_product_id": null,
+    "candidate_product_name": null,
+    "candidate_equipment_id": null
+  },
+  {
+    "job_id_access": 1262,
+    "job_name_access": "DIC-069-2CAV",
+    "prefix": "DIC",
+    "candidate_company_id": "46779df5-53c5-4184-95af-8b137d275b1b",
+    "candidate_company_name": "(株)大一",
+    "candidate_product_id": null,
+    "candidate_product_name": null,
+    "candidate_equipment_id": null
+  },
+  {
+    "job_id_access": 1263,
+    "job_name_access": "SSM-059 R1",
+    "prefix": "SSM",
+    "candidate_company_id": "c1158470-7e69-47c7-addf-db1d98214c4d",
+    "candidate_company_name": "サンシャインモスキュー",
+    "candidate_product_id": null,
+    "candidate_product_name": null,
+    "candidate_equipment_id": null
+  },
+  {
+    "job_id_access": 1264,
+    "job_name_access": "JAE-193",
+    "prefix": "JAE",
+    "candidate_company_id": "5551651a-6ff6-4ba8-bef4-af2b61e8632a",
+    "candidate_company_name": "日本航空電子工業株式会社",
+    "candidate_product_id": "9c38f691-4325-4233-b2b2-e3fb4c4018a3",
+    "candidate_product_name": "JAE-193",
+    "candidate_equipment_id": null
+  },
+  {
+    "job_id_access": 1265,
+    "job_name_access": "STD-013",
+    "prefix": "STD",
+    "candidate_company_id": "1825d7d2-3490-4d07-870c-60eefaf93b17",
+    "candidate_company_name": "瀬戸電子(株)",
+    "candidate_product_id": null,
+    "candidate_product_name": null,
+    "candidate_equipment_id": null
+  },
+  {
+    "job_id_access": 1266,
+    "job_name_access": "NHC-010",
+    "prefix": "NHC",
+    "candidate_company_id": "564c4ada-f866-4a88-8358-1b97cac614f1",
+    "candidate_company_name": "日本コネクト工業(株)",
+    "candidate_product_id": null,
+    "candidate_product_name": null,
+    "candidate_equipment_id": null
+  },
+  {
+    "job_id_access": 1268,
+    "job_name_access": "ASH-005 R1",
+    "prefix": "ASH",
+    "candidate_company_id": "0ea1a54f-c0d9-49a3-8159-a3397c2e2338",
+    "candidate_company_name": "(株)朝日プラスチック",
+    "candidate_product_id": "e24f83d9-7d42-42b9-8059-eee68d9c6e4a",
+    "candidate_product_name": "ASH-005",
+    "candidate_equipment_id": null
+  },
+  {
+    "job_id_access": 1269,
+    "job_name_access": "DIC-145R1-2CAV",
+    "prefix": "DIC",
+    "candidate_company_id": "46779df5-53c5-4184-95af-8b137d275b1b",
+    "candidate_company_name": "(株)大一",
+    "candidate_product_id": null,
+    "candidate_product_name": null,
+    "candidate_equipment_id": null
+  },
+  {
+    "job_id_access": 1270,
+    "job_name_access": "CHG-018D R1",
+    "prefix": "CHG",
+    "candidate_company_id": "50b8e78b-ec3c-424c-8ac9-a3948e84f503",
+    "candidate_company_name": "CHG",
+    "candidate_product_id": null,
+    "candidate_product_name": null,
+    "candidate_equipment_id": null
+  },
+  {
+    "job_id_access": 1271,
+    "job_name_access": "IRI-017",
+    "prefix": "IRI",
+    "candidate_company_id": "dc902de9-c28f-493e-aee8-07af61a9425f",
+    "candidate_company_name": "IRI",
+    "candidate_product_id": null,
+    "candidate_product_name": null,
+    "candidate_equipment_id": null
+  },
+  {
+    "job_id_access": 1272,
+    "job_name_access": "DIC-165D R6",
+    "prefix": "DIC",
+    "candidate_company_id": "46779df5-53c5-4184-95af-8b137d275b1b",
+    "candidate_company_name": "(株)大一",
+    "candidate_product_id": "962dac83-a390-4b95-8b0e-226c3ff00a9e",
+    "candidate_product_name": "DIC-165D",
+    "candidate_equipment_id": null
+  },
+  {
+    "job_id_access": 1273,
+    "job_name_access": "TOW-005 R2",
+    "prefix": "TOW",
+    "candidate_company_id": "262c5b66-a2fa-4eed-80d0-c0b885d45c75",
+    "candidate_company_name": "東和紙工(株)",
+    "candidate_product_id": null,
+    "candidate_product_name": null,
+    "candidate_equipment_id": null
+  },
+  {
+    "job_id_access": 1274,
+    "job_name_access": "SHT-022A R5",
+    "prefix": "SHT",
+    "candidate_company_id": "011b1a81-bcfd-49a0-ab35-5dbe08ab789e",
+    "candidate_company_name": "精発ばね工業(株)",
+    "candidate_product_id": null,
+    "candidate_product_name": null,
+    "candidate_equipment_id": null
+  },
+  {
+    "job_id_access": 1275,
+    "job_name_access": "WB-385X290",
+    "prefix": "WB",
+    "candidate_company_id": "bfdb082e-34d9-44b3-aad4-f56ef89200d9",
+    "candidate_company_name": "WB",
+    "candidate_product_id": null,
+    "candidate_product_name": null,
+    "candidate_equipment_id": null
+  },
+  {
+    "job_id_access": 1276,
+    "job_name_access": "COB-001",
+    "prefix": "COB",
+    "candidate_company_id": null,
+    "candidate_company_name": null,
+    "candidate_product_id": null,
+    "candidate_product_name": null,
+    "candidate_equipment_id": null
+  },
+  {
+    "job_id_access": 1277,
+    "job_name_access": "SMK-232",
+    "prefix": "SMK",
+    "candidate_company_id": "2af154c3-4f7a-405b-9502-8f121eada865",
+    "candidate_company_name": "SMK株式会社",
+    "candidate_product_id": null,
+    "candidate_product_name": null,
+    "candidate_equipment_id": null
+  },
+  {
+    "job_id_access": 1278,
+    "job_name_access": "YCM-082 R1",
+    "prefix": "YCM",
+    "candidate_company_id": "952bce3d-a891-4829-a220-8c184763dff2",
+    "candidate_company_name": "ワイコム(株)",
+    "candidate_product_id": "e9d1cb9b-ddb6-4f12-addf-1f4b72b416e6",
+    "candidate_product_name": "YCM082",
+    "candidate_equipment_id": null
+  }
+]
