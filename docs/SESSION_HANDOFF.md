@@ -845,5 +845,20 @@ Cuối mỗi ngày làm việc, Quản lý xưởng khuôn đối chiếu qua `/
 - **Schema changes / Additional internal jobs:** `blocked` (Không thay đổi schema, không tạo thêm Job nội bộ)
 - **Chế độ hỗ trợ kỹ thuật:** AN chỉ hỗ trợ xử lý khi phát sinh lỗi/sự cố, tuyệt đối không tự ý mở rộng phạm vi.
 
+### 28.7. Khung Đánh giá & Tiêu chí Nghiệm thu Sau Chu kỳ Pilot (Pilot Review Framework)
+- **Quyết định của Minh Chủ Thoan [Stamp: 2026-10-06 17:49 JST]:**
+  > Tiếp tục Pilot vận hành bộ phận khuôn trong một chu kỳ làm việc thực tế, chưa import Access và chưa mở rộng module mới.
+- **Nguyên tắc ghi nhận:** Không cần tạo artifact hoặc commit cho mỗi work log phát sinh hằng ngày. Chỉ tạo báo cáo tổng hợp sau một chu kỳ hoặc khi phát sinh sự cố nghiêm trọng.
+- **8 Chỉ số Tổng hợp Bắt buộc cho Báo cáo "Pilot Operation Review":**
+  1. Số work logs mới phát sinh trong chu kỳ.
+  2. Số nhân sự thực tế đã tham gia ghi nhận.
+  3. Danh sách Job/Step đã được sử dụng.
+  4. Các mã `processing_codes` đã được sử dụng thực tế.
+  5. Các lỗi hoặc trở ngại UI / DB (nếu có).
+  6. Các trường hợp công việc thực tế phải ghi ngoài hệ thống do thiếu mã/bước.
+  7. Đề xuất điều chỉnh hoặc bổ sung luồng thao tác.
+  8. Các quyết định cần Minh Chủ Thoan phê duyệt.
+- **Căn cứ quyết định của PE:** Báo cáo tổng hợp này sẽ là căn cứ duy nhất để PE thẩm định và đề xuất bước tiếp theo (sửa nhỏ UI, bổ sung Job/Step chuẩn, mở rộng báo cáo, thiết kế module vật tư, hay lập kế hoạch nạp Access delta có chọn lọc).
+
 
 
