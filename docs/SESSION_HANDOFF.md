@@ -896,7 +896,7 @@ Mỗi bản ghi delta ứng viên (27 Jobs, 81 Steps, 311 Work Logs) bắt buộ
 ### 29.5. 8 Trường Siêu dữ liệu Bắt buộc cho Mỗi Dòng Staging/Audit
 - `source_table`: Tên bảng Access nguồn (`tblJOB`, `tblProcessingDeadline`, `tblWorkLog`).
 - `source_primary_key`: Khóa chính Access (`JobID`, `ProcessingDeadlineID`, `WorkLogID`).
-- `source_file_sha256`: Mã băm SHA-256 của file `ysdJOB_20261006.accdb`.
+- `source_file_sha256`: Mã băm SHA-256 tính toán động từ file Access thực tế tại thời điểm audit (không hardcode).
 - `source_row_hash`: Mã băm kiểm tra toàn vẹn nội dung dòng.
 - `legacy_id`: Khóa định danh duy nhất (`JOB-{id}`, `LEGACY-STEP-{id}`, `LEGACY-LOG-{id}`).
 - `target_candidate_id`: UUID ứng viên được map trên Supabase.
@@ -906,6 +906,11 @@ Mỗi bản ghi delta ứng viên (27 Jobs, 81 Steps, 311 Work Logs) bắt buộ
 ### 29.6. Thứ tự Xử lý Kỹ thuật (Sau khi Thoan Công bố Kết thúc Pilot)
 `Audit/Dry-run Read-only -> PE Thẩm định -> Thoan duyệt Staging -> Nạp Staging -> Audit FK/Idempotency -> PE Thẩm định -> Thoan duyệt Production Insert -> Kiểm tra Schedule/UI`
 Thứ tự nạp cha-con bất biến: `work_orders / jobs -> job_steps -> work_logs`.
+
+### 29.7. Phê chuẩn Chính thức từ PE (Approved Spec)
+- **Thẩm định PE [Stamp: 2026-10-06 18:41 JST]:** PE chính thức phê chuẩn Section 29 ở cấp độ **Approved Spec**.
+- **Kỷ luật vận hành:** Tiếp tục duy trì chế độ **Silent Technical Standby**, không can thiệp mã nguồn, không nạp Access delta, bảo toàn Production baseline (jobs: 1,205, job_steps: 2,451, work_logs: 7,106).
+- **Hành động tiếp theo:** Chờ Minh Chủ Thoan công bố kết thúc chu kỳ Pilot để kích hoạt vòng audit/dry-run delta chỉ-đọc.
 
 
 
