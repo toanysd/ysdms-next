@@ -655,3 +655,30 @@ Bạn là AN (Executing Agent). Đây là dự án **ysdms-next** — hệ thố
 - **Kiểm tra TypeScript:** `npx tsc --noEmit` đạt **0 errors**.
 - **Trạng thái Git:** Sẵn sàng commit tài liệu và JSON artifacts lên kho mã nguồn.
 
+## 24. KHẢO SÁT ROUTE & SCHEMA PHỤC VỤ PILOT BỘ PHẬN KHUÔN (2026-10-06 16:30 JST)
+
+### 24.1. Căn cứ & Mục tiêu
+- **Phê duyệt chỉ đạo:** Minh Chủ Thoan [Stamp: 2026-10-06 16:23 JST] & PE [Stamp: 2026-10-06 16:25 JST].
+- **Mục tiêu:** Thực hiện Khảo sát Chỉ-Đọc (Strictly Read-Only Reconnaissance) trả lời chính xác 12 câu hỏi kỹ thuật về giao diện, route, server action và schema Supabase liên quan đến phân xưởng khuôn, phục vụ lập phương án triển khai thử nghiệm thực tế (Pilot).
+
+### 24.2. Tóm tắt Kết quả 12 Câu hỏi Khảo sát
+1. **Route Jobs:** Tạo tại `/equipment/jobs` (`createMoldJobAction`), `/worklogs/new` (`createQuickJob`), `/production/work-orders/[id]` (`generateJobsForWorkOrder`). Chi tiết & sửa tại `/equipment/jobs/[id]`.
+2. **Route Steps:** Quản lý tại `/equipment/jobs/[id]` (Tab Steps $\rightarrow$ `EditStepModal.tsx`). Cập nhật qua `updateJobStepDetails` và `updateJobStepDates`. Tự động sinh từ `standard_process_times` và `JOB_STEP_TEMPLATES`.
+3. **Route Work Logs:** Nhập chính tại `/worklogs/new` (`WorklogFormShared.tsx`), nhập theo step tại `/equipment/jobs/[id]`. Lưu qua `saveWorklogRecord` / `createWorklog`.
+4. **Trường bắt buộc trong Form Work Log:** `work_date`, `employee_id`, `job_id`, `job_step_id` (bắt buộc trên UI), `hours_spent` (>0). `quantity_done` chỉ bắt buộc khi `jobCategory === 'THERMOFORMING'`.
+5. **Dropdowns:** Hỗ trợ đầy đủ `job_id`, `job_step_id` (lọc động theo job), `employee_id` (ghi nhớ thợ qua `localStorage`), `machine_id`, `processing_code_id` (lọc theo phòng ban).
+6. **Tác vụ nội bộ:** Schema `work_logs.job_id` là `NOT NULL` và chưa có cột `task_category`. Đề xuất tối ưu: Tạo Job xưởng nội bộ `JOB-INTERNAL-SHOP` kèm 4 bước chuẩn (5S, bảo trì, sửa khuôn, Stacking) để thợ chọn ghi nhận mà không cần sửa code/schema.
+7. **Cột trạng thái:** `job_steps.step_status`, `progress_percent`, `actual_hours`; `jobs.job_status`, `overall_progress`, `completed_date`. Tự động hoàn thành qua `processStepCompletionEngine` khi `is_finished = true`.
+8. **Tổng giờ công:** Tính toán đầy đủ tại 3 tầng: Step (`actual_hours`), Lập lịch/Gantt (`getJobsForGantt`), và Lệnh sản xuất (`v_work_order_progress`).
+9. **Cảnh báo Deadline/Quá hạn:** `/equipment/schedule` (badge đỏ `overdueCount`, highlight đỏ trong Grid & Gantt), `/equipment/jobs` (sort deadline ASC), `/production/work-orders/[id]` (`WorkOrderProgressCockpit`).
+10. **Route Lịch/Gantt sẵn sàng:** Tuyến `/equipment/schedule` vận hành 100% với 2 chế độ `ToolingExcelGridView` (lưới ma trận kiểu Excel) và `MoldJobGantt` (biểu đồ tiến độ Gantt), lọc linh hoạt 1-2 tuần hoặc 1 tháng.
+11. **Dùng được ngay tại xưởng:** Quản lý Job (`/equipment/jobs`), Lập lịch & điều phối (`/equipment/schedule`), Ghi Nippo hàng ngày (`/worklogs/new`), In phiếu Nippo A4 chuẩn Nhật có dấu Hanko (`/reports/daily-worklog`).
+12. **Cần tinh chỉnh thêm:** Cần nạp Job xưởng nội bộ (`JOB-INTERNAL-SHOP`), bổ sung auto-refresh trên `/equipment/schedule`, và nạp dữ liệu delta (27 Jobs & 81 Steps mới từ Access).
+
+### 24.3. Hồ sơ & Trạng thái Kiểm tra
+- **Tài liệu SSOT:** `docs/reports/2026-10-06_mold_pilot_schema_route_recon.md`.
+- **TypeScript:** `npx tsc --noEmit` $\rightarrow$ **0 errors**.
+- **Đa ngôn ngữ (i18n):** `node scripts/check_translations.mjs` $\rightarrow$ **0 missing keys**.
+- **Cam kết an toàn:** 100% Chỉ-đọc, 0 ghi Supabase Production.
+
+
