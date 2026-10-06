@@ -912,7 +912,8 @@ Thứ tự nạp cha-con bất biến: `work_orders / jobs -> job_steps -> work_
 - **Kỷ luật vận hành:** Tiếp tục duy trì chế độ **Silent Technical Standby**, không can thiệp mã nguồn, không nạp Access delta, bảo toàn Production baseline (jobs: 1,205, job_steps: 2,451, work_logs: 7,106).
 - **Hành động tiếp theo:** Chờ Minh Chủ Thoan công bố kết thúc chu kỳ Pilot để kích hoạt vòng audit/dry-run delta chỉ-đọc.
 
-## 30. KẾT QUẢ THỰC HIỆN VÒNG A: AUDIT & DRY-RUN DELTA ACCESS CHỈ-ĐỌC (2026-10-06 18:52 JST)
+## 30. KẾT QUẢ THỰC HIỆN VÒNG A: AUDIT & DRY-RUN DELTA ACCESS CHỈ-ĐỌC (2026-10-06 18:58 JST)
+*(Round A audit completed — pending PE/THOAN mapping approval)*
 
 ### 30.1. Căn cứ & Quyết định Phê duyệt
 - **Quyết định của Minh Chủ Thoan [Stamp: 2026-10-06 18:50 JST]:** Tuyên bố KẾT THÚC chu kỳ Pilot; cho phép AN rời Silent Technical Standby để bắt đầu Vòng A (audit/dry-run delta Access chỉ-đọc theo Section 29 Approved Spec).
@@ -921,6 +922,7 @@ Thứ tự nạp cha-con bất biến: `work_orders / jobs -> job_steps -> work_
   * Kích thước: `612,442,112` bytes
   * Mã băm SHA-256 động: `0ec0f23e05a08178f0294b7f6e6de1bb5ede75feda54cf1bb8d1bb64cbd0cd66`
   * Chế độ kết nối: `ReadOnly=1` (100% không ghi)
+- **Kiểm tra Bảng Staging trên Supabase:** Có 1 bảng staging hiện hữu duy nhất `staging_order_lines_backfill` (lịch sử từ giai đoạn backfill order lines trước đó); **0 bảng staging mới** được tạo cho Access delta.
 - **Production Baseline (Bảo toàn 100%):** `jobs = 1,205`, `job_steps = 2,451`, `work_logs = 7,106`.
 
 ### 30.2. Kết quả Đối soát & Phân loại 6 Trạng thái Chi tiết
@@ -929,33 +931,51 @@ Thứ tự nạp cha-con bất biến: `work_orders / jobs -> job_steps -> work_
 - `MATCHED_ALREADY`: **1,203** jobs.
 - `CONFLICT_REQUIRES_REVIEW`: **27** jobs (JobIDs: 1251..1278, ngoại trừ 1267).
   * *Phát hiện kiểm toán:* Cả 27 jobs trong Access đều có `JobNo = NULL` và `CompanyID = NULL`.
-  * *Kết quả khảo sát tiền tố:* 26/27 jobs có thể phân giải được công ty khách hàng thông qua tiền tố mã khuôn (`ADY`, `YKW`, `TOW`, `SSK`, `DIC`, `MTM`, `JAE`, `SSM`, `STD`, `NHC`, `ASH`, `SHT`, `SMK`, `YCM`, `WB`); 8 jobs đã có sẵn sản phẩm trong bảng `products`. Duy nhất 1 job `COB-001` (JobID 1276) cần xác nhận thêm.
-- `NEW_SAFE_TO_STAGE`: **0** (bảo lưu ở CONFLICT chờ PE & Thoan phê duyệt ánh xạ tiền tố).
+  * *Ranh giới nghiêm ngặt:* Tách biệt hoàn toàn giữa khảo sát ứng viên (*candidate resolution*) và phê duyệt ánh xạ chính thức (*approved mapping*).
+  * *Kết quả khảo sát ứng viên:* 26/27 jobs có thể phân giải công ty khách hàng thông qua tiền tố mã khuôn (`ADY`, `YKW`, `TOW`, `SSK`, `DIC`, `MTM`, `JAE`, `SSM`, `STD`, `NHC`, `ASH`, `SHT`, `SMK`, `YCM`, `WB`); 8 jobs đã có sẵn sản phẩm trong bảng `products`. Duy nhất 1 job `COB-001` (JobID 1276) cần xác nhận thêm.
+  * Toàn bộ 27 jobs delta giữ nguyên trạng thái `CONFLICT_REQUIRES_REVIEW` chờ Minh Chủ Thoan phê duyệt quy tắc tiền tố.
+- `NEW_SAFE_TO_STAGE`: **0** jobs.
 
 #### B. 81 Steps Delta (`tblProcessingDeadline`)
 - `MATCHED_ALREADY`: **2,446** steps.
-- `NEW_SAFE_TO_STAGE`: **61** steps (55 steps thuộc 27 Jobs delta mới, 6 steps bổ sung cho các Job cũ trên Supabase).
+- `NEW_SAFE_TO_STAGE`: **61** steps.
+  * **6 steps bổ sung cho Job cũ đã có trên Supabase:**
+    1. StepID `4275` (Deadline: 2026-10-01) -> JobID `623` (`ZA水冷ベース`)
+    2. StepID `4276` (Deadline: 2026-10-02) -> JobID `1170` (`ASH021R2`)
+    3. StepID `4238` (Deadline: 2026-09-04) -> JobID `1248` (`JAE380`)
+    4. StepID `4241` (Deadline: 2026-09-03) -> JobID `1250` (`KSP227`)
+    5. StepID `4251` (Deadline: NULL) -> JobID `1247` (`MMT021R2`)
+    6. StepID `4226` (Deadline: 2026-09-04) -> JobID `1249` (`JAE381`)
+  * **55 steps thuộc 27 Jobs delta mới** (Phụ thuộc vào phê duyệt Job cha).
 - `UNRESOLVED_PARENT`: **20** steps (Gắn cờ `HOLD_STAGING_UNRESOLVED_PARENT` do `JobID = NULL`). Danh sách: `3892, 2970, 2971, 3024, 3065, 3066, 3099, 3107, 3242, 3284, 3325, 3329, 3347, 3379, 3380, 3381, 3390, 3404, 3554, 3612`.
 
 #### C. 311 Work Logs Delta (`tblWorkLog`) — Tổng cộng: 604.00 giờ
 - `MATCHED_ALREADY`: **7,105** logs.
-- `NEW_SAFE_TO_STAGE`: **143** logs (**286.75** giờ) — Có step cha và mã gia công hợp lệ.
-- `INTERNAL_TASK`: **118** logs (**223.50** giờ) — Công việc nội bộ:
-  * Mã 40 (`スタッキング`): 44 logs
-  * Mã 50 (`5S`): 33 logs
-  * Mã 888 (`その他`): 25 logs
-  * Mã 42 (`金型・治具修理`): 15 logs
-  * Mã 54 (`メンテナンス`): 1 log
-  -> Ứng viên nạp vào `JOB-INTERNAL-SHOP`.
-- `UNRESOLVED_PARENT`: **50** logs (**93.75** giờ) — Có mã gia công nhưng `ProcessingDeadlineID IS NULL`.
-- *Xác nhận số lượng nhóm 94 logs không có step:* Đúng chính xác 44 logs (Internal) + 50 logs (Unresolved) = 94 logs!
+- `NEW_SAFE_TO_STAGE`: **143** logs (**286.75** giờ).
+  * 5 logs thuộc các step của Job cũ đã có trên Supabase (WorkLogIDs: `9052` cho Job 623; `8882`, `8895`, `8901`, `8920` cho Job 1249).
+  * 138 logs thuộc các step của 27 Jobs delta mới.
+  * 100% hợp lệ về nhân viên, mã gia công chuẩn và liên kết cha.
+- `INTERNAL_TASK`: **118** logs (**223.50** giờ).
+  * **Ánh xạ vào 4 Step của `JOB-INTERNAL-SHOP` (93 logs, 181.75 giờ):**
+    - Step 1 (`5S・工場清掃`, Mã 50): **33 logs** (43.50h)
+    - Step 2 (`設備・コンプレッサー保全`, Mã 54): **1 log** (2.00h)
+    - Step 3 (`金型・治具修理`, Mã 42): **15 logs** (38.00h)
+    - Step 4 (`スタッキング木板製作`, Mã 40): **44 logs** (98.25h)
+  * **Mã 888 (`その他`): 25 logs (41.75 giờ) — Phân loại: `INTERNAL_TASK_UNMAPPED` / `CONFLICT_REQUIRES_REVIEW`:**
+    - Không có step tương ứng trong `JOB-INTERNAL-SHOP`, tuyệt đối không tự động gán vào 4 bước hiện có. Chờ quyết định bổ sung Step 5 hoặc hướng xử lý riêng.
+  * **Kiểm tra tính toàn vẹn (Missing fields):** 0 dòng thiếu nhân viên, ngày, mã công đoạn hay giờ làm việc (100% cú pháp hợp lệ).
+- `UNRESOLVED_PARENT`: **50** logs (**93.75** giờ).
+  * Có mã gia công cơ khí nhưng `ProcessingDeadlineID IS NULL`. Giữ cách ly ngoài staging.
+- *(Xác nhận nhóm 94 logs không có step trong Access: Đúng chính xác 44 logs Stacking + 50 logs Unresolved = 94 logs).*
 
-### 30.3. Hồ sơ Bằng chứng
+### 30.3. Hồ sơ Bằng chứng & Tệp Kiểm toán
 - Báo cáo chi tiết Markdown: `docs/reports/2026-10-06_access_delta_round_a_audit_report.md`
-- Tệp xuất bản JSON: `scripts/access_delta_round_a_audit.json`
-- Bảng ánh xạ ứng viên 27 Jobs: `scripts/jobs_27_delta_resolved_candidates.json`
-- Script thực thi: `scripts/audit_round_a_access_delta.py`
-- Cam kết: 0 thao tác ghi Supabase Production, 0 bảng staging được tạo.
+- Tệp xuất bản JSON tổng thể: `scripts/access_delta_round_a_audit.json`
+- Tệp bổ sung chi tiết: `scripts/access_delta_round_a_supplement.json`
+- Bảng khảo sát ứng viên 27 Jobs: `scripts/jobs_27_delta_resolved_candidates.json`
+- Script thực thi: `scripts/audit_round_a_access_delta.py` & `scripts/generate_round_a_supplement.py`
+- Cam kết: 0 ghi Supabase Production, 0 bảng staging mới.
+
 
 
 
