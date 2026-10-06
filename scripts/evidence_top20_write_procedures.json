@@ -1,0 +1,272 @@
+[
+  {
+    "module": "ModUpdateDesignForPlasticType",
+    "proc": "UpdateDesignForPlasticType",
+    "type": "Sub",
+    "side_effect": "RECORD_UPDATE",
+    "tables": [
+      "tblMoldDesign",
+      "tblPLASTICforForming",
+      "tblPlasticMaterial",
+      "tblPlasticColor",
+      "tblPlasticThickness",
+      "tblPlasticWidth",
+      "tblPlasticStaticCharge"
+    ],
+    "lines": 56,
+    "table_count": 7
+  },
+  {
+    "module": "ModUpdateCurrentDesignForPlasticType",
+    "proc": "UpdateCurrentDesignForPlasticType",
+    "type": "Sub",
+    "side_effect": "RECORD_UPDATE",
+    "tables": [
+      "tblMoldDesign",
+      "tblPLASTICforForming",
+      "tblPlasticMaterial",
+      "tblPlasticColor",
+      "tblPlasticThickness",
+      "tblPlasticWidth",
+      "tblPlasticStaticCharge"
+    ],
+    "lines": 56,
+    "table_count": 7
+  },
+  {
+    "module": "Form_frmMoldSearchSubMoldDetails",
+    "proc": "cmdShipMold_Click",
+    "type": "Sub",
+    "side_effect": "RECORD_INSERT",
+    "tables": [
+      "tblLocationLog",
+      "tblShipLog",
+      "statuslogs",
+      "tblMold",
+      "tblCompany"
+    ],
+    "lines": 434,
+    "table_count": 5
+  },
+  {
+    "module": "Form_frmMOLDlocation",
+    "proc": "CreateOrCheckMold",
+    "type": "Sub",
+    "side_effect": "RECORD_INSERT",
+    "tables": [
+      "tblMold",
+      "tblMoldDesign",
+      "tblTray",
+      "tblCustomer"
+    ],
+    "lines": 344,
+    "table_count": 4
+  },
+  {
+    "module": "Form_frmMOLDentry",
+    "proc": "btnMoldCreate_Click",
+    "type": "Sub",
+    "side_effect": "RECORD_INSERT",
+    "tables": [
+      "tblMold",
+      "tblMoldDesign",
+      "tblTray",
+      "tblCustomer"
+    ],
+    "lines": 210,
+    "table_count": 4
+  },
+  {
+    "module": "Form_frmMOLDlocation_ng",
+    "proc": "CreateOrCheckMold",
+    "type": "Sub",
+    "side_effect": "RECORD_INSERT",
+    "tables": [
+      "tblMold",
+      "tblMoldDesign",
+      "tblTray",
+      "tblCustomer"
+    ],
+    "lines": 177,
+    "table_count": 4
+  },
+  {
+    "module": "Form_frmMoldSearch",
+    "proc": "cmdTeflonUpdate_Click",
+    "type": "Sub",
+    "side_effect": "RECORD_INSERT",
+    "tables": [
+      "tblTeflonLog",
+      "tblShipLog",
+      "tblEmployee"
+    ],
+    "lines": 427,
+    "table_count": 3
+  },
+  {
+    "module": "Form_frmMoldSearch",
+    "proc": "cmdBulkDispose_Click",
+    "type": "Sub",
+    "side_effect": "RECORD_INSERT",
+    "tables": [
+      "tblLocationLog",
+      "statuslogs",
+      "tblMold"
+    ],
+    "lines": 196,
+    "table_count": 3
+  },
+  {
+    "module": "Form_frmMoldSearch",
+    "proc": "cmdBulkCheckOut_Click",
+    "type": "Sub",
+    "side_effect": "RECORD_INSERT",
+    "tables": [
+      "statuslogs",
+      "tblEmployee",
+      "destinations"
+    ],
+    "lines": 193,
+    "table_count": 3
+  },
+  {
+    "module": "Form_frmMoldSearch",
+    "proc": "cmdCheckOut_Click",
+    "type": "Sub",
+    "side_effect": "RECORD_INSERT",
+    "tables": [
+      "statuslogs",
+      "tblEmployee",
+      "destinations"
+    ],
+    "lines": 177,
+    "table_count": 3
+  },
+  {
+    "module": "Form_frmMoldSearchSubMoldDetails",
+    "proc": "cmdDisposeMold_Click",
+    "type": "Sub",
+    "side_effect": "RECORD_INSERT",
+    "tables": [
+      "tblLocationLog",
+      "statuslogs",
+      "tblMold"
+    ],
+    "lines": 165,
+    "table_count": 3
+  },
+  {
+    "module": "ModAddStatuslogs",
+    "proc": "UpdateMoldTeflonFields",
+    "type": "Sub",
+    "side_effect": "RECORD_INSERT",
+    "tables": [
+      "tblShipLog",
+      "statuslogs",
+      "tblMold"
+    ],
+    "lines": 158,
+    "table_count": 3
+  },
+  {
+    "module": "Form_frmMOLDentry",
+    "proc": "btnMoldDesignCreate_Click",
+    "type": "Sub",
+    "side_effect": "RECORD_INSERT",
+    "tables": [
+      "tblMoldDesign",
+      "tblTray",
+      "tblCustomer"
+    ],
+    "lines": 121,
+    "table_count": 3
+  },
+  {
+    "module": "Form_frmMOLDentry",
+    "proc": "txtMoldDesignCreate_Exit",
+    "type": "Sub",
+    "side_effect": "RECORD_INSERT",
+    "tables": [
+      "tblMoldDesign",
+      "tblTray",
+      "tblCustomer"
+    ],
+    "lines": 120,
+    "table_count": 3
+  },
+  {
+    "module": "Form_frmsCUTTERdataEntry",
+    "proc": "cbMoldDesign_AfterUpdate",
+    "type": "Sub",
+    "side_effect": "RECORD_INSERT",
+    "tables": [
+      "tblCutter",
+      "tblMoldDesign",
+      "tblMoldCutter"
+    ],
+    "lines": 106,
+    "table_count": 3
+  },
+  {
+    "module": "Form_frmCUTTERsearchSubEntry",
+    "proc": "MoldDesignID_AfterUpdate",
+    "type": "Sub",
+    "side_effect": "RECORD_UPDATE",
+    "tables": [
+      "tblCutter",
+      "tblMoldDesign",
+      "tblMoldCutter"
+    ],
+    "lines": 103,
+    "table_count": 3
+  },
+  {
+    "module": "modMoldWBS_V2",
+    "proc": "SyncActualHours",
+    "type": "Sub",
+    "side_effect": "RECORD_UPDATE",
+    "tables": [
+      "tblJOB",
+      "tblProcessingDeadline",
+      "tblWorkLog"
+    ],
+    "lines": 39,
+    "table_count": 3
+  },
+  {
+    "module": "Form_frmMOLDlocation",
+    "proc": "cbMoldCode_AfterUpdate",
+    "type": "Sub",
+    "side_effect": "RECORD_INSERT",
+    "tables": [
+      "tblLocationLog",
+      "tblMold"
+    ],
+    "lines": 209,
+    "table_count": 2
+  },
+  {
+    "module": "Form_frmMOLDlocation",
+    "proc": "txtMoldNumber_AfterUpdate",
+    "type": "Sub",
+    "side_effect": "RECORD_INSERT",
+    "tables": [
+      "tblLocationLog",
+      "tblMold"
+    ],
+    "lines": 201,
+    "table_count": 2
+  },
+  {
+    "module": "Form_frmMOLDProcessing",
+    "proc": "btnCheckCreateCutter_Click",
+    "type": "Sub",
+    "side_effect": "RECORD_INSERT",
+    "tables": [
+      "tblCutter",
+      "tblMoldCutter"
+    ],
+    "lines": 188,
+    "table_count": 2
+  }
+]

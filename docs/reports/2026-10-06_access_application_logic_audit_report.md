@@ -75,16 +75,22 @@
 
 ### 3.1. Quy trình 1: Chỉ thị & Lập lịch gia công khuôn (Shop-Floor Dispatching Cockpit)
 - **Đối tượng cốt lõi:**
-  - Form trung tâm: `BangDuDinhFrm` (Form khởi động mặc định từ Macro `AutoExec`).
+  - Form trung tâm: `BangDuDinhFrm` — **Bằng chứng tĩnh từ Macro AutoExec:**  
+    Trích xuất tĩnh metadata bằng `Access.Application.SaveAsText(4, "AutoExec")` (không mở/chạy macro) xác nhận định nghĩa XML gốc:
+    ```xml
+    <Action Name="OpenForm">
+        <Argument Name="FormName">BangDuDinhFrm</Argument>
+    </Action>
+    ```
+    Điều này chứng minh `BangDuDinhFrm` là form đích mở đầu của ứng dụng Access mà không cần phải thực thi bất kỳ macro runtime nào.
   - Form xử lý chi tiết: `frmMOLDProcessing` (RecordSource: `qryMOLDprocessing`, 606 dòng VBA), `Form_KyHanGcFrms`, `Form_KyHanGcFrms2`.
   - Subforms gá lắp: `YoteiMoldFrms` (khuôn chính), `YoteiPlugFrms` (khuôn Plug), `YoteiStakingFrms` (Stacking), `YoteiTeflonFrms` (Teflon), `YoteiMachineFrms` (Máy gia công CNC/phay).
   - Query điều phối: `BangDuDinh_FullQry`.
-- **Cơ chế chuyển đổi trạng thái (State Machine) trong `tblProcessingStatus`:**
-  Hệ thống xưởng phân cấp trạng thái thành 2 pha rõ rệt:
-  1. *Pha Chuẩn bị Phôi & Vật tư (Material Readiness Pipeline):*  
-     `ZR.材料 Request` (Yêu cầu đặt phôi) $\rightarrow$ `ZN.材料待ち` (Đang chờ nhà cung cấp giao phôi) $\rightarrow$ `ZF.材料有` (Phôi đã nhập về xưởng sẵn sàng lên máy).
-  2. *Pha Gia công Cơ khí (Machining Pipeline):*  
-     `1.プログラム` (Lập trình CAD/CAM) $\rightarrow$ `2.機械加工` (Phay/tiện CNC) $\rightarrow$ `3.穴あけ` (Khoan thoát khí) $\rightarrow$ `4.ミガキ` (Đánh bóng khuôn) $\rightarrow$ `5.プラグ作成` (Gia công khuôn đực Plug) $\rightarrow$ `6.ネル貼り` (Dán nỉ) $\rightarrow$ `F.完了` (Hoàn tất toàn bộ công đoạn).
+- **Cơ chế chuyển đổi trạng thái trong `tblProcessingStatus` & Ý kiến chỉ đạo từ Minh Chủ Thoan:**
+  - *Ghi nhận nghiệp vụ từ Minh Chủ Thoan [Stamp: 2026-10-06 16:12 JST]:*  
+    Các mã trạng thái `ZR`, `ZN`, `ZF` thuộc về hệ thống cũ dành cho trạng thái đặt hàng vật liệu (`Z` = zairyou / 材料, `N` = NOW / đang chờ, `R` = Request / yêu cầu, `F` = Finish / hoàn thành), **trong hệ thống YSDMS NextGen KHÔNG DÙNG ĐẾN (DEPRECATED)**.
+  - *Pha Gia công Cơ khí thực tế trên xưởng:*  
+    `1.プログラム` (Lập trình CAD/CAM) $\rightarrow$ `2.機械加工` (Phay/tiện CNC) $\rightarrow$ `3.穴あけ` (Khoan thoát khí) $\rightarrow$ `4.ミガキ` (Đánh bóng khuôn) $\rightarrow$ `5.プラグ作成` (Gia công khuôn đực Plug) $\rightarrow$ `6.ネル貼り` (Dán nỉ) $\rightarrow$ `F.完了` (Hoàn tất toàn bộ công đoạn).
 - **Thuật toán ghép dao và lòng khuôn (CAV Matching Algorithm):**
   Trong `Form_frmMOLDProcessing`, hàm `FindCAVIDFlexible(dblLength, dblWidth)` tự động tính toán sai số kỹ thuật:
   $$\text{Sai số} = | \text{CAVwidth} - W | \le 0.1\text{ mm} \quad \text{và} \quad | \text{CAVlength} - L | \le 0.1\text{ mm}$$
@@ -101,16 +107,19 @@
   - Form ghi nhận: `ThoiLuongGcFrms3`, `frmDaiLyWorkLog`, `F_ThoiLuongGC Subform1`.
   - Query tổng hợp: `Nippo_FullQry`, `ChamCongQry`, `qryDailyWorkLog_Sakata`.
   - Báo cáo phê duyệt: `Nippo_Final_ThoanRpt`, `Nippo_Final_DuyenRpt`, `Nippo_today_SakataRpt`, `Zangyou_ThisMonthRpt`.
-- **Bảng mã phân loại công việc chuẩn (`tblProcessingCode` — Giải mã trường hợp 94 Work Logs không gắn JobID):**
-  Audit chi tiết bảng `tblProcessingCode` cho thấy cấu trúc mã công việc bao quát từ khâu kỹ thuật đến vận hành nội bộ:
-  - **Nhóm Thiết kế & Lập trình (0–8):** 0 (Thiết kế Tray), 1 (3D Tray), 2 (3D Khuôn), 3 (3D Plug), 6 (Vẽ lỗ sau), 7 (Lập trình gia công mặt trước).
-  - **Nhóm Gia công Khuôn Chính (10–17):** 10 (Tính toán & phay CNC), 11 (Khoan lỗ thoát khí), 12 (Đánh bóng), 13 (Dán nỉ), 16 (Gia công bổ sung).
-  - **Nhóm Gia công Khuôn Mẫu Thử (20–24):** 20 (Tính toán & phay mẫu thử), 21 (Khoan), 22 (Đánh bóng).
-  - **Nhóm Gia công Plug (30–34):** 31 (Tính toán & phay Plug), 33 (Làm Plug thủ công khuôn chính).
-  - **Nhóm Đồ gá & Dao Cắt (40–43):** 40 (Stacking), 41 (Làm ván gỗ), 42 (Sửa chữa khuôn/đế khí), 43 (Gá dao cắt).
-  - **Nhóm Tác vụ Nội bộ Xưởng & Kaizen (50–56):** 50 (5S nhà xưởng), 51 (Đóng gói), 52 (Nghiền phế), 53 (Sắp xếp kho khuôn), 54 (Bảo trì máy móc), 55 (Vệ sinh khuôn), 56 (Cân chỉnh Plug).  
-    $\rightarrow$ **Kết luận chính xác:** 94 bản ghi Work Log có `ProcessingDeadlineID = null` chính là các giờ công thực hiện công việc nhóm 50–56 (5S, bảo trì định kỳ, dọn kho), không phát sinh từ một đơn hàng/khuôn cụ thể.
-  - **Nhóm Hỗ trợ & Khác (250–999):** 250 (Nghiệp vụ văn phòng), 560 (Hỗ trợ dập), 610 (Đóng hàng xuất khẩu), 630 (Kiểm tra chất lượng), 750 (Họp khách hàng), 999 (Họp giao ban toàn công ty).
+- **Bảng mã phân loại công việc chuẩn (`tblProcessingCode`) & Bằng chứng 94 Work Logs không gắn JobID:**
+  Audit chi tiết toàn bộ 94 bản ghi `tblWorkLog` có `ProcessingDeadlineID IS NULL` (lưu tại `scripts/evidence_94_internal_logs.json`) xác nhận phân bổ nghiệp vụ thực tế tại xưởng:
+  * **36 logs:** Mã `40: スタッキング` (Gia công đồ gá Stacking xếp chồng sản phẩm, làm ván gỗ).
+  * **24 logs:** Mã `13: 本型ネル貼り` (Dán nỉ thủ công khuôn chính).
+  * **15 logs:** Mã `23: 試作ネル貼り` (Dán nỉ thủ công khuôn mẫu thử).
+  * **5 logs:** Mã `42: 金型・プラグ・ベース修理、穴あけなど` (Sửa chữa khuôn/plug/đế bị va chạm, khoan thêm lỗ).
+  * **4 logs:** Mã `14: 演算＆加工` (Cải tiến Kaizen khuôn, gọt chu vi ngoài).
+  * **3 logs:** Mã `10: 金型演算＆加工` (Gia công cải tạo bề mặt khuôn).
+  * **2 logs:** Mã `50: 5S` (Hoạt động 5S vệ sinh xưởng).
+  * **1 log:** Mã `54: メンテナンス` (Ghi chú rõ: `コンプレッサー故障の対応` — Xử lý sự cố máy nén khí hỏng).
+  * **1 log:** Mã `11: 本型穴あけ` (Ghi chú: `金型掃除・穴あけ` — Vệ sinh khuôn & khoan lỗ).
+  * **3 logs:** Mã `15, 20, 24` (Gia công khuôn mẫu thử).  
+  $\rightarrow$ **Kết luận chính xác theo yêu cầu PE:** Tuyệt đối **KHÔNG gán ép 94 logs này vào bất kỳ job_id khách hàng nào**. Đây là các giờ công lao động độc lập của thợ xưởng (Stacking, Dán nỉ, Bảo trì máy, Kaizen nội bộ).
 - **Cơ chế tính lương & giờ làm việc:**
   Truy vấn `Nippo_FullQry` tự động tính ngày chốt chấm công: `[ProcessingDate] + 10 AS DateChamCong`, hỗ trợ phân nhóm theo nhân sự và xuất báo cáo PDF tự động gửi cho từng cấp quản lý (Thoan, Duyên, Sakata).
 
@@ -154,9 +163,12 @@
 
 ### 3.5. Quy trình 5: Bảo dưỡng khuôn, Phủ Teflon & Điều chuyển vị trí Kệ (Maintenance, Teflon & Location History)
 - **Đối tượng cốt lõi:**
-  - Bảng dữ liệu: `tblTeflonLog` (186 dòng), `tblLocationLog` (406 dòng vết chuyển kệ), `tblShipLog` (381 dòng xuất xưởng).
+  - Bảng dữ liệu vật lý (Single Source of Truth từ `scripts/access_table_stats.json` & DAO):
+    * `tblTeflonLog`: **4,692 dòng** toàn bảng.
+    * `tblLocationLog`: **1,488 dòng** toàn bảng (trong đó 1,361 dòng ghi vết di chuyển Khuôn `MoldID`, 127 dòng ghi vết di chuyển Dao cắt `CutterID`).
+    * `tblShipLog`: **358 dòng** xuất xưởng.
   - Module tự động hóa: `ModTeflonSync` (109 dòng VBA), `ModCutterLogRackLayerChange` (53 dòng VBA).
-  - Form & Query: `frmTeflonLog`, `frmsMoldLocationLog`, `qryTeflonTuJobSangMold`, `qryTeflon`.
+  - Form & Query: `frmTeflonLog`, `frmsMoldLocationLog`, `qryTeflonTuJobSangMold`, `qryTeflon` (4,692 dòng).
 - **Cơ chế tự động hóa ghi vết chuyển vị trí Kệ (`ModCutterLogRackLayerChange`):**
   Mỗi khi dao cắt hoặc khuôn được di chuyển sang tầng kệ mới (`RackLayerID` thay đổi), thủ tục VBA tự động bắt sự kiện:
   ```vba
@@ -183,7 +195,7 @@
 | **G2** | **Bộ mã công đoạn chuẩn & Tác vụ 5S nội bộ** | Phân cấp mã 0–999 rõ ràng trong `tblProcessingCode` (gồm cả 5S, bảo trì, đóng gói) | Bảng `work_logs` chỉ gắn với `job_id`, chưa hỗ trợ ghi nhận tác vụ nội bộ không có Job | **P1** | Bổ sung trường `task_category` vào `work_logs` hoặc tạo Job nội bộ cố định cho tác vụ 5S/Bảo trì. |
 | **G3** | **Quản lý Đặt phôi kim loại & Vật tư cơ khí tiêu hao** | `DatHangVTTbl` + `ChuumonshoQry` tự động tính giá phôi nhôm theo khối lượng riêng ($2.8$) | Chỉ có quản lý cuộn nhựa định hình màng (`raw_materials`), hoàn toàn chưa có phôi cơ khí | **P1** | Thiết kế phân hệ `/equipment/materials` quản lý tồn kho và đặt phôi nhôm/thép gia công khuôn. |
 | **G4** | **In phiếu Mượn/Trả khuôn chuẩn JAE / ATS** | Đầy đủ thông số bản vẽ, bước tiến, tuổi thọ, giá trị và ảnh chụp trong `tblMoldBorrow` | Đã có cấu trúc bảng `equipment_loans` (Migration 097/098) và UI M18 nhưng đang trống dữ liệu | **P0** | Thực hiện backfill 209 bản ghi mượn/trả và bổ sung mẫu in PDF phiếu bàn giao chuẩn JAE/ATS. |
-| **G5** | **Nhật ký Di chuyển Kệ & Chu kỳ mạ Teflon** | Bắt sự kiện tự động ghi vào `tblLocationLog` và `tblTeflonLog` | Chỉ lưu vị trí hiện tại trên `equipment`, chưa có bảng lưu lịch sử dịch chuyển kệ theo thời gian | **P2** | Tạo bảng `equipment_location_logs` và trigger lưu vết khi thay đổi `rack_layer_id`. |
+| **G5** | **Nhật ký Di chuyển Kệ & Chu kỳ mạ Teflon** | Bắt sự kiện tự động ghi vào `tblLocationLog` và `tblTeflonLog` | Đã có bảng chuẩn hóa `asset_location_logs` (ADR-008) ghi vết di chuyển kệ; `equipment` lưu trạng thái hiện tại | **P2** | Sử dụng trực tiếp `asset_location_logs` (KHÔNG tạo `equipment_location_logs` mới) để lưu vết lịch sử di chuyển kệ khi thay đổi `rack_layer_id`. |
 
 ---
 
@@ -201,4 +213,118 @@
    - Đã chạy lệnh `npx tsc --noEmit` $\rightarrow$ Kết quả: **0 errors**.
 
 ---
-*Báo cáo được lập và lưu vết đầy đủ trong hệ thống tài liệu dự án NextGen.*
+
+## 6. GÓI A — EVIDENCE PACK CHUẨN HÓA (STANDARDIZED EVIDENCE AUDIT PACK)
+
+### 6.1. Bằng chứng Trích xuất Tĩnh Macro `AutoExec`
+Được trích xuất nguyên văn bằng phương thức tĩnh `Access.Application.SaveAsText(4, "AutoExec")` (không mở/chạy macro):
+```xml
+Version = 196611
+Action = "SetDisplayedCategories" (Category = acNavigationCategoryObjectType)
+Condition = "Not [CurrentProject].[IsTrusted]" -> Action = "OpenForm" (FormName = "BangDuDinhFrm")
+Condition = "[CurrentProject].[IsTrusted]"     -> Action = "OpenForm" (FormName = "BangDuDinhFrm")
+```
+$\rightarrow$ Xác nhận 100%: `AutoExec` có mục đích duy nhất là khởi chạy `BangDuDinhFrm` khi người dùng mở Access. Quá trình audit tĩnh của AN không thực thi macro này.
+
+### 6.2. Danh mục Đầy đủ 16 Action Queries Phát hiện trong Access
+| # | Tên QueryDef | Loại Action | Bảng tác động | Đoạn mã SQL trích xuất |
+|---|---|---|---|---|
+| 1 | `~TMPCLP495211` | `RECORD_INSERT` | — (Dynamic) | `INSERT INTO tblOrderHead (OrderNo, CustomerID, OrderDate...)` |
+| 2 | `qryAppendProductionPlanStep` | `RECORD_INSERT` | `tblMold, tblMoldCutter` | `INSERT INTO tblProductionPlanStep (ProductionPlanID, StepNo, StepType, MoldID, CutterID, MachineID...)` |
+| 3 | `qryMoldOnCheckListYES` | `RECORD_UPDATE` | `tblMold` | `UPDATE tblMold SET MoldOnCheckList = Yes;` |
+| 4 | `qrySeed01_Append_tblDesignMaster_v801` | `RECORD_INSERT` | `tblMoldDesign` | `INSERT INTO tblDesignMaster (DesignMasterCode, DesignMasterName, CustomerID, TrayID...)` |
+| 5 | `qrySeed02_Update_tblMoldDesign_DesignMasterID_v801` | `RECORD_UPDATE` | `tblMoldDesign` | `UPDATE tblMoldDesign INNER JOIN tblDesignMaster ON tblDesignMaster.DesignMasterCode = ...` |
+| 6 | `qrySeed03_Append_tblMoldMaster_v801` | `RECORD_INSERT` | — (Dynamic) | `INSERT INTO tblMoldMaster (MoldMasterCode, MoldMasterName, DesignMasterID, CustomerID, TrayID...)` |
+| 7 | `qrySeed04_Append_tblMoldRevision_v801` | `RECORD_INSERT` | `tblMoldDesign` | `INSERT INTO tblMoldRevision (MoldMasterID, MoldDesignID, RevisionNo, RevisionName...)` |
+| 8 | `qrySeed05_Update_tblMold_MoldRevisionID_v801` | `RECORD_UPDATE` | `tblMold` | `UPDATE tblMold INNER JOIN tblMoldRevision ON tblMold.MoldDesignID = tblMoldRevision.MoldDesignID...` |
+| 9 | `qrySeed06_Update_tblDesignMaster_ActiveRevisionID_v801` | `RECORD_UPDATE` | `tblMoldDesign` | `UPDATE tblDesignMaster INNER JOIN (tblMoldDesign INNER JOIN tblMoldRevision...` |
+| 10 | `qrySeed07_Append_tblCutterMaster_v801` | `RECORD_INSERT` | `tblCutter, tblMoldDesign` | `INSERT INTO tblCutterMaster (CutterMasterCode, CutterMasterName, DesignMasterID, CustomerID, TrayID...)` |
+| 11 | `qrySeed08_Update_tblCutter_CutterMasterID_v801` | `RECORD_UPDATE` | `tblCutter` | `UPDATE tblCutter INNER JOIN tblCutterMaster ON tblCutterMaster.CutterMasterCode = ...` |
+| 12 | `qryTeflonTuJobSangMold` | `RECORD_UPDATE` | `tblJOB, tblMold` | `UPDATE tblMold SET TeflonCoating = "テフロン加工済" WHERE MoldID IN (SELECT DISTINCT MoldID FROM tblJob WHERE (TeflonShippingDate IS NOT NULL)...)` |
+| 13 | `qryUpdateMoldCodeCheck` | `RECORD_UPDATE` | `tblMold` | `UPDATE tblMold SET MoldCodeCheck = Replace(Replace([MoldName], "-", ""), " ", "");` |
+| 14 | `qryUpdatetblMoldItemTypeID` | `RECORD_UPDATE` | `tblMold` | `UPDATE tblMold SET ItemTypeID = 11 WHERE MoldName LIKE '*###D*';` |
+| 15 | `Query2` | `RECORD_INSERT` | — (Dynamic) | `INSERT INTO tblOrderLine (OrderHeadID, LineNo, TrayID, MoldDesignID, TrayOrderID, Quantity, Unit...)` |
+| 16 | `UpdateThayKyTu` | `RECORD_UPDATE` | — (NukigataTbl) | `UPDATE NukigataTbl SET IDnukigata = Replace(IDnukigata, "-", ".") WHERE IDnukigata LIKE "*-*";` |
+
+### 6.3. Bảng Top 20 Procedures có Tác động Ghi Dữ liệu Nhiều Nhất
+Tổng số thủ tục có thao tác ghi dữ liệu: **89 thủ tục** (49 INSERT, 27 UPDATE, 13 DELETE). Dưới đây là 20 thủ tục tác động nhiều bảng nhất:
+| # | Module | Procedure | Hành vi | LOC | Bảng bị tác động |
+|---|---|---|---|---|---|
+| 1 | `ModUpdateDesignForPlasticType` | `UpdateDesignForPlasticType` | `RECORD_UPDATE` | 56 | `tblMoldDesign, tblPLASTICforForming, tblPlasticMaterial, tblPlasticColor, tblPlasticThickness, tblPlasticWidth, tblPlasticStaticCharge` |
+| 2 | `ModUpdateCurrentDesignForPlasticType` | `UpdateCurrentDesignForPlasticType` | `RECORD_UPDATE` | 56 | `tblMoldDesign, tblPLASTICforForming, tblPlasticMaterial, tblPlasticColor, tblPlasticThickness, tblPlasticWidth, tblPlasticStaticCharge` |
+| 3 | `Form_frmMoldSearchSubMoldDetails` | `cmdShipMold_Click` | `RECORD_INSERT` | 434 | `tblLocationLog, tblShipLog, statuslogs, tblMold, tblCompany` |
+| 4 | `Form_frmMOLDlocation` | `CreateOrCheckMold` | `RECORD_INSERT` | 344 | `tblMold, tblMoldDesign, tblTray, tblCustomer` |
+| 5 | `Form_frmMOLDentry` | `btnMoldCreate_Click` | `RECORD_INSERT` | 210 | `tblMold, tblMoldDesign, tblTray, tblCustomer` |
+| 6 | `Form_frmMOLDlocation_ng` | `CreateOrCheckMold` | `RECORD_INSERT` | 177 | `tblMold, tblMoldDesign, tblTray, tblCustomer` |
+| 7 | `Form_frmMoldSearch` | `cmdTeflonUpdate_Click` | `RECORD_INSERT` | 427 | `tblTeflonLog, tblShipLog, tblEmployee` |
+| 8 | `Form_frmMoldSearch` | `cmdBulkDispose_Click` | `RECORD_INSERT` | 196 | `tblLocationLog, statuslogs, tblMold` |
+| 9 | `Form_frmMoldSearch` | `cmdBulkCheckOut_Click` | `RECORD_INSERT` | 193 | `statuslogs, tblEmployee, destinations` |
+| 10 | `Form_frmMoldSearch` | `cmdCheckOut_Click` | `RECORD_INSERT` | 177 | `statuslogs, tblEmployee, destinations` |
+| 11 | `Form_frmMoldSearchSubMoldDetails` | `cmdDisposeMold_Click` | `RECORD_INSERT` | 165 | `tblLocationLog, statuslogs, tblMold` |
+| 12 | `ModAddStatuslogs` | `UpdateMoldTeflonFields` | `RECORD_INSERT` | 158 | `tblShipLog, statuslogs, tblMold` |
+| 13 | `Form_frmMOLDentry` | `btnMoldDesignCreate_Click` | `RECORD_INSERT` | 121 | `tblMoldDesign, tblTray, tblCustomer` |
+| 14 | `Form_frmMOLDentry` | `txtMoldDesignCreate_Exit` | `RECORD_INSERT` | 120 | `tblMoldDesign, tblTray, tblCustomer` |
+| 15 | `Form_frmsCUTTERdataEntry` | `cbMoldDesign_AfterUpdate` | `RECORD_INSERT` | 106 | `tblCutter, tblMoldDesign, tblMoldCutter` |
+| 16 | `Form_frmCUTTERsearchSubEntry` | `MoldDesignID_AfterUpdate` | `RECORD_UPDATE` | 103 | `tblCutter, tblMoldDesign, tblMoldCutter` |
+| 17 | `modMoldWBS_V2` | `SyncActualHours` | `RECORD_UPDATE` | 39 | `tblJOB, tblProcessingDeadline, tblWorkLog` |
+| 18 | `Form_frmMOLDlocation` | `cbMoldCode_AfterUpdate` | `RECORD_INSERT` | 209 | `tblLocationLog, tblMold` |
+| 19 | `Form_frmMOLDlocation` | `txtMoldNumber_AfterUpdate` | `RECORD_INSERT` | 201 | `tblLocationLog, tblMold` |
+| 20 | `Form_frmMOLDProcessing` | `btnCheckCreateCutter_Click` | `RECORD_INSERT` | 188 | `tblCutter, tblMoldCutter` |
+
+### 6.4. Bảng Bằng chứng Chi tiết 94 Tác vụ Nội bộ Không có JobID
+Toàn văn 94 bản ghi được lưu tại file artifact: `scripts/evidence_94_internal_logs.json`. Dưới đây là bảng trích yếu đại diện theo từng nhóm công việc:
+| WorkLogID | ProcessingCodeID | Tên công đoạn | Ghi chú thực tế (ProcessingNotes) | Ngày thực hiện | DeadlineID | Phân loại đề xuất | Nguồn chứng cứ |
+| :---: | :---: | :--- | :--- | :---: | :---: | :--- | :--- |
+| `3414` | 54 | メンテナンス (Bảo trì) | コンプレッサー故障の対応 (Xử lý sự cố máy nén khí) | 2024-01-17 | NULL | `SHOP_MAINTENANCE` | `tblWorkLog` |
+| `2677` | 42 | Sửa khuôn/đế | ぶつかったかな (Sửa chữa do va đập) | 2023-08-07 | NULL | `SHOP_REPAIR` | `tblWorkLog` |
+| `2686` | 11 | Khoan khuôn | 金型掃除・穴あけ (Vệ sinh khuôn & khoan lỗ) | 2023-08-08 | NULL | `SHOP_CLEANING_DRILL` | `tblWorkLog` |
+| `2259` | 14 | Gia công phay | 改善 (Kaizen cải tiến công cụ) | 2023-05-18 | NULL | `SHOP_KAIZEN` | `tblWorkLog` |
+| `2613` | 14 | Gia công phay | 改善・寸法変更 (Kaizen & đổi kích thước) | 2023-07-25 | NULL | `SHOP_KAIZEN` | `tblWorkLog` |
+| `4075` | 42 | Sửa khuôn/đế | プラグの調整 (Cân chỉnh khuôn Plug) | 2024-05-27 | NULL | `SHOP_PLUG_ADJUST` | `tblWorkLog` |
+| `4811` | 40 | スタッキング | 修理・銅板作成 (Sửa chữa & làm tấm đồng) | 2024-10-18 | NULL | `SHOP_STACKING` | `tblWorkLog` |
+| `3814` | 40 | スタッキング | スタキング・木板 (Làm ván gỗ xếp chồng) | 2024-03-27 | NULL | `SHOP_STACKING` | `tblWorkLog` |
+| `2030` | 40 | スタッキング | 外形調整　530以下 (Chỉnh hình dạng ngoài) | 2023-03-25 | NULL | `SHOP_STACKING` | `tblWorkLog` |
+| `3166` | 50 | 5S | — (Hoạt động 5S xưởng) | 2023-11-28 | NULL | `SHOP_5S` | `tblWorkLog` |
+| `1764...` (36 logs) | 40 | スタッキング | Gia công bộ đồ gá Stacking | 2023–2026 | NULL | `SHOP_STACKING` | `tblWorkLog` |
+| `2409...` (24 logs) | 13 | 本型ネル貼り | Dán nỉ thủ công khuôn chính | 2023–2025 | NULL | `SHOP_FLANNEL_MOLD` | `tblWorkLog` |
+| `2596...` (15 logs) | 23 | 試作ネル貼り | Dán nỉ thủ công khuôn mẫu | 2023–2025 | NULL | `SHOP_FLANNEL_PROTO` | `tblWorkLog` |
+
+$\rightarrow$ **Quyết định phân loại:** Tuyệt đối không gán ép vào job của khách hàng. Sẽ quản lý dưới dạng `task_category = 'SHOP_INTERNAL'` hoặc Job nội bộ `JOB-INTERNAL-SHOP`.
+
+---
+
+## 7. GÓI B — KHUNG ĐẶC TẢ PILOT VẬN HÀNH BỘ PHẬN KHUÔN (PILOT SPECIFICATION)
+
+### 7.1. Mục tiêu Nghiệp vụ Cốt lõi
+Xây dựng chuỗi vận hành khép kín, tinh gọn cho bộ phận gia công khuôn theo mô hình:
+$$\text{Chỉ thị khuôn (Job)} \longrightarrow \text{Lập lịch (Steps \& Deadlines)} \longrightarrow \text{Nhật ký Nippo} \longrightarrow \text{Báo cáo Tiến độ}$$
+- **Nguyên tắc thiết kế:** Không sao chép giao diện cũ cồng kềnh của Access; tận dụng tối đa schema chuẩn ADR-002 (`work_orders` $\rightarrow$ `jobs` $\rightarrow$ `job_steps` $\rightarrow$ `work_logs`) và các components UI NextGen hiện hữu.
+
+### 7.2. Giải phẫu 4 Khâu Vận hành Pilot
+1. **Khâu 1: Tiếp nhận Chỉ thị & Khởi tạo Job khuôn (`/production/jobs`)**
+   - Nguồn gốc: Tự động sinh từ Đơn hàng (`orders`) hoặc tạo thủ công Job nội bộ cho xưởng.
+   - Phân cấp Job theo thiết bị: Tách riêng Job khuôn (`MOLD`), Job dao (`CUTTER`), Job Plug (`PLUG`), Job Stacking (`STACKING`).
+   - Thông tin gá lắp: Chọn lòng khuôn (CAV) và dao cắt (Shared qua `equipment_assignments` hoặc Dedicated).
+2. **Khâu 2: Lập lịch Công đoạn & Hạn chót (Step Scheduling & Dispatching)**
+   - Khởi tạo mẫu công đoạn chuẩn cho khuôn:
+     1. `CAD/CAM`: Lập trình đường chạy dao (1.プログラム).
+     2. `CNC_MACHINING`: Phay cơ khí CNC (2.機械加工).
+     3. `DRILLING`: Khoan lỗ thoát khí/chân không (3.穴あけ).
+     4. `POLISHING`: Đánh bóng lòng khuôn (4.ミガキ).
+     5. `PLUG_MAKING`: Gia công/cân chỉnh Plug (5.プラグ作成).
+     6. `FLANNEL`: Dán nỉ bề mặt (6.ネル貼り).
+     7. `QC_INSPECTION`: Nghiệm thu hoàn tất (F.完了).
+   - Gán người phụ trách (`assigned_employee_id`), máy phụ trách (`assigned_machine_id`), hạn hoàn thành (`planned_end_date`).
+3. **Khâu 3: Ghi nhận Nippo Hàng ngày & Tác vụ Nội bộ (`/worklog`)**
+   - Giao diện thân thiện trên Tablet/Điện thoại/PC xưởng.
+   - Thợ chọn: Ngày làm việc $\rightarrow$ Chọn Job & Step đang làm $\rightarrow$ Nhập giờ công (`actual_hours`) $\rightarrow$ Ghi chú.
+   - **Xử lý Tác vụ Nội bộ:** Cung cấp tùy chọn "Công việc xưởng không gắn Job" với danh mục mã chuẩn (5S, Bảo trì máy móc, Dọn kho, Sửa chữa đồ gá) $\rightarrow$ Lưu vào `work_logs` với `task_category = 'SHOP_INTERNAL'`, không bắt buộc `job_id`.
+4. **Khâu 4: Báo cáo Tiến độ & Cảnh báo Chậm hạn (Dispatching Dashboard)**
+   - Dashboard Kanban hoặc Danh sách trực quan hiển thị:
+     * Tỷ lệ hoàn thành công đoạn từng bộ khuôn.
+     * Cảnh báo màu đỏ/vàng cho các bước cận hạn hoặc quá hạn (`planned_end_date < CURRENT_DATE`).
+     * Tổng hợp tổng giờ công thực tế so với giờ dự kiến theo từng máy/thợ.
+     * Xuất báo cáo công việc hàng ngày gửi Quản lý xưởng (tương đương `Nippo_Final_ThoanRpt`).
+
+---
+*Báo cáo được hoàn thiện và lưu vết đầy đủ trong hệ thống tài liệu dự án NextGen.*
