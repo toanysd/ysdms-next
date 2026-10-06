@@ -787,9 +787,54 @@ Bạn là AN (Executing Agent). Đây là dự án **ysdms-next** — hệ thố
 - **Step 4 (`スタッキング木板製作`):** `processing_status_id = 1`, `actual_hours = 0.0`, `step_status = PENDING`.
 - **Job `JOB-INTERNAL-SHOP`:** `job_status = PENDING`, `overall_progress = 0.0`.
 - **Tệp bằng chứng:** `scripts/postflight_pilot_worklog_result.json`, `scripts/verify_postflight_pilot.mjs`.
-- **Sổ bài học:** `docs/SO_BAI_HOC.md` (L001).
+- **Sổ bài học:** `docs/SO_BAI_HOC.md` (L001, L002).
 - **TypeScript:** `npx tsc --noEmit` $\rightarrow$ **0 errors**.
 - **i18n:** `node scripts/check_translations.mjs` $\rightarrow$ **0 missing keys**.
+
+## 28. PHÊ DUYỆT MỞ PILOT VẬN HÀNH HẰNG NGÀY GIỚI HẠN CHO BỘ PHẬN KHUÔN (2026-10-06 17:43 JST)
+
+### 28.1. Quyết định của Minh Chủ Thoan
+- Minh Chủ Thoan [Stamp: 2026-10-06 17:43 JST] chính thức ra quyết định:
+  > **Cho phép mở Pilot vận hành hằng ngày giới hạn cho bộ phận khuôn.**
+- PE [Stamp: 2026-10-06 17:42 JST] nghiệm thu thành công Pilot Work Log đầu tiên và đồng thuận mở Pilot giới hạn để thu thập dữ liệu vận hành thực tế có kiểm soát.
+
+### 28.2. Phạm vi & Quy trình Vận hành Chuẩn
+- **5 Tuyến Route Được Phép Sử Dụng:**
+  1. `/equipment/jobs`: Quản lý & tra cứu danh sách Job.
+  2. `/equipment/schedule`: Theo dõi lịch trình & tiến độ gia công.
+  3. `/worklogs/new`: Nhập nhật ký công việc (Nippo) thường nhật.
+  4. `/worklogs`: Xem & tra cứu lịch sử nhật ký.
+  5. `/reports/daily-worklog`: Báo cáo tổng hợp nhật ký công việc theo ngày.
+- **Quy trình chuẩn cho kỹ thuật viên xưởng:**
+  `Chọn Job/Step -> Chọn processing code từ danh mục chuẩn -> Nhập giờ công thực tế -> Ghi chú cụ thể vào notes -> Đánh dấu is_finished = true CHỈ KHI thực sự hoàn tất -> Quản lý kiểm tra báo cáo cuối ngày`
+
+### 28.3. Bộ Quy tắc Bắt buộc Trong Thời gian Pilot
+1. **Nội dung công việc:** Bắt buộc lấy từ bảng `processing_codes`. Tuyệt đối không nhập tự do thay cho mã công việc.
+2. **Chi tiết công việc:** Mọi diễn giải cụ thể bắt buộc ghi trong trường `notes`.
+3. **Phạm vi Job nội bộ:** Dùng `JOB-INTERNAL-SHOP` cho 5S, bảo trì thiết bị, sửa chữa khuôn/đồ gá và stacking nội bộ.
+4. **Tách biệt khách hàng:** Tuyệt đối không gán công việc thuộc đơn hàng khách hàng vào Job nội bộ.
+5. **Kỷ luật dữ liệu:** Không tự tạo Job/Step mới ngoài danh mục đã duyệt; không tự sửa trực tiếp `actual_hours`, `step_status`, `job_status`.
+6. **Kiểm soát hoàn thành:** Chỉ tích `is_finished = true` khi bước công việc đã hoàn thành 100%.
+
+### 28.4. Ranh giới & Giới hạn Cấm Tuyệt đối
+- **ĐƯỢC PHÉP:** Ghi nhận các công việc mới phát sinh hằng ngày bằng các route chuẩn; sử dụng `JOB-INTERNAL-SHOP` và các Job/Step hiện có; quản lý nghiệm thu cuối ngày.
+- **CHƯA ĐƯỢC PHÉP (NGHIÊM CẤM):**
+  * Không import 27 Jobs từ Access.
+  * Không import 81 Steps từ Access.
+  * Không import 311 Work Logs lịch sử từ Access.
+  * Không import 209 phiếu mượn khuôn từ Access.
+  * Không tạo migration cho `task_category`.
+  * Không tự động hóa đồng bộ dữ liệu Access.
+  * Không tạo thêm Job nội bộ mới ngoài `JOB-INTERNAL-SHOP`.
+
+### 28.5. Cơ chế Kiểm tra Cuối ngày của Quản lý
+Cuối mỗi ngày làm việc, Quản lý xưởng khuôn đối chiếu qua `/reports/daily-worklog`:
+- Tổng số work log đã ghi.
+- Danh sách nhân sự thực hiện.
+- Ngày làm việc và số giờ công thực tế.
+- Mã `processing_code` và chi tiết trong `notes`.
+- Trạng thái các bước trên `/equipment/schedule` (`PENDING`, `IN_PROGRESS`, `COMPLETED`).
+- Nếu phát hiện bất thường: Dừng thao tác và thông báo cho PE/AN để kiểm tra, tuyệt đối không chỉnh sửa dữ liệu thủ công.
 
 
 

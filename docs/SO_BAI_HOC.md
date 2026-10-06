@@ -6,6 +6,7 @@ Tài liệu ghi nhận các sự cố kỹ thuật, lỗi cú pháp, sai sót qu
 
 ## Mục lục
 1. [L001 - Lỗi cú pháp json_build_object trong truy vấn Preflight Verification](#l001---lỗi-cú-pháp-json_build_object-trong-truy-vấn-preflight-verification)
+2. [L002 - Lỗi thiếu dấu phẩy trong JSON scalar postflight](#l002---lỗi-thiếu-dấu-phẩy-trong-json-scalar-postflight)
 
 ---
 
@@ -24,3 +25,23 @@ Tài liệu ghi nhận các sự cố kỹ thuật, lỗi cú pháp, sai sót qu
   3. Cả PE và AN đã chuẩn hóa cú pháp preflight thành công với kết quả trả về JSON hợp lệ 100%.
 - **Bài học rút ra (Takeaway):**
   - Đối với các truy vấn Preflight/Postflight quan trọng, ưu tiên viết dạng bảng phẳng `SELECT (SELECT ...) AS col1, (SELECT ...) AS col2` hoặc script Node.js / TypeScript đã có linter và kiểu dữ liệu rõ ràng, tránh phụ thuộc vào các câu lệnh SQL chuỗi dài không qua validate tĩnh.
+
+---
+
+## L002 - Lỗi thiếu dấu phẩy trong JSON scalar postflight
+
+- **Thời gian ghi nhận:** 2026-10-06 17:42 JST
+- **Phân loại:** Quy trình / SQL syntax / postflight verification
+- **Trạng thái:** Resolved (Đã có helper chuẩn hóa)
+- **Bảng tóm tắt:**
+  | Mã | Tiêu đề | Nguyên nhân | Biểu hiện | Giải pháp khắc phục | Trạng thái |
+  |---|---|---|---|---|---|
+  | **L002** | Lỗi thiếu dấu phẩy trong JSON scalar postflight | Truy vấn dài viết thủ công | Supabase syntax error tại `step_status_after` | Tạo query từ danh sách key/value có kiểm tra cú pháp trước khi chạy, chuẩn hóa helper tạo scalar audit | Resolved |
+- **Mô tả sự cố:**
+  - Khi PE thực hiện truy vấn Postflight độc lập trên Supabase Production để nghiệm thu bản ghi Pilot Work Log, truy vấn chuỗi dài dạng `json_build_object('k1', (SELECT ...), 'k2', (SELECT ...))` bị thiếu dấu phẩy giữa key `step_status_after` và scalar subquery kế tiếp, dẫn đến lỗi cú pháp PostgreSQL khi parse JSON object.
+- **Nguyên nhân gốc rễ (Root Cause):**
+  - Viết thủ công các câu truy vấn JSON scalar dài trong môi trường prompt/CLI mà không có công cụ tự động kiểm tra cú pháp (linter/formatter) trước khi thực thi. Việc ghép chuỗi đa dòng nhiều tham số dễ gây sót dấu phân cách.
+- **Giải pháp & Hành động khắc phục:**
+  1. Đã xây dựng helper module `scripts/generate_scalar_audit.mjs` nhận mảng các cặp `[key, sql_expression]` và tự động sinh câu truy vấn SQL chuẩn cú pháp với đầy đủ dấu phẩy và ngoặc đơn bảo đảm không lỗi cú pháp.
+  2. Tuyệt đối không viết thủ công các query JSON dài trực tiếp vào console hoặc prompt khi chưa qua script kiểm tra tĩnh.
+  3. AN và PE đã đối chiếu độc lập và hoàn tất nghiệm thu chính xác với kết quả trả về đầy đủ 10 trường dữ liệu postflight.
