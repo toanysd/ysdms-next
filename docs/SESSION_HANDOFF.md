@@ -611,3 +611,22 @@ Bạn là AN (Executing Agent). Đây là dự án **ysdms-next** — hệ thố
   * `equipment_loans`: `loan_code = 'LN-BORROW-' || LPAD(MoldBorrowID, 4, '0')`
 - **Cam kết an toàn:** 100% Read-Only, 0 thao tác ghi vào Supabase Production. Báo cáo đầy đủ: `docs/reports/2026-10-06_access_job_database_audit_report.md`.
 
+## 22. TINH LỌC DỮ LIỆU ACCESS & MA TRẬN PHÂN LOẠI 82 BẢNG (2026-10-06 15:55 JST)
+
+### 22.1. Căn cứ & Định hướng Kỹ thuật
+- **Định hướng từ PE & Minh Chủ Thoan:** [Stamp: 2026-10-06 15:40 JST] Chuyển đổi mục tiêu sang **Access Delta Reconciliation**, phân loại rõ 5 nhóm bảng (A: Vận hành, B: Master đã map, C: Vật tư/nhựa, D: Lịch sử/tham chiếu, E: Bảng tạm/trống).
+- **Phân định rõ 2 nhóm vật tư:**
+  * Nhựa định hình sản phẩm (`tblPlastic...`, `tblPLASTICforForming`): Thuần túy là `MATERIAL_REFERENCE` & `DESIGN_SPEC` (tham chiếu thiết kế cho khay/khuôn), không thuộc WMS kho.
+  * Vật tư cơ khí khuôn (`DatHangVTTbl`, `VatTuTbl`, `VatTuSDtbl`): Phôi nhôm A5052, thép, dao phay CNC và vật tư tiêu hao ca làm việc gắn với `JobID` và `WorkLogID`.
+
+### 22.2. Kết quả Hoàn thành Vòng A
+- **Ma trận 82 bảng chuẩn hóa:** Đã hoàn thành 100% với 17 trường thông tin (`classification`, `data_role`, `operational_effect`, `import_decision`...). File: `docs/reports/2026-10-06_access_classification_matrix_and_refinement_report.md` và `scripts/access_82_tables_classification_matrix.json`.
+- **Hiệu chỉnh 6 điểm PE yêu cầu:**
+  1. `mold_work_orders`: Đã chứng minh bằng chứng thực tế: 0 dòng trong DB, 0 dòng trong code `src/`, đã deprecated theo ADR-002 (Work Order Model Option C 4 tầng).
+  2. `equipment_loans`: Đã chỉnh sửa enum chuẩn theo Migration 097/098: `loan_type IN ('BORROW', 'RETURN', 'REPAIR_OUT')`, `status IN ('PENDING_APPROVAL', 'APPROVED', 'REJECTED', 'IN_TRANSIT', 'RETURNED', 'CANCELLED')`.
+  3. 20 steps `JobID = null`: Phân loại `HOLD_STAGING_UNRESOLVED_PARENT`.
+  4. 94 work logs `ProcessingDeadlineID = null`: Xác định chính xác là giờ công bảo trì xưởng (máy nén khí, vệ sinh khuôn, Kaizen), phân loại `HOLD_INTERNAL_TASK_NEEDS_JOB_SPEC`.
+  5. Quan hệ 1:N giữa `tblTray` và `tblMoldDesign`: Kiểm chứng 3,870 khay, 296 khay có nhiều revisions.
+  6. 27 Jobs mới & 81 Steps mới: Toàn bộ phát sinh từ cuối tháng 8 đến 06/10/2026.
+- **Cam kết an toàn:** 100% Chỉ-đọc, 0 thao tác ghi Supabase Production. TypeScript `npx tsc --noEmit` đạt 0 errors.
+
