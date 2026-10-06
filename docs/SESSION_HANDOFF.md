@@ -836,5 +836,14 @@ Cuối mỗi ngày làm việc, Quản lý xưởng khuôn đối chiếu qua `/
 - Trạng thái các bước trên `/equipment/schedule` (`PENDING`, `IN_PROGRESS`, `COMPLETED`).
 - Nếu phát hiện bất thường: Dừng thao tác và thông báo cho PE/AN để kiểm tra, tuyệt đối không chỉnh sửa dữ liệu thủ công.
 
+### 28.6. Thông số Vận hành Thực tế (Operational Baseline)
+- **Pilot start:** `2026-10-06`
+- **Initial pilot work log:** `1` (`9101a00b-2305-4185-a12e-4407fa8b47dd`)
+- **Current work_logs baseline:** `7,106`
+- **Allowed routes:** `5` (`/equipment/jobs`, `/equipment/schedule`, `/worklogs/new`, `/worklogs`, `/reports/daily-worklog`)
+- **Access import:** `blocked` (Nghiêm cấm tuyệt đối trong giai đoạn Pilot)
+- **Schema changes / Additional internal jobs:** `blocked` (Không thay đổi schema, không tạo thêm Job nội bộ)
+- **Chế độ hỗ trợ kỹ thuật:** AN chỉ hỗ trợ xử lý khi phát sinh lỗi/sự cố, tuyệt đối không tự ý mở rộng phạm vi.
+
 
 
