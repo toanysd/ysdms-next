@@ -681,4 +681,43 @@ Bạn là AN (Executing Agent). Đây là dự án **ysdms-next** — hệ thố
 - **Đa ngôn ngữ (i18n):** `node scripts/check_translations.mjs` $\rightarrow$ **0 missing keys**.
 - **Cam kết an toàn:** 100% Chỉ-đọc, 0 ghi Supabase Production.
 
+## 25. THỰC THI KHỞI TẠO JOB NỘI BỘ XƯỞNG KHUÔN `JOB-INTERNAL-SHOP` & 4 STEPS (2026-10-06 17:17 JST)
+
+### 25.1. Căn cứ & Quyết định Phê duyệt
+- **Quyết định phê duyệt:** Minh Chủ Thoan [Stamp: 2026-10-06 17:16 JST] cho phép chạy payload fail-closed.
+- **Thẩm định kỹ thuật:** PE [Stamp: 2026-10-06 17:13 JST] xác nhận preflight đạt và chuẩn hóa các trường khởi tạo: `job_status = 'PENDING'`, `step_status = 'PENDING'`, `progress = 0`.
+- **Cơ chế thực thi:** 1 Transaction duy nhất (`BEGIN ... COMMIT`), fail-closed, kiểm tra preflight nghiêm ngặt, tự động rollback nếu có bất kỳ sai lệch nào.
+
+### 25.2. Kết quả Thực thi Chính thức trên Supabase Production
+- **1 Job nội bộ (`jobs`):**
+  * `job_id`: `380d3e19-6074-4701-a0bd-d0e8a2892202`
+  * `job_code`: `JOB-INTERNAL-SHOP`
+  * `job_name`: `社内作業・5S・保全`
+  * `job_category`: `INTERNAL_OPS`
+  * `job_status`: `PENDING`
+  * `overall_progress`: `0.0`
+  * `company_id`: `1b234ffe-deeb-46a3-8408-47285e7ec1e9` (Công ty nội bộ YSD)
+  * `processing_item_id`: `10` ('社内作業')
+- **4 Bước công đoạn chuẩn (`job_steps`):**
+  * **Step 1:** ID `6ba5c7b9-4ec3-4d41-bbd2-057613287bff` \| `5S・工場清掃` \| `PENDING` \| Track `FINISH` \| Item `10` ('社内作業') \| Status `1` ('0.未確認') \| Actual Hours `0.0`
+  * **Step 2:** ID `60072b5b-1209-4581-b334-f34431347307` \| `設備・コンプレッサー保全` \| `PENDING` \| Track `FINISH` \| Item `10` ('社内作業') \| Status `1` ('0.未確認') \| Actual Hours `0.0`
+  * **Step 3:** ID `d8cff65d-2ffd-49ad-82e7-08a0b4624a47` \| `金型・治具修理` \| `PENDING` \| Track `MOLD` \| Item `1` ('金型') \| Status `1` ('0.未確認') \| Actual Hours `0.0`
+  * **Step 4:** ID `d002b455-e5f5-4a34-b83f-9b5db94aba48` \| `スタッキング木板製作` \| `PENDING` \| Track `FINISH` \| Item `7` ('スタッキング') \| Status `1` ('0.未確認') \| Actual Hours `0.0`
+
+### 25.3. Kết quả Postflight Đối soát Toàn diện
+- `job_count`: **1**
+- `step_count`: **4**
+- `min_step_no`: **1**
+- `max_step_no`: **4**
+- `pending_steps_count`: **4**
+- `job_status`: **PENDING**
+- `overall_progress`: **0**
+- `jobs_total_after`: **1,205** (tăng đúng +1 từ baseline 1,204)
+- `job_steps_total_after`: **2,451** (tăng đúng +4 từ baseline 2,447)
+- `work_logs_total_after`: **7,105** (giữ nguyên tuyệt đối 100%, 0 work log ghi đè)
+- **Tệp kết quả:** `scripts/postflight_internal_job_result.json`.
+- **TypeScript:** `npx tsc --noEmit` $\rightarrow$ **0 errors**.
+- **Đa ngôn ngữ (i18n):** `node scripts/check_translations.mjs` $\rightarrow$ **0 missing keys**.
+
+
 

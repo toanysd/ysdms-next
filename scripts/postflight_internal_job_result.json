@@ -1,0 +1,14 @@
+{
+  "job_id": "380d3e19-6074-4701-a0bd-d0e8a2892202",
+  "job_count": 1,
+  "step_count": 4,
+  "min_step_no": 1,
+  "max_step_no": 4,
+  "pending_steps_count": 4,
+  "job_status": "PENDING",
+  "overall_progress": 0,
+  "jobs_total_after": 1205,
+  "job_steps_total_after": 2451,
+  "work_logs_total_after": 7105,
+  "executed_at": "2026-10-06T08:17:00.066Z"
+}
