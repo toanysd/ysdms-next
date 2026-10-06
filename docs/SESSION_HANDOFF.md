@@ -754,5 +754,42 @@ Bạn là AN (Executing Agent). Đây là dự án **ysdms-next** — hệ thố
   * `step_processing_status_id`: Giữ nguyên **1** (`0.未確認`).
 - **Trạng thái:** Sẵn sàng trình PE và Minh Chủ Thoan duyệt trước khi thực thi.
 
+## 27. THỰC THI THÀNH CÔNG 01 PILOT WORK LOG & NGHIỆM THU POSTFLIGHT (2026-10-06 17:40 JST)
+
+### 27.1. Phê duyệt & Căn cứ
+- **Phê duyệt kỹ thuật:** PE [Stamp: 2026-10-06 17:39 JST] phê duyệt preflight và đặc tả kỹ thuật 10 thông số.
+- **Phê duyệt thi công:** Minh Chủ Thoan [Stamp: 2026-10-06 17:39 JST] phê duyệt chính thức ("ĐỒng ý").
+- **Tệp thực thi:** `scripts/execute_pilot_worklog.mjs` (fail-closed transaction, assertions preflight & postflight).
+
+### 27.2. Kết quả Thực thi Chính thức
+- **ID dòng Work Log:** `9101a00b-2305-4185-a12e-4407fa8b47dd`
+- **Job ID:** `380d3e19-6074-4701-a0bd-d0e8a2892202` (`JOB-INTERNAL-SHOP`)
+- **Step ID:** `6ba5c7b9-4ec3-4d41-bbd2-057613287bff` (Step 1: `5S・工場清掃`)
+- **Nhân sự:** `abe82154-2f81-44ec-b76e-11a2db247fca` (`M09 グエン　ダン　トアン`)
+- **Ngày làm việc:** `2026-10-06`
+- **Thời lượng:** `1.0` giờ
+- **Processing Code:** `50` (`5S`)
+- **Ghi chú:** `金型工場エリアの5S整理整頓・清掃作業実施（Pilot Work Log）`
+- **Trạng thái đóng:** `is_finished = false`
+
+### 27.3. 7 Chỉ số Postflight Thực tế trên Supabase Production
+1. `pilot_log_count`: **1**
+2. `job_worklogs_count`: **1**
+3. `work_logs_total_after`: **7,106** (tăng đúng +1 từ baseline 7,105)
+4. `step_processing_status_id`: **9** (`N.進行中` - trigger `trg_update_step_status_from_worklogs` tự động nâng từ 1 lên 9)
+5. `step_status_after`: **PENDING** (giữ nguyên do `is_finished = false`)
+6. `job_status_after`: **PENDING** (giữ nguyên do chưa có step hoàn thành)
+7. `step_actual_hours_after`: **0.0** (bảo toàn do DB trigger không tự tính `actual_hours`)
+
+### 27.4. Đối soát Bảo toàn Các Bước Còn Lại
+- **Step 2 (`設備・コンプレッサー保全`):** `processing_status_id = 1`, `actual_hours = 0.0`, `step_status = PENDING`.
+- **Step 3 (`金型・治具修理`):** `processing_status_id = 1`, `actual_hours = 0.0`, `step_status = PENDING`.
+- **Step 4 (`スタッキング木板製作`):** `processing_status_id = 1`, `actual_hours = 0.0`, `step_status = PENDING`.
+- **Job `JOB-INTERNAL-SHOP`:** `job_status = PENDING`, `overall_progress = 0.0`.
+- **Tệp bằng chứng:** `scripts/postflight_pilot_worklog_result.json`, `scripts/verify_postflight_pilot.mjs`.
+- **Sổ bài học:** `docs/SO_BAI_HOC.md` (L001).
+- **TypeScript:** `npx tsc --noEmit` $\rightarrow$ **0 errors**.
+- **i18n:** `node scripts/check_translations.mjs` $\rightarrow$ **0 missing keys**.
+
 
 

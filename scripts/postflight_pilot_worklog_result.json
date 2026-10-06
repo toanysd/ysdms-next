@@ -1,0 +1,31 @@
+{
+  "timestamp": "2026-10-06T08:39:50.000Z",
+  "log_id": "9101a00b-2305-4185-a12e-4407fa8b47dd",
+  "pilot_log_count": 1,
+  "job_worklogs_count": 1,
+  "work_logs_total_after": 7106,
+  "step_processing_status_id": 9,
+  "step_status_after": "PENDING",
+  "job_status_after": "PENDING",
+  "step_actual_hours_after": "0.0",
+  "job_id": "380d3e19-6074-4701-a0bd-d0e8a2892202",
+  "job_code": "JOB-INTERNAL-SHOP",
+  "step_id": "6ba5c7b9-4ec3-4d41-bbd2-057613287bff",
+  "step_no": 1,
+  "step_name": "5S・工場清掃",
+  "employee_id": "abe82154-2f81-44ec-b76e-11a2db247fca",
+  "employee_name": "グエン　ダン　トアン",
+  "processing_code_id": 50,
+  "processing_name": "5S",
+  "work_date": "2026-10-06",
+  "hours_spent": 1.0,
+  "is_finished": false,
+  "quantity_done": null,
+  "quantity_ng": 0,
+  "notes": "金型工場エリアの5S整理整頓・清掃作業実施（Pilot Work Log）",
+  "other_steps_preserved": {
+    "step_2_processing_status_id": 1,
+    "step_3_processing_status_id": 1,
+    "step_4_processing_status_id": 1
+  }
+}
