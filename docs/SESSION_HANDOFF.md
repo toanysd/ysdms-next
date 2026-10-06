@@ -861,5 +861,51 @@ Cuối mỗi ngày làm việc, Quản lý xưởng khuôn đối chiếu qua `/
 - **Căn cứ quyết định của PE:** Báo cáo tổng hợp này sẽ là căn cứ duy nhất để PE thẩm định và đề xuất bước tiếp theo (sửa nhỏ UI, bổ sung Job/Step chuẩn, mở rộng báo cáo, thiết kế module vật tư, hay lập kế hoạch nạp Access delta có chọn lọc).
 - **Thẩm định & Phê chuẩn từ PE [Stamp: 2026-10-06 18:01 JST]:** PE chính thức phê chuẩn Khung đánh giá chu kỳ Pilot (Đặc tả đã duyệt). Hệ thống chuyển sang giai đoạn vận hành thực tế không can thiệp (uninterrupted observation phase), bảo toàn Production baseline (jobs: 1,205, job_steps: 2,451, work_logs: 7,106).
 
+## 29. PHÂN TÍCH HIỆN TƯỢNG LỊCH TRỐNG & ĐẶC TẢ POST-PILOT DELTA ACCESS (2026-10-06 18:35 JST)
+
+### 29.1. Làm rõ Hiện tượng Lịch Trống trên `/equipment/schedule`
+- **Hiện tượng:** Màn hình `/equipment/schedule` tải giao diện bình thường nhưng Gantt timeline hiển thị `スケジュールなし` (Không có lịch trình).
+- **Nguyên nhân cốt lõi (Root Cause):**
+  * Không phải lỗi UI hay route bị gãy: Giao diện Gantt tải hoàn chỉnh, query filter theo ngày/trạng thái bình thường.
+  * Nguyên nhân là do **thiếu dữ liệu delta**: Access có 27 Jobs, 81 Steps phát sinh mới đến ngày 2026-10-06. Các Job này chưa từng được nạp vào Supabase Production (hiện chỉ có 1.205 Jobs, trong đó có 1 Job nội bộ `JOB-INTERNAL-SHOP` vừa tạo).
+  * Trong giai đoạn Pilot hiện tại, hệ thống bị khóa nghiêm ngặt không import Access delta. Do đó, các công việc mới trong Access không thể xuất hiện trên NextGen.
+
+### 29.2. Quyết định Phê duyệt Kế hoạch Sau Pilot của Minh Chủ Thoan
+- Minh Chủ Thoan [Stamp: 2026-10-06 18:35 JST] chính thức phê chuẩn:
+  > **Sau khi kết thúc chu kỳ Pilot, cho phép AN thực hiện audit/dry-run delta Access chỉ-đọc cho 27 Jobs, 81 Steps và 311 Work Logs; chưa tạo staging và chưa ghi Production.**
+- PE [Stamp: 2026-10-06 18:26 JST] thống nhất nguyên tắc 4 giai đoạn xử lý dữ liệu sau Pilot.
+
+### 29.3. Ranh giới Phê duyệt Nghiêm ngặt
+1. Tuyệt đối KHÔNG import dữ liệu trong chu kỳ Pilot.
+2. Tuyệt đối KHÔNG tạo bảng staging trên Supabase ở thời điểm hiện tại.
+3. Tuyệt đối KHÔNG chạy lại script ETL cũ (`import_access_legacy.py`).
+4. Tuyệt đối KHÔNG gán 20 Steps không có `JobID` vào Job đoán mò (phải gắn cờ `HOLD_STAGING_UNRESOLVED_PARENT`).
+5. Tuyệt đối KHÔNG gán 94 Work Logs nội bộ (5S, bảo trì, Kaizen) vào Job của khách hàng.
+6. Tuyệt đối KHÔNG dùng `JobCode` làm khóa duy nhất (bắt buộc dùng `legacy_id = 'JOB-' || JobID` do Access có trùng lặp JobCode).
+7. Tuyệt đối KHÔNG sửa code NextGen để đọc trực tiếp file Access.
+
+### 29.4. Cấu trúc Phân loại 6 Trạng thái Bắt buộc cho Báo cáo Dry-Run
+Mỗi bản ghi delta ứng viên (27 Jobs, 81 Steps, 311 Work Logs) bắt buộc được gán 1 trong 6 trạng thái:
+1. `MATCHED_ALREADY`: Đã tồn tại trong Supabase, khớp 100% qua `legacy_id`.
+2. `NEW_SAFE_TO_STAGE`: Bản ghi mới an toàn, có đầy đủ quan hệ cha-con và master data.
+3. `CONFLICT_REQUIRES_REVIEW`: Trùng lặp hoặc xung đột mã/thuộc tính, cần con người rà soát.
+4. `UNRESOLVED_PARENT`: Thiếu bản ghi cha (ví dụ: Step có `JobID = NULL`).
+5. `INTERNAL_TASK`: Thuộc nhóm công việc nội bộ xưởng (5S, bảo trì, sửa đồ gá).
+6. `SKIP_DUPLICATE`: Bản ghi trùng lặp nội bộ trong Access cần loại trừ.
+
+### 29.5. 8 Trường Siêu dữ liệu Bắt buộc cho Mỗi Dòng Staging/Audit
+- `source_table`: Tên bảng Access nguồn (`tblJOB`, `tblProcessingDeadline`, `tblWorkLog`).
+- `source_primary_key`: Khóa chính Access (`JobID`, `ProcessingDeadlineID`, `WorkLogID`).
+- `source_file_sha256`: Mã băm SHA-256 của file `ysdJOB_20261006.accdb`.
+- `source_row_hash`: Mã băm kiểm tra toàn vẹn nội dung dòng.
+- `legacy_id`: Khóa định danh duy nhất (`JOB-{id}`, `LEGACY-STEP-{id}`, `LEGACY-LOG-{id}`).
+- `target_candidate_id`: UUID ứng viên được map trên Supabase.
+- `validation_status`: Trạng thái thẩm tra (1 trong 6 trạng thái trên).
+- `validation_error`: Chi tiết lỗi nếu không đạt điều kiện.
+
+### 29.6. Thứ tự Xử lý Kỹ thuật (Sau khi Thoan Công bố Kết thúc Pilot)
+`Audit/Dry-run Read-only -> PE Thẩm định -> Thoan duyệt Staging -> Nạp Staging -> Audit FK/Idempotency -> PE Thẩm định -> Thoan duyệt Production Insert -> Kiểm tra Schedule/UI`
+Thứ tự nạp cha-con bất biến: `work_orders / jobs -> job_steps -> work_logs`.
+
 
 
