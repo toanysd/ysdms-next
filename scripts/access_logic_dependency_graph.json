@@ -1,0 +1,3937 @@
+[
+  {
+    "object_name": "frmMoldTaskPlan_Subform",
+    "object_type": "FORM",
+    "record_source": "tblMoldTaskPlan",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [],
+    "subforms": []
+  },
+  {
+    "object_name": "SapxepKhuon_TangDeKhuon Subform",
+    "object_type": "FORM",
+    "record_source": "tblRackLayer",
+    "vba_module": "Form_SapxepKhuon_TangDeKhuon Subform",
+    "vba_line_count": 26,
+    "vba_side_effects": [
+      "READ_ONLY"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [
+      "tblRackLayer"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "TehaiAlumi Subform",
+    "object_type": "FORM",
+    "record_source": "SELECT tblProcessingDeadline.*, [tblItemType].IDDC, [tblItemType].[ItemTypeName]",
+    "vba_module": "Form_TehaiAlumi Subform",
+    "vba_line_count": 26,
+    "vba_side_effects": [
+      "READ_ONLY"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [
+      "tblProcessingDeadline",
+      "tblItemType"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "SapXepKhuonPhanPhoiNukigataVaKhuon Subform",
+    "object_type": "FORM",
+    "record_source": "SELECT tblMoldCutter.*, tblMoldDesign.MoldDesignName, tblCutter.CutterNo FROM (t",
+    "vba_module": "Form_SapXepKhuonPhanPhoiNukigataVaKhuon Subform",
+    "vba_line_count": 5,
+    "vba_side_effects": [
+      "READ_ONLY"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [
+      "tblCutter",
+      "tblMoldDesign",
+      "tblMoldCutter"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "frmMOLDlocationSubRackLayer",
+    "object_type": "FORM",
+    "record_source": "SELECT [tblRackLayer].[RackLayerID], [tblRackLayer].[RackID], [tblRackLayer].[Ra",
+    "vba_module": "Form_frmMOLDlocationSubRackLayer",
+    "vba_line_count": 47,
+    "vba_side_effects": [
+      "READ_ONLY"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [
+      "tblRackLayer"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "Mage_T_NFrm",
+    "object_type": "FORM",
+    "record_source": "mage_Ttbl",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [],
+    "subforms": [
+      "Form.Mage_T_N Subform"
+    ]
+  },
+  {
+    "object_name": "NukigataTbl Subform",
+    "object_type": "FORM",
+    "record_source": "tblCutter",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [
+      "tblCutter"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "Mage_T_N Subform",
+    "object_type": "FORM",
+    "record_source": "SELECT [mage_Ntbl].IDNobi, [mage_Ntbl].IDChatLieu, [mage_Ntbl].IDt, [mage_Ntbl].",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [],
+    "subforms": []
+  },
+  {
+    "object_name": "TehaiPlug Subform",
+    "object_type": "FORM",
+    "record_source": "SELECT tblProcessingDeadline.*, [tblItemType].IDDC, [tblItemType].[ItemTypeName]",
+    "vba_module": "Form_TehaiPlug Subform",
+    "vba_line_count": 26,
+    "vba_side_effects": [
+      "READ_ONLY"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [
+      "tblProcessingDeadline",
+      "tblItemType"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "Mage_NobiFrm",
+    "object_type": "FORM",
+    "record_source": "mage_ChatlieuTbl",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [],
+    "subforms": [
+      "Form.Mage_T_NFrm",
+      "Form.Mage_Nobi Subform"
+    ]
+  },
+  {
+    "object_name": "Mage_Nobi Subform",
+    "object_type": "FORM",
+    "record_source": "mage_Ntbl",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [],
+    "subforms": []
+  },
+  {
+    "object_name": "QuanLyZaikoDH_Subform",
+    "object_type": "FORM",
+    "record_source": "DatHangTbl",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [],
+    "subforms": []
+  },
+  {
+    "object_name": "SapxepKhuon_KH Subform",
+    "object_type": "FORM",
+    "record_source": "tblCustomer",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [
+      "tblCustomer"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "F_ThoiLuongGC_VatTuSD Subform",
+    "object_type": "FORM",
+    "record_source": "SELECT VatTuSDtbl.*, [VatTuTbl].TenVatTu FROM VatTuTbl INNER JOIN VatTuSDtbl ON",
+    "vba_module": "Form_F_ThoiLuongGC_VatTuSD Subform",
+    "vba_line_count": 48,
+    "vba_side_effects": [
+      "READ_ONLY"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [
+      "VatTuSDtbl",
+      "VatTuTbl"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "BangDuDinhFrm",
+    "object_type": "FORM",
+    "record_source": "",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [],
+    "subforms": [
+      "Form.YoteiStakingFrms",
+      "Form.YoteiMoldFrms",
+      "Report.Zangyou_ThisMonthRpt",
+      "Form.YoteiTeflonFrms",
+      "Form.YoteiPlugFrms",
+      "Form.YoteiMachineFrms"
+    ]
+  },
+  {
+    "object_name": "NukigataLichSuGiaCongFrm",
+    "object_type": "FORM",
+    "record_source": "SELECT tblCutterLog.* FROM tblCutterLog;",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [
+      "tblCutterLog"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "NukigataSearch_CacJobTheoKhFrm",
+    "object_type": "FORM",
+    "record_source": "SoHieuKhuon_CacJobTheoKhQry",
+    "vba_module": "Form_NukigataSearch_CacJobTheoKhFrm",
+    "vba_line_count": 10,
+    "vba_side_effects": [
+      "READ_ONLY"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [],
+    "subforms": []
+  },
+  {
+    "object_name": "VatTu_ImgFrm",
+    "object_type": "FORM",
+    "record_source": "VatTuTbl",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [
+      "VatTuTbl"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "PhanPhoiNukigataVaKhuonTbl Subform",
+    "object_type": "FORM",
+    "record_source": "tblMoldCutter",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [
+      "tblMoldCutter"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "FuguaiFrm",
+    "object_type": "FORM",
+    "record_source": "tblDefect",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [
+      "tblDefect"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "ThoiLuongGcFrms",
+    "object_type": "FORM",
+    "record_source": "tblWorkLog",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [
+      "tblWorkLog"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "ThoiLuongGcVatTuSdFrms",
+    "object_type": "FORM",
+    "record_source": "tblWorkLog",
+    "vba_module": "Form_ThoiLuongGcVatTuSdFrms",
+    "vba_line_count": 11,
+    "vba_side_effects": [
+      "READ_ONLY"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [
+      "tblWorkLog"
+    ],
+    "subforms": [
+      "Form.VatTuSdFrms"
+    ]
+  },
+  {
+    "object_name": "MayFrms",
+    "object_type": "FORM",
+    "record_source": "SELECT tblItemType2.* FROM tblItemType2;",
+    "vba_module": "Form_MayFrms",
+    "vba_line_count": 50,
+    "vba_side_effects": [
+      "READ_ONLY"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [],
+    "subforms": []
+  },
+  {
+    "object_name": "KyHanGcFrms",
+    "object_type": "FORM",
+    "record_source": "tblProcessingDeadline",
+    "vba_module": "Form_KyHanGcFrms",
+    "vba_line_count": 50,
+    "vba_side_effects": [
+      "READ_ONLY"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [
+      "tblProcessingDeadline"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "YoteiPlugFrms",
+    "object_type": "FORM",
+    "record_source": "ListAllQry",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [
+      "ListAllQry"
+    ],
+    "all_affected_tables": [
+      "tblProcessingDeadline",
+      "tblProcessingItem",
+      "tblMold",
+      "tblJOB",
+      "tblProcessingStatus",
+      "tblMoldDesign",
+      "tblItemType"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "SapXepKhuon_Vitrikhuon Subform2",
+    "object_type": "FORM",
+    "record_source": "SELECT tblMold.*, tblRack.*, tblCustomer.CustomerShortName, tblRackLayer.RackLay",
+    "vba_module": "Form_SapXepKhuon_Vitrikhuon Subform2",
+    "vba_line_count": 2,
+    "vba_side_effects": [],
+    "referenced_queries": [],
+    "all_affected_tables": [
+      "tblMold",
+      "tblCustomer",
+      "tblRack",
+      "tblRackLayer"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "ThoiLuongGcFrms1",
+    "object_type": "FORM",
+    "record_source": "tblWorkLog",
+    "vba_module": "Form_ThoiLuongGcFrms1",
+    "vba_line_count": 25,
+    "vba_side_effects": [
+      "READ_ONLY"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [
+      "tblWorkLog"
+    ],
+    "subforms": [
+      "Form.F_ThoiLuongGC_VatTuSD Subform"
+    ]
+  },
+  {
+    "object_name": "NukigataLichsudichuyenFrm",
+    "object_type": "FORM",
+    "record_source": "tblShipLog",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [
+      "tblShipLog"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "KyHanGC_JikanFrm",
+    "object_type": "FORM",
+    "record_source": "SELECT [tblProcessingDeadline].[ProcessingDeadlineID], [tblProcessingDeadline].I",
+    "vba_module": "Form_KyHanGC_JikanFrm",
+    "vba_line_count": 26,
+    "vba_side_effects": [
+      "READ_ONLY"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [
+      "tblProcessingDeadline"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "SapXepKhuon_Vitrikhuon Subform1",
+    "object_type": "FORM",
+    "record_source": "SELECT tblMold.MoldID, tblMold.CustomerID, tblMold.[MoldNumber], tblMold.RackLay",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [
+      "tblMold"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "F_ThoiLuongGC Subform1",
+    "object_type": "FORM",
+    "record_source": "tblWorkLog",
+    "vba_module": "Form_F_ThoiLuongGC Subform1",
+    "vba_line_count": 40,
+    "vba_side_effects": [
+      "READ_ONLY"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [
+      "tblWorkLog"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "DinhHinhListRutGonFrm",
+    "object_type": "FORM",
+    "record_source": "tblForming",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [],
+    "subforms": []
+  },
+  {
+    "object_name": "DinhHinhListFrm",
+    "object_type": "FORM",
+    "record_source": "tblForming",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [],
+    "subforms": []
+  },
+  {
+    "object_name": "NhuaDinhHinhFrm",
+    "object_type": "FORM",
+    "record_source": "SELECT tblPLASTICforForming.*, tblPlasticMaterial.PlasticMaterial, tblPlasticCol",
+    "vba_module": "Form_NhuaDinhHinhFrm",
+    "vba_line_count": 26,
+    "vba_side_effects": [
+      "READ_ONLY"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [
+      "tblPlasticMaterial",
+      "tblPLASTICforForming"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "ListAllFrm",
+    "object_type": "FORM",
+    "record_source": "ListAllQry",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [
+      "ListAllQry"
+    ],
+    "all_affected_tables": [
+      "tblProcessingDeadline",
+      "tblProcessingItem",
+      "tblMold",
+      "tblJOB",
+      "tblProcessingStatus",
+      "tblMoldDesign",
+      "tblItemType"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "KyHanGcFrm",
+    "object_type": "FORM",
+    "record_source": "tblProcessingDeadline",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [
+      "tblProcessingDeadline"
+    ],
+    "subforms": [
+      "Form.ThoiLuongGcFrms3",
+      "Form.ThoiLuongGcFrms1"
+    ]
+  },
+  {
+    "object_name": "DinhHinhDetailFrm",
+    "object_type": "FORM",
+    "record_source": "tblForming",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [],
+    "subforms": [
+      "Form.DinhHinhKetQuaListFrm"
+    ]
+  },
+  {
+    "object_name": "QuanLyZaikodhFrm",
+    "object_type": "FORM",
+    "record_source": "tblProcessingDeadline",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [
+      "tblProcessingDeadline"
+    ],
+    "subforms": [
+      "Form.QuanLyZaikoDH_Subform"
+    ]
+  },
+  {
+    "object_name": "MageFrm",
+    "object_type": "FORM",
+    "record_source": "",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [],
+    "subforms": [
+      "Form.Mage_NobiFrm",
+      "Form.Mage_ChatLieuFrm"
+    ]
+  },
+  {
+    "object_name": "Mage_ChatLieuFrm",
+    "object_type": "FORM",
+    "record_source": "mage_ChatlieuTbl",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [],
+    "subforms": []
+  },
+  {
+    "object_name": "VatTu_ListFrm",
+    "object_type": "FORM",
+    "record_source": "VatTuTbl",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [
+      "VatTuTbl"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "DinhHinhKetQuaListFrm",
+    "object_type": "FORM",
+    "record_source": "tblFormedTray",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [],
+    "subforms": []
+  },
+  {
+    "object_name": "SapXepKhuon_mainFrm",
+    "object_type": "FORM",
+    "record_source": "tblRack",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [
+      "tblRack"
+    ],
+    "subforms": [
+      "Form.SapXepKhuon_Vitrikhuon Subform1",
+      "Form.SapXepKhuon_VitrikhuonFrms",
+      "Form.SapxepKhuon_KH Subform",
+      "Form.SapxepKhuon_TangDeKhuon Subform",
+      "Form.SapXepKhuon_Vitrikhuon Subform3",
+      "Form.SapXepKhuon_Vitrikhuon Subform2"
+    ]
+  },
+  {
+    "object_name": "MemoFrm",
+    "object_type": "FORM",
+    "record_source": "T_Memo",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [],
+    "subforms": []
+  },
+  {
+    "object_name": "PhanPhoiNukigataVaKhuonFrms2",
+    "object_type": "FORM",
+    "record_source": "SELECT tblMoldCutter.*, tblMoldDesign.MoldDesignName FROM tblMoldDesign INNER JO",
+    "vba_module": "Form_PhanPhoiNukigataVaKhuonFrms2",
+    "vba_line_count": 56,
+    "vba_side_effects": [
+      "READ_ONLY",
+      "UI_NAVIGATION"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [
+      "tblMold",
+      "tblMoldCutter",
+      "tblMoldDesign"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "frmMOLDdetailsSubJobList",
+    "object_type": "FORM",
+    "record_source": "SELECT [tblJOB].[JobID], [tblJOB].[JobName], [tblJOB].[JobCodeAuto], [tblJOB].[M",
+    "vba_module": "Form_frmMOLDdetailsSubJobList",
+    "vba_line_count": 22,
+    "vba_side_effects": [
+      "UI_NAVIGATION"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [
+      "tblJOB"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "frmJOBList",
+    "object_type": "FORM",
+    "record_source": "tblJob",
+    "vba_module": "Form_frmJOBList",
+    "vba_line_count": 1,
+    "vba_side_effects": [],
+    "referenced_queries": [],
+    "all_affected_tables": [
+      "tblJOB"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "ThoiLuongGcFrms2",
+    "object_type": "FORM",
+    "record_source": "tblWorkLog",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [
+      "tblWorkLog"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "SapXepKhuon_Vitrikhuon Subform3",
+    "object_type": "FORM",
+    "record_source": "SELECT tblMold.MoldID, tblMold.[MoldNumber], tblMold.RackLayerID, tblMold.MoldNo",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [
+      "tblMold"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "YoteiTeflonFrms",
+    "object_type": "FORM",
+    "record_source": "qryTeflon",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [
+      "qryTeflon"
+    ],
+    "all_affected_tables": [
+      "tblTeflonLog",
+      "tblMold"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "Job_LinkFrms",
+    "object_type": "FORM",
+    "record_source": "SELECT [FolderLink_PartTbl].IDPart, [FolderLink_PartTbl].IDFolderLink_Part, [Fol",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [],
+    "subforms": []
+  },
+  {
+    "object_name": "ZaikoFrms",
+    "object_type": "FORM",
+    "record_source": "ZaikoTbl",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [],
+    "subforms": []
+  },
+  {
+    "object_name": "ThoiLuongGcZaiKoFrms",
+    "object_type": "FORM",
+    "record_source": "tblWorkLog",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [
+      "tblWorkLog"
+    ],
+    "subforms": [
+      "Form.ZaikoFrms"
+    ]
+  },
+  {
+    "object_name": "Form2",
+    "object_type": "FORM",
+    "record_source": "tblProductionPlanStep",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [],
+    "subforms": []
+  },
+  {
+    "object_name": "YoteiMoldFrms",
+    "object_type": "FORM",
+    "record_source": "ListAllQry",
+    "vba_module": "Form_YoteiMoldFrms",
+    "vba_line_count": 24,
+    "vba_side_effects": [
+      "UI_NAVIGATION"
+    ],
+    "referenced_queries": [
+      "ListAllQry"
+    ],
+    "all_affected_tables": [
+      "tblProcessingDeadline",
+      "tblProcessingItem",
+      "tblMold",
+      "tblJOB",
+      "tblProcessingStatus",
+      "tblMoldDesign",
+      "tblItemType"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "TehaiCutterFrms",
+    "object_type": "FORM",
+    "record_source": "SELECT tblProcessingDeadline.*, [tblItemType].IDDC, [tblItemType].[ItemTypeName]",
+    "vba_module": "Form_TehaiCutterFrms",
+    "vba_line_count": 26,
+    "vba_side_effects": [
+      "READ_ONLY"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [
+      "tblProcessingDeadline",
+      "tblItemType"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "VatTuSD_DatHangVtFrms",
+    "object_type": "FORM",
+    "record_source": "DatHangVTTbl",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [
+      "DatHangVTTbl"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "SapXepKhuon_VitrikhuonFrms",
+    "object_type": "FORM",
+    "record_source": "SELECT tblMold.RackLayerID, tblMold.MoldID, tblMold.MoldNotes, tblMold.LastOrder",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [
+      "tblMold"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "PhanPhoiNukigataVaKhuonFrms",
+    "object_type": "FORM",
+    "record_source": "SELECT [tblMoldCutter].[MoldCutterID], [tblMoldCutter].IDsttKhuonDinhHinh, [tblM",
+    "vba_module": "Form_PhanPhoiNukigataVaKhuonFrms",
+    "vba_line_count": 56,
+    "vba_side_effects": [
+      "READ_ONLY",
+      "UI_NAVIGATION"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [
+      "tblMoldCutter"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "PhanPhoiNukigataVaKhuonTbl Subform2",
+    "object_type": "FORM",
+    "record_source": "SELECT [tblMoldCutter].[MoldCutterID], [tblMoldCutter].IDnukigata, [tblMoldCutte",
+    "vba_module": "Form_PhanPhoiNukigataVaKhuonTbl Subform2",
+    "vba_line_count": 5,
+    "vba_side_effects": [
+      "READ_ONLY"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [
+      "tblMoldCutter"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "YoteiMachineFrms",
+    "object_type": "FORM",
+    "record_source": "ListAllQry",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [
+      "ListAllQry"
+    ],
+    "all_affected_tables": [
+      "tblProcessingDeadline",
+      "tblProcessingItem",
+      "tblMold",
+      "tblJOB",
+      "tblProcessingStatus",
+      "tblMoldDesign",
+      "tblItemType"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "VatTuSdFrms",
+    "object_type": "FORM",
+    "record_source": "VatTuTbl",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [
+      "VatTuTbl"
+    ],
+    "subforms": [
+      "Form.VatTuSD_DatHangVtFrms"
+    ]
+  },
+  {
+    "object_name": "YoteiStakingFrms",
+    "object_type": "FORM",
+    "record_source": "ListAllQry",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [
+      "ListAllQry"
+    ],
+    "all_affected_tables": [
+      "tblProcessingDeadline",
+      "tblProcessingItem",
+      "tblMold",
+      "tblJOB",
+      "tblProcessingStatus",
+      "tblMoldDesign",
+      "tblItemType"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "KyHanGcFrms2",
+    "object_type": "FORM",
+    "record_source": "SELECT tblProcessingDeadline.*, tblProcessingStatus.ProcessingStatus FROM tblPro",
+    "vba_module": "Form_KyHanGcFrms2",
+    "vba_line_count": 48,
+    "vba_side_effects": [
+      "READ_ONLY"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [
+      "tblProcessingDeadline",
+      "tblProcessingStatus"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "frmMoldSearchSubCutterDetails",
+    "object_type": "FORM",
+    "record_source": "SELECT tblMoldCutter.*, tblMoldDesign.MoldDesignCode, tblMoldDesign.DesignForPla",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [
+      "tblMoldDesign",
+      "tblMoldCutter"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "PhanPhoiNukigataVaKhuonTblFrm",
+    "object_type": "FORM",
+    "record_source": "tblCutter",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [
+      "tblCutter"
+    ],
+    "subforms": [
+      "Form.PhanPhoiNukigataVaKhuonTbl Subform"
+    ]
+  },
+  {
+    "object_name": "NukigataSearchMainFrm",
+    "object_type": "FORM",
+    "record_source": "tblCutter",
+    "vba_module": "Form_NukigataSearchMainFrm",
+    "vba_line_count": 41,
+    "vba_side_effects": [
+      "READ_ONLY"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [
+      "tblCutter"
+    ],
+    "subforms": [
+      "Form.NukigataSearchSubFrm",
+      "Form.PhanPhoiNukigataVaKhuonFrms"
+    ]
+  },
+  {
+    "object_name": "frmCustomerDetails",
+    "object_type": "FORM",
+    "record_source": "tblCustomer",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [
+      "tblCustomer"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "frmDAILYworkLogSubList",
+    "object_type": "FORM",
+    "record_source": "qryDAILYworkLogSubList",
+    "vba_module": "Form_frmDAILYworkLogSubList",
+    "vba_line_count": 54,
+    "vba_side_effects": [
+      "READ_ONLY"
+    ],
+    "referenced_queries": [
+      "qryDAILYworkLogSubList"
+    ],
+    "all_affected_tables": [
+      "tblWorkLog",
+      "tblProcessingDeadline",
+      "tblEmployee",
+      "tblJOB",
+      "tblItemType"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "frmWorkLogSubList",
+    "object_type": "FORM",
+    "record_source": "qryWorkLogSubList",
+    "vba_module": "Form_frmWorkLogSubList",
+    "vba_line_count": 18,
+    "vba_side_effects": [
+      "READ_ONLY"
+    ],
+    "referenced_queries": [
+      "qryWorkLogSubList"
+    ],
+    "all_affected_tables": [
+      "tblWorkLog",
+      "tblProcessingDeadline",
+      "tblJOB"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "frmShipLogSubList",
+    "object_type": "FORM",
+    "record_source": "SELECT [tblShipLog].[ShipID], [tblShipLog].[CustomerID], [tblShipLog].[ShipItemN",
+    "vba_module": "Form_frmShipLogSubList",
+    "vba_line_count": 25,
+    "vba_side_effects": [
+      "UI_NAVIGATION"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [
+      "tblShipLog"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "ThoiLuongGcFrms3",
+    "object_type": "FORM",
+    "record_source": "tblWorkLog",
+    "vba_module": "Form_ThoiLuongGcFrms3",
+    "vba_line_count": 35,
+    "vba_side_effects": [
+      "READ_ONLY"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [
+      "tblWorkLog"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "frmMOLDshiplogSubList",
+    "object_type": "FORM",
+    "record_source": "tblShipLog",
+    "vba_module": "Form_frmMOLDshiplogSubList",
+    "vba_line_count": 98,
+    "vba_side_effects": [
+      "READ_ONLY",
+      "RECORD_UPDATE"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [
+      "tblMold",
+      "tblShipLog",
+      "tblCompany"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "NukigataSearch_JobLienquanFrm",
+    "object_type": "FORM",
+    "record_source": "SoHieuKhuon_JobLienQuan_KhQry",
+    "vba_module": "Form_NukigataSearch_JobLienquanFrm",
+    "vba_line_count": 7,
+    "vba_side_effects": [
+      "READ_ONLY"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [],
+    "subforms": []
+  },
+  {
+    "object_name": "NukigataSearchSubFrm",
+    "object_type": "FORM",
+    "record_source": "NhapDuLieuNukigataQry",
+    "vba_module": "Form_NukigataSearchSubFrm",
+    "vba_line_count": 39,
+    "vba_side_effects": [
+      "READ_ONLY",
+      "UI_NAVIGATION"
+    ],
+    "referenced_queries": [
+      "NhapDuLieuNukigataQry"
+    ],
+    "all_affected_tables": [
+      "tblCutter",
+      "tblRack",
+      "tblRackLayer"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "NukigataNhapDuLieu_JobLienQuanFrms",
+    "object_type": "FORM",
+    "record_source": "tblJOB",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [
+      "tblJOB"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "frmTeflonLog",
+    "object_type": "FORM",
+    "record_source": "tblMold",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [
+      "tblMold"
+    ],
+    "subforms": [
+      "Form.frmMOLDsearchSubTeflonLog"
+    ]
+  },
+  {
+    "object_name": "frmMoldSearchSubShipmentLog",
+    "object_type": "FORM",
+    "record_source": "tblShipLog",
+    "vba_module": "Form_frmMoldSearchSubShipmentLog",
+    "vba_line_count": 3,
+    "vba_side_effects": [],
+    "referenced_queries": [],
+    "all_affected_tables": [
+      "tblShipLog"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "SapXepKhuonNukigataSubFrm",
+    "object_type": "FORM",
+    "record_source": "NhapDuLieuNukigataQry",
+    "vba_module": "Form_SapXepKhuonNukigataSubFrm",
+    "vba_line_count": 7,
+    "vba_side_effects": [
+      "READ_ONLY"
+    ],
+    "referenced_queries": [
+      "NhapDuLieuNukigataQry"
+    ],
+    "all_affected_tables": [
+      "tblCutter",
+      "tblRack",
+      "tblRackLayer"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "frmMOLDdetails",
+    "object_type": "FORM",
+    "record_source": "qryMOLDdetails",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [
+      "qryMOLDdetails"
+    ],
+    "all_affected_tables": [
+      "tblMold",
+      "tblMoldDesign"
+    ],
+    "subforms": [
+      "Form.frmMOLDdetailsSubMoldResult",
+      "Form.frmPLASTICforForming"
+    ]
+  },
+  {
+    "object_name": "PhanPhoiNukigataVaKhuonTbl Subform1",
+    "object_type": "FORM",
+    "record_source": "KhuonTheoDaoCatListQry",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [
+      "KhuonTheoDaoCatListQry"
+    ],
+    "all_affected_tables": [
+      "tblMold"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "NukigataLichSuGiaCongListFrm",
+    "object_type": "FORM",
+    "record_source": "tblCutterLog",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [
+      "tblCutterLog"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "DathangvtListFrm",
+    "object_type": "FORM",
+    "record_source": "DatHangVTTbl",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [
+      "DatHangVTTbl"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "DatHangVtMainFrm",
+    "object_type": "FORM",
+    "record_source": "VatTuTbl",
+    "vba_module": "Form_DatHangVtMainFrm",
+    "vba_line_count": 25,
+    "vba_side_effects": [
+      "READ_ONLY"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [
+      "VatTuTbl"
+    ],
+    "subforms": [
+      "Form.DatHangvtSubFrm"
+    ]
+  },
+  {
+    "object_name": "DatHangvtSubFrm",
+    "object_type": "FORM",
+    "record_source": "DatHangVTTbl",
+    "vba_module": "Form_DatHangvtSubFrm",
+    "vba_line_count": 29,
+    "vba_side_effects": [
+      "READ_ONLY"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [
+      "DatHangVTTbl"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "frmsCUTTERmoldCutter",
+    "object_type": "FORM",
+    "record_source": "tblMoldCutter",
+    "vba_module": "Form_frmsCUTTERmoldCutter",
+    "vba_line_count": 21,
+    "vba_side_effects": [
+      "UI_NAVIGATION"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [
+      "tblMoldCutter"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "frmPLASTICforForming",
+    "object_type": "FORM",
+    "record_source": "SELECT tblPLASTICforForming.* FROM tblPLASTICforForming;",
+    "vba_module": "Form_frmPLASTICforForming",
+    "vba_line_count": 26,
+    "vba_side_effects": [
+      "READ_ONLY"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [
+      "tblPLASTICforForming"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "frmMOLDsearchSubFolderLink",
+    "object_type": "FORM",
+    "record_source": "TblFolderLink",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [],
+    "subforms": []
+  },
+  {
+    "object_name": "frmRACKsubMold",
+    "object_type": "FORM",
+    "record_source": "SELECT [tblMold].[MoldID], [tblMold].[MoldDesignID], [tblMold].[MoldName], [tblM",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [
+      "tblMold"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "frmMOLDlocationSubMoldList",
+    "object_type": "FORM",
+    "record_source": "SELECT tblMold.MoldID, tblMold.MoldName, tblMold.MoldCode, tblMold.MoldDesignID,",
+    "vba_module": "Form_frmMOLDlocationSubMoldList",
+    "vba_line_count": 103,
+    "vba_side_effects": [
+      "READ_ONLY",
+      "UI_NAVIGATION"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [
+      "tblMold",
+      "tblMoldDesign"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "frmPopupMaSoKhuonThem",
+    "object_type": "FORM",
+    "record_source": "SELECT [tblCutter].IDMaKhuonThietKe, [tblCutter].[MoldShared], [tblCutter].[Crea",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [
+      "tblCutter"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "frmsCUTTERdataEntry",
+    "object_type": "FORM",
+    "record_source": "tblCutter",
+    "vba_module": "Form_frmsCUTTERdataEntry",
+    "vba_line_count": 565,
+    "vba_side_effects": [
+      "RECORD_INSERT",
+      "READ_ONLY",
+      "RECORD_UPDATE",
+      "UI_NAVIGATION"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [
+      "tblCutter",
+      "tblMold",
+      "tblMoldCutter",
+      "tblMoldDesign"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "frmProductionPlanEntry",
+    "object_type": "FORM",
+    "record_source": "tblProductionPlan",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [],
+    "subforms": []
+  },
+  {
+    "object_name": "frmFormingEntry",
+    "object_type": "FORM",
+    "record_source": "tblForming",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [],
+    "subforms": []
+  },
+  {
+    "object_name": "frmMOLDDESIGNdetails",
+    "object_type": "FORM",
+    "record_source": "tblMoldDesign",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [
+      "tblMoldDesign"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "frmCUTTERdetails",
+    "object_type": "FORM",
+    "record_source": "qryCutterInfo",
+    "vba_module": "Form_frmCUTTERdetails",
+    "vba_line_count": 20,
+    "vba_side_effects": [
+      "READ_ONLY"
+    ],
+    "referenced_queries": [
+      "qryCutterInfo"
+    ],
+    "all_affected_tables": [
+      "tblRack",
+      "tblCutter",
+      "tblMoldDesign",
+      "tblMoldCutter",
+      "tblRackLayer"
+    ],
+    "subforms": [
+      "Form.NukigataLichSuGiaCongListFrm",
+      "Form.DinhHinhKetQuaListFrm",
+      "Form.PhanPhoiNukigataVaKhuonFrms2",
+      "Form.DinhHinhListRutGonFrm",
+      "Form.NukigataLichsudichuyenFrm"
+    ]
+  },
+  {
+    "object_name": "frmMoldSearchSubResults",
+    "object_type": "FORM",
+    "record_source": "SELECT tblMold.*, tblMoldDesign.MoldDesignName, tblMoldDesign.TrayID, tblMoldDes",
+    "vba_module": "Form_frmMoldSearchSubResults",
+    "vba_line_count": 157,
+    "vba_side_effects": [
+      "RECORD_INSERT",
+      "READ_ONLY"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [
+      "tblMold",
+      "tblMoldDesign"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "frmMoldSearchSubRackLayerDetails",
+    "object_type": "FORM",
+    "record_source": "SELECT [tblRackLayer].[RackLayerID], [tblRackLayer].[RackID], [tblRackLayer].[Ra",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [
+      "tblRackLayer"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "frmMoldSearchSubMoldDetails",
+    "object_type": "FORM",
+    "record_source": "SELECT tblMold.*, tblMoldDesign.*, tblRack.RackLocation, tblRackLayer.RackLayerN",
+    "vba_module": "Form_frmMoldSearchSubMoldDetails",
+    "vba_line_count": 904,
+    "vba_side_effects": [
+      "RECORD_INSERT",
+      "READ_ONLY",
+      "RECORD_UPDATE"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [
+      "tblRack",
+      "tblMold",
+      "tblCompany",
+      "statuslogs",
+      "tblLocationLog",
+      "tblMoldDesign",
+      "tblShipLog",
+      "tblRackLayer"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "frmMOLDlocationLog",
+    "object_type": "FORM",
+    "record_source": "tblMold",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [
+      "tblMold"
+    ],
+    "subforms": [
+      "Form.frmMOLDlocationLogSubList"
+    ]
+  },
+  {
+    "object_name": "frmMoldSearchSubTrayForming",
+    "object_type": "FORM",
+    "record_source": "SELECT [tblForming].[FormingID], [tblForming].TrayOrderID, [tblForming].MoldID,",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [],
+    "subforms": []
+  },
+  {
+    "object_name": "frmMOLDProcessing",
+    "object_type": "FORM",
+    "record_source": "qryMOLDprocessing",
+    "vba_module": "Form_frmMOLDProcessing",
+    "vba_line_count": 606,
+    "vba_side_effects": [
+      "RECORD_INSERT",
+      "READ_ONLY",
+      "UI_NAVIGATION"
+    ],
+    "referenced_queries": [
+      "qryMOLDprocessing"
+    ],
+    "all_affected_tables": [
+      "tblMold",
+      "tblResponsiblePerson",
+      "tblJOB",
+      "tblCutter",
+      "tblMoldDesign",
+      "tblMoldCutter",
+      "tblCav"
+    ],
+    "subforms": [
+      "Form.frmsTeflonLog",
+      "Form.NhuaDinhHinhFrm",
+      "Form.frmMOLDprocessingSubMoldList",
+      "Form.frmMOLDProcessingSubStatuslogs",
+      "Form.KyHanGcFrms2",
+      "Form.frmMOLDProcessingSubCutter"
+    ]
+  },
+  {
+    "object_name": "frmMOLDsearch",
+    "object_type": "FORM",
+    "record_source": "searchQuery",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [],
+    "subforms": [
+      "Form.frmMOLDsearchSubTeflonLog",
+      "Form.frmMoldSearchSubShipmentLog",
+      "Form.frmsMoldLocationLog",
+      "Form.frmMoldSearchSubCutterDetails",
+      "Form.frmMOLDsearchSubStatuslog",
+      "Form.frmMOLDsearchSubJobList",
+      "Form.frmMOLDsearchSubMoldBorrowCertificate",
+      "Form.frmMoldSearchSubResults",
+      "Form.frmMoldSearchSubMoldDetails"
+    ]
+  },
+  {
+    "object_name": "frmFILEsearch",
+    "object_type": "FORM",
+    "record_source": "qryMOLDdetails",
+    "vba_module": "Form_frmFILEsearch",
+    "vba_line_count": 151,
+    "vba_side_effects": [
+      "RECORD_INSERT",
+      "READ_ONLY"
+    ],
+    "referenced_queries": [
+      "qryMOLDdetails"
+    ],
+    "all_affected_tables": [
+      "tblMold",
+      "tblMoldDesign"
+    ],
+    "subforms": [
+      "Form.frmFILEsearchSubResult"
+    ]
+  },
+  {
+    "object_name": "frmMOLDsearchSubJobList",
+    "object_type": "FORM",
+    "record_source": "tblJob",
+    "vba_module": "Form_frmMOLDsearchSubJobList",
+    "vba_line_count": 1,
+    "vba_side_effects": [],
+    "referenced_queries": [],
+    "all_affected_tables": [
+      "tblJOB"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "frmMOLDentrySubMoldLog",
+    "object_type": "FORM",
+    "record_source": "tblMoldLog",
+    "vba_module": "Form_frmMOLDentrySubMoldLog",
+    "vba_line_count": 5,
+    "vba_side_effects": [
+      "READ_ONLY"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [
+      "tblMoldLog"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "frmMOLDsearchSubMoldBorrowCertificate",
+    "object_type": "FORM",
+    "record_source": "tblMoldBorrow",
+    "vba_module": "Form_frmMOLDsearchSubMoldBorrowCertificate",
+    "vba_line_count": 1,
+    "vba_side_effects": [],
+    "referenced_queries": [],
+    "all_affected_tables": [
+      "tblMoldBorrow"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "frmCustomerList",
+    "object_type": "FORM",
+    "record_source": "tblCustomer",
+    "vba_module": "Form_frmCustomerList",
+    "vba_line_count": 12,
+    "vba_side_effects": [
+      "READ_ONLY"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [
+      "tblCustomer"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "frmCompanyList",
+    "object_type": "FORM",
+    "record_source": "tblCompany",
+    "vba_module": "Form_frmCompanyList",
+    "vba_line_count": 30,
+    "vba_side_effects": [
+      "READ_ONLY"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [
+      "tblCompany"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "frmMOLDBORROWSubList",
+    "object_type": "FORM",
+    "record_source": "tblMoldBorrow",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [
+      "tblMoldBorrow"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "frmCUTTERsearchSubMoldShared",
+    "object_type": "FORM",
+    "record_source": "SELECT tblMoldDesign.MoldDesignCode, tblMoldDesign.MoldDesignID, tblCutter.Cutte",
+    "vba_module": "Form_frmCUTTERsearchSubMoldShared",
+    "vba_line_count": 21,
+    "vba_side_effects": [
+      "UI_NAVIGATION"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [
+      "tblCutter",
+      "tblMoldDesign"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "frmCustomerList2",
+    "object_type": "FORM",
+    "record_source": "tblCustomer",
+    "vba_module": "Form_frmCustomerList2",
+    "vba_line_count": 1,
+    "vba_side_effects": [],
+    "referenced_queries": [],
+    "all_affected_tables": [
+      "tblCustomer"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "frmTRAYList",
+    "object_type": "FORM",
+    "record_source": "tblTray",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [
+      "tblTray"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "frmMOLDprocessingSubMoldList",
+    "object_type": "FORM",
+    "record_source": "KhuonTheoDaoCatListQry",
+    "vba_module": "Form_frmMOLDprocessingSubMoldList",
+    "vba_line_count": 71,
+    "vba_side_effects": [
+      "READ_ONLY"
+    ],
+    "referenced_queries": [
+      "KhuonTheoDaoCatListQry"
+    ],
+    "all_affected_tables": [
+      "tblMold"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "frmMOLDdetailsSubMoldResult",
+    "object_type": "FORM",
+    "record_source": "SELECT tblMold.*, tblMoldDesign.MoldDesignName, tblMoldDesign.TrayID, tblMoldDes",
+    "vba_module": "Form_frmMOLDdetailsSubMoldResult",
+    "vba_line_count": 49,
+    "vba_side_effects": [
+      "RECORD_INSERT",
+      "UI_NAVIGATION"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [
+      "tblMold",
+      "tblMoldDesign"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "frmFILEsearchSubResult",
+    "object_type": "FORM",
+    "record_source": "SELECT * FROM tblFile WHERE (FileName LIKE '*JAE-202*' OR FileLink LIKE '*JAE-20",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [],
+    "subforms": []
+  },
+  {
+    "object_name": "frmMoldPicturesPrint",
+    "object_type": "FORM",
+    "record_source": "",
+    "vba_module": "Form_frmMoldPicturesPrint",
+    "vba_line_count": 83,
+    "vba_side_effects": [
+      "READ_ONLY",
+      "UI_NAVIGATION"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [
+      "tblMoldDesign"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "frmMOLDdetailsSubAssetInfo",
+    "object_type": "FORM",
+    "record_source": "copytblAssetInfo",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [],
+    "subforms": []
+  },
+  {
+    "object_name": "frmShipLog",
+    "object_type": "FORM",
+    "record_source": "tblShipLog",
+    "vba_module": "Form_frmShipLog",
+    "vba_line_count": 41,
+    "vba_side_effects": [
+      "READ_ONLY"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [
+      "tblCutter",
+      "tblMold",
+      "tblShipLog"
+    ],
+    "subforms": [
+      "Form.frmShipLogSubList"
+    ]
+  },
+  {
+    "object_name": "frmCUTTERsearch",
+    "object_type": "FORM",
+    "record_source": "",
+    "vba_module": "Form_frmCUTTERsearch",
+    "vba_line_count": 230,
+    "vba_side_effects": [
+      "READ_ONLY"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [
+      "tblProcessingDeadline",
+      "tblMoldDesign",
+      "tblMoldCutter",
+      "tblJOB"
+    ],
+    "subforms": [
+      "Form.frmCUTTERsearchSubMoldShared",
+      "Form.frmCUTTERsearchSubEntry",
+      "Form.XX_frmCUTTERmanagementSubMoldList_xx"
+    ]
+  },
+  {
+    "object_name": "frmRACKsubLayer",
+    "object_type": "FORM",
+    "record_source": "SELECT [tblRackLayer].[RackLayerID], [tblRackLayer].[RackID], [tblRackLayer].[Ra",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [
+      "tblRackLayer"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "frmRACK",
+    "object_type": "FORM",
+    "record_source": "tblRack",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [
+      "tblRack"
+    ],
+    "subforms": [
+      "Form.frmRACKsubMold",
+      "Form.frmRACKsubLayer"
+    ]
+  },
+  {
+    "object_name": "frmMOLDentry",
+    "object_type": "FORM",
+    "record_source": "tblCustomer",
+    "vba_module": "Form_frmMOLDentry",
+    "vba_line_count": 1686,
+    "vba_side_effects": [
+      "RECORD_INSERT",
+      "READ_ONLY",
+      "RECORD_UPDATE"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [
+      "tblProcessingDeadline",
+      "tblMold",
+      "tblJOB",
+      "tblTray",
+      "tblMoldDesign",
+      "tblCustomer"
+    ],
+    "subforms": [
+      "Form.frmMOLDentrySubMoldProcessing",
+      "Form.frmMOLDentrySubMoldDesign",
+      "Form.frmMOLDentrySubProcessingDeadline",
+      "Form.frmMOLDentrySubCutter",
+      "Form.frmMOLDentrySubMold",
+      "Form.frmMOLDentrySubTray",
+      "Form.frmMOLDentrySubMoldLog"
+    ]
+  },
+  {
+    "object_name": "frmCUTTERsearchSubEntry",
+    "object_type": "FORM",
+    "record_source": "tblCutter",
+    "vba_module": "Form_frmCUTTERsearchSubEntry",
+    "vba_line_count": 567,
+    "vba_side_effects": [
+      "RECORD_INSERT",
+      "READ_ONLY",
+      "RECORD_UPDATE",
+      "UI_NAVIGATION"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [
+      "tblCutter",
+      "tblMoldDesign",
+      "tblMoldCutter"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "frmProductionLogEntry",
+    "object_type": "FORM",
+    "record_source": "tblProductionLog",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [],
+    "subforms": []
+  },
+  {
+    "object_name": "frmMOLDentrySubCutter",
+    "object_type": "FORM",
+    "record_source": "SELECT tblCutter.CutterID, tblCutter.CutterNo, tblCutter.CutterName, tblMoldCutt",
+    "vba_module": "Form_frmMOLDentrySubCutter",
+    "vba_line_count": 15,
+    "vba_side_effects": [
+      "READ_ONLY"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [
+      "tblCutter"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "frmMOLDentrySubMold",
+    "object_type": "FORM",
+    "record_source": "tblMold",
+    "vba_module": "Form_frmMOLDentrySubMold",
+    "vba_line_count": 82,
+    "vba_side_effects": [
+      "READ_ONLY"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [
+      "tblMold"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "frmMOLDentrySubTray",
+    "object_type": "FORM",
+    "record_source": "tbltray",
+    "vba_module": "Form_frmMOLDentrySubTray",
+    "vba_line_count": 64,
+    "vba_side_effects": [
+      "RECORD_INSERT",
+      "READ_ONLY"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [
+      "tblTray"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "frmMOLDentrySubMoldDesign",
+    "object_type": "FORM",
+    "record_source": "SELECT tblMoldDesign.*, Replace(Replace([MoldDesignName],'-',''),' ','') AS MaRu",
+    "vba_module": "Form_frmMOLDentrySubMoldDesign",
+    "vba_line_count": 122,
+    "vba_side_effects": [
+      "READ_ONLY"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [
+      "tblMoldDesign"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "frmMOLDentrySubMoldProcessing",
+    "object_type": "FORM",
+    "record_source": "tblJOB",
+    "vba_module": "Form_frmMOLDentrySubMoldProcessing",
+    "vba_line_count": 102,
+    "vba_side_effects": [
+      "READ_ONLY"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [
+      "tblJOB"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "frmMOLDshiplog",
+    "object_type": "FORM",
+    "record_source": "tblMold",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [
+      "tblMold"
+    ],
+    "subforms": [
+      "Form.frmMOLDshiplogSubList"
+    ]
+  },
+  {
+    "object_name": "frmMOLDentrySubProcessingDeadline",
+    "object_type": "FORM",
+    "record_source": "tblProcessingDeadline",
+    "vba_module": "Form_frmMOLDentrySubProcessingDeadline",
+    "vba_line_count": 29,
+    "vba_side_effects": [
+      "READ_ONLY"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [
+      "tblProcessingDeadline"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "frmDAILYworkLog",
+    "object_type": "FORM",
+    "record_source": "",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [],
+    "subforms": [
+      "Report.rptDailyWorkLog",
+      "Form.frmDAILYworkLogSubList",
+      "Report.rptJobTime_tomtat"
+    ]
+  },
+  {
+    "object_name": "frmMOLDProcessingSubMoldLocationLog",
+    "object_type": "FORM",
+    "record_source": "tblLocationLog",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [
+      "tblLocationLog"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "frmsMoldLocationLog",
+    "object_type": "FORM",
+    "record_source": "tblLocationLog",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [
+      "tblLocationLog"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "frmCUTTERlocationLog",
+    "object_type": "FORM",
+    "record_source": "tblCutter",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [
+      "tblCutter"
+    ],
+    "subforms": [
+      "Form.frmMOLDlocationLogSubList"
+    ]
+  },
+  {
+    "object_name": "frmMOLDlocationSubRack",
+    "object_type": "FORM",
+    "record_source": "SELECT [tblRack].[RackID], [tblRack].[RackNumber], [tblRack].[RackSymbol], [tblR",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [
+      "tblRack"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "frmMOLDlocationLogSubList",
+    "object_type": "FORM",
+    "record_source": "tblLocationLog",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [
+      "tblLocationLog"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "frmMOLDlocation_ng",
+    "object_type": "FORM",
+    "record_source": "",
+    "vba_module": "Form_frmMOLDlocation_ng",
+    "vba_line_count": 728,
+    "vba_side_effects": [
+      "RECORD_INSERT",
+      "READ_ONLY"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [
+      "tblMold",
+      "tblTray",
+      "tblLocationLog",
+      "tblMoldDesign",
+      "tblCustomer"
+    ],
+    "subforms": [
+      "Form.frmMOLDlocationSubMoldList",
+      "Form.frmMOLDlocationSubRackLayer",
+      "Form.frmMOLDlocationSubRack"
+    ]
+  },
+  {
+    "object_name": "frmMOLDlocation",
+    "object_type": "FORM",
+    "record_source": "SELECT",
+    "vba_module": "Form_frmMOLDlocation",
+    "vba_line_count": 1076,
+    "vba_side_effects": [
+      "RECORD_INSERT",
+      "READ_ONLY"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [
+      "tblRack",
+      "tblMold",
+      "tblTray",
+      "tblLocationLog",
+      "tblMoldDesign",
+      "tblCustomer",
+      "tblRackLayer"
+    ],
+    "subforms": [
+      "Form.frmMOLDlocationSubMoldList",
+      "Form.frmMOLDlocationSubRackLayer",
+      "Form.frmMOLDlocationSubRack"
+    ]
+  },
+  {
+    "object_name": "XX_frmCUTTERmanagementSubMoldList_xx",
+    "object_type": "FORM",
+    "record_source": "qryKhuonDinhHinhListrutgonSub",
+    "vba_module": "Form_XX_frmCUTTERmanagementSubMoldList_xx",
+    "vba_line_count": 5,
+    "vba_side_effects": [
+      "READ_ONLY"
+    ],
+    "referenced_queries": [
+      "qryKhuonDinhHinhListrutgonSub"
+    ],
+    "all_affected_tables": [
+      "tblMold"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "XX_frmCUTTERmanagement_xx",
+    "object_type": "FORM",
+    "record_source": "",
+    "vba_module": "Form_XX_frmCUTTERmanagement_xx",
+    "vba_line_count": 96,
+    "vba_side_effects": [
+      "READ_ONLY"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [
+      "tblMoldDesign",
+      "tblMoldCutter"
+    ],
+    "subforms": [
+      "Form.frmsCUTTERmoldCutter",
+      "Form.frmsCUTTERdataEntry",
+      "Form.XX_frmCUTTERmanagementSubMoldList_xx"
+    ]
+  },
+  {
+    "object_name": "frmMOLDBORROWSubCertificate",
+    "object_type": "FORM",
+    "record_source": "tblMoldBorrow",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [
+      "tblMoldBorrow"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "frmMOLDBORROW",
+    "object_type": "FORM",
+    "record_source": "tblMolddesign",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [
+      "tblMoldDesign"
+    ],
+    "subforms": [
+      "Form.frmMOLDBORROWSubList",
+      "Form.frmMOLDBORROWSubCertificate"
+    ]
+  },
+  {
+    "object_name": "frmExportCSV",
+    "object_type": "FORM",
+    "record_source": "",
+    "vba_module": "Form_frmExportCSV",
+    "vba_line_count": 252,
+    "vba_side_effects": [
+      "READ_ONLY"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [
+      "tblWorkLog",
+      "tblEmployee",
+      "statuslogs",
+      "tblLocationLog",
+      "tblProcessingDeadline",
+      "tblRack",
+      "tblCutter",
+      "tblTray",
+      "tblMoldDesign",
+      "tblShipLog",
+      "tblRackLayer",
+      "tblProcessingItem",
+      "tblTeflonLog",
+      "destinations",
+      "tblMold",
+      "tblJOB",
+      "tblCompany",
+      "tblCustomer",
+      "tblMoldCutter"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "frmMOLDProcessingSubCutter",
+    "object_type": "FORM",
+    "record_source": "SELECT tblCutter.CutterNo, tblCutter.CutterName, tblCutter.CutterNote, tblMoldDe",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [
+      "tblCutter"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "frmsTeflonLog",
+    "object_type": "FORM",
+    "record_source": "tblTeflonLog",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [
+      "tblTeflonLog"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "frmMOLDsearchSubTeflonLog",
+    "object_type": "FORM",
+    "record_source": "tblTeflonLog",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [
+      "tblTeflonLog"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "frmMOLDProcessingSubStatuslogs",
+    "object_type": "FORM",
+    "record_source": "statuslogs",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [
+      "statuslogs"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "frmAddFileLink",
+    "object_type": "FORM",
+    "record_source": "",
+    "vba_module": "Form_frmAddFileLink",
+    "vba_line_count": 685,
+    "vba_side_effects": [
+      "RECORD_DELETE",
+      "RECORD_INSERT",
+      "READ_ONLY",
+      "RECORD_UPDATE"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [],
+    "subforms": []
+  },
+  {
+    "object_name": "frmNewJobDialog",
+    "object_type": "FORM",
+    "record_source": "",
+    "vba_module": "Form_frmNewJobDialog",
+    "vba_line_count": 116,
+    "vba_side_effects": [
+      "UI_NAVIGATION"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [
+      "tblMold",
+      "tblMoldDesign",
+      "tblJOB"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "frmMOLDsearchSubStatuslog",
+    "object_type": "FORM",
+    "record_source": "statuslogs",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [
+      "statuslogs"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "frmSTAKINGsearch",
+    "object_type": "FORM",
+    "record_source": "SQL",
+    "vba_module": "Form_frmSTAKINGsearch",
+    "vba_line_count": 257,
+    "vba_side_effects": [
+      "READ_ONLY"
+    ],
+    "referenced_queries": [
+      "frmSTAKINGsearch_SubDesignInfo"
+    ],
+    "all_affected_tables": [
+      "tblProcessingDeadline",
+      "tblMoldDesign",
+      "tblJOB"
+    ],
+    "subforms": [
+      "Form.frmSTAKINGsearch_SubDesignInfo"
+    ]
+  },
+  {
+    "object_name": "frmSTAKINGsearch_SubDesignInfo",
+    "object_type": "FORM",
+    "record_source": "SELECT tblMoldDesign.MoldDesignName, tblJOB.JobName, tblJOB.JobCode, tblJOB.JobI",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [
+      "tblMoldDesign",
+      "tblJOB"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "KyHanGcFrms3",
+    "object_type": "FORM",
+    "record_source": "SELECT tblProcessingDeadline.*, tblJOB.JobName FROM tblJOB INNER JOIN tblProcess",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [
+      "tblProcessingDeadline",
+      "tblJOB"
+    ],
+    "subforms": [
+      "Form.ThoiLuongGcFrms3",
+      "Report.NhatKyGiaCong_Tomtat",
+      "Form.ThoiLuongGcFrms1"
+    ]
+  },
+  {
+    "object_name": "frmOrderLineEntry",
+    "object_type": "FORM",
+    "record_source": "tblOrderLine",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [],
+    "subforms": []
+  },
+  {
+    "object_name": "frmOrderEntry",
+    "object_type": "FORM",
+    "record_source": "tblOrderHead",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [],
+    "subforms": []
+  },
+  {
+    "object_name": "frmProductionPlanStepEntry",
+    "object_type": "FORM",
+    "record_source": "tblProductionPlanStep",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [],
+    "subforms": []
+  },
+  {
+    "object_name": "frmProductionResultEntry",
+    "object_type": "FORM",
+    "record_source": "tblProductionResult",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [],
+    "subforms": []
+  },
+  {
+    "object_name": "Production Plan Step Entry",
+    "object_type": "FORM",
+    "record_source": "tblProductionPlanStep",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [],
+    "subforms": []
+  },
+  {
+    "object_name": "frmTrayOrderEntry",
+    "object_type": "FORM",
+    "record_source": "tblTrayOrder",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [
+      "tblTrayOrder"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "frmFormedTrayEntry",
+    "object_type": "FORM",
+    "record_source": "tblFormedTray",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [],
+    "subforms": []
+  },
+  {
+    "object_name": "frmOrderHeadEntry",
+    "object_type": "FORM",
+    "record_source": "tblOrderHead",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [],
+    "subforms": []
+  },
+  {
+    "object_name": "tblCNC_Schedule",
+    "object_type": "FORM",
+    "record_source": "tblCNC_Schedule",
+    "vba_module": "Form_tblCNC_Schedule",
+    "vba_line_count": 26,
+    "vba_side_effects": [
+      "READ_ONLY"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [],
+    "subforms": []
+  },
+  {
+    "object_name": "Form1",
+    "object_type": "FORM",
+    "record_source": "",
+    "vba_module": "Form_Form1",
+    "vba_line_count": 26,
+    "vba_side_effects": [
+      "READ_ONLY"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [],
+    "subforms": [
+      "Form.frmMoldTaskPlan_Subform"
+    ]
+  },
+  {
+    "object_name": "frmMoldWBS_Main",
+    "object_type": "FORM",
+    "record_source": "",
+    "vba_module": "Form_frmMoldWBS_Main",
+    "vba_line_count": 26,
+    "vba_side_effects": [
+      "READ_ONLY"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [],
+    "subforms": [
+      "Form.frmMoldTaskPlan_Subform"
+    ]
+  },
+  {
+    "object_name": "SHIJISHORpt",
+    "object_type": "REPORT",
+    "record_source": "BaoCaoNoiDungGcQry",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [
+      "BaoCaoNoiDungGcQry"
+    ],
+    "all_affected_tables": [
+      "tblProcessingCode",
+      "tblWorkLog",
+      "tblProcessingDeadline",
+      "tblEmployee",
+      "tblJOB"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "BangTenKhuonJAE2Rpt",
+    "object_type": "REPORT",
+    "record_source": "tblMoldDesign",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [
+      "tblMoldDesign"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "rptLocation",
+    "object_type": "REPORT",
+    "record_source": "SELECT tblMold.MoldName, tblRackLayer.RackLayerNumber, tblRack.RackID, tblRack.R",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [
+      "tblMold",
+      "tblRack",
+      "tblRackLayer"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "BaoCaoChoMuonThietBiRpt",
+    "object_type": "REPORT",
+    "record_source": "Q_KANAGATA",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [
+      "Q_KANAGATA"
+    ],
+    "all_affected_tables": [
+      "tblResponsiblePerson",
+      "tblMold",
+      "tblMoldDesign",
+      "tblJOB"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "FuguaiRpt",
+    "object_type": "REPORT",
+    "record_source": "FuguaiQry",
+    "vba_module": "Report_FuguaiRpt",
+    "vba_line_count": 5,
+    "vba_side_effects": [
+      "READ_ONLY"
+    ],
+    "referenced_queries": [
+      "FuguaiQry"
+    ],
+    "all_affected_tables": [],
+    "subforms": []
+  },
+  {
+    "object_name": "DanhSachDaoCatTheoABCRpt",
+    "object_type": "REPORT",
+    "record_source": "DanhSachDaoCatTheoAbcQry",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [
+      "DanhSachDaoCatTheoAbcQry"
+    ],
+    "all_affected_tables": [
+      "tblRack",
+      "tblCutter",
+      "tblMoldDesign",
+      "tblCustomer",
+      "tblMoldCutter",
+      "tblRackLayer"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "Copy Of R_Nippo",
+    "object_type": "REPORT",
+    "record_source": "Q_Nippo_Print",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [],
+    "subforms": []
+  },
+  {
+    "object_name": "DatHangVT_TheoVtRpt",
+    "object_type": "REPORT",
+    "record_source": "Q_DatHangVT_TimKiem",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [],
+    "subforms": []
+  },
+  {
+    "object_name": "NhatKyGiaCong_Tomtat",
+    "object_type": "REPORT",
+    "record_source": "Nippo_Today_shanai_tomTatQry",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [
+      "Nippo_Today_shanai_tomTatQry"
+    ],
+    "all_affected_tables": [
+      "tblProcessingCode",
+      "tblWorkLog",
+      "tblProcessingDeadline",
+      "tblEmployee",
+      "tblJOB",
+      "tblMoldDesign"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "DatHangVtRpt",
+    "object_type": "REPORT",
+    "record_source": "Q_DatHangVT",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [],
+    "subforms": []
+  },
+  {
+    "object_name": "ChuumonshoRpt",
+    "object_type": "REPORT",
+    "record_source": "ChuumonshoQry",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [
+      "ChuumonshoQry"
+    ],
+    "all_affected_tables": [
+      "DatHangVTTbl",
+      "tblEmployee",
+      "VatTuTbl"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "BaoCaoDoThiRpt",
+    "object_type": "REPORT",
+    "record_source": "",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [],
+    "subforms": []
+  },
+  {
+    "object_name": "Nippo_Final_DuyenRpt",
+    "object_type": "REPORT",
+    "record_source": "Nippo_Today_shanaiQry",
+    "vba_module": "Report_Nippo_Final_DuyenRpt",
+    "vba_line_count": 83,
+    "vba_side_effects": [
+      "UI_NAVIGATION"
+    ],
+    "referenced_queries": [
+      "Nippo_Today_shanaiQry"
+    ],
+    "all_affected_tables": [
+      "tblProcessingCode",
+      "tblWorkLog",
+      "tblProcessingDeadline",
+      "tblEmployee",
+      "tblJOB",
+      "tblProcessingStatus",
+      "tblMoldDesign"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "Nippo_Final_ThoanRpt",
+    "object_type": "REPORT",
+    "record_source": "Nippo_Today_shanaiQry",
+    "vba_module": "Report_Nippo_Final_ThoanRpt",
+    "vba_line_count": 84,
+    "vba_side_effects": [
+      "UI_NAVIGATION"
+    ],
+    "referenced_queries": [
+      "Nippo_Today_shanaiQry"
+    ],
+    "all_affected_tables": [
+      "tblProcessingCode",
+      "tblWorkLog",
+      "tblProcessingDeadline",
+      "tblEmployee",
+      "tblJOB",
+      "tblProcessingStatus",
+      "tblMoldDesign"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "DatHangVT_TimKiemRpt",
+    "object_type": "REPORT",
+    "record_source": "DatHangVT_TimKiemQry",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [
+      "DatHangVT_TimKiemQry"
+    ],
+    "all_affected_tables": [
+      "DatHangVTTbl",
+      "VatTuTbl"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "BaocaoChoMuonThietBi_DieuKienRpt",
+    "object_type": "REPORT",
+    "record_source": "BaoCaoXuatKhuon_CatAnhQry",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [
+      "BaoCaoXuatKhuon_CatAnhQry"
+    ],
+    "all_affected_tables": [
+      "tblTray",
+      "tblResponsiblePerson",
+      "tblJOB"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "Copy Of R_PhieuDH",
+    "object_type": "REPORT",
+    "record_source": "Q_Phieu_DH",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [],
+    "subforms": []
+  },
+  {
+    "object_name": "Nippo3_Date",
+    "object_type": "REPORT",
+    "record_source": "qryWorkLogByDate",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [
+      "qryWorkLogByDate"
+    ],
+    "all_affected_tables": [
+      "tblProcessingCode",
+      "tblWorkLog",
+      "tblProcessingDeadline",
+      "tblEmployee",
+      "tblJOB",
+      "tblProcessingStatus",
+      "tblMoldDesign"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "Copy Of Nippo3",
+    "object_type": "REPORT",
+    "record_source": "Q_Nippo_Print",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [],
+    "subforms": []
+  },
+  {
+    "object_name": "Zangyou_ThisMonthRpt",
+    "object_type": "REPORT",
+    "record_source": "Zangyou_thisMonthQry",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [
+      "Zangyou_thisMonthQry"
+    ],
+    "all_affected_tables": [
+      "tblProcessingCode",
+      "tblWorkLog",
+      "tblProcessingDeadline",
+      "tblEmployee",
+      "tblJOB"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "BaoCaoChoMuonThietBi_CatAnhRpt",
+    "object_type": "REPORT",
+    "record_source": "BaoCaoXuatKhuon_CatAnhQry",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [
+      "BaoCaoXuatKhuon_CatAnhQry"
+    ],
+    "all_affected_tables": [
+      "tblTray",
+      "tblResponsiblePerson",
+      "tblJOB"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "BaoCaoThangRpt",
+    "object_type": "REPORT",
+    "record_source": "BaoCaoThang",
+    "vba_module": "Report_BaoCaoThangRpt",
+    "vba_line_count": 5,
+    "vba_side_effects": [
+      "READ_ONLY"
+    ],
+    "referenced_queries": [
+      "BaoCaoThang"
+    ],
+    "all_affected_tables": [],
+    "subforms": []
+  },
+  {
+    "object_name": "BangTenKhuon_SmallRpt",
+    "object_type": "REPORT",
+    "record_source": "SELECT T_JOB.*, T_ThietKe.* FROM T_ThietKe INNER JOIN T_JOB ON T_ThietKe.IDThiet",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [],
+    "subforms": []
+  },
+  {
+    "object_name": "ThoiLuongGC_TinhLuong_thisMonthRpt",
+    "object_type": "REPORT",
+    "record_source": "ThoiLuongGC_thisMonthQry",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [
+      "ThoiLuongGC_thisMonthQry"
+    ],
+    "all_affected_tables": [
+      "tblProcessingCode",
+      "tblWorkLog",
+      "tblProcessingDeadline",
+      "tblEmployee",
+      "tblJOB"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "ThoiLuongGC_TinhLuong_MonthRpt",
+    "object_type": "REPORT",
+    "record_source": "ThoiLuongGC_thisMonthQry",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [
+      "ThoiLuongGC_thisMonthQry"
+    ],
+    "all_affected_tables": [
+      "tblProcessingCode",
+      "tblWorkLog",
+      "tblProcessingDeadline",
+      "tblEmployee",
+      "tblJOB"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "DatHangVT_DateRpt",
+    "object_type": "REPORT",
+    "record_source": "DatHangVtQry",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [
+      "DatHangVtQry"
+    ],
+    "all_affected_tables": [
+      "DatHangVTTbl",
+      "VatTuTbl"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "DanhSachJobRpt",
+    "object_type": "REPORT",
+    "record_source": "SELECT [T_KH].TenKH, [T_Nhom].[TenNhom], [T_Nhom].MaSoDonHang, [T_NguoiPhatHanh]",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [],
+    "subforms": []
+  },
+  {
+    "object_name": "Copy Of R_PhieuXuatKhuon",
+    "object_type": "REPORT",
+    "record_source": "Q_PhieuMuonKhuon",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [],
+    "subforms": []
+  },
+  {
+    "object_name": "Copy Of R_BaoCaoXuatKhuon",
+    "object_type": "REPORT",
+    "record_source": "Q_KANAGATA",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [
+      "Q_KANAGATA"
+    ],
+    "all_affected_tables": [
+      "tblResponsiblePerson",
+      "tblMold",
+      "tblMoldDesign",
+      "tblJOB"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "ChungNhanMuonKhuonATSrpt",
+    "object_type": "REPORT",
+    "record_source": "",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [],
+    "subforms": []
+  },
+  {
+    "object_name": "BangDuDinh_FullRpt",
+    "object_type": "REPORT",
+    "record_source": "BangDuDinh_FullQry",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [
+      "BangDuDinh_FullQry"
+    ],
+    "all_affected_tables": [
+      "tblProcessingDeadline",
+      "tblProcessingItem",
+      "tblProcessingStatus",
+      "tblJOB"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "KyHanGC_ThoiLuongGC_Rpts",
+    "object_type": "REPORT",
+    "record_source": "SELECT [tblProcessingDeadline].[ProcessingDeadlineID], Sum(IIf([ProcessingTime]",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [
+      "tblProcessingDeadline"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "BangDuDinh_Full1Rpt",
+    "object_type": "REPORT",
+    "record_source": "Q_BangDuDinh_Full",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [],
+    "subforms": []
+  },
+  {
+    "object_name": "BaoCaoThangNayRpt",
+    "object_type": "REPORT",
+    "record_source": "qryProductionReportForThisMonth",
+    "vba_module": "Report_BaoCaoThangNayRpt",
+    "vba_line_count": 5,
+    "vba_side_effects": [
+      "READ_ONLY"
+    ],
+    "referenced_queries": [
+      "qryProductionReportForThisMonth"
+    ],
+    "all_affected_tables": [
+      "tblProcessingItem",
+      "tblMoldDesign",
+      "tblJOB"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "rptJobTime_tomtat",
+    "object_type": "REPORT",
+    "record_source": "SELECT tblJOB.JobName, tblItemType.ItemTypeName, tblJOB.JobCode, tblJOB.JobID, t",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [
+      "tblItemType",
+      "tblJOB"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "BangDuDinh_ThismonthRpt",
+    "object_type": "REPORT",
+    "record_source": "BangDuDinh_FullQry",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [
+      "BangDuDinh_FullQry"
+    ],
+    "all_affected_tables": [
+      "tblProcessingDeadline",
+      "tblProcessingItem",
+      "tblProcessingStatus",
+      "tblJOB"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "Nippo_AllRpt",
+    "object_type": "REPORT",
+    "record_source": "Nippo_FullQry",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [
+      "Nippo_FullQry"
+    ],
+    "all_affected_tables": [
+      "tblProcessingCode",
+      "tblWorkLog",
+      "tblProcessingDeadline",
+      "tblEmployee",
+      "tblJOB",
+      "tblMoldDesign"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "BaoCaoFullRpt",
+    "object_type": "REPORT",
+    "record_source": "Q_BAOCAO_FULL",
+    "vba_module": "Report_BaoCaoFullRpt",
+    "vba_line_count": 5,
+    "vba_side_effects": [
+      "READ_ONLY"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [],
+    "subforms": []
+  },
+  {
+    "object_name": "KyHanGC_ThoiLuongGC_Sub_V3Rpts",
+    "object_type": "REPORT",
+    "record_source": "SELECT [tblProcessingDeadline].[ProcessingDeadlineID], Sum(IIf([ProcessingTime]",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [
+      "tblProcessingDeadline"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "BaoCaoDoThi2Rpt",
+    "object_type": "REPORT",
+    "record_source": "",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [],
+    "subforms": []
+  },
+  {
+    "object_name": "BangTenKhuonYCMrpt",
+    "object_type": "REPORT",
+    "record_source": "tblMoldDesign",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [
+      "tblMoldDesign"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "DSkhuon_DHganNhatRpt",
+    "object_type": "REPORT",
+    "record_source": "DSkhuon_DHgannhatQry",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [
+      "DSkhuon_DHgannhatQry"
+    ],
+    "all_affected_tables": [
+      "tblCustomer",
+      "tblMold",
+      "tblRack",
+      "tblRackLayer"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "BaoCaoThang_V2Rpt",
+    "object_type": "REPORT",
+    "record_source": "Q_BaoCaoThang",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [],
+    "subforms": []
+  },
+  {
+    "object_name": "BaoCaoChoMuonThietBiJAErpt",
+    "object_type": "REPORT",
+    "record_source": "PhieuMuonKhuonQry",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [],
+    "subforms": []
+  },
+  {
+    "object_name": "Nippo_today_SakataRpt",
+    "object_type": "REPORT",
+    "record_source": "qryDailyWorkLog_Sakata",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [
+      "qryDailyWorkLog_Sakata"
+    ],
+    "all_affected_tables": [
+      "tblProcessingCode",
+      "tblWorkLog",
+      "tblProcessingDeadline",
+      "tblEmployee",
+      "tblJOB",
+      "tblProcessingStatus",
+      "tblMoldDesign"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "ThoiGianGCJOBrpt",
+    "object_type": "REPORT",
+    "record_source": "BaoCaoNoiDungGcQry",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [
+      "BaoCaoNoiDungGcQry"
+    ],
+    "all_affected_tables": [
+      "tblProcessingCode",
+      "tblWorkLog",
+      "tblProcessingDeadline",
+      "tblEmployee",
+      "tblJOB"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "ChungNhanMuonKhuonATSRpt2",
+    "object_type": "REPORT",
+    "record_source": "SELECT KhuonThietKeTbl.*, tblJOB.*, Day([NgayLamPhieuMuon]) AS PhieuMuonNgay, Mo",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [
+      "tblJOB"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "ThoiLuongGC_TinhLuongRpt",
+    "object_type": "REPORT",
+    "record_source": "qryProcessingTimeThoan",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [
+      "qryProcessingTimeThoan"
+    ],
+    "all_affected_tables": [
+      "tblProcessingCode",
+      "tblWorkLog",
+      "tblProcessingDeadline",
+      "tblJOB"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "TeflonRpt",
+    "object_type": "REPORT",
+    "record_source": "TeflonQry",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [
+      "TeflonQry"
+    ],
+    "all_affected_tables": [
+      "tblJOB"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "BangTenKhuonJAERpt",
+    "object_type": "REPORT",
+    "record_source": "tblMoldDesign",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [
+      "tblMoldDesign"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "rptMoldInfoSheetCommon",
+    "object_type": "REPORT",
+    "record_source": "SELECT tblMoldDesign.*, tblMoldBorrow.MoldBorrowID, tblMoldBorrow.CustomerID, tb",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [
+      "tblMoldBorrow",
+      "tblMoldDesign"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "ThoiLuongGC_JOB_SHIJISHO SubRpt",
+    "object_type": "REPORT",
+    "record_source": "SELECT [T_KyHanGC].IDJobNo, [T_KyHanGC].IDCapDC, [T_KyHanGC].IDTinhTrangGC, Sum(",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [],
+    "subforms": []
+  },
+  {
+    "object_name": "AlarmRpt2",
+    "object_type": "REPORT",
+    "record_source": "T_Alarm",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [],
+    "subforms": []
+  },
+  {
+    "object_name": "ThoiLuongGC_VatTu_sakataRpt",
+    "object_type": "REPORT",
+    "record_source": "ThoiLuongGC_VatTu_sakataQry",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [
+      "ThoiLuongGC_VatTu_sakataQry"
+    ],
+    "all_affected_tables": [
+      "tblWorkLog",
+      "tblProcessingDeadline",
+      "tblJOB",
+      "VatTuSDtbl",
+      "VatTuTbl"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "rptProductionReportForThisMonth",
+    "object_type": "REPORT",
+    "record_source": "qryProductionReportForThisMonth",
+    "vba_module": "Report_rptProductionReportForThisMonth",
+    "vba_line_count": 84,
+    "vba_side_effects": [
+      "UI_NAVIGATION"
+    ],
+    "referenced_queries": [
+      "qryProductionReportForThisMonth"
+    ],
+    "all_affected_tables": [
+      "tblProcessingItem",
+      "tblMoldDesign",
+      "tblJOB"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "DanhSachDaoCatTheoAbcDayDuRpt",
+    "object_type": "REPORT",
+    "record_source": "DanhSachDaoCatTheoAbcQry",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [
+      "DanhSachDaoCatTheoAbcQry"
+    ],
+    "all_affected_tables": [
+      "tblRack",
+      "tblCutter",
+      "tblMoldDesign",
+      "tblCustomer",
+      "tblMoldCutter",
+      "tblRackLayer"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "rptCutterListABC",
+    "object_type": "REPORT",
+    "record_source": "DanhSachDaoCatTheoAbcQry",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [
+      "DanhSachDaoCatTheoAbcQry"
+    ],
+    "all_affected_tables": [
+      "tblRack",
+      "tblCutter",
+      "tblMoldDesign",
+      "tblCustomer",
+      "tblMoldCutter",
+      "tblRackLayer"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "rptCutterListABCfull",
+    "object_type": "REPORT",
+    "record_source": "qryCutterListABCfull",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [
+      "qryCutterListABCfull"
+    ],
+    "all_affected_tables": [
+      "tblRack",
+      "tblCutter",
+      "tblMoldDesign",
+      "tblCustomer",
+      "tblMoldCutter",
+      "tblRackLayer"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "rptMoldInfoSheet1",
+    "object_type": "REPORT",
+    "record_source": "tblMoldDesign",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [
+      "tblMoldDesign"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "rptMoldArrangementABC",
+    "object_type": "REPORT",
+    "record_source": "qryMoldArrangementABC",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [
+      "qryMoldArrangementABC"
+    ],
+    "all_affected_tables": [
+      "tblCustomer",
+      "tblMold",
+      "tblRack",
+      "tblRackLayer"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "rptMoldInfoSheetJAE01",
+    "object_type": "REPORT",
+    "record_source": "SELECT tblMoldBorrow.*, tblMoldDesign.MoldDesignLength, tblMoldDesign.MoldDesign",
+    "vba_module": "Report_rptMoldInfoSheetJAE01",
+    "vba_line_count": 46,
+    "vba_side_effects": [
+      "EXTERNAL_FILE_IO"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [
+      "tblMoldBorrow",
+      "tblMoldDesign"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "rptMoldBorrowPicture",
+    "object_type": "REPORT",
+    "record_source": "SELECT tblMoldDesign.MoldDesignName, tblMoldDesign.MoldDesignLength, tblMoldDesi",
+    "vba_module": "Report_rptMoldBorrowPicture",
+    "vba_line_count": 17,
+    "vba_side_effects": [
+      "READ_ONLY"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [
+      "tblMoldDesign"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "rptCutterDetails",
+    "object_type": "REPORT",
+    "record_source": "tblCutter",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [
+      "tblCutter"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "rptDailyWorkLog",
+    "object_type": "REPORT",
+    "record_source": "SELECT tblEmployee.EmployeeName, tblProcessingCode.ProcessingName, tblJOB.JobNam",
+    "vba_module": "Report_rptDailyWorkLog",
+    "vba_line_count": 84,
+    "vba_side_effects": [
+      "UI_NAVIGATION"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [
+      "tblProcessingCode",
+      "tblEmployee",
+      "tblJOB"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "rptWorkLogDuyen",
+    "object_type": "REPORT",
+    "record_source": "SELECT tblWorkLog.WorkLogID, tblJOB.JobName, tblWorkLog.ProcessingTime, tblWorkL",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [
+      "tblWorkLog",
+      "tblJOB"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "rptProcessingTimeThoan",
+    "object_type": "REPORT",
+    "record_source": "qryProcessingTimeThoan",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [
+      "qryProcessingTimeThoan"
+    ],
+    "all_affected_tables": [
+      "tblProcessingCode",
+      "tblWorkLog",
+      "tblProcessingDeadline",
+      "tblJOB"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "rptProcessingTimeDuyen",
+    "object_type": "REPORT",
+    "record_source": "qryProcessingTimeDuyen",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [
+      "qryProcessingTimeDuyen"
+    ],
+    "all_affected_tables": [
+      "tblProcessingCode",
+      "tblWorkLog",
+      "tblProcessingDeadline",
+      "tblJOB"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "rptCutterListABCforRack",
+    "object_type": "REPORT",
+    "record_source": "qryCutterListABCfull",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [
+      "qryCutterListABCfull"
+    ],
+    "all_affected_tables": [
+      "tblRack",
+      "tblCutter",
+      "tblMoldDesign",
+      "tblCustomer",
+      "tblMoldCutter",
+      "tblRackLayer"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "rptCutterListByNo",
+    "object_type": "REPORT",
+    "record_source": "qryCutterListByNo",
+    "vba_module": null,
+    "vba_line_count": 0,
+    "vba_side_effects": [
+      "NONE"
+    ],
+    "referenced_queries": [
+      "qryCutterListByNo"
+    ],
+    "all_affected_tables": [
+      "tblCutter",
+      "tblMoldDesign",
+      "tblMoldCutter"
+    ],
+    "subforms": []
+  },
+  {
+    "object_name": "rptMoldBorrowPictureSingle",
+    "object_type": "REPORT",
+    "record_source": "SELECT tblMoldDesign.MoldDesignName, tblMoldDesign.MoldDesignLength, tblMoldDesi",
+    "vba_module": "Report_rptMoldBorrowPictureSingle",
+    "vba_line_count": 17,
+    "vba_side_effects": [
+      "READ_ONLY"
+    ],
+    "referenced_queries": [],
+    "all_affected_tables": [
+      "tblMoldDesign"
+    ],
+    "subforms": []
+  }
+]

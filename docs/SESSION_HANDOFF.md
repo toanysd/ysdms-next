@@ -630,3 +630,28 @@ Bạn là AN (Executing Agent). Đây là dự án **ysdms-next** — hệ thố
   6. 27 Jobs mới & 81 Steps mới: Toàn bộ phát sinh từ cuối tháng 8 đến 06/10/2026.
 - **Cam kết an toàn:** 100% Chỉ-đọc, 0 thao tác ghi Supabase Production. TypeScript `npx tsc --noEmit` đạt 0 errors.
 
+## 23. AUDIT TOÀN DIỆN LOGIC ỨNG DỤNG ACCESS & TRÍCH XUẤT TĨNH (2026-10-06 16:15 JST)
+
+### 23.1. Căn cứ & Cơ chế Thực thi
+- **Phê duyệt chỉ đạo:** Minh Chủ Thoan [Stamp: 2026-10-06 16:02 JST] & PE [Stamp: 2026-10-06 16:01 JST].
+- **Cơ chế thi công:** 100% Chế độ Chỉ-Đọc Tĩnh (Static Extraction — Read-Only Mode) thông qua Microsoft DAO 3.6 / ACE (`DAO.DBEngine.120`) và Access Object Model (`Access.Application.SaveAsText` & `VBE.VBProjects`).
+- **An toàn tuyệt đối:** 0 Macro chạy, 0 AutoExec, 0 RunSQL/Execute, 0 UI tương tác. Tuyệt đối **0 ghi Supabase Production**, chưa tạo bảng staging, chưa chạy migration. File Access vật lý nguyên vẹn 612,442,112 bytes (SHA-256: `1cb7cb09...`).
+
+### 23.2. Hoàn thành 4 Bộ Hồ Sơ Trích Xuất Tĩnh (Artifacts)
+1. `scripts/access_query_inventory.json` (339 KB): Đầy đủ 585 QueryDefs (107 Named Queries, 478 form/report embedded queries). 569 READ_ONLY, 16 Action Queries (7 INSERT INTO, 9 UPDATE, 0 DELETE).
+2. `scripts/access_vba_inventory.json` (291 KB): Đầy đủ 180 VBComponents (82 Standard, 7 Class, 91 Form/Report modules), 28,020 dòng mã nguồn VBA, 837 procedures. Phân loại tác động: 671 READ_ONLY, 60 UI_NAVIGATION, 49 RECORD_INSERT, 27 RECORD_UPDATE, 13 RECORD_DELETE, 17 EXTERNAL_FILE_IO.
+3. `scripts/access_form_report_inventory.json` (76 KB): Danh mục 236 đối tượng (166 Forms, 70 Reports) kèm đầy đủ cấu trúc Subforms, nút bấm và liên kết sự kiện.
+4. `scripts/access_logic_dependency_graph.json` (95 KB): Đồ thị phụ thuộc logic đa chiều (Form/Report $\rightarrow$ RecordSource $\rightarrow$ Referenced Tables/Queries $\rightarrow$ Event Handlers $\rightarrow$ Target Tables Affected).
+
+### 23.3. Kết quả Chuyên sâu 5 Quy trình Vận hành Xưởng
+- **Quy trình 1 (Chỉ thị & Lập lịch gia công):** Khám phá cockpit `BangDuDinhFrm` + `BangDuDinh_FullQry`. State machine `tblProcessingStatus` phân cấp 2 pha: Chuẩn bị phôi (`ZR` $\rightarrow$ `ZN` $\rightarrow$ `ZF`) và Gia công (`1.プログラム` $\rightarrow$ `2.機械加工` $\rightarrow$ `3.穴あけ` $\rightarrow$ `4.ミガキ` $\rightarrow$ `5.プラグ作成` $\rightarrow$ `6.ネル貼り` $\rightarrow$ `F.完了`). Thuật toán `FindCAVIDFlexible` tìm kiếm lòng khuôn với dung sai $\pm 0.1$ mm.
+- **Quy trình 2 (Nippo & Giờ công):** Hệ thống mã công việc `tblProcessingCode` (0–999). Giải mã hoàn toàn 94 work logs không có JobID: là các tác vụ nội bộ 5S (50), bảo dưỡng máy (54), dọn kho khuôn (53), vệ sinh khuôn (55).
+- **Quy trình 3 (Đặt phôi nhôm & Vật tư cơ khí):** Bộ 3 bảng `DatHangVTTbl` (1,396 dòng), `VatTuTbl` (723 dòng), `VatTuSDtbl` (64 dòng). Công thức tính đơn giá nhôm theo khối lượng riêng $2.8\text{ g/cm}^3$ trong `ChuumonshoQry`: `DonGia * 1000000 / (2.8 * t * W * L)`.
+- **Quy trình 4 (Mượn/Trả khuôn & Bàn giao JAE/ATS):** 209 hồ sơ trong `tblMoldBorrow` chứa đầy đủ thông số bản vẽ, mã quản lý tài sản, bước tiến, tuổi thọ số lần dập, đơn giá tài sản và hình ảnh biên bản bàn giao.
+- **Quy trình 5 (Bảo dưỡng, Phủ Teflon & Điều chuyển vị trí kệ):** Bắt sự kiện tự động đổi kệ tức thời trong `ModCutterLogRackLayerChange`, chu kỳ 3 bước mạ phủ Teflon xưởng ngoài (`ModTeflonSync`).
+
+### 23.4. Tài liệu & Trạng thái Hệ thống
+- **Báo cáo toàn diện:** `docs/reports/2026-10-06_access_application_logic_audit_report.md`.
+- **Kiểm tra TypeScript:** `npx tsc --noEmit` đạt **0 errors**.
+- **Trạng thái Git:** Sẵn sàng commit tài liệu và JSON artifacts lên kho mã nguồn.
+

@@ -1,0 +1,3127 @@
+[
+  {
+    "object_name": "frmMoldTaskPlan_Subform",
+    "object_type": "FORM",
+    "record_source": "tblMoldTaskPlan",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "SapxepKhuon_TangDeKhuon Subform",
+    "object_type": "FORM",
+    "record_source": "tblRackLayer",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": [
+      {
+        "event": "OnCurrent",
+        "binding": "[Event Procedure]"
+      }
+    ]
+  },
+  {
+    "object_name": "TehaiAlumi Subform",
+    "object_type": "FORM",
+    "record_source": "SELECT tblProcessingDeadline.*, [tblItemType].IDDC, [tblItemType].[ItemTypeName]",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "SapXepKhuonPhanPhoiNukigataVaKhuon Subform",
+    "object_type": "FORM",
+    "record_source": "SELECT tblMoldCutter.*, tblMoldDesign.MoldDesignName, tblCutter.CutterNo FROM (t",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "frmMOLDlocationSubRackLayer",
+    "object_type": "FORM",
+    "record_source": "SELECT [tblRackLayer].[RackLayerID], [tblRackLayer].[RackID], [tblRackLayer].[Ra",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": [
+      {
+        "event": "OnDblClick",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "OnClick",
+        "binding": "[Event Procedure]"
+      }
+    ]
+  },
+  {
+    "object_name": "Mage_T_NFrm",
+    "object_type": "FORM",
+    "record_source": "mage_Ttbl",
+    "subforms": [
+      "Form.Mage_T_N Subform"
+    ],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "NukigataTbl Subform",
+    "object_type": "FORM",
+    "record_source": "tblCutter",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "Mage_T_N Subform",
+    "object_type": "FORM",
+    "record_source": "SELECT [mage_Ntbl].IDNobi, [mage_Ntbl].IDChatLieu, [mage_Ntbl].IDt, [mage_Ntbl].",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "TehaiPlug Subform",
+    "object_type": "FORM",
+    "record_source": "SELECT tblProcessingDeadline.*, [tblItemType].IDDC, [tblItemType].[ItemTypeName]",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "Mage_NobiFrm",
+    "object_type": "FORM",
+    "record_source": "mage_ChatlieuTbl",
+    "subforms": [
+      "Form.Mage_T_NFrm",
+      "Form.Mage_Nobi Subform"
+    ],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "Mage_Nobi Subform",
+    "object_type": "FORM",
+    "record_source": "mage_Ntbl",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "QuanLyZaikoDH_Subform",
+    "object_type": "FORM",
+    "record_source": "DatHangTbl",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "SapxepKhuon_KH Subform",
+    "object_type": "FORM",
+    "record_source": "tblCustomer",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "F_ThoiLuongGC_VatTuSD Subform",
+    "object_type": "FORM",
+    "record_source": "SELECT VatTuSDtbl.*, [VatTuTbl].TenVatTu FROM VatTuTbl INNER JOIN VatTuSDtbl ON",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "BangDuDinhFrm",
+    "object_type": "FORM",
+    "record_source": null,
+    "subforms": [
+      "Form.YoteiStakingFrms",
+      "Form.YoteiMoldFrms",
+      "Report.Zangyou_ThisMonthRpt",
+      "Form.YoteiTeflonFrms",
+      "Form.YoteiPlugFrms",
+      "Form.YoteiMachineFrms"
+    ],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "NukigataLichSuGiaCongFrm",
+    "object_type": "FORM",
+    "record_source": "SELECT tblCutterLog.* FROM tblCutterLog;",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "NukigataSearch_CacJobTheoKhFrm",
+    "object_type": "FORM",
+    "record_source": "SoHieuKhuon_CacJobTheoKhQry",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "VatTu_ImgFrm",
+    "object_type": "FORM",
+    "record_source": "VatTuTbl",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "PhanPhoiNukigataVaKhuonTbl Subform",
+    "object_type": "FORM",
+    "record_source": "tblMoldCutter",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "FuguaiFrm",
+    "object_type": "FORM",
+    "record_source": "tblDefect",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "ThoiLuongGcFrms",
+    "object_type": "FORM",
+    "record_source": "tblWorkLog",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "ThoiLuongGcVatTuSdFrms",
+    "object_type": "FORM",
+    "record_source": "tblWorkLog",
+    "subforms": [
+      "Form.VatTuSdFrms"
+    ],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "MayFrms",
+    "object_type": "FORM",
+    "record_source": "SELECT tblItemType2.* FROM tblItemType2;",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": [
+      {
+        "event": "BeforeUpdate",
+        "binding": "[Event Procedure]"
+      }
+    ]
+  },
+  {
+    "object_name": "KyHanGcFrms",
+    "object_type": "FORM",
+    "record_source": "tblProcessingDeadline",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": [
+      {
+        "event": "BeforeUpdate",
+        "binding": "[Event Procedure]"
+      }
+    ]
+  },
+  {
+    "object_name": "YoteiPlugFrms",
+    "object_type": "FORM",
+    "record_source": "ListAllQry",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "SapXepKhuon_Vitrikhuon Subform2",
+    "object_type": "FORM",
+    "record_source": "SELECT tblMold.*, tblRack.*, tblCustomer.CustomerShortName, tblRackLayer.RackLay",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "ThoiLuongGcFrms1",
+    "object_type": "FORM",
+    "record_source": "tblWorkLog",
+    "subforms": [
+      "Form.F_ThoiLuongGC_VatTuSD Subform"
+    ],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": [
+      {
+        "event": "BeforeUpdate",
+        "binding": "[Event Procedure]"
+      }
+    ]
+  },
+  {
+    "object_name": "NukigataLichsudichuyenFrm",
+    "object_type": "FORM",
+    "record_source": "tblShipLog",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "KyHanGC_JikanFrm",
+    "object_type": "FORM",
+    "record_source": "SELECT [tblProcessingDeadline].[ProcessingDeadlineID], [tblProcessingDeadline].I",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "SapXepKhuon_Vitrikhuon Subform1",
+    "object_type": "FORM",
+    "record_source": "SELECT tblMold.MoldID, tblMold.CustomerID, tblMold.[MoldNumber], tblMold.RackLay",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "F_ThoiLuongGC Subform1",
+    "object_type": "FORM",
+    "record_source": "tblWorkLog",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": [
+      {
+        "event": "BeforeUpdate",
+        "binding": "[Event Procedure]"
+      }
+    ]
+  },
+  {
+    "object_name": "DinhHinhListRutGonFrm",
+    "object_type": "FORM",
+    "record_source": "tblForming",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "DinhHinhListFrm",
+    "object_type": "FORM",
+    "record_source": "tblForming",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "NhuaDinhHinhFrm",
+    "object_type": "FORM",
+    "record_source": "SELECT tblPLASTICforForming.*, tblPlasticMaterial.PlasticMaterial, tblPlasticCol",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "ListAllFrm",
+    "object_type": "FORM",
+    "record_source": "ListAllQry",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "KyHanGcFrm",
+    "object_type": "FORM",
+    "record_source": "tblProcessingDeadline",
+    "subforms": [
+      "Form.ThoiLuongGcFrms3",
+      "Form.ThoiLuongGcFrms1"
+    ],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "DinhHinhDetailFrm",
+    "object_type": "FORM",
+    "record_source": "tblForming",
+    "subforms": [
+      "Form.DinhHinhKetQuaListFrm"
+    ],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "QuanLyZaikodhFrm",
+    "object_type": "FORM",
+    "record_source": "tblProcessingDeadline",
+    "subforms": [
+      "Form.QuanLyZaikoDH_Subform"
+    ],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "MageFrm",
+    "object_type": "FORM",
+    "record_source": null,
+    "subforms": [
+      "Form.Mage_NobiFrm",
+      "Form.Mage_ChatLieuFrm"
+    ],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "Mage_ChatLieuFrm",
+    "object_type": "FORM",
+    "record_source": "mage_ChatlieuTbl",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "VatTu_ListFrm",
+    "object_type": "FORM",
+    "record_source": "VatTuTbl",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "DinhHinhKetQuaListFrm",
+    "object_type": "FORM",
+    "record_source": "tblFormedTray",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "SapXepKhuon_mainFrm",
+    "object_type": "FORM",
+    "record_source": "tblRack",
+    "subforms": [
+      "Form.SapXepKhuon_Vitrikhuon Subform1",
+      "Form.SapXepKhuon_VitrikhuonFrms",
+      "Form.SapxepKhuon_KH Subform",
+      "Form.SapxepKhuon_TangDeKhuon Subform",
+      "Form.SapXepKhuon_Vitrikhuon Subform3",
+      "Form.SapXepKhuon_Vitrikhuon Subform2"
+    ],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "MemoFrm",
+    "object_type": "FORM",
+    "record_source": "T_Memo",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "PhanPhoiNukigataVaKhuonFrms2",
+    "object_type": "FORM",
+    "record_source": "SELECT tblMoldCutter.*, tblMoldDesign.MoldDesignName FROM tblMoldDesign INNER JO",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": [
+      {
+        "event": "OnCurrent",
+        "binding": "[Event Procedure]"
+      }
+    ]
+  },
+  {
+    "object_name": "frmMOLDdetailsSubJobList",
+    "object_type": "FORM",
+    "record_source": "SELECT [tblJOB].[JobID], [tblJOB].[JobName], [tblJOB].[JobCodeAuto], [tblJOB].[M",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": [
+      {
+        "event": "OnDblClick",
+        "binding": "[Event Procedure]"
+      }
+    ]
+  },
+  {
+    "object_name": "frmJOBList",
+    "object_type": "FORM",
+    "record_source": "tblJob",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "ThoiLuongGcFrms2",
+    "object_type": "FORM",
+    "record_source": "tblWorkLog",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "SapXepKhuon_Vitrikhuon Subform3",
+    "object_type": "FORM",
+    "record_source": "SELECT tblMold.MoldID, tblMold.[MoldNumber], tblMold.RackLayerID, tblMold.MoldNo",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "YoteiTeflonFrms",
+    "object_type": "FORM",
+    "record_source": "qryTeflon",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "Job_LinkFrms",
+    "object_type": "FORM",
+    "record_source": "SELECT [FolderLink_PartTbl].IDPart, [FolderLink_PartTbl].IDFolderLink_Part, [Fol",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "ZaikoFrms",
+    "object_type": "FORM",
+    "record_source": "ZaikoTbl",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "ThoiLuongGcZaiKoFrms",
+    "object_type": "FORM",
+    "record_source": "tblWorkLog",
+    "subforms": [
+      "Form.ZaikoFrms"
+    ],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "Form2",
+    "object_type": "FORM",
+    "record_source": "tblProductionPlanStep",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": [
+      {
+        "event": "OnClick",
+        "binding": "=PPS_SaveActiveForm()"
+      }
+    ]
+  },
+  {
+    "object_name": "YoteiMoldFrms",
+    "object_type": "FORM",
+    "record_source": "ListAllQry",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": [
+      {
+        "event": "OnClick",
+        "binding": "[Event Procedure]"
+      }
+    ]
+  },
+  {
+    "object_name": "TehaiCutterFrms",
+    "object_type": "FORM",
+    "record_source": "SELECT tblProcessingDeadline.*, [tblItemType].IDDC, [tblItemType].[ItemTypeName]",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "VatTuSD_DatHangVtFrms",
+    "object_type": "FORM",
+    "record_source": "DatHangVTTbl",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "SapXepKhuon_VitrikhuonFrms",
+    "object_type": "FORM",
+    "record_source": "SELECT tblMold.RackLayerID, tblMold.MoldID, tblMold.MoldNotes, tblMold.LastOrder",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "PhanPhoiNukigataVaKhuonFrms",
+    "object_type": "FORM",
+    "record_source": "SELECT [tblMoldCutter].[MoldCutterID], [tblMoldCutter].IDsttKhuonDinhHinh, [tblM",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": [
+      {
+        "event": "OnCurrent",
+        "binding": "[Event Procedure]"
+      }
+    ]
+  },
+  {
+    "object_name": "PhanPhoiNukigataVaKhuonTbl Subform2",
+    "object_type": "FORM",
+    "record_source": "SELECT [tblMoldCutter].[MoldCutterID], [tblMoldCutter].IDnukigata, [tblMoldCutte",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "YoteiMachineFrms",
+    "object_type": "FORM",
+    "record_source": "ListAllQry",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "VatTuSdFrms",
+    "object_type": "FORM",
+    "record_source": "VatTuTbl",
+    "subforms": [
+      "Form.VatTuSD_DatHangVtFrms"
+    ],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "YoteiStakingFrms",
+    "object_type": "FORM",
+    "record_source": "ListAllQry",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "KyHanGcFrms2",
+    "object_type": "FORM",
+    "record_source": "SELECT tblProcessingDeadline.*, tblProcessingStatus.ProcessingStatus FROM tblPro",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "frmMoldSearchSubCutterDetails",
+    "object_type": "FORM",
+    "record_source": "SELECT tblMoldCutter.*, tblMoldDesign.MoldDesignCode, tblMoldDesign.DesignForPla",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "PhanPhoiNukigataVaKhuonTblFrm",
+    "object_type": "FORM",
+    "record_source": "tblCutter",
+    "subforms": [
+      "Form.PhanPhoiNukigataVaKhuonTbl Subform"
+    ],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "NukigataSearchMainFrm",
+    "object_type": "FORM",
+    "record_source": "tblCutter",
+    "subforms": [
+      "Form.NukigataSearchSubFrm",
+      "Form.PhanPhoiNukigataVaKhuonFrms"
+    ],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "frmCustomerDetails",
+    "object_type": "FORM",
+    "record_source": "tblCustomer",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "frmDAILYworkLogSubList",
+    "object_type": "FORM",
+    "record_source": "qryDAILYworkLogSubList",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "frmWorkLogSubList",
+    "object_type": "FORM",
+    "record_source": "qryWorkLogSubList",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": [
+      {
+        "event": "AfterUpdate",
+        "binding": "[Event Procedure]"
+      }
+    ]
+  },
+  {
+    "object_name": "frmShipLogSubList",
+    "object_type": "FORM",
+    "record_source": "SELECT [tblShipLog].[ShipID], [tblShipLog].[CustomerID], [tblShipLog].[ShipItemN",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": [
+      {
+        "event": "OnClick",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "OnDblClick",
+        "binding": "[Event Procedure]"
+      }
+    ]
+  },
+  {
+    "object_name": "ThoiLuongGcFrms3",
+    "object_type": "FORM",
+    "record_source": "tblWorkLog",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": [
+      {
+        "event": "BeforeUpdate",
+        "binding": "[Event Procedure]"
+      }
+    ]
+  },
+  {
+    "object_name": "frmMOLDshiplogSubList",
+    "object_type": "FORM",
+    "record_source": "tblShipLog",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": [
+      {
+        "event": "AfterUpdate",
+        "binding": "[Event Procedure]"
+      }
+    ]
+  },
+  {
+    "object_name": "NukigataSearch_JobLienquanFrm",
+    "object_type": "FORM",
+    "record_source": "SoHieuKhuon_JobLienQuan_KhQry",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": [
+      {
+        "event": "OnDblClick",
+        "binding": "[Event Procedure]"
+      }
+    ]
+  },
+  {
+    "object_name": "NukigataSearchSubFrm",
+    "object_type": "FORM",
+    "record_source": "NhapDuLieuNukigataQry",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "NukigataNhapDuLieu_JobLienQuanFrms",
+    "object_type": "FORM",
+    "record_source": "tblJOB",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "frmTeflonLog",
+    "object_type": "FORM",
+    "record_source": "tblMold",
+    "subforms": [
+      "Form.frmMOLDsearchSubTeflonLog"
+    ],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "frmMoldSearchSubShipmentLog",
+    "object_type": "FORM",
+    "record_source": "tblShipLog",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "SapXepKhuonNukigataSubFrm",
+    "object_type": "FORM",
+    "record_source": "NhapDuLieuNukigataQry",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "frmMOLDdetails",
+    "object_type": "FORM",
+    "record_source": "qryMOLDdetails",
+    "subforms": [
+      "Form.frmMOLDdetailsSubMoldResult",
+      "Form.frmPLASTICforForming"
+    ],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": [
+      {
+        "event": "OnLoad",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "AfterUpdate",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "OnDblClick",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "OnClick",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "OnDblClick",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "OnDblClick",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "OnClick",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "OnDblClick",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "OnClick",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "OnDblClick",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "OnClick",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "OnClick",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "OnClick",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "AfterUpdate",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "OnClick",
+        "binding": "[Event Procedure]"
+      }
+    ]
+  },
+  {
+    "object_name": "PhanPhoiNukigataVaKhuonTbl Subform1",
+    "object_type": "FORM",
+    "record_source": "KhuonTheoDaoCatListQry",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "NukigataLichSuGiaCongListFrm",
+    "object_type": "FORM",
+    "record_source": "tblCutterLog",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "DathangvtListFrm",
+    "object_type": "FORM",
+    "record_source": "DatHangVTTbl",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "DatHangVtMainFrm",
+    "object_type": "FORM",
+    "record_source": "VatTuTbl",
+    "subforms": [
+      "Form.DatHangvtSubFrm"
+    ],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": [
+      {
+        "event": "BeforeUpdate",
+        "binding": "[Event Procedure]"
+      }
+    ]
+  },
+  {
+    "object_name": "DatHangvtSubFrm",
+    "object_type": "FORM",
+    "record_source": "DatHangVTTbl",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": [
+      {
+        "event": "BeforeUpdate",
+        "binding": "[Event Procedure]"
+      }
+    ]
+  },
+  {
+    "object_name": "frmsCUTTERmoldCutter",
+    "object_type": "FORM",
+    "record_source": "tblMoldCutter",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "frmPLASTICforForming",
+    "object_type": "FORM",
+    "record_source": "SELECT tblPLASTICforForming.* FROM tblPLASTICforForming;",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "frmMOLDsearchSubFolderLink",
+    "object_type": "FORM",
+    "record_source": "TblFolderLink",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "frmRACKsubMold",
+    "object_type": "FORM",
+    "record_source": "SELECT [tblMold].[MoldID], [tblMold].[MoldDesignID], [tblMold].[MoldName], [tblM",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "frmMOLDlocationSubMoldList",
+    "object_type": "FORM",
+    "record_source": "SELECT tblMold.MoldID, tblMold.MoldName, tblMold.MoldCode, tblMold.MoldDesignID,",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": [
+      {
+        "event": "AfterUpdate",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "OnDblClick",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "OnDblClick",
+        "binding": "[Event Procedure]"
+      }
+    ]
+  },
+  {
+    "object_name": "frmPopupMaSoKhuonThem",
+    "object_type": "FORM",
+    "record_source": "SELECT [tblCutter].IDMaKhuonThietKe, [tblCutter].[MoldShared], [tblCutter].[Crea",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "frmsCUTTERdataEntry",
+    "object_type": "FORM",
+    "record_source": "tblCutter",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": [
+      {
+        "event": "OnCurrent",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "OnDblClick",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "AfterUpdate",
+        "binding": "[Event Procedure]"
+      }
+    ]
+  },
+  {
+    "object_name": "frmProductionPlanEntry",
+    "object_type": "FORM",
+    "record_source": "tblProductionPlan",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "frmFormingEntry",
+    "object_type": "FORM",
+    "record_source": "tblForming",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": [
+      {
+        "event": "OnClick",
+        "binding": "=FE_SaveActiveForm()"
+      },
+      {
+        "event": "OnClick",
+        "binding": "=FE_CloseWithConfirm()"
+      }
+    ]
+  },
+  {
+    "object_name": "frmMOLDDESIGNdetails",
+    "object_type": "FORM",
+    "record_source": "tblMoldDesign",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "frmCUTTERdetails",
+    "object_type": "FORM",
+    "record_source": "qryCutterInfo",
+    "subforms": [
+      "Form.NukigataLichSuGiaCongListFrm",
+      "Form.DinhHinhKetQuaListFrm",
+      "Form.PhanPhoiNukigataVaKhuonFrms2",
+      "Form.DinhHinhListRutGonFrm",
+      "Form.NukigataLichsudichuyenFrm"
+    ],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": [
+      {
+        "event": "OnClick",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "OnClick",
+        "binding": "[Event Procedure]"
+      }
+    ]
+  },
+  {
+    "object_name": "frmMoldSearchSubResults",
+    "object_type": "FORM",
+    "record_source": "SELECT tblMold.*, tblMoldDesign.MoldDesignName, tblMoldDesign.TrayID, tblMoldDes",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": [
+      {
+        "event": "OnCurrent",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "OnDblClick",
+        "binding": "[Event Procedure]"
+      }
+    ]
+  },
+  {
+    "object_name": "frmMoldSearchSubRackLayerDetails",
+    "object_type": "FORM",
+    "record_source": "SELECT [tblRackLayer].[RackLayerID], [tblRackLayer].[RackID], [tblRackLayer].[Ra",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "frmMoldSearchSubMoldDetails",
+    "object_type": "FORM",
+    "record_source": "SELECT tblMold.*, tblMoldDesign.*, tblRack.RackLocation, tblRackLayer.RackLayerN",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": [
+      {
+        "event": "AfterUpdate",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "OnClick",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "OnClick",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "OnClick",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "OnClick",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "AfterUpdate",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "AfterUpdate",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "AfterUpdate",
+        "binding": "[Event Procedure]"
+      }
+    ]
+  },
+  {
+    "object_name": "frmMOLDlocationLog",
+    "object_type": "FORM",
+    "record_source": "tblMold",
+    "subforms": [
+      "Form.frmMOLDlocationLogSubList"
+    ],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "frmMoldSearchSubTrayForming",
+    "object_type": "FORM",
+    "record_source": "SELECT [tblForming].[FormingID], [tblForming].TrayOrderID, [tblForming].MoldID,",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "frmMOLDProcessing",
+    "object_type": "FORM",
+    "record_source": "qryMOLDprocessing",
+    "subforms": [
+      "Form.frmsTeflonLog",
+      "Form.NhuaDinhHinhFrm",
+      "Form.frmMOLDprocessingSubMoldList",
+      "Form.frmMOLDProcessingSubStatuslogs",
+      "Form.KyHanGcFrms2",
+      "Form.frmMOLDProcessingSubCutter"
+    ],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": [
+      {
+        "event": "BeforeUpdate",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "OnLoad",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "OnClick",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "AfterUpdate",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "OnDblClick",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "AfterUpdate",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "OnDblClick",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "OnClick",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "OnClick",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "OnClick",
+        "binding": "[Event Procedure]"
+      }
+    ]
+  },
+  {
+    "object_name": "frmMOLDsearch",
+    "object_type": "FORM",
+    "record_source": "searchQuery",
+    "subforms": [
+      "Form.frmMOLDsearchSubTeflonLog",
+      "Form.frmMoldSearchSubShipmentLog",
+      "Form.frmsMoldLocationLog",
+      "Form.frmMoldSearchSubCutterDetails",
+      "Form.frmMOLDsearchSubStatuslog",
+      "Form.frmMOLDsearchSubJobList",
+      "Form.frmMOLDsearchSubMoldBorrowCertificate",
+      "Form.frmMoldSearchSubResults",
+      "Form.frmMoldSearchSubMoldDetails"
+    ],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": [
+      {
+        "event": "OnLoad",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "AfterUpdate",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "OnClick",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "OnClick",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "OnClick",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "OnClick",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "OnClick",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "OnClick",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "OnClick",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "OnClick",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "OnClick",
+        "binding": "[Event Procedure]"
+      }
+    ]
+  },
+  {
+    "object_name": "frmFILEsearch",
+    "object_type": "FORM",
+    "record_source": "qryMOLDdetails",
+    "subforms": [
+      "Form.frmFILEsearchSubResult"
+    ],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": [
+      {
+        "event": "OnLoad",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "OnClick",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "OnClick",
+        "binding": "[Event Procedure]"
+      }
+    ]
+  },
+  {
+    "object_name": "frmMOLDsearchSubJobList",
+    "object_type": "FORM",
+    "record_source": "tblJob",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "frmMOLDentrySubMoldLog",
+    "object_type": "FORM",
+    "record_source": "tblMoldLog",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "frmMOLDsearchSubMoldBorrowCertificate",
+    "object_type": "FORM",
+    "record_source": "tblMoldBorrow",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "frmCustomerList",
+    "object_type": "FORM",
+    "record_source": "tblCustomer",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": [
+      {
+        "event": "OnLoad",
+        "binding": "[Event Procedure]"
+      }
+    ]
+  },
+  {
+    "object_name": "frmCompanyList",
+    "object_type": "FORM",
+    "record_source": "tblCompany",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": [
+      {
+        "event": "OnDblClick",
+        "binding": "[Event Procedure]"
+      }
+    ]
+  },
+  {
+    "object_name": "frmMOLDBORROWSubList",
+    "object_type": "FORM",
+    "record_source": "tblMoldBorrow",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": [
+      {
+        "event": "OnClick",
+        "binding": "[Event Procedure]"
+      }
+    ]
+  },
+  {
+    "object_name": "frmCUTTERsearchSubMoldShared",
+    "object_type": "FORM",
+    "record_source": "SELECT tblMoldDesign.MoldDesignCode, tblMoldDesign.MoldDesignID, tblCutter.Cutte",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "frmCustomerList2",
+    "object_type": "FORM",
+    "record_source": "tblCustomer",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "frmTRAYList",
+    "object_type": "FORM",
+    "record_source": "tblTray",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "frmMOLDprocessingSubMoldList",
+    "object_type": "FORM",
+    "record_source": "KhuonTheoDaoCatListQry",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": [
+      {
+        "event": "AfterUpdate",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "OnDblClick",
+        "binding": "[Event Procedure]"
+      }
+    ]
+  },
+  {
+    "object_name": "frmMOLDdetailsSubMoldResult",
+    "object_type": "FORM",
+    "record_source": "SELECT tblMold.*, tblMoldDesign.MoldDesignName, tblMoldDesign.TrayID, tblMoldDes",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": [
+      {
+        "event": "OnDblClick",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "OnClick",
+        "binding": "[Event Procedure]"
+      }
+    ]
+  },
+  {
+    "object_name": "frmFILEsearchSubResult",
+    "object_type": "FORM",
+    "record_source": "SELECT * FROM tblFile WHERE (FileName LIKE '*JAE-202*' OR FileLink LIKE '*JAE-20",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "frmMoldPicturesPrint",
+    "object_type": "FORM",
+    "record_source": null,
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": [
+      {
+        "event": "AfterUpdate",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "OnClick",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "OnClick",
+        "binding": "[Event Procedure]"
+      }
+    ]
+  },
+  {
+    "object_name": "frmMOLDdetailsSubAssetInfo",
+    "object_type": "FORM",
+    "record_source": "copytblAssetInfo",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "frmShipLog",
+    "object_type": "FORM",
+    "record_source": "tblShipLog",
+    "subforms": [
+      "Form.frmShipLogSubList"
+    ],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": [
+      {
+        "event": "AfterUpdate",
+        "binding": "[Event Procedure]"
+      }
+    ]
+  },
+  {
+    "object_name": "frmCUTTERsearch",
+    "object_type": "FORM",
+    "record_source": null,
+    "subforms": [
+      "Form.frmCUTTERsearchSubMoldShared",
+      "Form.frmCUTTERsearchSubEntry",
+      "Form.XX_frmCUTTERmanagementSubMoldList_xx"
+    ],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": [
+      {
+        "event": "AfterUpdate",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "AfterUpdate",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "AfterUpdate",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "AfterUpdate",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "AfterUpdate",
+        "binding": "[Event Procedure]"
+      }
+    ]
+  },
+  {
+    "object_name": "frmRACKsubLayer",
+    "object_type": "FORM",
+    "record_source": "SELECT [tblRackLayer].[RackLayerID], [tblRackLayer].[RackID], [tblRackLayer].[Ra",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "frmRACK",
+    "object_type": "FORM",
+    "record_source": "tblRack",
+    "subforms": [
+      "Form.frmRACKsubMold",
+      "Form.frmRACKsubLayer"
+    ],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "frmMOLDentry",
+    "object_type": "FORM",
+    "record_source": "tblCustomer",
+    "subforms": [
+      "Form.frmMOLDentrySubMoldProcessing",
+      "Form.frmMOLDentrySubMoldDesign",
+      "Form.frmMOLDentrySubProcessingDeadline",
+      "Form.frmMOLDentrySubCutter",
+      "Form.frmMOLDentrySubMold",
+      "Form.frmMOLDentrySubTray",
+      "Form.frmMOLDentrySubMoldLog"
+    ],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": [
+      {
+        "event": "OnCurrent",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "BeforeUpdate",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "OnClick",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "OnClick",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "AfterUpdate",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "OnClick",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "OnClick",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "OnClick",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "OnClick",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "OnClick",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "OnClick",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "OnClick",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "OnClick",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "OnClick",
+        "binding": "[Event Procedure]"
+      }
+    ]
+  },
+  {
+    "object_name": "frmCUTTERsearchSubEntry",
+    "object_type": "FORM",
+    "record_source": "tblCutter",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": [
+      {
+        "event": "OnCurrent",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "AfterUpdate",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "BeforeUpdate",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "AfterUpdate",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "AfterUpdate",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "OnDblClick",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "BeforeUpdate",
+        "binding": "[Event Procedure]"
+      }
+    ]
+  },
+  {
+    "object_name": "frmProductionLogEntry",
+    "object_type": "FORM",
+    "record_source": "tblProductionLog",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": [
+      {
+        "event": "OnClick",
+        "binding": "=PL_SaveActiveForm()"
+      },
+      {
+        "event": "OnClick",
+        "binding": "=PL_CloseWithConfirm()"
+      }
+    ]
+  },
+  {
+    "object_name": "frmMOLDentrySubCutter",
+    "object_type": "FORM",
+    "record_source": "SELECT tblCutter.CutterID, tblCutter.CutterNo, tblCutter.CutterName, tblMoldCutt",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": [
+      {
+        "event": "OnCurrent",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "BeforeUpdate",
+        "binding": "[Event Procedure]"
+      }
+    ]
+  },
+  {
+    "object_name": "frmMOLDentrySubMold",
+    "object_type": "FORM",
+    "record_source": "tblMold",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": [
+      {
+        "event": "BeforeUpdate",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "AfterUpdate",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "AfterUpdate",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "AfterUpdate",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "OnDblClick",
+        "binding": "[Event Procedure]"
+      }
+    ]
+  },
+  {
+    "object_name": "frmMOLDentrySubTray",
+    "object_type": "FORM",
+    "record_source": "tbltray",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": [
+      {
+        "event": "OnCurrent",
+        "binding": "[Event Procedure]"
+      }
+    ]
+  },
+  {
+    "object_name": "frmMOLDentrySubMoldDesign",
+    "object_type": "FORM",
+    "record_source": "SELECT tblMoldDesign.*, Replace(Replace([MoldDesignName],'-',''),' ','') AS MaRu",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": [
+      {
+        "event": "AfterUpdate",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "OnDblClick",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "OnDblClick",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "OnDblClick",
+        "binding": "[Event Procedure]"
+      }
+    ]
+  },
+  {
+    "object_name": "frmMOLDentrySubMoldProcessing",
+    "object_type": "FORM",
+    "record_source": "tblJOB",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": [
+      {
+        "event": "OnCurrent",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "BeforeUpdate",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "AfterUpdate",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "OnDblClick",
+        "binding": "[Event Procedure]"
+      }
+    ]
+  },
+  {
+    "object_name": "frmMOLDshiplog",
+    "object_type": "FORM",
+    "record_source": "tblMold",
+    "subforms": [
+      "Form.frmMOLDshiplogSubList"
+    ],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "frmMOLDentrySubProcessingDeadline",
+    "object_type": "FORM",
+    "record_source": "tblProcessingDeadline",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": [
+      {
+        "event": "OnCurrent",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "BeforeUpdate",
+        "binding": "[Event Procedure]"
+      }
+    ]
+  },
+  {
+    "object_name": "frmDAILYworkLog",
+    "object_type": "FORM",
+    "record_source": null,
+    "subforms": [
+      "Report.rptDailyWorkLog",
+      "Form.frmDAILYworkLogSubList",
+      "Report.rptJobTime_tomtat"
+    ],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": [
+      {
+        "event": "AfterUpdate",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "AfterUpdate",
+        "binding": "[Event Procedure]"
+      }
+    ]
+  },
+  {
+    "object_name": "frmMOLDProcessingSubMoldLocationLog",
+    "object_type": "FORM",
+    "record_source": "tblLocationLog",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "frmsMoldLocationLog",
+    "object_type": "FORM",
+    "record_source": "tblLocationLog",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "frmCUTTERlocationLog",
+    "object_type": "FORM",
+    "record_source": "tblCutter",
+    "subforms": [
+      "Form.frmMOLDlocationLogSubList"
+    ],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "frmMOLDlocationSubRack",
+    "object_type": "FORM",
+    "record_source": "SELECT [tblRack].[RackID], [tblRack].[RackNumber], [tblRack].[RackSymbol], [tblR",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "frmMOLDlocationLogSubList",
+    "object_type": "FORM",
+    "record_source": "tblLocationLog",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "frmMOLDlocation_ng",
+    "object_type": "FORM",
+    "record_source": null,
+    "subforms": [
+      "Form.frmMOLDlocationSubMoldList",
+      "Form.frmMOLDlocationSubRackLayer",
+      "Form.frmMOLDlocationSubRack"
+    ],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": [
+      {
+        "event": "AfterUpdate",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "AfterUpdate",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "AfterUpdate",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "AfterUpdate",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "AfterUpdate",
+        "binding": "[Event Procedure]"
+      }
+    ]
+  },
+  {
+    "object_name": "frmMOLDlocation",
+    "object_type": "FORM",
+    "record_source": "SELECT",
+    "subforms": [
+      "Form.frmMOLDlocationSubMoldList",
+      "Form.frmMOLDlocationSubRackLayer",
+      "Form.frmMOLDlocationSubRack"
+    ],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": [
+      {
+        "event": "OnLoad",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "AfterUpdate",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "AfterUpdate",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "AfterUpdate",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "AfterUpdate",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "AfterUpdate",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "AfterUpdate",
+        "binding": "[Event Procedure]"
+      }
+    ]
+  },
+  {
+    "object_name": "XX_frmCUTTERmanagementSubMoldList_xx",
+    "object_type": "FORM",
+    "record_source": "qryKhuonDinhHinhListrutgonSub",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "XX_frmCUTTERmanagement_xx",
+    "object_type": "FORM",
+    "record_source": null,
+    "subforms": [
+      "Form.frmsCUTTERmoldCutter",
+      "Form.frmsCUTTERdataEntry",
+      "Form.XX_frmCUTTERmanagementSubMoldList_xx"
+    ],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": [
+      {
+        "event": "AfterUpdate",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "AfterUpdate",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "AfterUpdate",
+        "binding": "[Event Procedure]"
+      }
+    ]
+  },
+  {
+    "object_name": "frmMOLDBORROWSubCertificate",
+    "object_type": "FORM",
+    "record_source": "tblMoldBorrow",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": [
+      {
+        "event": "OnClick",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "OnClick",
+        "binding": "[Event Procedure]"
+      }
+    ]
+  },
+  {
+    "object_name": "frmMOLDBORROW",
+    "object_type": "FORM",
+    "record_source": "tblMolddesign",
+    "subforms": [
+      "Form.frmMOLDBORROWSubList",
+      "Form.frmMOLDBORROWSubCertificate"
+    ],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "frmExportCSV",
+    "object_type": "FORM",
+    "record_source": null,
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": [
+      {
+        "event": "OnLoad",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "OnClick",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "OnClick",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "OnClick",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "OnClick",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "OnClick",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "OnClick",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "OnClick",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "OnClick",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "OnClick",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "OnClick",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "OnClick",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "OnClick",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "OnClick",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "OnClick",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "OnClick",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "OnClick",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "OnClick",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "OnClick",
+        "binding": "[Event Procedure]"
+      }
+    ]
+  },
+  {
+    "object_name": "frmMOLDProcessingSubCutter",
+    "object_type": "FORM",
+    "record_source": "SELECT tblCutter.CutterNo, tblCutter.CutterName, tblCutter.CutterNote, tblMoldDe",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "frmsTeflonLog",
+    "object_type": "FORM",
+    "record_source": "tblTeflonLog",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "frmMOLDsearchSubTeflonLog",
+    "object_type": "FORM",
+    "record_source": "tblTeflonLog",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "frmMOLDProcessingSubStatuslogs",
+    "object_type": "FORM",
+    "record_source": "statuslogs",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "frmAddFileLink",
+    "object_type": "FORM",
+    "record_source": null,
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": [
+      {
+        "event": "OnClick",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "OnClick",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "OnClick",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "OnClick",
+        "binding": "[Event Procedure]"
+      }
+    ]
+  },
+  {
+    "object_name": "frmNewJobDialog",
+    "object_type": "FORM",
+    "record_source": null,
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": [
+      {
+        "event": "OnLoad",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "OnClick",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "OnClick",
+        "binding": "[Event Procedure]"
+      }
+    ]
+  },
+  {
+    "object_name": "frmMOLDsearchSubStatuslog",
+    "object_type": "FORM",
+    "record_source": "statuslogs",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "frmSTAKINGsearch",
+    "object_type": "FORM",
+    "record_source": "SQL",
+    "subforms": [
+      "Form.frmSTAKINGsearch_SubDesignInfo"
+    ],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": [
+      {
+        "event": "OnLoad",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "AfterUpdate",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "AfterUpdate",
+        "binding": "[Event Procedure]"
+      }
+    ]
+  },
+  {
+    "object_name": "frmSTAKINGsearch_SubDesignInfo",
+    "object_type": "FORM",
+    "record_source": "SELECT tblMoldDesign.MoldDesignName, tblJOB.JobName, tblJOB.JobCode, tblJOB.JobI",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "KyHanGcFrms3",
+    "object_type": "FORM",
+    "record_source": "SELECT tblProcessingDeadline.*, tblJOB.JobName FROM tblJOB INNER JOIN tblProcess",
+    "subforms": [
+      "Form.ThoiLuongGcFrms3",
+      "Report.NhatKyGiaCong_Tomtat",
+      "Form.ThoiLuongGcFrms1"
+    ],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "frmOrderLineEntry",
+    "object_type": "FORM",
+    "record_source": "tblOrderLine",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "frmOrderEntry",
+    "object_type": "FORM",
+    "record_source": "tblOrderHead",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "frmProductionPlanStepEntry",
+    "object_type": "FORM",
+    "record_source": "tblProductionPlanStep",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": [
+      {
+        "event": "OnClick",
+        "binding": "=PPS_SaveActiveForm()"
+      },
+      {
+        "event": "OnClick",
+        "binding": "=PPS_CloseWithConfirm()"
+      }
+    ]
+  },
+  {
+    "object_name": "frmProductionResultEntry",
+    "object_type": "FORM",
+    "record_source": "tblProductionResult",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": [
+      {
+        "event": "OnClick",
+        "binding": "=PR_SaveActiveForm()"
+      },
+      {
+        "event": "OnClick",
+        "binding": "=PR_CloseWithConfirm()"
+      }
+    ]
+  },
+  {
+    "object_name": "Production Plan Step Entry",
+    "object_type": "FORM",
+    "record_source": "tblProductionPlanStep",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": [
+      {
+        "event": "OnClick",
+        "binding": "=PPS_SaveActiveForm()"
+      }
+    ]
+  },
+  {
+    "object_name": "frmTrayOrderEntry",
+    "object_type": "FORM",
+    "record_source": "tblTrayOrder",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": [
+      {
+        "event": "OnClick",
+        "binding": "=TOSaveActiveForm()"
+      },
+      {
+        "event": "OnClick",
+        "binding": "=TOCloseWithConfirm()"
+      }
+    ]
+  },
+  {
+    "object_name": "frmFormedTrayEntry",
+    "object_type": "FORM",
+    "record_source": "tblFormedTray",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": [
+      {
+        "event": "OnClick",
+        "binding": "=FT_SaveActiveForm()"
+      },
+      {
+        "event": "OnClick",
+        "binding": "=FT_CloseWithConfirm()"
+      }
+    ]
+  },
+  {
+    "object_name": "frmOrderHeadEntry",
+    "object_type": "FORM",
+    "record_source": "tblOrderHead",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": [
+      {
+        "event": "OnClick",
+        "binding": "=OH_SaveActiveForm()"
+      },
+      {
+        "event": "OnClick",
+        "binding": "=OH_CloseWithConfirm()"
+      }
+    ]
+  },
+  {
+    "object_name": "tblCNC_Schedule",
+    "object_type": "FORM",
+    "record_source": "tblCNC_Schedule",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": [
+      {
+        "event": "AfterUpdate",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "AfterUpdate",
+        "binding": "[Event Procedure]"
+      }
+    ]
+  },
+  {
+    "object_name": "Form1",
+    "object_type": "FORM",
+    "record_source": null,
+    "subforms": [
+      "Form.frmMoldTaskPlan_Subform"
+    ],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": [
+      {
+        "event": "OnClick",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "OnClick",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "OnClick",
+        "binding": "[Event Procedure]"
+      }
+    ]
+  },
+  {
+    "object_name": "frmMoldWBS_Main",
+    "object_type": "FORM",
+    "record_source": null,
+    "subforms": [
+      "Form.frmMoldTaskPlan_Subform"
+    ],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": [
+      {
+        "event": "OnClick",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "OnClick",
+        "binding": "[Event Procedure]"
+      },
+      {
+        "event": "OnClick",
+        "binding": "[Event Procedure]"
+      }
+    ]
+  },
+  {
+    "object_name": "SHIJISHORpt",
+    "object_type": "REPORT",
+    "record_source": "BaoCaoNoiDungGcQry",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "BangTenKhuonJAE2Rpt",
+    "object_type": "REPORT",
+    "record_source": "tblMoldDesign",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "rptLocation",
+    "object_type": "REPORT",
+    "record_source": "SELECT tblMold.MoldName, tblRackLayer.RackLayerNumber, tblRack.RackID, tblRack.R",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "BaoCaoChoMuonThietBiRpt",
+    "object_type": "REPORT",
+    "record_source": "Q_KANAGATA",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "FuguaiRpt",
+    "object_type": "REPORT",
+    "record_source": "FuguaiQry",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "DanhSachDaoCatTheoABCRpt",
+    "object_type": "REPORT",
+    "record_source": "DanhSachDaoCatTheoAbcQry",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "Copy Of R_Nippo",
+    "object_type": "REPORT",
+    "record_source": "Q_Nippo_Print",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "DatHangVT_TheoVtRpt",
+    "object_type": "REPORT",
+    "record_source": "Q_DatHangVT_TimKiem",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "NhatKyGiaCong_Tomtat",
+    "object_type": "REPORT",
+    "record_source": "Nippo_Today_shanai_tomTatQry",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "DatHangVtRpt",
+    "object_type": "REPORT",
+    "record_source": "Q_DatHangVT",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "ChuumonshoRpt",
+    "object_type": "REPORT",
+    "record_source": "ChuumonshoQry",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "BaoCaoDoThiRpt",
+    "object_type": "REPORT",
+    "record_source": null,
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "Nippo_Final_DuyenRpt",
+    "object_type": "REPORT",
+    "record_source": "Nippo_Today_shanaiQry",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "Nippo_Final_ThoanRpt",
+    "object_type": "REPORT",
+    "record_source": "Nippo_Today_shanaiQry",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "DatHangVT_TimKiemRpt",
+    "object_type": "REPORT",
+    "record_source": "DatHangVT_TimKiemQry",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "BaocaoChoMuonThietBi_DieuKienRpt",
+    "object_type": "REPORT",
+    "record_source": "BaoCaoXuatKhuon_CatAnhQry",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "Copy Of R_PhieuDH",
+    "object_type": "REPORT",
+    "record_source": "Q_Phieu_DH",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "Nippo3_Date",
+    "object_type": "REPORT",
+    "record_source": "qryWorkLogByDate",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "Copy Of Nippo3",
+    "object_type": "REPORT",
+    "record_source": "Q_Nippo_Print",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "Zangyou_ThisMonthRpt",
+    "object_type": "REPORT",
+    "record_source": "Zangyou_thisMonthQry",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "BaoCaoChoMuonThietBi_CatAnhRpt",
+    "object_type": "REPORT",
+    "record_source": "BaoCaoXuatKhuon_CatAnhQry",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "BaoCaoThangRpt",
+    "object_type": "REPORT",
+    "record_source": "BaoCaoThang",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "BangTenKhuon_SmallRpt",
+    "object_type": "REPORT",
+    "record_source": "SELECT T_JOB.*, T_ThietKe.* FROM T_ThietKe INNER JOIN T_JOB ON T_ThietKe.IDThiet",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "ThoiLuongGC_TinhLuong_thisMonthRpt",
+    "object_type": "REPORT",
+    "record_source": "ThoiLuongGC_thisMonthQry",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "ThoiLuongGC_TinhLuong_MonthRpt",
+    "object_type": "REPORT",
+    "record_source": "ThoiLuongGC_thisMonthQry",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "DatHangVT_DateRpt",
+    "object_type": "REPORT",
+    "record_source": "DatHangVtQry",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "DanhSachJobRpt",
+    "object_type": "REPORT",
+    "record_source": "SELECT [T_KH].TenKH, [T_Nhom].[TenNhom], [T_Nhom].MaSoDonHang, [T_NguoiPhatHanh]",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "Copy Of R_PhieuXuatKhuon",
+    "object_type": "REPORT",
+    "record_source": "Q_PhieuMuonKhuon",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "Copy Of R_BaoCaoXuatKhuon",
+    "object_type": "REPORT",
+    "record_source": "Q_KANAGATA",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "ChungNhanMuonKhuonATSrpt",
+    "object_type": "REPORT",
+    "record_source": null,
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "BangDuDinh_FullRpt",
+    "object_type": "REPORT",
+    "record_source": "BangDuDinh_FullQry",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "KyHanGC_ThoiLuongGC_Rpts",
+    "object_type": "REPORT",
+    "record_source": "SELECT [tblProcessingDeadline].[ProcessingDeadlineID], Sum(IIf([ProcessingTime]",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "BangDuDinh_Full1Rpt",
+    "object_type": "REPORT",
+    "record_source": "Q_BangDuDinh_Full",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "BaoCaoThangNayRpt",
+    "object_type": "REPORT",
+    "record_source": "qryProductionReportForThisMonth",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "rptJobTime_tomtat",
+    "object_type": "REPORT",
+    "record_source": "SELECT tblJOB.JobName, tblItemType.ItemTypeName, tblJOB.JobCode, tblJOB.JobID, t",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "BangDuDinh_ThismonthRpt",
+    "object_type": "REPORT",
+    "record_source": "BangDuDinh_FullQry",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "Nippo_AllRpt",
+    "object_type": "REPORT",
+    "record_source": "Nippo_FullQry",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "BaoCaoFullRpt",
+    "object_type": "REPORT",
+    "record_source": "Q_BAOCAO_FULL",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "KyHanGC_ThoiLuongGC_Sub_V3Rpts",
+    "object_type": "REPORT",
+    "record_source": "SELECT [tblProcessingDeadline].[ProcessingDeadlineID], Sum(IIf([ProcessingTime]",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "BaoCaoDoThi2Rpt",
+    "object_type": "REPORT",
+    "record_source": null,
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "BangTenKhuonYCMrpt",
+    "object_type": "REPORT",
+    "record_source": "tblMoldDesign",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "DSkhuon_DHganNhatRpt",
+    "object_type": "REPORT",
+    "record_source": "DSkhuon_DHgannhatQry",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "BaoCaoThang_V2Rpt",
+    "object_type": "REPORT",
+    "record_source": "Q_BaoCaoThang",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "BaoCaoChoMuonThietBiJAErpt",
+    "object_type": "REPORT",
+    "record_source": "PhieuMuonKhuonQry",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "Nippo_today_SakataRpt",
+    "object_type": "REPORT",
+    "record_source": "qryDailyWorkLog_Sakata",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "ThoiGianGCJOBrpt",
+    "object_type": "REPORT",
+    "record_source": "BaoCaoNoiDungGcQry",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "ChungNhanMuonKhuonATSRpt2",
+    "object_type": "REPORT",
+    "record_source": "SELECT KhuonThietKeTbl.*, tblJOB.*, Day([NgayLamPhieuMuon]) AS PhieuMuonNgay, Mo",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "ThoiLuongGC_TinhLuongRpt",
+    "object_type": "REPORT",
+    "record_source": "qryProcessingTimeThoan",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "TeflonRpt",
+    "object_type": "REPORT",
+    "record_source": "TeflonQry",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "BangTenKhuonJAERpt",
+    "object_type": "REPORT",
+    "record_source": "tblMoldDesign",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "rptMoldInfoSheetCommon",
+    "object_type": "REPORT",
+    "record_source": "SELECT tblMoldDesign.*, tblMoldBorrow.MoldBorrowID, tblMoldBorrow.CustomerID, tb",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "ThoiLuongGC_JOB_SHIJISHO SubRpt",
+    "object_type": "REPORT",
+    "record_source": "SELECT [T_KyHanGC].IDJobNo, [T_KyHanGC].IDCapDC, [T_KyHanGC].IDTinhTrangGC, Sum(",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "AlarmRpt2",
+    "object_type": "REPORT",
+    "record_source": "T_Alarm",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "ThoiLuongGC_VatTu_sakataRpt",
+    "object_type": "REPORT",
+    "record_source": "ThoiLuongGC_VatTu_sakataQry",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "rptProductionReportForThisMonth",
+    "object_type": "REPORT",
+    "record_source": "qryProductionReportForThisMonth",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "DanhSachDaoCatTheoAbcDayDuRpt",
+    "object_type": "REPORT",
+    "record_source": "DanhSachDaoCatTheoAbcQry",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "rptCutterListABC",
+    "object_type": "REPORT",
+    "record_source": "DanhSachDaoCatTheoAbcQry",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "rptCutterListABCfull",
+    "object_type": "REPORT",
+    "record_source": "qryCutterListABCfull",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "rptMoldInfoSheet1",
+    "object_type": "REPORT",
+    "record_source": "tblMoldDesign",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "rptMoldArrangementABC",
+    "object_type": "REPORT",
+    "record_source": "qryMoldArrangementABC",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "rptMoldInfoSheetJAE01",
+    "object_type": "REPORT",
+    "record_source": "SELECT tblMoldBorrow.*, tblMoldDesign.MoldDesignLength, tblMoldDesign.MoldDesign",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "rptMoldBorrowPicture",
+    "object_type": "REPORT",
+    "record_source": "SELECT tblMoldDesign.MoldDesignName, tblMoldDesign.MoldDesignLength, tblMoldDesi",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "rptCutterDetails",
+    "object_type": "REPORT",
+    "record_source": "tblCutter",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "rptDailyWorkLog",
+    "object_type": "REPORT",
+    "record_source": "SELECT tblEmployee.EmployeeName, tblProcessingCode.ProcessingName, tblJOB.JobNam",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "rptWorkLogDuyen",
+    "object_type": "REPORT",
+    "record_source": "SELECT tblWorkLog.WorkLogID, tblJOB.JobName, tblWorkLog.ProcessingTime, tblWorkL",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "rptProcessingTimeThoan",
+    "object_type": "REPORT",
+    "record_source": "qryProcessingTimeThoan",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "rptProcessingTimeDuyen",
+    "object_type": "REPORT",
+    "record_source": "qryProcessingTimeDuyen",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "rptCutterListABCforRack",
+    "object_type": "REPORT",
+    "record_source": "qryCutterListABCfull",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "rptCutterListByNo",
+    "object_type": "REPORT",
+    "record_source": "qryCutterListByNo",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  },
+  {
+    "object_name": "rptMoldBorrowPictureSingle",
+    "object_type": "REPORT",
+    "record_source": "SELECT tblMoldDesign.MoldDesignName, tblMoldDesign.MoldDesignLength, tblMoldDesi",
+    "subforms": [],
+    "buttons_count": 0,
+    "buttons": [],
+    "event_bindings": []
+  }
+]

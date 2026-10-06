@@ -95,3 +95,4 @@ tsconfig.tsbuildinfo
 
 thaoluan-per/
 *.accdb
+*.laccdb
