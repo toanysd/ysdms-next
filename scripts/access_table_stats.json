@@ -1,0 +1,3866 @@
+[
+  {
+    "table_name": "DatHangVTTbl",
+    "row_count": 1396,
+    "column_count": 17,
+    "columns": [
+      {
+        "name": "IDMaDHVT",
+        "type": "COUNTER",
+        "size": 10,
+        "nullable": "NO"
+      },
+      {
+        "name": "MSVatTu",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "JobID",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "DonViDH",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "DonGiaDH",
+        "type": "DOUBLE",
+        "size": 53,
+        "nullable": "YES"
+      },
+      {
+        "name": "PhiVanChuyenVT",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "NgayNhanVT",
+        "type": "DATETIME",
+        "size": 19,
+        "nullable": "YES"
+      },
+      {
+        "name": "SoLuongDH",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "GiaThanhDH",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "TongSoChiec",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "GiaBanLe",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "IDNhanVien",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "DaNhanHang",
+        "type": "BIT",
+        "size": 1,
+        "nullable": "NO"
+      },
+      {
+        "name": "GhiChuDH",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "GiaThanh",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "UpdatedAt",
+        "type": "DATETIME",
+        "size": 19,
+        "nullable": "YES"
+      },
+      {
+        "name": "UpdatedBy",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      }
+    ]
+  },
+  {
+    "table_name": "VatTuSDtbl",
+    "row_count": 64,
+    "column_count": 7,
+    "columns": [
+      {
+        "name": "IDVatTuSD",
+        "type": "COUNTER",
+        "size": 10,
+        "nullable": "NO"
+      },
+      {
+        "name": "MSVatTu",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "WorkLogID",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "SoLuongVTSD",
+        "type": "DOUBLE",
+        "size": 53,
+        "nullable": "YES"
+      },
+      {
+        "name": "DonViVTSD",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "UpdatedAt",
+        "type": "DATETIME",
+        "size": 19,
+        "nullable": "YES"
+      },
+      {
+        "name": "UpdatedBy",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      }
+    ]
+  },
+  {
+    "table_name": "VatTuTbl",
+    "row_count": 723,
+    "column_count": 13,
+    "columns": [
+      {
+        "name": "MSVatTu",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "TenVatTu",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "DoDayVL",
+        "type": "DOUBLE",
+        "size": 53,
+        "nullable": "YES"
+      },
+      {
+        "name": "ChieuRongVL",
+        "type": "DOUBLE",
+        "size": 53,
+        "nullable": "YES"
+      },
+      {
+        "name": "ChieuDaiVL",
+        "type": "DOUBLE",
+        "size": 53,
+        "nullable": "YES"
+      },
+      {
+        "name": "KyHieuKichThuocVt",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "CapDoTinhChatVt",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "HangSXVatTu",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "GhiChuVatTu",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "HinhAnhVatTu",
+        "type": "LONGCHAR",
+        "size": 1073741823,
+        "nullable": "YES"
+      },
+      {
+        "name": "IDVatTu",
+        "type": "COUNTER",
+        "size": 10,
+        "nullable": "NO"
+      },
+      {
+        "name": "UpdatedAt",
+        "type": "DATETIME",
+        "size": 19,
+        "nullable": "YES"
+      },
+      {
+        "name": "UpdatedBy",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      }
+    ]
+  },
+  {
+    "table_name": "destinations",
+    "row_count": 16,
+    "column_count": 6,
+    "columns": [
+      {
+        "name": "DestinationID",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "DestinationName",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "DestinationType",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "IsActive",
+        "type": "BIT",
+        "size": 1,
+        "nullable": "NO"
+      },
+      {
+        "name": "UpdatedAt",
+        "type": "DATETIME",
+        "size": 19,
+        "nullable": "YES"
+      },
+      {
+        "name": "UpdatedBy",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      }
+    ]
+  },
+  {
+    "table_name": "scraplog",
+    "row_count": 0,
+    "column_count": 14,
+    "columns": [
+      {
+        "name": "ScraptID",
+        "type": "COUNTER",
+        "size": 10,
+        "nullable": "NO"
+      },
+      {
+        "name": "ItemID",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "IsMold",
+        "type": "BIT",
+        "size": 1,
+        "nullable": "NO"
+      },
+      {
+        "name": "RequestedDate",
+        "type": "DATETIME",
+        "size": 19,
+        "nullable": "YES"
+      },
+      {
+        "name": "Status",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "ScraptMethod",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "ScraptCompany",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "ScheduledDate",
+        "type": "DATETIME",
+        "size": 19,
+        "nullable": "YES"
+      },
+      {
+        "name": "Cost",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "ScrappedDate",
+        "type": "DATETIME",
+        "size": 19,
+        "nullable": "YES"
+      },
+      {
+        "name": "EmployeeID",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "Notes",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "UpdatedAt",
+        "type": "DATETIME",
+        "size": 19,
+        "nullable": "YES"
+      },
+      {
+        "name": "UpdatedBy",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      }
+    ]
+  },
+  {
+    "table_name": "statuslogs",
+    "row_count": 398,
+    "column_count": 17,
+    "columns": [
+      {
+        "name": "StatusLogID",
+        "type": "COUNTER",
+        "size": 10,
+        "nullable": "NO"
+      },
+      {
+        "name": "MoldID",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "CutterID",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "ItemType",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "Status",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "Timestamp",
+        "type": "DATETIME",
+        "size": 19,
+        "nullable": "YES"
+      },
+      {
+        "name": "EmployeeID",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "DestinationID",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "Notes",
+        "type": "LONGCHAR",
+        "size": 1073741823,
+        "nullable": "YES"
+      },
+      {
+        "name": "AuditDate",
+        "type": "DATETIME",
+        "size": 19,
+        "nullable": "YES"
+      },
+      {
+        "name": "AuditType",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "SessionID",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "SessionName",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "SessionMode",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "AuditSessionID",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "UpdatedAt",
+        "type": "DATETIME",
+        "size": 19,
+        "nullable": "YES"
+      },
+      {
+        "name": "UpdatedBy",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      }
+    ]
+  },
+  {
+    "table_name": "tblCalendar",
+    "row_count": 730,
+    "column_count": 4,
+    "columns": [
+      {
+        "name": "CalDate",
+        "type": "DATETIME",
+        "size": 19,
+        "nullable": "YES"
+      },
+      {
+        "name": "IsWorkday",
+        "type": "BIT",
+        "size": 1,
+        "nullable": "NO"
+      },
+      {
+        "name": "StandardHours",
+        "type": "DOUBLE",
+        "size": 53,
+        "nullable": "YES"
+      },
+      {
+        "name": "Note",
+        "type": "VARCHAR",
+        "size": 100,
+        "nullable": "YES"
+      }
+    ]
+  },
+  {
+    "table_name": "tblCase",
+    "row_count": 18,
+    "column_count": 9,
+    "columns": [
+      {
+        "name": "IDCaseNo",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "AutoNum",
+        "type": "COUNTER",
+        "size": 10,
+        "nullable": "NO"
+      },
+      {
+        "name": "TatamuSize",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "Chouhen",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "tanpen",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "fukasa",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "X+Y",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "UpdatedAt",
+        "type": "DATETIME",
+        "size": 19,
+        "nullable": "YES"
+      },
+      {
+        "name": "UpdatedBy",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      }
+    ]
+  },
+  {
+    "table_name": "tblCav",
+    "row_count": 57,
+    "column_count": 9,
+    "columns": [
+      {
+        "name": "CAVID",
+        "type": "COUNTER",
+        "size": 10,
+        "nullable": "NO"
+      },
+      {
+        "name": "CAV",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "Serial",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "CAVlength",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "CAVwidth",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "CAVnotes",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "CAVNo",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "UpdatedAt",
+        "type": "DATETIME",
+        "size": 19,
+        "nullable": "YES"
+      },
+      {
+        "name": "UpdatedBy",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      }
+    ]
+  },
+  {
+    "table_name": "tblCompany",
+    "row_count": 1725,
+    "column_count": 13,
+    "columns": [
+      {
+        "name": "CompanyID",
+        "type": "COUNTER",
+        "size": 10,
+        "nullable": "NO"
+      },
+      {
+        "name": "CompanyShortName",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "CompanyName",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "CompanyRomajiName",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "OrderParentFolder",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "OrderFolderPath",
+        "type": "LONGCHAR",
+        "size": 1073741823,
+        "nullable": "YES"
+      },
+      {
+        "name": "CadFolderPath",
+        "type": "LONGCHAR",
+        "size": 1073741823,
+        "nullable": "YES"
+      },
+      {
+        "name": "CompanyAddress",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "CompanyTEL",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "CompanyFAX",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "CompanyNotes",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "UpdatedAt",
+        "type": "DATETIME",
+        "size": 19,
+        "nullable": "YES"
+      },
+      {
+        "name": "UpdatedBy",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      }
+    ]
+  },
+  {
+    "table_name": "tblCustomer",
+    "row_count": 415,
+    "column_count": 12,
+    "columns": [
+      {
+        "name": "CustomerID",
+        "type": "COUNTER",
+        "size": 10,
+        "nullable": "NO"
+      },
+      {
+        "name": "CustomerShortName",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "CustomerRomajiName",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "CustomerKanaName",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "CustomerNo",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "ContactPerson",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "DateEntry",
+        "type": "DATETIME",
+        "size": 19,
+        "nullable": "YES"
+      },
+      {
+        "name": "CustomerNotes",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "CustomerOrderFolder",
+        "type": "LONGCHAR",
+        "size": 1073741823,
+        "nullable": "YES"
+      },
+      {
+        "name": "CustomerCADfolder",
+        "type": "LONGCHAR",
+        "size": 1073741823,
+        "nullable": "YES"
+      },
+      {
+        "name": "UpdatedAt",
+        "type": "DATETIME",
+        "size": 19,
+        "nullable": "YES"
+      },
+      {
+        "name": "UpdatedBy",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      }
+    ]
+  },
+  {
+    "table_name": "tblCutter",
+    "row_count": 1729,
+    "column_count": 39,
+    "columns": [
+      {
+        "name": "CutterID",
+        "type": "COUNTER",
+        "size": 10,
+        "nullable": "NO"
+      },
+      {
+        "name": "CutterNo",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "CutterName",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "CutterDesignCode",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "CutterCode",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "CustomerID",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "MoldDesignID",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "MoldShared",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "ItemTypeID",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "RackLayerID",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "KeeperCompany",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "CutterNote",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "CutterDetail",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "CutterManufactureDate",
+        "type": "DATETIME",
+        "size": 19,
+        "nullable": "YES"
+      },
+      {
+        "name": "SatoCode",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "SatoCodeDate",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "Description",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "UsageStatus",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "BladeCount",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "CutterPresence",
+        "type": "BIT",
+        "size": 1,
+        "nullable": "NO"
+      },
+      {
+        "name": "Pitch",
+        "type": "DOUBLE",
+        "size": 53,
+        "nullable": "YES"
+      },
+      {
+        "name": "PlasticCutType",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "PostCutLength",
+        "type": "DOUBLE",
+        "size": 53,
+        "nullable": "YES"
+      },
+      {
+        "name": "PostCutWidth",
+        "type": "DOUBLE",
+        "size": 53,
+        "nullable": "YES"
+      },
+      {
+        "name": "CutlineLength",
+        "type": "DOUBLE",
+        "size": 53,
+        "nullable": "YES"
+      },
+      {
+        "name": "CutlineWidth",
+        "type": "DOUBLE",
+        "size": 53,
+        "nullable": "YES"
+      },
+      {
+        "name": "CutterLength",
+        "type": "DOUBLE",
+        "size": 53,
+        "nullable": "YES"
+      },
+      {
+        "name": "CutterWidth",
+        "type": "DOUBLE",
+        "size": 53,
+        "nullable": "YES"
+      },
+      {
+        "name": "CutterHeight",
+        "type": "DOUBLE",
+        "size": 53,
+        "nullable": "YES"
+      },
+      {
+        "name": "CutterThickness",
+        "type": "DOUBLE",
+        "size": 53,
+        "nullable": "YES"
+      },
+      {
+        "name": "CutterCorner",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "CutterChamfer",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "CutterType",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "CutterDim",
+        "type": "VARCHAR",
+        "size": 243,
+        "nullable": "YES"
+      },
+      {
+        "name": "PPcushionUse",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "CutterEntry",
+        "type": "DATETIME",
+        "size": 19,
+        "nullable": "YES"
+      },
+      {
+        "name": "CutterMasterID",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "UpdatedAt",
+        "type": "DATETIME",
+        "size": 19,
+        "nullable": "YES"
+      },
+      {
+        "name": "UpdatedBy",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      }
+    ]
+  },
+  {
+    "table_name": "tblCutterLog",
+    "row_count": 21,
+    "column_count": 20,
+    "columns": [
+      {
+        "name": "CutterLogID",
+        "type": "COUNTER",
+        "size": 10,
+        "nullable": "NO"
+      },
+      {
+        "name": "CutterID",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "CutterNo",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "ProcessingType",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "ProcessingDetails",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "OutsourcingDate",
+        "type": "DATETIME",
+        "size": 19,
+        "nullable": "YES"
+      },
+      {
+        "name": "PostReceiptDate",
+        "type": "DATETIME",
+        "size": 19,
+        "nullable": "YES"
+      },
+      {
+        "name": "IDDinhHinh",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "CutterDesignLength",
+        "type": "DOUBLE",
+        "size": 53,
+        "nullable": "YES"
+      },
+      {
+        "name": "CutterDesignWidth",
+        "type": "DOUBLE",
+        "size": 53,
+        "nullable": "YES"
+      },
+      {
+        "name": "CutterDesignHeight",
+        "type": "DOUBLE",
+        "size": 53,
+        "nullable": "YES"
+      },
+      {
+        "name": "CutterCorner",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "CutterChamfer",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "CutterMeasuredLength",
+        "type": "DOUBLE",
+        "size": 53,
+        "nullable": "YES"
+      },
+      {
+        "name": "CutterMeasuredWidth",
+        "type": "DOUBLE",
+        "size": 53,
+        "nullable": "YES"
+      },
+      {
+        "name": "PostCutLength",
+        "type": "DOUBLE",
+        "size": 53,
+        "nullable": "YES"
+      },
+      {
+        "name": "PostCutWidth",
+        "type": "DOUBLE",
+        "size": 53,
+        "nullable": "YES"
+      },
+      {
+        "name": "PlasticType",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "UpdatedAt",
+        "type": "DATETIME",
+        "size": 19,
+        "nullable": "YES"
+      },
+      {
+        "name": "UpdatedBy",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      }
+    ]
+  },
+  {
+    "table_name": "tblDefect",
+    "row_count": 4,
+    "column_count": 15,
+    "columns": [
+      {
+        "name": "DefectID",
+        "type": "COUNTER",
+        "size": 10,
+        "nullable": "NO"
+      },
+      {
+        "name": "JobID",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "IDJobNo",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "DefectNumbers",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "DefectDate",
+        "type": "DATETIME",
+        "size": 19,
+        "nullable": "YES"
+      },
+      {
+        "name": "DefectDetails",
+        "type": "LONGCHAR",
+        "size": 1073741823,
+        "nullable": "YES"
+      },
+      {
+        "name": "NguyenNhan",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "DoiSach",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "Anhfuguai1",
+        "type": "LONGCHAR",
+        "size": 1073741823,
+        "nullable": "YES"
+      },
+      {
+        "name": "KyThang",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "KyNam",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "Anhfuguai2",
+        "type": "LONGCHAR",
+        "size": 1073741823,
+        "nullable": "YES"
+      },
+      {
+        "name": "Anhfuguai3",
+        "type": "LONGCHAR",
+        "size": 1073741823,
+        "nullable": "YES"
+      },
+      {
+        "name": "UpdatedAt",
+        "type": "DATETIME",
+        "size": 19,
+        "nullable": "YES"
+      },
+      {
+        "name": "UpdatedBy",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      }
+    ]
+  },
+  {
+    "table_name": "tblEmployee",
+    "row_count": 23,
+    "column_count": 11,
+    "columns": [
+      {
+        "name": "EmployeeID",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "EmployeeName",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "EmployeeNameShort",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "DivisionID",
+        "type": "VARCHAR",
+        "size": 9,
+        "nullable": "YES"
+      },
+      {
+        "name": "JoiningDate",
+        "type": "DATETIME",
+        "size": 19,
+        "nullable": "YES"
+      },
+      {
+        "name": "Birthday",
+        "type": "DATETIME",
+        "size": 19,
+        "nullable": "YES"
+      },
+      {
+        "name": "Address",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "Tel",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "EmployeeOrderCode",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "UpdatedAt",
+        "type": "DATETIME",
+        "size": 19,
+        "nullable": "YES"
+      },
+      {
+        "name": "UpdatedBy",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      }
+    ]
+  },
+  {
+    "table_name": "tblEmployee_old",
+    "row_count": 7,
+    "column_count": 11,
+    "columns": [
+      {
+        "name": "EmployeeID",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "EmployeeName",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "EmployeeNameShort",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "DivisionID",
+        "type": "VARCHAR",
+        "size": 9,
+        "nullable": "YES"
+      },
+      {
+        "name": "JoiningDate",
+        "type": "DATETIME",
+        "size": 19,
+        "nullable": "YES"
+      },
+      {
+        "name": "Birthday",
+        "type": "DATETIME",
+        "size": 19,
+        "nullable": "YES"
+      },
+      {
+        "name": "Address",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "Tel",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "EmployeeOrderCode",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "UpdatedAt",
+        "type": "DATETIME",
+        "size": 19,
+        "nullable": "YES"
+      },
+      {
+        "name": "UpdatedBy",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      }
+    ]
+  },
+  {
+    "table_name": "tblItemType",
+    "row_count": 11,
+    "column_count": 5,
+    "columns": [
+      {
+        "name": "ItemTypeID",
+        "type": "COUNTER",
+        "size": 10,
+        "nullable": "NO"
+      },
+      {
+        "name": "ItemType",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "ItemTypeName",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "UpdatedAt",
+        "type": "DATETIME",
+        "size": 19,
+        "nullable": "YES"
+      },
+      {
+        "name": "UpdatedBy",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      }
+    ]
+  },
+  {
+    "table_name": "tblJOB",
+    "row_count": 1230,
+    "column_count": 39,
+    "columns": [
+      {
+        "name": "JobID",
+        "type": "COUNTER",
+        "size": 10,
+        "nullable": "NO"
+      },
+      {
+        "name": "JobName",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "JobCode",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "MoldDesignID",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "InstructionID",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "ProcessingItemID",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "ResponsiblePersonID",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "MachiningCustomerID",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "OutsourcingID",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "MoldID",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "JobStartDate",
+        "type": "DATETIME",
+        "size": 19,
+        "nullable": "YES"
+      },
+      {
+        "name": "JobQuantity",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "JobNote",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "YearPeriod",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "MonthPeriod",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "Approved",
+        "type": "BIT",
+        "size": 1,
+        "nullable": "NO"
+      },
+      {
+        "name": "DeliveryDeadline",
+        "type": "DATETIME",
+        "size": 19,
+        "nullable": "YES"
+      },
+      {
+        "name": "ReleasePeriod",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "DateEntry",
+        "type": "DATETIME",
+        "size": 19,
+        "nullable": "YES"
+      },
+      {
+        "name": "PostProductionFeedback",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "AnhKhuonJob",
+        "type": "LONGCHAR",
+        "size": 1073741823,
+        "nullable": "YES"
+      },
+      {
+        "name": "NoiGCkhuon",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "FormingLocation",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "MoldShippingDate",
+        "type": "DATETIME",
+        "size": 19,
+        "nullable": "YES"
+      },
+      {
+        "name": "InventoryCheckUponReProduction",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "DrawingChecUponReProduction",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "ToleranceX",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "ToleranceY",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "SeparateCutter",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "QuantitySentToTheOffice",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "NoiNhan",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "PriceQuote",
+        "type": "BIT",
+        "size": 1,
+        "nullable": "NO"
+      },
+      {
+        "name": "UnitPrice",
+        "type": "DOUBLE",
+        "size": 53,
+        "nullable": "YES"
+      },
+      {
+        "name": "LoaiThungDong",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "BaoNilon",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "PocketTEST",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "IsSelected",
+        "type": "BIT",
+        "size": 1,
+        "nullable": "NO"
+      },
+      {
+        "name": "UpdatedAt",
+        "type": "DATETIME",
+        "size": 19,
+        "nullable": "YES"
+      },
+      {
+        "name": "UpdatedBy",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      }
+    ]
+  },
+  {
+    "table_name": "tblLocationLog",
+    "row_count": 1488,
+    "column_count": 10,
+    "columns": [
+      {
+        "name": "LocationLogID",
+        "type": "COUNTER",
+        "size": 10,
+        "nullable": "NO"
+      },
+      {
+        "name": "OldRackLayer",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "NewRackLayer",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "MoldID",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "CutterID",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "notes",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "EmployeeID",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "DateEntry",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "UpdatedAt",
+        "type": "DATETIME",
+        "size": 19,
+        "nullable": "YES"
+      },
+      {
+        "name": "UpdatedBy",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      }
+    ]
+  },
+  {
+    "table_name": "tblMachine",
+    "row_count": 14,
+    "column_count": 8,
+    "columns": [
+      {
+        "name": "MachineID",
+        "type": "COUNTER",
+        "size": 10,
+        "nullable": "NO"
+      },
+      {
+        "name": "MachineName",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "MachineType",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "MachineLocation",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "MachineManager",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "MachineNotes",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "UpdatedAt",
+        "type": "DATETIME",
+        "size": 19,
+        "nullable": "YES"
+      },
+      {
+        "name": "UpdatedBy",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      }
+    ]
+  },
+  {
+    "table_name": "tblMachiningCustomer",
+    "row_count": 5,
+    "column_count": 7,
+    "columns": [
+      {
+        "name": "MachiningCustomerID",
+        "type": "COUNTER",
+        "size": 10,
+        "nullable": "NO"
+      },
+      {
+        "name": "MachiningCustomer",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "MachiningCustomerLocation",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "TEL",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "FAX",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "UpdatedAt",
+        "type": "DATETIME",
+        "size": 19,
+        "nullable": "YES"
+      },
+      {
+        "name": "UpdatedBy",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      }
+    ]
+  },
+  {
+    "table_name": "tblMold",
+    "row_count": 4793,
+    "column_count": 26,
+    "columns": [
+      {
+        "name": "MoldID",
+        "type": "COUNTER",
+        "size": 10,
+        "nullable": "NO"
+      },
+      {
+        "name": "MoldName",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "MoldCode",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "CustomerID",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "TrayID",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "MoldDesignID",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "RackLayerID",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "ItemTypeID",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "MoldLengthModified",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "MoldWidthModified",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "MoldHeightModified",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "MoldWeight",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "MoldNotes",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "MoldUsageStatus",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "MoldOnCheckList",
+        "type": "BIT",
+        "size": 1,
+        "nullable": "NO"
+      },
+      {
+        "name": "JobID",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "MoldReturning",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "MoldReturnedDate",
+        "type": "DATETIME",
+        "size": 19,
+        "nullable": "YES"
+      },
+      {
+        "name": "MoldDisposing",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "MoldDisposedDate",
+        "type": "DATETIME",
+        "size": 19,
+        "nullable": "YES"
+      },
+      {
+        "name": "MoldEntry",
+        "type": "DATETIME",
+        "size": 19,
+        "nullable": "YES"
+      },
+      {
+        "name": "MoldRevisionID",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "DeviceStatus",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "KeeperCompany",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "UpdatedAt",
+        "type": "DATETIME",
+        "size": 19,
+        "nullable": "YES"
+      },
+      {
+        "name": "UpdatedBy",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      }
+    ]
+  },
+  {
+    "table_name": "tblMoldBorrow",
+    "row_count": 209,
+    "column_count": 32,
+    "columns": [
+      {
+        "name": "MoldBorrowID",
+        "type": "COUNTER",
+        "size": 10,
+        "nullable": "NO"
+      },
+      {
+        "name": "CustomerID",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "MoldDesignID",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "AssetCode",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "AssetMoldType",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "AssetName",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "AssetQuantity",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "BorrowYear",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "BorrowMonth",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "CertificateDate",
+        "type": "DATETIME",
+        "size": 19,
+        "nullable": "YES"
+      },
+      {
+        "name": "CreatedBy",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "DrawingNo",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "EntryDate",
+        "type": "DATETIME",
+        "size": 19,
+        "nullable": "YES"
+      },
+      {
+        "name": "EquipmentNo",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "FeedPitch",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "JaeNo",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "MoldCompany",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "ModelNo",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "MoldJobNo",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "MoldLifespan",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "MoldPrice",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "MoldPicture",
+        "type": "LONGCHAR",
+        "size": 1073741823,
+        "nullable": "YES"
+      },
+      {
+        "name": "MoldPictureLink",
+        "type": "LONGCHAR",
+        "size": 1073741823,
+        "nullable": "YES"
+      },
+      {
+        "name": "MoldSheetTitle",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "Notes",
+        "type": "LONGCHAR",
+        "size": 1073741823,
+        "nullable": "YES"
+      },
+      {
+        "name": "ProductNo",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "ProductName",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "RespDept",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "VendorCode",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "VendorName",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "UpdatedAt",
+        "type": "DATETIME",
+        "size": 19,
+        "nullable": "YES"
+      },
+      {
+        "name": "UpdatedBy",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      }
+    ]
+  },
+  {
+    "table_name": "tblMoldCutter",
+    "row_count": 2738,
+    "column_count": 7,
+    "columns": [
+      {
+        "name": "MoldCutterID",
+        "type": "COUNTER",
+        "size": 10,
+        "nullable": "NO"
+      },
+      {
+        "name": "CutterID",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "MoldDesignID",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "DateEntry",
+        "type": "DATETIME",
+        "size": 19,
+        "nullable": "YES"
+      },
+      {
+        "name": "MoldCutterNotes",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "UpdatedAt",
+        "type": "DATETIME",
+        "size": 19,
+        "nullable": "YES"
+      },
+      {
+        "name": "UpdatedBy",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      }
+    ]
+  },
+  {
+    "table_name": "tblMoldDesign",
+    "row_count": -1,
+    "error": "'utf-16-le' codec can't decode bytes in position 48-49: illegal UTF-16 surrogate"
+  },
+  {
+    "table_name": "tblMoldDesignLog",
+    "row_count": 0,
+    "column_count": 8,
+    "columns": [
+      {
+        "name": "MoldLogID",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "MoldDesignID",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "ChangeDate",
+        "type": "DATETIME",
+        "size": 19,
+        "nullable": "YES"
+      },
+      {
+        "name": "OldVersion",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "NewVersion",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "ChangeDescription",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "UpdatedAt",
+        "type": "DATETIME",
+        "size": 19,
+        "nullable": "YES"
+      },
+      {
+        "name": "UpdatedBy",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      }
+    ]
+  },
+  {
+    "table_name": "tblMoldLog",
+    "row_count": 36,
+    "column_count": 12,
+    "columns": [
+      {
+        "name": "MoldLogID",
+        "type": "COUNTER",
+        "size": 10,
+        "nullable": "NO"
+      },
+      {
+        "name": "MoldID",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "ChangeDate",
+        "type": "DATETIME",
+        "size": 19,
+        "nullable": "YES"
+      },
+      {
+        "name": "OldDesignID",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "NewDesignID",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "OldMoldName",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "NewMoldName",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "OldMoldDesignName",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "NewMoldDesignName",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "ChangeDescription",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "UpdatedAt",
+        "type": "DATETIME",
+        "size": 19,
+        "nullable": "YES"
+      },
+      {
+        "name": "UpdatedBy",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      }
+    ]
+  },
+  {
+    "table_name": "tblPLASTICforForming",
+    "row_count": 330,
+    "column_count": 18,
+    "columns": [
+      {
+        "name": "PlasticForFormingID",
+        "type": "COUNTER",
+        "size": 10,
+        "nullable": "NO"
+      },
+      {
+        "name": "PlasticMaterialID",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "PlasticColorID",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "PlasticThicknessID",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "PlasticWidthID",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "PlasticStaticChargeID",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "Silicone",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "PlasticCompanyID",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "IDJobNo",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "PlasticForFormingCombine",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "PlasticForFormingNotes",
+        "type": "LONGCHAR",
+        "size": 1073741823,
+        "nullable": "YES"
+      },
+      {
+        "name": "MoldID",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "JobID",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "MoldDesignID",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "PlasticWidth2",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "PlasticThickness2",
+        "type": "DOUBLE",
+        "size": 53,
+        "nullable": "YES"
+      },
+      {
+        "name": "UpdatedAt",
+        "type": "DATETIME",
+        "size": 19,
+        "nullable": "YES"
+      },
+      {
+        "name": "UpdatedBy",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      }
+    ]
+  },
+  {
+    "table_name": "tblPlasticColor",
+    "row_count": 7,
+    "column_count": 5,
+    "columns": [
+      {
+        "name": "PlasticColorID",
+        "type": "COUNTER",
+        "size": 10,
+        "nullable": "NO"
+      },
+      {
+        "name": "PlasticColor",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "PlasticColorMemo",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "UpdatedAt",
+        "type": "DATETIME",
+        "size": 19,
+        "nullable": "YES"
+      },
+      {
+        "name": "UpdatedBy",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      }
+    ]
+  },
+  {
+    "table_name": "tblPlasticCompany",
+    "row_count": 23,
+    "column_count": 4,
+    "columns": [
+      {
+        "name": "PlasticCompanyID",
+        "type": "COUNTER",
+        "size": 10,
+        "nullable": "NO"
+      },
+      {
+        "name": "PlasticCompany",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "UpdatedAt",
+        "type": "DATETIME",
+        "size": 19,
+        "nullable": "YES"
+      },
+      {
+        "name": "UpdatedBy",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      }
+    ]
+  },
+  {
+    "table_name": "tblPlasticGroup",
+    "row_count": 17,
+    "column_count": 4,
+    "columns": [
+      {
+        "name": "PlasticGroupID",
+        "type": "COUNTER",
+        "size": 10,
+        "nullable": "NO"
+      },
+      {
+        "name": "PlasticGroup",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "UpdatedAt",
+        "type": "DATETIME",
+        "size": 19,
+        "nullable": "YES"
+      },
+      {
+        "name": "UpdatedBy",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      }
+    ]
+  },
+  {
+    "table_name": "tblPlasticLength",
+    "row_count": 24,
+    "column_count": 4,
+    "columns": [
+      {
+        "name": "PlasticLengthID",
+        "type": "COUNTER",
+        "size": 10,
+        "nullable": "NO"
+      },
+      {
+        "name": "PlasticLengthPerPack",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "UpdatedAt",
+        "type": "DATETIME",
+        "size": 19,
+        "nullable": "YES"
+      },
+      {
+        "name": "UpdatedBy",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      }
+    ]
+  },
+  {
+    "table_name": "tblPlasticMaterial",
+    "row_count": 5,
+    "column_count": 5,
+    "columns": [
+      {
+        "name": "PlasticMaterialID",
+        "type": "COUNTER",
+        "size": 10,
+        "nullable": "NO"
+      },
+      {
+        "name": "PlasticMaterial",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "PlasticMaterialNotes",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "UpdatedAt",
+        "type": "DATETIME",
+        "size": 19,
+        "nullable": "YES"
+      },
+      {
+        "name": "UpdatedBy",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      }
+    ]
+  },
+  {
+    "table_name": "tblPlasticStaticCharge",
+    "row_count": 22,
+    "column_count": 5,
+    "columns": [
+      {
+        "name": "PlasticStaticChargeID",
+        "type": "COUNTER",
+        "size": 10,
+        "nullable": "NO"
+      },
+      {
+        "name": "PlasticStaticCharge",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "PlasticStaticChargeNotes",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "UpdatedAt",
+        "type": "DATETIME",
+        "size": 19,
+        "nullable": "YES"
+      },
+      {
+        "name": "UpdatedBy",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      }
+    ]
+  },
+  {
+    "table_name": "tblPlasticThickness",
+    "row_count": 25,
+    "column_count": 4,
+    "columns": [
+      {
+        "name": "PlasticThicknessID",
+        "type": "COUNTER",
+        "size": 10,
+        "nullable": "NO"
+      },
+      {
+        "name": "PlasticThickness",
+        "type": "DOUBLE",
+        "size": 53,
+        "nullable": "YES"
+      },
+      {
+        "name": "UpdatedAt",
+        "type": "DATETIME",
+        "size": 19,
+        "nullable": "YES"
+      },
+      {
+        "name": "UpdatedBy",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      }
+    ]
+  },
+  {
+    "table_name": "tblPlasticWidth",
+    "row_count": 26,
+    "column_count": 4,
+    "columns": [
+      {
+        "name": "PlasticWidthID",
+        "type": "COUNTER",
+        "size": 10,
+        "nullable": "NO"
+      },
+      {
+        "name": "PlasticWidth",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "UpdatedAt",
+        "type": "DATETIME",
+        "size": 19,
+        "nullable": "YES"
+      },
+      {
+        "name": "UpdatedBy",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      }
+    ]
+  },
+  {
+    "table_name": "tblProcessingCode",
+    "row_count": 53,
+    "column_count": 5,
+    "columns": [
+      {
+        "name": "ProcessingCodeID",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "ProcessingName",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "Note",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "UpdatedAt",
+        "type": "DATETIME",
+        "size": 19,
+        "nullable": "YES"
+      },
+      {
+        "name": "UpdatedBy",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      }
+    ]
+  },
+  {
+    "table_name": "tblProcessingDeadline",
+    "row_count": 2527,
+    "column_count": 15,
+    "columns": [
+      {
+        "name": "ProcessingDeadlineID",
+        "type": "COUNTER",
+        "size": 10,
+        "nullable": "NO"
+      },
+      {
+        "name": "JobID",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "IDJobNo",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "ItemTypeID",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "ProcessingStatusID",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "MachiningCustomerID",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "ProcessingDeadline",
+        "type": "DATETIME",
+        "size": 19,
+        "nullable": "YES"
+      },
+      {
+        "name": "EstimatedHours",
+        "type": "DOUBLE",
+        "size": 53,
+        "nullable": "YES"
+      },
+      {
+        "name": "Set",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "Tehai",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "DrawingReceiptDate",
+        "type": "DATETIME",
+        "size": 19,
+        "nullable": "YES"
+      },
+      {
+        "name": "ProcessingNotes",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "IDCapDC",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "UpdatedAt",
+        "type": "DATETIME",
+        "size": 19,
+        "nullable": "YES"
+      },
+      {
+        "name": "UpdatedBy",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      }
+    ]
+  },
+  {
+    "table_name": "tblProcessingItem",
+    "row_count": 20,
+    "column_count": 7,
+    "columns": [
+      {
+        "name": "ProcessingItemID",
+        "type": "COUNTER",
+        "size": 10,
+        "nullable": "NO"
+      },
+      {
+        "name": "ProcessingItemName",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "Description",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "ProcessingImage",
+        "type": "LONGCHAR",
+        "size": 1073741823,
+        "nullable": "YES"
+      },
+      {
+        "name": "ProcessingNotes",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "UpdatedAt",
+        "type": "DATETIME",
+        "size": 19,
+        "nullable": "YES"
+      },
+      {
+        "name": "UpdatedBy",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      }
+    ]
+  },
+  {
+    "table_name": "tblProcessingStatus",
+    "row_count": 13,
+    "column_count": 6,
+    "columns": [
+      {
+        "name": "ProcessingStatusID",
+        "type": "COUNTER",
+        "size": 10,
+        "nullable": "NO"
+      },
+      {
+        "name": "ProcessingStatus",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "IDTinhTrangGC",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "TinhTrangGiaCong",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "UpdatedAt",
+        "type": "DATETIME",
+        "size": 19,
+        "nullable": "YES"
+      },
+      {
+        "name": "UpdatedBy",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      }
+    ]
+  },
+  {
+    "table_name": "tblRack",
+    "row_count": 90,
+    "column_count": 9,
+    "columns": [
+      {
+        "name": "RackID",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "RackNumber",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "RackSymbol",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "RackLocation",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "RackNotes",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "RackCompanyLocation",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "RackName",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "UpdatedAt",
+        "type": "DATETIME",
+        "size": 19,
+        "nullable": "YES"
+      },
+      {
+        "name": "UpdatedBy",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      }
+    ]
+  },
+  {
+    "table_name": "tblRackLayer",
+    "row_count": 400,
+    "column_count": 7,
+    "columns": [
+      {
+        "name": "RackLayerID",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "RackID",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "RackLayerNumber",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "RackLayerNotes",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "RackCompanyNote",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "UpdatedAt",
+        "type": "DATETIME",
+        "size": 19,
+        "nullable": "YES"
+      },
+      {
+        "name": "UpdatedBy",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      }
+    ]
+  },
+  {
+    "table_name": "tblResponsiblePerson",
+    "row_count": 13,
+    "column_count": 6,
+    "columns": [
+      {
+        "name": "ResponsiblePersonID",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "ResponsiblePerson",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "Joining Date",
+        "type": "DATETIME",
+        "size": 19,
+        "nullable": "YES"
+      },
+      {
+        "name": "ResponsiblePersonNotes",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "UpdatedAt",
+        "type": "DATETIME",
+        "size": 19,
+        "nullable": "YES"
+      },
+      {
+        "name": "UpdatedBy",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      }
+    ]
+  },
+  {
+    "table_name": "tblShipLog",
+    "row_count": 358,
+    "column_count": 22,
+    "columns": [
+      {
+        "name": "ShipID",
+        "type": "COUNTER",
+        "size": 10,
+        "nullable": "NO"
+      },
+      {
+        "name": "CustomerID",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "ItemTypeID",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "ShipItemName",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "ShipDate",
+        "type": "DATETIME",
+        "size": 19,
+        "nullable": "YES"
+      },
+      {
+        "name": "ToCompanyID",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "FromCompanyID",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "ShipItemType",
+        "type": "VARCHAR",
+        "size": 50,
+        "nullable": "YES"
+      },
+      {
+        "name": "ShipStatus",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "FromCompany",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "ToCompany",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "MoldID",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "CutterID",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "FrameID",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "OtherEquipID",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "WaterBaseID",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "ShipNotes",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "DateEntry",
+        "type": "DATETIME",
+        "size": 19,
+        "nullable": "YES"
+      },
+      {
+        "name": "handler",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "EmployeeID",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "UpdatedAt",
+        "type": "DATETIME",
+        "size": 19,
+        "nullable": "YES"
+      },
+      {
+        "name": "UpdatedBy",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      }
+    ]
+  },
+  {
+    "table_name": "tblStakings",
+    "row_count": 2,
+    "column_count": 11,
+    "columns": [
+      {
+        "name": "StakingID",
+        "type": "COUNTER",
+        "size": 10,
+        "nullable": "NO"
+      },
+      {
+        "name": "StakingName",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "IDStaking",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "StakingType",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "Serial",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "StakingDai",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "StakingRong",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "StakingGhichu",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "MaySo",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "UpdatedAt",
+        "type": "DATETIME",
+        "size": 19,
+        "nullable": "YES"
+      },
+      {
+        "name": "UpdatedBy",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      }
+    ]
+  },
+  {
+    "table_name": "tblTeflonLog",
+    "row_count": 4692,
+    "column_count": 21,
+    "columns": [
+      {
+        "name": "TeflonLogID",
+        "type": "COUNTER",
+        "size": 10,
+        "nullable": "NO"
+      },
+      {
+        "name": "MoldID",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "TeflonStatus",
+        "type": "VARCHAR",
+        "size": 20,
+        "nullable": "YES"
+      },
+      {
+        "name": "RequestedBy",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "RequestedDate",
+        "type": "DATETIME",
+        "size": 19,
+        "nullable": "YES"
+      },
+      {
+        "name": "ApprovedDate",
+        "type": "DATETIME",
+        "size": 19,
+        "nullable": "YES"
+      },
+      {
+        "name": "ApprovedBy",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "SentBy",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "SentDate",
+        "type": "DATETIME",
+        "size": 19,
+        "nullable": "YES"
+      },
+      {
+        "name": "ExpectedDate",
+        "type": "DATETIME",
+        "size": 19,
+        "nullable": "YES"
+      },
+      {
+        "name": "ReceivedDate",
+        "type": "DATETIME",
+        "size": 19,
+        "nullable": "YES"
+      },
+      {
+        "name": "ReceivedBy",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "SupplierID",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "CoatingType",
+        "type": "VARCHAR",
+        "size": 50,
+        "nullable": "YES"
+      },
+      {
+        "name": "Reason",
+        "type": "VARCHAR",
+        "size": 50,
+        "nullable": "YES"
+      },
+      {
+        "name": "TeflonCost",
+        "type": "CURRENCY",
+        "size": 19,
+        "nullable": "YES"
+      },
+      {
+        "name": "Quality",
+        "type": "VARCHAR",
+        "size": 20,
+        "nullable": "YES"
+      },
+      {
+        "name": "TeflonNotes",
+        "type": "LONGCHAR",
+        "size": 1073741823,
+        "nullable": "YES"
+      },
+      {
+        "name": "CreatedDate",
+        "type": "DATETIME",
+        "size": 19,
+        "nullable": "YES"
+      },
+      {
+        "name": "UpdatedBy",
+        "type": "VARCHAR",
+        "size": 50,
+        "nullable": "YES"
+      },
+      {
+        "name": "UpdatedAt",
+        "type": "DATETIME",
+        "size": 19,
+        "nullable": "YES"
+      }
+    ]
+  },
+  {
+    "table_name": "tblTray",
+    "row_count": 4112,
+    "column_count": 15,
+    "columns": [
+      {
+        "name": "TrayID",
+        "type": "COUNTER",
+        "size": 10,
+        "nullable": "NO"
+      },
+      {
+        "name": "TrayName",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "TrayCode",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "MoldTrayName",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "RackLayerID",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "CustomerID",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "TrayDateEntry",
+        "type": "DATETIME",
+        "size": 19,
+        "nullable": "YES"
+      },
+      {
+        "name": "ItemTypeID",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "TrayOrderNotes",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "TrayWeight",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "CustomerTrayName",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "CustomerDrawingNo",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "CustomerEquipmentNo",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "UpdatedAt",
+        "type": "DATETIME",
+        "size": 19,
+        "nullable": "YES"
+      },
+      {
+        "name": "UpdatedBy",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      }
+    ]
+  },
+  {
+    "table_name": "tblTrayCustomer",
+    "row_count": 1069,
+    "column_count": 12,
+    "columns": [
+      {
+        "name": "TrayCustomerID",
+        "type": "COUNTER",
+        "size": 10,
+        "nullable": "NO"
+      },
+      {
+        "name": "CustomerNo",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "Destination",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "Address",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "Client",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "Sub",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "PhoneNumber",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "FAX",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "Remarks",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "FolderLink",
+        "type": "LONGCHAR",
+        "size": 1073741823,
+        "nullable": "YES"
+      },
+      {
+        "name": "UpdatedAt",
+        "type": "DATETIME",
+        "size": 19,
+        "nullable": "YES"
+      },
+      {
+        "name": "UpdatedBy",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      }
+    ]
+  },
+  {
+    "table_name": "tblTrayOrder",
+    "row_count": 2,
+    "column_count": 12,
+    "columns": [
+      {
+        "name": "TrayOrderID",
+        "type": "COUNTER",
+        "size": 10,
+        "nullable": "NO"
+      },
+      {
+        "name": "TrayOrderDate",
+        "type": "DATETIME",
+        "size": 19,
+        "nullable": "YES"
+      },
+      {
+        "name": "CustomerID",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "TrayID",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "TrayOrderPerson",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "TrayOderQuantity",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "TrayDeliveryDate",
+        "type": "DATETIME",
+        "size": 19,
+        "nullable": "YES"
+      },
+      {
+        "name": "TrayOrderStatus",
+        "type": "VARCHAR",
+        "size": 50,
+        "nullable": "YES"
+      },
+      {
+        "name": "TrayOrderNotes",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "TrayOrderCustomerID",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "UpdatedAt",
+        "type": "DATETIME",
+        "size": 19,
+        "nullable": "YES"
+      },
+      {
+        "name": "UpdatedBy",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      }
+    ]
+  },
+  {
+    "table_name": "tblWorkLog",
+    "row_count": 7416,
+    "column_count": 14,
+    "columns": [
+      {
+        "name": "WorkLogID",
+        "type": "COUNTER",
+        "size": 10,
+        "nullable": "NO"
+      },
+      {
+        "name": "ProcessingDeadlineID",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "EmployeeID",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "ProcessingCodeID",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "ProcessingTime",
+        "type": "DOUBLE",
+        "size": 53,
+        "nullable": "YES"
+      },
+      {
+        "name": "ProcessingDate",
+        "type": "DATETIME",
+        "size": 19,
+        "nullable": "YES"
+      },
+      {
+        "name": "ProcessingNotes",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "ProcessingNumbers",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "FinishDate",
+        "type": "DATETIME",
+        "size": 19,
+        "nullable": "YES"
+      },
+      {
+        "name": "Finished",
+        "type": "BIT",
+        "size": 1,
+        "nullable": "NO"
+      },
+      {
+        "name": "Noidunglienlac",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      },
+      {
+        "name": "CompanyID",
+        "type": "INTEGER",
+        "size": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "UpdatedAt",
+        "type": "DATETIME",
+        "size": 19,
+        "nullable": "YES"
+      },
+      {
+        "name": "UpdatedBy",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": "YES"
+      }
+    ]
+  }
+]

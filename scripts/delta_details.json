@@ -1,0 +1,245 @@
+{
+  "unimportedJobs": [
+    {
+      "JobID": 1251,
+      "JobCode": "ADY133R1",
+      "JobName": "ADY-133 R1",
+      "JobStartDate": null,
+      "DeliveryDeadline": "2026-09-15T00:00:00"
+    },
+    {
+      "JobID": 1252,
+      "JobCode": "YKW009",
+      "JobName": "YKW-009",
+      "JobStartDate": "2026-08-29T00:00:00",
+      "DeliveryDeadline": "2026-09-10T00:00:00"
+    },
+    {
+      "JobID": 1253,
+      "JobCode": "TOW005DR2",
+      "JobName": "TOW-005D R2",
+      "JobStartDate": null,
+      "DeliveryDeadline": "2026-09-11T00:00:00"
+    },
+    {
+      "JobID": 1254,
+      "JobCode": "SSK011R3",
+      "JobName": "SSK-011 R3",
+      "JobStartDate": null,
+      "DeliveryDeadline": "2026-09-14T00:00:00"
+    },
+    {
+      "JobID": 1255,
+      "JobCode": "CHG019D",
+      "JobName": "CHG-019 D",
+      "JobStartDate": null,
+      "DeliveryDeadline": "2026-09-05T00:00:00"
+    },
+    {
+      "JobID": 1256,
+      "JobCode": "DIC0642面",
+      "JobName": "DIC-064 2面",
+      "JobStartDate": null,
+      "DeliveryDeadline": "2026-09-07T00:00:00"
+    },
+    {
+      "JobID": 1257,
+      "JobCode": "MTM194R3",
+      "JobName": "MTM-194 R3",
+      "JobStartDate": null,
+      "DeliveryDeadline": "2026-09-04T00:00:00"
+    },
+    {
+      "JobID": 1258,
+      "JobCode": "CHG020D",
+      "JobName": "CHG-020 D",
+      "JobStartDate": null,
+      "DeliveryDeadline": "2026-09-09T00:00:00"
+    },
+    {
+      "JobID": 1259,
+      "JobCode": "CHG016DR4",
+      "JobName": "CHG-016D R4",
+      "JobStartDate": null,
+      "DeliveryDeadline": "2026-09-09T00:00:00"
+    },
+    {
+      "JobID": 1260,
+      "JobCode": "JAE382",
+      "JobName": "JAE-382",
+      "JobStartDate": "2026-09-03T00:00:00",
+      "DeliveryDeadline": "2026-09-28T00:00:00"
+    },
+    {
+      "JobID": 1261,
+      "JobCode": "CHG017DR4",
+      "JobName": "CHG-017 DR4",
+      "JobStartDate": null,
+      "DeliveryDeadline": "2026-09-14T00:00:00"
+    },
+    {
+      "JobID": 1262,
+      "JobCode": "DIC0692CAV",
+      "JobName": "DIC-069-2CAV",
+      "JobStartDate": null,
+      "DeliveryDeadline": "2026-09-18T00:00:00"
+    },
+    {
+      "JobID": 1263,
+      "JobCode": "SSM059R1",
+      "JobName": "SSM-059 R1",
+      "JobStartDate": null,
+      "DeliveryDeadline": "2026-09-25T00:00:00"
+    },
+    {
+      "JobID": 1264,
+      "JobCode": "JAE193",
+      "JobName": "JAE-193",
+      "JobStartDate": null,
+      "DeliveryDeadline": "2026-09-15T00:00:00"
+    },
+    {
+      "JobID": 1265,
+      "JobCode": "STD013",
+      "JobName": "STD-013",
+      "JobStartDate": null,
+      "DeliveryDeadline": "2026-09-24T00:00:00"
+    },
+    {
+      "JobID": 1266,
+      "JobCode": "NHC010",
+      "JobName": "NHC-010",
+      "JobStartDate": null,
+      "DeliveryDeadline": "2026-10-02T00:00:00"
+    },
+    {
+      "JobID": 1268,
+      "JobCode": "ASH005R1",
+      "JobName": "ASH-005 R1",
+      "JobStartDate": null,
+      "DeliveryDeadline": "2026-09-17T00:00:00"
+    },
+    {
+      "JobID": 1269,
+      "JobCode": "DIC145R12CAV",
+      "JobName": "DIC-145R1-2CAV",
+      "JobStartDate": null,
+      "DeliveryDeadline": "2026-09-28T00:00:00"
+    },
+    {
+      "JobID": 1270,
+      "JobCode": "CHG018DR1",
+      "JobName": "CHG-018D R1",
+      "JobStartDate": null,
+      "DeliveryDeadline": "2026-10-01T00:00:00"
+    },
+    {
+      "JobID": 1271,
+      "JobCode": "IRI017",
+      "JobName": "IRI-017",
+      "JobStartDate": null,
+      "DeliveryDeadline": "2026-10-05T00:00:00"
+    },
+    {
+      "JobID": 1272,
+      "JobCode": "DIC165DR6",
+      "JobName": "DIC-165D R6",
+      "JobStartDate": null,
+      "DeliveryDeadline": "2026-10-06T00:00:00"
+    },
+    {
+      "JobID": 1273,
+      "JobCode": "TOW005R2",
+      "JobName": "TOW-005 R2",
+      "JobStartDate": null,
+      "DeliveryDeadline": "2026-10-07T00:00:00"
+    },
+    {
+      "JobID": 1274,
+      "JobCode": "SHT022AR5",
+      "JobName": "SHT-022A R5",
+      "JobStartDate": null,
+      "DeliveryDeadline": "2026-10-08T00:00:00"
+    },
+    {
+      "JobID": 1275,
+      "JobCode": "WB385X290",
+      "JobName": "WB-385X290",
+      "JobStartDate": null,
+      "DeliveryDeadline": "2026-09-30T00:00:00"
+    },
+    {
+      "JobID": 1276,
+      "JobCode": "COB001",
+      "JobName": "COB-001",
+      "JobStartDate": null,
+      "DeliveryDeadline": "2026-10-09T00:00:00"
+    },
+    {
+      "JobID": 1277,
+      "JobCode": "SMK232",
+      "JobName": "SMK-232",
+      "JobStartDate": null,
+      "DeliveryDeadline": "2026-10-13T00:00:00"
+    },
+    {
+      "JobID": 1278,
+      "JobCode": "YCM082R1",
+      "JobName": "YCM-082 R1",
+      "JobStartDate": "2026-10-06T00:00:00",
+      "DeliveryDeadline": "2026-10-19T00:00:00"
+    }
+  ],
+  "unimportedStepsCount": 81,
+  "stepsForNewJobs": 55,
+  "stepsForExistingJobs": 26,
+  "unimportedLogsCount": 311,
+  "logDatesRange": {
+    "min": "2022-09-07T00:00:00",
+    "max": "2026-10-05T00:00:00"
+  },
+  "monthDist": {
+    "2026-09": 155,
+    "2026-10": 29,
+    "2026-08": 26,
+    "2026-06": 1,
+    "2022-09": 1,
+    "2022-11": 3,
+    "2022-12": 4,
+    "2023-01": 4,
+    "2023-02": 1,
+    "2023-03": 2,
+    "2023-04": 1,
+    "2023-05": 5,
+    "2023-06": 4,
+    "2023-07": 5,
+    "2023-08": 5,
+    "2023-11": 4,
+    "2023-12": 2,
+    "2024-01": 2,
+    "2024-02": 7,
+    "2024-03": 2,
+    "2024-05": 2,
+    "2024-06": 1,
+    "2024-07": 4,
+    "2024-08": 5,
+    "2024-09": 1,
+    "2024-10": 5,
+    "2024-11": 2,
+    "2024-12": 3,
+    "2025-01": 3,
+    "2025-02": 3,
+    "2025-03": 1,
+    "2025-04": 3,
+    "2025-05": 2,
+    "2025-06": 4,
+    "2025-07": 2,
+    "2025-08": 4,
+    "2025-11": 3
+  },
+  "moldBorrowsCount": 209,
+  "borrowDatesRange": {
+    "min": "2024-11-01T00:00:00",
+    "max": "2025-03-10T00:00:00"
+  }
+}

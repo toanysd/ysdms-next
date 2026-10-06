@@ -46,6 +46,7 @@ add_col.js
 /playwright-report/
 scripts/temp/
 scripts/_temp*
+scripts/access_audit_export.json
 
 # Scratch / Debug / Legacy (dọn dẹp 2026-07-15)
 /scratch/

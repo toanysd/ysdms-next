@@ -589,3 +589,25 @@ Bạn là AN (Executing Agent). Đây là dự án **ysdms-next** — hệ thố
 - **Bảng `public.order_lines`:** **ĐÃ ÁP DỤNG VÀO SUPABASE & ĐÃ KIỂM THỬ THỰC TẾ** ✅.
 - **Tình trạng nợ kỹ thuật 0 order_lines:** **CHÍNH THỨC ĐƯỢC GIẢI QUYẾT TRIỆT ĐỂ (CLOSED ✅)**.
 - **Các bước tiếp theo:** Chờ PE thẩm tra độc lập trên Supabase và cấp phép mở khâu kiểm thử giao diện Tạo Phiếu Giao Hàng (`/shipments/new`).
+
+## 21. BÁO CÁO KIỂM TOÁN CHỈ-ĐỌC: TẬP DỮ LIỆU ACCESS ysdJOB_20261006.accdb (2026-10-06 15:25 JST)
+
+### 21.1. Căn cứ Thực hiện
+- **Chỉ thị Minh Chủ Thoan:** [Stamp: 2026-10-06 15:12 JST] Phê duyệt vòng audit chỉ-đọc file `ysdJOB_20261006.accdb` (584.07 MB). Tuyệt đối không ghi Supabase, không tạo bảng staging.
+- **Phê duyệt Kỹ thuật PE:** Yêu cầu 10 hạng mục chứng minh kỹ thuật độc lập.
+
+### 21.2. Kết quả Đối soát Chính
+- **Tập tin nguồn:** `D:\AntiGravity_Workspace\apps\ysdms-nextgen\docs\ysdJOB_20261006.accdb` (612,442,112 bytes, Last Modified: 2026-10-06 13:43:26 JST).
+- **Tổng số bảng:** 82 bảng (50 bảng nghiệp vụ, 32 bảng tạm `~TMP...`).
+- **Phát hiện dữ liệu Delta (Mới / Chưa nạp vào Supabase):**
+  * `tblJOB`: 1,230 dòng $\rightarrow$ 1,203 đã có trên Supabase, **27 Jobs MỚI** (dải JobID 1251–1278, phát sinh từ cuối tháng 8/2026 đến 06/10/2026).
+  * `tblProcessingDeadline`: 2,527 dòng $\rightarrow$ 2,446 đã có, **81 Steps MỚI** (55 thuộc 27 Jobs mới, 26 thuộc 6 Jobs cũ bổ sung và 20 step có JobID=NULL).
+  * `tblWorkLog`: 7,416 dòng $\rightarrow$ 7,105 đã có, **311 Work Logs MỚI** (210 logs từ tháng 8–10/2026, 94 logs có `ProcessingDeadlineID=NULL` bị script cũ bỏ qua, 7 logs lịch sử).
+  * `tblMoldBorrow`: 209 dòng $\rightarrow$ **209 Phiếu mượn khuôn CHƯA NẠP** (Supabase `equipment_loans` hiện có 0 dòng).
+- **Khóa Idempotency đề xuất:**
+  * `jobs` / `work_orders`: `legacy_id = 'JOB-' || JobID`
+  * `job_steps`: `legacy_id = 'LEGACY-STEP-' || ProcessingDeadlineID`
+  * `work_logs`: `legacy_id = 'LEGACY-LOG-' || WorkLogID`
+  * `equipment_loans`: `loan_code = 'LN-BORROW-' || LPAD(MoldBorrowID, 4, '0')`
+- **Cam kết an toàn:** 100% Read-Only, 0 thao tác ghi vào Supabase Production. Báo cáo đầy đủ: `docs/reports/2026-10-06_access_job_database_audit_report.md`.
+
