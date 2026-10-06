@@ -513,3 +513,23 @@ Bạn là AN (Executing Agent). Đây là dự án **ysdms-next** — hệ thố
 - 16 file lô `batch_01.sql` đến `batch_16.sql`: Mỗi file ~54 KB (< 70 KB), chứa đầy đủ 13 cột dữ liệu.
 - Script tự động: `scripts/export_staging_sql_batches.mjs` & `scripts/verify_pe_audit_queries.mjs`.
 - Quyết định tiếp theo: Chờ Minh Chủ Thoan duyệt mở cổng nạp 16 batch vào bảng `staging_order_lines_backfill` trên Production.
+
+### 19.4. Thực thi Nạp Thật vào Staging trên Supabase Production (Minh Chủ Đã Duyệt)
+- **Thời điểm thực thi:** 2026-10-06 14:24 JST.
+- **Lệnh phê duyệt từ Minh Chủ Thoan:** "Đồng thuận với PE, cho phép AN".
+- **Script thi công:** `scripts/execute_staging_load_to_supabase.mjs --execute`.
+- **Kết quả thực tế trên Supabase Production:**
+  * Bảng `public.staging_order_lines_backfill` đã tạo thành công kèm 4 index (`order_no`, `product_id`, `batch_no`, `source_row_no`).
+  * Đã nạp thành công trọn vẹn 16 lô SQL (từ `batch_01` đến `batch_16`), tổng cộng **đúng 6.279 dòng**.
+  * PostgREST API xác nhận: `count = 6279`.
+  * Đã chạy trực tiếp 7 truy vấn kiểm định A $\rightarrow$ G trên PostgreSQL Production:
+    - **Query A:** 6.279 dòng, 2.396 orders, 713 products, tổng sản lượng normalized: 8.701.481 PCS (gốc 8.701.479 PCS + 2 PCS mẫu) $\rightarrow$ **PASSED ✅**.
+    - **Query B (Duplicate):** 0 dòng trùng lặp $\rightarrow$ **PASSED ✅**.
+    - **Query C (Missing orders):** 0 đơn hàng thiếu $\rightarrow$ **PASSED ✅**.
+    - **Query D (Missing products):** 0 sản phẩm thiếu $\rightarrow$ **PASSED ✅**.
+    - **Query E (Product code mismatch):** 0 dòng lệch mã sản phẩm $\rightarrow$ **PASSED ✅**.
+    - **Query F (Quantity invalid):** 0 dòng có số lượng không hợp lệ $\rightarrow$ **PASSED ✅**.
+    - **Query G (Line numbering continuity):** 0 dòng ngắt quãng $\rightarrow$ **PASSED ✅**.
+- **Cam kết an toàn Production:**
+  * Bảng `public.order_lines`: **Vẫn giữ nguyên 0 dòng (100% READ-ONLY)**. Tuyệt đối chưa ghi sang bảng chính khi chưa có chỉ đạo tiếp theo.
+- **Trạng thái mới:** ĐÃ ÁP DỤNG VÀO SUPABASE (cho bảng staging) & ĐÃ KIỂM THỬ THỰC TẾ.
