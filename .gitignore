@@ -92,3 +92,4 @@ tsconfig.tsbuildinfo
 # Unignore supabase migrations
 !supabase/migrations/
 
+thaoluan-per/

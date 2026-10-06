@@ -485,3 +485,31 @@ Bạn là AN (Executing Agent). Đây là dự án **ysdms-next** — hệ thố
 
 
 
+
+## 19. TRIỂN KHAI YÊU CẦU KIỂM ĐỊNH PE (2026-10-06) — NÂNG CẤP STAGING & 7 QUERY ĐỐI SOÁT
+
+### 19.1. Tiếp thu Chỉ đạo Kỹ thuật từ PE
+- **Phân loại trạng thái:** Mã đã viết (Code Written) đối với bộ script và staging SQL.
+- **Trạng thái Production hiện tại:**
+  * `orders`: 2.396 dòng.
+  * `order_lines`: 0 dòng (READ-ONLY tuyệt đối: Chưa ghi bất kỳ dòng nào).
+  * `products`: 8.489 dòng.
+  * `public.staging_order_lines_backfill`: Chưa tạo (Chờ Anh Thoan phê duyệt cổng).
+- **Đáp ứng mục 3.1 (Thiết kế Staging V2):** Bổ sung đầy đủ tracking: `batch_no INT`, `source_row_no INT`, `quantity_normalized INT`, `validation_status TEXT`, `validation_error TEXT`.
+- **Đáp ứng mục 3.2 (7 Truy vấn Kiểm định A -> G):** Đã tích hợp trọn vẹn vào `00_setup_and_verification.sql` và xây dựng runner tự động `scripts/verify_pe_audit_queries.mjs`.
+
+### 19.2. Kết quả Chạy Thực tế 7 Bài Kiểm định A -> G trên Supabase Production
+- Script thực thi: `node scripts/verify_pe_audit_queries.mjs`.
+- Kết quả đối soát 100% khớp thực tế:
+  * **Query A (Đếm dòng & Sản lượng):** 6.279 dòng, 2.396 đơn hàng, 713 sản phẩm, 8.701.481 PCS normalized (8.701.479 PCS gốc + 2 dòng mẫu đặc biệt = 1) -> **PASSED ✅**.
+  * **Query B (Duplicate khóa nguồn):** 0 trùng lặp `(order_no, line_no)` -> **PASSED ✅**.
+  * **Query C (Missing orders FK):** 0 lỗi FK đơn hàng (2.396/2.396 khớp 100%) -> **PASSED ✅**.
+  * **Query D (Missing products FK):** 0 lỗi FK sản phẩm (713/713 khớp 100%) -> **PASSED ✅**.
+  * **Query E (Product code mismatch):** 0 mismatch (Mã sản phẩm nguồn khớp 100% với `products.product_code`) -> **PASSED ✅**.
+  * **Query F (Quantity hợp lệ):** 0 lỗi (100% là số nguyên dương > 0) -> **PASSED ✅**.
+  * **Query G (Line numbering 1..N):** 0 ngắt quãng (100% các đơn có số dòng liên tục từ 1) -> **PASSED ✅**.
+
+### 19.3. Bàn giao Kho Lưu trữ Staging V2
+- 16 file lô `batch_01.sql` đến `batch_16.sql`: Mỗi file ~54 KB (< 70 KB), chứa đầy đủ 13 cột dữ liệu.
+- Script tự động: `scripts/export_staging_sql_batches.mjs` & `scripts/verify_pe_audit_queries.mjs`.
+- Quyết định tiếp theo: Chờ Minh Chủ Thoan duyệt mở cổng nạp 16 batch vào bảng `staging_order_lines_backfill` trên Production.
