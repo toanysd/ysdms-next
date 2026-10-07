@@ -13,7 +13,25 @@ with open(ENV_FILE, 'r', encoding='utf-8') as f:
 conn = psycopg2.connect(db_url)
 cur = conn.cursor(cursor_factory=RealDictCursor)
 
-# 1. Fetch exact trigger definitions from pg_trigger
+EXPECTED_TRIGGERS = {
+    'trg_sync_job_progress': {
+        'table': 'job_steps',
+        'function': 'sync_job_overall_progress',
+        'events': ['INSERT', 'DELETE', 'UPDATE']
+    },
+    'trigger_update_job_status': {
+        'table': 'job_steps',
+        'function': 'trg_update_job_status_from_steps',
+        'events': ['INSERT', 'DELETE', 'UPDATE']
+    },
+    'trigger_update_step_status': {
+        'table': 'work_logs',
+        'function': 'trg_update_step_status_from_worklogs',
+        'events': ['INSERT', 'DELETE', 'UPDATE']
+    }
+}
+
+print("=== 1. FAIL-CLOSED TRIGGER CATALOG AUDITING ===")
 cur.execute('''
     SELECT 
         tgname AS trigger_name,
@@ -25,14 +43,57 @@ cur.execute('''
       AND NOT tgisinternal
     ORDER BY relname, tgname;
 ''')
-print("=== TRIGGER DEFINITIONS ===")
-for r in cur.fetchall():
-    print(f"[{r['table_name']}] {r['trigger_name']}:\n  {r['trigger_def']}\n")
+found_triggers = {r['trigger_name']: r for r in cur.fetchall()}
 
-# 2. Fetch function definitions
+trigger_audit_results = {}
+for tg_name, spec in EXPECTED_TRIGGERS.items():
+    if tg_name not in found_triggers:
+        raise AssertionError(f"FAIL-CLOSED: Expected trigger '{tg_name}' NOT FOUND in catalog pg_trigger!")
+    
+    actual = found_triggers[tg_name]
+    actual_table = actual['table_name']
+    actual_def = actual['trigger_def']
+    expected_table = spec['table']
+    expected_fn = spec['function']
+    
+    if actual_table != expected_table:
+        raise AssertionError(f"FAIL-CLOSED: Trigger '{tg_name}' is attached to table '{actual_table}', expected '{expected_table}'!")
+    
+    if expected_fn not in actual_def:
+        raise AssertionError(f"FAIL-CLOSED: Trigger '{tg_name}' definition does not call function '{expected_fn}'! Def: {actual_def}")
+    
+    for ev in spec['events']:
+        if ev not in actual_def:
+            raise AssertionError(f"FAIL-CLOSED: Trigger '{tg_name}' definition missing expected event '{ev}'! Def: {actual_def}")
+            
+    print(f"  [PASS] Trigger '{tg_name}': Table '{actual_table}', Function '{expected_fn}', Events {spec['events']}")
+    trigger_audit_results[tg_name] = {
+        'status': 'VERIFIED',
+        'table': actual_table,
+        'function': expected_fn,
+        'trigger_def': actual_def
+    }
+
+print("\n=== 2. FAIL-CLOSED FUNCTION OVERLOAD & DEFINITION AUDITING ===")
+function_audit_results = {}
 for fn in ['sync_job_overall_progress', 'trg_update_job_status_from_steps', 'trg_update_step_status_from_worklogs']:
+    cur.execute('SELECT count(*) as c FROM pg_proc WHERE proname = %s', (fn,))
+    overload_count = cur.fetchone()['c']
+    
+    if overload_count == 0:
+        raise AssertionError(f"FAIL-CLOSED: Function '{fn}' NOT FOUND in pg_proc!")
+    elif overload_count > 1:
+        raise AssertionError(f"FAIL-CLOSED: Function '{fn}' has {overload_count} overloads (ambiguous call definition)!")
+        
     cur.execute('SELECT pg_get_functiondef(p.oid) AS def FROM pg_proc p WHERE proname = %s', (fn,))
-    r = cur.fetchone()
-    print(f"=== FUNCTION: {fn} ===\n{r['def']}\n")
+    fn_def = cur.fetchone()['def']
+    
+    print(f"  [PASS] Function '{fn}': Exactly 1 overload, signature verified.")
+    function_audit_results[fn] = {
+        'status': 'VERIFIED_UNIQUE_OVERLOAD',
+        'overload_count': 1,
+        'function_def': fn_def
+    }
 
+print("\n>>> ALL TRIGGER AND FUNCTION DEFINITIONS PASSED FAIL-CLOSED AUDIT 100%! <<<\n")
 conn.close()

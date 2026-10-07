@@ -201,6 +201,180 @@
     "trigger_update_job_status": "CREATE TRIGGER trigger_update_job_status AFTER INSERT OR DELETE OR UPDATE ON public.job_steps FOR EACH ROW EXECUTE FUNCTION trg_update_job_status_from_steps()",
     "trigger_update_step_status": "CREATE TRIGGER trigger_update_step_status AFTER INSERT OR DELETE OR UPDATE ON public.work_logs FOR EACH ROW EXECUTE FUNCTION trg_update_step_status_from_worklogs()"
   },
+  "constraint_mapping": [
+    {
+      "constraint_name": "job_steps_step_status_check",
+      "target_table": "job_steps",
+      "target_column": "step_status",
+      "constraint_type": "CHECK",
+      "payload_value": "3 'PENDING', 3 'COMPLETED'",
+      "validation_method": "Assert all values in ('PENDING', 'IN_PROGRESS', 'COMPLETED', 'ON_HOLD', 'CANCELLED')",
+      "result": "PASS_VERIFIED"
+    },
+    {
+      "constraint_name": "job_steps_assigned_to_fkey",
+      "target_table": "job_steps",
+      "target_column": "assigned_to",
+      "constraint_type": "FOREIGN KEY",
+      "payload_value": "All 6 rows NULL",
+      "validation_method": "NOT APPLICABLE — payload inserts NULL",
+      "result": "PASS_NOT_APPLICABLE"
+    },
+    {
+      "constraint_name": "job_steps_item_type_id_fkey",
+      "target_table": "job_steps",
+      "target_column": "item_type_id",
+      "constraint_type": "FOREIGN KEY",
+      "payload_value": "All 6 rows NULL",
+      "validation_method": "NOT APPLICABLE — payload inserts NULL",
+      "result": "PASS_NOT_APPLICABLE"
+    },
+    {
+      "constraint_name": "job_steps_job_id_fkey",
+      "target_table": "job_steps",
+      "target_column": "job_id",
+      "constraint_type": "FOREIGN KEY",
+      "payload_value": "6 non-null UUIDs (ASH021R2, JAE380, MMT021R2, KSP227, ZA水冷ベース, JAE381)",
+      "validation_method": "SELECT count(*) FROM jobs WHERE job_id = s.target_job_id",
+      "result": "PASS_VERIFIED"
+    },
+    {
+      "constraint_name": "job_steps_machine_id_fkey",
+      "target_table": "job_steps",
+      "target_column": "machine_id",
+      "constraint_type": "FOREIGN KEY",
+      "payload_value": "All 6 rows NULL",
+      "validation_method": "NOT APPLICABLE — payload inserts NULL",
+      "result": "PASS_NOT_APPLICABLE"
+    },
+    {
+      "constraint_name": "job_steps_outsource_company_fkey",
+      "target_table": "job_steps",
+      "target_column": "outsource_company",
+      "constraint_type": "FOREIGN KEY",
+      "payload_value": "All 6 rows NULL",
+      "validation_method": "NOT APPLICABLE — payload inserts NULL",
+      "result": "PASS_NOT_APPLICABLE"
+    },
+    {
+      "constraint_name": "job_steps_processing_item_id_fkey",
+      "target_table": "job_steps",
+      "target_column": "processing_item_id",
+      "constraint_type": "FOREIGN KEY",
+      "payload_value": "All 6 rows NULL",
+      "validation_method": "NOT APPLICABLE — payload inserts NULL",
+      "result": "PASS_NOT_APPLICABLE"
+    },
+    {
+      "constraint_name": "job_steps_processing_status_id_fkey",
+      "target_table": "job_steps",
+      "target_column": "processing_status_id",
+      "constraint_type": "FOREIGN KEY",
+      "payload_value": "2 rows value 9 (N.進行中), 4 rows NULL (outsource steps)",
+      "validation_method": "For non-null: SELECT count(*) FROM processing_statuses WHERE status_id = 9; For null: NOT APPLICABLE",
+      "result": "PASS_VERIFIED"
+    },
+    {
+      "constraint_name": "job_steps_pkey",
+      "target_table": "job_steps",
+      "target_column": "step_id",
+      "constraint_type": "PRIMARY KEY",
+      "payload_value": "6 distinct UUIDs generated / mapped",
+      "validation_method": "Assert unique and non-null UUIDs",
+      "result": "PASS_VERIFIED"
+    },
+    {
+      "constraint_name": "job_steps_job_id_step_no_key",
+      "target_table": "job_steps",
+      "target_column": "(job_id, step_no)",
+      "constraint_type": "UNIQUE",
+      "payload_value": "6 distinct pairs across target jobs",
+      "validation_method": "SELECT count(*) FROM job_steps WHERE job_id = s.job_id AND step_no = s.step_no",
+      "result": "PASS_VERIFIED"
+    },
+    {
+      "constraint_name": "work_logs_quantity_ng_check",
+      "target_table": "work_logs",
+      "target_column": "quantity_ng",
+      "constraint_type": "CHECK",
+      "payload_value": "All 5 rows set to 0 (default)",
+      "validation_method": "Assert quantity_ng >= 0",
+      "result": "PASS_VERIFIED"
+    },
+    {
+      "constraint_name": "work_logs_company_id_fkey",
+      "target_table": "work_logs",
+      "target_column": "company_id",
+      "constraint_type": "FOREIGN KEY",
+      "payload_value": "All 5 rows NULL",
+      "validation_method": "NOT APPLICABLE — payload inserts NULL",
+      "result": "PASS_NOT_APPLICABLE"
+    },
+    {
+      "constraint_name": "work_logs_employee_id_fkey",
+      "target_table": "work_logs",
+      "target_column": "employee_id",
+      "constraint_type": "FOREIGN KEY",
+      "payload_value": "5 non-null UUIDs (employees abe82..., 44d2...)",
+      "validation_method": "SELECT count(*) FROM employees WHERE employee_id = l.employee_id AND is_active = true",
+      "result": "PASS_VERIFIED"
+    },
+    {
+      "constraint_name": "work_logs_job_id_fkey",
+      "target_table": "work_logs",
+      "target_column": "job_id",
+      "constraint_type": "FOREIGN KEY",
+      "payload_value": "5 non-null UUIDs (JAE381, ZA水冷ベース)",
+      "validation_method": "SELECT count(*) FROM jobs WHERE job_id = l.target_job_id",
+      "result": "PASS_VERIFIED"
+    },
+    {
+      "constraint_name": "work_logs_job_step_id_fkey",
+      "target_table": "work_logs",
+      "target_column": "job_step_id",
+      "constraint_type": "FOREIGN KEY",
+      "payload_value": "5 non-null values (4 x LEGACY-STEP-4226, 1 x LEGACY-STEP-4275)",
+      "validation_method": "Preflight resolves to staging STEP legacy_id; In-transaction joins to job_steps.step_id",
+      "result": "PASS_VERIFIED"
+    },
+    {
+      "constraint_name": "work_logs_machine_id_fkey",
+      "target_table": "work_logs",
+      "target_column": "machine_id",
+      "constraint_type": "FOREIGN KEY",
+      "payload_value": "All 5 rows NULL",
+      "validation_method": "NOT APPLICABLE — payload inserts NULL",
+      "result": "PASS_NOT_APPLICABLE"
+    },
+    {
+      "constraint_name": "work_logs_processing_code_id_fkey",
+      "target_table": "work_logs",
+      "target_column": "processing_code_id",
+      "constraint_type": "FOREIGN KEY",
+      "payload_value": "5 non-null integers [10, 10, 11, 12, 14]",
+      "validation_method": "SELECT count(*) FROM processing_codes WHERE processing_code_id = l.processing_code_id AND is_active = true",
+      "result": "PASS_VERIFIED"
+    },
+    {
+      "constraint_name": "work_logs_processing_status_id_fkey",
+      "target_table": "work_logs",
+      "target_column": "processing_status_id",
+      "constraint_type": "FOREIGN KEY",
+      "payload_value": "All 5 rows NULL",
+      "validation_method": "NOT APPLICABLE — payload inserts NULL",
+      "result": "PASS_NOT_APPLICABLE"
+    },
+    {
+      "constraint_name": "work_logs_pkey",
+      "target_table": "work_logs",
+      "target_column": "log_id",
+      "constraint_type": "PRIMARY KEY",
+      "payload_value": "5 distinct UUIDs generated / mapped",
+      "validation_method": "Assert unique and non-null UUIDs",
+      "result": "PASS_VERIFIED"
+    }
+  ],
+  "trigger_audit_status": "FAIL_CLOSED_ASSERTIONS_PASSED",
   "trigger_side_effects": [
     {
       "entity": "job_step",

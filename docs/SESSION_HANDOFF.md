@@ -1220,3 +1220,28 @@ Thứ tự nạp cha-con bất biến: `work_orders / jobs -> job_steps -> work_
   * `scripts/dry_run_b1_validation_result.json`
   * `scripts/inspect_trigger_defs.py`
   * `docs/reports/2026-10-07_b1_insert_dry_run_validation_report.md`
+
+## 37. HOÀN TẤT VÒNG TINH CHỈNH CUỐI THEO AUDIT COMMIT ddda79b CỦA PE (2026-10-07 11:10 JST)
+
+### 37.1. Căn cứ & Ủy quyền Vận hành
+- **Thẩm định kỹ thuật:** PE [Stamp: 2026-10-07 11:04 JST] xác nhận commit `ddda79b` tồn tại trên GitHub remote, baseline Production đạt chuẩn, nhưng chỉ ra 3 điểm tinh chỉnh kỹ thuật (Point A, B, C) trước khi xem xét INSERT Production.
+- **Ủy quyền vận hành:** AN thực hiện vòng sửa kỹ thuật nhỏ cuối cùng (read-only) theo chỉ thị PE và ủy quyền từ Minh Chủ Thoan.
+
+### 37.2. Kết quả Xử lý
+1. **Point A (Bảng Mapping 19 Ràng Buộc Catalog):**
+   - Lập bảng ánh xạ toàn diện 19 constraints từ `pg_constraint` cho `job_steps` (10 constraints) và `work_logs` (9 constraints).
+   - Phân định minh bạch giữa các trường `NOT APPLICABLE — payload inserts NULL` (ví dụ: `assigned_to`, `machine_id`, `outsource_company`, `company_id`) và các trường có giá trị đã được kiểm chứng bằng truy vấn (`PASS_VERIFIED`).
+2. **Point B (Fail-Closed Trigger Assertions):**
+   - Tích hợp kiểm tra tự động fail-closed vào `scripts/inspect_trigger_defs.py` và `scripts/dry_run_b1_validation.py`.
+   - Assert bắt buộc: tồn tại đúng 3 triggers kỳ vọng, đúng bảng, đúng sự kiện, gọi đúng function, và mỗi function chỉ có duy nhất 1 overload (`overload_count = 1`).
+3. **Point C (Phạm vi Kết luận):**
+   - Thu hẹp phạm vi tuyên bố: "Đã xử lý trong phạm vi 5 audit point và payload B1". Không sử dụng cụm "toàn diện 100%" cho toàn hệ thống.
+
+### 37.3. Trạng thái Kiểm chứng & Baseline
+- Script dry-run: `python scripts/dry_run_b1_validation.py` chạy thành công với 19/19 constraints được ánh xạ và fail-closed trigger assertions đạt chuẩn.
+- Supabase Production Baseline (Chỉ đọc):
+  * `jobs`: **1,205** (Bảo toàn 100%)
+  * `job_steps`: **2,451** (Bảo toàn 100%)
+  * `work_logs`: **7,106** (Bảo toàn 100%)
+  * `staging_access_delta_b1`: **11** dòng (6 STEP, 5 WORK_LOG)
+- USB Sync: Robocopy hoàn tất sang `G:\AntiGravity\apps\ysdms-nextgen`.

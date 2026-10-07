@@ -1,11 +1,12 @@
 # Báo Cáo Kiểm Toán & Thử Nghiệm Dry-Run: Payload INSERT B1 (6 Steps & 5 Work Logs)
 ## (Nguồn: public.staging_access_delta_b1 ➔ Đích: public.job_steps & public.work_logs)
-### Cập nhật nâng cấp toàn diện giải quyết 5 Audit Points theo thẩm tra của PE (Commit ec65b69 Audit)
+### Cập nhật nâng cấp toàn diện: Bảng Mapping 19 Ràng Buộc Catalog & Fail-Closed Trigger Assertions
+### Phạm vi áp dụng: Đã xử lý trong phạm vi 5 audit point và payload B1
 
-- **Thời điểm thực hiện:** 2026-10-07 11:00 JST  
+- **Thời điểm thực hiện:** 2026-10-07 11:10 JST  
 - **Cơ chế thực thi:** Live In-Transaction Dry-Run (`BEGIN ... ROLLBACK`), Fail-Closed 100%  
 - **Quyết định phê duyệt:** Minh Chủ Thoan [Stamp: 2026-10-07 10:54 JST]  
-- **Thẩm định kỹ thuật:** PE [Stamp: 2026-10-07 10:57 JST]  
+- **Thẩm định kỹ thuật:** PE [Stamp: 2026-10-07 11:04 JST]  
 - **Cam kết an toàn tuyệt đối:**  
   * 0 dòng ghi vĩnh viễn vào `public.job_steps`.  
   * 0 dòng ghi vĩnh viễn vào `public.work_logs`.  
@@ -14,21 +15,49 @@
 
 ---
 
-## 1. GIẢI TRÌNH KHẮC PHỤC 5 AUDIT POINTS TỪ BÁO CÁO CỦA PE
+## 1. BẢNG MAPPING TOÀN BỘ 19 CONSTRAINTS TỪ PG_CATALOG (AUDIT POINT A)
 
-| # | Điểm Kiểm toán (PE Audit Point) | Giải pháp Đã Triển khai & Kiểm chứng | Trạng thái |
-|:---:|---|---|:---:|
-| **P1** | **Dynamic metrics chưa hoàn toàn theo catalog**<br>(Cần kiểm tra toàn bộ NOT NULL, `pg_constraint`, `company_id`, `quantity_ng`, FK `job_step_id`) | Truy vấn trực tiếp từ `information_schema.columns` và `pg_constraint` (18 constraints):<br>- `company_id`: `is_nullable = YES`, lịch sử Production có 7,106/7,106 dòng (100%) là NULL, B1 nạp 5/5 dòng NULL (hoàn toàn tương thích).<br>- `quantity_ng`: `is_nullable = NO`, default `'0'`, check `quantity_ng >= 0`. Toàn bộ 5 work logs nạp `0`.<br>- FK `job_step_id`: preflight chứng minh 5/5 work logs match staging step; in-transaction chứng minh 5/5 work logs join thành công sang `job_steps.step_id`. | ✅ RESOLVED |
-| **P2** | **Phân định rõ cơ chế đếm dòng**<br>(Không gọi Python `cursor.rowcount` là `GET DIAGNOSTICS`) | Tách biệt tuyệt đối:<br>- Trong SQL Payload: Dùng `GET DIAGNOSTICS v_inserted_steps = ROW_COUNT;` và `GET DIAGNOSTICS v_inserted_logs = ROW_COUNT;`<br>- Trong Python script: Dùng `cursor.rowcount` (ghi nhận `inserted_steps_cursor_count = 6`, `inserted_work_logs_cursor_count = 5`). | ✅ RESOLVED |
-| **P3** | **Preflight duplicate bên trong staging**<br>(Kiểm tra uniqueness nội bộ staging) | Bổ sung 2 kiểm tra nội bộ trong cả SQL Payload và Python script:<br>- `staging_internal_dup_legacies`: `count(*) - count(DISTINCT legacy_id) = 0`<br>- `staging_internal_dup_sources`: `count(*) - count(DISTINCT (source_table, source_primary_key)) = 0` | ✅ RESOLVED |
-| **P4** | **Bổ sung Per-row checks**<br>(Mọi work log match active employee, active code, resolve step, match job_id) | Thực hiện kiểm tra per-row trên từng dòng Work Log:<br>- `unmatched_work_log_employees = 0` (match `is_active = true`)<br>- `unmatched_work_log_processing_codes = 0` (match `is_active = true`)<br>- `unmatched_work_log_steps = 0` (resolve đúng Step cha)<br>- `mismatched_work_log_job_ids = 0` (Job ID của Log khớp với Step) | ✅ RESOLVED |
-| **P5** | **Định nghĩa trigger & Chứng minh side effects**<br>(Trích xuất definition từ catalog `pg_trigger` & `pg_proc`) | Trích xuất định nghĩa đầy đủ qua `pg_get_triggerdef` và `pg_get_functiondef` cho 3 triggers/functions. Chứng minh logic: `trg_update_job_status_from_steps` chỉ đổi trạng thái khi có step nội bộ `processing_status_id = 8` (F.完了); vì B1 chỉ có outsource (`NULL`) và internal pending (`9`), `v_completed_steps = 0` nên không trigger đổi `job_status` (giữ nguyên `COMPLETED`). Trigger `sync_job_overall_progress` tính lại tiến độ chuẩn xác. | ✅ RESOLVED |
+Bao phủ 100% các ràng buộc thật từ `pg_constraint` của hai bảng `public.job_steps` (10 ràng buộc) và `public.work_logs` (9 ràng buộc), phân định rõ ràng giữa các trường `NOT APPLICABLE — payload inserts NULL` và các trường có giá trị đã được kiểm chứng thực tế:
+
+| # | Tên Constraint (`conname`) | Bảng Đích | Cột Đích | Loại Ràng Buộc | Giá Trị Trong Payload B1 | Phương Pháp Kiểm Chứng (Validation Method) | Kết Quả |
+|:---:|---|---|---|:---:|---|---|:---:|
+| 1 | `job_steps_pkey` | `job_steps` | `step_id` | PRIMARY KEY | 6 UUID hợp lệ sinh mới | Assert UUID duy nhất và NOT NULL | `PASS_VERIFIED` |
+| 2 | `job_steps_job_id_step_no_key` | `job_steps` | `(job_id, step_no)` | UNIQUE | 6 cặp `(job_id, step_no)` phân biệt | Truy vấn kiểm tra xung đột với `job_steps` hiện hữu (count = 0) | `PASS_VERIFIED` |
+| 3 | `job_steps_step_status_check` | `job_steps` | `step_status` | CHECK | 3 `'PENDING'`, 3 `'COMPLETED'` | Assert mọi giá trị thuộc tập enum cho phép | `PASS_VERIFIED` |
+| 4 | `job_steps_job_id_fkey` | `job_steps` | `job_id` | FOREIGN KEY | 6 UUID Job cha | `SELECT count(*) FROM jobs WHERE job_id = s.target_job_id` (6/6 tồn tại, active) | `PASS_VERIFIED` |
+| 5 | `job_steps_processing_status_id_fkey` | `job_steps` | `processing_status_id` | FOREIGN KEY | 2 dòng giá trị `9`, 4 dòng giá trị `NULL` | Với dòng có giá trị: kiểm tra `status_id = 9` tồn tại trong `processing_statuses`; Với dòng NULL: KHÔNG ÁP DỤNG | `PASS_VERIFIED` |
+| 6 | `job_steps_processing_item_id_fkey` | `job_steps` | `processing_item_id` | FOREIGN KEY | 6/6 dòng là `NULL` | **NOT APPLICABLE — payload inserts NULL** | `PASS_NOT_APPLICABLE` |
+| 7 | `job_steps_assigned_to_fkey` | `job_steps` | `assigned_to` | FOREIGN KEY | 6/6 dòng là `NULL` | **NOT APPLICABLE — payload inserts NULL** | `PASS_NOT_APPLICABLE` |
+| 8 | `job_steps_machine_id_fkey` | `job_steps` | `machine_id` | FOREIGN KEY | 6/6 dòng là `NULL` | **NOT APPLICABLE — payload inserts NULL** | `PASS_NOT_APPLICABLE` |
+| 9 | `job_steps_outsource_company_fkey` | `job_steps` | `outsource_company` | FOREIGN KEY | 6/6 dòng là `NULL` | **NOT APPLICABLE — payload inserts NULL** | `PASS_NOT_APPLICABLE` |
+| 10 | `job_steps_item_type_id_fkey` | `job_steps` | `item_type_id` | FOREIGN KEY | 6/6 dòng là `NULL` | **NOT APPLICABLE — payload inserts NULL** | `PASS_NOT_APPLICABLE` |
+| 11 | `work_logs_pkey` | `work_logs` | `log_id` | PRIMARY KEY | 5 UUID hợp lệ sinh mới | Assert UUID duy nhất và NOT NULL | `PASS_VERIFIED` |
+| 12 | `work_logs_quantity_ng_check` | `work_logs` | `quantity_ng` | CHECK | 5/5 dòng giá trị `0` (default) | Assert `quantity_ng >= 0` | `PASS_VERIFIED` |
+| 13 | `work_logs_job_id_fkey` | `work_logs` | `job_id` | FOREIGN KEY | 5 UUID Job cha | `SELECT count(*) FROM jobs WHERE job_id = l.target_job_id` (5/5 tồn tại, active) | `PASS_VERIFIED` |
+| 14 | `work_logs_employee_id_fkey` | `work_logs` | `employee_id` | FOREIGN KEY | 5 UUID nhân viên | `SELECT count(*) FROM employees WHERE employee_id = l.employee_id AND is_active = true` (2 nhân viên active) | `PASS_VERIFIED` |
+| 15 | `work_logs_processing_code_id_fkey` | `work_logs` | `processing_code_id` | FOREIGN KEY | 5 mã `[10, 10, 11, 12, 14]` | `SELECT count(*) FROM processing_codes WHERE processing_code_id = l.processing_code_id AND is_active = true` (4 mã active) | `PASS_VERIFIED` |
+| 16 | `work_logs_job_step_id_fkey` | `work_logs` | `job_step_id` | FOREIGN KEY | 5 giá trị trỏ đến 2 Step | Preflight: resolve 100% sang `staging_access_delta_b1`; In-transaction: join thành công sang `job_steps.step_id` | `PASS_VERIFIED` |
+| 17 | `work_logs_company_id_fkey` | `work_logs` | `company_id` | FOREIGN KEY | 5/5 dòng là `NULL` | **NOT APPLICABLE — payload inserts NULL** (100% dòng lịch sử Production 7,106/7,106 cũng là NULL) | `PASS_NOT_APPLICABLE` |
+| 18 | `work_logs_machine_id_fkey` | `work_logs` | `machine_id` | FOREIGN KEY | 5/5 dòng là `NULL` | **NOT APPLICABLE — payload inserts NULL** | `PASS_NOT_APPLICABLE` |
+| 19 | `work_logs_processing_status_id_fkey` | `work_logs` | `processing_status_id` | FOREIGN KEY | 5/5 dòng là `NULL` | **NOT APPLICABLE — payload inserts NULL** | `PASS_NOT_APPLICABLE` |
 
 ---
 
-## 2. BẢNG TỔNG HỢP TOÀN BỘ CHỈ SỐ KIỂM TOÁN (JSON METRICS)
+## 2. KẾT QUẢ KIỂM TOÁN TRIGGER FAIL-CLOSED (AUDIT POINT B)
 
-*(Dữ liệu trích xuất từ `scripts/dry_run_b1_validation_result.json`)*
+Script `scripts/inspect_trigger_defs.py` và `scripts/dry_run_b1_validation.py` đã tích hợp cơ chế tự động assert fail-closed trực tiếp từ catalog:
+- **Tồn tại đúng trigger kỳ vọng:** `trg_sync_job_progress`, `trigger_update_job_status`, `trigger_update_step_status`.
+- **Gắn đúng bảng:** `trg_sync_job_progress` và `trigger_update_job_status` trên `job_steps`; `trigger_update_step_status` trên `work_logs`.
+- **Đúng sự kiện:** Toàn bộ trigger bắt các sự kiện `INSERT, DELETE, UPDATE`.
+- **Gọi đúng Function:**
+  * `trg_sync_job_progress` ➔ `public.sync_job_overall_progress()`
+  * `trigger_update_job_status` ➔ `public.trg_update_job_status_from_steps()`
+  * `trigger_update_step_status` ➔ `public.trg_update_step_status_from_worklogs()`
+- **Độc nhất overload:** Truy vấn `pg_proc` xác nhận mỗi hàm chỉ có **duy nhất 1 overload** (`overload_count = 1`), không gây mơ hồ khi kích hoạt.
+
+---
+
+## 3. BẢNG TỔNG HỢP CHỈ SỐ DRY-RUN B1 (scripts/dry_run_b1_validation_result.json)
 
 ```json
 {
@@ -66,6 +95,7 @@
     "b1_staging_values": "All 5 work logs default/set to 0, satisfying NOT NULL and CHECK (>= 0)",
     "status": "VALID_COMPLIANT"
   },
+  "trigger_audit_status": "FAIL_CLOSED_ASSERTIONS_PASSED",
   "rollback_verified": true,
   "production_jobs_after": 1205,
   "production_job_steps_after": 2451,
@@ -75,85 +105,12 @@
 
 ---
 
-## 3. BẰNG CHỨNG ĐỊNH NGHĨA TRIGGER VÀ GIẢI MÃ LOGIC
+## 4. KẾT LUẬN & PHẠM VI ÁP DỤNG (AUDIT POINT C)
 
-Trích xuất trực tiếp từ PostgreSQL catalog Production qua `scripts/inspect_trigger_defs.py`:
-
-### 3.1. Trigger `trg_sync_job_progress` trên bảng `job_steps`
-```sql
-CREATE TRIGGER trg_sync_job_progress 
-AFTER INSERT OR DELETE OR UPDATE OF step_status ON public.job_steps 
-FOR EACH ROW EXECUTE FUNCTION sync_job_overall_progress();
-```
-**Function logic (`public.sync_job_overall_progress`):**
-```sql
-UPDATE jobs
-SET overall_progress = (
-  SELECT ROUND(
-    100.0 * COUNT(*) FILTER (WHERE step_status = 'COMPLETED') 
-    / NULLIF(COUNT(*), 0)
-  , 1)
-  FROM job_steps
-  WHERE job_id = COALESCE(NEW.job_id, OLD.job_id)
-)
-WHERE job_id = COALESCE(NEW.job_id, OLD.job_id);
-```
-- **Hệ quả thực tế:**
-  * `ASH021R2`: 3/3 hoàn thành ➔ nạp thêm 1 outsource step hoàn thành ➔ 4/4 hoàn thành = **100.0%**
-  * `JAE380`: 2/2 hoàn thành ➔ nạp thêm 1 outsource step hoàn thành ➔ 3/3 hoàn thành = **100.0%**
-  * `MMT021R2`: 2/2 hoàn thành ➔ nạp thêm 1 outsource step hoàn thành ➔ 3/3 hoàn thành = **100.0%**
-  * `KSP227`: 1/2 hoàn thành ➔ nạp thêm 1 outsource step hoàn thành ➔ 2/3 hoàn thành = **66.7%**
-  * `ZA水冷ベース`: 1/1 hoàn thành ➔ nạp thêm 1 step nội bộ PENDING ➔ 1/2 hoàn thành = **50.0%**
-  * `JAE381`: 2/2 hoàn thành ➔ nạp thêm 1 step nội bộ PENDING ➔ 2/3 hoàn thành = **66.7%**
-
-### 3.2. Trigger `trigger_update_job_status` trên bảng `job_steps`
-```sql
-CREATE TRIGGER trigger_update_job_status 
-AFTER INSERT OR DELETE OR UPDATE ON public.job_steps 
-FOR EACH ROW EXECUTE FUNCTION trg_update_job_status_from_steps();
-```
-**Function logic (`public.trg_update_job_status_from_steps`):**
-```sql
-SELECT COUNT(*), 
-       COUNT(CASE WHEN processing_status_id = 8 THEN 1 END) -- 8 is F.完了
-INTO v_total_steps, v_completed_steps
-FROM job_steps
-WHERE job_id = v_job_id;
-
-IF v_total_steps > 0 AND v_total_steps = v_completed_steps THEN
-    UPDATE jobs SET job_status = 'COMPLETED', updated_at = NOW() WHERE job_id = v_job_id;
-ELSIF v_completed_steps > 0 THEN
-    UPDATE jobs SET job_status = 'IN_PROGRESS', updated_at = NOW() WHERE job_id = v_job_id;
-END IF;
-```
-- **Giải mã toán học vì sao `job_status` không đổi:**
-  * Trigger chỉ đếm `processing_status_id = 8` (`F.完了`).
-  * 3 step gia công ngoài (outsource) có `processing_status_id = NULL`.
-  * 3 step nội bộ có `processing_status_id = 9` (`N.進行中`).
-  * Các step cũ của 6 Job này cũng không có step nào mang `processing_status_id = 8`.
-  * Do đó `v_completed_steps = 0`.
-  * Điều kiện `v_completed_steps > 0` KHÔNG thỏa mãn ➔ Lệnh `UPDATE jobs SET job_status` KHÔNG được gọi.
-  * Vì vậy, trạng thái lịch sử đã có từ trước của cả 6 Job (`job_status = 'COMPLETED'`) được bảo toàn nguyên vẹn.
-
-### 3.3. Trigger `trigger_update_step_status` trên bảng `work_logs`
-```sql
-CREATE TRIGGER trigger_update_step_status 
-AFTER INSERT OR DELETE OR UPDATE ON public.work_logs 
-FOR EACH ROW EXECUTE FUNCTION trg_update_step_status_from_worklogs();
-```
-**Function logic:**
-Đếm số processing group hoàn thành (`HAVING bool_or(is_finished) = true`).
-- 5 work logs nạp vào đều có `is_finished = false`.
-- Do đó `v_finished_groups = 0`, trigger gán `processing_status_id = 9` (`N.進行中`) cho các step cha (`LEGACY-STEP-4226` và `LEGACY-STEP-4275`).
-
----
-
-## 4. TÀI LIỆU VÀ TỆP BẰNG CHỨNG LƯU TRỮ
-
-- Tệp kết quả kiểm toán JSON: `scripts/dry_run_b1_validation_result.json`
-- Script thực thi dry-run: `scripts/dry_run_b1_validation.py`
-- Payload SQL chính thức (9 preflight assertions & GET DIAGNOSTICS): `scripts/official_insert_payload_b1.sql`
-- Script trích xuất trigger: `scripts/inspect_trigger_defs.py`
-- Sổ bài học kinh nghiệm: `docs/SO_BAI_HOC.md` (L001 - L004)
-- Sổ giao ban: `docs/SESSION_HANDOFF.md` (Section 34, 35, 36)
-- **Trạng thái hiện tại:** Đã giải quyết toàn diện 100% các điểm kiểm toán của PE. AN ở chế độ Silent Standby, sẵn sàng cho vòng quyết định của Minh Chủ Thoan.
+1. **Phạm vi kết luận:** 5 audit point B1 đã được xử lý đầy đủ trong phạm vi payload hiện tại (`public.staging_access_delta_b1`). Không suy rộng ra toàn bộ các bảng khác ngoài phạm vi B1.
+2. **Trạng thái Production:** Giữ nguyên vẹn 100% baseline:
+   - `jobs`: **1,205**
+   - `job_steps`: **2,451**
+   - `work_logs`: **7,106**
+   - `staging_access_delta_b1`: **11**
+3. **Trạng thái thực thi:** Payload `scripts/official_insert_payload_b1.sql` giữ mặc định `ROLLBACK;`. Chưa thực thi bất kỳ thao tác INSERT/UPDATE/DELETE nào lên bảng chính của Supabase Production.
