@@ -235,8 +235,8 @@
       "target_column": "job_id",
       "constraint_type": "FOREIGN KEY",
       "payload_value": "6 non-null UUIDs (ASH021R2, JAE380, MMT021R2, KSP227, ZA水冷ベース, JAE381)",
-      "validation_method": "SELECT count(*) FROM jobs WHERE job_id = s.target_job_id",
-      "result": "PASS_VERIFIED"
+      "validation_method": "SELECT count(*) FROM jobs WHERE job_id = s.target_job_id (target exists)",
+      "result": "PASS_VERIFIED_EXISTS"
     },
     {
       "constraint_name": "job_steps_machine_id_fkey",
@@ -271,8 +271,8 @@
       "target_column": "processing_status_id",
       "constraint_type": "FOREIGN KEY",
       "payload_value": "2 rows value 9 (N.進行中), 4 rows NULL (outsource steps)",
-      "validation_method": "For non-null: SELECT count(*) FROM processing_statuses WHERE status_id = 9; For null: NOT APPLICABLE",
-      "result": "PASS_VERIFIED"
+      "validation_method": "For non-null: SELECT count(*) FROM processing_statuses WHERE status_id = 9 (target exists); For null: NOT APPLICABLE",
+      "result": "PASS_VERIFIED_EXISTS"
     },
     {
       "constraint_name": "job_steps_pkey",
@@ -316,8 +316,8 @@
       "target_column": "employee_id",
       "constraint_type": "FOREIGN KEY",
       "payload_value": "5 non-null UUIDs (employees abe82..., 44d2...)",
-      "validation_method": "SELECT count(*) FROM employees WHERE employee_id = l.employee_id AND is_active = true",
-      "result": "PASS_VERIFIED"
+      "validation_method": "SELECT count(*) FROM employees WHERE employee_id = l.employee_id AND is_active = true (target exists and is_active=true)",
+      "result": "PASS_VERIFIED_EXISTS_AND_ACTIVE"
     },
     {
       "constraint_name": "work_logs_job_id_fkey",
@@ -325,8 +325,8 @@
       "target_column": "job_id",
       "constraint_type": "FOREIGN KEY",
       "payload_value": "5 non-null UUIDs (JAE381, ZA水冷ベース)",
-      "validation_method": "SELECT count(*) FROM jobs WHERE job_id = l.target_job_id",
-      "result": "PASS_VERIFIED"
+      "validation_method": "SELECT count(*) FROM jobs WHERE job_id = l.target_job_id (target exists)",
+      "result": "PASS_VERIFIED_EXISTS"
     },
     {
       "constraint_name": "work_logs_job_step_id_fkey",
@@ -352,8 +352,8 @@
       "target_column": "processing_code_id",
       "constraint_type": "FOREIGN KEY",
       "payload_value": "5 non-null integers [10, 10, 11, 12, 14]",
-      "validation_method": "SELECT count(*) FROM processing_codes WHERE processing_code_id = l.processing_code_id AND is_active = true",
-      "result": "PASS_VERIFIED"
+      "validation_method": "SELECT count(*) FROM processing_codes WHERE processing_code_id = l.processing_code_id AND is_active = true (target exists and is_active=true)",
+      "result": "PASS_VERIFIED_EXISTS_AND_ACTIVE"
     },
     {
       "constraint_name": "work_logs_processing_status_id_fkey",
@@ -374,6 +374,8 @@
       "result": "PASS_VERIFIED"
     }
   ],
+  "unmapped_constraints": [],
+  "unexpected_constraints": [],
   "trigger_audit_status": "FAIL_CLOSED_ASSERTIONS_PASSED",
   "trigger_side_effects": [
     {

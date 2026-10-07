@@ -260,8 +260,8 @@ for c in catalog_constraints:
             'target_column': 'job_id',
             'constraint_type': 'FOREIGN KEY',
             'payload_value': '6 non-null UUIDs (ASH021R2, JAE380, MMT021R2, KSP227, ZA水冷ベース, JAE381)',
-            'validation_method': 'SELECT count(*) FROM jobs WHERE job_id = s.target_job_id',
-            'result': 'PASS_VERIFIED'
+            'validation_method': 'SELECT count(*) FROM jobs WHERE job_id = s.target_job_id (target exists)',
+            'result': 'PASS_VERIFIED_EXISTS'
         })
     elif name == 'job_steps_processing_status_id_fkey':
         constraint_mapping.append({
@@ -270,8 +270,8 @@ for c in catalog_constraints:
             'target_column': 'processing_status_id',
             'constraint_type': 'FOREIGN KEY',
             'payload_value': '2 rows value 9 (N.進行中), 4 rows NULL (outsource steps)',
-            'validation_method': 'For non-null: SELECT count(*) FROM processing_statuses WHERE status_id = 9; For null: NOT APPLICABLE',
-            'result': 'PASS_VERIFIED'
+            'validation_method': 'For non-null: SELECT count(*) FROM processing_statuses WHERE status_id = 9 (target exists); For null: NOT APPLICABLE',
+            'result': 'PASS_VERIFIED_EXISTS'
         })
     elif name in ('job_steps_processing_item_id_fkey', 'job_steps_assigned_to_fkey', 
                   'job_steps_machine_id_fkey', 'job_steps_outsource_company_fkey', 
@@ -313,8 +313,8 @@ for c in catalog_constraints:
             'target_column': 'job_id',
             'constraint_type': 'FOREIGN KEY',
             'payload_value': '5 non-null UUIDs (JAE381, ZA水冷ベース)',
-            'validation_method': 'SELECT count(*) FROM jobs WHERE job_id = l.target_job_id',
-            'result': 'PASS_VERIFIED'
+            'validation_method': 'SELECT count(*) FROM jobs WHERE job_id = l.target_job_id (target exists)',
+            'result': 'PASS_VERIFIED_EXISTS'
         })
     elif name == 'work_logs_employee_id_fkey':
         constraint_mapping.append({
@@ -323,8 +323,8 @@ for c in catalog_constraints:
             'target_column': 'employee_id',
             'constraint_type': 'FOREIGN KEY',
             'payload_value': '5 non-null UUIDs (employees abe82..., 44d2...)',
-            'validation_method': 'SELECT count(*) FROM employees WHERE employee_id = l.employee_id AND is_active = true',
-            'result': 'PASS_VERIFIED'
+            'validation_method': 'SELECT count(*) FROM employees WHERE employee_id = l.employee_id AND is_active = true (target exists and is_active=true)',
+            'result': 'PASS_VERIFIED_EXISTS_AND_ACTIVE'
         })
     elif name == 'work_logs_processing_code_id_fkey':
         constraint_mapping.append({
@@ -333,8 +333,8 @@ for c in catalog_constraints:
             'target_column': 'processing_code_id',
             'constraint_type': 'FOREIGN KEY',
             'payload_value': '5 non-null integers [10, 10, 11, 12, 14]',
-            'validation_method': 'SELECT count(*) FROM processing_codes WHERE processing_code_id = l.processing_code_id AND is_active = true',
-            'result': 'PASS_VERIFIED'
+            'validation_method': 'SELECT count(*) FROM processing_codes WHERE processing_code_id = l.processing_code_id AND is_active = true (target exists and is_active=true)',
+            'result': 'PASS_VERIFIED_EXISTS_AND_ACTIVE'
         })
     elif name == 'work_logs_job_step_id_fkey':
         constraint_mapping.append({
@@ -358,41 +358,63 @@ for c in catalog_constraints:
             'result': 'PASS_NOT_APPLICABLE'
         })
 
-print(f"  - Total constraints mapped: {len(constraint_mapping)}/19")
+catalog_names = set(c['conname'] for c in catalog_constraints)
+mapped_names = set(m['constraint_name'] for m in constraint_mapping)
+unmapped_constraints = list(catalog_names - mapped_names)
+unexpected_constraints = list(mapped_names - catalog_names)
 
-# 3.11 Fail-Closed Trigger Assertions (Point B)
+# Bi-directional assertion (Point A)
+if len(constraint_mapping) != len(catalog_constraints):
+    raise AssertionError(f"FAIL-CLOSED: Constraint count mismatch! Mapped {len(constraint_mapping)}, catalog {len(catalog_constraints)}")
+if unmapped_constraints:
+    raise AssertionError(f"FAIL-CLOSED: Unmapped catalog constraints found: {unmapped_constraints}")
+if unexpected_constraints:
+    raise AssertionError(f"FAIL-CLOSED: Unexpected constraints found: {unexpected_constraints}")
+
+print(f"  - Bi-directional Constraint Mapping Assertions: PASSED ({len(constraint_mapping)}/{len(catalog_constraints)}, unmapped=0, unexpected=0)")
+
+# 3.11 Fail-Closed Low-Level Trigger Assertions (Point B)
 EXPECTED_TRIGGERS = {
-    'trg_sync_job_progress': {'table': 'job_steps', 'function': 'sync_job_overall_progress', 'events': ['INSERT', 'DELETE', 'UPDATE']},
-    'trigger_update_job_status': {'table': 'job_steps', 'function': 'trg_update_job_status_from_steps', 'events': ['INSERT', 'DELETE', 'UPDATE']},
-    'trigger_update_step_status': {'table': 'work_logs', 'function': 'trg_update_step_status_from_worklogs', 'events': ['INSERT', 'DELETE', 'UPDATE']}
+    'trg_sync_job_progress': {'table': 'job_steps', 'function': 'sync_job_overall_progress', 'expected_tgtype': 29},
+    'trigger_update_job_status': {'table': 'job_steps', 'function': 'trg_update_job_status_from_steps', 'expected_tgtype': 29},
+    'trigger_update_step_status': {'table': 'work_logs', 'function': 'trg_update_step_status_from_worklogs', 'expected_tgtype': 29}
 }
 
 cur.execute("""
-    SELECT tgname AS trigger_name, relname AS table_name, pg_get_triggerdef(t.oid) AS trigger_def
+    SELECT 
+        t.tgname AS trigger_name,
+        c.relname AS table_name,
+        t.tgrelid,
+        t.tgfoid,
+        t.tgtype,
+        p.proname AS function_name,
+        c.oid AS expected_relid,
+        p.oid AS expected_foid
     FROM pg_trigger t
     JOIN pg_class c ON c.oid = t.tgrelid
-    WHERE relname IN ('job_steps', 'work_logs') AND NOT tgisinternal;
+    JOIN pg_proc p ON p.oid = t.tgfoid
+    WHERE c.relname IN ('job_steps', 'work_logs')
+      AND NOT tgisinternal;
 """)
 found_tg = {r['trigger_name']: r for r in cur.fetchall()}
 
 for tg_name, spec in EXPECTED_TRIGGERS.items():
     if tg_name not in found_tg:
-        raise AssertionError(f"FAIL-CLOSED: Trigger '{tg_name}' NOT FOUND in catalog!")
+        raise AssertionError(f"FAIL-CLOSED: Trigger '{tg_name}' NOT FOUND in catalog pg_trigger!")
     actual = found_tg[tg_name]
-    if actual['table_name'] != spec['table']:
-        raise AssertionError(f"FAIL-CLOSED: Trigger '{tg_name}' attached to '{actual['table_name']}', expected '{spec['table']}'!")
-    if spec['function'] not in actual['trigger_def']:
-        raise AssertionError(f"FAIL-CLOSED: Trigger '{tg_name}' does not call '{spec['function']}'!")
-    for ev in spec['events']:
-        if ev not in actual['trigger_def']:
-            raise AssertionError(f"FAIL-CLOSED: Trigger '{tg_name}' missing event '{ev}'!")
+    if actual['table_name'] != spec['table'] or actual['tgrelid'] != actual['expected_relid']:
+        raise AssertionError(f"FAIL-CLOSED: Trigger '{tg_name}' tgrelid mismatch!")
+    if actual['function_name'] != spec['function'] or actual['tgfoid'] != actual['expected_foid']:
+        raise AssertionError(f"FAIL-CLOSED: Trigger '{tg_name}' tgfoid mismatch!")
+    if actual['tgtype'] != spec['expected_tgtype']:
+        raise AssertionError(f"FAIL-CLOSED: Trigger '{tg_name}' tgtype mismatch (actual: {actual['tgtype']}, expected: {spec['expected_tgtype']})!")
 
 for fn in ['sync_job_overall_progress', 'trg_update_job_status_from_steps', 'trg_update_step_status_from_worklogs']:
     cur.execute("SELECT count(*) as c FROM pg_proc WHERE proname = %s", (fn,))
     cnt = cur.fetchone()['c']
     if cnt != 1:
         raise AssertionError(f"FAIL-CLOSED: Function '{fn}' has {cnt} overloads, expected exactly 1!")
-print("  - Fail-closed trigger & overload assertions: PASSED 100%")
+print("  - Low-level catalog trigger & overload assertions: PASSED (tgtype=29 bitmask, tgrelid, tgfoid, overloads=1)")
 
 # 3.12 Unique Conflicts Total
 unique_conflicts = duplicate_target_legacy_ids + step_key_conflicts + staging_internal_dup_legacies + staging_internal_dup_sources
@@ -611,6 +633,8 @@ result_data = {
         "trigger_update_step_status": "CREATE TRIGGER trigger_update_step_status AFTER INSERT OR DELETE OR UPDATE ON public.work_logs FOR EACH ROW EXECUTE FUNCTION trg_update_step_status_from_worklogs()"
     },
     "constraint_mapping": constraint_mapping,
+    "unmapped_constraints": unmapped_constraints,
+    "unexpected_constraints": unexpected_constraints,
     "trigger_audit_status": "FAIL_CLOSED_ASSERTIONS_PASSED",
     "trigger_side_effects": trigger_side_effects,
     "rollback_verified": dry_run_success,

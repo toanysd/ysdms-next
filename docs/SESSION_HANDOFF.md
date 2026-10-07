@@ -1245,3 +1245,39 @@ Thứ tự nạp cha-con bất biến: `work_orders / jobs -> job_steps -> work_
   * `work_logs`: **7,106** (Bảo toàn 100%)
   * `staging_access_delta_b1`: **11** dòng (6 STEP, 5 WORK_LOG)
 - USB Sync: Robocopy hoàn tất sang `G:\AntiGravity\apps\ysdms-nextgen`.
+
+## 38. HOÀN TẤT VÒNG THẨM TRA TOÀN DIỆN COMMIT c0101a THEO CHỈ THỊ PE (2026-10-07 11:25 JST)
+
+### 38.1. Căn cứ & Ủy quyền Vận hành
+- **Thẩm định kỹ thuật:** PE [Stamp: 2026-10-07 11:12 JST] xác nhận commit `c0101a` trên remote, baseline Production đạt chuẩn, và chỉ thị AN thực hiện 4 điểm kỹ thuật chuyên sâu (Point A, B, C, D).
+- **Ủy quyền vận hành:** AN thực hiện vòng sửa kỹ thuật nhỏ cuối cùng (read-only) theo chỉ thị PE và ủy quyền từ Minh Chủ Thoan.
+
+### 38.2. Kết quả Hoàn thiện 4 Điểm Kỹ thuật
+1. **Point A (Bi-Directional Constraint Assertions):**
+   - Assert hai chiều giữa danh sách mapping và catalog `pg_constraint`:
+     * `len(constraint_mapping) == len(catalog_constraints)` (19/19)
+     * `unmapped_constraints = []` (0)
+     * `unexpected_constraints = []` (0)
+2. **Point B (Kiểm toán Trigger theo Catalog Thấp Cấp):**
+   - Xác minh trực tiếp qua các trường catalog:
+     * OID Bảng `tgrelid` (58428, 58461)
+     * OID Hàm `tgfoid` (68050, 58782, 58780)
+     * Bitmask Sự Kiện `tgtype = 29` (nhị phân `11101`: ROW + AFTER + INSERT + DELETE + UPDATE)
+     * Chữ ký hàm duy nhất `overload_count = 1` trong `pg_proc`.
+3. **Point C (Standalone Validator `audit_all_constraints.py`):**
+   - Nâng cấp thành bộ kiểm định độc lập hoàn chỉnh, tự động assert 19/19 constraints, fail-closed khi có lỗi và xuất file kết quả `scripts/audit_all_constraints_result.json`.
+4. **Point D (Chuẩn hóa Thuật ngữ Ràng buộc):**
+   - Phân định chuẩn xác theo schema thực tế:
+     * `PASS_VERIFIED_EXISTS`: Cho `jobs` và `processing_statuses` (kiểm tra tồn tại khóa ngoại, không có cột `is_active`).
+     * `PASS_VERIFIED_EXISTS_AND_ACTIVE`: Cho `employees` và `processing_codes` (kiểm tra tồn tại và `is_active = true`).
+     * `PASS_NOT_APPLICABLE`: Cho các FK có giá trị NULL trong payload.
+
+### 38.3. Baseline Supabase Production & Artifacts
+- Baseline Production (Chỉ đọc): `jobs: 1,205`, `job_steps: 2,451`, `work_logs: 7,106`, `staging_access_delta_b1: 11`.
+- Hồ sơ kết quả kiểm toán:
+  * `scripts/inspect_trigger_defs.py`
+  * `scripts/audit_all_constraints.py`
+  * `scripts/audit_all_constraints_result.json`
+  * `scripts/dry_run_b1_validation.py`
+  * `scripts/dry_run_b1_validation_result.json`
+  * `docs/reports/2026-10-07_b1_insert_dry_run_validation_report.md`
