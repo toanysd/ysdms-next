@@ -5058,8 +5058,8 @@
     "searchPlaceholder": "Tìm theo mã phiếu, mã khuôn, tên khuôn, công ty, người phụ trách...",
     "filterAll": "Tất cả",
     "filterCustomerLoan": "Lưu giữ khuôn KH (預託)",
-    "filterReturnToCustomer": "Khuôn mượn / xuất ngoài (貸出)",
-    "filterOutsourceProcessing": "Gia công ngoài / Điều chuyển",
+    "filterReturnToCustomer": "Hoàn trả khách hàng (返却)",
+    "filterOutsourceProcessing": "Gia công ngoài (外注加工)",
     "filterActive": "Đang xử lý",
     "filterOverdue": "Quá hạn",
     "statusAll": "Tất cả trạng thái",
@@ -5074,7 +5074,7 @@
       "completedThisMonth": "Hoàn tất tháng này"
     },
     "types": {
-      "CUSTOMER_LOAN": "Mượn khuôn (Giữ hộ)",
+      "CUSTOMER_LOAN": "Lưu giữ khuôn KH gửi (預託)",
       "RETURN_TO_CUSTOMER": "Trả khuôn khách hàng",
       "OUTSOURCE_PROCESSING": "Xuất gia công ngoài"
     },
@@ -5211,7 +5211,9 @@
       "actionsTitle": "Thao tác khả dụng",
       "printDocument": "In chứng từ PDF",
       "downloadDocument": "Tải chứng từ PDF"
-    }
+    },
+    "transferBoundaryNotice": "※ Điều chuyển thiết bị nội bộ (Kawasaki - Yashio) không thuộc phạm vi Quản lý mượn/trả.",
+    "linkToLifecycle": "Đến Quản lý vòng đời / Kiểm kê"
   },
   "FastJobCreate": {
     "title": "Phát hành Nhanh Chỉ thị Gia công Khuôn (1-Stop Fast Tooling)",

@@ -9,6 +9,7 @@ Tài liệu ghi nhận các sự cố kỹ thuật, lỗi cú pháp, sai sót qu
 2. [L002 - Lỗi thiếu dấu phẩy trong JSON scalar postflight](#l002---lỗi-thiếu-dấu-phẩy-trong-json-scalar-postflight)
 3. [L003 - PE truy vấn sai entity_type khiến STEP/WORK_LOG bị báo 0](#l003---pe-truy-vấn-sai-entity_type-khiến-stepwork_log-bị-báo-0)
 4. [L004 - Commit SHA local chưa push lên remote GitHub nhưng được báo làm bằng chứng kiểm chứng độc lập](#l004---commit-sha-local-chưa-push-lên-remote-github-nhưng-được-báo-làm-bằng-chứng-kiểm-chứng-độc-lập)
+5. [L005 - Sai lệch Commit SHA do không trích xuất trực tiếp bằng lệnh git rev-parse HEAD](#l005---sai-lệch-commit-sha-do-không-trích-xuất-trực-tiếp-bằng-lệnh-git-rev-parse-head)
 
 ---
 
@@ -93,3 +94,27 @@ Tài liệu ghi nhận các sự cố kỹ thuật, lỗi cú pháp, sai sót qu
   3. Mọi báo cáo bàn giao sau này nếu commit chưa push PHẢI ghi rõ: `local-only / remote-not-verified`.
 - **Bài học rút ra (Takeaway):**
   - Mọi bằng chứng SHA gửi cho bên thứ ba hoặc kiểm toán viên độc lập phải đi kèm trạng thái xác thực trên GitHub (Remote URL hoặc cờ local-only).
+
+---
+
+## L005 - Sai lệch Commit SHA do không trích xuất trực tiếp bằng lệnh git rev-parse HEAD
+
+- **Thời gian ghi nhận:** 2026-10-08 08:20 JST
+- **Phân loại:** Quy trình / Git verification / Chống sai lệch mã băm (Hash Integrity)
+- **Trạng thái:** Resolved (Đã thiết lập quy tắc bắt buộc chạy `git rev-parse HEAD`)
+- **Bảng tóm tắt theo mẫu bắt buộc:**
+  | Ngày | Tiêu đề | Nguyên nhân | Biểu hiện | Giải pháp khắc phục | Trạng thái |
+  |---|---|---|---|---|---|
+  | 2026-10-08 | Sai lệch Commit SHA trong báo cáo thẩm định | Nhập tay hoặc copy nhầm chuỗi hash trước khi lệnh git tạo commit hoàn tất | Báo cáo ghi SHA `62bb66b262...` trong khi remote commit thật là `62bb66bc93...` (chỉ trùng 7 ký tự đầu) | Bắt buộc chạy `git rev-parse HEAD` qua terminal và copy nguyên văn 40 ký tự vào báo cáo | Resolved |
+
+- **Mô tả sự cố:**
+  - Khi gửi REPORT thẩm định WO-P1-001 cho PE, chuỗi Commit SHA trong báo cáo ghi `62bb66b2628464303dca8d81ddba0a911eb9c9b3`, trong khi commit thực tế trên origin/main là `62bb66bc933963c37a5dca345d1efac2ebbcbea7`. Cả hai chỉ trùng 7 ký tự đầu `62bb66b`. Khi PE kiểm toán độc lập trên GitHub, chuỗi SHA báo cáo trả về `Not Found`.
+- **Nguyên nhân gốc rễ (Root Cause):**
+  - Do thao tác gán nhãn SHA thủ công hoặc copy từ draft/temp hash trước khi git hoàn tất quá trình đóng gói commit cuối cùng, không kiểm tra lại bằng lệnh `git rev-parse HEAD`.
+- **Giải pháp & Hành động khắc phục:**
+  1. Ban hành quy tắc sắt: Tuyệt đối KHÔNG gõ tay, đoán hoặc copy tạm chuỗi SHA.
+  2. BẮT BUỘC chạy lệnh: `git rev-parse HEAD` ngay sau khi `git commit` thành công để lấy chính xác 40 ký tự hex trực tiếp từ output của Git engine.
+  3. Kiểm tra đối chiếu với `git log -1 --format="%H"` trước khi paste vào văn bản báo cáo hoặc gửi qua Kênh C/pe_an_messages.
+- **Bài học rút ra (Takeaway):**
+  - Hash integrity là nguyên tắc sống còn trong kiểm toán phần mềm phân tán. 1 ký tự sai lệch là toàn bộ chuỗi chứng thực độc lập bị vô hiệu hóa.
+

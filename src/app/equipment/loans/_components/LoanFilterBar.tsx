@@ -1,8 +1,9 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import { Search, X, Filter, Building2 } from 'lucide-react';
+import { Search, X, Filter, Building2, Info, ArrowRight } from 'lucide-react';
 import { useSearchHistory } from '@/hooks/useSearchHistory';
 import { SearchSuggestions } from '@/components/ui/SearchSuggestions';
 import type { LoanType, LoanStatus } from '../types';
@@ -90,6 +91,23 @@ export default function LoanFilterBar({
         <div className="text-[12px] font-medium text-[var(--text-muted)] shrink-0 px-2">
           {t('totalRecords', { count: totalCount })}
         </div>
+      </div>
+
+      {/* SSOT Boundary Notice: Internal Transfer is strictly segregated per Spec Section 1.1 */}
+      <div className="flex items-center justify-between text-[11px] px-2.5 py-1 rounded bg-[var(--tint-blue-bg)] border border-[var(--border-subtle)] text-[var(--text-muted)]">
+        <div className="flex items-center gap-1.5 min-w-0">
+          <Info size={13} className="text-[var(--accent)] shrink-0" />
+          <span className="truncate">
+            {t('transferBoundaryNotice')}
+          </span>
+        </div>
+        <Link
+          href="/equipment/lifecycle"
+          className="text-[var(--accent)] font-semibold hover:underline flex items-center gap-1 shrink-0 ml-2"
+        >
+          <span>{t('linkToLifecycle')}</span>
+          <ArrowRight size={11} />
+        </Link>
       </div>
 
       {/* Bottom row: Search & Status Dropdown & Clear */}

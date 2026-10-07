@@ -5057,9 +5057,9 @@
     "refresh": "更新",
     "searchPlaceholder": "管理番号、設備コード、金型名、会社名、担当者で検索...",
     "filterAll": "すべて",
-    "filterCustomerLoan": "金型預託 (客先型)",
-    "filterReturnToCustomer": "金型貸出 (客先返却)",
-    "filterOutsourceProcessing": "外注加工・設備移管",
+    "filterCustomerLoan": "金型預託 (預り)",
+    "filterReturnToCustomer": "客先返却 (返却)",
+    "filterOutsourceProcessing": "外注加工 (表面処理)",
     "filterActive": "進行中",
     "filterOverdue": "期限超過",
     "statusAll": "すべてのステータス",
@@ -5074,7 +5074,7 @@
       "completedThisMonth": "今月完了"
     },
     "types": {
-      "CUSTOMER_LOAN": "金型借用 (兼 預り)",
+      "CUSTOMER_LOAN": "金型預託 (客先預り)",
       "RETURN_TO_CUSTOMER": "客先返却",
       "OUTSOURCE_PROCESSING": "外注加工出庫"
     },
@@ -5211,7 +5211,9 @@
       "actionsTitle": "実行可能なアクション",
       "printDocument": "帳票印刷 (PDF)",
       "downloadDocument": "PDFダウンロード"
-    }
+    },
+    "transferBoundaryNotice": "※ 川崎・八潮工場間の社内設備移管は本画面（貸出管理）の対象外です（別制度）。",
+    "linkToLifecycle": "社内移管・棚卸へ"
   },
   "FastJobCreate": {
     "title": "金型製作・改修指示書 クイック発行 (1-Stop Fast Tooling)",
