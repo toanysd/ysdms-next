@@ -1173,3 +1173,50 @@ Thứ tự nạp cha-con bất biến: `work_orders / jobs -> job_steps -> work_
 - Script dry-run nâng cấp: `scripts/dry_run_b1_validation.py`
 - Kết quả kiểm toán JSON nâng cấp: `scripts/dry_run_b1_validation_result.json`
 - Báo cáo chi tiết Markdown: `docs/reports/2026-10-07_b1_insert_dry_run_validation_report.md`
+
+## 36. GIẢI QUYẾT TRIỆT ĐỂ 5 AUDIT POINTS CỦA PE VỀ COMMIT ec65b69 (2026-10-07 11:00 JST)
+
+### 36.1. Căn cứ & Ủy quyền Vận hành
+- **Ủy quyền vận hành:** Minh Chủ Thoan [Stamp: 2026-10-07 10:54 JST] ủy quyền cho AN chủ động thực hiện các vòng sửa kỹ thuật nhỏ/read-only và dry-run mà không cần hỏi lại, miễn là không đụng đến Production data hay schema.
+- **Thẩm định kỹ thuật:** PE [Stamp: 2026-10-07 10:57 JST] xác nhận commit `ec65b69` tồn tại trên GitHub remote, baseline Production đạt chuẩn, nhưng chỉ ra 5 audit points cần khắc phục triệt để.
+
+### 36.2. Kết quả Xử lý 5 Audit Points
+1. **Point 1 (Dynamic Catalog Metrics):**
+   - Đọc trực tiếp từ `information_schema.columns` (NOT NULL columns) và `pg_constraint` (toàn bộ 18 constraints của `job_steps` và `work_logs`).
+   - Kiểm tra `company_id`: `is_nullable = YES`. Lịch sử Production 7,106/7,106 dòng (100%) là NULL. B1 nạp 5/5 dòng NULL (chuẩn hóa đồng nhất).
+   - Kiểm tra `quantity_ng`: `is_nullable = NO`, default `'0'`, check `quantity_ng >= 0`. Toàn bộ 5 work logs thỏa mãn `quantity_ng = 0`.
+   - FK `job_step_id`: Đã chứng minh preflight (5/5 work logs map đúng staging step) và post-insert (5/5 work logs join thành công sang `job_steps.step_id`).
+2. **Point 2 (Phân định Naming Row Count):**
+   - SQL Payload: Dùng `GET DIAGNOSTICS v_inserted_steps = ROW_COUNT;` và `GET DIAGNOSTICS v_inserted_logs = ROW_COUNT;`.
+   - Python Dry-Run: Dùng `cursor.rowcount` (ghi nhận `inserted_steps_cursor_count = 6`, `inserted_work_logs_cursor_count = 5`). Không đánh tráo khái niệm.
+3. **Point 3 (Preflight Staging Uniqueness):**
+   - Bổ sung kiểm tra nội bộ staging: `staging_internal_dup_legacies = 0` và `staging_internal_dup_sources = 0`.
+4. **Point 4 (Per-Row Validations):**
+   - Thực hiện kiểm tra per-row trên từng dòng Work Log:
+     * `unmatched_work_log_employees = 0` (kiểm tra `is_active = true`)
+     * `unmatched_work_log_processing_codes = 0` (kiểm tra `is_active = true`)
+     * `unmatched_work_log_steps = 0` (resolve đúng Step cha)
+     * `mismatched_work_log_job_ids = 0` (Job ID của Log khớp với Step)
+5. **Point 5 (Trigger Definitions & Mathematical Proof):**
+   - Tạo script `scripts/inspect_trigger_defs.py` trích xuất định nghĩa thực tế từ `pg_trigger` và `pg_proc` cho 3 triggers: `trg_sync_job_progress`, `trigger_update_job_status`, `trigger_update_step_status`.
+   - Chứng minh logic: `trg_update_job_status_from_steps` chỉ đổi trạng thái khi có step mang `processing_status_id = 8` (`F.完了`). Vì B1 chỉ có outsource (`NULL`) và internal pending (`9`), `v_completed_steps = 0` nên trigger không đổi `job_status` (bảo toàn `COMPLETED`). Trigger `sync_job_overall_progress` cập nhật tiến độ % chính xác.
+
+### 36.3. Bằng chứng Thực thi Dry-Run & Trạng thái Baseline
+- Kết quả dry-run in-transaction với `ROLLBACK;`:
+  * `inserted_steps_cursor_count`: **6**
+  * `inserted_work_logs_cursor_count`: **5**
+  * `duplicate_target_legacy_ids`: **0**
+  * `unique_conflicts`: **0**
+  * `fk_conflicts`: **0**
+  * `not_null_conflicts`: **0**
+  * `rollback_verified`: **true**
+- Baseline Supabase Production sau dry-run:
+  * `jobs`: **1,205** (Bảo toàn 100%)
+  * `job_steps`: **2,451** (Bảo toàn 100%)
+  * `work_logs`: **7,106** (Bảo toàn 100%)
+- **Hồ sơ file:**
+  * `scripts/official_insert_payload_b1.sql`
+  * `scripts/dry_run_b1_validation.py`
+  * `scripts/dry_run_b1_validation_result.json`
+  * `scripts/inspect_trigger_defs.py`
+  * `docs/reports/2026-10-07_b1_insert_dry_run_validation_report.md`

@@ -2,7 +2,7 @@
 -- OFFICIAL INSERT PAYLOAD: B1 ACCESS DELTA (6 STEPS & 5 WORK LOGS)
 -- Target: public.job_steps & public.work_logs
 -- Source: public.staging_access_delta_b1
--- Policy: Fail-Closed Transaction with Deep Preflight & Row Count Assertions
+-- Policy: Fail-Closed Transaction with Deep Catalog, Per-Row & Row Count Assertions
 -- Note: Mặc định an toàn kết thúc bằng ROLLBACK; Chỉ chuyển COMMIT khi có phê duyệt
 -- ============================================================================
 
@@ -20,16 +20,25 @@ DECLARE
     v_staging_steps INT;
     v_staging_logs INT;
     
-    -- Conflict & Idempotency counts
+    -- Idempotency & Target Conflict counts
     v_step_legacy_conflicts INT;
     v_log_legacy_conflicts INT;
     v_step_no_conflicts INT;
-    v_staging_source_duplicates INT;
     
-    -- Relational resolution counts
-    v_resolved_step_joins INT;
-    v_active_employees INT;
-    v_active_processing_codes INT;
+    -- Staging Internal Duplicate counts (Point 3)
+    v_staging_dup_legacies INT;
+    v_staging_dup_sources INT;
+    
+    -- Per-row Relational Resolution counts (Point 4)
+    v_unmatched_log_employees INT;
+    v_unmatched_log_codes INT;
+    v_unmatched_log_steps INT;
+    v_mismatched_log_job_ids INT;
+    
+    -- NOT NULL & Value Validity counts (Point 1)
+    v_invalid_not_null_steps INT;
+    v_invalid_not_null_logs INT;
+    v_invalid_hours_logs INT;
 BEGIN
     -- 1.1 Baseline assertion
     SELECT count(*) INTO v_jobs_count FROM public.jobs;
@@ -48,7 +57,20 @@ BEGIN
             v_staging_steps, v_staging_logs;
     END IF;
 
-    -- 1.2 Idempotency: Target legacy_id collision check
+    -- 1.2 Staging internal uniqueness assertion (Point 3)
+    SELECT count(*) - count(DISTINCT legacy_id) INTO v_staging_dup_legacies 
+    FROM public.staging_access_delta_b1;
+    IF v_staging_dup_legacies > 0 THEN
+        RAISE EXCEPTION 'Preflight Failed: % duplicate legacy_ids inside staging_access_delta_b1', v_staging_dup_legacies;
+    END IF;
+
+    SELECT count(*) - count(DISTINCT (source_table, source_primary_key)) INTO v_staging_dup_sources 
+    FROM public.staging_access_delta_b1;
+    IF v_staging_dup_sources > 0 THEN
+        RAISE EXCEPTION 'Preflight Failed: % duplicate source keys inside staging_access_delta_b1', v_staging_dup_sources;
+    END IF;
+
+    -- 1.3 Idempotency: Target legacy_id collision check
     SELECT count(*) INTO v_step_legacy_conflicts
     FROM public.job_steps
     WHERE legacy_id IN (
@@ -67,7 +89,7 @@ BEGIN
         RAISE EXCEPTION 'Preflight Failed: % Work Log legacy_ids already exist in public.work_logs', v_log_legacy_conflicts;
     END IF;
 
-    -- 1.3 Target unique key (job_id, step_no) collision check
+    -- 1.4 Target unique key (job_id, step_no) collision check
     SELECT count(*) INTO v_step_no_conflicts
     FROM public.job_steps js
     JOIN public.staging_access_delta_b1 s 
@@ -78,57 +100,84 @@ BEGIN
         RAISE EXCEPTION 'Preflight Failed: % (job_id, step_no) unique conflicts detected in public.job_steps', v_step_no_conflicts;
     END IF;
 
-    -- 1.4 Source duplicate check in staging
-    SELECT count(*) INTO v_staging_source_duplicates
-    FROM (
-        SELECT source_table, source_primary_key 
-        FROM public.staging_access_delta_b1 
-        GROUP BY source_table, source_primary_key 
-        HAVING count(*) > 1
-    ) sub;
-    IF v_staging_source_duplicates > 0 THEN
-        RAISE EXCEPTION 'Preflight Failed: % duplicate source keys in staging_access_delta_b1', v_staging_source_duplicates;
+    -- 1.5 Per-row Work Log -> Step resolution check (Point 4)
+    SELECT count(*) INTO v_unmatched_log_steps
+    FROM public.staging_access_delta_b1 l
+    LEFT JOIN public.staging_access_delta_b1 s 
+      ON s.entity_type = 'STEP' 
+     AND s.legacy_id = (l.payload->>'target_step_legacy_id')
+    WHERE l.entity_type = 'WORK_LOG' 
+      AND s.staging_id IS NULL;
+    IF v_unmatched_log_steps > 0 THEN
+        RAISE EXCEPTION 'Preflight Failed: % work logs failed to resolve target step in staging', v_unmatched_log_steps;
     END IF;
 
-    -- 1.5 Resolved step join for Work Logs check
-    -- Every work log must map to a valid step in staging
-    SELECT count(*) INTO v_resolved_step_joins
+    -- 1.6 Per-row Work Log -> Job ID consistency with Step (Point 4)
+    SELECT count(*) INTO v_mismatched_log_job_ids
     FROM public.staging_access_delta_b1 l
     JOIN public.staging_access_delta_b1 s 
       ON s.entity_type = 'STEP' 
      AND s.legacy_id = (l.payload->>'target_step_legacy_id')
-    WHERE l.entity_type = 'WORK_LOG';
-    IF v_resolved_step_joins <> 5 THEN
-        RAISE EXCEPTION 'Preflight Failed: Only % of 5 work logs resolved target step in staging', v_resolved_step_joins;
+    WHERE l.entity_type = 'WORK_LOG' 
+      AND l.target_job_id <> s.target_job_id;
+    IF v_mismatched_log_job_ids > 0 THEN
+        RAISE EXCEPTION 'Preflight Failed: % work logs have job_id mismatched with target step', v_mismatched_log_job_ids;
     END IF;
 
-    -- 1.6 Employees existence and is_active check
-    SELECT count(DISTINCT e.employee_id) INTO v_active_employees
+    -- 1.7 Per-row active employee existence check (Point 4)
+    SELECT count(*) INTO v_unmatched_log_employees
     FROM public.staging_access_delta_b1 l
-    JOIN public.employees e 
+    LEFT JOIN public.employees e 
       ON e.employee_id = l.employee_id 
      AND e.is_active = true
-    WHERE l.entity_type = 'WORK_LOG';
-    IF v_active_employees <> 2 THEN
-        RAISE EXCEPTION 'Preflight Failed: Expected 2 active employees, found %', v_active_employees;
+    WHERE l.entity_type = 'WORK_LOG' 
+      AND e.employee_id IS NULL;
+    IF v_unmatched_log_employees > 0 THEN
+        RAISE EXCEPTION 'Preflight Failed: % work logs reference missing or inactive employee', v_unmatched_log_employees;
     END IF;
 
-    -- 1.7 Processing codes existence and is_active check
-    SELECT count(DISTINCT pc.processing_code_id) INTO v_active_processing_codes
+    -- 1.8 Per-row active processing code existence check (Point 4)
+    SELECT count(*) INTO v_unmatched_log_codes
     FROM public.staging_access_delta_b1 l
-    JOIN public.processing_codes pc 
+    LEFT JOIN public.processing_codes pc 
       ON pc.processing_code_id = l.processing_code_id 
      AND pc.is_active = true
-    WHERE l.entity_type = 'WORK_LOG';
-    IF v_active_processing_codes <> 4 THEN
-        RAISE EXCEPTION 'Preflight Failed: Expected 4 active processing codes, found %', v_active_processing_codes;
+    WHERE l.entity_type = 'WORK_LOG' 
+      AND pc.processing_code_id IS NULL;
+    IF v_unmatched_log_codes > 0 THEN
+        RAISE EXCEPTION 'Preflight Failed: % work logs reference missing or inactive processing code', v_unmatched_log_codes;
     END IF;
 
-    RAISE NOTICE 'Preflight Validation Passed: All 7 checks verified successfully.';
+    -- 1.9 Target Table NOT NULL columns checks (Point 1)
+    SELECT count(*) INTO v_invalid_not_null_steps
+    FROM public.staging_access_delta_b1
+    WHERE entity_type = 'STEP'
+      AND (target_job_id IS NULL OR step_no IS NULL OR step_name IS NULL OR btrim(step_name) = '');
+    IF v_invalid_not_null_steps > 0 THEN
+        RAISE EXCEPTION 'Preflight Failed: % steps violate NOT NULL constraint (job_id, step_no, step_name)', v_invalid_not_null_steps;
+    END IF;
+
+    SELECT count(*) INTO v_invalid_not_null_logs
+    FROM public.staging_access_delta_b1
+    WHERE entity_type = 'WORK_LOG'
+      AND (target_job_id IS NULL OR employee_id IS NULL OR work_date IS NULL);
+    IF v_invalid_not_null_logs > 0 THEN
+        RAISE EXCEPTION 'Preflight Failed: % work logs violate NOT NULL constraint (job_id, employee_id, work_date)', v_invalid_not_null_logs;
+    END IF;
+
+    SELECT count(*) INTO v_invalid_hours_logs
+    FROM public.staging_access_delta_b1
+    WHERE entity_type = 'WORK_LOG'
+      AND (hours_spent IS NULL OR hours_spent <= 0);
+    IF v_invalid_hours_logs > 0 THEN
+        RAISE EXCEPTION 'Preflight Failed: % work logs have invalid hours_spent (must be > 0)', v_invalid_hours_logs;
+    END IF;
+
+    RAISE NOTICE 'Preflight Validation Passed: All 9 catalog, per-row and uniqueness assertions verified.';
 END $$;
 
 -- ============================================================================
--- 2. INSERT 6 STEPS & ASSERT ACTUAL INSERTED ROW COUNT
+-- 2. INSERT 6 STEPS & ASSERT ACTUAL INSERTED ROW COUNT (GET DIAGNOSTICS)
 -- ============================================================================
 DO $$
 DECLARE
@@ -166,15 +215,16 @@ BEGIN
     WHERE s.entity_type = 'STEP'
     ORDER BY s.source_primary_key;
 
+    -- Assert actual row count via GET DIAGNOSTICS (Point 2)
     GET DIAGNOSTICS v_inserted_steps = ROW_COUNT;
     IF v_inserted_steps <> 6 THEN
-        RAISE EXCEPTION 'Insert Failed: Expected 6 steps inserted, actual row count: %', v_inserted_steps;
+        RAISE EXCEPTION 'Insert Failed: Expected 6 steps inserted via GET DIAGNOSTICS, actual: %', v_inserted_steps;
     END IF;
-    RAISE NOTICE 'Step Insert Succeeded: % rows inserted into public.job_steps.', v_inserted_steps;
+    RAISE NOTICE 'Step Insert Succeeded: % rows inserted into public.job_steps (GET DIAGNOSTICS verified).', v_inserted_steps;
 END $$;
 
 -- ============================================================================
--- 3. INSERT 5 WORK LOGS & ASSERT ACTUAL INSERTED ROW COUNT
+-- 3. INSERT 5 WORK LOGS & ASSERT ACTUAL INSERTED ROW COUNT (GET DIAGNOSTICS)
 -- ============================================================================
 DO $$
 DECLARE
@@ -220,11 +270,12 @@ BEGIN
     WHERE s.entity_type = 'WORK_LOG'
     ORDER BY s.source_primary_key;
 
+    -- Assert actual row count via GET DIAGNOSTICS (Point 2)
     GET DIAGNOSTICS v_inserted_logs = ROW_COUNT;
     IF v_inserted_logs <> 5 THEN
-        RAISE EXCEPTION 'Insert Failed: Expected 5 work logs inserted, actual row count: %', v_inserted_logs;
+        RAISE EXCEPTION 'Insert Failed: Expected 5 work logs inserted via GET DIAGNOSTICS, actual: %', v_inserted_logs;
     END IF;
-    RAISE NOTICE 'Work Log Insert Succeeded: % rows inserted into public.work_logs.', v_inserted_logs;
+    RAISE NOTICE 'Work Log Insert Succeeded: % rows inserted into public.work_logs (GET DIAGNOSTICS verified).', v_inserted_logs;
 END $$;
 
 -- ============================================================================

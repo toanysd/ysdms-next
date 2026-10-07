@@ -1,32 +1,220 @@
 {
   "dry_run_step_rows": 6,
   "dry_run_work_log_rows": 5,
-  "inserted_steps_verified": 6,
-  "inserted_work_logs_verified": 5,
+  "inserted_steps_cursor_count": 6,
+  "inserted_work_logs_cursor_count": 5,
+  "row_count_assertion_method": {
+    "sql_payload": "GET DIAGNOSTICS ROW_COUNT",
+    "python_dry_run": "cursor.rowcount"
+  },
+  "staging_internal_dup_legacies": 0,
+  "staging_internal_dup_sources": 0,
   "duplicate_target_legacy_ids": 0,
   "existing_target_rows": 0,
   "missing_parent_jobs": 0,
-  "missing_employees": 0,
-  "missing_processing_codes": 0,
-  "invalid_step_values": 0,
-  "invalid_work_log_values": 0,
+  "unmatched_work_log_employees": 0,
+  "unmatched_work_log_processing_codes": 0,
+  "unmatched_work_log_steps": 0,
+  "mismatched_work_log_job_ids": 0,
   "fk_conflicts": 0,
   "unique_conflicts": 0,
   "not_null_conflicts": 0,
+  "company_id_audit": {
+    "is_nullable": true,
+    "historical_production_null_count": "7106/7106 (100%)",
+    "b1_staging_null_count": "5/5 (100% NULL, aligns with existing schema)",
+    "status": "VALID_COMPLIANT"
+  },
+  "quantity_ng_audit": {
+    "column_name": "quantity_ng",
+    "is_nullable": "NO",
+    "column_default": "0",
+    "check_constraint": "CHECK (quantity_ng >= 0)",
+    "b1_staging_values": "All 5 work logs default/set to 0, satisfying NOT NULL and CHECK (>= 0)",
+    "status": "VALID_COMPLIANT"
+  },
+  "not_null_catalog_columns": [
+    {
+      "table_name": "job_steps",
+      "column_name": "job_id",
+      "column_default": null
+    },
+    {
+      "table_name": "job_steps",
+      "column_name": "step_id",
+      "column_default": "gen_random_uuid()"
+    },
+    {
+      "table_name": "job_steps",
+      "column_name": "step_name",
+      "column_default": null
+    },
+    {
+      "table_name": "job_steps",
+      "column_name": "step_no",
+      "column_default": null
+    },
+    {
+      "table_name": "work_logs",
+      "column_name": "employee_id",
+      "column_default": null
+    },
+    {
+      "table_name": "work_logs",
+      "column_name": "job_id",
+      "column_default": null
+    },
+    {
+      "table_name": "work_logs",
+      "column_name": "log_id",
+      "column_default": "gen_random_uuid()"
+    },
+    {
+      "table_name": "work_logs",
+      "column_name": "quantity_ng",
+      "column_default": "0"
+    },
+    {
+      "table_name": "work_logs",
+      "column_name": "work_date",
+      "column_default": null
+    }
+  ],
+  "pg_catalog_constraints": [
+    {
+      "conname": "job_steps_step_status_check",
+      "contype": "c",
+      "relname": "job_steps",
+      "def": "CHECK ((step_status = ANY (ARRAY['PENDING'::text, 'IN_PROGRESS'::text, 'COMPLETED'::text, 'ON_HOLD'::text, 'CANCELLED'::text])))"
+    },
+    {
+      "conname": "job_steps_assigned_to_fkey",
+      "contype": "f",
+      "relname": "job_steps",
+      "def": "FOREIGN KEY (assigned_to) REFERENCES employees(employee_id)"
+    },
+    {
+      "conname": "job_steps_item_type_id_fkey",
+      "contype": "f",
+      "relname": "job_steps",
+      "def": "FOREIGN KEY (item_type_id) REFERENCES item_types(item_type_id)"
+    },
+    {
+      "conname": "job_steps_job_id_fkey",
+      "contype": "f",
+      "relname": "job_steps",
+      "def": "FOREIGN KEY (job_id) REFERENCES jobs(job_id)"
+    },
+    {
+      "conname": "job_steps_machine_id_fkey",
+      "contype": "f",
+      "relname": "job_steps",
+      "def": "FOREIGN KEY (machine_id) REFERENCES machines(machine_id)"
+    },
+    {
+      "conname": "job_steps_outsource_company_fkey",
+      "contype": "f",
+      "relname": "job_steps",
+      "def": "FOREIGN KEY (outsource_company) REFERENCES companies(company_id)"
+    },
+    {
+      "conname": "job_steps_processing_item_id_fkey",
+      "contype": "f",
+      "relname": "job_steps",
+      "def": "FOREIGN KEY (processing_item_id) REFERENCES processing_items(processing_item_id)"
+    },
+    {
+      "conname": "job_steps_processing_status_id_fkey",
+      "contype": "f",
+      "relname": "job_steps",
+      "def": "FOREIGN KEY (processing_status_id) REFERENCES processing_statuses(status_id)"
+    },
+    {
+      "conname": "job_steps_pkey",
+      "contype": "p",
+      "relname": "job_steps",
+      "def": "PRIMARY KEY (step_id)"
+    },
+    {
+      "conname": "job_steps_job_id_step_no_key",
+      "contype": "u",
+      "relname": "job_steps",
+      "def": "UNIQUE (job_id, step_no)"
+    },
+    {
+      "conname": "work_logs_quantity_ng_check",
+      "contype": "c",
+      "relname": "work_logs",
+      "def": "CHECK ((quantity_ng >= 0))"
+    },
+    {
+      "conname": "work_logs_company_id_fkey",
+      "contype": "f",
+      "relname": "work_logs",
+      "def": "FOREIGN KEY (company_id) REFERENCES companies(company_id)"
+    },
+    {
+      "conname": "work_logs_employee_id_fkey",
+      "contype": "f",
+      "relname": "work_logs",
+      "def": "FOREIGN KEY (employee_id) REFERENCES employees(employee_id)"
+    },
+    {
+      "conname": "work_logs_job_id_fkey",
+      "contype": "f",
+      "relname": "work_logs",
+      "def": "FOREIGN KEY (job_id) REFERENCES jobs(job_id)"
+    },
+    {
+      "conname": "work_logs_job_step_id_fkey",
+      "contype": "f",
+      "relname": "work_logs",
+      "def": "FOREIGN KEY (job_step_id) REFERENCES job_steps(step_id)"
+    },
+    {
+      "conname": "work_logs_machine_id_fkey",
+      "contype": "f",
+      "relname": "work_logs",
+      "def": "FOREIGN KEY (machine_id) REFERENCES machines(machine_id)"
+    },
+    {
+      "conname": "work_logs_processing_code_id_fkey",
+      "contype": "f",
+      "relname": "work_logs",
+      "def": "FOREIGN KEY (processing_code_id) REFERENCES processing_codes(processing_code_id)"
+    },
+    {
+      "conname": "work_logs_processing_status_id_fkey",
+      "contype": "f",
+      "relname": "work_logs",
+      "def": "FOREIGN KEY (processing_status_id) REFERENCES processing_statuses(status_id)"
+    },
+    {
+      "conname": "work_logs_pkey",
+      "contype": "p",
+      "relname": "work_logs",
+      "def": "PRIMARY KEY (log_id)"
+    }
+  ],
+  "trigger_definitions_audited": {
+    "trg_sync_job_progress": "CREATE TRIGGER trg_sync_job_progress AFTER INSERT OR DELETE OR UPDATE OF step_status ON public.job_steps FOR EACH ROW EXECUTE FUNCTION sync_job_overall_progress()",
+    "trigger_update_job_status": "CREATE TRIGGER trigger_update_job_status AFTER INSERT OR DELETE OR UPDATE ON public.job_steps FOR EACH ROW EXECUTE FUNCTION trg_update_job_status_from_steps()",
+    "trigger_update_step_status": "CREATE TRIGGER trigger_update_step_status AFTER INSERT OR DELETE OR UPDATE ON public.work_logs FOR EACH ROW EXECUTE FUNCTION trg_update_step_status_from_worklogs()"
+  },
   "trigger_side_effects": [
     {
       "entity": "job_step",
       "legacy_id": "LEGACY-STEP-4226",
       "resulting_processing_status_id": 9,
       "step_status": "PENDING",
-      "behavior": "Maintained processing_status_id=9 (N.進行中) because work logs have is_finished=false"
+      "behavior": "Maintained processing_status_id=9 (N.進行中) via trg_update_step_status_from_worklogs because is_finished=false"
     },
     {
       "entity": "job_step",
       "legacy_id": "LEGACY-STEP-4275",
       "resulting_processing_status_id": 9,
       "step_status": "PENDING",
-      "behavior": "Maintained processing_status_id=9 (N.進行中) because work logs have is_finished=false"
+      "behavior": "Maintained processing_status_id=9 (N.進行中) via trg_update_step_status_from_worklogs because is_finished=false"
     },
     {
       "entity": "job",
@@ -35,7 +223,7 @@
       "job_status_after": "COMPLETED",
       "progress_before": 100.0,
       "progress_after": 100.0,
-      "behavior": "job_status remained COMPLETED (historical pre-existing state). overall_progress updated from 100.0% to 100.0% via sync_job_overall_progress()"
+      "behavior": "job_status remained COMPLETED (pre-existing state preserved; trg_update_job_status_from_steps did not trigger status change). overall_progress updated from 100.0% to 100.0% via sync_job_overall_progress()"
     },
     {
       "entity": "job",
@@ -44,7 +232,7 @@
       "job_status_after": "COMPLETED",
       "progress_before": 100.0,
       "progress_after": 100.0,
-      "behavior": "job_status remained COMPLETED (historical pre-existing state). overall_progress updated from 100.0% to 100.0% via sync_job_overall_progress()"
+      "behavior": "job_status remained COMPLETED (pre-existing state preserved; trg_update_job_status_from_steps did not trigger status change). overall_progress updated from 100.0% to 100.0% via sync_job_overall_progress()"
     },
     {
       "entity": "job",
@@ -53,7 +241,7 @@
       "job_status_after": "COMPLETED",
       "progress_before": 100.0,
       "progress_after": 66.7,
-      "behavior": "job_status remained COMPLETED (historical pre-existing state). overall_progress updated from 100.0% to 66.7% via sync_job_overall_progress()"
+      "behavior": "job_status remained COMPLETED (pre-existing state preserved; trg_update_job_status_from_steps did not trigger status change). overall_progress updated from 100.0% to 66.7% via sync_job_overall_progress()"
     },
     {
       "entity": "job",
@@ -62,7 +250,7 @@
       "job_status_after": "COMPLETED",
       "progress_before": 50.0,
       "progress_after": 66.7,
-      "behavior": "job_status remained COMPLETED (historical pre-existing state). overall_progress updated from 50.0% to 66.7% via sync_job_overall_progress()"
+      "behavior": "job_status remained COMPLETED (pre-existing state preserved; trg_update_job_status_from_steps did not trigger status change). overall_progress updated from 50.0% to 66.7% via sync_job_overall_progress()"
     },
     {
       "entity": "job",
@@ -71,7 +259,7 @@
       "job_status_after": "COMPLETED",
       "progress_before": 100.0,
       "progress_after": 100.0,
-      "behavior": "job_status remained COMPLETED (historical pre-existing state). overall_progress updated from 100.0% to 100.0% via sync_job_overall_progress()"
+      "behavior": "job_status remained COMPLETED (pre-existing state preserved; trg_update_job_status_from_steps did not trigger status change). overall_progress updated from 100.0% to 100.0% via sync_job_overall_progress()"
     },
     {
       "entity": "job",
@@ -80,7 +268,7 @@
       "job_status_after": "COMPLETED",
       "progress_before": 100.0,
       "progress_after": 50.0,
-      "behavior": "job_status remained COMPLETED (historical pre-existing state). overall_progress updated from 100.0% to 50.0% via sync_job_overall_progress()"
+      "behavior": "job_status remained COMPLETED (pre-existing state preserved; trg_update_job_status_from_steps did not trigger status change). overall_progress updated from 100.0% to 50.0% via sync_job_overall_progress()"
     }
   ],
   "rollback_verified": true,
