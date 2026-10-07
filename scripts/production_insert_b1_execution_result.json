@@ -1,0 +1,180 @@
+{
+  "execution_timestamp_jst": "2026-10-07 11:31:32 JST",
+  "full_commit_sha": "a0ca74d3ed94a5d8314b323450ab8f000295791b",
+  "transaction_result": "COMMITTED",
+  "inserted_steps_row_count": 6,
+  "inserted_work_logs_row_count": 5,
+  "postflight_jobs": 1205,
+  "postflight_job_steps": 2457,
+  "postflight_work_logs": 7111,
+  "inserted_step_legacy_ids": [
+    "LEGACY-STEP-4226",
+    "LEGACY-STEP-4238",
+    "LEGACY-STEP-4241",
+    "LEGACY-STEP-4251",
+    "LEGACY-STEP-4275",
+    "LEGACY-STEP-4276"
+  ],
+  "inserted_work_log_legacy_ids": [
+    "LEGACY-LOG-8882",
+    "LEGACY-LOG-8895",
+    "LEGACY-LOG-8901",
+    "LEGACY-LOG-8920",
+    "LEGACY-LOG-9052"
+  ],
+  "inserted_step_details": [
+    {
+      "step_id": "2e8077b3-544a-4899-b838-84e7b6a3dc47",
+      "job_id": "f536c3e9-f4a8-4578-837b-174d9f96a7b3",
+      "step_no": 3,
+      "step_name": "金型 (MOLD)",
+      "step_status": "PENDING",
+      "processing_status_id": 9,
+      "legacy_id": "LEGACY-STEP-4226"
+    },
+    {
+      "step_id": "d961333c-f706-458b-9408-70f1c057a398",
+      "job_id": "39dbbc91-c7b4-4a90-bdd8-8c894b782092",
+      "step_no": 3,
+      "step_name": "抜型 (CUTTER)",
+      "step_status": "COMPLETED",
+      "processing_status_id": null,
+      "legacy_id": "LEGACY-STEP-4238"
+    },
+    {
+      "step_id": "9fae6e83-59d5-4989-9fd6-8393c19efc00",
+      "job_id": "17131b0b-3f8c-40dd-988a-fc1d1c9888bc",
+      "step_no": 3,
+      "step_name": "抜型 (CUTTER)",
+      "step_status": "COMPLETED",
+      "processing_status_id": null,
+      "legacy_id": "LEGACY-STEP-4241"
+    },
+    {
+      "step_id": "763f1b7f-ef83-442f-b1cf-26c394421e3c",
+      "job_id": "c33e3f71-d3b0-48dd-8c34-11ad76a4a195",
+      "step_no": 3,
+      "step_name": "抜型 (CUTTER)",
+      "step_status": "COMPLETED",
+      "processing_status_id": null,
+      "legacy_id": "LEGACY-STEP-4251"
+    },
+    {
+      "step_id": "a6a77dd4-1f53-4e74-9ce1-cdd004fd1d60",
+      "job_id": "249439b2-e1c6-4b42-ba99-54910d1f8a14",
+      "step_no": 2,
+      "step_name": "金型 (MOLD)",
+      "step_status": "PENDING",
+      "processing_status_id": 9,
+      "legacy_id": "LEGACY-STEP-4275"
+    },
+    {
+      "step_id": "71653cd4-beb4-4d48-a447-483f01babc43",
+      "job_id": "dcaa2eb8-f66b-426d-9bb0-5a4ec7e18d00",
+      "step_no": 4,
+      "step_name": "スタッキング (STAKING)",
+      "step_status": "COMPLETED",
+      "processing_status_id": null,
+      "legacy_id": "LEGACY-STEP-4276"
+    }
+  ],
+  "inserted_work_log_details": [
+    {
+      "log_id": "860626a1-9bc7-458a-b31a-2f4b76d20333",
+      "job_id": "f536c3e9-f4a8-4578-837b-174d9f96a7b3",
+      "job_step_id": "2e8077b3-544a-4899-b838-84e7b6a3dc47",
+      "employee_id": "abe82154-2f81-44ec-b76e-11a2db247fca",
+      "hours_spent": 2.0,
+      "processing_code_id": 10,
+      "is_finished": false,
+      "legacy_id": "LEGACY-LOG-8882"
+    },
+    {
+      "log_id": "a5723b96-5080-431f-aae3-de6843f8f15f",
+      "job_id": "f536c3e9-f4a8-4578-837b-174d9f96a7b3",
+      "job_step_id": "2e8077b3-544a-4899-b838-84e7b6a3dc47",
+      "employee_id": "abe82154-2f81-44ec-b76e-11a2db247fca",
+      "hours_spent": 1.0,
+      "processing_code_id": 10,
+      "is_finished": false,
+      "legacy_id": "LEGACY-LOG-8895"
+    },
+    {
+      "log_id": "4bbad9bd-41ed-41e8-a79d-705623fdcbf4",
+      "job_id": "f536c3e9-f4a8-4578-837b-174d9f96a7b3",
+      "job_step_id": "2e8077b3-544a-4899-b838-84e7b6a3dc47",
+      "employee_id": "44d2d142-4173-4e1b-baa3-c888edc7777c",
+      "hours_spent": 2.5,
+      "processing_code_id": 11,
+      "is_finished": false,
+      "legacy_id": "LEGACY-LOG-8901"
+    },
+    {
+      "log_id": "ba4b1513-da38-4676-a6b8-44ee7379d0f3",
+      "job_id": "f536c3e9-f4a8-4578-837b-174d9f96a7b3",
+      "job_step_id": "2e8077b3-544a-4899-b838-84e7b6a3dc47",
+      "employee_id": "44d2d142-4173-4e1b-baa3-c888edc7777c",
+      "hours_spent": 2.0,
+      "processing_code_id": 12,
+      "is_finished": false,
+      "legacy_id": "LEGACY-LOG-8920"
+    },
+    {
+      "log_id": "89027dc7-f56a-40e9-be1b-59d8b32c4f59",
+      "job_id": "249439b2-e1c6-4b42-ba99-54910d1f8a14",
+      "job_step_id": "a6a77dd4-1f53-4e74-9ce1-cdd004fd1d60",
+      "employee_id": "abe82154-2f81-44ec-b76e-11a2db247fca",
+      "hours_spent": 1.5,
+      "processing_code_id": 14,
+      "is_finished": false,
+      "legacy_id": "LEGACY-LOG-9052"
+    }
+  ],
+  "target_legacy_conflicts_after": 11,
+  "duplicate_legacy_ids_in_target": 0,
+  "parent_job_side_effects": [
+    {
+      "job_id": "dcaa2eb8-f66b-426d-9bb0-5a4ec7e18d00",
+      "job_code": "ASH021R2",
+      "job_status": "COMPLETED",
+      "overall_progress": 100.0
+    },
+    {
+      "job_id": "39dbbc91-c7b4-4a90-bdd8-8c894b782092",
+      "job_code": "JAE380",
+      "job_status": "COMPLETED",
+      "overall_progress": 100.0
+    },
+    {
+      "job_id": "f536c3e9-f4a8-4578-837b-174d9f96a7b3",
+      "job_code": "JAE381",
+      "job_status": "COMPLETED",
+      "overall_progress": 66.7
+    },
+    {
+      "job_id": "17131b0b-3f8c-40dd-988a-fc1d1c9888bc",
+      "job_code": "KSP227",
+      "job_status": "COMPLETED",
+      "overall_progress": 66.7
+    },
+    {
+      "job_id": "c33e3f71-d3b0-48dd-8c34-11ad76a4a195",
+      "job_code": "MMT021R2",
+      "job_status": "COMPLETED",
+      "overall_progress": 100.0
+    },
+    {
+      "job_id": "249439b2-e1c6-4b42-ba99-54910d1f8a14",
+      "job_code": "ZA水冷ベース",
+      "job_status": "COMPLETED",
+      "overall_progress": 50.0
+    }
+  ],
+  "notices": [
+    "NOTICE:  Preflight Validation Passed: All 9 catalog, per-row and uniqueness assertions verified.",
+    "NOTICE:  Step Insert Succeeded: 6 rows inserted into public.job_steps (GET DIAGNOSTICS verified).",
+    "NOTICE:  Work Log Insert Succeeded: 5 rows inserted into public.work_logs (GET DIAGNOSTICS verified).",
+    "NOTICE:  Postflight Validation Passed: All counts and trigger side effects verified."
+  ],
+  "rollback_or_commit_evidence": "PostgreSQL TRANSACTION COMMITTED SUCCESSFULLY, postflight counts verified"
+}

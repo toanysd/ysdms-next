@@ -1281,3 +1281,39 @@ Thứ tự nạp cha-con bất biến: `work_orders / jobs -> job_steps -> work_
   * `scripts/dry_run_b1_validation.py`
   * `scripts/dry_run_b1_validation_result.json`
   * `docs/reports/2026-10-07_b1_insert_dry_run_validation_report.md`
+
+## 39. THỰC THI CHÍNH THỨC INSERT PRODUCTION B1 (6 STEPS & 5 WORK LOGS) — COMMITTED (2026-10-07 11:31 JST)
+
+### 39.1. Căn cứ & Quyết định Phê duyệt
+- **Phê duyệt chính thức:** Minh Chủ Thoan [Stamp: 2026-10-07 11:30 JST] cho phép thực thi INSERT chính thức vào Production cho đúng 6 `STEP` và 5 `WORK_LOG` theo payload B1 đã kiểm toán.
+- **Thẩm định kỹ thuật:** PE [Stamp: 2026-10-07 11:29 JST] xác nhận audit payload đạt trong phạm vi full patch commit `a0ca74d3ed94a5d8314b323450ab8f000295791b`.
+
+### 39.2. Kết quả Thực thi Giao dịch
+- **Thời điểm thực thi:** 2026-10-07 11:31:32 JST.
+- **Trạng thái giao dịch:** `COMMITTED` thành công trong một transaction duy nhất.
+- **Số dòng chèn:**
+  * `public.job_steps`: **6 dòng** (`GET DIAGNOSTICS` verified)
+  * `public.work_logs`: **5 dòng** (`GET DIAGNOSTICS` verified)
+- **Số liệu Production sau khi COMMIT:**
+  * `jobs`: **1,205** (Bảo toàn)
+  * `job_steps`: **2,457** (+6)
+  * `work_logs`: **7,111** (+5)
+  * `staging_access_delta_b1`: **11** dòng (Bảo toàn)
+  * `target_legacy_conflicts_after`: **11** (11 dòng mới nạp đã hiện diện đầy đủ)
+  * `duplicate_legacy_ids`: **0**
+  * `FK conflicts`: **0**
+  * `UNIQUE conflicts`: **0**
+  * `NOT NULL conflicts`: **0**
+
+### 39.3. Tác động Trigger (Parent Jobs & Steps)
+- Recalibration tiến độ `sync_job_overall_progress`:
+  * `ASH021R2`: 100.0%, `JAE380`: 100.0%, `MMT021R2`: 100.0%
+  * `KSP227`: 66.7%, `ZA水冷ベース`: 50.0%, `JAE381`: 66.7%
+- Trạng thái `job_status`: Bảo toàn `COMPLETED` cho cả 6 Job.
+- Trạng thái Step nhận Work Log: `LEGACY-STEP-4226` và `LEGACY-STEP-4275` duy trì `processing_status_id = 9` (N.進行中).
+
+### 39.4. Hồ sơ Artifacts Đã Tạo
+- `scripts/official_insert_payload_b1.sql` (chuyển sang COMMIT)
+- `scripts/execute_production_insert_b1.py` (script thực thi và hậu kiểm)
+- `scripts/production_insert_b1_execution_result.json` (kết quả thực thi chi tiết)
+- `docs/reports/2026-10-07_b1_production_insert_execution_report.md` (báo cáo nghiệm thu thực thi)

@@ -317,7 +317,6 @@ END $$;
 -- ============================================================================
 -- 5. TRANSACTION CONTROL
 -- ============================================================================
--- CHẾ ĐỘ THẨM ĐỊNH DRY-RUN: MẶC ĐỊNH LUÔN LÀ ROLLBACK
--- CHỈ ĐỔI THÀNH COMMIT KHI CÓ QUYẾT ĐỊNH PHÊ DUYỆT BẰNG VĂN BẢN TỪ MINH CHỦ THOAN
-ROLLBACK;
--- COMMIT;
+-- PHÊ DUYỆT THỰC THI CHÍNH THỨC TỪ MINH CHỦ THOAN [Stamp: 2026-10-07 11:30 JST]
+-- ĐÃ QUA THẨM ĐỊNH KỸ THUẬT PE [Stamp: 2026-10-07 11:29 JST]
+COMMIT;
