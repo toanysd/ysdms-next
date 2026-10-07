@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-10-07T13:54:53.245632",
+  "timestamp": "2026-10-07T14:14:53.923501",
   "total": 12,
   "passed": 12,
   "failed": 0,
@@ -67,7 +67,7 @@
     {
       "test_id": "TC-P02-11",
       "status": "PASS",
-      "description": "Equipment mold and cutter assigned with SET_MEMBER relation",
+      "description": "Equipment mold and cutter assigned with relationship_type='SET_MEMBER' and is_default=true",
       "details": ""
     },
     {

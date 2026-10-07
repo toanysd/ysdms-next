@@ -1,0 +1,232 @@
+/* ==========================================================================
+   Print Layout — 金型製作・改修指示書 (A4 Portrait)
+   Target: Single Page A4 Portrait for Tooling Workshop Shopfloor & Inspection
+   ========================================================================== */
+
+.job-print-wrapper {
+  background: var(--bg-canvas, #f8fafc);
+  min-height: 100vh;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.job-print-actions {
+  width: 100%;
+  max-width: 210mm;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  flex-shrink: 0;
+}
+
+.job-print-sheet {
+  width: 210mm;
+  min-height: 297mm;
+  background: #ffffff;
+  color: #0f172a;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  box-sizing: border-box;
+  padding: 12mm 14mm;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Meiryo", sans-serif;
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+/* Header Grid */
+.job-header-box {
+  border-bottom: 2px solid #0f172a;
+  padding-bottom: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.job-doc-title {
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: 2px;
+  color: #0f172a;
+  margin: 0 0 4px 0;
+}
+
+.job-doc-subtitle {
+  font-size: 11px;
+  color: #475569;
+}
+
+.job-qr-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #cbd5e1;
+  padding: 4px 8px;
+  border-radius: 4px;
+  background: #f8fafc;
+}
+
+.job-qr-text {
+  font-size: 9px;
+  font-weight: 700;
+  color: #334155;
+  margin-top: 2px;
+  text-align: center;
+}
+
+/* Section Box Pattern */
+.job-section {
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.job-section-title {
+  background: #f1f5f9;
+  font-size: 11px;
+  font-weight: 700;
+  color: #1e293b;
+  padding: 4px 8px;
+  border-bottom: 1px solid #cbd5e1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.job-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1px;
+  background: #cbd5e1;
+}
+
+.job-grid-4 {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1px;
+  background: #cbd5e1;
+}
+
+.job-cell {
+  background: #ffffff;
+  padding: 4px 8px;
+  display: flex;
+  flex-direction: column;
+}
+
+.job-cell-label {
+  font-size: 9px;
+  color: #64748b;
+  font-weight: 600;
+}
+
+.job-cell-value {
+  font-size: 12px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.job-cell-mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+/* Steps Table */
+.job-steps-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.job-steps-table th,
+.job-steps-table td {
+  border: 1px solid #cbd5e1;
+  padding: 4px 6px;
+  font-size: 11px;
+}
+
+.job-steps-table th {
+  background: #f1f5f9;
+  font-weight: 700;
+  text-align: center;
+  color: #1e293b;
+}
+
+.job-steps-table td {
+  vertical-align: middle;
+}
+
+/* Sign-off Boxes (Japanese Workshop Standard) */
+.job-signoff-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  border: 1px solid #0f172a;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.job-signoff-box {
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid #0f172a;
+}
+
+.job-signoff-box:last-child {
+  border-right: none;
+}
+
+.job-signoff-header {
+  background: #f1f5f9;
+  font-size: 10px;
+  font-weight: 700;
+  text-align: center;
+  padding: 4px 2px;
+  border-bottom: 1px solid #0f172a;
+  color: #0f172a;
+}
+
+.job-signoff-body {
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  color: #94a3b8;
+}
+
+/* Print Specific Rules */
+@media print {
+  body, html {
+    background: #ffffff !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  .job-print-wrapper {
+    background: #ffffff !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    min-height: auto !important;
+  }
+
+  .job-print-sheet {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-height: auto !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  @page {
+    size: A4 portrait;
+    margin: 10mm 12mm;
+  }
+}

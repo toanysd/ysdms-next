@@ -172,17 +172,17 @@ def main():
     runner.assert_test("TC-P02-10", next_code == "ADY071-R3" and next_code_empty == "ADY071-R1",
                        "Revision new mode generates deterministic next revision code (R3 from [R1, R2])")
 
-    # TC-P02-11: Equipment mold and cutter assignment simulation
+    # TC-P02-11: Equipment mold and cutter assignment simulation (Exact catalog columns)
     mold_equip_code = f"ADY071-MOLD"
     cutter_equip_code = "CT-1042"
     assignment = {
-        "parent_equipment_id": "mold-uuid-555",
-        "child_equipment_id": "cutter-uuid-888",
-        "assignment_type": "SET_MEMBER",
-        "is_active": True
+        "primary_equipment_id": "mold-uuid-555",
+        "related_equipment_id": "cutter-uuid-888",
+        "relationship_type": "SET_MEMBER",
+        "is_default": True
     }
-    runner.assert_test("TC-P02-11", mold_equip_code == "ADY071-MOLD" and assignment["assignment_type"] == "SET_MEMBER" and assignment["is_active"] is True,
-                       "Equipment mold and cutter assigned with SET_MEMBER relation")
+    runner.assert_test("TC-P02-11", mold_equip_code == "ADY071-MOLD" and assignment["relationship_type"] == "SET_MEMBER" and assignment["is_default"] is True,
+                       "Equipment mold and cutter assigned with relationship_type='SET_MEMBER' and is_default=true")
 
     # TC-P02-12: Job sequence generation and advisory lock
     today_str = datetime.now().strftime("%Y%m%d")

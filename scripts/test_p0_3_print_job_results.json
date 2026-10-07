@@ -1,0 +1,55 @@
+{
+  "total": 8,
+  "passed": 8,
+  "failed": 0,
+  "results": [
+    {
+      "test_id": "TC-P03-01",
+      "status": "PASS",
+      "description": "All required route and component files exist on disk",
+      "details": ""
+    },
+    {
+      "test_id": "TC-P03-02",
+      "status": "PASS",
+      "description": "print.css defines @media print, .no-print hiding, and A4 portrait page size",
+      "details": ""
+    },
+    {
+      "test_id": "TC-P03-03",
+      "status": "PASS",
+      "description": "JobPrint i18n namespace has parity between JA and VI (43 keys)",
+      "details": ""
+    },
+    {
+      "test_id": "TC-P03-04",
+      "status": "PASS",
+      "description": "JobPrintSheet imports and calls QRCode.toDataURL for shopfloor scanning",
+      "details": ""
+    },
+    {
+      "test_id": "TC-P03-05",
+      "status": "PASS",
+      "description": "Specs are loaded directly from design_revisions SSOT without synthetic fallbacks",
+      "details": ""
+    },
+    {
+      "test_id": "TC-P03-06",
+      "status": "PASS",
+      "description": "Cutters queried via equipment_assignments with exact catalog columns",
+      "details": ""
+    },
+    {
+      "test_id": "TC-P03-07",
+      "status": "PASS",
+      "description": "4 Japanese workshop sign-off blocks and quick shortcut to Nippo are present",
+      "details": ""
+    },
+    {
+      "test_id": "TC-P03-08",
+      "status": "PASS",
+      "description": "ViewModel mock structure satisfies all rendering contracts",
+      "details": ""
+    }
+  ]
+}

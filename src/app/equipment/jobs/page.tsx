@@ -9,7 +9,7 @@ import {
   Plus, Filter, Search,
   ChevronDown, Loader2, Briefcase, Calendar,
   ArrowUp, ArrowDown, ArrowUpDown, X,
-  ArrowLeft, ArrowUpFromLine, Sparkles
+  ArrowLeft, ArrowUpFromLine, Sparkles, Printer
 } from 'lucide-react'
 import { Pagination } from '@/components/ui/Pagination'
 import { SearchSuggestions } from '@/components/ui/SearchSuggestions'
@@ -366,15 +366,24 @@ function JobsPageContent() {
                   return (
                     <tr key={job.job_id}>
                       <td>
-                        <Link
-                          href={`/equipment/jobs/${job.job_id}`}
-                          style={{
-                            color: 'var(--accent)', fontWeight: 700,
-                            fontFamily: 'monospace', fontSize: 13, textDecoration: 'none'
-                          }}
-                        >
-                          {job.job_code}
-                        </Link>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <Link
+                            href={`/equipment/jobs/${job.job_id}`}
+                            style={{
+                              color: 'var(--accent)', fontWeight: 700,
+                              fontFamily: 'monospace', fontSize: 13, textDecoration: 'none'
+                            }}
+                          >
+                            {job.job_code}
+                          </Link>
+                          <Link
+                            href={`/equipment/jobs/${job.job_id}/print`}
+                            title="A4指示書印刷"
+                            style={{ color: 'var(--text-muted)', display: 'inline-flex', alignItems: 'center', padding: '2px' }}
+                          >
+                            <Printer size={13} />
+                          </Link>
+                        </div>
                       </td>
                       <td style={{ fontWeight: 600 }}>{job.job_name}</td>
                       <td>
