@@ -1141,3 +1141,7 @@ Thứ tự nạp cha-con bất biến: `work_orders / jobs -> job_steps -> work_
 - Script thực thi dry-run: `scripts/dry_run_b1_validation.py`
 - Payload SQL chính thức: `scripts/official_insert_payload_b1.sql`
 - Báo cáo chi tiết Markdown: `docs/reports/2026-10-07_b1_insert_dry_run_validation_report.md`
+
+### 34.5. Phê duyệt Push GitHub & Đồng bộ Remote Commit SHA
+- **Chỉ thị của Minh Chủ Thoan [Stamp: 2026-10-07 10:44 JST]:** Cho phép AN sửa lỗi đóng gói, ghi nhận L004 và push commit lên `origin main`.
+- **Ranh giới:** Phê duyệt chỉ dành riêng cho việc packaging/push tài liệu và script dry-run lên GitHub để PE thẩm tra độc lập. Tuyệt đối không can thiệp DB hay insert Production.

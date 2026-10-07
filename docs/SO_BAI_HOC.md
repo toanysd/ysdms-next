@@ -8,6 +8,7 @@ Tài liệu ghi nhận các sự cố kỹ thuật, lỗi cú pháp, sai sót qu
 1. [L001 - Lỗi cú pháp json_build_object trong truy vấn Preflight Verification](#l001---lỗi-cú-pháp-json_build_object-trong-truy-vấn-preflight-verification)
 2. [L002 - Lỗi thiếu dấu phẩy trong JSON scalar postflight](#l002---lỗi-thiếu-dấu-phẩy-trong-json-scalar-postflight)
 3. [L003 - PE truy vấn sai entity_type khiến STEP/WORK_LOG bị báo 0](#l003---pe-truy-vấn-sai-entity_type-khiến-stepwork_log-bị-báo-0)
+4. [L004 - Commit SHA local chưa push lên remote GitHub nhưng được báo làm bằng chứng kiểm chứng độc lập](#l004---commit-sha-local-chưa-push-lên-remote-github-nhưng-được-báo-làm-bằng-chứng-kiểm-chứng-độc-lập)
 
 ---
 
@@ -69,3 +70,26 @@ Tài liệu ghi nhận các sự cố kỹ thuật, lỗi cú pháp, sai sót qu
   3. Không thực hiện lệnh `UPDATE` staging chỉ để đổi casing.
 - **Bài học rút ra (Takeaway):**
   - Trước mọi phiên kiểm toán độc lập trên bất kỳ cột enum/phân loại nào, bắt buộc phải chạy `SELECT DISTINCT <column>` để xác nhận tập giá trị thực tế trước khi đặt điều kiện `WHERE`.
+
+---
+
+## L004 - Commit SHA local chưa push lên remote GitHub nhưng được báo làm bằng chứng kiểm chứng độc lập
+
+- **Thời gian ghi nhận:** 2026-10-07 10:43 JST
+- **Phân loại:** Quy trình / Git packaging / Đồng bộ hồ sơ liên tác nhân
+- **Trạng thái:** Resolved (Được Thoan phê duyệt push và đối chiếu remote)
+- **Bảng tóm tắt theo mẫu bắt buộc:**
+  | Ngày | Tiêu đề | Nguyên nhân | Biểu hiện | Giải pháp khắc phục | Trạng thái |
+  |---|---|---|---|---|---|
+  | 2026-10-07 | Commit SHA local chưa push lên remote GitHub | Tuân thủ rule cấm tự push khi chưa có yêu cầu nhưng báo SHA như thể đã public | GitHub trả về "No commit found for SHA" khi PE kiểm tra độc lập | Ghi rõ trạng thái local-only/remote-not-verified, chỉ push khi Thoan duyệt và xác minh ls-remote | Resolved |
+
+- **Mô tả sự cố:**
+  - Sau khi hoàn thành dry-run B1, AN thực hiện commit cục bộ `8c19997...` chứa tài liệu báo cáo và payload. Do tuân thủ quy tắc "KHÔNG tự động git push mã nguồn trừ khi có YÊU CẦU TRỰC TIẾP từ người dùng", commit chưa được đẩy lên GitHub. Tuy nhiên, trong báo cáo bàn giao gửi PE, AN đã cung cấp full commit SHA mà không nêu rõ cờ `local-only`, dẫn đến việc PE kiểm tra trên GitHub nhận kết quả "No commit found for SHA".
+- **Nguyên nhân gốc rễ (Root Cause):**
+  - Thiếu quy ước phân biệt minh thị giữa commit SHA cục bộ (`local-only`) và commit SHA đã public trên remote (`remote-verified`).
+- **Giải pháp & Khắc phục:**
+  1. Minh Chủ Thoan chính thức phê duyệt cho phép đẩy commit lên `origin main`.
+  2. Bổ sung kiểm tra chéo bằng `git ls-remote origin refs/heads/main` để lấy đúng SHA remote sau khi push.
+  3. Mọi báo cáo bàn giao sau này nếu commit chưa push PHẢI ghi rõ: `local-only / remote-not-verified`.
+- **Bài học rút ra (Takeaway):**
+  - Mọi bằng chứng SHA gửi cho bên thứ ba hoặc kiểm toán viên độc lập phải đi kèm trạng thái xác thực trên GitHub (Remote URL hoặc cờ local-only).
