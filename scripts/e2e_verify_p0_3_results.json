@@ -1,0 +1,16 @@
+{
+  "job_id": "39dbbc91-c7b4-4a90-bdd8-8c894b782092",
+  "url": "http://localhost:3000/equipment/jobs/39dbbc91-c7b4-4a90-bdd8-8c894b782092/print",
+  "http_status": 200,
+  "title": "金型製作・改修指示書",
+  "qr_valid": true,
+  "job_code": "JAE380",
+  "nippo_href": "/worklogs/new?job_id=39dbbc91-c7b4-4a90-bdd8-8c894b782092",
+  "signoff_boxes_count": 4,
+  "print_button": true,
+  "artifacts": {
+    "screen_preview": "D:\\AntiGravity_Workspace\\apps\\ysdms-nextgen\\public\\evidence\\p0_3_browser_screen.png",
+    "print_preview": "D:\\AntiGravity_Workspace\\apps\\ysdms-nextgen\\public\\evidence\\p0_3_browser_print_mode.png",
+    "pdf": "D:\\AntiGravity_Workspace\\apps\\ysdms-nextgen\\public\\evidence\\p0_3_tooling_sheet_A4.pdf"
+  }
+}

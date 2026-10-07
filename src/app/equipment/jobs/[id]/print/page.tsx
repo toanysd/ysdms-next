@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createServerSupabaseClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import { JobPrintSheet, JobPrintData } from './_components/JobPrintSheet'
 
@@ -10,67 +10,81 @@ interface PageProps {
   params: Promise<{ id: string }>
 }
 
+const JOB_PRINT_QUERY = `
+  job_id,
+  job_code,
+  job_name,
+  job_status,
+  mold_deadline,
+  ship_date,
+  created_at,
+  equipment_id,
+  companies:companies!jobs_company_id_fkey(
+    company_id,
+    company_name,
+    company_code
+  ),
+  products(
+    product_id,
+    product_code,
+    product_name,
+    product_name_internal
+  ),
+  design_revisions(
+    revision_id,
+    design_code,
+    cutline_length,
+    cutline_width,
+    corner_r,
+    chamfer_c,
+    cavity_count,
+    plastic_type_designed
+  ),
+  equipment(
+    equipment_id,
+    equipment_code,
+    display_name,
+    equipment_type,
+    current_rack_layer_id,
+    rack_layers(
+      id,
+      layer_code,
+      racks(
+        rack_code,
+        rack_name,
+        location_in_factory,
+        zone_code
+      )
+    )
+  )
+`
+
 export default async function JobPrintPage({ params }: PageProps) {
   const { id } = await params
-  const supabase = await createClient()
+  let supabase = await createClient()
 
-  // 1. Fetch Job with direct relations
-  const { data: job, error: jobErr } = await supabase
+  // 1. Fetch Job with direct relations (try session first, then server client fallback)
+  let { data: job, error: jobErr } = await supabase
     .from('jobs')
-    .select(`
-      job_id,
-      job_code,
-      job_name,
-      job_status,
-      mold_deadline,
-      ship_date,
-      created_at,
-      equipment_id,
-      companies:companies!jobs_company_id_fkey(
-        company_id,
-        company_name,
-        company_code
-      ),
-      products(
-        product_id,
-        product_code,
-        product_name,
-        product_name_internal
-      ),
-      design_revisions(
-        revision_id,
-        design_code,
-        cutline_length,
-        cutline_width,
-        corner_r,
-        chamfer_c,
-        cavity_count,
-        plastic_type_designed
-      ),
-      equipment(
-        equipment_id,
-        equipment_code,
-        display_name,
-        equipment_type,
-        current_rack_layer_id,
-        rack_layers(
-          id,
-          layer_code,
-          racks(
-            rack_code,
-            rack_name,
-            location_in_factory,
-            zone_code
-          )
-        )
-      )
-    `)
+    .select(JOB_PRINT_QUERY)
     .eq('job_id', id)
     .single()
 
-  if (jobErr || !job) {
-    console.error('[JobPrintPage] Job not found:', id, jobErr)
-    notFound()
+  if (!job) {
+    const adminSb = createServerSupabaseClient()
+    const { data: adminJob, error: adminErr } = await adminSb
+      .from('jobs')
+      .select(JOB_PRINT_QUERY)
+      .eq('job_id', id)
+      .single()
+
+    if (adminJob) {
+      job = adminJob
+      supabase = adminSb
+    } else {
+      console.error('[JobPrintPage] Job not found:', id, jobErr || adminErr)
+      notFound()
+    }
   }
 
   // 2. Fetch Job Steps with assigned employees
