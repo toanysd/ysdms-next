@@ -39,9 +39,8 @@ export async function middleware(request: NextRequest) {
 
   const { pathname } = request.nextUrl
 
-  // Allow public routes and shopfloor QR tooling print sheets (strictly UUID format)
-  const isToolingJobPrint = /^\/equipment\/jobs\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\/print$/.test(pathname)
-  if (PUBLIC_ROUTES.some(route => pathname.startsWith(route)) || isToolingJobPrint) {
+  // Allow public routes
+  if (PUBLIC_ROUTES.some(route => pathname.startsWith(route))) {
     // If already logged in and trying to access login, redirect to dashboard
     if (user && pathname === '/login') {
       const url = request.nextUrl.clone()

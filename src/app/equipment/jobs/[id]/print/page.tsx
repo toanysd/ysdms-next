@@ -1,4 +1,4 @@
-import { createClient, createServerSupabaseClient } from '@/lib/supabase/server'
+import { createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import { JobPrintSheet, JobPrintData } from './_components/JobPrintSheet'
 
@@ -61,30 +61,18 @@ const JOB_PRINT_QUERY = `
 
 export default async function JobPrintPage({ params }: PageProps) {
   const { id } = await params
-  let supabase = await createClient()
+  const supabase = await createClient()
 
-  // 1. Fetch Job with direct relations (try session first, then server client fallback)
-  let { data: job, error: jobErr } = await supabase
+  // 1. Fetch Job with direct relations (authenticated session strictly required)
+  const { data: job, error: jobErr } = await supabase
     .from('jobs')
     .select(JOB_PRINT_QUERY)
     .eq('job_id', id)
     .single()
 
   if (!job) {
-    const adminSb = createServerSupabaseClient()
-    const { data: adminJob, error: adminErr } = await adminSb
-      .from('jobs')
-      .select(JOB_PRINT_QUERY)
-      .eq('job_id', id)
-      .single()
-
-    if (adminJob) {
-      job = adminJob
-      supabase = adminSb
-    } else {
-      console.error('[JobPrintPage] Job not found:', id, jobErr || adminErr)
-      notFound()
-    }
+    console.error('[JobPrintPage] Job not found or access denied:', id, jobErr)
+    notFound()
   }
 
   // 2. Fetch Job Steps with assigned employees

@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-10-07T15:07:08.463759",
+  "timestamp": "2026-10-07T15:52:28.183320",
   "total": 11,
   "passed": 11,
   "failed": 0,
@@ -54,7 +54,7 @@
     },
     {
       "tc_id": "TC-P04-09",
-      "description": "Middleware strictly whitelists only /equipment/jobs/{uuid}/print via RFC 4122 regex",
+      "description": "/equipment/jobs/[id]/print requires authentication, redirects to /login, and eliminates service-role fallback",
       "status": "PASS",
       "message": ""
     },

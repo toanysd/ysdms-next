@@ -30,7 +30,7 @@
     {
       "test_id": "TC-P03-05",
       "status": "PASS",
-      "description": "Specs are loaded directly from design_revisions SSOT without synthetic fallbacks",
+      "description": "Specs loaded from design_revisions SSOT without synthetic fallbacks and zero service-role usage",
       "details": ""
     },
     {

@@ -3,10 +3,10 @@
   "browser": "Chromium headless",
   "test_scope": "Local E2E Browser Verification (Not Production Cloud Browser)",
   "target_job_id": "39dbbc91-c7b4-4a90-bdd8-8c894b782092",
-  "timestamp": "2026-10-07T06:06:49.323Z",
+  "timestamp": "2026-10-07T06:52:49.087Z",
   "unauthenticated_barrier": {
-    "tested_url": "http://localhost:3000/worklogs/new?job_id=39dbbc91-c7b4-4a90-bdd8-8c894b782092",
-    "redirected_to_login": true,
+    "worklogs_new_redirected": true,
+    "print_sheet_redirected": true,
     "status": "PASS"
   },
   "list_page": {

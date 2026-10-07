@@ -1,5 +1,13 @@
 {
-  "job_id": "39dbbc91-c7b4-4a90-bdd8-8c894b782092",
+  "environment": "localhost:3000",
+  "browser": "Chromium headless",
+  "test_scope": "Local E2E Browser Verification (Not Production Cloud Browser)",
+  "target_job_id": "39dbbc91-c7b4-4a90-bdd8-8c894b782092",
+  "unauthenticated_barrier": {
+    "tested_url": "http://localhost:3000/equipment/jobs/39dbbc91-c7b4-4a90-bdd8-8c894b782092/print",
+    "redirected_to_login": true,
+    "status": "PASS"
+  },
   "url": "http://localhost:3000/equipment/jobs/39dbbc91-c7b4-4a90-bdd8-8c894b782092/print",
   "http_status": 200,
   "title": "金型製作・改修指示書",

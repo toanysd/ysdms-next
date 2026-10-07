@@ -26,16 +26,22 @@ async function run() {
 
   const browser = await chromium.launch()
 
-  // ── PHASE 1: Verify Unauthenticated Access is Blocked (TC-P04-08) ──
+  // ── PHASE 1: Verify Unauthenticated Access Barrier (TC-P04-08 & TC-P04-09) ──
   console.log('\n[Phase 1] Testing Unauthenticated Access Barrier...')
   const anonContext = await browser.newContext()
   const anonPage = await anonContext.newPage()
 
   await anonPage.goto(`${baseUrl}/worklogs/new?job_id=${targetJobId}`)
-  const anonFinalUrl = anonPage.url()
-  const isRedirectedToLogin = anonFinalUrl.includes('/login')
-  console.log(` -> Unauthenticated /worklogs/new redirected to: ${anonFinalUrl}`)
-  console.log(` -> Login Barrier Verified: ${isRedirectedToLogin}`)
+  const anonWorklogsUrl = anonPage.url()
+  const isWorklogsRedirected = anonWorklogsUrl.includes('/login')
+  console.log(` -> Unauthenticated /worklogs/new redirected to: ${anonWorklogsUrl}`)
+  console.log(` -> Worklogs Login Barrier Verified: ${isWorklogsRedirected}`)
+
+  await anonPage.goto(`${baseUrl}/equipment/jobs/${targetJobId}/print`)
+  const anonPrintUrl = anonPage.url()
+  const isPrintRedirected = anonPrintUrl.includes('/login')
+  console.log(` -> Unauthenticated /equipment/jobs/.../print redirected to: ${anonPrintUrl}`)
+  console.log(` -> Print Sheet Login Barrier Verified: ${isPrintRedirected}`)
   await anonContext.close()
 
   // ── PHASE 2: Authenticated Verification ──
@@ -135,9 +141,9 @@ async function run() {
     target_job_id: targetJobId,
     timestamp: new Date().toISOString(),
     unauthenticated_barrier: {
-      tested_url: `${baseUrl}/worklogs/new?job_id=${targetJobId}`,
-      redirected_to_login: isRedirectedToLogin,
-      status: isRedirectedToLogin ? 'PASS' : 'FAIL'
+      worklogs_new_redirected: isWorklogsRedirected,
+      print_sheet_redirected: isPrintRedirected,
+      status: (isWorklogsRedirected && isPrintRedirected) ? 'PASS' : 'FAIL'
     },
     list_page: {
       url: `${baseUrl}/worklogs`,

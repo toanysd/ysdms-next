@@ -150,18 +150,21 @@ def main():
     except Exception as e:
         record_result("TC-P04-08", "Authentication requirement check", False, str(e))
 
-    # TC-P04-09: Truy cập /print chưa đăng nhập -> xác nhận chính sách auth rõ ràng (regex UUID)
+    # TC-P04-09: Truy cập /print chưa đăng nhập -> bị chặn/redirect login & không dùng service-role fallback
     try:
-        has_strict_regex = (
-            r"/^\/equipment\/jobs\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\/print$/.test(pathname)" in middleware_content or
-            r"/^\/equipment\/jobs\/[a-f0-9-]+\/print$/" in middleware_content
-        )
-        has_no_loose_includes = "includes('/print/')" not in middleware_content and "endsWith('/print')" not in middleware_content
+        print_page_path = os.path.join(base_dir, "src", "app", "equipment", "jobs", "[id]", "print", "page.tsx")
+        with open(print_page_path, "r", encoding="utf-8") as f:
+            print_page_content = f.read()
 
-        tc9_passed = has_strict_regex and has_no_loose_includes
-        record_result("TC-P04-09", "Middleware strictly whitelists only /equipment/jobs/{uuid}/print via RFC 4122 regex", tc9_passed)
+        is_print_in_public = "print" in middleware_content.split("PUBLIC_ROUTES = [")[1].split("]")[0]
+        no_print_whitelist = "isToolingJobPrint" not in middleware_content
+        no_service_role_in_print = "createServerSupabaseClient" not in print_page_content
+        has_auth_redirect = "url.pathname = '/login'" in middleware_content
+
+        tc9_passed = (not is_print_in_public) and no_print_whitelist and no_service_role_in_print and has_auth_redirect
+        record_result("TC-P04-09", "/equipment/jobs/[id]/print requires authentication, redirects to /login, and eliminates service-role fallback", tc9_passed)
     except Exception as e:
-        record_result("TC-P04-09", "Strict print regex check", False, str(e))
+        record_result("TC-P04-09", "Print route auth requirement check", False, str(e))
 
     # TC-P04-10: step_id thuộc Job khác -> bị từ chối
     try:

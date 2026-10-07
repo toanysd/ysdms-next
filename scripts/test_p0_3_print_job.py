@@ -72,13 +72,14 @@ def main():
     runner.assert_test("TC-P03-04", has_qr_import and has_qr_generation,
                        "JobPrintSheet imports and calls QRCode.toDataURL for shopfloor scanning")
 
-    # TC-P03-05: SSOT compliance (RULE-DATA-01 & RULE-DATA-02)
+    # TC-P03-05: SSOT compliance (RULE-DATA-01 & RULE-DATA-02) & Security (No Service Role)
     server_content = open("src/app/equipment/jobs/[id]/print/page.tsx", encoding="utf-8").read()
     reads_cutline_from_rev = "cutline_length" in server_content and "cutline_width" in server_content
     reads_plastic_from_rev = "plastic_type_designed" in server_content
     no_synthetic_rev = "revData" not in server_content
-    runner.assert_test("TC-P03-05", reads_cutline_from_rev and reads_plastic_from_rev and no_synthetic_rev,
-                       "Specs are loaded directly from design_revisions SSOT without synthetic fallbacks")
+    no_service_role = "createServerSupabaseClient" not in server_content
+    runner.assert_test("TC-P03-05", reads_cutline_from_rev and reads_plastic_from_rev and no_synthetic_rev and no_service_role,
+                       "Specs loaded from design_revisions SSOT without synthetic fallbacks and zero service-role usage")
 
     # TC-P03-06: Equipment & Location binding
     uses_primary_eq = "primary_equipment_id" in server_content

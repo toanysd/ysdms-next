@@ -1,22 +1,82 @@
 import { chromium } from '@playwright/test'
+import { createClient } from '@supabase/supabase-js'
+import { createChunks } from '@supabase/ssr'
 import fs from 'fs'
 import path from 'path'
+import { fileURLToPath } from 'url'
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
+const rootDir = path.resolve(__dirname, '..')
+
+const envContent = fs.readFileSync(path.join(rootDir, '.env.local'), 'utf8')
+const supabaseUrl = envContent.match(/^NEXT_PUBLIC_SUPABASE_URL=(.*)$/m)[1].trim()
+const serviceKey = envContent.match(/^SUPABASE_SERVICE_ROLE_KEY=(.*)$/m)[1].trim()
+const anonKey = envContent.match(/^NEXT_PUBLIC_SUPABASE_ANON_KEY=(.*)$/m)[1].trim()
 
 async function run() {
   console.log('=================================================================')
-  console.log('BROWSER E2E VERIFICATION: Sprint P0-3 Job A4 Print Sheet')
+  console.log('BROWSER E2E VERIFICATION: Sprint P0-3 Job A4 Print Sheet (Authenticated)')
   console.log('=================================================================')
 
   const browser = await chromium.launch({ headless: true })
-  const context = await browser.newContext({
-    viewport: { width: 1280, height: 1024 }
-  })
-  const page = await context.newPage()
-
   const targetJobId = '39dbbc91-c7b4-4a90-bdd8-8c894b782092'
   const printUrl = `http://localhost:3000/equipment/jobs/${targetJobId}/print`
+  const projectId = 'iirezrszalmecsslbruo'
 
-  console.log(`[1] Navigating to: ${printUrl}`)
+  // ── PHASE 1: Verify Unauthenticated Access is Blocked & Redirected ──
+  console.log('\n[Phase 1] Testing Unauthenticated Access Barrier...')
+  const anonContext = await browser.newContext()
+  const anonPage = await anonContext.newPage()
+  await anonPage.goto(printUrl)
+  const anonFinalUrl = anonPage.url()
+  const isRedirectedToLogin = anonFinalUrl.includes('/login')
+  console.log(` -> Unauthenticated /equipment/jobs/.../print redirected to: ${anonFinalUrl}`)
+  console.log(` -> Login Barrier Verified: ${isRedirectedToLogin}`)
+  await anonContext.close()
+
+  if (!isRedirectedToLogin) {
+    throw new Error('SECURITY VIOLATION: Unauthenticated access was NOT redirected to login!')
+  }
+
+  // ── PHASE 2: Authenticated Access & Render Verification ──
+  console.log('\n[Phase 2] Acquiring Authenticated Session for Operator...')
+  const adminClient = createClient(supabaseUrl, serviceKey)
+  const { data: linkData, error: linkErr } = await adminClient.auth.admin.generateLink({
+    type: 'magiclink',
+    email: 'admin@ysd-pack.co.jp'
+  })
+  if (linkErr) throw linkErr
+
+  const userClient = createClient(supabaseUrl, anonKey)
+  const { data: sessionData, error: sessionErr } = await userClient.auth.verifyOtp({
+    token_hash: linkData.properties.hashed_token,
+    type: 'email'
+  })
+  if (sessionErr) throw sessionErr
+
+  const session = sessionData.session
+  const chunks = createChunks(`sb-${projectId}-auth-token`, JSON.stringify(session))
+
+  const authContext = await browser.newContext({
+    viewport: { width: 1280, height: 1024 },
+    locale: 'ja-JP'
+  })
+
+  const cookies = chunks.map(c => ({
+    name: c.name,
+    value: encodeURIComponent(c.value),
+    domain: 'localhost',
+    path: '/',
+    httpOnly: false,
+    secure: false,
+    sameSite: 'Lax'
+  }))
+  await authContext.addCookies(cookies)
+
+  const page = await authContext.newPage()
+
+  console.log(`[1] Navigating to: ${printUrl} (Authenticated)`)
   const response = await page.goto(printUrl, { waitUntil: 'networkidle', timeout: 30000 })
   console.log(`[2] HTTP Status: ${response.status()}`)
 
@@ -76,7 +136,15 @@ async function run() {
   console.log('=================================================================')
 
   const results = {
-    job_id: targetJobId,
+    environment: 'localhost:3000',
+    browser: 'Chromium headless',
+    test_scope: 'Local E2E Browser Verification (Not Production Cloud Browser)',
+    target_job_id: targetJobId,
+    unauthenticated_barrier: {
+      tested_url: printUrl,
+      redirected_to_login: isRedirectedToLogin,
+      status: isRedirectedToLogin ? 'PASS' : 'FAIL'
+    },
     url: printUrl,
     http_status: response.status(),
     title: titleText?.trim(),
