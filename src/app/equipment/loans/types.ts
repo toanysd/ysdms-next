@@ -119,6 +119,8 @@ export interface LoanFilterParams {
   loan_type?: LoanType | 'ALL';
   status?: LoanStatus | 'ALL' | 'ACTIVE';
   is_overdue?: boolean;
+  customer_code?: string;
+  stream_tab?: 'ALL' | 'CUSTODY' | 'LOAN' | 'TRANSFER';
   page?: number;
   pageSize?: number;
 }
@@ -129,3 +131,144 @@ export interface LoanListResult {
   page: number;
   pageSize: number;
 }
+
+// ==============================================================================
+// SSOT 11 Customers Configuration & Annual Audit Types (MOLD_CUSTODY_BUSINESS_SPEC v1.0)
+// ==============================================================================
+
+export interface SsotCustomerPartner {
+  id: string;
+  code: string;
+  nameJA: string;
+  nameVI: string;
+  evidenceRef: string;
+  standardDocType: string;
+  searchKeywords: string[];
+}
+
+export const SSOT_11_CUSTOMERS: SsotCustomerPartner[] = [
+  {
+    id: 'shin-ei',
+    code: 'SES04',
+    nameJA: '新鋭産業 / 新鋭ハイテック',
+    nameVI: 'Shin-Ei Sangyo / Shin-Ei Hitec',
+    evidenceRef: 'Row 30',
+    standardDocType: '金型借用書フォーマット (In Placard + 2 dấu)',
+    searchKeywords: ['新鋭', 'Shin-Ei', 'SES04'],
+  },
+  {
+    id: 'jae',
+    code: 'JAE',
+    nameJA: '日本航空電子工業 (JAE / NLC)',
+    nameVI: 'Japan Aviation Electronics (JAE / NLC)',
+    evidenceRef: 'Row 15, 16',
+    standardDocType: '貸与設備棚卸調査表 (Excel Cột G-K)',
+    searchKeywords: ['JAE', '航空電子', '弘前航空電子', '山形航空電子'],
+  },
+  {
+    id: 'transtron',
+    code: 'TRANSTRON',
+    nameJA: 'トランストロン / MRDI / オーテ',
+    nameVI: 'Transtron / MRDI / Ohte',
+    evidenceRef: 'Row 52, 55',
+    standardDocType: '金型預かり証 (Ảnh kèm thước dây áp sát)',
+    searchKeywords: ['トランストロン', 'Transtron', 'MRDI', 'オーテ'],
+  },
+  {
+    id: 'fujikura',
+    code: 'FUJIKURA',
+    nameJA: '藤倉コンポ (Fujikura Composite)',
+    nameVI: 'Fujikura Composite',
+    evidenceRef: 'source_data/型保管料(20250704)',
+    standardDocType: '貸与資産明細書兼確認書 (Phí lưu kho 307.5 Yên/tháng)',
+    searchKeywords: ['藤倉', 'Fujikura', 'フジクラ'],
+  },
+  {
+    id: 'panasonic',
+    code: 'PNS',
+    nameJA: 'パナソニック白河 (Panasonic)',
+    nameVI: 'Panasonic Shirakawa',
+    evidenceRef: 'Row 100',
+    standardDocType: '金型返却票・金型棚卸 (QR cá thể + Pallet 1100x1100)',
+    searchKeywords: ['パナソニック', 'Panasonic', 'PNS'],
+  },
+  {
+    id: 'canon-asahi',
+    code: 'CANON-ASAHI',
+    nameJA: '大分キヤノン / 旭化成',
+    nameVI: 'Oita Canon / Asahi Kasei',
+    evidenceRef: 'Row 5, 13869',
+    standardDocType: '借用証/現品受渡確認票 (Tách TSCĐ & Chi phí, Ký điện tử)',
+    searchKeywords: ['キヤノン', 'Canon', '旭化成', '旭金属', 'ASAHI'],
+  },
+  {
+    id: 'rhythm',
+    code: 'RTM',
+    nameJA: 'リズム / YAC Garter',
+    nameVI: 'Rhythm / YAC Garter',
+    evidenceRef: 'Row 50',
+    standardDocType: '資産棚卸証 (Kiểm kê ủy thác định kỳ tháng 12)',
+    searchKeywords: ['リズム', 'Rhythm', 'RTM', 'YAC'],
+  },
+  {
+    id: 'a-and-t',
+    code: 'A&T',
+    nameJA: 'エー・アンド・デイ (A&T)',
+    nameVI: 'A&T Corporation',
+    evidenceRef: 'Row 9, 10, 11',
+    standardDocType: '金型等有無確認表 (Kiểm đếm khuôn & gá cắt tháng 11)',
+    searchKeywords: ['A&T', 'エー・アンド・デイ'],
+  },
+  {
+    id: 'omura-smk',
+    code: 'OMURA-SMK',
+    nameJA: '大村技研 / SMK',
+    nameVI: 'Omura Giken / SMK',
+    evidenceRef: 'Row 70, 82',
+    standardDocType: '設備返却依頼・廃棄受渡 (Thu hồi linh kiện, gửi xưởng Iwate)',
+    searchKeywords: ['大村', 'Omura', 'SMK'],
+  },
+  {
+    id: 'minebea',
+    code: 'MINEBEA',
+    nameJA: 'ミネベア (MinebeaMitsumi)',
+    nameVI: 'MinebeaMitsumi',
+    evidenceRef: 'Row 697',
+    standardDocType: '外注加工依頼書 (Xuất gia công phủ Teflon chống dính)',
+    searchKeywords: ['ミネベア', 'Minebea'],
+  },
+  {
+    id: 'terada',
+    code: 'TERADA',
+    nameJA: '寺田電機製作所 / 寺田デイム',
+    nameVI: 'Terada Electric / Terada Deimu',
+    evidenceRef: 'Row 3096',
+    standardDocType: '現地棚卸訪問日程案内 (Đón đoàn kiểm toán tận xưởng Kawasaki)',
+    searchKeywords: ['寺田', 'Terada'],
+  },
+];
+
+export interface AnnualAuditRecord {
+  id: string;
+  equipment_id: string;
+  equipment_code: string;
+  equipment_name: string | null;
+  equipment_type: string;
+  customer_asset_no: string | null;
+  customer_name: string;
+  current_rack_location: string | null;
+  custody_status: 'CUSTODY_ACTIVE' | 'LOAN_OUT' | 'INTERNAL_STORAGE' | 'RETURNED';
+  custody_status_label: string;
+  loan_date: string | null;
+  last_audit_date: string | null;
+  condition_summary: string | null;
+  photo_overall_url: string | null;
+  photo_nameplate_url: string | null;
+}
+
+export interface AnnualAuditFilterParams {
+  partnerId?: string;
+  year?: number;
+  status?: string;
+}
+

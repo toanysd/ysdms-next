@@ -7,6 +7,7 @@ import LoanKpiCards from './_components/LoanKpiCards';
 import LoanFilterBar from './_components/LoanFilterBar';
 import LoanListTable from './_components/LoanListTable';
 import CreateLoanModal from './_components/CreateLoanModal';
+import LoanAuditExportModal from './_components/LoanAuditExportModal';
 import {
   ApproveModal,
   RejectModal,
@@ -30,12 +31,14 @@ export default function EquipmentLoansPage() {
   const initialSearch = searchParams.get('search') || '';
   const initialTab = searchParams.get('tab') || 'ALL';
   const initialStatus = searchParams.get('status') || 'ALL';
+  const initialCustomer = searchParams.get('customer') || 'ALL';
   const initialPage = parseInt(searchParams.get('page') || '1', 10);
 
   const [search, setSearch] = useState(initialSearch);
   const [debouncedSearch, setDebouncedSearch] = useState(initialSearch);
   const [selectedTab, setSelectedTab] = useState(initialTab);
   const [selectedStatus, setSelectedStatus] = useState(initialStatus);
+  const [selectedCustomer, setSelectedCustomer] = useState(initialCustomer);
   const [currentPage, setCurrentPage] = useState(initialPage);
   const pageSize = 50;
 
@@ -55,6 +58,7 @@ export default function EquipmentLoansPage() {
 
   // Modals state
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isAuditExportOpen, setIsAuditExportOpen] = useState(false);
   const [activeLoanForAction, setActiveLoanForAction] = useState<EquipmentLoanItem | null>(null);
   const [isApproveOpen, setIsApproveOpen] = useState(false);
   const [isRejectOpen, setIsRejectOpen] = useState(false);
@@ -76,6 +80,7 @@ export default function EquipmentLoansPage() {
     if (debouncedSearch) params.set('search', debouncedSearch);
     if (selectedTab !== 'ALL') params.set('tab', selectedTab);
     if (selectedStatus !== 'ALL') params.set('status', selectedStatus);
+    if (selectedCustomer !== 'ALL') params.set('customer', selectedCustomer);
     if (currentPage > 1) params.set('page', String(currentPage));
 
     const qs = params.toString();
@@ -83,7 +88,7 @@ export default function EquipmentLoansPage() {
     if (qs !== currentQs) {
       router.replace(`${pathname}${qs ? `?${qs}` : ''}`, { scroll: false });
     }
-  }, [debouncedSearch, selectedTab, selectedStatus, currentPage, router, pathname, searchParams]);
+  }, [debouncedSearch, selectedTab, selectedStatus, selectedCustomer, currentPage, router, pathname, searchParams]);
 
   // Load data callback
   const loadData = useCallback(() => {
@@ -112,6 +117,7 @@ export default function EquipmentLoansPage() {
             loan_type: loanTypeParam,
             status: statusParam,
             is_overdue: isOverdueParam,
+            customer_code: selectedCustomer !== 'ALL' ? selectedCustomer : undefined,
             page: currentPage,
             pageSize,
           }),
@@ -127,7 +133,7 @@ export default function EquipmentLoansPage() {
         setLoading(false);
       }
     });
-  }, [debouncedSearch, selectedTab, selectedStatus, currentPage]);
+  }, [debouncedSearch, selectedTab, selectedStatus, selectedCustomer, currentPage]);
 
   useEffect(() => {
     loadData();
@@ -137,6 +143,7 @@ export default function EquipmentLoansPage() {
     setSearch('');
     setSelectedTab('ALL');
     setSelectedStatus('ALL');
+    setSelectedCustomer('ALL');
     setCurrentPage(1);
   };
 
@@ -148,6 +155,7 @@ export default function EquipmentLoansPage() {
       {/* 1. Page Header (Page Anatomy Layer 1) */}
       <LoanHeader
         onOpenCreate={() => setIsCreateOpen(true)}
+        onOpenAuditExport={() => setIsAuditExportOpen(true)}
         onRefresh={loadData}
         loading={loading}
       />
@@ -174,6 +182,11 @@ export default function EquipmentLoansPage() {
         selectedStatus={selectedStatus}
         onStatusChange={(status) => {
           setSelectedStatus(status);
+          setCurrentPage(1);
+        }}
+        selectedCustomer={selectedCustomer}
+        onCustomerChange={(cust) => {
+          setSelectedCustomer(cust);
           setCurrentPage(1);
         }}
         onClear={handleClearFilters}
@@ -211,6 +224,12 @@ export default function EquipmentLoansPage() {
         isOpen={isCreateOpen}
         onClose={() => setIsCreateOpen(false)}
         onSuccess={loadData}
+      />
+
+      {/* 5.1 Annual Audit Export Modal (WO-P1-001) */}
+      <LoanAuditExportModal
+        isOpen={isAuditExportOpen}
+        onClose={() => setIsAuditExportOpen(false)}
       />
 
       {/* 6. Workflow Action Modals */}

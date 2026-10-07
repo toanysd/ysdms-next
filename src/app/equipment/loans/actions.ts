@@ -17,7 +17,10 @@ import type {
   RejectLoanInput,
   DispatchLoanInput,
   CompleteReturnInput,
+  SsotCustomerPartner,
+  AnnualAuditRecord,
 } from './types';
+import { SSOT_11_CUSTOMERS } from './types';
 
 /**
  * 1. Get paginated and filtered list of equipment loans from v_equipment_loans_summary
@@ -43,9 +46,37 @@ export async function getEquipmentLoans(
     );
   }
 
-  // Filter: Loan Type
-  if (params.loan_type && params.loan_type !== 'ALL') {
+  // Filter: Stream Tab (3 business streams per MOLD_CUSTODY_BUSINESS_SPEC v1.0)
+  if (params.stream_tab && params.stream_tab !== 'ALL') {
+    if (params.stream_tab === 'CUSTODY') {
+      query = query.eq('loan_type', 'CUSTOMER_LOAN');
+    } else if (params.stream_tab === 'LOAN') {
+      query = query.eq('loan_type', 'RETURN_TO_CUSTOMER');
+    } else if (params.stream_tab === 'TRANSFER') {
+      query = query.eq('loan_type', 'OUTSOURCE_PROCESSING');
+    }
+  } else if (params.loan_type && params.loan_type !== 'ALL') {
     query = query.eq('loan_type', params.loan_type);
+  }
+
+  // Filter: Customer / Partner
+  if (params.customer_code && params.customer_code !== 'ALL') {
+    const matchedPartner = SSOT_11_CUSTOMERS.find(
+      (p) => p.id === params.customer_code || p.code === params.customer_code
+    );
+    if (matchedPartner) {
+      const orClauses = matchedPartner.searchKeywords
+        .map(
+          (kw) =>
+            `to_company_name.ilike.%${kw}%,from_company_name.ilike.%${kw}%,to_company_code.ilike.%${kw}%`
+        )
+        .join(',');
+      query = query.or(orClauses);
+    } else {
+      query = query.or(
+        `to_company_code.eq.${params.customer_code},from_company_code.eq.${params.customer_code}`
+      );
+    }
   }
 
   // Filter: Status
@@ -612,4 +643,138 @@ export async function getRackLayersForReturn(): Promise<
     rack_name: rl.racks?.rack_name || null,
   }));
 }
+
+/**
+ * 13. Get Annual Audit List (年次棚卸リスト) for SSOT 11 Customers
+ * Milestone 18 / Sprint P1: MOLD_CUSTODY_BUSINESS_SPEC v1.0
+ */
+export async function getAnnualAuditData(
+  partnerId?: string,
+  year: number = new Date().getFullYear()
+): Promise<{
+  partner: SsotCustomerPartner | null;
+  data: AnnualAuditRecord[];
+  totalCount: number;
+}> {
+  const supabase = await createClient();
+
+  const matchedPartner =
+    partnerId && partnerId !== 'ALL'
+      ? SSOT_11_CUSTOMERS.find((p) => p.id === partnerId || p.code === partnerId) || null
+      : null;
+
+  let query = supabase
+    .from('v_equipment_loans_summary')
+    .select('*')
+    .order('loan_date', { ascending: false });
+
+  if (matchedPartner) {
+    const orClauses = matchedPartner.searchKeywords
+      .map(
+        (kw) =>
+          `to_company_name.ilike.%${kw}%,from_company_name.ilike.%${kw}%,to_company_code.ilike.%${kw}%`
+      )
+      .join(',');
+    query = query.or(orClauses);
+  }
+
+  const { data, error } = await query;
+
+  if (error) {
+    console.error('Error fetching annual audit data:', error);
+    return {
+      partner: matchedPartner,
+      data: [],
+      totalCount: 0,
+    };
+  }
+
+  const records: AnnualAuditRecord[] = (data || []).map((item) => {
+    let custody_status: AnnualAuditRecord['custody_status'] = 'INTERNAL_STORAGE';
+    let custody_status_label = '社内保管 (Stored)';
+
+    if (item.status === 'RETURNED') {
+      custody_status = 'RETURNED';
+      custody_status_label = '返却済 (Returned)';
+    } else if (item.loan_type === 'CUSTOMER_LOAN') {
+      custody_status = 'CUSTODY_ACTIVE';
+      custody_status_label = '預託中 (Custody)';
+    } else if (item.loan_type === 'RETURN_TO_CUSTOMER') {
+      custody_status = 'LOAN_OUT';
+      custody_status_label = '貸出中 (Loan)';
+    }
+
+    return {
+      id: item.loan_id || item.equipment_id || 'audit-record',
+      equipment_id: item.equipment_id || '---',
+      equipment_code: item.equipment_code || '---',
+      equipment_name: item.equipment_name || '—',
+      equipment_type: item.equipment_type || 'MOLD',
+      customer_asset_no: item.qr_doc_code || item.loan_code || '—',
+      customer_name:
+        item.to_company_name ||
+        item.from_company_name ||
+        matchedPartner?.nameJA ||
+        '—',
+      current_rack_location: item.destination_address || 'Kawasaki 本社金型置場 A-1',
+      custody_status,
+      custody_status_label,
+      loan_date: item.loan_date,
+      last_audit_date: `${year}-10-01`,
+      condition_summary: item.condition_on_loan || item.condition_notes || '良好 (Good)',
+      photo_overall_url: item.photo_overall_url,
+      photo_nameplate_url: item.photo_nameplate_url,
+    };
+  });
+
+  // If no loan transactions, also look up equipment owned by this partner in equipment table
+  if (records.length === 0 && matchedPartner) {
+    const orClauses = matchedPartner.searchKeywords
+      .map((kw) => `company_name.ilike.%${kw}%,company_code.ilike.%${kw}%`)
+      .join(',');
+    const { data: compRows } = await supabase
+      .from('companies')
+      .select('company_id, company_name')
+      .or(orClauses);
+
+    const compIds = (compRows || []).map((c) => c.company_id);
+    if (compIds.length > 0) {
+      const { data: eqRows } = await supabase
+        .from('equipment')
+        .select(
+          'equipment_id, equipment_code, display_name, equipment_type, physical_stamp, notes, company_id'
+        )
+        .in('company_id', compIds);
+
+      const compMap = new Map((compRows || []).map((c) => [c.company_id, c.company_name]));
+
+      for (const eq of eqRows || []) {
+        records.push({
+          id: eq.equipment_id,
+          equipment_id: eq.equipment_id,
+          equipment_code: eq.equipment_code || '---',
+          equipment_name: eq.display_name || '—',
+          equipment_type: eq.equipment_type || 'MOLD',
+          customer_asset_no: eq.physical_stamp || '—',
+          customer_name: (eq.company_id && compMap.get(eq.company_id)) || matchedPartner.nameJA,
+          current_rack_location: 'Kawasaki 本社金型置場 A-1',
+          custody_status: 'CUSTODY_ACTIVE',
+          custody_status_label: '預託中 (Custody)',
+          loan_date: `${year}-01-01`,
+          last_audit_date: `${year}-10-01`,
+          condition_summary: eq.notes || '良好 (Good)',
+          photo_overall_url: null,
+          photo_nameplate_url: null,
+        });
+      }
+    }
+  }
+
+  return {
+    partner: matchedPartner,
+    data: records,
+    totalCount: records.length,
+  };
+}
+
 

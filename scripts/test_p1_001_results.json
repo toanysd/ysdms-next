@@ -1,0 +1,56 @@
+{
+  "suite": "WO-P1-001",
+  "timestamp": "2026-10-07 19:55 JST",
+  "passed": 8,
+  "failed": 0,
+  "tests": [
+    {
+      "tc_id": "TC-P1-01",
+      "description": "All required loans route and audit modal files exist on disk",
+      "status": "PASS",
+      "message": ""
+    },
+    {
+      "tc_id": "TC-P1-02",
+      "description": "types.ts strictly defines exactly 11 SSOT customers without unapproved entities",
+      "status": "PASS",
+      "message": ""
+    },
+    {
+      "tc_id": "TC-P1-03",
+      "description": "3 business streams (預託, 貸出, 移管) are modeled and integrated in FilterBar",
+      "status": "PASS",
+      "message": ""
+    },
+    {
+      "tc_id": "TC-P1-04",
+      "description": "RULE-DATA-02 verified: Zero usage of non-existent tables (items/photos); queries v_equipment_loans_summary",
+      "status": "PASS",
+      "message": ""
+    },
+    {
+      "tc_id": "TC-P1-05",
+      "description": "getAnnualAuditData action implemented with direct equipment resolution fallback",
+      "status": "PASS",
+      "message": ""
+    },
+    {
+      "tc_id": "TC-P1-06",
+      "description": "LoanAuditExportModal implements UTF-8 BOM CSV export and dual signature approval blocks",
+      "status": "PASS",
+      "message": ""
+    },
+    {
+      "tc_id": "TC-P1-07",
+      "description": "TypeScript compile check (npx tsc --noEmit) passes with 0 errors",
+      "status": "PASS",
+      "message": ""
+    },
+    {
+      "tc_id": "TC-P1-08",
+      "description": "next-intl translation check (check_translations.mjs) passes with 0 missing keys",
+      "status": "PASS",
+      "message": "🔍 Scanning files for missing translation keys...\n✅ All translation keys are properly defined in both ja.json and vi.json\n"
+    }
+  ]
+}

@@ -2,16 +2,18 @@
 
 import React from 'react';
 import { useTranslations } from 'next-intl';
-import { ArrowLeftRight, Plus, RefreshCw } from 'lucide-react';
+import { ArrowLeftRight, Plus, RefreshCw, FileSpreadsheet } from 'lucide-react';
 
 interface LoanHeaderProps {
   onOpenCreate: () => void;
+  onOpenAuditExport?: () => void;
   onRefresh: () => void;
   loading?: boolean;
 }
 
 export default function LoanHeader({
   onOpenCreate,
+  onOpenAuditExport,
   onRefresh,
   loading = false,
 }: LoanHeaderProps) {
@@ -53,6 +55,19 @@ export default function LoanHeader({
           <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
           <span>{t('refresh')}</span>
         </button>
+
+        {onOpenAuditExport && (
+          <button
+            type="button"
+            onClick={onOpenAuditExport}
+            className="btn btn-secondary flex items-center gap-1.5 text-[13px]"
+            style={{ borderColor: 'var(--accent)', color: 'var(--accent)' }}
+            title="年次棚卸調査リスト・有高確認"
+          >
+            <FileSpreadsheet size={15} style={{ color: 'var(--accent)' }} />
+            <span>年次棚卸リスト</span>
+          </button>
+        )}
 
         <button
           type="button"

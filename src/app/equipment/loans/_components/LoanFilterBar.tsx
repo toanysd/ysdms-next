@@ -2,10 +2,11 @@
 
 import React, { useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { Search, X, Filter } from 'lucide-react';
+import { Search, X, Filter, Building2 } from 'lucide-react';
 import { useSearchHistory } from '@/hooks/useSearchHistory';
 import { SearchSuggestions } from '@/components/ui/SearchSuggestions';
 import type { LoanType, LoanStatus } from '../types';
+import { SSOT_11_CUSTOMERS } from '../types';
 
 interface LoanFilterBarProps {
   search: string;
@@ -14,6 +15,8 @@ interface LoanFilterBarProps {
   onTabChange: (tab: string) => void;
   selectedStatus: string;
   onStatusChange: (status: string) => void;
+  selectedCustomer?: string;
+  onCustomerChange?: (customer: string) => void;
   onClear: () => void;
   totalCount: number;
 }
@@ -25,6 +28,8 @@ export default function LoanFilterBar({
   onTabChange,
   selectedStatus,
   onStatusChange,
+  selectedCustomer = 'ALL',
+  onCustomerChange,
   onClear,
   totalCount,
 }: LoanFilterBarProps) {
@@ -53,7 +58,10 @@ export default function LoanFilterBar({
   ];
 
   const hasFilters =
-    Boolean(search) || selectedTab !== 'ALL' || selectedStatus !== 'ALL';
+    Boolean(search) ||
+    selectedTab !== 'ALL' ||
+    selectedStatus !== 'ALL' ||
+    (selectedCustomer && selectedCustomer !== 'ALL');
 
   return (
     <div className="card-flat p-2 flex flex-col gap-2 shrink-0">
@@ -126,6 +134,24 @@ export default function LoanFilterBar({
             visible={showSuggestions && !search}
             onClose={() => setShowSuggestions(false)}
           />
+        </div>
+
+        {/* Customer selector (11 SSOT Customers) */}
+        <div className="flex items-center gap-1.5">
+          <Building2 size={13} className="text-[var(--text-muted)]" />
+          <select
+            value={selectedCustomer}
+            onChange={(e) => onCustomerChange?.(e.target.value)}
+            className="form-input text-[12px] h-[30px] py-0 px-2 max-w-[200px]"
+            title="SSOT 11 客先フィルター"
+          >
+            <option value="ALL">全客先 (Tất cả khách hàng)</option>
+            {SSOT_11_CUSTOMERS.map((p, idx) => (
+              <option key={p.id} value={p.id}>
+                {idx + 1}. {p.nameJA}
+              </option>
+            ))}
+          </select>
         </div>
 
         {/* Status selector */}

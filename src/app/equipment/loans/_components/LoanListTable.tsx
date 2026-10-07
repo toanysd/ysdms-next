@@ -90,30 +90,21 @@ export default function LoanListTable({
     switch (type) {
       case 'CUSTOMER_LOAN':
         return (
-          <span
-            className="badge inline-flex items-center gap-1 font-bold text-[11px]"
-            style={{ background: '#EFF6FF', color: '#1D4ED8', border: '1px solid #BFDBFE' }}
-          >
+          <span className="badge badge--info inline-flex items-center gap-1 font-bold text-[11px]">
             <ShieldCheck size={12} />
             {t('types.CUSTOMER_LOAN')}
           </span>
         );
       case 'RETURN_TO_CUSTOMER':
         return (
-          <span
-            className="badge inline-flex items-center gap-1 font-bold text-[11px]"
-            style={{ background: 'var(--tint-orange-bg)', color: '#C2410C', border: '1px solid #FED7AA' }}
-          >
+          <span className="badge badge--warning inline-flex items-center gap-1 font-bold text-[11px]">
             <ArrowRight size={12} />
             {t('types.RETURN_TO_CUSTOMER')}
           </span>
         );
       case 'OUTSOURCE_PROCESSING':
         return (
-          <span
-            className="badge inline-flex items-center gap-1 font-bold text-[11px]"
-            style={{ background: '#FAF5FF', color: '#7E22CE', border: '1px solid #E9D5FF' }}
-          >
+          <span className="badge badge--neutral inline-flex items-center gap-1 font-bold text-[11px]">
             <Clock size={12} />
             {t('types.OUTSOURCE_PROCESSING')}
           </span>
@@ -131,11 +122,8 @@ export default function LoanListTable({
         return <span className="badge badge--info">{t('status.APPROVED')}</span>;
       case 'IN_TRANSIT':
         return (
-          <span
-            className="badge inline-flex items-center gap-1"
-            style={{ background: '#EFF6FF', color: '#2563EB', border: '1px solid #93C5FD' }}
-          >
-            <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
+          <span className="badge badge--info inline-flex items-center gap-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-[var(--accent)] animate-pulse" />
             {t('status.IN_TRANSIT')}
           </span>
         );
