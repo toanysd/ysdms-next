@@ -1,0 +1,2263 @@
+{
+  "products": {
+    "exists": true,
+    "column_count": 37,
+    "columns": [
+      {
+        "name": "product_id",
+        "type": "uuid",
+        "nullable": false,
+        "default": "gen_random_uuid()"
+      },
+      {
+        "name": "product_code",
+        "type": "text",
+        "nullable": false,
+        "default": null
+      },
+      {
+        "name": "company_id",
+        "type": "uuid",
+        "nullable": false,
+        "default": null
+      },
+      {
+        "name": "customer_product_name",
+        "type": "text",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "product_name",
+        "type": "text",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "product_name_en",
+        "type": "text",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "pocket_count",
+        "type": "integer",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "pieces_per_box",
+        "type": "integer",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "box_spec",
+        "type": "text",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "mold_master_id",
+        "type": "uuid",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "product_status",
+        "type": "text",
+        "nullable": true,
+        "default": "'ACTIVE'::text"
+      },
+      {
+        "name": "date_entry",
+        "type": "timestamp with time zone",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "notes",
+        "type": "text",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "created_at",
+        "type": "timestamp with time zone",
+        "nullable": true,
+        "default": "now()"
+      },
+      {
+        "name": "updated_at",
+        "type": "timestamp with time zone",
+        "nullable": true,
+        "default": "now()"
+      },
+      {
+        "name": "updated_by",
+        "type": "text",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "product_name_internal",
+        "type": "text",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "legacy_id",
+        "type": "text",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "legacy_specs",
+        "type": "jsonb",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "product_description",
+        "type": "text",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "product_set_type",
+        "type": "text",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "set_component_names",
+        "type": "jsonb",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "stacking_type",
+        "type": "text",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "stacking_layers",
+        "type": "integer",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "stacking_height_mm",
+        "type": "numeric",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "external_length_mm",
+        "type": "numeric",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "external_width_mm",
+        "type": "numeric",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "customer_product_specs",
+        "type": "jsonb",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "end_user_company_id",
+        "type": "uuid",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "first_shipment_date",
+        "type": "date",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "requires_prototype_mold",
+        "type": "boolean",
+        "nullable": true,
+        "default": "false"
+      },
+      {
+        "name": "product_lifecycle_status",
+        "type": "text",
+        "nullable": false,
+        "default": "'DRAFT'::text"
+      },
+      {
+        "name": "product_code_normalized",
+        "type": "text",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "product_name_normalized",
+        "type": "text",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "feed_length_mm",
+        "type": "numeric",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "film_width_mm",
+        "type": "numeric",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "thickness_mm",
+        "type": "numeric",
+        "nullable": true,
+        "default": null
+      }
+    ],
+    "constraints": [
+      {
+        "name": "products_company_id_fkey",
+        "type": "FOREIGN KEY",
+        "column": "company_id",
+        "foreign_table": "companies",
+        "foreign_column": "company_id"
+      },
+      {
+        "name": "products_end_user_company_id_fkey",
+        "type": "FOREIGN KEY",
+        "column": "end_user_company_id",
+        "foreign_table": "companies",
+        "foreign_column": "company_id"
+      },
+      {
+        "name": "products_pkey",
+        "type": "PRIMARY KEY",
+        "column": "product_id",
+        "foreign_table": "products",
+        "foreign_column": "product_id"
+      },
+      {
+        "name": "products_product_code_key",
+        "type": "UNIQUE",
+        "column": "product_code",
+        "foreign_table": "products",
+        "foreign_column": "product_code"
+      }
+    ]
+  },
+  "design_revisions": {
+    "exists": true,
+    "column_count": 61,
+    "columns": [
+      {
+        "name": "revision_id",
+        "type": "uuid",
+        "nullable": false,
+        "default": "gen_random_uuid()"
+      },
+      {
+        "name": "design_code",
+        "type": "text",
+        "nullable": false,
+        "default": null
+      },
+      {
+        "name": "company_id",
+        "type": "uuid",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "cav_type_id",
+        "type": "uuid",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "design_length",
+        "type": "numeric",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "design_width",
+        "type": "numeric",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "design_height",
+        "type": "numeric",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "design_depth",
+        "type": "numeric",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "design_weight",
+        "type": "text",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "pocket_numbers",
+        "type": "integer",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "cavity_count",
+        "type": "integer",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "cavity_pitch_mm",
+        "type": "numeric",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "cutline_length",
+        "type": "numeric",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "cutline_width",
+        "type": "numeric",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "corner_r",
+        "type": "text",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "chamfer_c",
+        "type": "text",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "orientation",
+        "type": "text",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "setup_type",
+        "type": "text",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "undercut_spec",
+        "type": "text",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "under_depth",
+        "type": "text",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "draft_angle",
+        "type": "text",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "has_separate_cutter",
+        "type": "boolean",
+        "nullable": true,
+        "default": "false"
+      },
+      {
+        "name": "plastic_type_designed",
+        "type": "text",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "designer",
+        "type": "text",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "design_date",
+        "type": "timestamp with time zone",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "cad_folder_path",
+        "type": "text",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "customer_drawing_no",
+        "type": "text",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "customer_equipment_no",
+        "type": "text",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "customer_tray_name",
+        "type": "text",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "text_content",
+        "type": "text",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "created_at",
+        "type": "timestamp with time zone",
+        "nullable": true,
+        "default": "now()"
+      },
+      {
+        "name": "updated_at",
+        "type": "timestamp with time zone",
+        "nullable": true,
+        "default": "now()"
+      },
+      {
+        "name": "updated_by",
+        "type": "text",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "revision_number",
+        "type": "integer",
+        "nullable": true,
+        "default": "0"
+      },
+      {
+        "name": "status",
+        "type": "text",
+        "nullable": true,
+        "default": "'APPROVED'::text"
+      },
+      {
+        "name": "designer_id",
+        "type": "uuid",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "approved_date",
+        "type": "date",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "drawing_pdf_path",
+        "type": "text",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "step_3d_path",
+        "type": "text",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "tray_info",
+        "type": "text",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "data_input_date",
+        "type": "text",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "legacy_id",
+        "type": "text",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "legacy_specs",
+        "type": "jsonb",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "product_id",
+        "type": "uuid",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "plug_type",
+        "type": "text",
+        "nullable": true,
+        "default": "'NONE'::text"
+      },
+      {
+        "name": "shared_plug_from_design_id",
+        "type": "uuid",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "plastic_id",
+        "type": "uuid",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "tolerance_x",
+        "type": "text",
+        "nullable": true,
+        "default": "'±0.5'::text"
+      },
+      {
+        "name": "tolerance_y",
+        "type": "text",
+        "nullable": true,
+        "default": "'±0.5'::text"
+      },
+      {
+        "name": "tolerance_pitch",
+        "type": "text",
+        "nullable": true,
+        "default": "'±0.3'::text"
+      },
+      {
+        "name": "discard_old_stock_on_remake",
+        "type": "boolean",
+        "nullable": true,
+        "default": "false"
+      },
+      {
+        "name": "replace_qc_drawing_on_remake",
+        "type": "boolean",
+        "nullable": true,
+        "default": "false"
+      },
+      {
+        "name": "water_cooling_plate_spec",
+        "type": "text",
+        "nullable": true,
+        "default": "'EXISTING'::text"
+      },
+      {
+        "name": "frame_spec",
+        "type": "text",
+        "nullable": true,
+        "default": "'EXISTING'::text"
+      },
+      {
+        "name": "machine_feed_pitch_mm",
+        "type": "numeric",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "alt_plastic_type",
+        "type": "text",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "alt_plastic_code",
+        "type": "text",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "gas_pressure",
+        "type": "text",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "change_summary",
+        "type": "text",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "parent_design_id",
+        "type": "uuid",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "design_category",
+        "type": "character varying",
+        "nullable": true,
+        "default": "'MASS_PRODUCTION'::character varying"
+      }
+    ],
+    "constraints": [
+      {
+        "name": "design_revisions_designer_id_fkey",
+        "type": "FOREIGN KEY",
+        "column": "designer_id",
+        "foreign_table": "employees",
+        "foreign_column": "employee_id"
+      },
+      {
+        "name": "design_revisions_parent_design_id_fkey",
+        "type": "FOREIGN KEY",
+        "column": "parent_design_id",
+        "foreign_table": "design_revisions",
+        "foreign_column": "revision_id"
+      },
+      {
+        "name": "design_revisions_plastic_id_fkey",
+        "type": "FOREIGN KEY",
+        "column": "plastic_id",
+        "foreign_table": "plastic_master",
+        "foreign_column": "plastic_id"
+      },
+      {
+        "name": "design_revisions_product_id_fkey",
+        "type": "FOREIGN KEY",
+        "column": "product_id",
+        "foreign_table": "products",
+        "foreign_column": "product_id"
+      },
+      {
+        "name": "design_revisions_shared_plug_from_design_id_fkey",
+        "type": "FOREIGN KEY",
+        "column": "shared_plug_from_design_id",
+        "foreign_table": "design_revisions",
+        "foreign_column": "revision_id"
+      },
+      {
+        "name": "mold_designs_cav_type_id_fkey",
+        "type": "FOREIGN KEY",
+        "column": "cav_type_id",
+        "foreign_table": "cav_types",
+        "foreign_column": "cav_type_id"
+      },
+      {
+        "name": "mold_designs_company_id_fkey",
+        "type": "FOREIGN KEY",
+        "column": "company_id",
+        "foreign_table": "companies",
+        "foreign_column": "company_id"
+      },
+      {
+        "name": "mold_designs_pkey",
+        "type": "PRIMARY KEY",
+        "column": "revision_id",
+        "foreign_table": "design_revisions",
+        "foreign_column": "revision_id"
+      },
+      {
+        "name": "mold_designs_design_code_key",
+        "type": "UNIQUE",
+        "column": "design_code",
+        "foreign_table": "design_revisions",
+        "foreign_column": "design_code"
+      }
+    ]
+  },
+  "equipment": {
+    "exists": true,
+    "column_count": 42,
+    "columns": [
+      {
+        "name": "equipment_id",
+        "type": "uuid",
+        "nullable": false,
+        "default": "gen_random_uuid()"
+      },
+      {
+        "name": "equipment_code",
+        "type": "text",
+        "nullable": false,
+        "default": null
+      },
+      {
+        "name": "display_name",
+        "type": "text",
+        "nullable": false,
+        "default": null
+      },
+      {
+        "name": "equipment_type",
+        "type": "text",
+        "nullable": false,
+        "default": null
+      },
+      {
+        "name": "sub_type",
+        "type": "text",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "physical_stamp",
+        "type": "text",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "dimensions",
+        "type": "text",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "actual_length_mm",
+        "type": "text",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "actual_width_mm",
+        "type": "text",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "actual_height_mm",
+        "type": "text",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "actual_weight",
+        "type": "text",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "material_spec",
+        "type": "text",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "piece_count",
+        "type": "integer",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "copy_number",
+        "type": "integer",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "company_id",
+        "type": "uuid",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "keeper_company_id",
+        "type": "uuid",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "design_revision_id",
+        "type": "uuid",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "cav_type_id",
+        "type": "uuid",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "mold_master_id",
+        "type": "uuid",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "current_rack_layer_id",
+        "type": "uuid",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "device_status",
+        "type": "text",
+        "nullable": true,
+        "default": "'NORMAL'::text"
+      },
+      {
+        "name": "usage_status",
+        "type": "text",
+        "nullable": true,
+        "default": "'STORAGE'::text"
+      },
+      {
+        "name": "on_checklist",
+        "type": "boolean",
+        "nullable": true,
+        "default": "false"
+      },
+      {
+        "name": "mold_type",
+        "type": "text",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "manufacturing_date",
+        "type": "date",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "entry_date",
+        "type": "date",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "returned_date",
+        "type": "date",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "disposed_date",
+        "type": "date",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "qr_uuid",
+        "type": "uuid",
+        "nullable": true,
+        "default": "gen_random_uuid()"
+      },
+      {
+        "name": "legacy_physical_mold_id",
+        "type": "uuid",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "legacy_cutter_id",
+        "type": "uuid",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "legacy_id",
+        "type": "text",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "legacy_specs",
+        "type": "jsonb",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "notes",
+        "type": "text",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "created_at",
+        "type": "timestamp with time zone",
+        "nullable": true,
+        "default": "now()"
+      },
+      {
+        "name": "updated_at",
+        "type": "timestamp with time zone",
+        "nullable": true,
+        "default": "now()"
+      },
+      {
+        "name": "updated_by",
+        "type": "uuid",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "shared_with_code",
+        "type": "text",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "shared_note",
+        "type": "text",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "cost_note",
+        "type": "text",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "maintenance_shot_threshold",
+        "type": "integer",
+        "nullable": true,
+        "default": "50000"
+      },
+      {
+        "name": "shots_at_last_maintenance",
+        "type": "integer",
+        "nullable": true,
+        "default": "0"
+      }
+    ],
+    "constraints": [
+      {
+        "name": "equipment_cav_type_id_fkey",
+        "type": "FOREIGN KEY",
+        "column": "cav_type_id",
+        "foreign_table": "cav_types",
+        "foreign_column": "cav_type_id"
+      },
+      {
+        "name": "equipment_company_id_fkey",
+        "type": "FOREIGN KEY",
+        "column": "company_id",
+        "foreign_table": "companies",
+        "foreign_column": "company_id"
+      },
+      {
+        "name": "equipment_current_rack_layer_id_fkey",
+        "type": "FOREIGN KEY",
+        "column": "current_rack_layer_id",
+        "foreign_table": "rack_layers",
+        "foreign_column": "id"
+      },
+      {
+        "name": "equipment_design_revision_id_fkey",
+        "type": "FOREIGN KEY",
+        "column": "design_revision_id",
+        "foreign_table": "design_revisions",
+        "foreign_column": "revision_id"
+      },
+      {
+        "name": "equipment_keeper_company_id_fkey",
+        "type": "FOREIGN KEY",
+        "column": "keeper_company_id",
+        "foreign_table": "companies",
+        "foreign_column": "company_id"
+      },
+      {
+        "name": "equipment_updated_by_fkey",
+        "type": "FOREIGN KEY",
+        "column": "updated_by",
+        "foreign_table": "employees",
+        "foreign_column": "employee_id"
+      },
+      {
+        "name": "equipment_pkey",
+        "type": "PRIMARY KEY",
+        "column": "equipment_id",
+        "foreign_table": "equipment",
+        "foreign_column": "equipment_id"
+      },
+      {
+        "name": "equipment_equipment_code_key",
+        "type": "UNIQUE",
+        "column": "equipment_code",
+        "foreign_table": "equipment",
+        "foreign_column": "equipment_code"
+      }
+    ]
+  },
+  "jobs": {
+    "exists": true,
+    "column_count": 46,
+    "columns": [
+      {
+        "name": "job_id",
+        "type": "uuid",
+        "nullable": false,
+        "default": "gen_random_uuid()"
+      },
+      {
+        "name": "job_code",
+        "type": "text",
+        "nullable": false,
+        "default": null
+      },
+      {
+        "name": "job_name",
+        "type": "text",
+        "nullable": false,
+        "default": null
+      },
+      {
+        "name": "job_type_id",
+        "type": "text",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "design_revision_id",
+        "type": "uuid",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "company_id",
+        "type": "uuid",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "responsible_id",
+        "type": "uuid",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "outsource_company",
+        "type": "uuid",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "start_date",
+        "type": "timestamp with time zone",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "deadline",
+        "type": "timestamp with time zone",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "completed_date",
+        "type": "timestamp with time zone",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "estimated_hours",
+        "type": "numeric",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "job_status",
+        "type": "text",
+        "nullable": true,
+        "default": "'PENDING'::text"
+      },
+      {
+        "name": "approved",
+        "type": "boolean",
+        "nullable": true,
+        "default": "false"
+      },
+      {
+        "name": "priority",
+        "type": "integer",
+        "nullable": true,
+        "default": "5"
+      },
+      {
+        "name": "year_period",
+        "type": "integer",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "month_period",
+        "type": "integer",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "notes",
+        "type": "text",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "created_at",
+        "type": "timestamp with time zone",
+        "nullable": true,
+        "default": "now()"
+      },
+      {
+        "name": "updated_at",
+        "type": "timestamp with time zone",
+        "nullable": true,
+        "default": "now()"
+      },
+      {
+        "name": "updated_by",
+        "type": "text",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "ship_date",
+        "type": "date",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "mold_deadline",
+        "type": "date",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "has_plug",
+        "type": "boolean",
+        "nullable": true,
+        "default": "true"
+      },
+      {
+        "name": "mold_track_status",
+        "type": "text",
+        "nullable": true,
+        "default": "'NOT_STARTED'::text"
+      },
+      {
+        "name": "plug_track_status",
+        "type": "text",
+        "nullable": true,
+        "default": "'NOT_STARTED'::text"
+      },
+      {
+        "name": "overall_progress",
+        "type": "numeric",
+        "nullable": true,
+        "default": "0"
+      },
+      {
+        "name": "legacy_id",
+        "type": "text",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "processing_item_id",
+        "type": "integer",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "product_id",
+        "type": "uuid",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "auxiliary_equipment_id",
+        "type": "uuid",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "mold_work_order_id",
+        "type": "uuid",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "quantity",
+        "type": "integer",
+        "nullable": true,
+        "default": "1"
+      },
+      {
+        "name": "release_type",
+        "type": "text",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "separate_cutter",
+        "type": "boolean",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "inventory_check_on_repro",
+        "type": "boolean",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "drawing_check_on_repro",
+        "type": "boolean",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "qty_sent_to_office",
+        "type": "integer",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "price_quote_required",
+        "type": "boolean",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "unit_price",
+        "type": "numeric",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "job_category",
+        "type": "text",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "equipment_id",
+        "type": "uuid",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "case_id",
+        "type": "uuid",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "work_order_id",
+        "type": "uuid",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "target_completion_date",
+        "type": "date",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "legacy_specs",
+        "type": "jsonb",
+        "nullable": true,
+        "default": null
+      }
+    ],
+    "constraints": [
+      {
+        "name": "jobs_auxiliary_equipment_id_fkey",
+        "type": "FOREIGN KEY",
+        "column": "auxiliary_equipment_id",
+        "foreign_table": "auxiliary_equipments",
+        "foreign_column": "equipment_id"
+      },
+      {
+        "name": "jobs_case_id_fkey",
+        "type": "FOREIGN KEY",
+        "column": "case_id",
+        "foreign_table": "business_cases",
+        "foreign_column": "id"
+      },
+      {
+        "name": "jobs_company_id_fkey",
+        "type": "FOREIGN KEY",
+        "column": "company_id",
+        "foreign_table": "companies",
+        "foreign_column": "company_id"
+      },
+      {
+        "name": "jobs_design_revision_id_fkey",
+        "type": "FOREIGN KEY",
+        "column": "design_revision_id",
+        "foreign_table": "design_revisions",
+        "foreign_column": "revision_id"
+      },
+      {
+        "name": "jobs_equipment_id_fkey",
+        "type": "FOREIGN KEY",
+        "column": "equipment_id",
+        "foreign_table": "equipment",
+        "foreign_column": "equipment_id"
+      },
+      {
+        "name": "jobs_job_type_id_fkey",
+        "type": "FOREIGN KEY",
+        "column": "job_type_id",
+        "foreign_table": "job_types",
+        "foreign_column": "job_type_id"
+      },
+      {
+        "name": "jobs_mold_work_order_id_fkey",
+        "type": "FOREIGN KEY",
+        "column": "mold_work_order_id",
+        "foreign_table": "mold_work_orders",
+        "foreign_column": "mwo_id"
+      },
+      {
+        "name": "jobs_outsource_company_fkey",
+        "type": "FOREIGN KEY",
+        "column": "outsource_company",
+        "foreign_table": "companies",
+        "foreign_column": "company_id"
+      },
+      {
+        "name": "jobs_processing_item_id_fkey",
+        "type": "FOREIGN KEY",
+        "column": "processing_item_id",
+        "foreign_table": "processing_items",
+        "foreign_column": "processing_item_id"
+      },
+      {
+        "name": "jobs_product_id_fkey",
+        "type": "FOREIGN KEY",
+        "column": "product_id",
+        "foreign_table": "products",
+        "foreign_column": "product_id"
+      },
+      {
+        "name": "jobs_responsible_id_fkey",
+        "type": "FOREIGN KEY",
+        "column": "responsible_id",
+        "foreign_table": "employees",
+        "foreign_column": "employee_id"
+      },
+      {
+        "name": "jobs_work_order_id_fkey",
+        "type": "FOREIGN KEY",
+        "column": "work_order_id",
+        "foreign_table": "work_orders",
+        "foreign_column": "wo_id"
+      },
+      {
+        "name": "jobs_pkey",
+        "type": "PRIMARY KEY",
+        "column": "job_id",
+        "foreign_table": "jobs",
+        "foreign_column": "job_id"
+      },
+      {
+        "name": "jobs_job_code_key",
+        "type": "UNIQUE",
+        "column": "job_code",
+        "foreign_table": "jobs",
+        "foreign_column": "job_code"
+      }
+    ]
+  },
+  "job_steps": {
+    "exists": true,
+    "column_count": 38,
+    "columns": [
+      {
+        "name": "step_id",
+        "type": "uuid",
+        "nullable": false,
+        "default": "gen_random_uuid()"
+      },
+      {
+        "name": "job_id",
+        "type": "uuid",
+        "nullable": false,
+        "default": null
+      },
+      {
+        "name": "step_no",
+        "type": "integer",
+        "nullable": false,
+        "default": null
+      },
+      {
+        "name": "processing_item_id",
+        "type": "integer",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "processing_status_id",
+        "type": "integer",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "step_name",
+        "type": "text",
+        "nullable": false,
+        "default": null
+      },
+      {
+        "name": "step_status",
+        "type": "text",
+        "nullable": true,
+        "default": "'PENDING'::text"
+      },
+      {
+        "name": "deadline",
+        "type": "timestamp with time zone",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "estimated_hours",
+        "type": "numeric",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "outsource_company",
+        "type": "uuid",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "machining_location",
+        "type": "text",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "set_info",
+        "type": "text",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "tehai_info",
+        "type": "text",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "drawing_receipt_date",
+        "type": "timestamp with time zone",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "notes",
+        "type": "text",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "created_at",
+        "type": "timestamp with time zone",
+        "nullable": true,
+        "default": "now()"
+      },
+      {
+        "name": "updated_at",
+        "type": "timestamp with time zone",
+        "nullable": true,
+        "default": "now()"
+      },
+      {
+        "name": "track",
+        "type": "text",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "machine_id",
+        "type": "uuid",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "assigned_to",
+        "type": "uuid",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "planned_start",
+        "type": "timestamp with time zone",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "planned_end",
+        "type": "timestamp with time zone",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "planned_hours",
+        "type": "numeric",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "actual_hours",
+        "type": "numeric",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "is_overtime",
+        "type": "boolean",
+        "nullable": true,
+        "default": "false"
+      },
+      {
+        "name": "progress_percent",
+        "type": "integer",
+        "nullable": true,
+        "default": "0"
+      },
+      {
+        "name": "baseline_start",
+        "type": "timestamp with time zone",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "baseline_end",
+        "type": "timestamp with time zone",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "item_type_id",
+        "type": "integer",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "type_code",
+        "type": "text",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "material_spec",
+        "type": "text",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "quantity",
+        "type": "integer",
+        "nullable": true,
+        "default": "1"
+      },
+      {
+        "name": "arrangement",
+        "type": "text",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "condition",
+        "type": "text",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "manufacture_location",
+        "type": "text",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "target_completion_date",
+        "type": "date",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "legacy_id",
+        "type": "text",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "legacy_specs",
+        "type": "jsonb",
+        "nullable": true,
+        "default": null
+      }
+    ],
+    "constraints": [
+      {
+        "name": "job_steps_assigned_to_fkey",
+        "type": "FOREIGN KEY",
+        "column": "assigned_to",
+        "foreign_table": "employees",
+        "foreign_column": "employee_id"
+      },
+      {
+        "name": "job_steps_item_type_id_fkey",
+        "type": "FOREIGN KEY",
+        "column": "item_type_id",
+        "foreign_table": "item_types",
+        "foreign_column": "item_type_id"
+      },
+      {
+        "name": "job_steps_job_id_fkey",
+        "type": "FOREIGN KEY",
+        "column": "job_id",
+        "foreign_table": "jobs",
+        "foreign_column": "job_id"
+      },
+      {
+        "name": "job_steps_machine_id_fkey",
+        "type": "FOREIGN KEY",
+        "column": "machine_id",
+        "foreign_table": "machines",
+        "foreign_column": "machine_id"
+      },
+      {
+        "name": "job_steps_outsource_company_fkey",
+        "type": "FOREIGN KEY",
+        "column": "outsource_company",
+        "foreign_table": "companies",
+        "foreign_column": "company_id"
+      },
+      {
+        "name": "job_steps_processing_item_id_fkey",
+        "type": "FOREIGN KEY",
+        "column": "processing_item_id",
+        "foreign_table": "processing_items",
+        "foreign_column": "processing_item_id"
+      },
+      {
+        "name": "job_steps_processing_status_id_fkey",
+        "type": "FOREIGN KEY",
+        "column": "processing_status_id",
+        "foreign_table": "processing_statuses",
+        "foreign_column": "status_id"
+      },
+      {
+        "name": "job_steps_pkey",
+        "type": "PRIMARY KEY",
+        "column": "step_id",
+        "foreign_table": "job_steps",
+        "foreign_column": "step_id"
+      },
+      {
+        "name": "job_steps_job_id_step_no_key",
+        "type": "UNIQUE",
+        "column": "step_no",
+        "foreign_table": "job_steps",
+        "foreign_column": "step_no"
+      },
+      {
+        "name": "job_steps_job_id_step_no_key",
+        "type": "UNIQUE",
+        "column": "step_no",
+        "foreign_table": "job_steps",
+        "foreign_column": "job_id"
+      },
+      {
+        "name": "job_steps_job_id_step_no_key",
+        "type": "UNIQUE",
+        "column": "job_id",
+        "foreign_table": "job_steps",
+        "foreign_column": "step_no"
+      },
+      {
+        "name": "job_steps_job_id_step_no_key",
+        "type": "UNIQUE",
+        "column": "job_id",
+        "foreign_table": "job_steps",
+        "foreign_column": "job_id"
+      }
+    ]
+  },
+  "work_logs": {
+    "exists": true,
+    "column_count": 22,
+    "columns": [
+      {
+        "name": "log_id",
+        "type": "uuid",
+        "nullable": false,
+        "default": "gen_random_uuid()"
+      },
+      {
+        "name": "job_step_id",
+        "type": "uuid",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "job_id",
+        "type": "uuid",
+        "nullable": false,
+        "default": null
+      },
+      {
+        "name": "employee_id",
+        "type": "uuid",
+        "nullable": false,
+        "default": null
+      },
+      {
+        "name": "company_id",
+        "type": "uuid",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "work_date",
+        "type": "date",
+        "nullable": false,
+        "default": null
+      },
+      {
+        "name": "hours_spent",
+        "type": "numeric",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "quantity_done",
+        "type": "integer",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "is_finished",
+        "type": "boolean",
+        "nullable": true,
+        "default": "false"
+      },
+      {
+        "name": "contact_content",
+        "type": "text",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "description",
+        "type": "text",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "notes",
+        "type": "text",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "created_at",
+        "type": "timestamp with time zone",
+        "nullable": true,
+        "default": "now()"
+      },
+      {
+        "name": "processing_code_id",
+        "type": "integer",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "planned_hours",
+        "type": "numeric",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "planned_date",
+        "type": "date",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "machine_id",
+        "type": "uuid",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "processing_status_id",
+        "type": "integer",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "design_revision_context",
+        "type": "text",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "legacy_id",
+        "type": "text",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "legacy_specs",
+        "type": "jsonb",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "quantity_ng",
+        "type": "integer",
+        "nullable": false,
+        "default": "0"
+      }
+    ],
+    "constraints": [
+      {
+        "name": "work_logs_company_id_fkey",
+        "type": "FOREIGN KEY",
+        "column": "company_id",
+        "foreign_table": "companies",
+        "foreign_column": "company_id"
+      },
+      {
+        "name": "work_logs_employee_id_fkey",
+        "type": "FOREIGN KEY",
+        "column": "employee_id",
+        "foreign_table": "employees",
+        "foreign_column": "employee_id"
+      },
+      {
+        "name": "work_logs_job_id_fkey",
+        "type": "FOREIGN KEY",
+        "column": "job_id",
+        "foreign_table": "jobs",
+        "foreign_column": "job_id"
+      },
+      {
+        "name": "work_logs_job_step_id_fkey",
+        "type": "FOREIGN KEY",
+        "column": "job_step_id",
+        "foreign_table": "job_steps",
+        "foreign_column": "step_id"
+      },
+      {
+        "name": "work_logs_machine_id_fkey",
+        "type": "FOREIGN KEY",
+        "column": "machine_id",
+        "foreign_table": "machines",
+        "foreign_column": "machine_id"
+      },
+      {
+        "name": "work_logs_processing_code_id_fkey",
+        "type": "FOREIGN KEY",
+        "column": "processing_code_id",
+        "foreign_table": "processing_codes",
+        "foreign_column": "processing_code_id"
+      },
+      {
+        "name": "work_logs_processing_status_id_fkey",
+        "type": "FOREIGN KEY",
+        "column": "processing_status_id",
+        "foreign_table": "processing_statuses",
+        "foreign_column": "status_id"
+      },
+      {
+        "name": "work_logs_pkey",
+        "type": "PRIMARY KEY",
+        "column": "log_id",
+        "foreign_table": "work_logs",
+        "foreign_column": "log_id"
+      }
+    ]
+  },
+  "racks": {
+    "exists": true,
+    "column_count": 9,
+    "columns": [
+      {
+        "name": "id",
+        "type": "uuid",
+        "nullable": false,
+        "default": "gen_random_uuid()"
+      },
+      {
+        "name": "rack_code",
+        "type": "text",
+        "nullable": false,
+        "default": null
+      },
+      {
+        "name": "rack_name",
+        "type": "text",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "location_in_factory",
+        "type": "text",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "notes",
+        "type": "text",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "created_at",
+        "type": "timestamp with time zone",
+        "nullable": true,
+        "default": "now()"
+      },
+      {
+        "name": "legacy_id",
+        "type": "text",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "rack_code_new",
+        "type": "text",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "zone_code",
+        "type": "text",
+        "nullable": true,
+        "default": null
+      }
+    ],
+    "constraints": [
+      {
+        "name": "racks_pkey",
+        "type": "PRIMARY KEY",
+        "column": "id",
+        "foreign_table": "racks",
+        "foreign_column": "id"
+      },
+      {
+        "name": "racks_rack_code_key",
+        "type": "UNIQUE",
+        "column": "rack_code",
+        "foreign_table": "racks",
+        "foreign_column": "rack_code"
+      }
+    ]
+  },
+  "rack_layers": {
+    "exists": true,
+    "column_count": 6,
+    "columns": [
+      {
+        "name": "id",
+        "type": "uuid",
+        "nullable": false,
+        "default": "gen_random_uuid()"
+      },
+      {
+        "name": "rack_id",
+        "type": "uuid",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "layer_number",
+        "type": "integer",
+        "nullable": false,
+        "default": null
+      },
+      {
+        "name": "layer_code",
+        "type": "text",
+        "nullable": false,
+        "default": null
+      },
+      {
+        "name": "notes",
+        "type": "text",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "legacy_id",
+        "type": "text",
+        "nullable": true,
+        "default": null
+      }
+    ],
+    "constraints": [
+      {
+        "name": "rack_layers_rack_id_fkey",
+        "type": "FOREIGN KEY",
+        "column": "rack_id",
+        "foreign_table": "racks",
+        "foreign_column": "id"
+      },
+      {
+        "name": "rack_layers_pkey",
+        "type": "PRIMARY KEY",
+        "column": "id",
+        "foreign_table": "rack_layers",
+        "foreign_column": "id"
+      },
+      {
+        "name": "rack_layers_layer_code_key",
+        "type": "UNIQUE",
+        "column": "layer_code",
+        "foreign_table": "rack_layers",
+        "foreign_column": "layer_code"
+      },
+      {
+        "name": "rack_layers_rack_id_layer_number_key",
+        "type": "UNIQUE",
+        "column": "layer_number",
+        "foreign_table": "rack_layers",
+        "foreign_column": "rack_id"
+      },
+      {
+        "name": "rack_layers_rack_id_layer_number_key",
+        "type": "UNIQUE",
+        "column": "rack_id",
+        "foreign_table": "rack_layers",
+        "foreign_column": "layer_number"
+      },
+      {
+        "name": "rack_layers_rack_id_layer_number_key",
+        "type": "UNIQUE",
+        "column": "rack_id",
+        "foreign_table": "rack_layers",
+        "foreign_column": "rack_id"
+      },
+      {
+        "name": "rack_layers_rack_id_layer_number_key",
+        "type": "UNIQUE",
+        "column": "layer_number",
+        "foreign_table": "rack_layers",
+        "foreign_column": "layer_number"
+      }
+    ]
+  },
+  "asset_location_logs": {
+    "exists": true,
+    "column_count": 8,
+    "columns": [
+      {
+        "name": "id",
+        "type": "uuid",
+        "nullable": false,
+        "default": "gen_random_uuid()"
+      },
+      {
+        "name": "asset_type",
+        "type": "USER-DEFINED",
+        "nullable": false,
+        "default": null
+      },
+      {
+        "name": "asset_id",
+        "type": "uuid",
+        "nullable": false,
+        "default": null
+      },
+      {
+        "name": "old_rack_layer_id",
+        "type": "uuid",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "new_rack_layer_id",
+        "type": "uuid",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "moved_by",
+        "type": "uuid",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "notes",
+        "type": "text",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "moved_at",
+        "type": "timestamp with time zone",
+        "nullable": true,
+        "default": "now()"
+      }
+    ],
+    "constraints": [
+      {
+        "name": "asset_location_logs_moved_by_fkey",
+        "type": "FOREIGN KEY",
+        "column": "moved_by",
+        "foreign_table": "employees",
+        "foreign_column": "employee_id"
+      },
+      {
+        "name": "asset_location_logs_new_rack_layer_id_fkey",
+        "type": "FOREIGN KEY",
+        "column": "new_rack_layer_id",
+        "foreign_table": "rack_layers",
+        "foreign_column": "id"
+      },
+      {
+        "name": "asset_location_logs_old_rack_layer_id_fkey",
+        "type": "FOREIGN KEY",
+        "column": "old_rack_layer_id",
+        "foreign_table": "rack_layers",
+        "foreign_column": "id"
+      },
+      {
+        "name": "asset_location_logs_pkey",
+        "type": "PRIMARY KEY",
+        "column": "id",
+        "foreign_table": "asset_location_logs",
+        "foreign_column": "id"
+      }
+    ]
+  },
+  "equipment_assignments": {
+    "exists": true,
+    "column_count": 7,
+    "columns": [
+      {
+        "name": "assignment_id",
+        "type": "uuid",
+        "nullable": false,
+        "default": "gen_random_uuid()"
+      },
+      {
+        "name": "primary_equipment_id",
+        "type": "uuid",
+        "nullable": false,
+        "default": null
+      },
+      {
+        "name": "related_equipment_id",
+        "type": "uuid",
+        "nullable": false,
+        "default": null
+      },
+      {
+        "name": "relationship_type",
+        "type": "text",
+        "nullable": false,
+        "default": "'SET_MEMBER'::text"
+      },
+      {
+        "name": "is_default",
+        "type": "boolean",
+        "nullable": true,
+        "default": "true"
+      },
+      {
+        "name": "notes",
+        "type": "text",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "created_at",
+        "type": "timestamp with time zone",
+        "nullable": true,
+        "default": "now()"
+      }
+    ],
+    "constraints": [
+      {
+        "name": "equipment_assignments_primary_equipment_id_fkey",
+        "type": "FOREIGN KEY",
+        "column": "primary_equipment_id",
+        "foreign_table": "equipment",
+        "foreign_column": "equipment_id"
+      },
+      {
+        "name": "equipment_assignments_related_equipment_id_fkey",
+        "type": "FOREIGN KEY",
+        "column": "related_equipment_id",
+        "foreign_table": "equipment",
+        "foreign_column": "equipment_id"
+      },
+      {
+        "name": "equipment_assignments_pkey",
+        "type": "PRIMARY KEY",
+        "column": "assignment_id",
+        "foreign_table": "equipment_assignments",
+        "foreign_column": "assignment_id"
+      },
+      {
+        "name": "uq_equipment_pair",
+        "type": "UNIQUE",
+        "column": "related_equipment_id",
+        "foreign_table": "equipment_assignments",
+        "foreign_column": "related_equipment_id"
+      },
+      {
+        "name": "uq_equipment_pair",
+        "type": "UNIQUE",
+        "column": "primary_equipment_id",
+        "foreign_table": "equipment_assignments",
+        "foreign_column": "primary_equipment_id"
+      },
+      {
+        "name": "uq_equipment_pair",
+        "type": "UNIQUE",
+        "column": "primary_equipment_id",
+        "foreign_table": "equipment_assignments",
+        "foreign_column": "related_equipment_id"
+      },
+      {
+        "name": "uq_equipment_pair",
+        "type": "UNIQUE",
+        "column": "related_equipment_id",
+        "foreign_table": "equipment_assignments",
+        "foreign_column": "primary_equipment_id"
+      }
+    ]
+  }
+}

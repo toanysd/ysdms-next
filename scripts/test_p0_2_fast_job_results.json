@@ -1,0 +1,80 @@
+{
+  "timestamp": "2026-10-07T13:54:53.245632",
+  "total": 12,
+  "passed": 12,
+  "failed": 0,
+  "results": [
+    {
+      "test_id": "TC-P02-01",
+      "status": "PASS",
+      "description": "Validation fails when product_code is empty",
+      "details": ""
+    },
+    {
+      "test_id": "TC-P02-02",
+      "status": "PASS",
+      "description": "Validation fails when product_code contains invalid characters",
+      "details": ""
+    },
+    {
+      "test_id": "TC-P02-03",
+      "status": "PASS",
+      "description": "Validation fails when company_id is missing",
+      "details": ""
+    },
+    {
+      "test_id": "TC-P02-04",
+      "status": "PASS",
+      "description": "Validation fails when cutline dimensions are non-positive",
+      "details": ""
+    },
+    {
+      "test_id": "TC-P02-05",
+      "status": "PASS",
+      "description": "Validation fails when rack_layer_id is missing",
+      "details": ""
+    },
+    {
+      "test_id": "TC-P02-06",
+      "status": "PASS",
+      "description": "Validation fails when job_name is whitespace or empty",
+      "details": ""
+    },
+    {
+      "test_id": "TC-P02-07",
+      "status": "PASS",
+      "description": "Validation fails when mold_deadline is missing",
+      "details": ""
+    },
+    {
+      "test_id": "TC-P02-08",
+      "status": "PASS",
+      "description": "Product resolution matches existing product or branches to creation",
+      "details": ""
+    },
+    {
+      "test_id": "TC-P02-09",
+      "status": "PASS",
+      "description": "Revision reuse skips cutline validation and assigns existing revision ID",
+      "details": ""
+    },
+    {
+      "test_id": "TC-P02-10",
+      "status": "PASS",
+      "description": "Revision new mode generates deterministic next revision code (R3 from [R1, R2])",
+      "details": ""
+    },
+    {
+      "test_id": "TC-P02-11",
+      "status": "PASS",
+      "description": "Equipment mold and cutter assigned with SET_MEMBER relation",
+      "details": ""
+    },
+    {
+      "test_id": "TC-P02-12",
+      "status": "PASS",
+      "description": "Job code adheres to pattern ^JOB-20261007-\\d{3}$ and advisory lock hash is valid int32",
+      "details": ""
+    }
+  ]
+}

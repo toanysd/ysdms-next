@@ -9,7 +9,7 @@ import {
   Plus, Filter, Search,
   ChevronDown, Loader2, Briefcase, Calendar,
   ArrowUp, ArrowDown, ArrowUpDown, X,
-  ArrowLeft, ArrowUpFromLine
+  ArrowLeft, ArrowUpFromLine, Sparkles
 } from 'lucide-react'
 import { Pagination } from '@/components/ui/Pagination'
 import { SearchSuggestions } from '@/components/ui/SearchSuggestions'
@@ -255,12 +255,20 @@ function JobsPageContent() {
 
         <div style={{ display: 'flex', gap: 8 }}>
           <Link
-            href="/equipment/jobs/quick-create"
+            href="/equipment/jobs/new-fast"
             className="btn btn-primary"
             style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 6 }}
           >
+            <Sparkles size={14} />
+            <span style={{ fontFamily: 'var(--font-jp)' }}>{t('fastCreate')}</span>
+          </Link>
+          <Link
+            href="/equipment/jobs/quick-create"
+            className="btn btn-secondary"
+            style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 6 }}
+          >
             <Plus size={14} />
-            <span style={{ fontFamily: 'var(--font-jp)' }}>一括登録 (1ページ)</span>
+            <span style={{ fontFamily: 'var(--font-jp)' }}>一括登録 (旧)</span>
           </Link>
           <button
             className="btn btn-secondary"
