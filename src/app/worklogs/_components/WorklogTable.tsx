@@ -174,7 +174,8 @@ export default function WorklogTable({
             {totalCount.toLocaleString()} {t('Worklogs.recordCount')}
           </span>
           <Link href="/worklogs/new" className="btn btn-primary" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-            {t('Worklogs.taoMoi')}
+            <span>＋</span>
+            <span>{t('Worklogs.todayAction')}</span>
           </Link>
         </div>
       </div>
@@ -226,6 +227,22 @@ export default function WorklogTable({
             value={filters.dateTo ?? ''}
             onChange={e => updateParams({ date_to: e.target.value || null })}
           />
+          <button
+            type="button"
+            className={`btn ${filters.dateFrom === new Date().toLocaleDateString('sv-SE') && filters.dateTo === new Date().toLocaleDateString('sv-SE') ? 'btn-primary' : 'btn-secondary'}`}
+            style={{ fontSize: 12, padding: '2px 8px', height: 32, cursor: 'pointer' }}
+            onClick={() => {
+              const todayStr = new Date().toLocaleDateString('sv-SE')
+              const isToday = filters.dateFrom === todayStr && filters.dateTo === todayStr
+              if (isToday) {
+                updateParams({ date_from: null, date_to: null })
+              } else {
+                updateParams({ date_from: todayStr, date_to: todayStr })
+              }
+            }}
+          >
+            {t('Worklogs.todayFilter')}
+          </button>
 
           {/* Status */}
           <select

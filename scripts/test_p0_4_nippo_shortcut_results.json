@@ -1,0 +1,74 @@
+{
+  "timestamp": "2026-10-07T15:07:08.463759",
+  "total": 11,
+  "passed": 11,
+  "failed": 0,
+  "results": [
+    {
+      "tc_id": "TC-P04-01",
+      "description": "/worklogs/new without params renders free form with local today date and worker memory",
+      "status": "PASS",
+      "message": ""
+    },
+    {
+      "tc_id": "TC-P04-02",
+      "description": "/worklogs/new?job_id=... renders Locked Job Banner and prefetches job steps",
+      "status": "PASS",
+      "message": ""
+    },
+    {
+      "tc_id": "TC-P04-03",
+      "description": "/worklogs/new?job_id=...&step_id=... preselects specified step",
+      "status": "PASS",
+      "message": ""
+    },
+    {
+      "tc_id": "TC-P04-04",
+      "description": "Worker selection is persisted to and restored from localStorage",
+      "status": "PASS",
+      "message": ""
+    },
+    {
+      "tc_id": "TC-P04-05",
+      "description": "Server Action validates required work_date, employee, job, and hours > 0",
+      "status": "PASS",
+      "message": ""
+    },
+    {
+      "tc_id": "TC-P04-06",
+      "description": "All 9 new Worklogs i18n keys are present in ja.json and vi.json",
+      "status": "PASS",
+      "message": "Missing JA: [], Missing VI: []"
+    },
+    {
+      "tc_id": "TC-P04-07",
+      "description": "TypeScript code structure integrity and clean import contract verified",
+      "status": "PASS",
+      "message": ""
+    },
+    {
+      "tc_id": "TC-P04-08",
+      "description": "/worklogs/new requires authentication and redirects unauthenticated users to /login",
+      "status": "PASS",
+      "message": ""
+    },
+    {
+      "tc_id": "TC-P04-09",
+      "description": "Middleware strictly whitelists only /equipment/jobs/{uuid}/print via RFC 4122 regex",
+      "status": "PASS",
+      "message": ""
+    },
+    {
+      "tc_id": "TC-P04-10",
+      "description": "saveWorklogRecord rejects mismatched job_step_id with ERR_STEP_JOB_MISMATCH",
+      "status": "PASS",
+      "message": ""
+    },
+    {
+      "tc_id": "TC-P04-11",
+      "description": "saveWorklogRecord rejects non-existent job_id with ERR_JOB_NOT_FOUND and zero writes",
+      "status": "PASS",
+      "message": ""
+    }
+  ]
+}

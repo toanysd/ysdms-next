@@ -1837,6 +1837,15 @@
     }
   },
   "Worklogs": {
+    "jobLocked": "Theo chỉ thị",
+    "lockedJobBannerTitle": "Chỉ thị gia công đang chọn (Job)",
+    "todayLogs": "Công việc hôm nay",
+    "todayFilter": "Hôm nay",
+    "todayAction": "Nhập Nippo hôm nay",
+    "errAuthRequired": "Yêu cầu đăng nhập để ghi nhận công việc",
+    "errJobNotFound": "Không tìm thấy Chỉ thị gia công",
+    "errStepMismatch": "Công đoạn không thuộc về Chỉ thị gia công này",
+    "errInvalidHours": "Số giờ làm việc phải lớn hơn 0",
     "filterJob": "— Công việc —",
     "filterEmployee": "— Nhân viên —",
     "filterStatus": "— Trạng thái —",

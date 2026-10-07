@@ -17,6 +17,13 @@ import { saveWorklogRecord } from '@/app/worklogs/_actions/createWorklog'
 export type WorklogFormSharedProps = {
   /** Nếu truyền vào → lock job, chỉ hiện steps của job này */
   defaultJobId?: string
+  defaultStepId?: string
+  lockedJob?: {
+    job_id: string
+    job_code: string
+    job_name: string | null
+    companies?: { company_name?: string | null; company_code?: string | null } | null
+  } | null
   /** Steps đã load sẵn từ ngoài (dùng khi defaultJobId cố định) */
   preloadedSteps?: JobStepOption[]
   /** Data ban đầu khi edit */
@@ -59,6 +66,8 @@ const STORAGE_KEY_LAST_WORKER = 'ysdms_last_selected_worker_id'
 // ── Component ────────────────────────────────────────────────────────────────
 export function WorklogFormShared({
   defaultJobId,
+  defaultStepId,
+  lockedJob,
   preloadedSteps,
   initialData,
   jobCategory,
@@ -73,18 +82,19 @@ export function WorklogFormShared({
 
   const isEdit = !!initialData?.log_id
   const isJobLocked = !!defaultJobId && !isEdit
+  const [currentLockedJob, setCurrentLockedJob] = useState<any>(lockedJob || null)
 
   // Form State
   const [workDate, setWorkDate] = useState<string>(
     initialData?.work_date
       ? initialData.work_date.slice(0, 10)
-      : new Date().toISOString().split('T')[0]
+      : new Date().toLocaleDateString('sv-SE')
   )
   const [employeeId, setEmployeeId] = useState<string>(initialData?.employee_id || '')
   const [selectedJobId, setSelectedJobId] = useState<string>(
     initialData?.job_id || defaultJobId || ''
   )
-  const [stepId, setStepId] = useState<string>(initialData?.job_step_id || '')
+  const [stepId, setStepId] = useState<string>(initialData?.job_step_id || defaultStepId || '')
   const [hoursSpent, setHoursSpent] = useState<string>(
     initialData?.hours_spent != null ? String(initialData.hours_spent) : '1.0'
   )
@@ -229,12 +239,40 @@ export function WorklogFormShared({
     }
   }
 
+  // ── Load Locked Job details if missing ─────────────────────────────────────
+  useEffect(() => {
+    if (defaultJobId && !currentLockedJob) {
+      supabase
+        .from('jobs')
+        .select(`
+          job_id,
+          job_code,
+          job_name,
+          companies:companies!jobs_company_id_fkey(
+            company_name,
+            company_code
+          )
+        `)
+        .eq('job_id', defaultJobId)
+        .single()
+        .then(({ data }) => {
+          if (data) setCurrentLockedJob(data)
+        })
+    }
+  }, [defaultJobId, currentLockedJob, supabase])
+
   // ── Load Steps when Job changes ────────────────────────────────────────────
   useEffect(() => {
     if (isJobLocked && preloadedSteps) {
       setSteps(preloadedSteps)
-      if (!stepId && preloadedSteps.length > 0) {
-        setStepId(preloadedSteps[0].step_id)
+      if (preloadedSteps.length > 0) {
+        const matched = defaultStepId ? preloadedSteps.find(s => s.step_id === defaultStepId) : null
+        const inProg = (preloadedSteps as any[]).find(s => s.step_status === 'IN_PROGRESS')
+        if (matched) {
+          setStepId(matched.step_id)
+        } else if (!stepId) {
+          setStepId(inProg ? inProg.step_id : preloadedSteps[0].step_id)
+        }
       }
       return
     }
@@ -247,18 +285,24 @@ export function WorklogFormShared({
     async function loadSteps() {
       const { data } = await supabase
         .from('job_steps')
-        .select('step_id, step_no, step_name, job_id')
+        .select('step_id, step_no, step_name, job_id, step_status')
         .eq('job_id', selectedJobId)
         .order('step_no')
       if (data) {
         setSteps(data)
-        if (!stepId && data.length > 0) {
-          setStepId(data[0].step_id)
+        if (data.length > 0) {
+          const matched = defaultStepId ? data.find(s => s.step_id === defaultStepId) : null
+          const inProg = (data as any[]).find(s => s.step_status === 'IN_PROGRESS')
+          if (matched) {
+            setStepId(matched.step_id)
+          } else if (!stepId) {
+            setStepId(inProg ? inProg.step_id : data[0].step_id)
+          }
         }
       }
     }
     loadSteps()
-  }, [selectedJobId, supabase, isJobLocked, preloadedSteps, stepId])
+  }, [selectedJobId, supabase, isJobLocked, preloadedSteps, stepId, defaultStepId])
 
   // ── Auto-filter department & detect Job category when Job changes ────────
   useEffect(() => {
@@ -465,8 +509,68 @@ export function WorklogFormShared({
             </div>
           </div>
 
-          {/* Row 2: Job (when unlocked) */}
-          {!isJobLocked && (
+          {/* Row 2: Job Locked Banner OR Job Selector */}
+          {isJobLocked ? (
+            <div
+              className="card-flat"
+              style={{
+                padding: '10px 14px',
+                background: 'var(--tint-teal-bg, #f0fdfa)',
+                border: '1px solid var(--tint-teal-border, #99f6e4)',
+                borderRadius: 6,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: 12,
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div
+                  style={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: 6,
+                    background: '#0d9488',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: '#fff',
+                    flexShrink: 0,
+                  }}
+                >
+                  <Briefcase size={16} />
+                </div>
+                <div>
+                  <div style={{ fontSize: 10.5, fontWeight: 600, color: 'var(--text-muted)' }}>
+                    {t('lockedJobBannerTitle')}
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 2 }}>
+                    <span
+                      style={{
+                        fontFamily: 'monospace',
+                        fontWeight: 800,
+                        fontSize: 13,
+                        color: 'var(--accent)',
+                      }}
+                    >
+                      {currentLockedJob?.job_code || selectedJobId}
+                    </span>
+                    <span style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--text-primary)' }}>
+                      {currentLockedJob?.job_name || ''}
+                    </span>
+                  </div>
+                  {currentLockedJob?.companies?.company_name && (
+                    <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 2 }}>
+                      {currentLockedJob.companies.company_name}
+                    </div>
+                  )}
+                </div>
+              </div>
+              <span className="badge badge--info" style={{ flexShrink: 0, fontSize: 10.5 }}>
+                {t('jobLocked')}
+              </span>
+            </div>
+          ) : (
             <div>
               <label className="form-label" style={{ fontSize: 11.5, fontWeight: 700 }}>
                 {t('formJob')} (Job gia công) <span style={{ color: 'red' }}>*</span>

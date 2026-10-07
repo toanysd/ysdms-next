@@ -1,0 +1,30 @@
+{
+  "environment": "localhost:3000",
+  "browser": "Chromium headless",
+  "test_scope": "Local E2E Browser Verification (Not Production Cloud Browser)",
+  "target_job_id": "39dbbc91-c7b4-4a90-bdd8-8c894b782092",
+  "timestamp": "2026-10-07T06:06:49.323Z",
+  "unauthenticated_barrier": {
+    "tested_url": "http://localhost:3000/worklogs/new?job_id=39dbbc91-c7b4-4a90-bdd8-8c894b782092",
+    "redirected_to_login": true,
+    "status": "PASS"
+  },
+  "list_page": {
+    "url": "http://localhost:3000/worklogs",
+    "status": 200,
+    "today_chip_present": true,
+    "action_button_text": "＋\n本日の日報入力"
+  },
+  "locked_page": {
+    "url": "http://localhost:3000/worklogs/new?job_id=39dbbc91-c7b4-4a90-bdd8-8c894b782092",
+    "status": 200,
+    "job_code_displayed": true,
+    "badge_displayed": true,
+    "default_date": "2026-10-07",
+    "steps_count": 4
+  },
+  "artifacts": {
+    "list_screen": "D:\\AntiGravity_Workspace\\apps\\ysdms-nextgen\\public\\evidence\\p0_4_worklogs_list_today.png",
+    "locked_screen": "D:\\AntiGravity_Workspace\\apps\\ysdms-nextgen\\public\\evidence\\p0_4_nippo_locked_job.png"
+  }
+}

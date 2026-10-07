@@ -1,6 +1,6 @@
 'use server'
 
-import { createClient, createServerSupabaseClient } from '@/lib/supabase/server'
+import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 
 export interface WorklogSavePayload {
@@ -29,28 +29,26 @@ export interface WorklogSavePayload {
  * 4. Nếu toàn bộ jobs của work_order_id đều COMPLETED:
  *    -> Cascade UPDATE work_orders SET wo_status = 'COMPLETED', completed_at = NOW()
  *
- * SỬ DỤNG Service Role client (createServerSupabaseClient) để bypass RLS, đảm bảo cascade thực thi an toàn.
+ * Chạy hoàn toàn dưới phiên authenticated của người dùng, tuân thủ RLS Policy.
  */
 async function processStepCompletionEngine(
+  supabase: any,
   jobId: string,
   jobStepId: string | null,
   workOrderId?: string | null
 ) {
   if (!jobStepId) return
 
-  const adminSupabase = createServerSupabaseClient()
-
   // 1. Tính tổng actual_hours của step này
-  const { data: logs } = await adminSupabase
+  const { data: logs } = await supabase
     .from('work_logs')
     .select('hours_spent')
     .eq('job_step_id', jobStepId)
 
-
   const totalHours = (logs || []).reduce((acc: number, l: any) => acc + (Number(l.hours_spent) || 0), 0)
 
   // 2. UPDATE job_steps
-  await adminSupabase
+  await supabase
     .from('job_steps')
     .update({
       step_status: 'COMPLETED',
@@ -60,14 +58,14 @@ async function processStepCompletionEngine(
     .eq('step_id', jobStepId)
 
   // 3. Kiểm tra xem toàn bộ steps của job_id đã COMPLETED chưa
-  const { data: pendingSteps } = await adminSupabase
+  const { data: pendingSteps } = await supabase
     .from('job_steps')
     .select('step_id')
     .eq('job_id', jobId)
     .neq('step_status', 'COMPLETED')
 
   if (pendingSteps && pendingSteps.length === 0) {
-    await adminSupabase
+    await supabase
       .from('jobs')
       .update({
         job_status: 'COMPLETED',
@@ -79,7 +77,7 @@ async function processStepCompletionEngine(
     // 4. Cascade to work_orders
     let woId = workOrderId
     if (!woId) {
-      const { data: jobRow } = await adminSupabase
+      const { data: jobRow } = await supabase
         .from('jobs')
         .select('work_order_id')
         .eq('job_id', jobId)
@@ -88,14 +86,14 @@ async function processStepCompletionEngine(
     }
 
     if (woId) {
-      const { data: pendingJobs } = await adminSupabase
+      const { data: pendingJobs } = await supabase
         .from('jobs')
         .select('job_id')
         .eq('work_order_id', woId)
         .neq('job_status', 'COMPLETED')
 
       if (pendingJobs && pendingJobs.length === 0) {
-        await adminSupabase
+        await supabase
           .from('work_orders')
           .update({
             wo_status: 'COMPLETED',
@@ -113,29 +111,68 @@ async function processStepCompletionEngine(
  */
 export async function saveWorklogRecord(
   payload: WorklogSavePayload
-): Promise<{ success: boolean; log_id?: string; error?: string }> {
+): Promise<{ success: boolean; log_id?: string; code?: string; error?: string }> {
   try {
     const supabase = await createClient()
 
-    if (!payload.work_date) return { success: false, error: 'Vui lòng chọn ngày làm việc' }
-    if (!payload.employee_id) return { success: false, error: 'Vui lòng chọn người thực hiện' }
-    if (!payload.job_id) return { success: false, error: 'Vui lòng chọn Job gia công' }
+    if (!payload.work_date) return { success: false, code: 'ERR_REQ_WORK_DATE', error: 'Vui lòng chọn ngày làm việc' }
+    if (!payload.employee_id) return { success: false, code: 'ERR_REQ_EMPLOYEE', error: 'Vui lòng chọn người thực hiện' }
+    if (!payload.job_id) return { success: false, code: 'ERR_REQ_JOB', error: 'Vui lòng chọn Job gia công' }
     if (!payload.hours_spent || isNaN(payload.hours_spent) || payload.hours_spent <= 0) {
-      return { success: false, error: 'Số giờ làm việc không hợp lệ' }
+      return { success: false, code: 'ERR_INVALID_HOURS', error: 'Số giờ làm việc không hợp lệ' }
     }
 
-    // Lookup Job category & Work Order
-    const { data: job } = await supabase
+    // 1. Validate Job exists (Anti-injection)
+    const { data: job, error: jobErr } = await supabase
       .from('jobs')
       .select('job_id, job_type_id, work_order_id, job_types(category)')
       .eq('job_id', payload.job_id)
       .single()
 
+    if (jobErr || !job) {
+      console.warn('[WORKLOG_TELEMETRY]', JSON.stringify({
+        event: 'worklog_save_rejected',
+        code: 'ERR_JOB_NOT_FOUND',
+        jobId: payload.job_id,
+        timestamp: new Date().toISOString()
+      }))
+      return {
+        success: false,
+        code: 'ERR_JOB_NOT_FOUND',
+        error: 'Chỉ thị gia công (Job) không tồn tại hoặc bạn không có quyền truy cập.'
+      }
+    }
+
+    // 2. Validate Step belongs to Job (Anti cross-job step injection)
+    if (payload.job_step_id) {
+      const { data: step, error: stepErr } = await supabase
+        .from('job_steps')
+        .select('step_id, job_id, step_name')
+        .eq('step_id', payload.job_step_id)
+        .eq('job_id', payload.job_id)
+        .single()
+
+      if (stepErr || !step) {
+        console.warn('[WORKLOG_TELEMETRY]', JSON.stringify({
+          event: 'worklog_save_rejected',
+          code: 'ERR_STEP_JOB_MISMATCH',
+          jobId: payload.job_id,
+          jobStepId: payload.job_step_id,
+          timestamp: new Date().toISOString()
+        }))
+        return {
+          success: false,
+          code: 'ERR_STEP_JOB_MISMATCH',
+          error: 'Công đoạn được chỉ định không thuộc về Chỉ thị gia công (Job) này.'
+        }
+      }
+    }
+
     const jobCategory = (job?.job_types as any)?.category
     const isThermoforming = jobCategory === 'THERMOFORMING'
 
     if (isThermoforming && (payload.quantity_done === null || payload.quantity_done === undefined || payload.quantity_done < 0)) {
-      return { success: false, error: '良品生産数 (quantity_done) は成形生産に必須です。' }
+      return { success: false, code: 'ERR_REQ_QTY', error: '良品生産数 (quantity_done) は成形生産に必須です。' }
     }
 
     const recordData = {
@@ -160,7 +197,7 @@ export async function saveWorklogRecord(
         .update(recordData)
         .eq('log_id', logId)
 
-      if (updateErr) return { success: false, error: updateErr.message }
+      if (updateErr) return { success: false, code: 'ERR_UPDATE_FAILED', error: updateErr.message }
     } else {
       const { data: inserted, error: insertErr } = await supabase
         .from('work_logs')
@@ -168,13 +205,14 @@ export async function saveWorklogRecord(
         .select('log_id')
         .single()
 
-      if (insertErr) return { success: false, error: insertErr.message }
+      if (insertErr) return { success: false, code: 'ERR_INSERT_FAILED', error: insertErr.message }
       logId = inserted.log_id
     }
 
-    // Step Completion Engine (dùng Service Role)
+    // Step Completion Engine (dùng phiên authenticated)
     if (payload.is_finished && payload.job_step_id) {
       await processStepCompletionEngine(
+        supabase,
         payload.job_id,
         payload.job_step_id,
         job?.work_order_id

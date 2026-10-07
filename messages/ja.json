@@ -1837,6 +1837,15 @@
     }
   },
   "Worklogs": {
+    "jobLocked": "指示書連動",
+    "lockedJobBannerTitle": "対象指示書 (Job)",
+    "todayLogs": "本日の作業",
+    "todayFilter": "本日",
+    "todayAction": "本日の日報入力",
+    "errAuthRequired": "ログインが必要です",
+    "errJobNotFound": "指定されたJobが存在しません",
+    "errStepMismatch": "指定された工程は該当Jobに属していません",
+    "errInvalidHours": "作業時間は0より大きい有効な数値を入力してください",
     "filterJob": "— ジョブ —",
     "filterEmployee": "— 担当 —",
     "filterStatus": "— ステータス —",
