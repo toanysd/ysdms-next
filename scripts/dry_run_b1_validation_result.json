@@ -1,0 +1,68 @@
+{
+  "dry_run_step_rows": 6,
+  "dry_run_work_log_rows": 5,
+  "duplicate_target_legacy_ids": 0,
+  "existing_target_rows": 0,
+  "missing_parent_jobs": 0,
+  "missing_employees": 0,
+  "missing_processing_codes": 0,
+  "invalid_step_values": 0,
+  "invalid_work_log_values": 0,
+  "fk_conflicts": 0,
+  "unique_conflicts": 0,
+  "not_null_conflicts": 0,
+  "trigger_side_effects": [
+    {
+      "step_legacy_id": "LEGACY-STEP-4226",
+      "resulting_processing_status_id": 9,
+      "step_status": "PENDING",
+      "notes": "Trigger trg_update_step_status_from_worklogs evaluated is_finished=false, maintained processing_status_id=9 (N.進行中)"
+    },
+    {
+      "step_legacy_id": "LEGACY-STEP-4275",
+      "resulting_processing_status_id": 9,
+      "step_status": "PENDING",
+      "notes": "Trigger trg_update_step_status_from_worklogs evaluated is_finished=false, maintained processing_status_id=9 (N.進行中)"
+    },
+    {
+      "job_code": "KSP227",
+      "resulting_job_status": "COMPLETED",
+      "resulting_overall_progress": 66.7,
+      "notes": "Trigger sync_job_overall_progress and trg_update_job_status_from_steps synchronized progress and status"
+    },
+    {
+      "job_code": "ZA水冷ベース",
+      "resulting_job_status": "COMPLETED",
+      "resulting_overall_progress": 50.0,
+      "notes": "Trigger sync_job_overall_progress and trg_update_job_status_from_steps synchronized progress and status"
+    },
+    {
+      "job_code": "JAE380",
+      "resulting_job_status": "COMPLETED",
+      "resulting_overall_progress": 100.0,
+      "notes": "Trigger sync_job_overall_progress and trg_update_job_status_from_steps synchronized progress and status"
+    },
+    {
+      "job_code": "MMT021R2",
+      "resulting_job_status": "COMPLETED",
+      "resulting_overall_progress": 100.0,
+      "notes": "Trigger sync_job_overall_progress and trg_update_job_status_from_steps synchronized progress and status"
+    },
+    {
+      "job_code": "ASH021R2",
+      "resulting_job_status": "COMPLETED",
+      "resulting_overall_progress": 100.0,
+      "notes": "Trigger sync_job_overall_progress and trg_update_job_status_from_steps synchronized progress and status"
+    },
+    {
+      "job_code": "JAE381",
+      "resulting_job_status": "COMPLETED",
+      "resulting_overall_progress": 66.7,
+      "notes": "Trigger sync_job_overall_progress and trg_update_job_status_from_steps synchronized progress and status"
+    }
+  ],
+  "rollback_verified": true,
+  "production_jobs_after": 1205,
+  "production_job_steps_after": 2451,
+  "production_work_logs_after": 7106
+}

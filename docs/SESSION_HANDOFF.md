@@ -1103,3 +1103,41 @@ Thứ tự nạp cha-con bất biến: `work_orders / jobs -> job_steps -> work_
 - AN giữ 100% chế độ chỉ-đọc, không tự ý cập nhật staging và không insert Production.
 - Đề xuất PE cập nhật truy vấn sang `entity_type IN ('STEP', 'WORK_LOG')` hoặc `source_table IN ('tblProcessingDeadline', 'tblWorkLog')` để nghiệm thu; hoặc chờ lệnh Minh Chủ Thoan nếu muốn chuẩn hóa convention chuỗi thường.
 - Báo cáo chi tiết: `docs/reports/2026-10-07_staging_b1_entity_type_audit_report.md`.
+
+## 34. THỰC THI DRY-RUN VALIDATION PAYLOAD INSERT B1 VÀ ĐỐI SOÁT BASELINE (2026-10-07 10:40 JST)
+
+### 34.1. Căn cứ & Quyết định Phê duyệt
+- **Quyết định phê duyệt:** Minh Chủ Thoan [Stamp: 2026-10-07 10:37 JST] cho phép chuẩn bị payload INSERT chính thức và chạy dry-run validation cho đúng 6 Step và 5 Work Log. Chưa được INSERT vào bảng chính.
+- **Thẩm định kỹ thuật:** PE [Stamp: 2026-10-07 10:37 JST] nghiệm thu Staging B1 (6 STEP / 5 WORK_LOG / 11 staging rows), yêu cầu chạy dry-run fail-closed có rollback transaction và kiểm tra toàn diện 14 chỉ số.
+- **Cập nhật bài học kinh nghiệm:** Đã ghi nhận L003 vào `docs/SO_BAI_HOC.md` về lỗi không đối chiếu enum thực tế trước khi viết truy vấn kiểm toán.
+
+### 34.2. Kết quả Kiểm tra 14 Chỉ số Kiểm toán (Đạt 100%)
+- `dry_run_step_rows`: **6**
+- `dry_run_work_log_rows`: **5**
+- `duplicate_target_legacy_ids`: **0** (0 trùng lặp trên bảng đích)
+- `existing_target_rows`: **0** (0 trùng cặp `job_id, step_no`)
+- `missing_parent_jobs`: **0** (100% Job cha tồn tại và khớp mã)
+- `missing_employees`: **0** (100% nhân viên tồn tại và active)
+- `missing_processing_codes`: **0** (100% mã công đoạn 10, 11, 12, 14 active)
+- `invalid_step_values`: **0**
+- `invalid_work_log_values`: **0**
+- `fk_conflicts`: **0**
+- `unique_conflicts`: **0**
+- `not_null_conflicts`: **0**
+- `rollback_verified`: **true** (giao dịch `BEGIN ... ROLLBACK` thực thi sạch sẽ)
+- Baseline Production sau dry-run:
+  * `production_jobs_after`: **1,205** (Bảo toàn 100%)
+  * `production_job_steps_after`: **2,451** (Bảo toàn 100%)
+  * `production_work_logs_after`: **7,106** (Bảo toàn 100%)
+
+### 34.3. Phân tích Tác động Kích hoạt Trigger (Side Effects)
+- `sync_job_overall_progress`: Tự động tính tỷ lệ hoàn thành % cho 6 Job cha:
+  * ASH021R2: 100%, JAE380: 100%, MMT021R2: 100%, KSP227: 66.7%, JAE381: 66.7%, ZA水冷ベース: 50.0%.
+- `trg_update_job_status_from_steps`: Cập nhật trạng thái Job dựa trên hoàn thành bước.
+- `trg_update_step_status_from_worklogs`: Đánh giá cờ `is_finished = false` từ work log để giữ `processing_status_id = 9` (N.進行中) cho `LEGACY-STEP-4226` và `LEGACY-STEP-4275`.
+
+### 34.4. Hồ sơ Bằng chứng
+- Tệp kết quả JSON: `scripts/dry_run_b1_validation_result.json`
+- Script thực thi dry-run: `scripts/dry_run_b1_validation.py`
+- Payload SQL chính thức: `scripts/official_insert_payload_b1.sql`
+- Báo cáo chi tiết Markdown: `docs/reports/2026-10-07_b1_insert_dry_run_validation_report.md`
