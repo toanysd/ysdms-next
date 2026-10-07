@@ -16,6 +16,9 @@
 ## MỤC LỤC
 
 1. [NGUYÊN TẮC THUẬT NGỮ & RÀNH BUỘC PHÁP LÝ (TERMINOLOGY PRINCIPLES)](#1-nguyên-tắc-thuật-ngữ--rành-buộc-pháp-lý-terminology-principles)
+   - [1.1. Bản chất Pháp lý Cốt lõi](#11-bản-chất-pháp-lý-cốt-lõi)
+   - [1.2. Ma trận Đối chiếu Thuật ngữ (JP - VI - EN)](#12-ma-trận-đối-chiếu-thuật-ngữ-jp---vi---en)
+   - [1.3. BẢNG TRA CỨU NHANH 10 GIÂY (QUICK REFERENCE MATRIX)](#13-bảng-tra-cứu-nhanh-10-giây-quick-reference-matrix)
 2. [5 ĐỀ MỤC CHUYÊN SÂU TOÀN DIỆN (CROSS-CUSTOMER TOPIC DEEP-DIVES)](#2-5-đề-mục-chuyên-sâu-toàn-diện-cross-customer-topic-deep-dives)
    - [Chủ đề 1: Bộ Chứng từ Tiếp nhận & Bàn giao Lưu giữ Khuôn](#chủ-đề-1-bộ-chứng-từ-tiếp-nhận--bàn-giao-lưu-giữ-khuôn-金型借用書--預り証--返却書)
    - [Chủ đề 2: Chiến dịch Kiểm kê Tài sản Cố định Hàng năm](#chủ-đề-2-chiến-dịch-kiểm-kê-tài-sản-cố-định-hàng-năm-貸与設備棚卸調査--有高確認)
@@ -62,6 +65,25 @@
 | `CUSTODY_CONTRACT` | **金型保管に関する寄託契約書** | Hợp đồng ký thác bảo quản khuôn | Bailment / Mold Custody Contract | Hợp đồng pháp lý giữa khách hàng và YSD quy định quyền, trách nhiệm bảo quản và biểu phí lưu kho. |
 | `OUTSOURCE_PROCESSING` | **外注加工出し (テフロン・メッキ)** | Xuất khuôn đi gia công xử lý bề mặt | Outsourced Surface Treatment | Chuyển khuôn tạm thời sang đối tác xử lý Teflon, xi mạ crôm hoặc mài bóng. Không đổi chủ sở hữu. |
 | `INTERNAL_TRANSFER` | **社内移管 / 設備移動** | Điều chuyển thiết bị nội bộ YSD | Internal Facility Transfer | Chuyển vị trí lưu trữ giữa Kawasaki (Trụ sở chính), Yashio, Saitama. Không liên quan khách hàng. |
+
+### 1.3. BẢNG TRA CỨU NHANH 10 GIÂY (QUICK REFERENCE MATRIX)
+> **Dành cho Ban Điều Hành (THOAN & PE):** Tra cứu ngay lập tức yêu cầu kế toán & hành động bắt buộc theo từng khách hàng mà không cần đọc hết văn bản.
+
+| Khách hàng / Đối tác | Chủ đề cốt lõi | Dòng Email / Nguồn chứng cứ | Biểu mẫu nghiệp vụ | Hành động bắt buộc (Kế toán & Vận hành YSD) |
+|---|---|---|---|---|
+| **1. Shin-Ei Hitec** | Tiếp nhận lưu giữ mới | Row 30 (`toanysdmail.xlsx`) | `金型借用書フォーマット` | In biển Placard $(L \times W \times H, \text{wt})$, chụp cạnh khuôn; đóng đủ 2 dấu (丸印 + 角印); gửi bưu điện bản gốc. |
+| **2. JAE / NLC** | Kiểm kê & Quản trị rủi ro pháp lý | Row 15, 16 (`toanysdmail.xlsx`) | `貸与設備棚卸調査表 (Excel)` | Điền cột G/H/I/J/K trên Excel; rà soát mốc $\ge 3$ năm không chạy; áp dụng chế tài Đạo luật Nhà thầu phụ (下請法). |
+| **3. Transtron / MRDI / Ohte** | Quy chuẩn ảnh biên nhận | Row 52, 55 (`toanysdmail.xlsx`) | `金型預かり証` | Chụp ảnh bắt buộc áp sát thước dây (メジャー) đo lòng khuôn & mép ngoài; kèm bảng tên định danh. |
+| **4. Fujikura** | Thu phí bảo quản khuôn | `source_data/型保管料(20250704)` | `貸与資産明細書兼確認書, 納品書, 請求書` | Lập bảng tính phí (307.5 Yên/khuôn/tháng); cộng 3% lãi suất chậm trả niên độ cũ; gửi bưu điện bản in gốc. |
+| **5. Panasonic Shirakawa** | Hoàn trả & Đóng gói pallet | Row 100 (`toanysdmail.xlsx`) | `金型返却票・金型棚卸` | Quét nhãn QR định danh cá thể (không có cấm trả); đóng pallet chuẩn $1,100 \times 1,100$ và đo chiều cao tổng xe cẩu. |
+| **6. Oita Canon / Asahi** | Mượn khuôn & Ký điện tử | Row 5, 13869 (`toanysdmail.xlsx`) | `借用証/現品受渡確認票` | Tách biệt Tài sản Cố định vs Chi phí; quy trình ký đóng dấu điện tử (電子社判) trên bản PDF gửi qua email. |
+| **7. Rhythm / YAC Garter** | Kiểm kê qua trung gian | Row 50 (`toanysdmail.xlsx`) | `資産棚卸証` | Ký xác nhận hiện trạng khuôn định kỳ tháng 12 theo mẫu của đơn vị ủy thác YAC Garter. |
+| **8. A&T** | Xác nhận hiện trạng hàng năm | Row 9, 10, 11 (`toanysdmail.xlsx`) | `金型等有無確認表` | Kiểm đếm và xác nhận nhanh khuôn cùng gá cắt vào tháng 11 hàng năm. |
+| **9. Omura Giken / SMK** | Hoàn trả tiêu hủy tài sản | Row 70, 82 (`toanysdmail.xlsx`) | `設備返却依頼・廃棄受渡` | Thu hồi trọn bộ: phụ tùng linh kiện, bản vẽ kỹ thuật và biên nhận gốc gửi về xưởng Iwate; cước nhận trả (着払い). |
+| **10. Minebea** | Xuất gia công bề mặt | Row 697 (`toanysdmail.xlsx`) | `外注加工依頼書` | Phủ Teflon chống dính bề mặt, dập thử mẫu nghiệm thu (24–60 tấm) trước khi chuyển sang dập hàng loạt. |
+| **11. Terada Deimu** | Khách kiểm toán tận xưởng | Row 3096 (`toanysdmail.xlsx`) | `現地棚卸訪問日程案内` | Xác định chính xác vị trí giá kệ tại Trụ sở chính Kawasaki để đón đoàn kiểm toán hiện trường của đối tác. |
+
+---
 
 ---
 
