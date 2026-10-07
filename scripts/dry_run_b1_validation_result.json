@@ -1,6 +1,8 @@
 {
   "dry_run_step_rows": 6,
   "dry_run_work_log_rows": 5,
+  "inserted_steps_verified": 6,
+  "inserted_work_logs_verified": 5,
   "duplicate_target_legacy_ids": 0,
   "existing_target_rows": 0,
   "missing_parent_jobs": 0,
@@ -13,52 +15,72 @@
   "not_null_conflicts": 0,
   "trigger_side_effects": [
     {
-      "step_legacy_id": "LEGACY-STEP-4226",
+      "entity": "job_step",
+      "legacy_id": "LEGACY-STEP-4226",
       "resulting_processing_status_id": 9,
       "step_status": "PENDING",
-      "notes": "Trigger trg_update_step_status_from_worklogs evaluated is_finished=false, maintained processing_status_id=9 (N.進行中)"
+      "behavior": "Maintained processing_status_id=9 (N.進行中) because work logs have is_finished=false"
     },
     {
-      "step_legacy_id": "LEGACY-STEP-4275",
+      "entity": "job_step",
+      "legacy_id": "LEGACY-STEP-4275",
       "resulting_processing_status_id": 9,
       "step_status": "PENDING",
-      "notes": "Trigger trg_update_step_status_from_worklogs evaluated is_finished=false, maintained processing_status_id=9 (N.進行中)"
+      "behavior": "Maintained processing_status_id=9 (N.進行中) because work logs have is_finished=false"
     },
     {
-      "job_code": "KSP227",
-      "resulting_job_status": "COMPLETED",
-      "resulting_overall_progress": 66.7,
-      "notes": "Trigger sync_job_overall_progress and trg_update_job_status_from_steps synchronized progress and status"
-    },
-    {
-      "job_code": "ZA水冷ベース",
-      "resulting_job_status": "COMPLETED",
-      "resulting_overall_progress": 50.0,
-      "notes": "Trigger sync_job_overall_progress and trg_update_job_status_from_steps synchronized progress and status"
-    },
-    {
-      "job_code": "JAE380",
-      "resulting_job_status": "COMPLETED",
-      "resulting_overall_progress": 100.0,
-      "notes": "Trigger sync_job_overall_progress and trg_update_job_status_from_steps synchronized progress and status"
-    },
-    {
-      "job_code": "MMT021R2",
-      "resulting_job_status": "COMPLETED",
-      "resulting_overall_progress": 100.0,
-      "notes": "Trigger sync_job_overall_progress and trg_update_job_status_from_steps synchronized progress and status"
-    },
-    {
+      "entity": "job",
       "job_code": "ASH021R2",
-      "resulting_job_status": "COMPLETED",
-      "resulting_overall_progress": 100.0,
-      "notes": "Trigger sync_job_overall_progress and trg_update_job_status_from_steps synchronized progress and status"
+      "job_status_before": "COMPLETED",
+      "job_status_after": "COMPLETED",
+      "progress_before": 100.0,
+      "progress_after": 100.0,
+      "behavior": "job_status remained COMPLETED (historical pre-existing state). overall_progress updated from 100.0% to 100.0% via sync_job_overall_progress()"
     },
     {
+      "entity": "job",
+      "job_code": "JAE380",
+      "job_status_before": "COMPLETED",
+      "job_status_after": "COMPLETED",
+      "progress_before": 100.0,
+      "progress_after": 100.0,
+      "behavior": "job_status remained COMPLETED (historical pre-existing state). overall_progress updated from 100.0% to 100.0% via sync_job_overall_progress()"
+    },
+    {
+      "entity": "job",
       "job_code": "JAE381",
-      "resulting_job_status": "COMPLETED",
-      "resulting_overall_progress": 66.7,
-      "notes": "Trigger sync_job_overall_progress and trg_update_job_status_from_steps synchronized progress and status"
+      "job_status_before": "COMPLETED",
+      "job_status_after": "COMPLETED",
+      "progress_before": 100.0,
+      "progress_after": 66.7,
+      "behavior": "job_status remained COMPLETED (historical pre-existing state). overall_progress updated from 100.0% to 66.7% via sync_job_overall_progress()"
+    },
+    {
+      "entity": "job",
+      "job_code": "KSP227",
+      "job_status_before": "COMPLETED",
+      "job_status_after": "COMPLETED",
+      "progress_before": 50.0,
+      "progress_after": 66.7,
+      "behavior": "job_status remained COMPLETED (historical pre-existing state). overall_progress updated from 50.0% to 66.7% via sync_job_overall_progress()"
+    },
+    {
+      "entity": "job",
+      "job_code": "MMT021R2",
+      "job_status_before": "COMPLETED",
+      "job_status_after": "COMPLETED",
+      "progress_before": 100.0,
+      "progress_after": 100.0,
+      "behavior": "job_status remained COMPLETED (historical pre-existing state). overall_progress updated from 100.0% to 100.0% via sync_job_overall_progress()"
+    },
+    {
+      "entity": "job",
+      "job_code": "ZA水冷ベース",
+      "job_status_before": "COMPLETED",
+      "job_status_after": "COMPLETED",
+      "progress_before": 100.0,
+      "progress_after": 50.0,
+      "behavior": "job_status remained COMPLETED (historical pre-existing state). overall_progress updated from 100.0% to 50.0% via sync_job_overall_progress()"
     }
   ],
   "rollback_verified": true,

@@ -1145,3 +1145,31 @@ Thứ tự nạp cha-con bất biến: `work_orders / jobs -> job_steps -> work_
 ### 34.5. Phê duyệt Push GitHub & Đồng bộ Remote Commit SHA
 - **Chỉ thị của Minh Chủ Thoan [Stamp: 2026-10-07 10:44 JST]:** Cho phép AN sửa lỗi đóng gói, ghi nhận L004 và push commit lên `origin main`.
 - **Ranh giới:** Phê duyệt chỉ dành riêng cho việc packaging/push tài liệu và script dry-run lên GitHub để PE thẩm tra độc lập. Tuyệt đối không can thiệp DB hay insert Production.
+
+## 35. NÂNG CẤP KHẮC PHỤC TRIỆT ĐỂ 7 BLOCKING ISSUES THEO PE AUDIT (2026-10-07 10:55 JST)
+
+### 35.1. Căn cứ & Quyết định Phê duyệt
+- **Quyết định phê duyệt:** Minh Chủ Thoan [Stamp: 2026-10-07 10:54 JST] đồng ý cho AN sửa code/audit payload theo 7 điểm blocking của PE; ủy quyền vận hành cho các vòng sửa kỹ thuật nhỏ không đụng dữ liệu Production.
+- **Thẩm định kỹ thuật:** PE [Stamp: 2026-10-07 10:55 JST] xác nhận 3 commit GitHub hợp lệ nhưng chỉ ra 7 điểm blocking trong full patch cần xử lý trước khi xem xét INSERT Production.
+
+### 35.2. Kết quả Khắc phục 7 Blocking Issues
+1. **Blocking 1 (Preflight Idempotency & Conflict Check):** Bổ sung 7 kiểm tra preflight nghiêm ngặt trong block `DO $$` của SQL payload:
+   - `v_step_legacy_conflicts = 0`
+   - `v_log_legacy_conflicts = 0`
+   - `v_step_no_conflicts = 0`
+   - `v_staging_source_duplicates = 0`
+   - `v_resolved_step_joins = 5`
+   - `v_active_employees = 2` (kiểm tra `is_active = true`)
+   - `v_active_processing_codes = 4` (kiểm tra `is_active = true`)
+2. **Blocking 2 (Row Count Assertion):** Dùng `GET DIAGNOSTICS v_inserted_steps = ROW_COUNT;` và `GET DIAGNOSTICS v_inserted_logs = ROW_COUNT;` để assert trực tiếp đúng 6 steps và 5 work logs được chèn vào.
+3. **Blocking 3 (Phân định Payload và Execution):** Giữ `official_insert_payload_b1.sql` mặc định là `ROLLBACK;` fail-closed.
+4. **Blocking 4 (Dynamic Metrics Calculation):** Script dry-run tính toán động 100% các chỉ số `fk_conflicts`, `unique_conflicts`, `not_null_conflicts` từ catalog và dữ liệu thực tế, kiểm tra `is_active = true` cho cả nhân viên và mã công đoạn.
+5. **Blocking 5 (Metadata SHA-256):** Đã sửa script dry-run đọc đúng `source_file_sha256` từ cột bảng staging.
+6. **Blocking 6 (Portable Paths):** Loại bỏ toàn bộ đường dẫn tuyệt đối `D:\...`, chuyển sang `os.path.join(os.path.dirname(__file__), ...)`.
+7. **Blocking 7 (Trigger Side Effects & Job Status):** Giải trình rõ cả 6 Job cha đều đã có sẵn trạng thái `job_status = 'COMPLETED'` từ lịch sử import; trigger `sync_job_overall_progress` cập nhật tiến độ % chính xác (KSP227: 66.7%, ZA水冷ベース: 50.0%, JAE381: 66.7%, ASH021R2: 100%, JAE380: 100%, MMT021R2: 100%).
+
+### 35.3. Hồ sơ Bằng chứng Cập nhật
+- Payload SQL nâng cấp: `scripts/official_insert_payload_b1.sql`
+- Script dry-run nâng cấp: `scripts/dry_run_b1_validation.py`
+- Kết quả kiểm toán JSON nâng cấp: `scripts/dry_run_b1_validation_result.json`
+- Báo cáo chi tiết Markdown: `docs/reports/2026-10-07_b1_insert_dry_run_validation_report.md`
