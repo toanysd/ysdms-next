@@ -302,10 +302,10 @@ export default function LoanAuditExportModal({
                       {r.equipment_name || '—'}
                     </td>
                     <td className="py-2 px-3 font-mono" style={{ color: 'var(--text-muted)' }}>
-                      {r.customer_asset_no}
+                      {r.customer_asset_no || '—'}
                     </td>
                     <td className="py-2 px-3 font-mono" style={{ color: 'var(--text-muted)' }}>
-                      {r.current_rack_location}
+                      {r.current_rack_location || '—'}
                     </td>
                     <td className="py-2 px-3 text-center">
                       <span
@@ -324,7 +324,7 @@ export default function LoanAuditExportModal({
                       {r.loan_date || '—'}
                     </td>
                     <td className="py-2 px-3" style={{ color: 'var(--text-primary)' }}>
-                      {r.condition_summary || '良好'}
+                      {r.condition_summary || '—'}
                     </td>
                   </tr>
                 ))}

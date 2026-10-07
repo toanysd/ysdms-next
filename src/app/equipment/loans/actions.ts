@@ -728,10 +728,10 @@ export async function getAnnualAuditData(
     const comp = prod?.companies;
     const activeLoan = activeLoansMap.get(eq.equipment_id);
 
-    // Determine rack location string from actual rack_layers
+    // Determine rack location string from actual rack_layers (RULE-DATA-01/02: no fake fallback)
     const rackCode = eq.rack_layers?.racks?.rack_code;
     const layerCode = eq.rack_layers?.layer_code;
-    let locationStr = 'Kawasaki 本社金型置場 A-1';
+    let locationStr: string | null = null;
     if (rackCode && layerCode) {
       locationStr = `${rackCode}-${layerCode}`;
     } else if (layerCode) {
@@ -740,10 +740,10 @@ export async function getAnnualAuditData(
 
     let custody_status: AnnualAuditRecord['custody_status'] = 'CUSTODY_ACTIVE';
     let custody_status_label = '預託中 (Custody)';
-    let loanDate: string | null = `${year}-01-01`;
+    let loanDate: string | null = null;
 
     if (activeLoan) {
-      loanDate = activeLoan.loan_date;
+      loanDate = activeLoan.loan_date || null;
       if (activeLoan.loan_type === 'OUTSOURCE_PROCESSING') {
         custody_status = 'LOAN_OUT';
         custody_status_label = '外注加工中 (Outsourced)';
@@ -765,8 +765,8 @@ export async function getAnnualAuditData(
       custody_status,
       custody_status_label,
       loan_date: loanDate,
-      last_audit_date: `${year}-10-01`,
-      condition_summary: activeLoan?.condition_notes || eq.notes || '良好 (現品実査済)',
+      last_audit_date: null,
+      condition_summary: activeLoan?.condition_notes || eq.notes || null,
       photo_overall_url: activeLoan?.photo_overall_url || null,
       photo_nameplate_url: activeLoan?.photo_nameplate_url || null,
     };
