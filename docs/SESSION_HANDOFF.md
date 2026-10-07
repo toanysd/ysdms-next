@@ -1073,9 +1073,33 @@ Thứ tự nạp cha-con bất biến: `work_orders / jobs -> job_steps -> work_
 - Tệp xuất bản JSON kết quả kiểm toán postflight: `scripts/staging_b1_postflight_audit.json`
 - Báo cáo chi tiết Markdown: `docs/reports/2026-10-06_staging_b1_execution_report.md`
 
+## 33. BÁO CÁO THẨM TRA ĐỘC LẬP & LÀM RÕ POSTFLIGHT STAGING B1 VỀ ENTITY_TYPE (2026-10-07 10:15 JST)
 
+### 33.1. Bối cảnh Thẩm định từ PE
+- PE kiểm tra độc lập lúc 19:30 JST (2026-10-06), ghi nhận:
+  * `staging_table_exists`: `true`
+  * `staging_rows`: `11`
+  * `duplicate_source_keys`: `0`, `duplicate_legacy_ids`: `0`, `invalid_rows`: `0`
+  * Baseline Production bất biến: `jobs = 1205`, `job_steps = 2451`, `work_logs = 7106`
+  * Tuy nhiên: `staging_step_rows = 0` và `staging_work_log_rows = 0` do PE truy vấn điều kiện chuỗi thường `entity_type = 'job_step'` và `entity_type = 'work_log'`.
 
+### 33.2. Nguyên nhân Gốc & Minh chứng Chỉ-đọc Trực tiếp trên Production
+- **Nguyên nhân gốc:** Staging B1 lưu `entity_type` theo quy ước ENUM in hoa:
+  * 6 dòng Step: `entity_type = 'STEP'` (nguồn `tblProcessingDeadline`)
+  * 5 dòng Log: `entity_type = 'WORK_LOG'` (nguồn `tblWorkLog`)
+- **Kết quả truy vấn theo yêu cầu của PE:**
+  ```sql
+  SELECT entity_type, source_table, count(*) AS row_count 
+  FROM public.staging_access_delta_b1 
+  GROUP BY entity_type, source_table 
+  ORDER BY entity_type, source_table;
+  ```
+  * `{'entity_type': 'STEP', 'source_table': 'tblProcessingDeadline', 'row_count': 6}`
+  * `{'entity_type': 'WORK_LOG', 'source_table': 'tblWorkLog', 'row_count': 5}`
+- **Danh sách `DISTINCT entity_type`:** `STEP`, `WORK_LOG`.
+- **Ràng buộc bảng Staging:** `PRIMARY KEY (staging_id)`, `UNIQUE (legacy_id)`, `UNIQUE (source_table, source_primary_key)`.
 
-
-
-
+### 33.3. Đề xuất & Kỷ luật
+- AN giữ 100% chế độ chỉ-đọc, không tự ý cập nhật staging và không insert Production.
+- Đề xuất PE cập nhật truy vấn sang `entity_type IN ('STEP', 'WORK_LOG')` hoặc `source_table IN ('tblProcessingDeadline', 'tblWorkLog')` để nghiệm thu; hoặc chờ lệnh Minh Chủ Thoan nếu muốn chuẩn hóa convention chuỗi thường.
+- Báo cáo chi tiết: `docs/reports/2026-10-07_staging_b1_entity_type_audit_report.md`.
