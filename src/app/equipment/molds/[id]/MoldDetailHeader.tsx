@@ -9,7 +9,19 @@ import { useTranslations } from 'next-intl'
 import type { MoldDetailData } from './page'
 import QRCodeModal from '@/components/equipment/QRCodeModal'
 
-export function MoldDetailHeader({ mold, isEditing, setIsEditing, onOpenReviseModal }: { mold: MoldDetailData; isEditing: boolean; setIsEditing: (v: boolean) => void; onOpenReviseModal?: () => void }) {
+export function MoldDetailHeader({
+  mold,
+  isEditing,
+  setIsEditing,
+  onOpenReviseModal,
+  onOpenLocationModal,
+}: {
+  mold: MoldDetailData
+  isEditing: boolean
+  setIsEditing: (v: boolean) => void
+  onOpenReviseModal?: () => void
+  onOpenLocationModal?: () => void
+}) {
   const t = useTranslations()
   const [qrModalOpen, setQrModalOpen] = useState(false)
 
@@ -67,16 +79,42 @@ export function MoldDetailHeader({ mold, isEditing, setIsEditing, onOpenReviseMo
         <span className={deviceStatusInfo.badgeClass}>{deviceStatusInfo.label}</span>
         <span className={usageStatusInfo.badgeClass}>{usageStatusInfo.label}</span>
 
-        {/* Rack location badge */}
-        {rack && (
-          <span className="badge badge--info font-mono font-bold text-[12px]">
+        {/* Rack location badge with click-to-edit */}
+        {rack ? (
+          <button
+            type="button"
+            onClick={onOpenLocationModal}
+            className="badge badge--info font-mono font-bold text-[12px] cursor-pointer hover:opacity-80 transition-opacity inline-flex items-center gap-1 border-0"
+            title="保管場所変更 (Bấm để cập nhật vị trí)"
+          >
             <MapPin size={12} />
-            {rack.racks?.rack_code || '?'}-{rack.layer_code}
-          </span>
+            <span>{rack.racks?.rack_code || '?'}-{rack.layer_code}</span>
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={onOpenLocationModal}
+            className="badge badge--neutral font-bold text-[11px] cursor-pointer hover:opacity-80 transition-opacity inline-flex items-center gap-1 text-slate-500 bg-slate-100 border border-slate-200"
+            title="保管場所設定 (Chưa có vị trí - Bấm để gán)"
+          >
+            <MapPin size={12} />
+            <span>未配置 (棚設定)</span>
+          </button>
         )}
 
         {!isEditing && (
-          <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
+          <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'center' }}>
+            {onOpenLocationModal && (
+              <button
+                type="button"
+                className="btn btn-secondary text-xs font-bold flex items-center gap-1.5"
+                onClick={onOpenLocationModal}
+                title="保管場所変更 (Cập nhật vị trí lưu kho)"
+              >
+                <MapPin size={14} className="text-teal-600" />
+                <span>保管場所変更</span>
+              </button>
+            )}
             <button
               type="button"
               className="btn btn-secondary text-xs font-bold flex items-center gap-1.5"

@@ -7,7 +7,7 @@ import {
   Plus, Pencil, Trash2, X, Save, Filter, Search,
   ChevronDown, Loader2, Image as ImageIcon, Box, FileText,
   ArrowLeft, ArrowUpFromLine, CheckCircle2, PenTool, Hammer, Wrench,
-  ArrowUp, ArrowDown, ArrowUpDown
+  ArrowUp, ArrowDown, ArrowUpDown, MapPin
 } from 'lucide-react'
 import { Pagination } from '@/components/ui/Pagination'
 import { SearchSuggestions } from '@/components/ui/SearchSuggestions'
@@ -15,6 +15,7 @@ import { useSearchHistory } from '@/hooks/useSearchHistory'
 import Link from 'next/link'
 import { CreateJobModal } from '@/components/equipment/CreateJobModal'
 import { MoldModal, PhysicalMoldFormData } from '@/components/equipment/MoldModal'
+import LocationMoveModal from '@/app/equipment/locations/_components/LocationMoveModal'
 import { useTranslations } from 'next-intl'
 
 type MoldStatus = 'ACTIVE' | 'MAINTENANCE' | 'DISPOSED' | string
@@ -47,8 +48,10 @@ type PhysicalMold = {
     } | null
   } | null
   rack_layers: {
+    id?: string
     layer_code: string
-    racks: { rack_code: string } | null
+    layer_number?: number
+    racks: { id?: string; rack_code: string; rack_name?: string | null; location_in_factory?: string | null } | null
   } | null
 }
 
@@ -83,6 +86,8 @@ function MoldsPageContent() {
     urlSearchParams.get('search') || ''
   )
   const [filterStatus, setFilterStatus] = useState<MoldStatus | ''>('')
+  const [filterLocation, setFilterLocation] = useState<string>('')
+  const [locationModalMold, setLocationModalMold] = useState<PhysicalMold | null>(null)
   
   const [modalOpen, setModalOpen] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -130,7 +135,7 @@ function MoldsPageContent() {
 
   useEffect(() => {
     setPage(1)
-  }, [filterStatus])
+  }, [filterStatus, filterLocation])
 
   // Forms
   const [modalInitialData, setModalInitialData] = useState<Partial<PhysicalMoldFormData>>({})
@@ -144,6 +149,21 @@ function MoldsPageContent() {
     const masterFilter = urlSearchParams.get('master') || ''
     const revisionFilter = urlSearchParams.get('revision') || ''
     
+    const isZoneFilter = filterLocation.startsWith('ZONE_')
+    const rackJoin = isZoneFilter 
+      ? `rack_layers!current_rack_layer_id!inner(
+          id,
+          layer_code,
+          layer_number,
+          racks!inner(id, rack_code, rack_name, rack_code_new, zone_code, location_in_factory)
+        )`
+      : `rack_layers!current_rack_layer_id(
+          id,
+          layer_code,
+          layer_number,
+          racks(id, rack_code, rack_name, rack_code_new, zone_code, location_in_factory)
+        )`
+
     let query = supabase
       .from('equipment')
       .select(`
@@ -158,16 +178,22 @@ function MoldsPageContent() {
             companies:companies!products_company_id_fkey(company_name, company_code)
           )
         ),
-        rack_layers!current_rack_layer_id(
-          layer_code,
-          racks(rack_code)
-        )
+        ${rackJoin}
       `, { count: 'exact' })
       .in('equipment_type', ['MOLD', 'WATER_BASE', 'PRESSURE_BASE'])
       .order(sortCol === 'system_code' ? 'equipment_code' : sortCol, { ascending: sortDir === 'asc' })
 
     if (filterStatus) query = query.eq('device_status', filterStatus)
     
+    if (filterLocation === 'ASSIGNED') {
+      query = query.not('current_rack_layer_id', 'is', null)
+    } else if (filterLocation === 'UNASSIGNED') {
+      query = query.is('current_rack_layer_id', null)
+    } else if (isZoneFilter) {
+      const zone = filterLocation.replace('ZONE_', '')
+      query = query.eq('rack_layers.racks.zone_code', zone)
+    }
+
     if (revisionFilter) {
       query = query.ilike('equipment_code', `${revisionFilter}%`)
     } else if (masterFilter) {
@@ -214,7 +240,7 @@ function MoldsPageContent() {
       setTotalRecords(count || 0)
     }
     setLoading(false)
-  }, [filterStatus, debouncedSearch, page, sortCol, sortDir])
+  }, [filterStatus, filterLocation, debouncedSearch, page, sortCol, sortDir])
 
   useEffect(() => {
     fetchMolds()
@@ -395,6 +421,24 @@ function MoldsPageContent() {
               {Object.keys(STATUS_LABELS).map((k) => <option key={k} value={k}>{getMoldStatusLabel(STATUS_LABELS[k].key)}</option>)}
             </select>
           </div>
+          <div className="relative">
+            <select 
+              value={filterLocation} 
+              onChange={(e) => setFilterLocation(e.target.value)} 
+              className="h-[28px] pl-2 pr-6 text-[11px] rounded border border-slate-300 appearance-none bg-white font-medium text-slate-700"
+            >
+              <option value="">全保管位置 (Tất cả vị trí)</option>
+              <option value="ASSIGNED">配置済 (Đã gán kệ)</option>
+              <option value="UNASSIGNED">未配置 (Chưa gán kệ)</option>
+              <optgroup label="エリア別 (Theo khu vực)">
+                <option value="ZONE_MR">MR エリア (Xưởng chính)</option>
+                <option value="ZONE_SP">SP エリア (Dự phòng)</option>
+                <option value="ZONE_2F">2F エリア (Tầng 2)</option>
+                <option value="ZONE_CS">CS エリア</option>
+                <option value="ZONE_MD">MD エリア</option>
+              </optgroup>
+            </select>
+          </div>
         </div>
       </div>
 
@@ -478,7 +522,21 @@ function MoldsPageContent() {
                     <td className="p-2 text-[11px] font-mono font-semibold">
                       {formatSize(m.actual_length_mm, m.actual_width_mm, m.actual_height_mm)}
                     </td>
-                    <td className="p-2 text-[11px] font-mono font-semibold">{formatRackLocation(m)}</td>
+                    <td className="p-2 text-[11px]">
+                      <div className="flex items-center justify-between gap-1 group">
+                        <span className={`font-mono font-semibold ${m.rack_layers?.layer_code ? 'text-slate-800' : 'text-slate-400'}`}>
+                          {formatRackLocation(m)}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setLocationModalMold(m)}
+                          className="p-1 rounded text-slate-400 hover:text-[var(--accent)] hover:bg-slate-100 opacity-60 group-hover:opacity-100 transition-opacity cursor-pointer"
+                          title="保管場所変更 (Đổi vị trí kệ)"
+                        >
+                          <MapPin size={12} />
+                        </button>
+                      </div>
+                    </td>
                     <td className="p-2">
                       <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full border bg-slate-100">{STORAGE_LABELS[m.usage_status] ? getMoldStatusLabel(STORAGE_LABELS[m.usage_status].key) : m.usage_status}</span>
                     </td>
@@ -561,6 +619,26 @@ function MoldsPageContent() {
           onSuccess={(jobId) => {
             setJobModalParams(null)
             router.push(`/equipment/jobs/${jobId}`)
+          }}
+        />
+      )}
+
+      {locationModalMold && (
+        <LocationMoveModal
+          isOpen={!!locationModalMold}
+          onClose={() => setLocationModalMold(null)}
+          onSuccess={() => {
+            setLocationModalMold(null)
+            fetchMolds()
+          }}
+          equipment={{
+            equipment_id: locationModalMold.physical_mold_id,
+            equipment_code: locationModalMold.system_code,
+            display_name: locationModalMold.display_name,
+            current_rack_layer_id: locationModalMold.current_rack_layer_id,
+            current_layer_code: locationModalMold.rack_layers?.layer_code,
+            current_rack_code: locationModalMold.rack_layers?.racks?.rack_code,
+            current_location_in_factory: locationModalMold.rack_layers?.racks?.location_in_factory,
           }}
         />
       )}

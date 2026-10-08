@@ -14,6 +14,7 @@ import { LocationTab } from './tabs/LocationTab'
 import { TransferTab } from './tabs/TransferTab'
 import { JobsTab } from './tabs/JobsTab'
 import { ReviseMoldModal } from './ReviseMoldModal'
+import LocationMoveModal from '@/app/equipment/locations/_components/LocationMoveModal'
 
 // ─── Shared Type (exported for child components) ──────────────────────────
 
@@ -96,15 +97,16 @@ export type MoldDetailData = {
 // ─── Tab Content Router ───────────────────────────────────────────────────
 
 function TabContent({ 
-  tab, mold, isEditing, formData, setFormData 
+  tab, mold, isEditing, formData, setFormData, onOpenLocationModal 
 }: { 
   tab: TabId; mold: MoldDetailData;
   isEditing: boolean;
   formData: Partial<MoldDetailData>;
   setFormData: React.Dispatch<React.SetStateAction<Partial<MoldDetailData>>>;
+  onOpenLocationModal?: () => void;
 }) {
   switch (tab) {
-    case 'overview':  return <OverviewTab mold={mold} isEditing={isEditing} formData={formData} setFormData={setFormData} />
+    case 'overview':  return <OverviewTab mold={mold} isEditing={isEditing} formData={formData} setFormData={setFormData} onOpenLocationModal={onOpenLocationModal} />
     case 'location':  return <LocationTab mold={mold} />
     case 'transfer':  return <TransferTab mold={mold} />
     case 'jobs':      return <JobsTab mold={mold} />
@@ -145,6 +147,7 @@ export default function MoldDetailPage() {
   const [isEditing, setIsEditing] = useState(false)
   const [formData, setFormData] = useState<Partial<MoldDetailData>>({})
   const [showReviseModal, setShowReviseModal] = useState(false)
+  const [showLocationModal, setShowLocationModal] = useState(false)
 
   const fetchMold = useCallback(async () => {
     setLoading(true)
@@ -277,6 +280,7 @@ export default function MoldDetailPage() {
         isEditing={isEditing} 
         setIsEditing={setIsEditing}
         onOpenReviseModal={() => setShowReviseModal(true)}
+        onOpenLocationModal={() => setShowLocationModal(true)}
       />
 
       {/* ── Workflow Navigation — liên kết các khâu ── */}
@@ -380,6 +384,7 @@ export default function MoldDetailPage() {
           isEditing={isEditing} 
           formData={formData} 
           setFormData={setFormData} 
+          onOpenLocationModal={() => setShowLocationModal(true)}
         />
       </div>
 
@@ -390,6 +395,26 @@ export default function MoldDetailPage() {
           onSuccess={() => {
             setShowReviseModal(false)
             fetchMold()
+          }}
+        />
+      )}
+
+      {showLocationModal && mold && (
+        <LocationMoveModal
+          isOpen={showLocationModal}
+          onClose={() => setShowLocationModal(false)}
+          onSuccess={() => {
+            setShowLocationModal(false)
+            fetchMold()
+          }}
+          equipment={{
+            equipment_id: mold.equipment_id,
+            equipment_code: mold.equipment_code,
+            display_name: mold.display_name,
+            current_rack_layer_id: mold.current_rack_layer_id,
+            current_layer_code: mold.rack_layers?.layer_code,
+            current_rack_code: mold.rack_layers?.racks?.rack_code,
+            current_location_in_factory: mold.rack_layers?.racks?.location_in_factory,
           }}
         />
       )}

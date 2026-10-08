@@ -1,5 +1,5 @@
 import { useTranslations } from 'next-intl'
-import { FileText, Calendar, Ruler, Hash, Weight, Box, Layers, Activity, Zap, Hammer } from 'lucide-react'
+import { FileText, Calendar, Ruler, Hash, Weight, Box, Layers, Activity, Zap, Hammer, MapPin, RefreshCw } from 'lucide-react'
 import Link from 'next/link'
 import type { MoldDetailData } from '../page'
 
@@ -53,12 +53,13 @@ function DimCard({ labelKey, value, unit, isEditing, editNode }: { labelKey: str
 }
 
 export function OverviewTab({ 
-  mold, isEditing, formData, setFormData 
+  mold, isEditing, formData, setFormData, onOpenLocationModal 
 }: { 
   mold: MoldDetailData;
   isEditing?: boolean;
   formData?: Partial<MoldDetailData>;
   setFormData?: React.Dispatch<React.SetStateAction<Partial<MoldDetailData>>>;
+  onOpenLocationModal?: () => void;
 }) {
   const t = useTranslations('Equipment')
   const rev = mold.mold_revisions
@@ -267,8 +268,73 @@ export function OverviewTab({
       </div>
       </div>
 
-      {/* Sidebar: Photo & Jobs */}
+      {/* Sidebar: Location, Photo & Jobs */}
       <div className="lg:col-span-1 flex flex-col gap-4">
+        {/* Storage Location Card */}
+        <div className="card-flat" style={{ padding: 16 }}>
+          <div className="flex items-center justify-between mb-3 border-b border-[var(--border-default)] pb-2">
+            <h3 className="text-[12px] font-bold flex items-center gap-2" style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-jp)', margin: 0 }}>
+              <MapPin size={14} style={{ color: 'var(--accent)' }} />
+              {t('Molds.cols.rackLocation')}
+            </h3>
+            {onOpenLocationModal && (
+              <button
+                type="button"
+                onClick={onOpenLocationModal}
+                className="btn btn-secondary text-[11px] py-0.5 px-2 flex items-center gap-1 cursor-pointer"
+                title={t('changeLocation')}
+              >
+                <RefreshCw size={11} />
+                <span>{t('changeLocation')}</span>
+              </button>
+            )}
+          </div>
+          <div className="flex flex-col gap-2">
+            <div className="flex items-baseline justify-between">
+              <span className="text-[11px] text-[var(--text-secondary)]">
+                {t('storage')}:
+              </span>
+              <span className={`text-[14px] font-bold font-mono ${mold.rack_layers?.layer_code ? 'text-[var(--text-primary)]' : 'text-[var(--text-muted)]'}`}>
+                {mold.rack_layers?.layer_code || '未配置'}
+              </span>
+            </div>
+            {mold.rack_layers && (
+              <div className="pt-2 border-t border-[var(--border-subtle)] flex flex-col gap-1.5 text-[11px]">
+                {mold.rack_layers.racks?.rack_code && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-[var(--text-secondary)]">ラック:</span>
+                    <span className="font-semibold text-[var(--text-primary)]">
+                      {mold.rack_layers.racks.rack_code}
+                      {mold.rack_layers.racks.rack_name ? ` (${mold.rack_layers.racks.rack_name})` : ''}
+                    </span>
+                  </div>
+                )}
+                {mold.rack_layers.layer_number != null && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-[var(--text-secondary)]">段数:</span>
+                    <span className="font-semibold text-[var(--text-primary)]">
+                      第 {mold.rack_layers.layer_number} 段
+                    </span>
+                  </div>
+                )}
+                {mold.rack_layers.racks?.location_in_factory && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-[var(--text-secondary)]">工場エリア:</span>
+                    <span className="font-semibold text-[var(--text-primary)]">
+                      {mold.rack_layers.racks.location_in_factory}
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
+            {!mold.rack_layers?.layer_code && (
+              <div className="text-[11px] text-[var(--text-muted)] italic mt-1">
+                未配置 (Chưa gán vị trí kệ)
+              </div>
+            )}
+          </div>
+        </div>
+
         {/* Photo Card */}
         <div className="card-flat" style={{ padding: 16 }}>
           <h3 style={{
