@@ -2198,6 +2198,21 @@
         "print": "印刷",
         "edit": "編集",
         "delete": "削除"
+      },
+      "exportSurvey": "貸与設備棚卸調査表 (Excel)",
+      "exportSurveyModal": {
+        "title": "貸与設備棚卸調査表の出力 (Excel)",
+        "subtitle": "JAE / NLC 等の取引先向け 11項目固定資産調査表",
+        "scopeLabel": "出力範囲",
+        "scopeAll": "全金型 (すべて出力)",
+        "scopeCustomer": "取引先指定 (JAE / NLC等)",
+        "scopeLocation": "保管場所指定",
+        "selectCustomer": "取引先を選択してください",
+        "selectLocation": "保管エリアを選択してください",
+        "exportBtn": "Excel出力開始",
+        "close": "閉じる",
+        "exporting": "生成中...",
+        "surveySpecNotice": "※ SSOT 規則に基づき、貸出書有無(G列)・金型有無(H列)・保管場所(I列)・稼働状況(J列)・最終使用日/見通し(K列) を自動判定して出力します。"
       }
     },
     "status": {

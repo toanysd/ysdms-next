@@ -7,7 +7,7 @@ import {
   Plus, Pencil, Trash2, X, Save, Filter, Search,
   ChevronDown, Loader2, Image as ImageIcon, Box, FileText,
   ArrowLeft, ArrowUpFromLine, CheckCircle2, PenTool, Hammer, Wrench,
-  ArrowUp, ArrowDown, ArrowUpDown, MapPin
+  ArrowUp, ArrowDown, ArrowUpDown, MapPin, FileSpreadsheet
 } from 'lucide-react'
 import { Pagination } from '@/components/ui/Pagination'
 import { SearchSuggestions } from '@/components/ui/SearchSuggestions'
@@ -16,6 +16,7 @@ import Link from 'next/link'
 import { CreateJobModal } from '@/components/equipment/CreateJobModal'
 import { MoldModal, PhysicalMoldFormData } from '@/components/equipment/MoldModal'
 import LocationMoveModal from '@/app/equipment/locations/_components/LocationMoveModal'
+import InventorySurveyExportModal from './_components/InventorySurveyExportModal'
 import { useTranslations } from 'next-intl'
 
 type MoldStatus = 'ACTIVE' | 'MAINTENANCE' | 'DISPOSED' | string
@@ -91,6 +92,7 @@ function MoldsPageContent() {
   
   const [modalOpen, setModalOpen] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
+  const [surveyExportModalOpen, setSurveyExportModalOpen] = useState(false)
 
   const [deleteId, setDeleteId] = useState<string | null>(null)
 
@@ -379,10 +381,21 @@ function MoldsPageContent() {
             </div>
           </div>
         </div>
-        <button onClick={openCreate} className="h-[32px] px-3 text-[12px] font-bold rounded flex items-center gap-1.5" style={{ background: 'var(--accent)', color: '#fff', border: 'none', cursor: 'pointer' }}>
-          <Plus size={14} />
-          <span style={{ fontFamily: 'var(--font-jp)' }}>{t('Molds.newRegister')}</span>
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setSurveyExportModalOpen(true)}
+            className="btn btn-secondary flex items-center gap-1.5"
+            style={{ height: 32, fontSize: 12, padding: '0 10px', borderColor: 'var(--border-subtle)' }}
+            title={t('Molds.exportSurvey')}
+          >
+            <FileSpreadsheet size={14} className="text-emerald-700" />
+            <span style={{ fontFamily: 'var(--font-jp)' }}>{t('Molds.exportSurvey')}</span>
+          </button>
+          <button onClick={openCreate} className="h-[32px] px-3 text-[12px] font-bold rounded flex items-center gap-1.5" style={{ background: 'var(--accent)', color: '#fff', border: 'none', cursor: 'pointer' }}>
+            <Plus size={14} />
+            <span style={{ fontFamily: 'var(--font-jp)' }}>{t('Molds.newRegister')}</span>
+          </button>
+        </div>
       </div>
 
       <div className="card-flat" style={{ padding: '8px 12px' }}>
@@ -642,6 +655,12 @@ function MoldsPageContent() {
           }}
         />
       )}
+
+      <InventorySurveyExportModal
+        isOpen={surveyExportModalOpen}
+        onClose={() => setSurveyExportModalOpen(false)}
+        currentFilterLocation={filterLocation}
+      />
     </div>
   )
 }

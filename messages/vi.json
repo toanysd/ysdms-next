@@ -2198,6 +2198,21 @@
         "print": "In",
         "edit": "Sửa",
         "delete": "Xóa"
+      },
+      "exportSurvey": "Xuất Excel khảo sát kiểm kê (貸与設備棚卸調査表)",
+      "exportSurveyModal": {
+        "title": "Xuất bảng khảo sát kiểm kê tài sản (Excel)",
+        "subtitle": "Bảng khảo sát tài sản cố định 11 cột chuẩn JAE / NLC",
+        "scopeLabel": "Phạm vi xuất",
+        "scopeAll": "Tất cả khuôn",
+        "scopeCustomer": "Theo đối tác / khách hàng (JAE / NLC...)",
+        "scopeLocation": "Theo khu vực lưu kho",
+        "selectCustomer": "Chọn khách hàng",
+        "selectLocation": "Chọn khu vực lưu kho",
+        "exportBtn": "Bắt đầu xuất Excel",
+        "close": "Đóng",
+        "exporting": "Đang tạo file...",
+        "surveySpecNotice": "※ Tự động xác định Có/Không giấy mượn (Cột G), Hiện vật tại xưởng (Cột H), Vị trí lưu kho (Cột I), Tình trạng hoạt động (Cột J), Ngày dùng gần nhất & Triển vọng (Cột K) theo chuẩn SSOT."
       }
     },
     "status": {
