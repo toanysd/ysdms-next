@@ -19,8 +19,10 @@ import type {
   CompleteReturnInput,
   SsotCustomerPartner,
   AnnualAuditRecord,
+  DormantMoldRecord,
+  StorageFeePartnerSummary,
 } from './types';
-import { SSOT_11_CUSTOMERS } from './types';
+import { SSOT_11_CUSTOMERS, STANDARD_MOLD_STORAGE_RATE_JPY } from './types';
 
 /**
  * 1. Get paginated and filtered list of equipment loans from v_equipment_loans_summary
@@ -82,6 +84,19 @@ export async function getEquipmentLoans(
     query = query.eq('is_overdue', true);
   }
 
+  // Filter: Dormant 3Y flag (Package 3 / WO-P1-002)
+  if (params.is_dormant_3y === true) {
+    const dormantData = await getDormantMoldsData(params.customer_code);
+    const dormantEqIds = dormantData.records
+      .filter((r) => r.is_dormant_3y)
+      .map((r) => r.equipment_id);
+    if (dormantEqIds.length > 0) {
+      query = query.in('equipment_id', dormantEqIds);
+    } else {
+      query = query.eq('equipment_id', '00000000-0000-0000-0000-000000000000');
+    }
+  }
+
   // Sorting: Rule 7.1 — Newest first
   query = query
     .order('loan_date', { ascending: false })
@@ -95,8 +110,42 @@ export async function getEquipmentLoans(
     throw new Error(`Failed to fetch equipment loans: ${error.message}`);
   }
 
+  const loanItems = (data || []) as unknown as EquipmentLoanItem[];
+
+  // Annotate dormant flag for items on this page (evidence-based from jobs history)
+  if (loanItems.length > 0) {
+    const eqIds = Array.from(new Set(loanItems.map((i) => i.equipment_id).filter(Boolean)));
+    if (eqIds.length > 0) {
+      const now = new Date();
+      const cutoff3y = new Date(now.getTime() - 3 * 365 * 24 * 60 * 60 * 1000);
+      const cutoffStr = cutoff3y.toISOString().slice(0, 10);
+
+      const { data: jobRows } = await supabase
+        .from('jobs')
+        .select('equipment_id, start_date, ship_date, deadline')
+        .in('equipment_id', eqIds);
+
+      const jobMap = new Map<string, string>();
+      (jobRows || []).forEach((j: any) => {
+        const dates = [j.ship_date, j.deadline, j.start_date]
+          .filter(Boolean)
+          .map((d: string) => d.slice(0, 10));
+        if (dates.length > 0) {
+          const maxD = dates.sort().reverse()[0];
+          const curr = jobMap.get(j.equipment_id);
+          if (!curr || maxD > curr) jobMap.set(j.equipment_id, maxD);
+        }
+      });
+
+      loanItems.forEach((item) => {
+        const lastJob = jobMap.get(item.equipment_id);
+        item.is_dormant_3y = Boolean(lastJob && lastJob <= cutoffStr);
+      });
+    }
+  }
+
   return {
-    data: (data || []) as unknown as EquipmentLoanItem[],
+    data: loanItems,
     totalRecords: count || 0,
     page,
     pageSize,
@@ -183,12 +232,22 @@ export async function getEquipmentLoanKpis(): Promise<LoanKpiSummary> {
     }
   }
 
+  // Package 3 / WO-P1-002: Dormant molds count
+  let dormantCount = 0;
+  try {
+    const dormantSummary = await getDormantMoldsData();
+    dormantCount = dormantSummary.dormantMoldsCount;
+  } catch (err) {
+    console.error('Error fetching dormant molds count for KPIs:', err);
+  }
+
   return {
     total: data?.length || 0,
     custodyCount: custodyEquipments.size,
     pendingApproval,
     inTransit,
     overdue,
+    dormantCount,
     completedThisMonth,
   };
 }
@@ -778,5 +837,234 @@ export async function getAnnualAuditData(
     totalCount: records.length,
   };
 }
+
+/**
+ * 14. Get 3-Year Dormant Molds & Storage Fee Calculation Data
+ * Package 3 / WO-P1-002: SSOT MOLD_CUSTODY_BUSINESS_SPEC v1.0 (Topic 3 & Fujikura Model)
+ * Evidence-Based: Calculates last_used_date from actual jobs, order_lines, orders, entry_date
+ */
+export async function getDormantMoldsData(
+  partnerId?: string,
+  unitRate: number = STANDARD_MOLD_STORAGE_RATE_JPY
+): Promise<StorageFeePartnerSummary> {
+  const supabase = await createClient();
+
+  const matchedPartner =
+    partnerId && partnerId !== 'ALL'
+      ? SSOT_11_CUSTOMERS.find((p) => p.id === partnerId || p.code === partnerId) || null
+      : null;
+
+  let targetCompanyIds: string[] = [];
+  if (matchedPartner) {
+    targetCompanyIds = matchedPartner.companyIds;
+  } else {
+    targetCompanyIds = SSOT_11_CUSTOMERS.flatMap((p) => p.companyIds);
+  }
+
+  if (targetCompanyIds.length === 0) {
+    return {
+      partner: matchedPartner,
+      totalMoldsCount: 0,
+      dormantMoldsCount: 0,
+      activeMoldsCount: 0,
+      totalAccumulatedFeeJpy: 0,
+      standardMonthlyRate: unitRate,
+      records: [],
+    };
+  }
+
+  // 1. Fetch physical equipment for the target partner(s)
+  const { data: eqRows, error: eqErr } = await supabase
+    .from('equipment')
+    .select(`
+      equipment_id,
+      equipment_code,
+      display_name,
+      equipment_type,
+      physical_stamp,
+      notes,
+      entry_date,
+      manufacturing_date,
+      created_at,
+      current_rack_layer_id,
+      rack_layers:current_rack_layer_id(layer_code, racks:rack_id(rack_code)),
+      design_revisions!equipment_design_revision_id_fkey!inner(
+        customer_equipment_no,
+        product_id,
+        products!design_revisions_product_id_fkey!inner(
+          company_id,
+          product_code,
+          product_name,
+          companies!products_company_id_fkey(company_name, company_code)
+        )
+      )
+    `)
+    .in('design_revisions.products.company_id', targetCompanyIds)
+    .order('equipment_code', { ascending: true });
+
+  if (eqErr || !eqRows) {
+    console.error('Error fetching equipment for dormant molds:', eqErr);
+    return {
+      partner: matchedPartner,
+      totalMoldsCount: 0,
+      dormantMoldsCount: 0,
+      activeMoldsCount: 0,
+      totalAccumulatedFeeJpy: 0,
+      standardMonthlyRate: unitRate,
+      records: [],
+    };
+  }
+
+  // 2. Fetch jobs linked to these equipment IDs
+  const eqIds = eqRows.map((e: any) => e.equipment_id);
+  const jobsMap = new Map<string, string>();
+  if (eqIds.length > 0) {
+    const batchSize = 400;
+    for (let i = 0; i < eqIds.length; i += batchSize) {
+      const slice = eqIds.slice(i, i + batchSize);
+      const { data: jobRows } = await supabase
+        .from('jobs')
+        .select('equipment_id, start_date, deadline, ship_date, completed_date')
+        .in('equipment_id', slice);
+
+      (jobRows || []).forEach((j: any) => {
+        const dates = [j.ship_date, j.completed_date, j.deadline, j.start_date]
+          .filter(Boolean)
+          .map((d: string) => d.slice(0, 10));
+        if (dates.length > 0) {
+          const maxD = dates.sort().reverse()[0];
+          const curr = jobsMap.get(j.equipment_id);
+          if (!curr || maxD > curr) {
+            jobsMap.set(j.equipment_id, maxD);
+          }
+        }
+      });
+    }
+  }
+
+  // 3. Fetch order_lines linked to these product IDs
+  const prodIds = Array.from(
+    new Set(eqRows.map((e: any) => e.design_revisions?.product_id).filter(Boolean))
+  );
+  const orderLinesMap = new Map<string, string>();
+  if (prodIds.length > 0) {
+    const batchSize = 400;
+    for (let i = 0; i < prodIds.length; i += batchSize) {
+      const slice = prodIds.slice(i, i + batchSize);
+      const { data: olRows } = await supabase
+        .from('order_lines')
+        .select('product_id, due_date, ship_date')
+        .in('product_id', slice);
+
+      (olRows || []).forEach((ol: any) => {
+        const dates = [ol.ship_date, ol.due_date]
+          .filter(Boolean)
+          .map((d: string) => d.slice(0, 10));
+        if (dates.length > 0) {
+          const maxD = dates.sort().reverse()[0];
+          const curr = orderLinesMap.get(ol.product_id);
+          if (!curr || maxD > curr) {
+            orderLinesMap.set(ol.product_id, maxD);
+          }
+        }
+      });
+    }
+  }
+
+  // 4. Calculate last_used_date, dormant status, and storage fees
+  const now = new Date();
+  let dormantCount = 0;
+  let totalFee = 0;
+
+  const records: DormantMoldRecord[] = eqRows.map((eq: any) => {
+    const rev = eq.design_revisions;
+    const prod = rev?.products;
+    const comp = prod?.companies;
+    const prodId = rev?.product_id;
+
+    const jobDate = jobsMap.get(eq.equipment_id);
+    const orderDate = prodId ? orderLinesMap.get(prodId) : null;
+    const entryDate =
+      eq.entry_date?.slice(0, 10) ||
+      eq.manufacturing_date?.slice(0, 10) ||
+      null;
+
+    let lastUsedDate: string | null = null;
+    let source: DormantMoldRecord['last_used_source'] = 'NONE';
+
+    if (jobDate) {
+      lastUsedDate = jobDate;
+      source = 'JOB';
+    }
+    if (orderDate && (!lastUsedDate || orderDate > lastUsedDate)) {
+      lastUsedDate = orderDate;
+      source = 'ORDER';
+    }
+    if (!lastUsedDate && entryDate) {
+      lastUsedDate = entryDate;
+      source = 'ENTRY';
+    }
+
+    let isDormant = false;
+    let daysInactive = 0;
+    let monthsDormant = 0;
+    let moldFee = 0;
+
+    if (lastUsedDate) {
+      const lastDt = new Date(lastUsedDate);
+      if (!isNaN(lastDt.getTime())) {
+        const diffMs = now.getTime() - lastDt.getTime();
+        daysInactive = Math.max(0, Math.floor(diffMs / (24 * 60 * 60 * 1000)));
+        monthsDormant = Math.max(0, Math.round(daysInactive / 30.4375));
+        if (daysInactive >= 3 * 365) {
+          isDormant = true;
+          dormantCount++;
+          moldFee = monthsDormant * unitRate;
+          totalFee += moldFee;
+        }
+      }
+    }
+
+    const rackCode = eq.rack_layers?.racks?.rack_code;
+    const layerCode = eq.rack_layers?.layer_code;
+    let locationStr: string | null = null;
+    if (rackCode && layerCode) {
+      locationStr = `${rackCode}-${layerCode}`;
+    } else if (layerCode) {
+      locationStr = layerCode;
+    }
+
+    return {
+      id: eq.equipment_id,
+      equipment_id: eq.equipment_id,
+      equipment_code: eq.equipment_code || '---',
+      equipment_name: eq.display_name || prod?.product_name || '—',
+      equipment_type: eq.equipment_type || 'MOLD',
+      customer_asset_no: rev?.customer_equipment_no || eq.physical_stamp || eq.equipment_code,
+      customer_name: matchedPartner?.nameJA || comp?.company_name || '—',
+      customer_code: matchedPartner?.code || comp?.company_code || '—',
+      current_rack_location: locationStr,
+      last_used_date: lastUsedDate,
+      last_used_source: source,
+      is_dormant_3y: isDormant,
+      days_inactive: daysInactive,
+      months_dormant: monthsDormant,
+      monthly_rate_jpy: unitRate,
+      total_storage_fee_jpy: moldFee,
+      condition_notes: eq.notes || null,
+    };
+  });
+
+  return {
+    partner: matchedPartner,
+    totalMoldsCount: records.length,
+    dormantMoldsCount: dormantCount,
+    activeMoldsCount: records.length - dormantCount,
+    totalAccumulatedFeeJpy: totalFee,
+    standardMonthlyRate: unitRate,
+    records,
+  };
+}
+
 
 

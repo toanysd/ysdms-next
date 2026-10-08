@@ -60,6 +60,7 @@ export interface EquipmentLoanItem {
   approved_by_name: string | null;
   returned_received_by_id: string | null;
   returned_received_by_name: string | null;
+  is_dormant_3y?: boolean;
 }
 
 export interface LoanKpiSummary {
@@ -68,6 +69,7 @@ export interface LoanKpiSummary {
   pendingApproval: number;
   inTransit: number;
   overdue: number;
+  dormantCount?: number;
   completedThisMonth: number;
 }
 
@@ -119,8 +121,9 @@ export interface LoanFilterParams {
   loan_type?: LoanType | 'ALL';
   status?: LoanStatus | 'ALL' | 'ACTIVE';
   is_overdue?: boolean;
+  is_dormant_3y?: boolean;
   customer_code?: string;
-  stream_tab?: 'ALL' | 'CUSTOMER_LOAN' | 'RETURN_TO_CUSTOMER' | 'OUTSOURCE_PROCESSING';
+  stream_tab?: 'ALL' | 'CUSTOMER_LOAN' | 'RETURN_TO_CUSTOMER' | 'OUTSOURCE_PROCESSING' | 'DORMANT_3Y';
   page?: number;
   pageSize?: number;
 }
@@ -346,4 +349,42 @@ export interface AnnualAuditFilterParams {
   year?: number;
   status?: string;
 }
+
+// ==============================================================================
+// Package 3: 3-Year Dormant Molds & Storage Fee Engine Types (WO-P1-002)
+// SSOT: MOLD_CUSTODY_BUSINESS_SPEC v1.0 (Topic 3 & Fujikura Model)
+// ==============================================================================
+
+export const STANDARD_MOLD_STORAGE_RATE_JPY = 307.5; // JPY/mold/month (Fujikura SSOT standard)
+
+export interface DormantMoldRecord {
+  id: string;
+  equipment_id: string;
+  equipment_code: string;
+  equipment_name: string | null;
+  equipment_type: string;
+  customer_asset_no: string | null;
+  customer_name: string;
+  customer_code: string;
+  current_rack_location: string | null;
+  last_used_date: string | null;
+  last_used_source: 'JOB' | 'ORDER' | 'ENTRY' | 'NONE';
+  is_dormant_3y: boolean;
+  days_inactive: number;
+  months_dormant: number;
+  monthly_rate_jpy: number;
+  total_storage_fee_jpy: number;
+  condition_notes: string | null;
+}
+
+export interface StorageFeePartnerSummary {
+  partner: SsotCustomerPartner | null;
+  totalMoldsCount: number;
+  dormantMoldsCount: number;
+  activeMoldsCount: number;
+  totalAccumulatedFeeJpy: number;
+  standardMonthlyRate: number;
+  records: DormantMoldRecord[];
+}
+
 

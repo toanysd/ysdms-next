@@ -46,6 +46,7 @@ export default function LoanFilterBar({
     { id: 'OUTSOURCE_PROCESSING', label: t('filterOutsourceProcessing') },
     { id: 'ACTIVE', label: t('filterActive') },
     { id: 'OVERDUE', label: t('filterOverdue') },
+    { id: 'DORMANT_3Y', label: t('filterDormant3Y') },
   ];
 
   const STATUSES: { id: LoanStatus | 'ALL'; label: string }[] = [

@@ -256,12 +256,23 @@ export default function LoanListTable({
                     {/* 3. 対象金型 */}
                     <td>
                       <div className="flex flex-col">
-                        <span
-                          className="font-mono font-bold text-[13px]"
-                          style={{ color: 'var(--text-primary)' }}
-                        >
-                          {item.equipment_code}
-                        </span>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span
+                            className="font-mono font-bold text-[13px]"
+                            style={{ color: 'var(--text-primary)' }}
+                          >
+                            {item.equipment_code}
+                          </span>
+                          {item.is_dormant_3y && (
+                            <span
+                              className="badge badge--warning text-[10px] font-semibold py-0 px-1.5 inline-flex items-center gap-0.5"
+                              title="最終稼働から3年以上経過 (Dormant ≥ 3 Years)"
+                            >
+                              <AlertTriangle size={10} />
+                              <span>{t('dormantBadge')}</span>
+                            </span>
+                          )}
+                        </div>
                         {item.equipment_name && (
                           <span
                             className="text-[11px] truncate max-w-[200px]"

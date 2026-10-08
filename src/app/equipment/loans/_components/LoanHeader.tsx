@@ -2,11 +2,12 @@
 
 import React from 'react';
 import { useTranslations } from 'next-intl';
-import { ArrowLeftRight, Plus, RefreshCw, FileSpreadsheet } from 'lucide-react';
+import { ArrowLeftRight, Plus, RefreshCw, FileSpreadsheet, Coins } from 'lucide-react';
 
 interface LoanHeaderProps {
   onOpenCreate: () => void;
   onOpenAuditExport?: () => void;
+  onOpenStorageFee?: () => void;
   onRefresh: () => void;
   loading?: boolean;
 }
@@ -14,6 +15,7 @@ interface LoanHeaderProps {
 export default function LoanHeader({
   onOpenCreate,
   onOpenAuditExport,
+  onOpenStorageFee,
   onRefresh,
   loading = false,
 }: LoanHeaderProps) {
@@ -66,6 +68,19 @@ export default function LoanHeader({
           >
             <FileSpreadsheet size={15} style={{ color: 'var(--accent)' }} />
             <span>年次棚卸リスト</span>
+          </button>
+        )}
+
+        {onOpenStorageFee && (
+          <button
+            type="button"
+            onClick={onOpenStorageFee}
+            className="btn btn-secondary flex items-center gap-1.5 text-[13px]"
+            style={{ borderColor: 'var(--status-warning)', color: 'var(--text-primary)' }}
+            title="型保管料算出・長期非稼働金型 (≥3年)"
+          >
+            <Coins size={15} style={{ color: 'var(--status-warning)' }} />
+            <span>型保管料算出</span>
           </button>
         )}
 

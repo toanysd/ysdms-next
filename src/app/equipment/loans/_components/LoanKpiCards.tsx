@@ -26,7 +26,7 @@ export default function LoanKpiCards({
   const t = useTranslations('Loans.kpi');
 
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 shrink-0">
+    <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 shrink-0">
       {/* 1. 総起票数 */}
       <div
         className="card-flat p-3 flex items-center justify-between cursor-pointer transition-all hover:shadow-sm"
@@ -154,6 +154,40 @@ export default function LoanKpiCards({
           }}
         >
           <AlertTriangle size={18} />
+        </div>
+      </div>
+
+      {/* 5. 非稼働 (≥3年以上) (Package 3 / WO-P1-002) */}
+      <div
+        className="card-flat p-3 flex items-center justify-between cursor-pointer transition-all hover:shadow-sm"
+        style={{
+          borderLeft: '4px solid #F59E0B',
+          background: selectedFilter === 'DORMANT_3Y' ? 'var(--tint-orange-bg)' : undefined,
+        }}
+        onClick={() => onSelectFilter?.('DORMANT_3Y')}
+      >
+        <div>
+          <div
+            className="text-[11px] font-semibold flex items-center gap-1"
+            style={{ color: '#D97706' }}
+          >
+            <span>非稼働 (≥3年)</span>
+          </div>
+          <div className="flex items-baseline gap-1.5 mt-0.5">
+            <span
+              className="text-[20px] font-bold"
+              style={{ color: '#D97706', fontFamily: 'monospace' }}
+            >
+              {kpis.dormantCount ?? 0}
+            </span>
+            <span className="text-[11px] text-[var(--text-muted)]">型</span>
+          </div>
+        </div>
+        <div
+          className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
+          style={{ background: 'var(--tint-orange-bg)', color: '#D97706' }}
+        >
+          <Clock size={18} />
         </div>
       </div>
     </div>

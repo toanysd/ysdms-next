@@ -8,6 +8,7 @@ import LoanFilterBar from './_components/LoanFilterBar';
 import LoanListTable from './_components/LoanListTable';
 import CreateLoanModal from './_components/CreateLoanModal';
 import LoanAuditExportModal from './_components/LoanAuditExportModal';
+import StorageFeeModal from './_components/StorageFeeModal';
 import {
   ApproveModal,
   RejectModal,
@@ -59,6 +60,7 @@ export default function EquipmentLoansPage() {
   // Modals state
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isAuditExportOpen, setIsAuditExportOpen] = useState(false);
+  const [isStorageFeeOpen, setIsStorageFeeOpen] = useState(false);
   const [activeLoanForAction, setActiveLoanForAction] = useState<EquipmentLoanItem | null>(null);
   const [isApproveOpen, setIsApproveOpen] = useState(false);
   const [isRejectOpen, setIsRejectOpen] = useState(false);
@@ -98,6 +100,7 @@ export default function EquipmentLoansPage() {
         let loanTypeParam: LoanType | 'ALL' | undefined = undefined;
         let statusParam: LoanStatus | 'ALL' | 'ACTIVE' | undefined = undefined;
         let isOverdueParam: boolean | undefined = undefined;
+        let isDormantParam: boolean | undefined = undefined;
 
         if (selectedTab === 'CUSTOMER_LOAN' || selectedTab === 'RETURN_TO_CUSTOMER' || selectedTab === 'OUTSOURCE_PROCESSING') {
           loanTypeParam = selectedTab as LoanType;
@@ -105,6 +108,8 @@ export default function EquipmentLoansPage() {
           statusParam = 'ACTIVE';
         } else if (selectedTab === 'OVERDUE') {
           isOverdueParam = true;
+        } else if (selectedTab === 'DORMANT_3Y') {
+          isDormantParam = true;
         }
 
         if (selectedStatus !== 'ALL') {
@@ -117,6 +122,7 @@ export default function EquipmentLoansPage() {
             loan_type: loanTypeParam,
             status: statusParam,
             is_overdue: isOverdueParam,
+            is_dormant_3y: isDormantParam,
             customer_code: selectedCustomer !== 'ALL' ? selectedCustomer : undefined,
             page: currentPage,
             pageSize,
@@ -156,6 +162,7 @@ export default function EquipmentLoansPage() {
       <LoanHeader
         onOpenCreate={() => setIsCreateOpen(true)}
         onOpenAuditExport={() => setIsAuditExportOpen(true)}
+        onOpenStorageFee={() => setIsStorageFeeOpen(true)}
         onRefresh={loadData}
         loading={loading}
       />
@@ -230,6 +237,16 @@ export default function EquipmentLoansPage() {
       <LoanAuditExportModal
         isOpen={isAuditExportOpen}
         onClose={() => setIsAuditExportOpen(false)}
+      />
+
+      {/* 5.2 Dormant Molds & Storage Fee Modal (WO-P1-002) */}
+      <StorageFeeModal
+        isOpen={isStorageFeeOpen}
+        onClose={() => setIsStorageFeeOpen(false)}
+        onRequestReturn={() => {
+          setIsStorageFeeOpen(false);
+          setIsCreateOpen(true);
+        }}
       />
 
       {/* 6. Workflow Action Modals */}
