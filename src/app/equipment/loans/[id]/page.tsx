@@ -30,6 +30,7 @@ import {
   DispatchModal,
   ReturnCheckInModal,
 } from '../_components/LoanWorkflowModals';
+import LoanPhotoCaptureSection from './_components/LoanPhotoCaptureSection';
 import type { EquipmentLoanItem, LoanType, LoanStatus } from '../types';
 
 export default function EquipmentLoanDetailPage() {
@@ -476,64 +477,10 @@ export default function EquipmentLoanDetailPage() {
 
         {/* Right Column: Photos for Japanese Accounting Audit (Span 1) */}
         <div className="flex flex-col gap-3">
-          <div className="card-flat p-3 flex flex-col gap-3">
-            <div className="flex items-center gap-1.5 text-[12px] font-bold text-[var(--accent)] border-b border-[var(--border-subtle)] pb-1.5">
-              <Camera size={15} />
-              <span>{t('detail.photosTitle')}</span>
-            </div>
-
-            {/* Photo 1: Overall with signboard */}
-            <div className="flex flex-col gap-1.5">
-              <span className="text-[11px] font-bold text-[#64748B]">
-                {t('detail.photoOverall')}
-              </span>
-              {loan.photo_overall_url ? (
-                <a
-                  href={loan.photo_overall_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block rounded-lg overflow-hidden border border-slate-200 bg-slate-100 hover:opacity-95 transition-opacity"
-                >
-                  <img
-                    src={loan.photo_overall_url}
-                    alt="Overall Mold"
-                    className="w-full h-44 object-cover"
-                  />
-                </a>
-              ) : (
-                <div className="h-32 rounded-lg border-2 border-dashed border-slate-200 flex flex-col items-center justify-center text-[var(--text-muted)] text-[11px]">
-                  <Camera size={24} className="mb-1 text-slate-300" />
-                  <span>{t('detail.noPhoto')}</span>
-                </div>
-              )}
-            </div>
-
-            {/* Photo 2: Nameplate */}
-            <div className="flex flex-col gap-1.5">
-              <span className="text-[11px] font-bold text-[#64748B]">
-                {t('detail.photoNameplate')}
-              </span>
-              {loan.photo_nameplate_url ? (
-                <a
-                  href={loan.photo_nameplate_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block rounded-lg overflow-hidden border border-slate-200 bg-slate-100 hover:opacity-95 transition-opacity"
-                >
-                  <img
-                    src={loan.photo_nameplate_url}
-                    alt="Nameplate"
-                    className="w-full h-44 object-cover"
-                  />
-                </a>
-              ) : (
-                <div className="h-32 rounded-lg border-2 border-dashed border-slate-200 flex flex-col items-center justify-center text-[var(--text-muted)] text-[11px]">
-                  <Camera size={24} className="mb-1 text-slate-300" />
-                  <span>{t('detail.noPhoto')}</span>
-                </div>
-              )}
-            </div>
-          </div>
+          <LoanPhotoCaptureSection
+            loan={loan}
+            onPhotoUpdated={fetchDetail}
+          />
         </div>
       </div>
 

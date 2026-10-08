@@ -1066,5 +1066,121 @@ export async function getDormantMoldsData(
   };
 }
 
+/**
+ * 15. Upload Loan Photo (Mobile Camera Quick-Capture)
+ * Package 4 / WO-P1-003: SSOT MOLD_CUSTODY_BUSINESS_SPEC v1.0 (Topic 4)
+ * Uploads photo with measuring tape (overall) or placard (nameplate) to 'equipment-photos' bucket
+ */
+export async function uploadLoanPhoto(
+  loanId: string,
+  photoType: 'overall' | 'nameplate',
+  formData: FormData
+): Promise<{ success: boolean; url?: string; error?: string }> {
+  try {
+    if (!loanId) return { success: false, error: 'Thiếu loanId (Missing loanId)' };
+    const file = formData.get('file') as File | null;
+    if (!file) return { success: false, error: 'Không tìm thấy file tải lên (No file found in formData)' };
+
+    const supabase = await createClient();
+
+    // Verify loan exists
+    const { data: loanRow, error: loanErr } = await supabase
+      .from('equipment_loans')
+      .select('loan_id, loan_code, equipment_id')
+      .eq('loan_id', loanId)
+      .maybeSingle();
+
+    if (loanErr || !loanRow) {
+      return { success: false, error: `Không tìm thấy phiếu mượn ${loanId}` };
+    }
+
+    const fileExt = file.name ? file.name.split('.').pop() || 'jpg' : 'jpg';
+    const fileName = `${photoType}_${Date.now()}.${fileExt}`;
+    const storagePath = `loans/${loanId}/${fileName}`;
+
+    // Upload to Supabase Storage bucket 'equipment-photos'
+    const arrayBuffer = await file.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+
+    const { error: uploadErr } = await supabase.storage
+      .from('equipment-photos')
+      .upload(storagePath, buffer, {
+        contentType: file.type || 'image/jpeg',
+        upsert: true,
+      });
+
+    if (uploadErr) {
+      console.error('Failed to upload image to equipment-photos:', uploadErr);
+      return { success: false, error: `Upload thất bại: ${uploadErr.message}` };
+    }
+
+    // Get public URL
+    const { data: publicUrlData } = supabase.storage
+      .from('equipment-photos')
+      .getPublicUrl(storagePath);
+
+    const publicUrl = publicUrlData.publicUrl;
+
+    // Update equipment_loans record
+    const updateData =
+      photoType === 'overall'
+        ? { photo_overall_url: publicUrl, updated_at: new Date().toISOString() }
+        : { photo_nameplate_url: publicUrl, updated_at: new Date().toISOString() };
+
+    const { error: updateErr } = await supabase
+      .from('equipment_loans')
+      .update(updateData)
+      .eq('loan_id', loanId);
+
+    if (updateErr) {
+      console.error('Failed to update loan photo URL:', updateErr);
+      return { success: false, error: `Cập nhật DB thất bại: ${updateErr.message}` };
+    }
+
+    revalidatePath(`/equipment/loans/${loanId}`);
+    revalidatePath('/equipment/loans');
+
+    return { success: true, url: publicUrl };
+  } catch (err: any) {
+    console.error('Exception in uploadLoanPhoto:', err);
+    return { success: false, error: err.message || 'Lỗi hệ thống khi tải ảnh' };
+  }
+}
+
+/**
+ * 16. Delete Loan Photo
+ */
+export async function deleteLoanPhoto(
+  loanId: string,
+  photoType: 'overall' | 'nameplate'
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    if (!loanId) return { success: false, error: 'Thiếu loanId' };
+
+    const supabase = await createClient();
+    const updateData =
+      photoType === 'overall'
+        ? { photo_overall_url: null, updated_at: new Date().toISOString() }
+        : { photo_nameplate_url: null, updated_at: new Date().toISOString() };
+
+    const { error: updateErr } = await supabase
+      .from('equipment_loans')
+      .update(updateData)
+      .eq('loan_id', loanId);
+
+    if (updateErr) {
+      return { success: false, error: updateErr.message };
+    }
+
+    revalidatePath(`/equipment/loans/${loanId}`);
+    revalidatePath('/equipment/loans');
+
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+}
+
+
 
 
