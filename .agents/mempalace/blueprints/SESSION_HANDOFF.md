@@ -555,3 +555,14 @@ Danh sách chia sub-phase:
 ### 📌 Ghi chú Nhắc nhở Quan trọng (Anh Thoan - Product Owner):
 - **Token Rotation Reminder:** Sau khi HOÀN TOÀN HOÀN THÀNH TOÀN BỘ DỰ ÁN, thực hiện rotate/thay đổi Personal Access Token (classic) trên GitHub và cập nhật lại vào biến môi trường `GITHUB_TOKEN` trên Render (`ysd-moldcutter-backend`). Đã lưu vào Sổ cái dự án để tự động nhắc anh Thoan ở bước cuối cùng.
 
+---
+
+## 18. TIẾN ĐỘ THI CÔNG CHUỖI WO-P1 (MOLD CUSTODY & BRIDGE HARDENING) — 2026-10-08
+
+| Work Order | Nội dung nghiệp vụ | Commit SHA | Trạng thái | Ghi chú nghiệm thu |
+|---|---|---|---|---|
+| `WO-BRIDGE-HARDENING` | Cứng hóa Bridge Event-Driven (Token auth, SSE, Anti-forgery, Idempotency) | `682c5f7` | **CLOSED ✅** | PE nghiệm thu độc lập trên GitHub |
+| `WO-P1-006` (Gói 7) | Luồng Hoàn trả khuôn & Giao nhận Hiện vật (Panasonic & SMK, PDF A4, Checklist) | `b642e30` | **CLOSED ✅** | 7/7 test gates pass, Browser Verification pass (Message ID: `8225c6de...`) |
+| `BRIDGE-V3.13` | Nâng cấp Userscript v3.13 (Light theme, Draggable, Collapsible, Context-aware UI) | `b2c6631` | **DEPLOYED ✅** | Sentinel ngầm kích hoạt Reactive Wakeup tự động |
+| `WO-P1-007` (Gói 8) | Xuất Excel kiểm kê Cột G/H/I/J/K hoặc theo chỉ đạo Minh Chủ | (chờ chỉ thị) | **PENDING ⏳** | PE chờ THOAN duyệt phạm vi trước khi nạp DIRECTIVE |
+
