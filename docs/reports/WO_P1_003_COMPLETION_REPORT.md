@@ -14,7 +14,8 @@
 | **Phân loại rủi ro** | `YELLOW` (Front-end UI + Supabase Storage upload + record update) |
 | **Can thiệp Schema (DDL)** | **ZERO DDL** (Tận dụng `photo_overall_url`, `photo_nameplate_url` trên bảng `equipment_loans` & bucket `equipment-photos` sẵn có) |
 | **Trạng thái** | ✅ **HOÀN THÀNH 100% — SẴN SÀNG NGHIỆM THU (READY FOR PE ACCEPTANCE)** |
-| **Git Commit SHA** | `1dc312b509ef4986348cb56667a5b3a3cceebf7e` (Short: `1dc312b`) |
+| **Git Commit SHA** | `1dc312b1eb4116edf7feb6365d417fc47bb4cda4` (Short: `1dc312b`) |
+| **Commit URL** | https://github.com/toanysd/ysdms-next/commit/1dc312b1eb4116edf7feb6365d417fc47bb4cda4 |
 | **GitHub Remote** | Đã push thành công lên `origin/main` |
 | **Đồng bộ USB** | Đã sao lưu toàn bộ mã nguồn & `.agents` sang ổ cứng USB `G:\` |
 
