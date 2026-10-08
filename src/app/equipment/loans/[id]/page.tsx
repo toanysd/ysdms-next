@@ -8,8 +8,6 @@ import {
   ArrowLeft,
   ArrowUpFromLine,
   ArrowLeftRight,
-  Printer,
-  Download,
   ShieldCheck,
   CheckCircle2,
   AlertTriangle,
@@ -32,6 +30,7 @@ import {
   ReturnCheckInModal,
 } from '../_components/LoanWorkflowModals';
 import LoanPhotoCaptureSection from './_components/LoanPhotoCaptureSection';
+import LoanPdfDownloadButton from './_components/LoanPdfDownloadButton';
 import type { EquipmentLoanItem, LoanType, LoanStatus } from '../types';
 
 export default function EquipmentLoanDetailPage() {
@@ -220,31 +219,12 @@ export default function EquipmentLoanDetailPage() {
             </button>
           )}
 
-          {/* PDF View / Print Direct Link */}
-          <a
-            href={`/api/equipment/loans/${loan.loan_id}/pdf`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="btn btn-secondary text-[12px] h-[30px] px-3 flex items-center gap-1.5"
-            title={t('detail.printDocument')}
-          >
-            <Printer size={14} />
-            <span>
-              {loan.status === 'RETURNED' || loan.loan_type === 'RETURN_TO_CUSTOMER'
-                ? t('printReturnSlip')
-                : t('detail.printDocument')}
-            </span>
-          </a>
-
-          {/* PDF Download Direct Link */}
-          <a
-            href={`/api/equipment/loans/${loan.loan_id}/pdf?download=1`}
-            className="btn btn-secondary text-[12px] h-[30px] px-3 flex items-center gap-1.5"
-            title={t('detail.downloadDocument')}
-          >
-            <Download size={14} />
-            <span>{t('detail.downloadDocument')}</span>
-          </a>
+          {/* Electronic Seal & PDF Actions (Gói 9: Oita Canon & Shin-Ei Hitec) */}
+          <LoanPdfDownloadButton
+            loanId={loan.loan_id}
+            loanStatus={loan.status}
+            loanType={loan.loan_type}
+          />
         </div>
       </div>
 

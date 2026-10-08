@@ -63,12 +63,20 @@ export async function GET(
       }
     }
 
-    // 4. Render PDF to buffer
+    // 4. Validate electronic seal parameter (Gói 9 - Oita Canon & Shin-Ei Hitec)
+    const sealParam = searchParams.get('seal')?.toUpperCase();
+    const validSeals = ['NONE', 'MARUIN', 'KAKUIN', 'BOTH'] as const;
+    const selectedSeal = validSeals.includes(sealParam as any)
+      ? (sealParam as 'NONE' | 'MARUIN' | 'KAKUIN' | 'BOTH')
+      : 'BOTH';
+
+    // 5. Render PDF to buffer
     const buffer = await renderToBuffer(
       React.createElement(MoldLoanPDFDocument as React.ComponentType<any>, {
         loan: loan as any,
         equipmentSpecs,
         type: selectedType,
+        electronicSeal: selectedSeal,
       }) as any
     );
 

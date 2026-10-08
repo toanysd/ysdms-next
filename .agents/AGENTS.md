@@ -63,6 +63,27 @@
 - ❌ Bỏ qua lỗi TypeScript và báo "hoàn thành"
 - ❌ Tự tạo bảng DB mới mà không có trong `docs/technical/02_data_model.md`
 
+---
+
+## 🛑 QUY TẮC 0.6 — Chặn Báo Cáo Nghiệm Thu Sớm (ANTI-PREMATURE COMPLETION RULE - BẮT BUỘC)
+
+### Nguyên tắc cốt lõi: CHỈ BÁO XONG KHI ĐÃ ĐẠT 100% QUALITY GATES
+Tuyệt đối KHÔNG phát tín hiệu hoàn tất ("AN_REPORT_DONE" / "Hoàn tất báo cáo") hoặc đưa ra khối báo cáo nghiệm thu gửi PE khi Antigravity vẫn còn đang sửa code, chưa chạy xong test, hoặc còn tác vụ nền (background tasks) đang thực thi.
+
+1. **Phân Định 3 Pha Bắt Buộc Trong Protocol v2.0:**
+   - **PHA 1 (PLANNING):** Nộp Kế hoạch thi công chi tiết (File list, Test plan). Trạng thái BẮT BUỘC ghi rõ: `[KẾ HOẠCH] Đệ trình Kế hoạch thi công (Chờ PE phê duyệt)`. Tuyệt đối KHÔNG dùng từ "Hoàn tất công việc".
+   - **PHA 2 (EXECUTION):** Viết mã nguồn, API, UI. Trạng thái BẮT BUỘC hiển thị là: `[THI CÔNG] AN đang sửa code & chạy kiểm thử (Chưa nghiệm thu)`. CẤM phát tín hiệu hoàn tất trong pha này.
+   - **PHA 3 (COMPLETION):** Báo cáo nghiệm thu hoàn thành gửi PE.
+
+2. **Điều Kiện Tiên Quyết Để Xuất Báo Cáo Nghiệm Thu Hoàn Thành (Pha 3):**
+   Chỉ được phép xuất khối Báo cáo Nghiệm thu gửi PE và phát tín hiệu hoàn thành khi thỏa mãn ĐỒNG THỜI 6 điều kiện sau:
+   - ✅ Toàn bộ code chức năng đã được viết hoàn chỉnh.
+   - ✅ `npx tsc --noEmit` đạt **0 errors**.
+   - ✅ `node scripts/check_translations.mjs` đạt **0 missing keys**.
+   - ✅ Test Suite tự động đạt **100% PASS**.
+   - ✅ Browser Verification (Playwright) chụp ảnh màn hình giao diện thực tế thành công.
+   - ✅ KHÔNG còn bất kỳ background task nào đang chạy dở dang trong IDE.
+
 ## 📒 SỔ CÁI DỰ ÁN — Nguồn kiến thức chính
 
 - **Vị trí:** `d:\AntiGravity_Workspace\.agents\mempalace\blueprints\ysdms-nextgen_MASTER.md`

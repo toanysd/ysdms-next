@@ -5248,7 +5248,16 @@
       "deleteConfirm": "写真を削除しますか？",
       "actionsTitle": "実行可能なアクション",
       "printDocument": "帳票印刷 (PDF)",
-      "downloadDocument": "PDFダウンロード"
+      "downloadDocument": "PDFダウンロード",
+      "sealSelector": {
+        "title": "電子社判",
+        "both": "両方押印 (丸印+角印)",
+        "maruin": "丸印のみ (代表者印)",
+        "kakuin": "角印のみ (社印)",
+        "none": "押印なし (空白)",
+        "badge": "電子社判適用中",
+        "applyBtn": "社判選択"
+      }
     },
     "transferBoundaryNotice": "※ 川崎・八潮工場間の社内設備移管は本画面（貸出管理）の対象外です（別制度）。",
     "linkToLifecycle": "社内移管・棚卸へ",

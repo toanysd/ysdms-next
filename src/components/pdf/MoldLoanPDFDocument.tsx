@@ -2,6 +2,7 @@ import React from 'react';
 import { Document, Page, Text, View, StyleSheet, Font, Image } from '@react-pdf/renderer';
 import path from 'path';
 import type { EquipmentLoanItem, LoanType } from '@/app/equipment/loans/types';
+import { ElectronicSealType, MaruinSeal, KakuinSeal } from './ElectronicSeal';
 
 // Register Japanese Fonts from local OTF
 const fontRegular = path.join(process.cwd(), 'public/fonts/NotoSansJP-Regular.otf');
@@ -24,6 +25,7 @@ export interface MoldLoanPDFProps {
     piece_count?: number | null;
   };
   type?: LoanType;
+  electronicSeal?: ElectronicSealType;
 }
 
 const styles = StyleSheet.create({
@@ -87,22 +89,22 @@ const styles = StyleSheet.create({
   },
   sealBox: {
     width: 44,
-    height: 44,
+    height: 52,
     borderWidth: 1,
     borderColor: '#94A3B8',
     alignItems: 'center',
     justifyContent: 'flex-start',
-    paddingTop: 2,
+    paddingTop: 1.5,
   },
   sealLabel: {
     fontSize: 6,
     color: '#64748B',
-    marginBottom: 2,
+    marginBottom: 1.5,
   },
   sealStampPlaceholder: {
     fontSize: 6.5,
     color: '#CBD5E1',
-    marginTop: 6,
+    marginTop: 10,
   },
   titleArea: {
     textAlign: 'center',
@@ -311,6 +313,7 @@ export const MoldLoanPDFDocument: React.FC<MoldLoanPDFProps> = ({
   loan,
   equipmentSpecs,
   type = loan.loan_type,
+  electronicSeal = 'BOTH',
 }) => {
   const isCustody = type === 'CUSTOMER_LOAN';
   const isReturn = type === 'RETURN_TO_CUSTOMER';
@@ -367,11 +370,19 @@ export const MoldLoanPDFDocument: React.FC<MoldLoanPDFProps> = ({
             <View style={styles.sealBoxContainer}>
               <View style={styles.sealBox}>
                 <Text style={styles.sealLabel}>代表取締役</Text>
-                <Text style={styles.sealStampPlaceholder}>〔 社 判 〕</Text>
+                {electronicSeal === 'MARUIN' || electronicSeal === 'BOTH' ? (
+                  <MaruinSeal />
+                ) : (
+                  <Text style={styles.sealStampPlaceholder}>〔 社 判 〕</Text>
+                )}
               </View>
               <View style={styles.sealBox}>
                 <Text style={styles.sealLabel}>管理責任者</Text>
-                <Text style={styles.sealStampPlaceholder}>〔 印 〕</Text>
+                {electronicSeal === 'KAKUIN' || electronicSeal === 'BOTH' ? (
+                  <KakuinSeal />
+                ) : (
+                  <Text style={styles.sealStampPlaceholder}>〔 印 〕</Text>
+                )}
               </View>
               {isReturn && (
                 <View style={styles.sealBox}>

@@ -5248,7 +5248,16 @@
       "deleteConfirm": "Bạn có chắc chắn muốn xóa ảnh này không?",
       "actionsTitle": "Thao tác khả dụng",
       "printDocument": "In chứng từ PDF",
-      "downloadDocument": "Tải chứng từ PDF"
+      "downloadDocument": "Tải chứng từ PDF",
+      "sealSelector": {
+        "title": "Con dấu điện tử",
+        "both": "Đóng cả hai (Tròn + Vuông)",
+        "maruin": "Chỉ dấu tròn (Đại diện PL)",
+        "kakuin": "Chỉ dấu vuông (Dấu công ty)",
+        "none": "Không đóng dấu (Để trống)",
+        "badge": "Đang áp dụng dấu điện tử",
+        "applyBtn": "Chọn con dấu"
+      }
     },
     "transferBoundaryNotice": "※ Điều chuyển thiết bị nội bộ (Kawasaki - Yashio) không thuộc phạm vi Quản lý mượn/trả.",
     "linkToLifecycle": "Đến Quản lý vòng đời / Kiểm kê",
