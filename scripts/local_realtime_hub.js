@@ -232,10 +232,18 @@ function startSupabaseRealtime() {
                     if (row.sender === 'PE' && row.status === 'PENDING') {
                         // Bắn sự kiện tới Userscript
                         broadcastSSE({
-                            type: 'PE_DIRECTIVE_ARRIVED',
+                            type: 'PE_MESSAGE_ARRIVED',
+                            messageType: row.message_type || 'DIRECTIVE',
                             directive: row
                         });
-                        auditLog('PE_DIRECTIVE_BROADCAST_SSE', { messageId: row.message_id, threadId: row.thread_id });
+                        auditLog('PE_DIRECTIVE_BROADCAST_SSE', { messageId: row.message_id, threadId: row.thread_id, type: row.message_type });
+                    } else if (row.sender === 'AN' && row.status === 'PENDING' && row.message_type === 'REPORT') {
+                        broadcastSSE({
+                            type: 'AN_REPORT_DONE',
+                            threadId: row.thread_id,
+                            message: row.content_md
+                        });
+                        auditLog('AN_REPORT_BROADCAST_SSE', { messageId: row.message_id, threadId: row.thread_id });
                     }
                 }
             )
@@ -245,6 +253,38 @@ function startSupabaseRealtime() {
                 auditLog('REALTIME_STATUS_CHANGE', { status });
                 broadcastSSE({ type: 'REALTIME_STATUS', status, subscribed: realtimeSubscribed });
             });
+
+        // Fallback Poller: 100% bảo hiểm nếu Realtime WebSocket bị delay hoặc reconnect
+        let lastPolledId = null;
+        setInterval(async () => {
+            try {
+                const { data, error } = await supabase
+                    .from('pe_an_messages')
+                    .select('*')
+                    .eq('status', 'PENDING')
+                    .order('created_at', { ascending: false })
+                    .limit(1)
+                    .maybeSingle();
+
+                if (data && data.message_id && data.message_id !== lastPolledId) {
+                    lastPolledId = data.message_id;
+                    if (data.sender === 'PE') {
+                        broadcastSSE({
+                            type: 'PE_MESSAGE_ARRIVED',
+                            messageType: data.message_type || 'DIRECTIVE',
+                            directive: data
+                        });
+                    } else if (data.sender === 'AN' && data.message_type === 'REPORT') {
+                        broadcastSSE({
+                            type: 'AN_REPORT_DONE',
+                            threadId: data.thread_id,
+                            message: data.content_md
+                        });
+                    }
+                }
+            } catch (e) {}
+        }, 3000);
+
     } catch (err) {
         console.error('[REALTIME ERROR]', err);
         auditLog('REALTIME_CONNECT_ERROR', { error: err.message });

@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         Perplexity Bridge: Full-Duplex Workflow (PE-AN Protocol v3.12 Light Draggable)
+// @name         Perplexity Bridge: Full-Duplex Workflow (PE-AN Protocol v3.13 Context-Aware)
 // @namespace    http://tampermonkey.net/
-// @version      3.12
-// @description  Hạ tầng cầu nối PE-AN Event-driven: Giao diện sáng thanh lịch, Thu gọn/Mở rộng, Di chuyển Drag & Drop, Tự nhận diện đa dạng ô nhập Perplexity.
+// @version      3.13
+// @description  Cầu nối PE-AN thông minh: Nút & Trạng thái tự động thích ứng ngữ cảnh (Đổ báo cáo PE / Gửi lệnh AN / Copy 1-click), Giao diện sáng thanh lịch, Kéo thả & Thu gọn.
 // @author       Antigravity
 // @match        https://www.perplexity.ai/*
 // @grant        none
@@ -11,7 +11,7 @@
 (function() {
     'use strict';
 
-    console.log('[Bridge v3.12 Light] 🚀 Khởi chạy hệ thống SSE Client, UI Sáng & Drag/Drop.');
+    console.log('[Bridge v3.13 Context-Aware] 🚀 Khởi chạy hệ thống SSE Client.');
 
     let CANDIDATE_PORTS = [7654, 7655, 7656, 3888, 3456];
     let portScanIndex = 0;
@@ -25,7 +25,15 @@
     let localHubPort = parseInt(savedPort, 10);
     let sseEventSource = null;
     let sessionToken = '';
-    let lastAnReportMessage = null;
+    
+    // Quản lý tin nhắn gần nhất
+    let latestMessage = {
+        sender: 'SYSTEM', // 'AN' | 'PE' | 'SYSTEM'
+        type: 'IDLE',     // 'REPORT' | 'DIRECTIVE' | 'APPROVAL' | 'IDLE'
+        text: '',
+        threadId: ''
+    };
+
     let pendingDirectiveToAN = null;
 
     // Toggle Auto-Forward: Đọc từ cache
@@ -53,15 +61,15 @@
     bridgeUI.style.boxShadow = '0 12px 32px -4px rgba(15, 23, 42, 0.16), 0 4px 12px -2px rgba(15, 23, 42, 0.08), 0 0 0 1px #E2E8F0';
     bridgeUI.style.fontFamily = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
     bridgeUI.style.fontSize = '13px';
-    bridgeUI.style.minWidth = '330px';
-    bridgeUI.style.maxWidth = '380px';
+    bridgeUI.style.minWidth = '340px';
+    bridgeUI.style.maxWidth = '390px';
     bridgeUI.style.overflow = 'hidden';
     bridgeUI.style.transition = 'box-shadow 0.2s, opacity 0.2s';
     bridgeUI.style.userSelect = 'none';
 
     // Áp dụng vị trí đã lưu hoặc mặc định góc phải dưới
     if (savedPos && typeof savedPos.left === 'number' && typeof savedPos.top === 'number') {
-        const maxL = Math.max(10, window.innerWidth - 350);
+        const maxL = Math.max(10, window.innerWidth - 360);
         const maxT = Math.max(10, window.innerHeight - 100);
         bridgeUI.style.left = `${Math.min(savedPos.left, maxL)}px`;
         bridgeUI.style.top = `${Math.min(savedPos.top, maxT)}px`;
@@ -98,32 +106,29 @@
                 <span style="font-weight: 500;">Tự động chuyển lệnh cho AN (Auto-forward)</span>
             </label>
 
+            <!-- KHỐI HÀNH ĐỘNG ĐỘNG (DYNAMIC ACTION AREA) -->
             <div style="display: flex; flex-direction: column; gap: 8px;">
-                <!-- Nút gửi lệnh sang AN (chỉ sáng khi TẮT auto hoặc có lệnh pending) -->
-                <button id="btn-manual-forward-an" style="display: none; background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%); color: white; border: none; padding: 9px 12px; border-radius: 8px; cursor: pointer; text-align: left; font-weight: 600; font-size: 12px; transition: all 0.2s; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);">
-                    <span style="margin-right: 6px;">📥</span> <span id="manual-forward-label">Có lệnh mới từ PE! Bấm gửi AN</span>
+                
+                <!-- Nút Hành Động Chính (Biến hóa theo ngữ cảnh) -->
+                <button id="btn-main-action" style="background-color: #F1F5F9; color: #64748B; border: 1px solid #CBD5E1; padding: 10px 14px; border-radius: 8px; cursor: pointer; text-align: left; font-weight: 700; font-size: 13px; transition: all 0.25s; display: flex; align-items: center; justify-content: space-between;">
+                    <span id="btn-main-action-text"><span style="margin-right: 6px;">🟢</span> Cầu nối sẵn sàng</span>
+                    <span id="btn-main-action-badge" style="display: none; font-size: 10px; background: rgba(255,255,255,0.35); padding: 2px 6px; border-radius: 4px; font-weight: 600;">ACTION</span>
                 </button>
 
-                <!-- Nút đổ báo cáo từ AN vào PE (LUÔN CHỜ BẤM TAY) -->
-                <button id="btn-fill-pe" disabled style="background-color: #F1F5F9; color: #94A3B8; border: 1px solid #E2E8F0; padding: 9px 12px; border-radius: 8px; cursor: not-allowed; text-align: left; font-weight: 700; font-size: 12px; transition: all 0.3s; display: flex; align-items: center; justify-content: space-between;">
-                    <span id="btn-fill-pe-text"><span style="margin-right: 6px;">🤖</span> Chờ AN thi công...</span>
-                    <span id="btn-fill-pe-badge" style="display: none; font-size: 10px; background: rgba(255,255,255,0.3); padding: 1px 6px; border-radius: 4px;">SẴN SÀNG</span>
-                </button>
-
-                <!-- Hàng công cụ phụ trợ: Copy & Điền tay -->
+                <!-- Hàng công cụ phụ trợ: Copy theo ngữ cảnh & Điền tay -->
                 <div style="display: flex; gap: 6px;">
-                    <button id="btn-copy-clipboard" style="flex: 1; background: #FFFFFF; color: #475569; border: 1px solid #CBD5E1; padding: 6px 8px; border-radius: 6px; cursor: pointer; text-align: center; font-size: 11px; font-weight: 500; transition: background 0.15s;" title="Sao chép nội dung báo cáo gần nhất vào Clipboard">
-                        📋 Copy báo cáo
+                    <button id="btn-smart-copy" style="flex: 1.2; background: #FFFFFF; color: #334155; border: 1px solid #CBD5E1; padding: 7px 10px; border-radius: 6px; cursor: pointer; text-align: center; font-size: 11px; font-weight: 600; transition: background 0.15s; display: flex; align-items: center; justify-content: center; gap: 4px;" title="Copy nội dung tin nhắn mới nhất vào Clipboard">
+                        <span>📋</span> <span id="btn-smart-copy-text">Copy tin mới nhất</span>
                     </button>
-                    <button id="btn-manual-fill" style="flex: 1; background: #FFFFFF; color: #475569; border: 1px solid #CBD5E1; padding: 6px 8px; border-radius: 6px; cursor: pointer; text-align: center; font-size: 11px; font-weight: 500; transition: background 0.15s;" title="Nhập thủ công nội dung đổ vào PE">
+                    <button id="btn-manual-fill" style="flex: 0.8; background: #FFFFFF; color: #475569; border: 1px solid #CBD5E1; padding: 7px 8px; border-radius: 6px; cursor: pointer; text-align: center; font-size: 11px; font-weight: 500; transition: background 0.15s;" title="Nhập thủ công nội dung đổ vào PE">
                         ✏️ Điền tay
                     </button>
                 </div>
             </div>
 
-            <!-- Toast / Log Thông báo -->
+            <!-- Toast / Trạng Thái Trực Quan -->
             <div id="bridge-toast" style="font-size: 11px; color: #64748B; background: #F8FAFC; border: 1px solid #E2E8F0; padding: 6px 8px; border-radius: 6px; font-family: monospace; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                Đang khởi tạo kết nối...
+                Khởi tạo kết nối...
             </div>
         </div>
 
@@ -144,20 +149,128 @@
     const miniPillEl = document.getElementById('bridge-mini-pill');
     const statusDot = document.getElementById('hub-status-dot');
     const realtimeBadge = document.getElementById('realtime-badge');
-    const btnFillPe = document.getElementById('btn-fill-pe');
-    const btnFillPeText = document.getElementById('btn-fill-pe-text');
-    const btnFillPeBadge = document.getElementById('btn-fill-pe-badge');
-    const btnCopyClipboard = document.getElementById('btn-copy-clipboard');
+    const btnMainAction = document.getElementById('btn-main-action');
+    const btnMainActionText = document.getElementById('btn-main-action-text');
+    const btnMainActionBadge = document.getElementById('btn-main-action-badge');
+    const btnSmartCopy = document.getElementById('btn-smart-copy');
+    const btnSmartCopyText = document.getElementById('btn-smart-copy-text');
     const btnManualFill = document.getElementById('btn-manual-fill');
-    const btnManualForwardAn = document.getElementById('btn-manual-forward-an');
-    const manualForwardLabel = document.getElementById('manual-forward-label');
     const toggleAutoForward = document.getElementById('toggle-auto-forward');
     const btnToggleCollapse = document.getElementById('btn-toggle-collapse');
     const toastDiv = document.getElementById('bridge-toast');
     const portDisplay = document.getElementById('port-display');
     const miniStatusText = document.getElementById('mini-status-text');
 
-    // --- CHỨC NĂNG THÔNG BÁO (TOAST) ---
+    // --- QUẢN LÝ GIAO DIỆN & TRẠNG THÁI ĐỘNG (CONTEXT-AWARE UI) ---
+    let currentUIState = 'IDLE'; // 'AN_REPORT_READY' | 'WAITING_PE' | 'PE_DIRECTIVE_READY' | 'PE_APPROVAL_READY' | 'AN_WORKING' | 'IDLE'
+
+    function updateContextUI(state, payload = {}) {
+        currentUIState = state;
+
+        if (state === 'AN_REPORT_READY') {
+            // AN VỪA XONG BÁO CÁO -> NÚT ĐỔ VÀO PE (XANH LÁ RỰC RỠ)
+            latestMessage = {
+                sender: 'AN',
+                type: 'REPORT',
+                text: payload.message || 'PE đọc Bridge.',
+                threadId: payload.threadId || ''
+            };
+            btnMainAction.style.background = 'linear-gradient(135deg, #10B981 0%, #059669 100%)';
+            btnMainAction.style.color = '#FFFFFF';
+            btnMainAction.style.border = 'none';
+            btnMainAction.style.cursor = 'pointer';
+            btnMainAction.style.boxShadow = '0 4px 14px rgba(16, 185, 129, 0.4)';
+            btnMainActionText.innerHTML = `<span style="margin-right: 6px;">🚀</span> Đổ báo cáo vào PE`;
+            btnMainActionBadge.innerText = 'SẴN SÀNG';
+            btnMainActionBadge.style.display = 'inline-block';
+            
+            btnSmartCopyText.innerText = 'Copy báo cáo AN';
+            log(`✅ AN đã hoàn tất báo cáo [${payload.threadId || ''}]. Bấm để đổ vào PE.`, 'success');
+            miniStatusText.innerText = `🚀 Báo cáo sẵn sàng!`;
+        }
+        else if (state === 'WAITING_PE') {
+            // ĐÃ ĐIỀN XONG VÀO CHATBOX -> CHỜ PE PHẢN HỒI (KHÔNG PHẢI CHỜ AN)
+            btnMainAction.style.background = '#EFF6FF';
+            btnMainAction.style.color = '#1D4ED8';
+            btnMainAction.style.border = '1px solid #BFDBFE';
+            btnMainAction.style.cursor = 'default';
+            btnMainAction.style.boxShadow = 'none';
+            btnMainActionText.innerHTML = `<span style="margin-right: 6px;">⏳</span> Đã điền xong. Chờ PE...`;
+            btnMainActionBadge.style.display = 'none';
+
+            log(`Đã điền nội dung! THOAN hãy kiểm tra và bấm Gửi trên Perplexity.`, 'info');
+            miniStatusText.innerText = `⏳ Chờ PE gửi...`;
+        }
+        else if (state === 'PE_DIRECTIVE_READY' || state === 'PE_APPROVAL_READY') {
+            // PE VỪA RA LỆNH HOẶC PHÊ DUYỆT
+            const isApproval = state === 'PE_APPROVAL_READY';
+            const d = payload.directive || {};
+            pendingDirectiveToAN = d;
+            latestMessage = {
+                sender: 'PE',
+                type: isApproval ? 'APPROVAL' : 'DIRECTIVE',
+                text: d.content_md || d.directiveText || '',
+                threadId: d.thread_id || '',
+                id: d.message_id || ''
+            };
+
+            btnSmartCopyText.innerText = isApproval ? 'Copy phê duyệt PE' : 'Copy chỉ thị PE';
+
+            if (isAutoForwardToAN) {
+                // TỰ ĐỘNG CHUYỂN SANG AN
+                forwardDirectiveToLocalHub(d);
+                btnMainAction.style.background = '#EFF6FF';
+                btnMainAction.style.color = '#1D4ED8';
+                btnMainAction.style.border = '1px solid #BFDBFE';
+                btnMainAction.style.cursor = 'default';
+                btnMainAction.style.boxShadow = 'none';
+                btnMainActionText.innerHTML = `<span style="margin-right: 6px;">⚡</span> Đã chuyển sang AN`;
+                btnMainActionBadge.style.display = 'none';
+                log(`⚡ ${isApproval ? 'PE đã duyệt' : 'Chỉ thị PE'}: Tự động chuyển AN...`, 'success');
+                miniStatusText.innerText = `⚙️ AN đang nhận lệnh`;
+            } else {
+                // CHỜ BẤM TAY ĐỂ GỬI SANG AN (XANH DƯƠNG RỰC RỠ)
+                btnMainAction.style.background = 'linear-gradient(135deg, #3B82F6 0%, #2563EB 100%)';
+                btnMainAction.style.color = '#FFFFFF';
+                btnMainAction.style.border = 'none';
+                btnMainAction.style.cursor = 'pointer';
+                btnMainAction.style.boxShadow = '0 4px 14px rgba(37, 99, 235, 0.4)';
+                btnMainActionText.innerHTML = `<span style="margin-right: 6px;">📥</span> ${isApproval ? 'Gửi duyệt sang AN' : 'Gửi lệnh sang AN'}`;
+                btnMainActionBadge.innerText = 'CHỜ GỬI';
+                btnMainActionBadge.style.display = 'inline-block';
+                log(`${isApproval ? '🎉 PE đã phê duyệt' : '📋 Chỉ thị mới từ PE'}! Bấm để gửi AN.`, 'warning');
+                miniStatusText.innerText = `📥 Có tin từ PE!`;
+            }
+        }
+        else if (state === 'AN_WORKING') {
+            // AN ĐANG THI CÔNG
+            btnMainAction.style.background = '#F8FAFC';
+            btnMainAction.style.color = '#475569';
+            btnMainAction.style.border = '1px solid #CBD5E1';
+            btnMainAction.style.cursor = 'wait';
+            btnMainAction.style.boxShadow = 'none';
+            btnMainActionText.innerHTML = `<span style="margin-right: 6px;">⚙️</span> AN đang thi công...`;
+            btnMainActionBadge.style.display = 'none';
+
+            btnSmartCopyText.innerText = 'Copy lệnh gần nhất';
+            log(`⚙️ AN đang thực thi công việc...`, 'info');
+            miniStatusText.innerText = `⚙️ AN đang làm...`;
+        }
+        else {
+            // IDLE / SẴN SÀNG
+            btnMainAction.style.background = '#F1F5F9';
+            btnMainAction.style.color = '#64748B';
+            btnMainAction.style.border = '1px solid #E2E8F0';
+            btnMainAction.style.cursor = 'pointer';
+            btnMainAction.style.boxShadow = 'none';
+            btnMainActionText.innerHTML = `<span style="margin-right: 6px;">🟢</span> Cầu nối sẵn sàng`;
+            btnMainActionBadge.style.display = 'none';
+            btnSmartCopyText.innerText = 'Copy tin mới nhất';
+            miniStatusText.innerText = `🟢 Sẵn sàng`;
+        }
+    }
+
+    // --- THÔNG BÁO TOAST ---
     function log(msg, type = 'info') {
         toastDiv.innerText = msg;
         toastDiv.title = msg;
@@ -178,10 +291,10 @@
             toastDiv.style.color = '#64748B';
             toastDiv.style.borderColor = '#E2E8F0';
         }
-        console.log(`[Bridge v3.12] ${msg}`);
+        console.log(`[Bridge v3.13] ${msg}`);
     }
 
-    // --- CHỨC NĂNG THU GỌN / MỞ RỘNG (COLLAPSIBLE) ---
+    // --- THU GỌN / MỞ RỘNG (COLLAPSIBLE) ---
     function setCollapsed(collapse) {
         isCollapsed = collapse;
         localStorage.setItem('pe_an_bridge_collapsed', isCollapsed);
@@ -194,7 +307,7 @@
             bodyEl.style.display = 'flex';
             miniPillEl.style.display = 'none';
             btnToggleCollapse.innerText = '➖';
-            bridgeUI.style.minWidth = '330px';
+            bridgeUI.style.minWidth = '340px';
         }
     }
 
@@ -207,17 +320,13 @@
         setCollapsed(false);
     });
 
-    // --- CHỨC NĂNG KÉO THẢ DI CHUYỂN (DRAGGABLE) ---
+    // --- KÉO THẢ DI CHUYỂN (DRAGGABLE) ---
     let isDragging = false;
-    let dragStartX = 0;
-    let dragStartY = 0;
-    let initialLeft = 0;
-    let initialTop = 0;
+    let dragStartX = 0, dragStartY = 0;
+    let initialLeft = 0, initialTop = 0;
 
     headerEl.addEventListener('mousedown', (e) => {
-        // Không kéo nếu click vào nút thu gọn hoặc đổi cổng
         if (e.target.id === 'btn-toggle-collapse' || e.target.id === 'port-display') return;
-        
         isDragging = true;
         headerEl.style.cursor = 'grabbing';
         bridgeUI.style.boxShadow = '0 20px 40px -4px rgba(15, 23, 42, 0.28), 0 0 0 2px #3B82F6';
@@ -228,12 +337,10 @@
         initialLeft = rect.left;
         initialTop = rect.top;
 
-        // Cố định toạ độ tuyệt đối sang left/top
         bridgeUI.style.left = `${initialLeft}px`;
         bridgeUI.style.top = `${initialTop}px`;
         bridgeUI.style.bottom = 'auto';
         bridgeUI.style.right = 'auto';
-
         e.preventDefault();
     });
 
@@ -245,7 +352,6 @@
         let newLeft = initialLeft + deltaX;
         let newTop = initialTop + deltaY;
 
-        // Giới hạn trong màn hình
         const maxLeft = window.innerWidth - bridgeUI.offsetWidth - 10;
         const maxTop = window.innerHeight - bridgeUI.offsetHeight - 10;
 
@@ -279,7 +385,7 @@
         }
     });
 
-    // Toggle tự động
+    // Toggle Auto-Forward
     toggleAutoForward.addEventListener('change', (e) => {
         isAutoForwardToAN = e.target.checked;
         localStorage.setItem('pe_an_auto_forward', isAutoForwardToAN);
@@ -289,32 +395,7 @@
         }
     });
 
-    // --- XỬ LÝ LỆNH TỪ PE ---
-    function handleNewDirective(directiveData) {
-        pendingDirectiveToAN = directiveData;
-        const mid = directiveData.message_id || 'unknown';
-        const shortMid = mid.length > 8 ? mid.slice(0, 8) : mid;
-        const timeStr = new Date().toLocaleTimeString();
-
-        if (isAutoForwardToAN) {
-            log(`Tự động nạp lệnh [${shortMid}] sang AN...`);
-            forwardDirectiveToLocalHub(directiveData);
-        } else {
-            log(`Có lệnh [${shortMid}] lúc ${timeStr}! Chờ THOAN bấm gửi.`, 'warning');
-            manualForwardLabel.innerText = `Lệnh mới [${shortMid}] (${timeStr}) → Bấm gửi AN`;
-            btnManualForwardAn.style.display = 'block';
-            
-            // Nếu đang thu gọn, báo hiệu trên mini pill
-            miniStatusText.innerText = `📥 Có lệnh mới [${shortMid}]!`;
-        }
-    }
-
-    btnManualForwardAn.addEventListener('click', () => {
-        if (pendingDirectiveToAN) {
-            forwardDirectiveToLocalHub(pendingDirectiveToAN);
-        }
-    });
-
+    // --- CHUYỂN LỆNH TỚI LOCAL HUB ---
     function forwardDirectiveToLocalHub(data) {
         log(`Đang gửi lệnh sang Local Hub (: ${localHubPort})...`);
         fetch(`http://127.0.0.1:${localHubPort}/api/directive`, {
@@ -325,7 +406,7 @@
             },
             body: JSON.stringify({
                 messageId: data.message_id || data.messageId,
-                threadId: data.thread_id || data.threadId || 'WO-BRIDGE-HARDENING',
+                threadId: data.thread_id || data.threadId || 'WO-P1-006',
                 messageType: data.message_type || data.messageType || 'DIRECTIVE',
                 directiveText: data.content_md || data.directiveText || ''
             })
@@ -340,8 +421,7 @@
         .then(() => {
             log(`Đã chuyển lệnh sang AN thành công!`, 'success');
             pendingDirectiveToAN = null;
-            btnManualForwardAn.style.display = 'none';
-            miniStatusText.innerText = `⚙️ AN đang thi công...`;
+            updateContextUI('AN_WORKING');
         })
         .catch(err => {
             log(`Lỗi gửi Hub: ${err.message}`, 'error');
@@ -359,7 +439,7 @@
         sseEventSource = new EventSource(`http://127.0.0.1:${localHubPort}/api/events`);
         
         sseEventSource.onopen = () => {
-            statusDot.style.backgroundColor = '#10B981'; // Green
+            statusDot.style.backgroundColor = '#10B981';
             statusDot.style.boxShadow = '0 0 6px #10B981';
             if (portDisplay) portDisplay.innerText = `:${localHubPort}`;
             log(`Đã kết nối Hub (: ${localHubPort})`);
@@ -394,13 +474,18 @@
                         realtimeBadge.style.color = '#B91C1C';
                         realtimeBadge.style.borderColor = '#FECACA';
                     }
-                } else if (data.type === 'PE_DIRECTIVE_ARRIVED') {
-                    handleNewDirective(data.directive);
+                } else if (data.type === 'PE_MESSAGE_ARRIVED' || data.type === 'PE_DIRECTIVE_ARRIVED') {
+                    const directive = data.directive || {};
+                    const msgType = directive.message_type || data.messageType || 'DIRECTIVE';
+                    if (msgType === 'APPROVAL') {
+                        updateContextUI('PE_APPROVAL_READY', { directive });
+                    } else {
+                        updateContextUI('PE_DIRECTIVE_READY', { directive });
+                    }
                 } else if (data.type === 'DIRECTIVE_DISPATCHED_TO_AN') {
-                    btnFillPeText.innerHTML = `<span style="margin-right: 6px;">⚙️</span> AN đang thi công...`;
-                    miniStatusText.innerText = `⚙️ AN đang thi công...`;
+                    updateContextUI('AN_WORKING');
                 } else if (data.type === 'AN_REPORT_DONE') {
-                    handleAnReportReady(data.message);
+                    updateContextUI('AN_REPORT_READY', { message: data.message, threadId: data.threadId });
                 }
             } catch (err) {
                 console.error('[SSE ERROR]', err);
@@ -408,7 +493,7 @@
         };
         
         sseEventSource.onerror = () => {
-            statusDot.style.backgroundColor = '#EF4444'; // Red
+            statusDot.style.backgroundColor = '#EF4444';
             statusDot.style.boxShadow = '0 0 6px #EF4444';
             realtimeBadge.innerText = 'RT: OFF';
             realtimeBadge.style.background = '#F1F5F9';
@@ -416,7 +501,6 @@
             realtimeBadge.style.borderColor = '#CBD5E1';
             miniStatusText.innerText = `🔴 Mất kết nối`;
             
-            // Quét cổng tiếp theo
             portScanIndex = (portScanIndex + 1) % CANDIDATE_PORTS.length;
             localHubPort = CANDIDATE_PORTS[portScanIndex];
             log(`Mất kết nối Hub. Thử cổng ${localHubPort}...`, 'warning');
@@ -428,28 +512,7 @@
 
     connectSSE();
 
-    // --- KHI AN BÁO CÁO XONG ---
-    function handleAnReportReady(message) {
-        lastAnReportMessage = message || "PE đọc Bridge: Hoàn tất nghiệm thu.";
-        log("✅ AN đã hoàn tất báo cáo! Bấm để đổ vào PE.", 'success');
-        
-        // Nút xanh ngọc nổi bật
-        btnFillPe.style.background = 'linear-gradient(135deg, #10B981 0%, #059669 100%)';
-        btnFillPe.style.color = '#FFFFFF';
-        btnFillPe.style.border = 'none';
-        btnFillPe.style.cursor = 'pointer';
-        btnFillPe.style.boxShadow = '0 4px 14px rgba(16, 185, 129, 0.4)';
-        btnFillPeText.innerHTML = `<span style="margin-right: 6px;">🚀</span> Đổ báo cáo vào PE`;
-        btnFillPeBadge.style.display = 'inline-block';
-        btnFillPe.disabled = false;
-        
-        miniStatusText.innerText = `🚀 Báo cáo sẵn sàng!`;
-        if (isCollapsed) {
-            bridgeUI.style.boxShadow = '0 0 0 3px #10B981, 0 12px 32px rgba(16, 185, 129, 0.3)';
-        }
-    }
-
-    // --- TÌM Ô NHẬP LIỆU PERPLEXITY (ĐA TẦNG ROBUST) ---
+    // --- TÌM VÀ ĐIỀN CHATBOX PERPLEXITY ---
     function isElementVisible(el) {
         if (!el) return false;
         const rect = el.getBoundingClientRect();
@@ -460,23 +523,16 @@
     function findPerplexityInput() {
         const keywords = ['câu hỏi', 'ask', 'follow', 'search', 'nhập', 'prompt', 'tiếp theo'];
 
-        // 1. Textarea có sẵn trên trang
         const textareas = Array.from(document.querySelectorAll('textarea'));
         for (const ta of textareas) {
-            if (isElementVisible(ta)) {
-                return { el: ta, type: 'textarea' };
-            }
+            if (isElementVisible(ta)) return { el: ta, type: 'textarea' };
         }
 
-        // 2. Contenteditable (Lexical, ProseMirror, Slate, Rich-editor)
         const editables = Array.from(document.querySelectorAll('div[contenteditable="true"], [role="textbox"], div[data-lexical-editor="true"], .ProseMirror, [contenteditable="plaintext-only"]'));
         for (const ed of editables) {
-            if (isElementVisible(ed)) {
-                return { el: ed, type: 'contenteditable' };
-            }
+            if (isElementVisible(ed)) return { el: ed, type: 'contenteditable' };
         }
 
-        // 3. Quét theo placeholder hoặc aria-label
         const allCandidates = Array.from(document.querySelectorAll('textarea, input[type="text"], input:not([type]), [contenteditable="true"]'));
         for (const c of allCandidates) {
             const ph = (c.getAttribute('placeholder') || '').toLowerCase();
@@ -489,39 +545,28 @@
             }
         }
 
-        // 4. Tìm kiếm qua container query
         const queryWrapper = document.querySelector('form, [data-testid="search-input"], [data-testid="prompt-input"]');
         if (queryWrapper) {
             const inner = queryWrapper.querySelector('textarea, div[contenteditable="true"], input');
-            if (inner) {
-                return { el: inner, type: inner.tagName === 'TEXTAREA' ? 'textarea' : 'contenteditable' };
-            }
+            if (inner) return { el: inner, type: inner.tagName === 'TEXTAREA' ? 'textarea' : 'contenteditable' };
         }
 
-        // 5. Fallback cuối cùng: phần tử cuối cùng trong DOM
         if (textareas.length > 0) return { el: textareas[textareas.length - 1], type: 'textarea' };
         if (editables.length > 0) return { el: editables[editables.length - 1], type: 'contenteditable' };
 
         return null;
     }
 
-    // --- ĐIỀN NỘI DUNG VÀO PERPLEXITY & CLIPBOARD ---
     async function fillPerplexityChatbox(text) {
-        // Bước 1: Luôn sao chép nội dung vào Clipboard trước (Bảo hiểm 100%)
-        let copied = false;
+        // Luôn copy vào clipboard trước
         try {
             if (navigator.clipboard && navigator.clipboard.writeText) {
                 await navigator.clipboard.writeText(text);
-                copied = true;
             }
-        } catch (e) {
-            console.warn('[Bridge] Không ghi được clipboard:', e);
-        }
+        } catch (e) {}
 
-        // Bước 2: Tìm phần tử ô nhập liệu
         let target = findPerplexityInput();
 
-        // Nếu chưa tìm thấy, thử click kích hoạt container tìm kiếm
         if (!target) {
             const clickTarget = document.querySelector('[placeholder*="câu hỏi"], [placeholder*="Ask"], div[class*="search"], div[class*="prompt"]');
             if (clickTarget) {
@@ -533,7 +578,8 @@
         }
 
         if (!target || !target.el) {
-            log(copied ? "⚠️ Đã Copy vào Clipboard! Bạn hãy bấm ô chat & nhấn Ctrl+V." : "Không tìm thấy ô nhập! Hãy thử click vào ô chat rồi bấm lại.", 'warning');
+            log("⚠️ Đã Copy vào Clipboard! Hãy bấm ô chat & nhấn Ctrl+V.", 'warning');
+            updateContextUI('WAITING_PE');
             return;
         }
 
@@ -552,7 +598,6 @@
                 el.dispatchEvent(new Event('input', { bubbles: true }));
                 el.dispatchEvent(new Event('change', { bubbles: true }));
             } else {
-                // Contenteditable (Lexical / ProseMirror)
                 const selection = window.getSelection();
                 const range = document.createRange();
                 range.selectNodeContents(el);
@@ -570,43 +615,47 @@
             el.dispatchEvent(new KeyboardEvent('keyup', { bubbles: true }));
             el.focus();
 
-            log("✅ Đã điền báo cáo! THOAN hãy kiểm tra và bấm nút Gửi trên Perplexity.", 'success');
+            updateContextUI('WAITING_PE');
         } catch (err) {
             console.error('[Bridge Fill Error]', err);
             log("⚠️ Đã copy nội dung vào Clipboard. Hãy nhấn Ctrl+V vào ô chat!", 'warning');
+            updateContextUI('WAITING_PE');
         }
-
-        // Reset trạng thái nút
-        btnFillPe.style.background = '#F1F5F9';
-        btnFillPe.style.color = '#94A3B8';
-        btnFillPe.style.border = '1px solid #E2E8F0';
-        btnFillPe.style.boxShadow = 'none';
-        btnFillPe.style.cursor = 'not-allowed';
-        btnFillPeText.innerHTML = `<span style="margin-right: 6px;">🤖</span> Chờ AN thi công...`;
-        btnFillPeBadge.style.display = 'none';
-        btnFillPe.disabled = true;
-        miniStatusText.innerText = `🟢 Chờ lệnh mới`;
     }
 
-    // --- SỰ KIỆN NÚT BẤM ---
-    btnFillPe.addEventListener('click', () => {
-        if (!btnFillPe.disabled) {
-            fillPerplexityChatbox(lastAnReportMessage || "PE đọc Bridge: Hoàn tất nghiệm thu.");
+    // --- SỰ KIỆN NÚT BẤM CHÍNH (DYNAMIC CLICK) ---
+    btnMainAction.addEventListener('click', () => {
+        if (currentUIState === 'AN_REPORT_READY') {
+            // Khi AN có báo cáo -> Điền vào Perplexity
+            fillPerplexityChatbox(latestMessage.text || "PE đọc Bridge: Hoàn tất nghiệm thu.");
+        }
+        else if (currentUIState === 'PE_DIRECTIVE_READY' || currentUIState === 'PE_APPROVAL_READY') {
+            // Khi PE có chỉ thị / phê duyệt -> Gửi sang AN
+            if (pendingDirectiveToAN) {
+                forwardDirectiveToLocalHub(pendingDirectiveToAN);
+            }
+        }
+        else {
+            // Trạng thái khác: Hiển thị thông báo hoặc copy
+            log(`Tin hiện tại: [${latestMessage.sender}] ${latestMessage.type} (${latestMessage.threadId || 'IDLE'})`, 'info');
         }
     });
 
-    btnCopyClipboard.addEventListener('click', async () => {
-        const textToCopy = lastAnReportMessage || "PE đọc Bridge: Hoàn tất nghiệm thu.";
+    // Nút Copy thông minh: Tự động copy nội dung của tin nhắn mới nhất
+    btnSmartCopy.addEventListener('click', async () => {
+        const textToCopy = latestMessage.text || pendingDirectiveToAN?.content_md || "PE đọc Bridge.";
         try {
             await navigator.clipboard.writeText(textToCopy);
-            log("📋 Đã sao chép nội dung vào Clipboard thành công!", 'success');
+            log(`📋 Đã copy nội dung [${latestMessage.sender} - ${latestMessage.type}] vào Clipboard!`, 'success');
         } catch (err) {
-            log("Lỗi copy Clipboard: Hãy copy thủ công.", 'error');
+            log("Lỗi copy Clipboard: Hãy thử lại.", 'error');
         }
     });
 
+    // Nút Điền tay
     btnManualFill.addEventListener('click', () => {
-        const text = prompt("Nhập nội dung muốn gửi cho PE:", lastAnReportMessage || "PE đọc Bridge: Hoàn tất nghiệm thu.");
+        const defaultText = latestMessage.text || "PE đọc Bridge: Hoàn tất nghiệm thu.";
+        const text = prompt("Nhập nội dung muốn đổ vào ô chat Perplexity:", defaultText);
         if (text) {
             fillPerplexityChatbox(text);
         }
