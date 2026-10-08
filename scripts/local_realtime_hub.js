@@ -20,7 +20,8 @@ const crypto = require('crypto');
 const { exec } = require('child_process');
 const { createClient } = require('@supabase/supabase-js');
 
-const START_PORT = 3456;
+const DEFAULT_PORT = 7654;
+const START_PORT = parseInt(process.env.HUB_PORT || process.argv[2] || DEFAULT_PORT, 10);
 const HOST = '127.0.0.1';
 const ROOT_DIR = path.resolve(__dirname, '..');
 const AGENTS_DIR = path.join(ROOT_DIR, '.agents');

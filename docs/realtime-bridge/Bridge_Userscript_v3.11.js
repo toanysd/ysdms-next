@@ -13,7 +13,9 @@
 
     console.log('[Bridge v3.11 Hardened] 🚀 Khởi chạy hệ thống SSE Client & UI Control.');
 
-    let localHubPort = 3456;
+    let CANDIDATE_PORTS = [7654, 7655, 7656, 3888, 3456];
+    let portScanIndex = 0;
+    let localHubPort = parseInt(localStorage.getItem('pe_an_hub_port') || '7654', 10);
     let sseEventSource = null;
     let sessionToken = '';
     let lastAnReportMessage = null;
@@ -204,9 +206,9 @@
                         realtimeBadge.style.background = '#065F46';
                         realtimeBadge.style.color = '#34D399';
                     }
-                    if (data.port && data.port !== localHubPort) {
+                    if (data.port) {
                         localHubPort = data.port;
-                        connectSSE();
+                        localStorage.setItem('pe_an_hub_port', data.port);
                     }
                 } else if (data.type === 'REALTIME_STATUS') {
                     if (data.subscribed) {
@@ -236,9 +238,14 @@
             realtimeBadge.innerText = 'RT: OFF';
             realtimeBadge.style.background = '#334155';
             realtimeBadge.style.color = '#94A3B8';
-            log('Mất kết nối Hub. Đang thử lại...');
+            
+            // Tự động quét cổng tiếp theo trong danh sách CANDIDATE_PORTS
+            portScanIndex = (portScanIndex + 1) % CANDIDATE_PORTS.length;
+            localHubPort = CANDIDATE_PORTS[portScanIndex];
+            log(`Mất kết nối Hub (: ${CANDIDATE_PORTS[(portScanIndex - 1 + CANDIDATE_PORTS.length) % CANDIDATE_PORTS.length]}). Đang thử cổng ${localHubPort}...`);
+            
             sseEventSource.close();
-            setTimeout(connectSSE, 3000);
+            setTimeout(connectSSE, 2500);
         };
     }
 
