@@ -462,6 +462,27 @@ export const MoldLoanPDFDocument: React.FC<MoldLoanPDFProps> = ({
           </View>
         )}
 
+        {/* 5b. Return Handover Checklist & Pallet Spec (Panasonic Shirakawa & SMK) */}
+        {isReturn && (
+          <View style={styles.placardContainer}>
+            <Text style={styles.placardHeader}>【 現品受渡・同梱物及び梱包荷姿確認 (Panasonic / SMK 規格) 】</Text>
+            <View style={styles.placardGrid}>
+              <Text style={styles.placardCell}>
+                1. 付属部品: <Text style={styles.placardCellBold}>金型部品・取付金具 一式 (同梱返却済)</Text>
+              </Text>
+              <Text style={styles.placardCell}>
+                2. 図面書類: <Text style={styles.placardCellBold}>金型図面・成形レイアウト図 (同梱返却済)</Text>
+              </Text>
+              <Text style={styles.placardCell}>
+                3. 証書原本: <Text style={styles.placardCellBold}>預かり書原本・借用書 (回収確認済)</Text>
+              </Text>
+              <Text style={styles.placardCell}>
+                4. 梱包荷姿: <Text style={styles.placardCellBold}>JIS標準パレット (1,100×1,100mm) ストレッチ包装</Text>
+              </Text>
+            </View>
+          </View>
+        )}
+
         {/* 6. Photo Attachments Area (全体写真 + 銘板写真) */}
         <Text style={styles.sectionTitle}>2. 現品写真添付欄 (固定資産写真 / Photographic Record)</Text>
         <View style={styles.photosContainer}>
@@ -504,26 +525,30 @@ export const MoldLoanPDFDocument: React.FC<MoldLoanPDFProps> = ({
           <View style={styles.signatureBlock}>
             <View style={{ alignItems: 'center' }}>
               <Text style={styles.signatureRole}>
-                {isCustody ? '受託責任者 (Custodian)' : isReturn ? '受領確認者 (Receiver)' : '加工委託先 (Processor)'}
+                {isCustody ? '受託責任者 (Custodian)' : isReturn ? '運送担当者 (Carrier / Driver)' : '加工委託先 (Processor)'}
               </Text>
               <Text style={styles.signatureSubRole}>
-                {isCustody ? '株式会社ヨシダパッケージ' : (loan.to_company_name || '客先企業')}
+                {isCustody ? '株式会社ヨシダパッケージ' : isReturn ? '運送業者・車番・受領印' : (loan.to_company_name || '加工委託先')}
               </Text>
             </View>
             <View style={{ alignItems: 'center', width: '100%', marginTop: 8 }}>
               <View style={styles.signatureLine} />
-              <Text style={styles.signatureLabel}>署名・捺印 (Signature / Stamp)</Text>
+              <Text style={styles.signatureLabel}>受領印・車番 (Receipt Stamp)</Text>
             </View>
           </View>
 
           <View style={styles.signatureBlock}>
             <View style={{ alignItems: 'center' }}>
-              <Text style={styles.signatureRole}>現品受渡検査員 (QC Inspector)</Text>
-              <Text style={styles.signatureSubRole}>品質管理部 / 製造技術部</Text>
+              <Text style={styles.signatureRole}>
+                {isReturn ? '受領確認者 (Customer Receiver)' : '現品受渡検査員 (QC Inspector)'}
+              </Text>
+              <Text style={styles.signatureSubRole}>
+                {isReturn ? (loan.to_company_name || '客先企業 (検収印)') : '品質管理部 / 製造技術部'}
+              </Text>
             </View>
             <View style={{ alignItems: 'center', width: '100%', marginTop: 8 }}>
               <View style={styles.signatureLine} />
-              <Text style={styles.signatureLabel}>確認印 (QC Approval)</Text>
+              <Text style={styles.signatureLabel}>検収印 (Inspection Stamp)</Text>
             </View>
           </View>
         </View>

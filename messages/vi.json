@@ -5175,7 +5175,17 @@
       "conditionOnReturnLabel": "Kiểm tra tình trạng lúc nhận lại",
       "conditionOnReturnPlaceholder": "Ví dụ: Đầy đủ linh kiện, đã bôi dầu chống gỉ, không biến dạng mẻ dao",
       "returnNotesLabel": "Ghi chú nhận lại",
-      "returnNotesPlaceholder": "Ghi chú thêm nếu có..."
+      "returnNotesPlaceholder": "Ghi chú thêm nếu có...",
+      "handoverTitle": "Bàn giao & Trả khuôn cho khách",
+      "carrierLabel": "Đơn vị vận chuyển / Biển số xe",
+      "carrierPlaceholder": "VD: Yamato / Xe tải 2T Kawasaki 12-34 / Trả cước",
+      "receiverLabel": "Đại diện khách hàng tiếp nhận",
+      "receiverPlaceholder": "VD: Nhà máy Panasonic Shirakawa - Phòng vật tư",
+      "checklistTitle": "Danh mục kiểm tra bàn giao hiện vật",
+      "partsReturnedLabel": "Linh kiện, phụ tùng gá kẹp (Đã kèm)",
+      "drawingsReturnedLabel": "Bản vẽ khuôn & sơ đồ tạo hình (Đã kèm)",
+      "certReturnedLabel": "Biên bản mượn gốc (Đã thu hồi)",
+      "palletSpecLabel": "Quy cách đóng gói Pallet chuẩn 1,100x1,100mm"
     },
     "detail": {
       "back": "Quay lại",
@@ -5226,7 +5236,9 @@
       "downloadDocument": "Tải chứng từ PDF"
     },
     "transferBoundaryNotice": "※ Điều chuyển thiết bị nội bộ (Kawasaki - Yashio) không thuộc phạm vi Quản lý mượn/trả.",
-    "linkToLifecycle": "Đến Quản lý vòng đời / Kiểm kê"
+    "linkToLifecycle": "Đến Quản lý vòng đời / Kiểm kê",
+    "printReturnSlip": "In Phiếu Giao Nhận Hiện Vật",
+    "returnSummaryTitle": "Thông tin bàn giao & hoàn trả hiện vật"
   },
   "FastJobCreate": {
     "title": "Phát hành Nhanh Chỉ thị Gia công Khuôn (1-Stop Fast Tooling)",

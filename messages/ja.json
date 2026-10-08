@@ -5175,7 +5175,17 @@
       "conditionOnReturnLabel": "返却受入時の外観・状態検査",
       "conditionOnReturnPlaceholder": "例: 刃こぼれなし、サビなし、防錆油塗布済み",
       "returnNotesLabel": "受入時メモ",
-      "returnNotesPlaceholder": "特記事項があれば入力..."
+      "returnNotesPlaceholder": "特記事項があれば入力...",
+      "handoverTitle": "金型返却・現品受渡確認",
+      "carrierLabel": "運送業者・便名・車番",
+      "carrierPlaceholder": "例: ヤマト便 / 2tトラック 川崎あ12-34 / 着払い",
+      "receiverLabel": "客先受取担当者",
+      "receiverPlaceholder": "例: パナソニック白河工場 資材課 担当者様",
+      "checklistTitle": "現品受渡・同梱確認チェックリスト",
+      "partsReturnedLabel": "金型部品・取付金具 一式（同梱確認済）",
+      "drawingsReturnedLabel": "金型図面・成形レイアウト図（同梱確認済）",
+      "certReturnedLabel": "預かり書原本・借用書（回収確認済）",
+      "palletSpecLabel": "JIS標準パレット (1,100×1,100mm) 梱包確認済"
     },
     "detail": {
       "back": "戻る",
@@ -5226,7 +5236,9 @@
       "downloadDocument": "PDFダウンロード"
     },
     "transferBoundaryNotice": "※ 川崎・八潮工場間の社内設備移管は本画面（貸出管理）の対象外です（別制度）。",
-    "linkToLifecycle": "社内移管・棚卸へ"
+    "linkToLifecycle": "社内移管・棚卸へ",
+    "printReturnSlip": "現品受渡確認票 印刷/PDF",
+    "returnSummaryTitle": "返却・現品受渡確認情報"
   },
   "FastJobCreate": {
     "title": "金型製作・改修指示書 クイック発行 (1-Stop Fast Tooling)",

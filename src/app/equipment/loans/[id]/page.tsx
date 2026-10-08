@@ -229,7 +229,11 @@ export default function EquipmentLoanDetailPage() {
             title={t('detail.printDocument')}
           >
             <Printer size={14} />
-            <span>{t('detail.printDocument')}</span>
+            <span>
+              {loan.status === 'RETURNED' || loan.loan_type === 'RETURN_TO_CUSTOMER'
+                ? t('printReturnSlip')
+                : t('detail.printDocument')}
+            </span>
           </a>
 
           {/* PDF Download Direct Link */}
@@ -472,7 +476,7 @@ export default function EquipmentLoanDetailPage() {
                 <span className="text-[10px] text-[#64748B] min-w-[100px] shrink-0 font-semibold">
                   {t('detail.conditionNotes')}
                 </span>
-                <span className="text-[13px] text-slate-700">
+                <span className="text-[12px] text-slate-800 whitespace-pre-line font-mono bg-slate-50 p-2 rounded border border-slate-200">
                   {loan.condition_notes || '—'}
                 </span>
               </div>

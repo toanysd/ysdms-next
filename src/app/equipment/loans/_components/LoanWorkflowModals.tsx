@@ -468,6 +468,14 @@ export function ReturnCheckInModal({
   const [newRackLayerId, setNewRackLayerId] = useState('');
   const [conditionOnReturn, setConditionOnReturn] = useState('');
   const [notes, setNotes] = useState('');
+  
+  // Gói 7: Thông tin giao nhận hoàn trả (Panasonic Shirakawa & SMK)
+  const [carrierName, setCarrierName] = useState('');
+  const [receiverContact, setReceiverContact] = useState('');
+  const [partsReturned, setPartsReturned] = useState(true);
+  const [drawingsReturned, setDrawingsReturned] = useState(true);
+  const [certReturned, setCertReturned] = useState(true);
+  const [palletChecked, setPalletChecked] = useState(true);
 
   useEffect(() => {
     if (isOpen) {
@@ -475,6 +483,12 @@ export function ReturnCheckInModal({
       setConditionOnReturn('');
       setNotes('');
       setNewRackLayerId('');
+      setCarrierName('');
+      setReceiverContact('');
+      setPartsReturned(true);
+      setDrawingsReturned(true);
+      setCertReturned(true);
+      setPalletChecked(true);
 
       Promise.all([getEmployeesForLoan(), getRackLayersForReturn()]).then(([emps, rls]) => {
         setEmployees(emps);
@@ -492,13 +506,20 @@ export function ReturnCheckInModal({
       return;
     }
 
+    const handoverSummary = [
+      notes ? notes.trim() : '',
+      receiverContact ? `【客先受取担当】${receiverContact.trim()}` : '',
+      carrierName ? `【運送業者・便名】${carrierName.trim()}` : '',
+      `【受渡品目確認】部品:${partsReturned ? '○' : '×'} | 図面:${drawingsReturned ? '○' : '×'} | 原本:${certReturned ? '○' : '×'} | パレット1100:${palletChecked ? '○' : '×'}`
+    ].filter(Boolean).join('\n');
+
     startTransition(async () => {
       const res = await completeEquipmentLoanReturn({
         loan_id: loan.loan_id,
         employee_id: employeeId,
         new_rack_layer_id: newRackLayerId || null,
-        condition_on_return: conditionOnReturn.trim() || null,
-        notes: notes.trim() || null,
+        condition_on_return: conditionOnReturn.trim() || '良好 (点検済)',
+        notes: handoverSummary || null,
       });
 
       if (!res.success) {
@@ -587,6 +608,79 @@ export function ReturnCheckInModal({
                 </option>
               ))}
             </select>
+          </div>
+
+          {/* Gói 7: Thông tin giao nhận hoàn trả */}
+          <div className="grid grid-cols-2 gap-2">
+            <div className="flex flex-col gap-1">
+              <label className="text-[11px] font-bold text-[var(--text-muted)]">
+                {t('workflowModal.carrierLabel')}
+              </label>
+              <input
+                type="text"
+                value={carrierName}
+                onChange={(e) => setCarrierName(e.target.value)}
+                placeholder={t('workflowModal.carrierPlaceholder')}
+                className="form-input text-[12px] h-[32px]"
+              />
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-[11px] font-bold text-[var(--text-muted)]">
+                {t('workflowModal.receiverLabel')}
+              </label>
+              <input
+                type="text"
+                value={receiverContact}
+                onChange={(e) => setReceiverContact(e.target.value)}
+                placeholder={t('workflowModal.receiverPlaceholder')}
+                className="form-input text-[12px] h-[32px]"
+              />
+            </div>
+          </div>
+
+          {/* Checklist bàn giao phụ tùng & bản vẽ */}
+          <div className="p-2.5 rounded bg-[var(--tint-teal-bg)] border border-[var(--border-subtle)] flex flex-col gap-1.5">
+            <span className="text-[11px] font-bold text-[var(--text-primary)]">
+              {t('workflowModal.checklistTitle')}
+            </span>
+            <div className="grid grid-cols-2 gap-1.5 text-[11px] text-[var(--text-secondary)]">
+              <label className="flex items-center gap-1.5 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={partsReturned}
+                  onChange={(e) => setPartsReturned(e.target.checked)}
+                  className="rounded text-[var(--accent)]"
+                />
+                <span>{t('workflowModal.partsReturnedLabel')}</span>
+              </label>
+              <label className="flex items-center gap-1.5 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={drawingsReturned}
+                  onChange={(e) => setDrawingsReturned(e.target.checked)}
+                  className="rounded text-[var(--accent)]"
+                />
+                <span>{t('workflowModal.drawingsReturnedLabel')}</span>
+              </label>
+              <label className="flex items-center gap-1.5 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={certReturned}
+                  onChange={(e) => setCertReturned(e.target.checked)}
+                  className="rounded text-[var(--accent)]"
+                />
+                <span>{t('workflowModal.certReturnedLabel')}</span>
+              </label>
+              <label className="flex items-center gap-1.5 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={palletChecked}
+                  onChange={(e) => setPalletChecked(e.target.checked)}
+                  className="rounded text-[var(--accent)]"
+                />
+                <span>{t('workflowModal.palletSpecLabel')}</span>
+              </label>
+            </div>
           </div>
 
           {/* Condition on return */}
