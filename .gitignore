@@ -99,3 +99,6 @@ thaoluan-per/
 *.accdb
 *.laccdb
 _trash*
+
+# Userscript with local tokens
+*.user.js

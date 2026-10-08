@@ -53,6 +53,26 @@ def send_message(thread_id: str, sender: str, message_type: str, content_md: str
     res = cur.fetchone()
     conn.commit()
     conn.close()
+
+    # Tự động báo về Local Realtime Hub để phát tín hiệu SSE cho trình duyệt chuyển CHẤM XANH
+    if sender == 'AN':
+        try:
+            import urllib.request, json
+            port = 3456
+            port_file = os.path.join(os.path.dirname(__file__), "..", ".agents", "hub_port.json")
+            if os.path.exists(port_file):
+                try:
+                    with open(port_file, 'r', encoding='utf-8') as pf:
+                        port = json.load(pf).get("port", 3456)
+                except Exception:
+                    pass
+            url = f"http://127.0.0.1:{port}/api/report"
+            payload = json.dumps({"threadId": thread_id, "pingMessage": "PE đọc Bridge."}).encode('utf-8')
+            req = urllib.request.Request(url, data=payload, headers={"Content-Type": "application/json"}, method="POST")
+            urllib.request.urlopen(req, timeout=2)
+        except Exception:
+            pass
+
     return res[0], res[1]
 
 def mark_read(message_id: str):
