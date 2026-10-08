@@ -1,14 +1,24 @@
 /**
- * PE-AN Local Realtime Hub (SSE + Webhook)
- * Dự án: YSDMS NextGen & OmniLinguist
- * Mục đích: Cầu nối thời gian thực giữa Perplexity (trình duyệt) và Antigravity (máy cục bộ).
- * Tuân thủ Quy Tắc Quản Lý Cổng Mạng: Tự động chuyển cổng (EADDRINUSE + 1), bind 127.0.0.1.
+ * PE-AN Local Realtime Hub (Hardened Gateway v4.0)
+ * Dự án: YSDMS NextGen — Phối hợp Tự trị PE-THOAN-AN
+ * Ràng buộc: WO-BRIDGE-HARDENING
+ * 
+ * Tính năng:
+ *  1. Supabase Realtime postgres_changes listener (Zero business polling).
+ *  2. Localhost only (127.0.0.1, auto-shifting on EADDRINUSE).
+ *  3. Session Secret Token & Origin check (Chống can thiệp ngoài).
+ *  4. Database Verification (Chống message giả mạo).
+ *  5. Idempotency Cache (Chống trùng lặp theo message_id).
+ *  6. Structured Audit Log (.agents/bridge_audit.log).
+ *  7. SSE Gateway cho Userscript và Long-polling cho Sentinel.
  */
 
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 const { exec } = require('child_process');
+const { createClient } = require('@supabase/supabase-js');
 
 const START_PORT = 3456;
 const HOST = '127.0.0.1';
@@ -19,30 +29,230 @@ if (!fs.existsSync(AGENTS_DIR)) {
     fs.mkdirSync(AGENTS_DIR, { recursive: true });
 }
 
-let activePort = START_PORT;
-let sseClients = [];
-let lastDirectiveId = '';
-let lastDirectiveTime = 0;
+// 1. Đọc cấu hình Supabase từ .env.local
+const envPath = path.join(ROOT_DIR, '.env.local');
+let supabaseUrl = '';
+let supabaseServiceKey = '';
 
-// Helper: Gửi phản hồi CORS
-function setCorsHeaders(res) {
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+if (fs.existsSync(envPath)) {
+    const envLines = fs.readFileSync(envPath, 'utf8').split('\n');
+    for (const line of envLines) {
+        const trimmed = line.trim();
+        if (trimmed && !trimmed.startsWith('#') && trimmed.includes('=')) {
+            const [k, ...v] = trimmed.split('=');
+            const val = v.join('=').trim().replace(/^["']|["']$/g, '');
+            if (k.trim() === 'NEXT_PUBLIC_SUPABASE_URL') supabaseUrl = val;
+            if (k.trim() === 'SUPABASE_SERVICE_ROLE_KEY') supabaseServiceKey = val;
+        }
+    }
 }
 
-// Helper: Phát âm thanh Windows
-function playSystemAlert() {
+// Khởi tạo Supabase client với Realtime WebSocket
+let supabase = null;
+if (supabaseUrl && supabaseServiceKey) {
+    supabase = createClient(supabaseUrl, supabaseServiceKey, {
+        auth: { persistSession: false },
+        realtime: {
+            params: {
+                eventsPerSecond: 10
+            }
+        }
+    });
+} else {
+    console.warn('[WARN] Không tìm thấy NEXT_PUBLIC_SUPABASE_URL hoặc SUPABASE_SERVICE_ROLE_KEY trong .env.local');
+}
+
+// 2. Sinh Session Secret Token bảo mật cục bộ
+const SESSION_TOKEN = crypto.randomBytes(32).toString('hex');
+fs.writeFileSync(path.join(AGENTS_DIR, 'hub_token.json'), JSON.stringify({
+    token: SESSION_TOKEN,
+    createdAt: new Date().toISOString()
+}, null, 2), 'utf8');
+
+// 3. Cache Idempotency (Lưu vết message_id đã xử lý)
+const PROCESSED_CACHE_FILE = path.join(AGENTS_DIR, 'processed_messages.json');
+let processedMessageIds = new Set();
+if (fs.existsSync(PROCESSED_CACHE_FILE)) {
+    try {
+        const raw = JSON.parse(fs.readFileSync(PROCESSED_CACHE_FILE, 'utf8'));
+        if (Array.isArray(raw)) processedMessageIds = new Set(raw);
+    } catch (e) {}
+}
+
+function markMessageProcessed(messageId) {
+    if (!messageId) return;
+    processedMessageIds.add(messageId);
+    try {
+        fs.writeFileSync(PROCESSED_CACHE_FILE, JSON.stringify(Array.from(processedMessageIds).slice(-200), null, 2), 'utf8');
+    } catch (e) {}
+}
+
+// 4. Audit Logger (JSONL)
+const AUDIT_LOG_FILE = path.join(AGENTS_DIR, 'bridge_audit.log');
+function auditLog(event, data = {}) {
+    const entry = {
+        timestamp: new Date().toISOString(),
+        event,
+        ...data
+    };
+    try {
+        fs.appendFileSync(AUDIT_LOG_FILE, JSON.stringify(entry) + '\n', 'utf8');
+    } catch (e) {}
+    console.log(`[AUDIT] ${entry.timestamp} | ${event} | ${data.messageId || data.threadId || ''}`);
+}
+
+let activePort = START_PORT;
+let sseClients = [];
+let waitingSentinels = [];
+let realtimeSubscribed = false;
+
+// 5. Kiểm tra Origin & Token
+function checkAuth(req) {
+    const tokenHeader = req.headers['x-bridge-token'] || '';
+    const authHeader = req.headers['authorization'] || '';
+    const bearerToken = authHeader.startsWith('Bearer ') ? authHeader.substring(7) : '';
+    const provided = tokenHeader || bearerToken;
+
+    // Chấp nhận nếu có token đúng
+    if (provided && provided === SESSION_TOKEN) return true;
+
+    // Chấp nhận nếu gọi nội bộ từ localhost không có token nhưng có Origin hợp lệ từ Perplexity / Extension
+    const origin = req.headers['origin'] || req.headers['referer'] || '';
+    const isPerplexity = origin.includes('perplexity.ai');
+    const isExtension = origin.startsWith('chrome-extension://') || origin.startsWith('moz-extension://');
+    const isLocalhost = req.socket.remoteAddress === '127.0.0.1' || req.socket.remoteAddress === '::1' || req.socket.remoteAddress === '::ffff:127.0.0.1';
+
+    // Cho phép Perplexity Userscript lấy token ban đầu qua /api/token
+    if (isLocalhost && (isPerplexity || isExtension)) return true;
+
+    return false;
+}
+
+// Helper CORS
+function setCorsHeaders(res, req) {
+    const origin = req.headers['origin'] || '*';
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-bridge-token');
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+}
+
+// 6. Xử lý Chỉ thị nhận được (Phân phối cho Sentinel)
+function dispatchDirectiveToSentinel(directiveObj) {
+    const { message_id, thread_id, message_type, content_md } = directiveObj;
+
+    if (processedMessageIds.has(message_id)) {
+        auditLog('DIRECTIVE_IGNORED_DUPLICATE', { messageId: message_id, threadId: thread_id });
+        return { success: false, reason: 'DUPLICATE' };
+    }
+
+    markMessageProcessed(message_id);
+
+    // Lưu vào PE_INBOX_LATEST
+    const inboxMdPath = path.join(AGENTS_DIR, 'PE_INBOX_LATEST.md');
+    const inboxJsonPath = path.join(AGENTS_DIR, 'PE_INBOX_LATEST.json');
+
+    const mdContent = `# PE DIRECTIVE (SUPABASE SSOT)
+
+- **Thread ID:** \`${thread_id}\`
+- **Message ID:** \`${message_id}\`
+- **Message Type:** \`${message_type}\`
+- **Received At:** \`${new Date().toISOString()}\`
+- **Origin:** Supabase Realtime via Hardened Local Hub
+
+---
+
+### Nội Dung Chỉ Thị
+${content_md}
+`;
+    fs.writeFileSync(inboxMdPath, mdContent, 'utf8');
+    fs.writeFileSync(inboxJsonPath, JSON.stringify(directiveObj, null, 2), 'utf8');
+
+    auditLog('DIRECTIVE_DISPATCHED', {
+        messageId: message_id,
+        threadId: thread_id,
+        waitingSentinels: waitingSentinels.length
+    });
+
+    // Bíp âm thanh
     try {
         if (process.platform === 'win32') {
             exec('powershell -Command "[console]::beep(880, 250)"', () => {});
         }
     } catch (e) {}
+
+    // Bắn cho các Sentinel đang chờ ngầm (Long-polling)
+    while (waitingSentinels.length > 0) {
+        const sentinel = waitingSentinels.pop();
+        try {
+            sentinel.writeHead(200, { 'Content-Type': 'application/json' });
+            sentinel.end(JSON.stringify({
+                success: true,
+                directive: directiveObj
+            }));
+        } catch (e) {}
+    }
+
+    // Bắn SSE thông báo tới Userscript rằng lệnh đã được dispatch
+    broadcastSSE({
+        type: 'DIRECTIVE_DISPATCHED_TO_AN',
+        messageId: message_id,
+        threadId: thread_id,
+        timestamp: new Date().toISOString()
+    });
+
+    return { success: true };
 }
 
-// Xử lý Request
-const server = http.createServer((req, res) => {
-    setCorsHeaders(res);
+function broadcastSSE(payload) {
+    const str = JSON.stringify(payload);
+    sseClients.forEach(client => {
+        try {
+            client.write(`data: ${str}\n\n`);
+        } catch (e) {}
+    });
+}
+
+// 7. Lắng nghe Supabase Realtime
+function startSupabaseRealtime() {
+    if (!supabase) return;
+
+    try {
+        console.log('[REALTIME] 📡 Đang kết nối Supabase Realtime Channel...');
+        const channel = supabase.channel('hub_pe_an_realtime')
+            .on(
+                'postgres_changes',
+                { event: 'INSERT', schema: 'public', table: 'pe_an_messages' },
+                (payload) => {
+                    const row = payload.new;
+                    console.log(`[REALTIME] 🔔 Nhận sự kiện Realtime INSERT: ${row.message_id} (${row.sender} - ${row.message_type})`);
+                    auditLog('REALTIME_EVENT_RECEIVED', { messageId: row.message_id, sender: row.sender, type: row.message_type });
+
+                    if (row.sender === 'PE' && row.status === 'PENDING') {
+                        // Bắn sự kiện tới Userscript
+                        broadcastSSE({
+                            type: 'PE_DIRECTIVE_ARRIVED',
+                            directive: row
+                        });
+                        auditLog('PE_DIRECTIVE_BROADCAST_SSE', { messageId: row.message_id, threadId: row.thread_id });
+                    }
+                }
+            )
+            .subscribe((status) => {
+                console.log(`[REALTIME] ⚡ Trạng thái Realtime: ${status}`);
+                realtimeSubscribed = (status === 'SUBSCRIBED');
+                auditLog('REALTIME_STATUS_CHANGE', { status });
+                broadcastSSE({ type: 'REALTIME_STATUS', status, subscribed: realtimeSubscribed });
+            });
+    } catch (err) {
+        console.error('[REALTIME ERROR]', err);
+        auditLog('REALTIME_CONNECT_ERROR', { error: err.message });
+    }
+}
+
+// 8. HTTP Server Cục bộ (Chỉ bind 127.0.0.1)
+const server = http.createServer(async (req, res) => {
+    setCorsHeaders(res, req);
 
     if (req.method === 'OPTIONS') {
         res.writeHead(204);
@@ -52,19 +262,37 @@ const server = http.createServer((req, res) => {
 
     const url = new URL(req.url, `http://${req.headers.host || '127.0.0.1'}`);
 
-    // 1. Trạng thái Server
+    // --- GET /api/status ---
     if (url.pathname === '/api/status' && req.method === 'GET') {
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({
             status: 'online',
             port: activePort,
+            host: HOST,
+            realtimeSubscribed,
             sseClients: sseClients.length,
+            waitingSentinels: waitingSentinels.length,
             time: new Date().toISOString()
         }));
         return;
     }
 
-    // 2. Kênh SSE Realtime (Trình duyệt kết nối vào để nhận tin tức thời từ AN)
+    // --- GET /api/token (Cấp token bảo mật cho Client cùng máy) ---
+    if (url.pathname === '/api/token' && req.method === 'GET') {
+        if (!checkAuth(req)) {
+            res.writeHead(403, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'Origin not allowed' }));
+            return;
+        }
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({
+            token: SESSION_TOKEN,
+            port: activePort
+        }));
+        return;
+    }
+
+    // --- GET /api/events (SSE Stream) ---
     if (url.pathname === '/api/events' && req.method === 'GET') {
         res.writeHead(200, {
             'Content-Type': 'text/event-stream',
@@ -72,83 +300,102 @@ const server = http.createServer((req, res) => {
             'Connection': 'keep-alive'
         });
 
-        res.write(`data: ${JSON.stringify({ type: 'CONNECTED', port: activePort })}\n\n`);
+        res.write(`data: ${JSON.stringify({
+            type: 'CONNECTED',
+            port: activePort,
+            realtimeSubscribed,
+            token: SESSION_TOKEN
+        })}\n\n`);
         sseClients.push(res);
-        console.log(`[SSE] 🌐 Tab Perplexity đã kết nối Realtime. Tổng clients: ${sseClients.length}`);
+        console.log(`[SSE] 🌐 Client kết nối SSE. Tổng: ${sseClients.length}`);
 
         req.on('close', () => {
             sseClients = sseClients.filter(c => c !== res);
-            console.log(`[SSE] 🔌 Tab đã ngắt kết nối. Còn lại: ${sseClients.length}`);
         });
         return;
     }
 
-    // 3. Webhook: PE ➔ AN (Trình duyệt báo có chỉ thị mới từ PE trên Supabase)
+    // --- GET /api/wait_directive (Sentinel Antigravity Worker Long-polling) ---
+    if (url.pathname === '/api/wait_directive' && req.method === 'GET') {
+        // Kiểm tra Token bắt buộc
+        const token = req.headers['x-bridge-token'] || url.searchParams.get('token');
+        if (token !== SESSION_TOKEN) {
+            auditLog('SENTINEL_AUTH_FAILED', { ip: req.socket.remoteAddress });
+            res.writeHead(401, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'Invalid or missing bridge token' }));
+            return;
+        }
+
+        req.on('close', () => {
+            waitingSentinels = waitingSentinels.filter(c => c !== res);
+        });
+        waitingSentinels.push(res);
+        console.log(`[LONG-POLLING] 🕒 Sentinel đang chờ chỉ thị ngầm... (Active: ${waitingSentinels.length})`);
+        return;
+    }
+
+    // --- POST /api/directive (Chuyển lệnh từ Userscript / Webhook sang AN) ---
     if (url.pathname === '/api/directive' && req.method === 'POST') {
+        // Kiểm tra Auth
+        const token = req.headers['x-bridge-token'] || '';
+        if (token !== SESSION_TOKEN && !checkAuth(req)) {
+            auditLog('DIRECTIVE_REJECTED_UNAUTHORIZED', { ip: req.socket.remoteAddress });
+            res.writeHead(401, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'Unauthorized: Invalid token or Origin' }));
+            return;
+        }
+
         let body = '';
         req.on('data', chunk => { body += chunk; });
-        req.on('end', () => {
+        req.on('end', async () => {
             try {
                 const data = JSON.parse(body);
-                const threadId = data.threadId || 'WO-P1-004';
-                const messageId = data.messageId || 'unknown';
-                const messageType = data.messageType || 'DIRECTIVE';
-                const directiveText = data.directiveText || '';
+                const messageId = data.messageId || data.message_id;
 
-                const now = Date.now();
-                if (messageId === lastDirectiveId && (now - lastDirectiveTime < 5000)) {
-                    console.log(`[REALTIME HUB] ⏳ Bỏ qua thông báo trùng lặp trong 5 giây (${messageId})`);
-                    res.writeHead(200, { 'Content-Type': 'application/json' });
-                    res.end(JSON.stringify({ success: true, message: 'Bỏ qua trùng lặp' }));
+                if (!messageId) {
+                    res.writeHead(400, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ error: 'message_id is required' }));
                     return;
                 }
-                lastDirectiveId = messageId;
-                lastDirectiveTime = now;
 
-                console.log(`\n=======================================================`);
-                console.log(`[REALTIME HUB] ⚡ NHẬN CHỈ THỊ MỚI TỪ PE TRÊN SUPABASE!`);
-                console.log(`Thread     : ${threadId}`);
-                console.log(`Loại tin   : ${messageType}`);
-                console.log(`Message ID : ${messageId}`);
-                console.log(`Thời gian  : ${new Date().toLocaleTimeString()}`);
-                console.log(`-------------------------------------------------------`);
-                console.log(directiveText.slice(0, 300) + (directiveText.length > 300 ? '...' : ''));
-                console.log(`=======================================================\n`);
+                // Chống trùng lặp (Idempotency)
+                if (processedMessageIds.has(messageId)) {
+                    auditLog('DIRECTIVE_REJECTED_DUPLICATE', { messageId });
+                    res.writeHead(200, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ success: true, message: 'Message already processed (Idempotent)' }));
+                    return;
+                }
 
-                // Lưu vào .agents/PE_INBOX_LATEST.md và PE_INBOX_LATEST.json
-                const inboxMdPath = path.join(AGENTS_DIR, 'PE_INBOX_LATEST.md');
-                const inboxJsonPath = path.join(AGENTS_DIR, 'PE_INBOX_LATEST.json');
+                // Xác thực với Supabase (Anti-forgery: Message PHẢI tồn tại trong DB thật)
+                let verifiedDirective = null;
+                if (supabase) {
+                    const { data: dbMsg, error: dbErr } = await supabase
+                        .from('pe_an_messages')
+                        .select('*')
+                        .eq('message_id', messageId)
+                        .maybeSingle();
 
-                const mdContent = `# PE DIRECTIVE (SUPABASE SSOT)
+                    if (dbErr || !dbMsg) {
+                        auditLog('DIRECTIVE_REJECTED_FORGERY', { messageId, error: dbErr?.message });
+                        res.writeHead(400, { 'Content-Type': 'application/json' });
+                        res.end(JSON.stringify({ error: 'Anti-forgery: message_id does not exist in Supabase pe_an_messages' }));
+                        return;
+                    }
+                    verifiedDirective = dbMsg;
+                } else {
+                    // Fallback nếu không có Supabase client
+                    verifiedDirective = {
+                        message_id: messageId,
+                        thread_id: data.threadId || data.thread_id || 'WO-BRIDGE-HARDENING',
+                        message_type: data.messageType || data.message_type || 'DIRECTIVE',
+                        content_md: data.directiveText || data.content_md || ''
+                    };
+                }
 
-- **Thread ID:** \`${threadId}\`
-- **Message ID:** \`${messageId}\`
-- **Message Type:** \`${messageType}\`
-- **Received At:** \`${new Date().toISOString()}\`
-- **Origin:** Supabase public.pe_an_messages via Realtime Hub
-
----
-
-### Nội Dung Chỉ Thị:
-${directiveText}
-`;
-                fs.writeFileSync(inboxMdPath, mdContent, 'utf8');
-                fs.writeFileSync(inboxJsonPath, JSON.stringify({
-                    threadId,
-                    messageId,
-                    messageType,
-                    receivedAt: new Date().toISOString(),
-                    directiveText
-                }, null, 2), 'utf8');
-
-                playSystemAlert();
-
+                // Chuyển directive cho Sentinel
+                const result = dispatchDirectiveToSentinel(verifiedDirective);
                 res.writeHead(200, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify({
-                    success: true,
-                    savedTo: inboxMdPath,
-                    message: 'Đã nhận thông báo chỉ thị từ Supabase thành công!'
-                }));
+                res.end(JSON.stringify({ success: true, messageId, result }));
             } catch (err) {
                 res.writeHead(400, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ error: err.message }));
@@ -157,37 +404,36 @@ ${directiveText}
         return;
     }
 
-    // 4. Webhook: AN ➔ PE (AN thi công xong, gửi báo cáo để trình duyệt chuyển sang CHẤM XANH)
+    // --- POST /api/report (AN nộp báo cáo xong, kích hoạt SSE AN_REPORT_DONE) ---
     if (url.pathname === '/api/report' && req.method === 'POST') {
+        const token = req.headers['x-bridge-token'] || '';
+        if (token !== SESSION_TOKEN && !checkAuth(req)) {
+            res.writeHead(401, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'Unauthorized token' }));
+            return;
+        }
+
         let body = '';
         req.on('data', chunk => { body += chunk; });
         req.on('end', () => {
             try {
                 const data = JSON.parse(body);
-                const threadId = data.threadId || 'WO-P1-004';
+                const threadId = data.threadId || 'WO-BRIDGE-HARDENING';
+                const message = data.pingMessage || 'PE đọc Bridge.';
 
-                console.log(`\n=======================================================`);
-                console.log(`[REALTIME HUB] 🔔 AN ĐÃ NỘP BÁO CÁO LÊN SUPABASE (${threadId})!`);
-                console.log(`Bắn tín hiệu SSE để trình duyệt chuyển CHẤM XANH & sáng nút Điền vào PE...`);
-                console.log(`=======================================================\n`);
+                console.log(`\n[REALTIME HUB] 🔔 AN ĐÃ NỘP BÁO CÁO (${threadId})!`);
+                auditLog('AN_REPORT_SUBMITTED', { threadId, message });
 
-                // Phát tín hiệu SSE cho tất cả các tab Perplexity đang mở
-                const ssePayload = JSON.stringify({
+                // Phát tín hiệu SSE
+                broadcastSSE({
                     type: 'AN_REPORT_DONE',
-                    threadId: threadId,
-                    message: data.pingMessage || 'PE đọc Bridge.',
+                    threadId,
+                    message,
                     timestamp: new Date().toISOString()
                 });
 
-                sseClients.forEach(client => {
-                    client.write(`data: ${ssePayload}\n\n`);
-                });
-
                 res.writeHead(200, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify({
-                    success: true,
-                    broadcastedTo: sseClients.length
-                }));
+                res.end(JSON.stringify({ success: true, broadcastedTo: sseClients.length }));
             } catch (err) {
                 res.writeHead(400, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ error: err.message }));
@@ -196,40 +442,48 @@ ${directiveText}
         return;
     }
 
-    res.writeHead(404);
-    res.end();
+    res.writeHead(404, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ error: 'Not Found' }));
 });
 
-// Cơ chế tự động chuyển cổng EADDRINUSE (port + 1)
+// Khởi chạy server và tự động chuyển cổng nếu trùng
 function startServer(port) {
     activePort = port;
     server.listen(port, HOST, () => {
         console.log(`=======================================================`);
-        console.log(`🚀 PE-AN Realtime Hub đã khởi chạy thành công!`);
-        console.log(`👉 Cổng hoạt động: http://${HOST}:${port}`);
-        console.log(`👉 SSE Endpoint : http://${HOST}:${port}/api/events`);
-        console.log(`👉 Directive API: http://${HOST}:${port}/api/directive`);
-        console.log(`👉 Report API   : http://${HOST}:${port}/api/report`);
+        console.log(`🚀 PE-AN Realtime Hub Hardened Gateway v4.0`);
+        console.log(`👉 Binding    : http://${HOST}:${port} (Strictly Localhost)`);
+        console.log(`👉 Auth Token : ${SESSION_TOKEN.slice(0, 10)}... (Đã lưu hub_token.json)`);
+        console.log(`👉 Realtime   : Supabase WebSocket ${supabase ? 'Active' : 'Disabled'}`);
+        console.log(`👉 SSE Stream : http://${HOST}:${port}/api/events`);
         console.log(`=======================================================`);
 
-        // Ghi lại cổng hoạt động ra file để client tự nhận diện
-        fs.writeFileSync(path.join(AGENTS_DIR, 'hub_port.json'), JSON.stringify({ port, host: HOST }), 'utf8');
+        // Ghi lại cổng và thông tin vào hub_port.json
+        fs.writeFileSync(path.join(AGENTS_DIR, 'hub_port.json'), JSON.stringify({
+            port,
+            host: HOST,
+            token: SESSION_TOKEN,
+            updatedAt: new Date().toISOString()
+        }, null, 2), 'utf8');
+
+        // Bắt đầu lắng nghe Realtime
+        startSupabaseRealtime();
     });
 
     server.on('error', (err) => {
         if (err.code === 'EADDRINUSE') {
-            console.warn(`[WARN] Cổng ${port} đã bị chiếm dụng. Đang tự động nâng lên cổng ${port + 1}...`);
+            console.warn(`[WARN] Cổng ${port} đã bị chiếm. Tự động chuyển lên ${port + 1}...`);
             startServer(port + 1);
         } else {
-            console.error(`[ERROR] Lỗi khởi động server:`, err);
+            console.error(`[ERROR] Server error:`, err);
         }
     });
 }
 
-// Giữ kết nối SSE không bị timeout
+// Keep-alive SSE
 setInterval(() => {
-    sseClients.forEach(client => {
-        client.write(`:keepalive\n\n`);
+    sseClients.forEach(c => {
+        try { c.write(':keepalive\n\n'); } catch (e) {}
     });
 }, 15000);
 
