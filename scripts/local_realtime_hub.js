@@ -129,13 +129,13 @@ function checkAuth(req) {
     return false;
 }
 
-// Helper CORS
+// Helper CORS với hỗ trợ Chrome Private Network Access (PNA)
 function setCorsHeaders(res, req) {
-    const origin = req.headers['origin'] || '*';
+    const origin = req.headers['origin'] || 'https://www.perplexity.ai';
     res.setHeader('Access-Control-Allow-Origin', origin);
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-bridge-token');
-    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-bridge-token, Cache-Control');
+    res.setHeader('Access-Control-Allow-Private-Network', 'true');
 }
 
 // 6. Xử lý Chỉ thị nhận được (Phân phối cho Sentinel)

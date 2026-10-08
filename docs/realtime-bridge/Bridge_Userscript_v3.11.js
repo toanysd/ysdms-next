@@ -15,7 +15,14 @@
 
     let CANDIDATE_PORTS = [7654, 7655, 7656, 3888, 3456];
     let portScanIndex = 0;
-    let localHubPort = parseInt(localStorage.getItem('pe_an_hub_port') || '7654', 10);
+    
+    // Xóa cổng cũ 3456 nếu còn sót trong cache trình duyệt
+    let savedPort = localStorage.getItem('pe_an_hub_port');
+    if (!savedPort || savedPort === '3456') {
+        savedPort = '7654';
+        localStorage.setItem('pe_an_hub_port', '7654');
+    }
+    let localHubPort = parseInt(savedPort, 10);
     let sseEventSource = null;
     let sessionToken = '';
     let lastAnReportMessage = null;
@@ -47,6 +54,7 @@
             <strong style="display: flex; align-items: center; gap: 8px; font-size: 14px;">
                 <span id="hub-status-dot" style="width: 10px; height: 10px; background-color: #EF4444; border-radius: 50%; display: inline-block; box-shadow: 0 0 6px #EF4444;"></span>
                 PE ⇄ AN Bridge
+                <span id="port-display" style="font-size: 11px; color: #38BDF8; font-weight: normal; cursor: pointer; text-decoration: underline;" title="Bấm để đổi cổng kết nối">:${localHubPort}</span>
             </strong>
             <div style="display: flex; align-items: center; gap: 6px;">
                 <span id="realtime-badge" style="font-size: 10px; background: #334155; padding: 2px 6px; border-radius: 4px; color: #94A3B8;">RT: OFF</span>
@@ -89,6 +97,19 @@
     const manualForwardLabel = document.getElementById('manual-forward-label');
     const toggleAutoForward = document.getElementById('toggle-auto-forward');
     const logDiv = document.getElementById('bridge-log');
+    const portDisplay = document.getElementById('port-display');
+
+    // Cho phép click vào cổng để đổi cổng kết nối thủ công
+    portDisplay.addEventListener('click', () => {
+        const input = prompt("Nhập cổng Local Hub (VD: 7654):", localHubPort);
+        if (input && !isNaN(parseInt(input, 10))) {
+            localHubPort = parseInt(input, 10);
+            localStorage.setItem('pe_an_hub_port', localHubPort.toString());
+            portDisplay.innerText = `:${localHubPort}`;
+            log(`Đã đổi sang cổng ${localHubPort}. Đang kết nối lại...`);
+            connectSSE();
+        }
+    });
 
     // Lắng nghe thay đổi Toggle
     toggleAutoForward.addEventListener('change', (e) => {
@@ -190,6 +211,7 @@
         sseEventSource.onopen = () => {
             statusDot.style.backgroundColor = '#10B981'; // Green
             statusDot.style.boxShadow = '0 0 6px #10B981';
+            if (portDisplay) portDisplay.innerText = `:${localHubPort}`;
             log(`Đã kết nối Hub (: ${localHubPort})`);
         };
         
