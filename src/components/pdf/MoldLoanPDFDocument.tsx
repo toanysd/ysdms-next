@@ -29,33 +29,33 @@ export interface MoldLoanPDFProps {
 const styles = StyleSheet.create({
   page: {
     fontFamily: 'NotoSansJP',
-    fontSize: 9,
-    paddingTop: 28,
-    paddingBottom: 28,
-    paddingHorizontal: 32,
+    fontSize: 8.5,
+    paddingTop: 24,
+    paddingBottom: 20,
+    paddingHorizontal: 28,
     backgroundColor: '#ffffff',
     color: '#0F172A',
-    lineHeight: 1.35,
+    lineHeight: 1.3,
   },
   headerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: 16,
+    marginBottom: 10,
   },
   recipientBox: {
     width: 250,
   },
   recipientName: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: 700,
     borderBottomWidth: 1.5,
     borderBottomColor: '#0F172A',
-    paddingBottom: 4,
-    marginBottom: 4,
+    paddingBottom: 3,
+    marginBottom: 3,
   },
   recipientSub: {
-    fontSize: 8.5,
+    fontSize: 8,
     color: '#475569',
   },
   issuerBox: {
@@ -64,30 +64,30 @@ const styles = StyleSheet.create({
     textAlign: 'right',
   },
   dateText: {
-    fontSize: 8.5,
+    fontSize: 8,
     color: '#475569',
-    marginBottom: 4,
+    marginBottom: 3,
   },
   issuerName: {
-    fontSize: 10,
+    fontSize: 9.5,
     fontWeight: 700,
     color: '#0F172A',
     marginBottom: 2,
   },
   issuerInfo: {
-    fontSize: 7.5,
+    fontSize: 7,
     color: '#475569',
-    lineHeight: 1.25,
+    lineHeight: 1.2,
   },
   sealBoxContainer: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
-    marginTop: 6,
+    marginTop: 4,
     gap: 6,
   },
   sealBox: {
-    width: 48,
-    height: 48,
+    width: 44,
+    height: 44,
     borderWidth: 1,
     borderColor: '#94A3B8',
     alignItems: 'center',
@@ -95,48 +95,48 @@ const styles = StyleSheet.create({
     paddingTop: 2,
   },
   sealLabel: {
-    fontSize: 6.5,
+    fontSize: 6,
     color: '#64748B',
     marginBottom: 2,
   },
   sealStampPlaceholder: {
-    fontSize: 7,
+    fontSize: 6.5,
     color: '#CBD5E1',
-    marginTop: 8,
+    marginTop: 6,
   },
   titleArea: {
     textAlign: 'center',
-    marginVertical: 14,
-    borderBottomWidth: 2,
+    marginVertical: 8,
+    borderBottomWidth: 1.5,
     borderBottomColor: '#0F172A',
-    paddingBottom: 6,
+    paddingBottom: 4,
   },
   mainTitle: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: 700,
     letterSpacing: 2,
     color: '#0F172A',
   },
   subTitle: {
-    fontSize: 8.5,
+    fontSize: 7.5,
     color: '#64748B',
-    marginTop: 2,
+    marginTop: 1,
   },
   pledgeText: {
-    fontSize: 8.5,
+    fontSize: 8,
     color: '#334155',
-    marginBottom: 14,
-    lineHeight: 1.45,
+    marginBottom: 8,
+    lineHeight: 1.35,
     textAlign: 'justify',
   },
   sectionTitle: {
-    fontSize: 9.5,
+    fontSize: 8.5,
     fontWeight: 700,
     color: '#0F172A',
     backgroundColor: '#F1F5F9',
-    paddingVertical: 3,
+    paddingVertical: 2.5,
     paddingHorizontal: 6,
-    marginBottom: 6,
+    marginBottom: 4,
     borderLeftWidth: 3,
     borderLeftColor: '#0D9488',
   },
@@ -144,7 +144,7 @@ const styles = StyleSheet.create({
     width: '100%',
     borderWidth: 1,
     borderColor: '#CBD5E1',
-    marginBottom: 12,
+    marginBottom: 6,
   },
   tableRow: {
     flexDirection: 'row',
@@ -186,25 +186,25 @@ const styles = StyleSheet.create({
     borderStyle: 'dashed',
     borderColor: '#0D9488',
     backgroundColor: '#F0FDFA',
-    padding: 8,
-    marginBottom: 12,
+    padding: 6,
+    marginBottom: 8,
   },
   placardHeader: {
-    fontSize: 8,
+    fontSize: 7.5,
     fontWeight: 700,
     color: '#0F766E',
-    marginBottom: 4,
+    marginBottom: 3,
     textAlign: 'center',
     letterSpacing: 1,
   },
   placardGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 4,
+    gap: 3,
   },
   placardCell: {
     width: '48%',
-    fontSize: 7.5,
+    fontSize: 7,
     color: '#134E4A',
   },
   placardCellBold: {
@@ -214,50 +214,93 @@ const styles = StyleSheet.create({
   photosContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 12,
-    gap: 10,
+    marginBottom: 8,
+    gap: 8,
   },
   photoBox: {
     flex: 1,
-    height: 120,
+    height: 90,
     borderWidth: 1,
     borderColor: '#CBD5E1',
     backgroundColor: '#F8FAFC',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 4,
+    padding: 3,
   },
   photoImg: {
-    maxHeight: 100,
+    maxHeight: 70,
     maxWidth: '100%',
     objectFit: 'contain',
   },
   photoPlaceholderText: {
-    fontSize: 7.5,
+    fontSize: 6.5,
     color: '#94A3B8',
     textAlign: 'center',
+    lineHeight: 1.2,
   },
   photoCaption: {
-    fontSize: 7.5,
+    fontSize: 6.5,
     fontWeight: 700,
     color: '#475569',
-    marginTop: 3,
+    marginTop: 2,
+    textAlign: 'center',
+  },
+  // 3-Party Signatures Block
+  signatureRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 6,
+    marginBottom: 8,
+    gap: 8,
+  },
+  signatureBlock: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: '#CBD5E1',
+    backgroundColor: '#F8FAFC',
+    padding: 5,
+    alignItems: 'center',
+    minHeight: 52,
+    justifyContent: 'space-between',
+  },
+  signatureRole: {
+    fontSize: 7,
+    fontWeight: 700,
+    color: '#0F172A',
+    textAlign: 'center',
+  },
+  signatureSubRole: {
+    fontSize: 5.5,
+    color: '#64748B',
+    textAlign: 'center',
+    marginBottom: 10,
+  },
+  signatureLine: {
+    width: '85%',
+    borderBottomWidth: 1,
+    borderBottomColor: '#94A3B8',
+    marginBottom: 2,
+  },
+  signatureLabel: {
+    fontSize: 5.5,
+    color: '#64748B',
+    textAlign: 'center',
   },
   footerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginTop: 'auto',
-    paddingTop: 8,
+    paddingTop: 6,
     borderTopWidth: 1,
     borderTopColor: '#E2E8F0',
   },
   footerText: {
-    fontSize: 7,
+    fontSize: 6.5,
     color: '#94A3B8',
   },
   footerBarcode: {
-    fontSize: 8,
+    fontSize: 7.5,
     fontFamily: 'NotoSansJP',
     fontWeight: 700,
     color: '#64748B',
@@ -440,7 +483,52 @@ export const MoldLoanPDFDocument: React.FC<MoldLoanPDFProps> = ({
           </View>
         </View>
 
-        {/* 7. Footer */}
+        {/* 7. 3-Party Signatures / Approvals Block */}
+        <Text style={styles.sectionTitle}>3. 署名・承認欄 (Signatures & Confirmation)</Text>
+        <View style={styles.signatureRow}>
+          <View style={styles.signatureBlock}>
+            <View style={{ alignItems: 'center' }}>
+              <Text style={styles.signatureRole}>
+                {isCustody ? '引渡責任者 (Lender)' : isReturn ? '返却責任者 (Returning Party)' : '発送責任者 (Sender)'}
+              </Text>
+              <Text style={styles.signatureSubRole}>
+                {isCustody ? (loan.from_company_name || '客先企業') : '株式会社ヨシダパッケージ'}
+              </Text>
+            </View>
+            <View style={{ alignItems: 'center', width: '100%', marginTop: 8 }}>
+              <View style={styles.signatureLine} />
+              <Text style={styles.signatureLabel}>署名・捺印 (Signature / Stamp)</Text>
+            </View>
+          </View>
+
+          <View style={styles.signatureBlock}>
+            <View style={{ alignItems: 'center' }}>
+              <Text style={styles.signatureRole}>
+                {isCustody ? '受託責任者 (Custodian)' : isReturn ? '受領確認者 (Receiver)' : '加工委託先 (Processor)'}
+              </Text>
+              <Text style={styles.signatureSubRole}>
+                {isCustody ? '株式会社ヨシダパッケージ' : (loan.to_company_name || '客先企業')}
+              </Text>
+            </View>
+            <View style={{ alignItems: 'center', width: '100%', marginTop: 8 }}>
+              <View style={styles.signatureLine} />
+              <Text style={styles.signatureLabel}>署名・捺印 (Signature / Stamp)</Text>
+            </View>
+          </View>
+
+          <View style={styles.signatureBlock}>
+            <View style={{ alignItems: 'center' }}>
+              <Text style={styles.signatureRole}>現品受渡検査員 (QC Inspector)</Text>
+              <Text style={styles.signatureSubRole}>品質管理部 / 製造技術部</Text>
+            </View>
+            <View style={{ alignItems: 'center', width: '100%', marginTop: 8 }}>
+              <View style={styles.signatureLine} />
+              <Text style={styles.signatureLabel}>確認印 (QC Approval)</Text>
+            </View>
+          </View>
+        </View>
+
+        {/* 8. Footer */}
         <View style={styles.footerRow}>
           <Text style={styles.footerText}>
             YSDMS NextGen - 金型資産借用・預託管理システム | {loan.loan_code}

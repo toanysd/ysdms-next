@@ -9,6 +9,7 @@ import {
   ArrowUpFromLine,
   ArrowLeftRight,
   Printer,
+  Download,
   ShieldCheck,
   CheckCircle2,
   AlertTriangle,
@@ -225,9 +226,20 @@ export default function EquipmentLoanDetailPage() {
             target="_blank"
             rel="noopener noreferrer"
             className="btn btn-secondary text-[12px] h-[30px] px-3 flex items-center gap-1.5"
+            title={t('detail.printDocument')}
           >
             <Printer size={14} />
             <span>{t('detail.printDocument')}</span>
+          </a>
+
+          {/* PDF Download Direct Link */}
+          <a
+            href={`/api/equipment/loans/${loan.loan_id}/pdf?download=1`}
+            className="btn btn-secondary text-[12px] h-[30px] px-3 flex items-center gap-1.5"
+            title={t('detail.downloadDocument')}
+          >
+            <Download size={14} />
+            <span>{t('detail.downloadDocument')}</span>
           </a>
         </div>
       </div>

@@ -72,13 +72,30 @@ export async function GET(
       }) as any
     );
 
-    const filename = `${selectedType}_${loan.loan_code || loanId}.pdf`;
+    // 5. Determine Disposition and Filenames (RFC 5987 compliant)
+    const isDownload = searchParams.get('download') === '1' || searchParams.get('download') === 'true';
+    const dispositionType = isDownload ? 'attachment' : 'inline';
+
+    let docTitle = '金型借用書';
+    if (selectedType === 'RETURN_TO_CUSTOMER') {
+      docTitle = '金型返却書';
+    } else if (selectedType === 'OUTSOURCE_PROCESSING') {
+      docTitle = '金型外注加工依頼書';
+    }
+
+    const companyName =
+      (selectedType === 'CUSTOMER_LOAN' ? loan.from_company_name : loan.to_company_name) || '客先';
+    const cleanCompany = companyName.replace(/[/\\?%*:|"<>]/g, '_').trim();
+    const loanCode = loan.loan_code || loanId;
+
+    const japaneseFilename = `${docTitle}_${loanCode}_${cleanCompany}.pdf`;
+    const asciiFilename = `${selectedType}_${loanCode}.pdf`;
 
     return new NextResponse(buffer as any, {
       status: 200,
       headers: {
         'Content-Type': 'application/pdf',
-        'Content-Disposition': `inline; filename="${filename}"`,
+        'Content-Disposition': `${dispositionType}; filename="${asciiFilename}"; filename*=UTF-8''${encodeURIComponent(japaneseFilename)}`,
         'Cache-Control': 'no-cache, no-store, must-revalidate',
       },
     });
