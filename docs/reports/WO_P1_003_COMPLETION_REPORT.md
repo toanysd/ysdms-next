@@ -107,6 +107,14 @@ SUMMARY: 8/8 Test Cases PASSED (100%)
 - **TypeScript:** `npx tsc --noEmit` $\rightarrow$ **0 errors**.
 - **Đa ngữ i18n:** `node scripts/check_translations.mjs` $\rightarrow$ **0 missing keys**.
 
+### 3.4. Kiểm chứng Thực tế trên Trình duyệt Di động (Mobile Browser Playwright)
+- **Script kiểm thử:** `scripts/verify_p1_003_mobile_browser.mjs`
+- **Môi trường:** Thiết bị di động mô phỏng (Viewport: 390x844 px, touch=true, deviceScaleFactor=2).
+- **Kết quả:** ĐẠT 100%. Tải thành công chi tiết phiếu, 2 slot chụp ảnh kèm camera sau `capture="environment"`, mở modal biển tên A4 hiển thị thông tin khuôn `TSP001`. Dọn dẹp dữ liệu test sạch sẽ sau khi kiểm tra.
+- **Ảnh chụp bằng chứng:**
+  * `docs/reports/screenshots/wo_p1_003_mobile_photo_section.png` (174 KB)
+  * `docs/reports/screenshots/wo_p1_003_mobile_placard_modal.png` (156 KB)
+
 ---
 
 ## 4. BẰNG CHỨNG THỰC TẾ & EVIDENCE-BASED (RULE-DATA-02)
