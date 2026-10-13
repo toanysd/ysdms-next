@@ -301,9 +301,9 @@
         console.log("[Bridge SSE] Nhận sự kiện từ Hub:", eventData);
         const type = eventData.event || eventData.type;
 
-        if (type === "AN_REPORT_DISPATCHED" || type === "AN_REPORT_READY") {
+        if (type === "AN_REPORT_DISPATCHED" || type === "AN_REPORT_READY" || type === "AN_REPORT_PERSISTED") {
             const report = eventData.data || eventData.report || eventData;
-            const reportId = report.id || report.message_id;
+            const reportId = report.id || report.message_id || report.reportId;
             const content = report.content_md || report.content || report.text;
 
             if (reportId && reportId === lastHandledReportId) {
