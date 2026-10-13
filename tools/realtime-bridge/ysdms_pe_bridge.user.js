@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         [v2.2.0] YSDMS NextGen Realtime Bridge: PE-AN Dedicated Hub
+// @name         [v2.3.0] YSDMS NextGen Realtime Bridge: PE-AN Dedicated Hub
 // @namespace    https://ysdms.nextgen.local/
-// @version      2.2.0
-// @description  Cầu nối thời gian thực hai chiều PE - THOAN - AN chuyên dụng cho dự án YSDMS NextGen (v2.2.0 Dedicated). Tự động chờ sau khi đổ dữ liệu vào PE (Awaiting Supabase New Row), kiểm tra chính xác đối tượng gửi (sender: PE/THOAN -> chuyển AN; AN -> chuyển PE) trước khi gửi lượt tiếp theo, tự động submit với độ trễ ngẫu nhiên từ 1-4s (không cố định), khóa Single-Flight chống đổ lặp, bảo toàn 100% nội dung báo cáo dài/file xác minh, hỗ trợ phím tắt Alt+F9, Alt+F10, Alt+F5, Alt+P.
+// @version      2.3.0
+// @description  Cầu nối thời gian thực hai chiều PE - THOAN - AN chuyên dụng (v2.3.0). Đảm bảo chỉ đổ 1 lần duy nhất cho mỗi báo cáo của AN (Single Dispatch Guard), bắt sự kiện người dùng submit thủ công qua Enter/Click, tự động nhận diện và khóa ô chat khi PE đang suy nghĩ (Thinking Shield / Busy State), ngăn chặn triệt để đổ lặp nội dung vào ô chat, chiều ngược lại chỉ forward sang AN 1 lần duy nhất.
 // @match        https://www.perplexity.ai/*
 // @match        https://perplexity.ai/*
 // @match        https://*.perplexity.ai/*
@@ -20,7 +20,7 @@
 (function() {
     'use strict';
 
-    const SCRIPT_VERSION = "v2.2.0";
+    const SCRIPT_VERSION = "v2.3.0";
     console.log(`%c[${SCRIPT_VERSION} YSDMS Bridge Dedicated] >>> SCRIPT ĐÃ ĐƯỢC NẠP VÀO TRANG <<<`, "background: #0284c7; color: #ffffff; font-size: 14px; font-weight: bold; padding: 4px 8px; border-radius: 4px;");
 
     // ==========================================
@@ -141,6 +141,36 @@
     // - sender === 'AN' (bản ghi mới khác ID cũ) -> Đối tượng nhận là PE (chuyển sang PE_TURN, kích hoạt nạp cho PE).
     let isAwaitingSupabaseNewRow = localStorage.getItem("omni_bridge_awaiting_supabase") === "true";
     let lastSubmittedAnReportId = localStorage.getItem("omni_bridge_last_submitted_an_id") || null;
+    let lastInjectedReportId = localStorage.getItem("omni_bridge_last_injected_report_id") || null;
+
+    function getStoredInjectedReports() {
+        try {
+            return JSON.parse(localStorage.getItem("omni_bridge_injected_reports") || "{}");
+        } catch {
+            return {};
+        }
+    }
+
+    function isReportInjected(reportId) {
+        if (!reportId) return false;
+        if (reportId === lastInjectedReportId) return true;
+        const injected = getStoredInjectedReports();
+        return !!injected[reportId];
+    }
+
+    function markReportInjected(reportId) {
+        if (!reportId) return;
+        lastInjectedReportId = reportId;
+        localStorage.setItem("omni_bridge_last_injected_report_id", reportId);
+        const injected = getStoredInjectedReports();
+        injected[reportId] = {
+            injectedAt: new Date().toISOString()
+        };
+        try {
+            localStorage.setItem("omni_bridge_injected_reports", JSON.stringify(injected));
+        } catch {}
+        logStateSnapshot("MARK_REPORT_INJECTED", `reportId=${reportId}`);
+    }
 
     function setAwaitingSupabaseNewRow(val, submittedReportId = null) {
         isAwaitingSupabaseNewRow = Boolean(val);
@@ -239,7 +269,7 @@
     // mọi nguồn sự kiện (SSE / Poll 3s / Rehydrate) đều KHÔNG được bật lại cờ "chờ đổ vào PE".
     // ==========================================
     function isReportLocked(reportId) {
-        return isReportHandled(reportId) || isReportConsumed(reportId) || Boolean(reportId && reportId === lastSubmittedAnReportId);
+        return isReportHandled(reportId) || isReportConsumed(reportId) || (typeof isReportInjected === 'function' && isReportInjected(reportId)) || Boolean(reportId && reportId === lastSubmittedAnReportId);
     }
 
     // Lý do chặn auto-inject (trả về chuỗi rỗng nếu được phép)
@@ -249,9 +279,13 @@
         if (effId && (effId === lastSubmittedAnReportId || isReportHandled(effId) || isReportConsumed(effId))) {
             return "REPORT_ALREADY_SUBMITTED";
         }
+        if (effId && typeof isReportInjected === 'function' && isReportInjected(effId)) {
+            return "REPORT_ALREADY_INJECTED";
+        }
         if (isPeRequestInFlight) return "PE_REQUEST_IN_FLIGHT";
         if (isPeStreaming) return "PE_STREAMING";
         if (isWaitingForNewPeResponse) return "WAITING_PE_RESPONSE";
+        if (typeof isPerplexityBusy === "function" && isPerplexityBusy()) return "PERPLEXITY_BUSY";
         if (typeof isPerplexityStreaming === "function" && isPerplexityStreaming()) return "PERPLEXITY_BUSY";
         return "";
     }
@@ -1128,13 +1162,24 @@
             return false;
         }
 
-        // 1b. SINGLE-FLIGHT (v1.0.16): Luồng TỰ ĐỘNG tuyệt đối không đổ lại báo cáo đã đổ, và không chen ngang khi PE đang trả lời
+        // 1b. SINGLE-FLIGHT (v1.0.16/v2.3.0): Luồng TỰ ĐỘNG tuyệt đối không đổ lại báo cáo đã đổ, và không chen ngang khi PE đang trả lời/suy nghĩ
         if (!force && !customText) {
+            if (typeof isPerplexityBusy === "function" && isPerplexityBusy()) {
+                logStateSnapshot("AUTO_INJECT_BLOCKED", `reason=PERPLEXITY_BUSY report=${currentAnMessageId}`);
+                console.log(`[Omni Bridge] 🔒 Chặn auto-inject (PE đang suy nghĩ / làm việc) cho report ${currentAnMessageId}`);
+                return false;
+            }
+            if (currentAnMessageId && typeof isReportInjected === "function" && isReportInjected(currentAnMessageId) && !shouldSubmit) {
+                logStateSnapshot("AUTO_INJECT_BLOCKED", `reason=REPORT_ALREADY_INJECTED report=${currentAnMessageId}`);
+                console.log(`[Omni Bridge] 🔒 Báo cáo [${currentAnMessageId}] đã được dán vào ô chat 1 lần rồi. Chờ người dùng duyệt gửi hoặc bấm thủ công.`);
+                currentCorrelation.pendingAnReport = false;
+                return false;
+            }
             const blockReason = getAutoInjectBlockReason(currentAnMessageId);
             if (blockReason) {
                 logStateSnapshot("AUTO_INJECT_BLOCKED", `reason=${blockReason} report=${currentAnMessageId}`);
                 console.log(`[Omni Bridge] 🔒 Chặn auto-inject (${blockReason}) cho report ${currentAnMessageId}`);
-                if (blockReason === "REPORT_HANDLED" || blockReason === "REPORT_ALREADY_INJECTED") {
+                if (blockReason === "REPORT_HANDLED" || blockReason === "REPORT_ALREADY_INJECTED" || blockReason === "REPORT_ALREADY_SUBMITTED") {
                     currentCorrelation.pendingAnReport = false; // Khóa vĩnh viễn cho report này
                 }
                 // Các lý do tạm thời (PE đang bận) chỉ HOÃN — renderTurnUI sẽ thử lại khi PE rảnh
@@ -1174,6 +1219,9 @@
 
         setReactInputValue(inputEl, pingMsg);
         lastFilledReportId = currentAnMessageId;
+        if (currentAnMessageId && typeof markReportInjected === 'function') {
+            markReportInjected(currentAnMessageId);
+        }
         updatePreviewBox(`[GỬI TỚI PE - ${new Date().toLocaleTimeString()}] (Req: ${currentRequestId} | Thread: ${lastThreadId})\n\n${pingMsg}`);
 
         // NẾU LÀ CHẾ ĐỘ CHỈ DÁN VÀO CHATBOX (SUBMIT THỦ CÔNG)
@@ -1255,6 +1303,49 @@
         return true;
     }
 
+    // ==========================================
+    // 4.1. BẮT SỰ KIỆN GỬI THỦ CÔNG CỦA MINH CHỦ & KHÓA TRẠNG THÁI CHỜ
+    // ==========================================
+    function markReportSubmitted(reportId) {
+        if (!reportId) return;
+        saveConsumedReport(reportId);
+        setAwaitingSupabaseNewRow(true, reportId);
+        if (typeof markReportInjected === 'function') {
+            markReportInjected(reportId);
+        }
+        isPeRequestInFlight = true;
+        isWaitingForNewPeResponse = true;
+        hasObservedNewStream = false;
+        currentCorrelation.pendingAnReport = false;
+
+        const currentPe = getLatestPeResponse();
+        if (currentPe && currentPe.text) {
+            baselinePeTextHash = hashString(currentPe.text);
+        }
+
+        const statusText = document.getElementById("omni-status-text");
+        if (statusText) {
+            statusText.innerHTML = `⏳ <b>[LƯỢT PE]</b> Đã gửi báo cáo cho PE — Đang chờ PE trả lời...`;
+        }
+        const btnSendPe = document.getElementById("omni-btn-send-pe");
+        if (btnSendPe) {
+            btnSendPe.disabled = true;
+            btnSendPe.textContent = "⏳ Đã gửi PE (Chờ trả lời)";
+            btnSendPe.style.background = "#94a3b8";
+            btnSendPe.style.color = "#ffffff";
+        }
+        logStateSnapshot("USER_SUBMITTED_MANUAL", `reportId=${reportId}`);
+        renderTurnUI();
+    }
+
+    function onUserSubmittedToPerplexity() {
+        const reportId = currentAnMessageId || lastInjectedReportId;
+        if (reportId && !isReportHandled(reportId)) {
+            console.log(`[Omni Bridge] 👤 Minh Chủ THOAN đã submit câu hỏi vào PE! Khóa báo cáo AN [${reportId}] để chống đổ lặp.`);
+            markReportSubmitted(reportId);
+        }
+    }
+
     // Gửi chỉ thị giục AN thủ công khi kết nối bị nghẽn
     async function triggerAnManualPing() {
         showToast("⚡ Đang gửi chỉ thị giục AN thi công...", "info");
@@ -1280,38 +1371,64 @@
     }
 
     // ==========================================
-    // 5. CHIỀU 2 (PE ➔ AN): ENVELOPE PARSER CHỐNG CẮT NGANG
+    // 5. CHIỀU 2 (PE ➔ AN): ENVELOPE PARSER & THINKING SHIELD
     // ==========================================
-    function isPerplexityStreaming() {
-        // Chỉ tìm nút dừng (Stop) trong khu vực input/form hoặc thanh điều khiển Perplexity
-        const inputArea = document.querySelector('form, div[class*="bottom-"], div[class*="input"], [data-testid="chat-input"]');
-        const container = inputArea || document;
+    function isPerplexityBusy() {
+        if (typeof isPeStreaming !== 'undefined' && isPeStreaming) return true;
 
-        const buttons = Array.from(container.querySelectorAll('button'));
+        // 1. Tìm nút dừng (Stop / Cancel) trong khu vực input/form hoặc thanh toolbar đáy
+        const inputArea = document.querySelector('form, div[class*="bottom-"], div[class*="input"], [data-testid="chat-input"]') || document.body;
+        const buttons = Array.from(inputArea.querySelectorAll('button')).filter(b => !b.closest('#omni-bridge-panel') && !b.closest('#omni-bridge-toast'));
         for (const b of buttons) {
-            if (b.closest('#omni-bridge-panel') || b.closest('#omni-bridge-toast')) continue;
             const aria = removeVietnameseTones(b.getAttribute('aria-label') || '').toLowerCase().trim();
             const title = removeVietnameseTones(b.getAttribute('title') || '').toLowerCase().trim();
             const tid = (b.getAttribute('data-testid') || '').toLowerCase().trim();
+            const text = removeVietnameseTones(b.textContent || '').toLowerCase().trim();
 
-            // Khớp chính xác tên nút dừng stream (không dùng substring lỏng lẻo 'dung' gây false positive)
-            if (aria === 'stop' || aria === 'stop generating' || title === 'stop' || title === 'stop generating' ||
-                tid === 'stop-button' || tid.includes('stop') ||
-                aria === 'dung' || aria === 'dung tao' || title === 'dung' || title === 'dung tao') {
+            if (aria === 'stop' || aria === 'stop generating' || aria === 'dung' || aria === 'dung tao' ||
+                title === 'stop' || title === 'stop generating' || title === 'dung' || title === 'dung tao' ||
+                aria.includes('cancel') || title.includes('cancel') ||
+                tid === 'stop-button' || tid.includes('stop') || tid.includes('cancel') ||
+                text === 'stop' || text === 'dung' || text === 'dung tao') {
                 return true;
             }
 
-            // Nếu trong khu vực form/input có nút chứa icon vuông Stop
-            if (inputArea && b.querySelector('svg rect') && !b.querySelector('svg path')) {
+            // Nếu trong khu vực form/input có nút chứa icon vuông Stop (svg rect hoặc rect trong svg)
+            if (b.querySelector('svg rect, rect')) {
                 return true;
             }
         }
 
-        const spinners = document.querySelectorAll('.animate-spin[class*="border"], [data-testid="loading-indicator"]');
+        // 2. Kiểm tra spinners / animations / loading indicators
+        const spinners = document.querySelectorAll('.animate-spin, [data-testid="loading-indicator"], .animate-pulse');
         for (const s of spinners) {
             if (!s.closest('#omni-bridge-panel') && !s.closest('#omni-bridge-toast')) return true;
         }
+
+        // 3. Kiểm tra văn bản trạng thái suy nghĩ / nghiên cứu của Perplexity (Thinking Shield)
+        // Ví dụ: "Đang nghiên cứu 12 giây", "Sonnet 5.5 Đang suy nghĩ", "Thinking...", "Researching..."
+        const busyKeywords = ['dang nghien cuu', 'dang suy nghi', 'thinking', 'researching', 'searching web', 'dang tim kiem'];
+        const statusCandidates = Array.from(document.querySelectorAll('div, span, button, p')).filter(el => {
+            if (el.closest('#omni-bridge-panel') || el.closest('#omni-bridge-toast') || el.closest('#omni-bridge-viewer')) return false;
+            const txt = removeVietnameseTones(el.innerText || '').toLowerCase().trim();
+            if (txt.length > 80) return false;
+            return busyKeywords.some(kw => txt.includes(kw));
+        });
+        if (statusCandidates.length > 0) {
+            return true;
+        }
+
+        // 4. Kiểm tra ô input có bị disabled không
+        const input = findPerplexityInput();
+        if (input && (input.disabled || input.getAttribute('aria-disabled') === 'true')) {
+            return true;
+        }
+
         return false;
+    }
+
+    function isPerplexityStreaming() {
+        return isPerplexityBusy();
     }
 
     function getLatestPeResponse() {
@@ -1535,6 +1652,12 @@
             showToast("ℹ️ Câu trả lời này đã được chuyển sang cho AN rồi! Đang ở lượt AN thi công.", "info");
             return false;
         }
+        const inReplyTo = currentAnMessageId || currentCorrelation.reportId;
+        const lastForwardedInReplyTo = localStorage.getItem("omni_bridge_last_forwarded_in_reply_to");
+        if (!force && inReplyTo && inReplyTo === lastForwardedInReplyTo) {
+            console.log(`[Omni Bridge] ℹ️ Đã chuyển tiếp phản hồi PE cho báo cáo [${inReplyTo}] rồi. Bỏ qua auto-forward.`);
+            return false;
+        }
         if (baselinePeTextHash && textHash === baselinePeTextHash && !force) {
             showToast("⚠️ Đây là văn bản PE cũ trên trang! Vui lòng đợi PE trả lời câu hỏi mới.", "warn");
             return false;
@@ -1561,7 +1684,6 @@
         localStorage.setItem("omni_bridge_last_forwarded_hash", textHash);
         updatePreviewBox(`[CHỈ THỊ PE - ${new Date().toLocaleTimeString()}] (Thread: ${threadId} | Đang lưu Supabase...)\n\n${peText}`);
 
-        const inReplyTo = currentAnMessageId || currentCorrelation.reportId;
         const workOrderId = currentCorrelation.workOrderId || extractWorkOrderId(peText) || extractThreadId(peText, lastThreadId);
         const correlationComment = inReplyTo ? `<!-- OMNI_CORRELATION: in_reply_to_message_id=${inReplyTo} work_order_id=${workOrderId || ''} handled_by=PE handled_at=${new Date().toISOString()} -->\n\n` : '';
         const nowJst = formatJstDateTime(new Date());
@@ -1606,6 +1728,9 @@
             renderTurnUI();
 
             localStorage.setItem("omni_bridge_last_forwarded_hash", textHash);
+            if (inReplyTo) {
+                localStorage.setItem("omni_bridge_last_forwarded_in_reply_to", inReplyTo);
+            }
             updatePreviewBox(`[CHỈ THỊ PE - ${new Date().toLocaleTimeString()}] (Thread: ${threadId} | UUID: ${realUuid})\n\n${peText}`);
 
             playTone(784, 0.3); // Chuông Sol (784Hz)
@@ -1787,12 +1912,15 @@
         console.log(`[Omni Bridge] ✅ Đồng bộ Turn State thành công! Sender=${record.sender}, Turn=${currentTurnState}, Next=${currentNextActor}, MsgId=${record.id}, Source=${source}`);
     }
 
-    async function rehydrateStateFromSupabase(threadId = lastThreadId) {
-        console.log(`[Omni Bridge] 🔄 [SSOT Rehydration] Khôi phục trạng thái từ Supabase (Thread: ${threadId})...`);
+    async function rehydrateStateFromSupabase(threadId = null) {
+        console.log(`[Omni Bridge] 🔄 [SSOT Rehydration] Khôi phục trạng thái từ Supabase (Thread: ${threadId || 'TOÀN CỤC'})...`);
 
         let record = null;
         try {
-            const data = await hubRequest(`${getHubUrl()}/api/messages/latest?thread_id=${encodeURIComponent(threadId)}`);
+            const queryUrl = threadId
+                ? `${getHubUrl()}/api/messages/latest?thread_id=${encodeURIComponent(threadId)}`
+                : `${getHubUrl()}/api/messages/latest`;
+            const data = await hubRequest(queryUrl);
             if (data) {
                 if (data.record) {
                     record = data.record;
@@ -1820,6 +1948,13 @@
             return;
         }
 
+        if (record.thread_id) {
+            lastThreadId = record.thread_id;
+            localStorage.setItem("ysdms_bridge_thread_id", record.thread_id);
+            const feedThread = document.getElementById("omni-feed-thread");
+            if (feedThread) feedThread.textContent = record.thread_id;
+        }
+
         handleSupabaseRowPersisted(record, "SUPABASE_REHYDRATION");
     }
 
@@ -1837,17 +1972,17 @@
         showToast("🔄 Đang tải tin nhắn mới nhất từ Supabase...", "info");
 
         try {
-            // Truy vấn tin mới nhất theo thread hiện tại
-            let res = await hubRequest(`${getHubUrl()}/api/messages/latest?thread_id=${encodeURIComponent(lastThreadId)}&force=1&t=${Date.now()}`);
+            // Truy vấn tin mới nhất trên toàn bộ bảng pe_an_messages (không bị kẹt ở thread cũ)
+            let res = await hubRequest(`${getHubUrl()}/api/messages/latest?force=1&t=${Date.now()}`);
             let rec = res && (res.record || (Array.isArray(res.data) && res.data.length > 0 ? res.data[0] : null));
 
-            // Nếu thread hiện tại chưa có tin, fallback tìm tin mới nhất trên toàn bảng pe_bridge
-            if (!rec) {
-                res = await hubRequest(`${getHubUrl()}/api/messages/latest?force=1&t=${Date.now()}`);
-                rec = res && (res.record || (Array.isArray(res.data) && res.data.length > 0 ? res.data[0] : null));
-            }
-
             if (rec && rec.id) {
+                if (rec.thread_id) {
+                    lastThreadId = rec.thread_id;
+                    localStorage.setItem("ysdms_bridge_thread_id", rec.thread_id);
+                    const feedThread = document.getElementById("omni-feed-thread");
+                    if (feedThread) feedThread.textContent = rec.thread_id;
+                }
                 if (res && res.correlation) {
                     currentCorrelation = res.correlation;
                     applyLocalLockToCorrelation();
@@ -1855,7 +1990,7 @@
                 // Ép buộc cập nhật lại UI bất kể deduplication
                 lastProcessedRowId = null;
                 handleSupabaseRowPersisted(rec, "MANUAL_REFRESH");
-                showToast(`✅ Đã nạp tin mới nhất từ Supabase: [${rec.sender} | #${rec.id.slice(0, 8)}]`, "success");
+                showToast(`✅ Đã nạp tin mới nhất từ Supabase: [${rec.sender} | #${rec.id.slice(0, 8)} | ${rec.thread_id}]`, "success");
                 playTone(880, 0.15);
             } else {
                 showToast("ℹ️ Không tìm thấy tin nhắn nào trên Supabase.", "warning");
@@ -1875,7 +2010,8 @@
     // Fallback polling loop (Inbound 3s fallback khi SSE mất kết nối)
     async function pollSnapshotLoop() {
         try {
-            const data = await hubRequest(`${getHubUrl()}/api/messages/latest?thread_id=${encodeURIComponent(lastThreadId)}`);
+            // Poll toàn cục để luôn đồng bộ luồng công việc mới nhất
+            const data = await hubRequest(`${getHubUrl()}/api/messages/latest`);
             if (data) {
                 const record = data.record || (Array.isArray(data) ? data[0] : null) || (data.data && Array.isArray(data.data) ? data.data[0] : null);
                 if (data.correlation) {
@@ -1888,7 +2024,13 @@
                     updateHubStatusBadge(true, 'POLL');
                 }
                 if (record && record.id !== lastProcessedRowId) {
-                    console.log(`[Omni Bridge] 📥 Polling phát hiện row mới: ${record.id}`);
+                    if (record.thread_id) {
+                        lastThreadId = record.thread_id;
+                        localStorage.setItem("ysdms_bridge_thread_id", record.thread_id);
+                        const feedThread = document.getElementById("omni-feed-thread");
+                        if (feedThread) feedThread.textContent = record.thread_id;
+                    }
+                    console.log(`[Omni Bridge] 📥 Polling phát hiện row mới: ${record.id} (${record.thread_id})`);
                     handleSupabaseRowPersisted(record, 'POLL_FALLBACK');
                 }
             } else {
@@ -2282,9 +2424,13 @@
                         }
                     }, TICK_MS);
                 } else if (isAutoFill && !isBridgePaused && !isSubmitting && !isAwaitingSupabaseNewRow && currentAnMessageId !== lastSubmittedAnReportId) {
-                    const inputEl = findPerplexityInput();
-                    const hasReport = inputEl && (inputEl.value || inputEl.textContent || '').trim().includes('AN da nop bao cao');
-                    if (!hasReport || lastFilledReportId !== currentAnMessageId) {
+                    // EXACTLY-ONCE DISPATCH (v2.3.0):
+                    // Báo cáo của AN chỉ được tự động đổ vào chatbox ĐÚNG 1 LẦN!
+                    // Tuyệt đối không kiểm tra !hasReport vì khi người dùng bấm gửi hoặc Perplexity đang suy nghĩ, ô chat bị xóa rỗng sẽ gây đổ lặp!
+                    // Muốn đổ lại cùng 1 báo cáo, người dùng BẮT BUỘC PHẢI BẤM NÚT THỦ CÔNG (Alt+F9 hoặc nút Đổ báo cáo)!
+                    const isAlreadyInjected = (typeof isReportInjected === 'function' && isReportInjected(currentAnMessageId)) || lastFilledReportId === currentAnMessageId;
+                    const isBusy = typeof isPerplexityBusy === 'function' ? isPerplexityBusy() : false;
+                    if (!isAlreadyInjected && !isBusy && !isReportLocked(currentAnMessageId)) {
                         setTimeout(() => {
                             executeFillAndSubmit(false, null, false); // false = Chỉ dán chatbox, không submit
                         }, 400);
@@ -3140,6 +3286,34 @@
             }
         });
 
+        // Bắt sự kiện người dùng submit thủ công câu hỏi vào Perplexity (Enter hoặc Click nút gửi)
+        // Nhằm ghi nhận ngay trạng thái ĐÃ GỬI và ngăn chặn đổ lặp khi ô chat bị xóa
+        document.addEventListener("keydown", (e) => {
+            if (e.key === "Enter" && !e.shiftKey && !e.ctrlKey && !e.altKey && !e.metaKey) {
+                const inputEl = findPerplexityInput();
+                if (inputEl && (e.target === inputEl || inputEl.contains(e.target))) {
+                    const val = (inputEl.value || inputEl.textContent || '').trim();
+                    if (val.length > 0) {
+                        onUserSubmittedToPerplexity();
+                    }
+                }
+            }
+        }, true);
+
+        document.addEventListener("click", (e) => {
+            const btn = e.target.closest('button');
+            if (btn && !btn.closest('#omni-bridge-panel') && !btn.closest('#omni-bridge-toast')) {
+                const submitBtn = findPerplexitySubmitButton();
+                if (btn === submitBtn || btn.contains(submitBtn) || submitBtn?.contains(btn)) {
+                    const inputEl = findPerplexityInput();
+                    const val = inputEl ? (inputEl.value || inputEl.textContent || '').trim() : '';
+                    if (val.length > 0) {
+                        onUserSubmittedToPerplexity();
+                    }
+                }
+            }
+        }, true);
+
         // Helper gắn sự kiện an toàn tuyệt đối chống null
         const safeBind = (id, handler, event = 'onclick') => {
             const el = document.getElementById(id);
@@ -3377,7 +3551,7 @@
         await autoDiscoverHub();
 
         // BƯỚC 1: Khôi phục trạng thái SSOT từ Supabase trước tiên (BRIDGE-STATUS-REHYDRATION-001)
-        await rehydrateStateFromSupabase(CONFIG.DEFAULT_THREAD_ID);
+        await rehydrateStateFromSupabase();
 
         // BƯỚC 2: Sau snapshot SSOT mới kết nối SSE Hub
         connectSseHub();

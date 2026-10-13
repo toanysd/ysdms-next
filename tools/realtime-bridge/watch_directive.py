@@ -78,7 +78,14 @@ def notify_agentapi(directive_text, message_id, thread_id):
         
         prompt = f"[⚡ DIRECTIVE TỪ PE / MINH CHỦ QUA BRIDGE]\n\n{directive_text}\n\n---\n*Ghi chú: Directive được chuyển tự động vào ô chat qua Native AgentAPI từ Watcher.*"
         import subprocess
-        res = subprocess.run([exe, "agentapi", "send-message", f"--title=PE DIRECTIVE", target_conv, prompt], capture_output=True, text=True, timeout=5)
+        res = subprocess.run(
+            [exe, "agentapi", "send-message", "--title=PE DIRECTIVE", target_conv, prompt],
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=5
+        )
         if res.returncode == 0:
             print(f"[AGENTAPI WAKEUP] 🚀 Đã gửi Directive trực tiếp vào phiên AN ({target_conv[:8]}...) thành công!")
             return True

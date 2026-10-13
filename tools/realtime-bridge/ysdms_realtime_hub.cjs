@@ -1364,6 +1364,20 @@ const server = http.createServer(async (req, res) => {
                         if (!contentToPersist.includes('[GỬI SUPABASE:') && !contentToPersist.includes('[GUI SUPABASE:')) {
                             contentToPersist = contentToPersist.trim() + `\n\n⏱️ [GỬI SUPABASE: ${nowJst} JST]`;
                         }
+                        let msgType = data.messageType || data.message_type;
+                        if (!msgType) {
+                            const upperText = directiveText.toUpperCase();
+                            if (upperText.includes('APPROVED') || upperText.includes('PHÊ DUYỆT') || upperText.includes('CHỐT ĐÓNG') || upperText.includes('CLOSED')) {
+                                msgType = 'APPROVAL';
+                            } else if (upperText.includes('QUESTION') || upperText.includes('CÂU HỎI') || upperText.includes('THẨM VẤN')) {
+                                msgType = 'QUESTION';
+                            } else if (upperText.includes('ANALYSIS') || upperText.includes('PHÂN TÍCH')) {
+                                msgType = 'ANALYSIS';
+                            } else {
+                                msgType = 'DIRECTIVE';
+                            }
+                        }
+
                         const insertRes = await fetch(`${SUPABASE_URL}/rest/v1/pe_an_messages`, {
                             method: 'POST',
                             headers: {
@@ -1375,6 +1389,7 @@ const server = http.createServer(async (req, res) => {
                             body: JSON.stringify({
                                 thread_id: threadId,
                                 sender: 'PE',
+                                message_type: msgType,
                                 content_md: contentToPersist
                             })
                         });
@@ -1382,8 +1397,9 @@ const server = http.createServer(async (req, res) => {
                             const insData = await insertRes.json();
                             if (insData && insData.length > 0) {
                                 persistedRow = insData[0];
+                                persistedRow.id = persistedRow.message_id || persistedRow.id;
                                 messageId = persistedRow.id;
-                                console.log(`[PERSIST-FIRST] ✅ Đã lưu bản ghi PE vào public.pe_bridge. UUID thật: ${messageId}`);
+                                console.log(`[PERSIST-FIRST] ✅ Đã lưu bản ghi PE vào public.pe_an_messages. UUID thật: ${messageId}`);
                             }
                         } else {
                             const errBody = await insertRes.text();
@@ -1604,12 +1620,13 @@ const server = http.createServer(async (req, res) => {
                             body: JSON.stringify({
                                 thread_id: threadId,
                                 sender: 'AN',
+                                message_type: 'REPORT',
                                 content_md: contentToPersist
                             })
                         });
                         if (insertRes.ok) {
                             const insData = await insertRes.json();
-                            if (insData && insData.length > 0) messageId = insData[0].id;
+                            if (insData && insData.length > 0) messageId = insData[0].message_id || insData[0].id;
                         }
                     } catch (e) {
                         console.warn('[HUB REPORT] Lỗi nộp Supabase:', e.message);
