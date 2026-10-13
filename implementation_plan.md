@@ -1,88 +1,97 @@
-# Implementation Plan - WO-P1-004 (Gói 5: Hoàn thiện PDF Engine / Export Phiếu Mượn & Hoàn Trả Khuôn)
+# Implementation Plan - BRIDGE v2.4.0 (Phương án 2: Kiến trúc Dual-Path Tinh Giản)
 
-**Mã lệnh công tác:** `WO-P1-004` | **Thread:** `WO-P1-004` | **Cấp độ rủi ro:** `YELLOW` (Front-end UI + Server Route PDF render)  
-**Tài liệu SSOT:** `docs/business/MOLD_CUSTODY_BUSINESS_SPEC.md` (Chủ đề 5)  
-**Thời gian lập:** 2026-10-08 10:35 JST  
-
----
-
-## 1. Mục tiêu & Cam kết An toàn (Safety Gates)
-
-- **Mục tiêu:** Hoàn thiện PDF Engine chuẩn công nghiệp A4 cho 3 luồng biên bản mượn/lưu giữ/hoàn trả khuôn (`CUSTOMER_LOAN`, `RETURN_TO_CUSTOMER`, `OUTSOURCE_PROCESSING`), tích hợp ảnh thực tế hiện trường từ mobile capture (Gói 4), hiển thị bố cục chuẩn kiểm toán J-SOX (con dấu, chữ ký 3 bên, mã QR/Barcode).
-- **Cam kết sắt (Safety Gates):**
-  - **ZERO DDL:** Tuyệt đối không can thiệp schema DB, không tạo bảng hay cột mới.
-  - **Zero Mock / Zero Fake Data:** Đọc trực tiếp từ view `v_equipment_loans_summary` và bảng `equipment`.
-  - **Quality Gates:** `npx tsc --noEmit` = 0 errors, `check_translations.mjs` = 0 missing keys, Test Suite 100% pass.
+**Mã công việc:** `BRIDGE-v2.4.0` | **Thread:** `BRIDGE-ORCHESTRATION` | **Cấp độ rủi ro:** `LOW` (Tooling/DevOps - Zero DDL)  
+**Tài liệu SSOT:** `docs/technical/08_pe_an_bridge_architecture.md`, `RULE-PROC-02 / QUY TẮC 0.7`  
+**Chỉ thị phê duyệt từ PE:** Directive `[Stamp: 2026-10-13 19:40 JST]` (PE PHÊ DUYỆT KIẾN TRÚC BRIDGE v2.4.0 — PHƯƠNG ÁN 2)  
+**Trạng thái hiện tại:** `[KẾ HOẠCH] Đệ trình Kế hoạch thi công (Chờ PE phê duyệt)`  
+**Thời gian lập:** 2026-10-13 19:45 JST  
 
 ---
 
-## 2. Kiến trúc Kỹ thuật & Bố cục PDF A4
+## 1. Bối Cảnh & Mục Tiêu
 
-### 2.1. Nâng cấp `MoldLoanPDFDocument.tsx` (`@react-pdf/renderer`)
-1. **Bố cục Chuẩn Công nghiệp A4 (Industrial Layout):**
-   - Header: Thông tin Đơn vị tiếp nhận (`客先企業 御中`) & Đơn vị phát hành (`株式会社ヨシダパッケージ`).
-   - Khối con dấu công ty (`〔 社 判 〕`, `〔 印 〕`).
-   - Tiêu đề văn bản động theo 3 luồng:
-     * `CUSTOMER_LOAN`: **金型借用書 (兼 預り証)** / *MOLD CUSTODY & LOAN CERTIFICATE*
-     * `RETURN_TO_CUSTOMER`: **金型返却書 (現品受渡確認票)** / *MOLD RETURN & DELIVERY CONFIRMATION SLIP*
-     * `OUTSOURCE_PROCESSING`: **金型外注加工・修理依頼書 (兼 送付状)** / *OUTSOURCE MACHINING DISPATCH SLIP*
-   - Lời cam kết trách nhiệm bảo quản tài sản (Pledge Statement).
-2. **Bảng Thông số Kỹ thuật Khuôn (Tooling Specs):**
-   - Mã khuôn, Tên khuôn/sản phẩm, Kích thước ngoài ($L \times W \times H$), Trọng lượng, Khách hàng sở hữu, Nơi bảo quản, Hạn trả dự kiến.
-3. **Mục 2: Hiện trường Thực tế — Tích hợp 2 Ảnh Mobile Capture (J-SOX Evidence):**
-   - Ảnh ①: Toàn cảnh có thước đo tỉ lệ (`全体写真・スケール付` / `photo_overall_url`).
-   - Ảnh ②: Cận cảnh biển tên / khắc chữ kim loại (`銘板・刻印・看板` / `photo_nameplate_url`).
-   - Khung hình co giãn tỉ lệ chuẩn (`objectFit: 'contain'`), kèm thông báo placeholder rõ nét nếu chưa có ảnh.
-4. **Khối Chữ ký & Phê duyệt (Approval & Signature Blocks):**
-   - 3 khối ký rõ ràng: Bên giao (`貸出人 / Bên giao`), Bên nhận (`保管者 / Bên nhận`), Kiểm tra KCS (`検査確認 / KCS`).
-5. **Đa ngữ JA / VI (Bilingual Support):**
-   - Tiêu đề mục và nhãn thông số được trình bày song ngữ Nhật - Việt tinh tế, vừa đáp ứng kiểm toán Nhật Bản vừa minh bạch cho quản đốc hiện trường Việt Nam.
+### 1.1. Bối cảnh
+- Kiến trúc sư trưởng PE đã xác nhận 100% khả năng tự gọi Supabase Connector để INSERT trực tiếp vào `pe_an_messages` (đã chứng minh qua các directive `WO-P1-009`, `WO-P1-010`).
+- Người dùng (Minh Chủ THOAN) và PE đã thống nhất loại bỏ việc cào DOM tự động ngầm trên trình duyệt Perplexity vì gây lộn xộn, bắt nhầm stream đang gõ dở, xung đột hash, và khiến Userscript phình to tới **3.732 dòng**.
+- PE đã phê duyệt kiến trúc **Phương án 2 (Dual-Path)**:
+  * **Luồng chính (Primary Path):** PE tự INSERT trực tiếp vào Supabase qua Supabase Connector. Hub nhận diện và kích hoạt Native AgentAPI đưa thẳng vào IDE cho AN.
+  * **Luồng cứu hộ (Rescue Path):** Duy trì DUY NHẤT 1 nút bấm thủ công trên Userscript `⚡ Gửi ngay cho AN (Alt+F10)` để Minh Chủ chủ động gửi nếu PE gặp sự cố về connector.
 
-### 2.2. Nâng cấp Tuyến API Server-Side `/api/equipment/loans/[id]/pdf/route.ts`
-- Sử dụng `@react-pdf/renderer` hàm `renderToBuffer`.
-- Load font tiếng Nhật bản địa `NotoSansJP-Regular.otf` và `NotoSansJP-Bold.otf`.
-- Định dạng tên file xuất chuẩn:
-  * URL Encoded RFC 5987 để trình duyệt tải về đúng tên tiếng Nhật: `金型預託証書_${loan_code}_${customer}.pdf`.
-  * Header HTTP: `Content-Type: application/pdf`, `Content-Disposition: inline; filename="..."`.
-
-### 2.3. Trải nghiệm Người dùng trên Trang Chi tiết (`/equipment/loans/[id]/page.tsx`)
-- Bổ sung cụm nút tác vụ chuyên biệt trên TopBar:
-  * Nút **In / Xem trước A4 (Preview)**: Mở PDF trực tiếp trong tab mới để in ấn ngay.
-  * Nút **Tải về PDF (Download)**: Tải trực tiếp file `.pdf` về máy tính.
+### 1.2. Mục tiêu kỹ thuật
+1. **XÓA BỎ 100% logic cào DOM tự động** ở chiều PE → AN trong `ysdms_pe_bridge.user.js`.
+2. **Tinh giản Userscript:** Cắt giảm từ 3.732 dòng xuống **~400 - 500 dòng** (giảm > 85% dung lượng).
+3. **Bảo toàn 100% chiều AN → PE:** Cơ chế nhận báo cáo AN qua SSE từ Hub, tự động đổ vào ô chat Perplexity, chuông âm thanh Web Audio, và cơ chế Minh Chủ Giữ Cổng (`[x] Chỉ dán chatbox` + Alt+F9).
+4. **Nút Cứu Hộ Thủ Công duy nhất (Alt+F10):** Chỉ đọc nội dung khi Minh Chủ click hoặc bấm phím tắt, gửi qua Hub `/api/directive` để đẩy vào Supabase. Tuyệt đối không cào ngầm tự động.
 
 ---
 
-## 3. Danh sách Tập tin Thi công (File List)
+## 2. Cam Kết An Toàn (Safety Gates)
 
-| STT | Tập tin | Thao tác | Mô tả |
+- **ZERO DDL:** Tuyệt đối không thay đổi schema cơ sở dữ liệu `pe_an_messages` hay bất kỳ bảng nào trong dự án.
+- **Zero Production Risk:** Chỉ can thiệp vào các tệp công cụ cầu nối (`tools/realtime-bridge/`), không ảnh hưởng mã nguồn Next.js (`src/app/`).
+- **Phân định 3 Pha (RULE-PROC-01):**
+  * Nộp Kế hoạch thi công chi tiết này (Pha 1: PLANNING).
+  * Chỉ tiến hành chỉnh sửa mã nguồn sau khi PE phê duyệt kế hoạch.
+  * Xuất Báo cáo nghiệm thu (Pha 3: COMPLETION) sau khi toàn bộ Test Suite đạt 100% PASS.
+
+---
+
+## 3. Danh Sách Tệp Can Thiệp (File List)
+
+| STT | Tệp | Loại thay đổi | Mô tả chi tiết |
 |---|---|---|---|
-| 1 | `src/components/pdf/MoldLoanPDFDocument.tsx` | Chỉnh sửa | Nâng cấp layout chuẩn công nghiệp, 2 slot ảnh mobile, khối chữ ký 3 bên, nhãn song ngữ JA/VI |
-| 2 | `src/app/api/equipment/loans/[id]/pdf/route.ts` | Chỉnh sửa | Tối ưu hóa renderToBuffer, RFC 5987 filename tiếng Nhật, error handling |
-| 3 | `src/app/equipment/loans/[id]/page.tsx` | Chỉnh sửa | Thêm nút Export/Download PDF chuyên nghiệp bên cạnh nút xem trước |
-| 4 | `messages/ja.json` & `messages/vi.json` | Chỉnh sửa | Bổ sung đầy đủ nhãn ngôn ngữ cho tính năng xuất PDF |
-| 5 | `scripts/test_p1_004_pdf_suite.py` | Tạo mới | Bộ kiểm thử tự động toàn diện 8 Test Cases cho PDF Engine |
+| 1 | `tools/realtime-bridge/ysdms_pe_bridge.user.js` | **Rewrite / Refactor** | Tinh giản từ 3.732 dòng xuống ~450 dòng. Xóa toàn bộ stream observer, hash detector, envelope parsing ngầm; giữ lại SSE receiver, input injector, toast/audio, và nút cứu hộ Alt+F10. Version: `v2.4.0`. |
+| 2 | `tools/realtime-bridge/ysdms_realtime_hub.cjs` | **Cập nhật cấu hình** | Cập nhật version banner lên `v2.4.0`, đảm bảo route `/api/directive` phục vụ tốt cho nút cứu hộ thủ công và phân phối Userscript mới tại `http://127.0.0.1:3856/ysdms_pe_bridge.user.js`. |
+| 3 | `scripts/test_bridge_v240_dual_path.py` | **Tạo mới (Test Suite)** | Script kiểm thử độc lập 5 tiêu chí: dung lượng dòng, loại bỏ auto-scraping, sự hiện diện của nút cứu hộ, tính tương thích của input inject, và luồng live Supabase. |
 
 ---
 
-## 4. Kế hoạch Kiểm thử Tự động (Test Plan - 8 Test Cases)
+## 4. Chi Tiết Kế Hoạch Tinh Giản Userscript (`ysdms_pe_bridge.user.js`)
 
-1. **TC-01:** Kiểm tra tệp font tiếng Nhật `NotoSansJP-Regular.otf` & `NotoSansJP-Bold.otf` sẵn có trên máy chủ.
-2. **TC-02:** Kiểm tra component `MoldLoanPDFDocument.tsx` đầy đủ 3 loại văn bản (預り証, 返却書, 外注送付状).
-3. **TC-03:** Kiểm tra 2 slot ảnh (`photo_overall_url`, `photo_nameplate_url`) được nhúng chính xác vào Section 2 của PDF.
-4. **TC-04:** Kiểm tra khối chữ ký 3 bên (Bên giao, Bên nhận, KCS kiểm tra) và ô đóng dấu社判.
-5. **TC-05:** Kiểm tra API route `/api/equipment/loans/[id]/pdf` phản hồi HTTP 200 và MIME `application/pdf`.
-6. **TC-06:** Kiểm tra mã hóa tên tệp tải về RFC 5987 chuẩn tiếng Nhật không lỗi font.
-7. **TC-07:** Kiểm thử biên dịch TypeScript (`npx tsc --noEmit`) = 0 lỗi.
-8. **TC-08:** Kiểm thử đa ngữ i18n (`check_translations.mjs`) = 0 khóa thiếu.
+### 4.1. Những phần BẮT BUỘC XÓA BỎ (Elimination List)
+- ❌ **Xóa `getLatestPeResponse()` tự động & stream detector:** Không còn quét liên tục các thẻ `.prose`, `div[dir="auto"]` trong DOM.
+- ❌ **Xóa MutationObserver & Stream Timer:** Xóa bỏ `observePeStream()`, `isPeStreaming`, `timeSinceLastTextChange`, `debounceForwardTimer`, `hasObservedNewStream`.
+- ❌ **Xóa `verifyDirectiveIntegrity()`:** Không cần cào và kiểm tra thẻ `=== PE-DIRECTIVE ===` hay `=== END ===` tự động nữa vì PE tự soạn bản ghi trên Supabase.
+- ❌ **Xóa các bộ tính toán hash chuỗi:** `hashString()`, `baselinePeTextHash`, `omni_bridge_last_forwarded_hash`, `omni_bridge_last_forwarded_in_reply_to`.
+- ❌ **Xóa logic auto-forward:** Toàn bộ lệnh gọi `forwardPeResponseToAn(false)` bị xóa vĩnh viễn.
+
+### 4.2. Những phần BẮT BUỘC GIỮ LẠI & TỐI ƯU (Preservation List)
+- ✅ **Cấu hình & Kết nối Hub (SSE Client):** Lắng nghe sự kiện `AN_REPORT_DISPATCHED` từ Hub `http://127.0.0.1:3856/api/events`.
+- ✅ **React Input Injector (Chiều AN → PE):**
+  * Tìm ô chat Perplexity (`textarea` / `contenteditable`).
+  * Thực hiện điền văn bản an toàn bằng `Prototype Setter` hoặc `document.execCommand('insertText')` + dispatch events `input`, `change`.
+  * Chuông báo hiệu Web Audio API (âm thanh notification nhẹ) khi có báo cáo mới từ AN.
+- ✅ **Cơ chế Minh Chủ Giữ Cổng (Dual-Shield Gatekeeper):**
+  * Tùy chọn checkbox `[x] Chỉ dán chatbox` (mặc định bật).
+  * Nút bấm `🚀 Gửi ngay cho PE (Alt+F9)`.
+- ✅ **Nút Cứu Hộ Thủ Công DUY NHẤT (Alt+F10 Rescue Handler):**
+  * Hàm `handleManualRescueForward()`: Chỉ chạy khi người dùng bấm nút `⚡ Gửi ngay cho AN (Alt+F10)` trên panel hoặc nhấn phím tắt `Alt+F10`.
+  * Đọc khối văn bản được bôi đen (selection) hoặc câu trả lời cuối cùng hiển thị trên màn hình.
+  * Hiển thị xác nhận rõ ràng: *"Đang gửi chỉ thị cứu hộ sang Supabase..."* và POST về `/api/directive`.
+- ✅ **Giao diện Panel Tinh Gọn (Floating UI):**
+  * Nền tối phẳng, nhỏ gọn ở góc màn hình.
+  * Hiển thị trạng thái lượt: `LƯỢT PE` (xanh ngọc) / `LƯỢT AN` (vàng cam).
+  * 2 nút hành động duy nhất: `[Alt+F9] Gửi PE` và `[Alt+F10] Cứu hộ gửi AN`.
 
 ---
 
-## 5. Trình tự Triển khai (Execution Steps)
+## 5. Kế Hoạch Kiểm Thử Tự Động (Test Plan)
 
-1. Gửi REPORT Kế hoạch qua Bridge Table `pe_an_messages` (Thread: `WO-P1-004`).
-2. Tinh chỉnh `MoldLoanPDFDocument.tsx` và `route.ts`.
-3. Tích hợp UI download/print trên `[id]/page.tsx`.
-4. Cập nhật `messages/ja.json` & `messages/vi.json`.
-5. Chạy `scripts/test_p1_004_pdf_suite.py` đạt 8/8 PASSED.
-6. Chạy Playwright kiểm tra route API trả về PDF buffer hợp lệ.
-7. Commit, push `origin/main`, mirror USB `G:`, và gửi REPORT hoàn tất cho PE nghiệm thu.
+Kỹ sư AN sẽ thi công script `scripts/test_bridge_v240_dual_path.py` để kiểm định 5 tiêu chí:
+
+1. **TC1 - Line Count Audit:** Số dòng của `ysdms_pe_bridge.user.js` phải nằm trong khoảng 350 - 600 dòng (giảm > 80% so với 3.732 dòng ban đầu).
+2. **TC2 - Zero Auto-Scraping Audit:** Quét regex toàn bộ Userscript đảm bảo không còn bất kỳ lệnh `forwardPeResponseToAn(false)` hoặc timer tự động cào DOM nào.
+3. **TC3 - Rescue Action Verification:** Kiểm tra sự hiện diện của listener cho sự kiện click `omni-btn-fwd-an` và hotkey `Alt+F10` gọi đúng hàm cứu hộ thủ công.
+4. **TC4 - Input Injection Integrity:** Kiểm tra đầy đủ các phương thức React input setter (`HTMLTextAreaElement.prototype`, `execCommand`, dispatch `InputEvent`).
+5. **TC5 - Hub & SSE Compatibility:** Gọi API Hub `/api/status` và `/api/events` đảm bảo Hub hoạt động ổn định và phục vụ Userscript v2.4.0.
+
+---
+
+## 6. Lộ Trình Triển Khai (Execution Timeline)
+
+1. **Pha 1 (Hiện tại):** Đệ trình Implementation Plan này lên Kiến trúc sư trưởng PE và Minh Chủ THOAN để phê duyệt.
+2. **Pha 2 (Sau khi PE duyệt):**
+   - Viết Userscript v2.4.0 tinh gọn theo đúng đặc tả.
+   - Cập nhật banner Hub v2.4.0.
+   - Viết và chạy Test Suite `scripts/test_bridge_v240_dual_path.py`.
+3. **Pha 3:** Xuất Báo cáo nghiệm thu hoàn thành gửi PE, kèm output kiểm thử thực tế và hướng dẫn Minh Chủ bấm `Tampermonkey -> Check for updates` để áp dụng ngay.
