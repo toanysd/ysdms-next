@@ -762,6 +762,14 @@
     // ==========================================
     // 4. ĐIỀN TEXT & GỬI VÀO PERPLEXITY (REACT COMPLIANT)
     // ==========================================
+    function cleanConnectorTags(text) {
+        if (!text) return '';
+        return text
+            .replace(/@[\w\u00C0-\u024F\u1EA0-\u1EF9\-]+/gi, '')
+            .replace(/(⚡\s*Supabase|GitHub|Học\s*thuật|Academic|Web|Scholar|Máy\s*tính|Tìm\s*kiếm)/gi, '')
+            .trim();
+    }
+
     function setReactInputValue(el, value) {
         if (!el) return false;
         el.focus();
@@ -773,6 +781,26 @@
             processedValue = removeVietnameseTones(processedValue);
         }
         processedValue = sanitizeLatexConflicts(processedValue);
+
+        // Đọc nội dung hiện có để bảo toàn các tag kết nối (@supabase, @github, @học thuật...)
+        let existingVal = '';
+        if (el.tagName.toLowerCase() === 'textarea' || el.tagName.toLowerCase() === 'input') {
+            existingVal = el.value || '';
+        } else {
+            existingVal = el.textContent || '';
+        }
+
+        let connectorPrefix = '';
+        const tagMatches = existingVal.match(/^(\s*@[\w\u00C0-\u024F\u1EA0-\u1EF9\-]+)+\s*/);
+        if (tagMatches && tagMatches[0]) {
+            connectorPrefix = tagMatches[0].trim() + '\n\n';
+        }
+
+        // Nếu ô chat đã có connector tags, bảo toàn connector tags để không làm mất kết nối riêng của Perplexity
+        let textToInsert = processedValue;
+        if (connectorPrefix && !processedValue.trim().startsWith('@')) {
+            textToInsert = connectorPrefix + processedValue;
+        }
 
         if (el.tagName.toLowerCase() === 'textarea' || el.tagName.toLowerCase() === 'input') {
             const proto = el.tagName.toLowerCase() === 'textarea' 
@@ -786,7 +814,7 @@
                     bubbles: true,
                     cancelable: true,
                     inputType: 'insertText',
-                    data: processedValue
+                    data: textToInsert
                 }));
             } catch(e) {}
 
@@ -794,10 +822,10 @@
             if (nativeSetter) {
                 nativeSetter.call(el, '');
                 el.dispatchEvent(new Event('input', { bubbles: true, cancelable: true }));
-                nativeSetter.call(el, processedValue);
+                nativeSetter.call(el, textToInsert);
             } else {
                 el.value = '';
-                el.value = processedValue;
+                el.value = textToInsert;
             }
 
             // 2. Dispatch InputEvent + Event + Change + Keyup
@@ -806,7 +834,7 @@
                     bubbles: true,
                     cancelable: true,
                     inputType: 'insertText',
-                    data: processedValue
+                    data: textToInsert
                 }));
             } catch(e) {}
             el.dispatchEvent(new Event('input', { bubbles: true, cancelable: true }));
@@ -831,7 +859,7 @@
             if (el.textContent && el.textContent.trim().length > 0) {
                 el.textContent = '';
             }
-            document.execCommand('insertText', false, processedValue);
+            document.execCommand('insertText', false, textToInsert);
             el.dispatchEvent(new Event('input', { bubbles: true, cancelable: true }));
             el.dispatchEvent(new Event('change', { bubbles: true, cancelable: true }));
         }
@@ -1044,10 +1072,10 @@
         if (!inputEl) return false;
 
         const originalText = (inputEl.value || inputEl.textContent || '').trim();
-        if (originalText.length === 0) return true;
+        const cleanOrig = cleanConnectorTags(originalText);
+        if (originalText.length === 0 || cleanOrig.length === 0) return true;
 
-        // v1.0.16: Đọc lại ô nhập MỚI NHẤT (React/Lexical có thể render lại node sau khi gửi -> node cũ bị tách khỏi DOM
-        // và vẫn giữ text cũ, khiến bản cũ tưởng "chưa gửi" rồi gõ lại + gửi lặp).
+        // v1.0.16/v2.3.1: Đọc lại ô nhập MỚI NHẤT (React/Lexical có thể render lại node sau khi gửi -> node cũ bị tách khỏi DOM)
         const readCurrentVal = () => {
             const fresh = findPerplexityInput();
             const el = (fresh && fresh.isConnected) ? fresh : inputEl;
@@ -1056,9 +1084,12 @@
         const wasStreamingBefore = isPerplexityStreaming();
         const isAccepted = () => {
             const v = readCurrentVal();
-            if (v === '' || v.length < originalText.length * 0.3) return true;
-            // PE vừa BẮT ĐẦU trả lời sau khi gửi => tin nhắn chắc chắn đã được nhận
+            const cleanV = cleanConnectorTags(v);
+            // 1. Nếu ô chat rỗng hoặc sau khi lọc tag chỉ còn rỗng/ngắn hơn 30% văn bản gốc -> ĐÃ NHẬN
+            if (cleanV === '' || cleanV.length < (cleanOrig.length > 0 ? cleanOrig.length * 0.3 : 1)) return true;
+            // 2. PE vừa BẮT ĐẦU trả lời hoặc đang suy nghĩ => chắc chắn tin nhắn đã được gửi vào PE
             if (!wasStreamingBefore && isPerplexityStreaming()) return true;
+            if (typeof isPerplexityBusy === 'function' && isPerplexityBusy()) return true;
             return false;
         };
 
@@ -1106,8 +1137,13 @@
 
             // Kích hoạt lại input để React reconcile — CHỈ khi ô nhập vẫn còn nguyên văn bản (chưa gửi)
             if (!isAccepted()) {
-                triggerRealisticInput(inputEl, originalText);
-                await new Promise(r => setTimeout(r, 400));
+                const currentClean = cleanConnectorTags(readCurrentVal());
+                if (currentClean.length > 0) {
+                    triggerRealisticInput(inputEl, originalText);
+                    await new Promise(r => setTimeout(r, 400));
+                } else {
+                    return true;
+                }
             } else {
                 return true;
             }
@@ -2496,10 +2532,13 @@
                 dot.style.boxShadow = isBridgePaused ? "0 0 10px rgba(249,115,22,0.8)" : "0 0 10px rgba(245,158,11,0.8)"; 
             }
             if (btnSendPe) {
-                btnSendPe.disabled = true;
-                btnSendPe.style.background = "#f1f5f9"; btnSendPe.style.color = "#94a3b8"; btnSendPe.style.cursor = "not-allowed";
-                btnSendPe.textContent = "⏳ Chờ AN thi công";
-                btnSendPe.title = "Đang trong lượt AN thi công và báo cáo";
+                // CHO PHÉP MINH CHỦ THOAN LUÔN BẤM ĐƯỢC NÚT ĐỂ ĐỔ VÀO PE (MANUAL OVERRIDE)
+                btnSendPe.disabled = false;
+                btnSendPe.style.background = "linear-gradient(135deg, #0284c7 0%, #0369a1 100%)";
+                btnSendPe.style.color = "#ffffff";
+                btnSendPe.style.cursor = "pointer";
+                btnSendPe.textContent = "🚀 Đổ vào PE (Alt+F9)";
+                btnSendPe.title = "Minh Chủ có thể bấm để đổ nội dung báo cáo mới nhất vào PE bất cứ lúc nào (kể cả khi đang ở lượt AN)";
             }
             if (btnFwdAn) {
                 btnFwdAn.style.background = "#fffbeb"; btnFwdAn.style.color = "#b45309";
@@ -2516,11 +2555,11 @@
             // IDLE
             if (dot) { dot.style.background = "#94a3b8"; dot.style.boxShadow = "none"; }
             if (btnSendPe) {
-                btnSendPe.disabled = !currentCorrelation.pendingAnReport;
-                btnSendPe.style.background = currentCorrelation.pendingAnReport ? "linear-gradient(135deg, #10b981 0%, #059669 100%)" : "#f8fafc";
-                btnSendPe.style.color = currentCorrelation.pendingAnReport ? "#ffffff" : "#64748b";
-                btnSendPe.style.cursor = currentCorrelation.pendingAnReport ? "pointer" : "default";
-                btnSendPe.textContent = currentCorrelation.pendingAnReport ? "🚀 Đổ báo cáo vào PE (Alt+F9)" : "⚪ OmniLinguist Bridge";
+                btnSendPe.disabled = false;
+                btnSendPe.style.background = "linear-gradient(135deg, #10b981 0%, #059669 100%)";
+                btnSendPe.style.color = "#ffffff";
+                btnSendPe.style.cursor = "pointer";
+                btnSendPe.textContent = "🚀 Đổ báo cáo vào PE (Alt+F9)";
             }
             if (btnFwdAn) {
                 btnFwdAn.style.background = "#f8fafc"; btnFwdAn.style.color = "#64748b";

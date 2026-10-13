@@ -1378,30 +1378,45 @@ const server = http.createServer(async (req, res) => {
                             }
                         }
 
-                        const insertRes = await fetch(`${SUPABASE_URL}/rest/v1/pe_an_messages`, {
-                            method: 'POST',
-                            headers: {
-                                'apikey': ACTIVE_KEY,
-                                'Authorization': `Bearer ${ACTIVE_KEY}`,
-                                'Content-Type': 'application/json',
-                                'Prefer': 'return=representation'
-                            },
-                            body: JSON.stringify({
-                                thread_id: threadId,
-                                sender: 'PE',
-                                message_type: msgType,
-                                content_md: contentToPersist
-                            })
-                        });
-                        if (insertRes.ok) {
+                        const explicitMessageId = (messageId && messageId.length >= 30) ? messageId : crypto.randomUUID();
+                        const safeThreadId = threadId || 'DEFAULT';
+                        const safeMsgType = ['DIRECTIVE', 'ANALYSIS', 'QUESTION', 'APPROVAL', 'REPORT'].includes(msgType) ? msgType : 'DIRECTIVE';
+
+                        let insertRes = null;
+                        for (let attempt = 1; attempt <= 2; attempt++) {
+                            try {
+                                insertRes = await fetch(`${SUPABASE_URL}/rest/v1/pe_an_messages`, {
+                                    method: 'POST',
+                                    headers: {
+                                        'apikey': ACTIVE_KEY,
+                                        'Authorization': `Bearer ${ACTIVE_KEY}`,
+                                        'Content-Type': 'application/json',
+                                        'Prefer': 'return=representation'
+                                    },
+                                    body: JSON.stringify({
+                                        message_id: explicitMessageId,
+                                        thread_id: safeThreadId,
+                                        sender: 'PE',
+                                        message_type: safeMsgType,
+                                        content_md: contentToPersist
+                                    })
+                                });
+                                if (insertRes.ok) break;
+                            } catch (netErr) {
+                                if (attempt === 2) throw netErr;
+                                await new Promise(r => setTimeout(r, 400));
+                            }
+                        }
+
+                        if (insertRes && insertRes.ok) {
                             const insData = await insertRes.json();
                             if (insData && insData.length > 0) {
                                 persistedRow = insData[0];
-                                persistedRow.id = persistedRow.message_id || persistedRow.id;
+                                persistedRow.id = persistedRow.message_id || explicitMessageId;
                                 messageId = persistedRow.id;
                                 console.log(`[PERSIST-FIRST] ✅ Đã lưu bản ghi PE vào public.pe_an_messages. UUID thật: ${messageId}`);
                             }
-                        } else {
+                        } else if (insertRes) {
                             const errBody = await insertRes.text();
                             console.error(`[PERSIST-FIRST] ❌ Supabase từ chối persist: HTTP ${insertRes.status} - ${errBody}`);
                         }
