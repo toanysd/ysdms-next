@@ -102,3 +102,4 @@ _trash*
 
 # Userscript with local tokens
 *.user.js
+!tools/realtime-bridge/*.user.js

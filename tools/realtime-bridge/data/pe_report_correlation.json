@@ -1,0 +1,16 @@
+{
+  "reports": {
+    "c0659ef4-6150-4226-a194-5b9ede3ecd34": {
+      "reportId": "c0659ef4-6150-4226-a194-5b9ede3ecd34",
+      "threadId": "ARCHITECTURE-PE-WORKER",
+      "workOrderId": null,
+      "createdAt": "2026-10-12T23:55:47.749761+00:00",
+      "status": "PENDING",
+      "handledBy": null,
+      "handledAt": null,
+      "peResponseId": null,
+      "inReplyTo": null
+    }
+  },
+  "consumed": {}
+}

@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mock Perplexity Pro UI Fixture for Bridge Audit</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #191a1a;
+            color: #e5e7eb;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            width: 800px;
+            background: #202222;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            border: 1px solid #333;
+        }
+        h2 {
+            margin-top: 0;
+            color: #20b8cd;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .badge {
+            background: #0e7490;
+            color: #fff;
+            font-size: 0.75rem;
+            padding: 2px 8px;
+            border-radius: 9999px;
+        }
+        .input-box {
+            position: relative;
+            background: #2b2d2d;
+            border-radius: 8px;
+            border: 1px solid #444;
+            padding: 12px;
+            margin-top: 16px;
+        }
+        textarea {
+            width: 100%;
+            height: 120px;
+            background: transparent;
+            border: none;
+            color: #fff;
+            font-size: 1rem;
+            outline: none;
+            resize: none;
+            box-sizing: border-box;
+        }
+        .toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 12px;
+            padding-top: 8px;
+            border-top: 1px solid #383a3a;
+        }
+        .left-tools {
+            display: flex;
+            gap: 8px;
+        }
+        .chip {
+            background: #383a3a;
+            border: 1px solid #555;
+            color: #9ca3af;
+            border-radius: 16px;
+            padding: 4px 12px;
+            font-size: 0.8rem;
+            cursor: pointer;
+        }
+        .submit-btn {
+            background: #20b8cd;
+            color: #000;
+            border: none;
+            border-radius: 50%;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+        .submit-btn:disabled {
+            background: #444;
+            color: #888;
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
+        .audit-log {
+            margin-top: 20px;
+            background: #111;
+            padding: 12px;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 0.85rem;
+            color: #10b981;
+            max-height: 150px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>
+            Perplexity Pro Mock Fixture
+            <span class="badge">AUDIT-ISOLATED</span>
+        </h2>
+        <p style="font-size: 0.85rem; color: #9ca3af;">
+            Fixture kiểm thử an toàn nội bộ cho PE-Bridge. Không kết nối internet, không tiêu hao quota thật.
+        </p>
+
+        <div class="input-box">
+            <textarea id="mock-query-input" placeholder="Ask anything..."></textarea>
+            
+            <div class="toolbar">
+                <div class="left-tools">
+                    <button class="chip" id="chip-github" aria-label="GitHub connector">@ GitHub</button>
+                    <button class="chip" id="chip-supabase" aria-label="Supabase connector">⚡ Supabase</button>
+                    <button class="chip" id="chip-search" aria-label="Search mode">Search</button>
+                    <button class="chip" id="chip-attach" aria-label="Attach files">+</button>
+                </div>
+                
+                <button class="submit-btn" id="mock-submit-button" aria-label="Submit" title="Submit query" disabled>
+                    ➔
+                </button>
+            </div>
+        </div>
+
+        <div class="audit-log" id="audit-log-console">
+            [MOCK-INIT] Fixture loaded ready for Bridge Audit tests.
+        </div>
+    </div>
+
+    <script>
+        const inputArea = document.getElementById('mock-query-input');
+        const submitBtn = document.getElementById('mock-submit-button');
+        const logBox = document.getElementById('audit-log-console');
+
+        function appendLog(msg) {
+            const time = new Date().toLocaleTimeString();
+            logBox.innerHTML += `<br>[${time}] ${msg}`;
+            logBox.scrollTop = logBox.scrollHeight;
+        }
+
+        // Mô phỏng hành vi React Controlled Component
+        inputArea.addEventListener('input', () => {
+            const hasVal = inputArea.value.trim().length > 0;
+            submitBtn.disabled = !hasVal;
+            appendLog(`Input changed. Length: ${inputArea.value.length} | Submit Enabled: ${!submitBtn.disabled}`);
+        });
+
+        submitBtn.addEventListener('click', () => {
+            if (submitBtn.disabled) return;
+            appendLog(`SUCCESS: Submit clicked with payload: "${inputArea.value.substring(0, 40)}..."`);
+            inputArea.value = '';
+            submitBtn.disabled = true;
+        });
+    </script>
+</body>
+</html>
