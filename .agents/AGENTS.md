@@ -84,6 +84,30 @@ Tuyệt đối KHÔNG phát tín hiệu hoàn tất ("AN_REPORT_DONE" / "Hoàn t
    - ✅ Browser Verification (Playwright) chụp ảnh màn hình giao diện thực tế thành công.
    - ✅ KHÔNG còn bất kỳ background task nào đang chạy dở dang trong IDE.
 
+---
+
+## 🛑 QUY TẮC 0.7 — Kiểm Soát Thứ Tự Báo Cáo & Chống Race Condition (ANTI-RACE CONDITION & TURN ORDER - BẮT BUỘC)
+
+### Nguyên tắc cốt lõi: CHUYỂN GIAO TUẦN TỰ (STRICT HALF-DUPLEX PROTOCOL)
+Để chống hiện tượng xung đột tương tranh (Race Condition) và ngắt quãng dòng ngữ cảnh giữa AN và PE:
+
+1. **Vị Trí Gọi Tool Gửi Supabase Của AN:**
+   - AN **chỉ được phép thực hiện lệnh đẩy bản ghi lên Supabase (pe_an_messages) ở TOOL CALL CUỐI CÙNG** của phiên làm việc.
+   - Tuyệt đối KHÔNG gọi tool gửi Supabase ở giữa chuỗi xử lý khi AN vẫn còn đang tra cứu tài liệu, chỉnh sửa code hoặc chạy kiểm thử.
+   - Ngay sau lệnh insert Supabase thành công, AN **phải xuất ngay câu trả lời hoàn tất và kết thúc turn** để đưa IDE vào trạng thái sẵn sàng lắng nghe (listening state).
+
+2. **Cơ Chế Bảo Hiểm Minh Chủ Giữ Cổng (Dual-Shield Gatekeeper):**
+   - Trên trình duyệt Perplexity, Userscript duy trì cấu hình mặc định: **[x] Chỉ dán chatbox** (TẮT [ ] Đổ & Submit (1-4s)).
+   - Khi có báo cáo mới từ AN, cầu nối chỉ dán văn bản vào ô chat của PE và phát chuông thông báo; **tuyệt đối không tự động submit**.
+   - Minh Chủ THOAN là người giữ chốt quyền lực (Gatekeeper): Đọc và duyệt xong câu trả lời của AN trên IDE, đối chiếu nội dung trong ô chat Perplexity, rồi mới bấm 🚀 Gửi ngay cho PE (Alt+F9) hoặc Enter để PE bắt đầu phân tích.
+
+3. **Nguyên Tắc Phân Định Vai Trò Khi Kết Thúc Phiên & Đề Xuất Work Order Tiếp Theo:**
+   - Khi hoàn thành một Work Order hoặc nhận nghiệm thu, AN **không được tự ý kết thúc phiên và trực tiếp đề nghị Minh Chủ chọn gói tiếp theo mà bỏ qua PE**.
+   - AN bắt buộc phải gửi Báo cáo Tổng kết và Đệ trình các phương án kỹ thuật cho **Kiến trúc sư trưởng PE** thẩm định kiến trúc và đánh giá rủi ro trước.
+   - **PE là bên có thẩm quyền đóng phiên kỹ thuật** và đệ trình khuyến nghị chính thức lên Minh Chủ THOAN để Minh Chủ ra quyết định chỉ thị thi công Work Order tiếp theo.
+
+---
+
 ## 📒 SỔ CÁI DỰ ÁN — Nguồn kiến thức chính
 
 - **Vị trí:** `d:\AntiGravity_Workspace\.agents\mempalace\blueprints\ysdms-nextgen_MASTER.md`

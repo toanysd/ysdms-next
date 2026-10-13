@@ -51,3 +51,25 @@ Vì ràng buộc **KHÔNG DDL** trong Work Order, hệ thống ánh xạ 7 bư�
 | 5. AN gửi Báo cáo | `REPORT` (`PENDING`) | `AN_REPORT_SUBMITTED` (SSE) |
 | 6. PE thẩm duyệt | `APPROVED` / `REJECTED` | `PE_REVIEWED` |
 | 7. Đóng Work Order | `CLOSED` | `CLOSED` |
+
+---
+
+## 4. NGUYÊN TẮC KIỂM SOÁT THỨ TỰ BÁO CÁO & CHỐNG RACE CONDITION (STRICT HALF-DUPLEX)
+
+Nhằm loại bỏ hoàn toàn nguy cơ xung đột tương tranh (Race Condition) và ngắt quãng mạch suy luận của AI khi PE phản hồi sớm hơn lúc AN hoàn tất:
+
+1. **Nguyên Tắc Chuyển Giao Tuần Tự (Strict Sequential Handover):**
+   - AN chỉ được phép gọi tool gửi bản ghi vào Supabase (pe_an_messages) ở **TOOL CALL CUỐI CÙNG** của phiên làm việc.
+   - Tuyệt đối không gửi Supabase khi còn tác vụ tra cứu, chỉnh sửa code hoặc chạy test dở dang.
+   - Ngay sau lệnh insert Supabase, AN phải kết thúc turn ngay lập tức để chuyển sang trạng thái sẵn sàng lắng nghe (listening state).
+
+2. **Cơ Chế Bảo Hiểm Minh Chủ Giữ Cổng (Dual-Shield Gatekeeper):**
+   - Cấu hình Userscript mặc định trên Perplexity: [x] Chỉ dán chatbox (TẮT [ ] Đổ & Submit (1-4s)).
+   - Khi có báo cáo mới của AN, cầu nối chỉ điền vào chatbox và phát chuông báo, không tự động submit.
+   - Minh Chủ THOAN giữ cổng: Đọc duyệt toàn bộ kết quả của AN trên IDE, kiểm tra nội dung trong ô chat Perplexity, sau đó mới bấm Alt+F9 hoặc Enter để PE bắt đầu phân tích.
+
+3. **Phân Định Trách Nhiệm Đóng Phiên & Đề Xuất Work Order:**
+   - AN không được tự ý kết thúc phiên và trực tiếp yêu cầu Minh Chủ chọn Work Order tiếp theo mà bỏ qua PE.
+   - AN bắt buộc phải nộp báo cáo tổng kết và đệ trình các phương án kỹ thuật cho PE (Kiến trúc sư trưởng) thẩm định trước.
+   - PE là bên chịu trách nhiệm đóng phiên kỹ thuật và đệ trình khuyến nghị chính thức lên Minh Chủ THOAN để ra quyết định chỉ thị thi công tiếp theo.
+
