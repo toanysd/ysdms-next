@@ -1,5 +1,5 @@
 /**
- * YSDMS NEXTGEN REALTIME BRIDGE HUB (v2.2.0 Dedicated)
+ * YSDMS NEXTGEN REALTIME BRIDGE HUB (v2.4.0 Dual-Path Architecture)
  * ------------------------------------------------
  * Cầu nối thời gian thực giữa Perplexity Web UI (PE) và Antigravity (AN)
  * dành riêng 100% cho dự án YSDMS NextGen.
@@ -29,7 +29,7 @@ const HANDOFF_LEDGER_FILE = path.join(DATA_DIR, 'pe_handoff_ledger.json');
 const START_PORT = parseInt(process.env.YSDMS_BRIDGE_PORT || process.argv[2] || '3856', 10);
 const HOST = '127.0.0.1';
 const MAX_PORT_TRIES = 30;
-const HUB_VERSION = 'v2.2.0';
+const HUB_VERSION = 'v2.4.0';
 
 // Đảm bảo các thư mục cần thiết tồn tại
 [AGENTS_DIR, DATA_DIR].forEach(dir => {
@@ -110,6 +110,22 @@ function isEchoBackContent(content) {
            text.includes('kinh moi pe tham dinh va phan hoi tiep theo');
 }
 
+function requiresThoanApprovalFirst(content) {
+    if (!content || typeof content !== 'string') return false;
+    const lower = content.toLowerCase();
+    return (
+        lower.includes('chờ thoan chốt') ||
+        lower.includes('chờ anh thoan chốt') ||
+        lower.includes('chờ minh chủ thoan') ||
+        lower.includes('chờ thoan duyệt') ||
+        lower.includes('đợi thoan chốt') ||
+        lower.includes('đợi thoan duyệt') ||
+        lower.includes('chờ quyết định từ thoan') ||
+        lower.includes('chờ quyết định của thoan') ||
+        lower.includes('kính trình minh chủ thoan quyết định')
+    );
+}
+
 function isDirectiveTargetingAn(content) {
     if (!content || typeof content !== 'string') return false;
     const text = content.trim();
@@ -124,19 +140,14 @@ function isDirectiveTargetingAn(content) {
         return false;
     }
 
-    // 1. Envelope tags bắt buộc
-    if (text.includes('=== PE-DIRECTIVE') || text.includes('=== PE-VERDICT') || text.includes('=== PE-ACCEPTANCE') || text.includes('=== PE-REVISE')) {
-        return true;
+    // Khi PE yêu cầu Minh Chủ THOAN chốt/duyệt trước -> Tạm dừng chờ THOAN ra quyết định
+    if (requiresThoanApprovalFirst(text)) {
+        return false;
     }
 
-    // 2. Từ khóa chỉ thị / phán quyết / giao việc cho AN
-    const directiveKeywords = [
-        'CHỈ THỊ', 'CHI THI', 'PHÁN QUYẾT', 'PHAN QUYET', 'VERDICT', 'DIRECTIVE',
-        'APPROVE', 'REVISE', 'GIAO VIỆC', 'GIAO VIEC', 'WORK ORDER', 'THỰC THI',
-        'THUC THI', 'KIỂM TOÁN', 'KIEM TOAN', 'ĐỐI SOÁT', 'DOI SOAT', 'YÊU CẦU AN',
-        'YEU CAU AN', 'CHẤP THUẬN', 'CHAP THUAN', 'QUY TRÌNH', 'QUY TRINH'
-    ];
-    return directiveKeywords.some(kw => upper.includes(kw));
+    // AN có năng lực tư duy độc lập để tự đọc hiểu toàn bộ chỉ thị / trao đổi kỹ thuật từ PE.
+    // Không áp đặt bộ lọc từ khóa hạn hẹp làm tắc nghẽn luồng.
+    return true;
 }
 
 // 2.2. Persistent Dispatch Ledger (Lưu trữ bền vững qua restart Hub)
@@ -626,8 +637,11 @@ function startSupabaseSyncDaemon() {
             if (validRows.length === 0) return;
             const row = validRows[0];
 
-            if (hubLastSeenId && row.id !== hubLastSeenId) {
-                console.log(`[SUPABASE SYNC] 🔔 Phát hiện row mới trên public.pe_bridge! ID: ${row.id} | Sender: ${row.sender} | Thread: ${row.thread_id}`);
+            const isFirstCheck = !hubLastSeenId;
+            if (isFirstCheck || row.id !== hubLastSeenId) {
+                if (!isFirstCheck) {
+                    console.log(`[SUPABASE SYNC] 🔔 Phát hiện row mới trên public.pe_an_messages! ID: ${row.id} | Sender: ${row.sender} | Thread: ${row.thread_id} /* public.pe_bridge compatibility */`);
+                }
                 hubLastSeenId = row.id;
                 const nextActor = row.sender === 'AN' ? 'PE' : 'AN';
                 const turnState = row.sender === 'AN' ? 'AN_REPORTED' : 'PE_REPLIED';
@@ -701,8 +715,10 @@ function startSupabaseSyncDaemon() {
                         console.log(`[SUPABASE SYNC] ⏭️ Bỏ qua row PE: thread_id [${row.thread_id}] không nằm trong whitelist quản lý.`);
                     } else if (isRowAlreadyDispatchedOrAcked(row.id)) {
                         console.log(`[SUPABASE SYNC] ⏭️ Bỏ qua row PE: messageId [${row.id}] đã từng dispatch hoặc đã được ACK.`);
+                    } else if (requiresThoanApprovalFirst(row.content_md)) {
+                        console.log(`[SUPABASE SYNC] ⏸️ Tạm dừng: PE yêu cầu Minh Chủ THOAN chốt/duyệt trước khi AN thi công.`);
                     } else if (!isDirectiveTargetingAn(row.content_md)) {
-                        console.log(`[SUPABASE SYNC] ⏭️ Bỏ qua row PE: nội dung là ping/ghi chú thường, không phải chỉ thị/phán quyết giao việc cho AN.`);
+                        console.log(`[SUPABASE SYNC] ⏭️ Bỏ qua row PE: nội dung là ping/ghi chú ngắn, không phải tin trao đổi kỹ thuật cho AN.`);
                     } else {
                         // Thỏa mãn toàn bộ guardrails -> Ghi nhận vào ledger và dispatch vào Inbox
                         recordDispatchedDirective(row);
@@ -732,12 +748,12 @@ function startSupabaseSyncDaemon() {
 
                         const inboxMdPath = path.join(AGENTS_DIR, 'PE_INBOX_LATEST.md');
                         const inboxJsonPath = path.join(AGENTS_DIR, 'PE_INBOX_LATEST.json');
-                        const mdContent = `# PE DIRECTIVE (OMNILINGUIST BRIDGE SSOT ✅)\n\n`
+                        const mdContent = `# PE DIRECTIVE (YSDMS NEXTGEN BRIDGE SSOT ✅)\n\n`
                             + `- **Thread ID:** \`${row.thread_id}\`\n`
                             + `- **Request ID:** \`${handoffReqId}\`\n`
                             + `- **Message ID:** \`${row.id}\`\n`
                             + `- **Received At:** \`${new Date().toISOString()}\`\n`
-                            + `- **Target Table:** \`public.pe_bridge\`\n\n`
+                            + `- **Target Table:** \`public.pe_an_messages\`\n\n`
                             + `---\n\n### Nội Dung Chỉ Thị:\n\n${row.content_md}\n`;
                         fs.writeFileSync(inboxMdPath, mdContent, 'utf8');
                         fs.writeFileSync(inboxJsonPath, JSON.stringify({
@@ -752,8 +768,6 @@ function startSupabaseSyncDaemon() {
                         console.log(`[SUPABASE SYNC] ⚡ Đã tự động cập nhật PE_INBOX_LATEST.json & Windows Clipboard cho Watcher (Thread: ${row.thread_id})!`);
                     }
                 }
-            } else if (!hubLastSeenId) {
-                hubLastSeenId = row.id;
             }
         } catch (e) {
             // im lặng để tránh rác log khi mạng chập chờn
@@ -1239,12 +1253,12 @@ const server = http.createServer(async (req, res) => {
         // 1. Ghi vào .agents/PE_INBOX_LATEST.md và JSON
         const inboxMdPath = path.join(AGENTS_DIR, 'PE_INBOX_LATEST.md');
         const inboxJsonPath = path.join(AGENTS_DIR, 'PE_INBOX_LATEST.json');
-        const mdContent = `# PE DIRECTIVE (OMNILINGUIST BRIDGE SSOT ✅)\n\n`
+        const mdContent = `# PE DIRECTIVE (YSDMS NEXTGEN BRIDGE SSOT ✅)\n\n`
             + `- **Thread ID:** \`${threadId}\`\n`
             + `- **Request ID:** \`${requestId}\`\n`
             + `- **Supabase Row UUID:** \`${messageId}\`\n`
             + `- **Received At:** \`${createdAt}\`\n`
-            + `- **Target Table:** \`public.pe_bridge\`\n\n`
+            + `- **Target Table:** \`public.pe_an_messages\`\n\n`
             + `---\n\n### Nội Dung Chỉ Thị:\n\n${directiveText}\n`;
 
         fs.writeFileSync(inboxMdPath, mdContent, 'utf8');
@@ -1772,12 +1786,12 @@ function listenOnPort(p, tries = 0) {
         console.log(`=================================================================`);
         console.log(`  YSDMS NEXTGEN REALTIME BRIDGE HUB ${HUB_VERSION} [HARDENED]`);
         console.log(`  Địa chỉ  : http://${HOST}:${activePort}`);
-        console.log(`  Bảng SSOT: public.pe_bridge (Supabase)`);
+        console.log(`  Bảng SSOT: public.pe_an_messages (Supabase) /* public.pe_bridge compatibility */`);
         console.log(`  PID      : ${process.pid}`);
         console.log(`=================================================================`);
         console.log(`[HƯỚNG DẪN]`);
         console.log(`- Cài đặt Userscript 'ysdms_pe_bridge.user.js' vào Tampermonkey trên trình duyệt.`);
-        console.log(`- Mở trang web Perplexity Pro (Project Space của OmniLinguist).`);
+        console.log(`- Mở trang web Perplexity Pro (Project Space của YSDMS NextGen).`);
         console.log(`- Bấm Ctrl + C để dừng Hub an toàn.`);
         console.log(`-----------------------------------------------------------------\n`);
 
