@@ -430,6 +430,7 @@ export interface PanasonicReturnMetadata {
   dispatcher_name: string;      // 出庫担当者 (YSD)
   transporter_name: string;     // 運送会社・クレーン車
   receiver_name: string;        // 受領者 (パナソニック白河工場)
+  destination_address?: string; // Địa chỉ nhận thực tế
   seal_type?: 'NONE' | 'MARUIN' | 'KAKUIN' | 'BOTH';
   notes?: string;
   updated_at: string;
@@ -448,6 +449,7 @@ export interface CreatePanasonicReturnInput {
   dispatcher_name: string;
   transporter_name: string;
   receiver_name: string;
+  destination_address?: string;
   seal_type?: 'NONE' | 'MARUIN' | 'KAKUIN' | 'BOTH';
   notes?: string;
 }

@@ -24,30 +24,29 @@ export default function PanasonicPalletReturnModal({
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
-  // Form State
+  // Form State - strictly zero fake values, empty defaults requiring actual input
   const [palletSpec] = useState('1,100 × 1,100 mm (JIS規格)');
-  const [totalHeightMm, setTotalHeightMm] = useState<number>(650);
-  const [totalWeightKg, setTotalWeightKg] = useState<number>(185.5);
-  const [qrSerialTag, setQrSerialTag] = useState(
-    `PNS-${loan?.equipment_code || 'MOLD'}-2024`
-  );
-  const [qrVerified, setQrVerified] = useState(true);
+  const [totalHeightMm, setTotalHeightMm] = useState<number | ''>('');
+  const [totalWeightKg, setTotalWeightKg] = useState<number | ''>('');
+  const [qrSerialTag, setQrSerialTag] = useState('');
+  const [qrVerified, setQrVerified] = useState(false);
 
-  // 4 Checklist items
-  const [checkDrawings, setCheckDrawings] = useState(true);
-  const [checkParts, setCheckParts] = useState(true);
-  const [checkOriginalDoc, setCheckOriginalDoc] = useState(true);
-  const [checkFilm, setCheckFilm] = useState(true);
+  // 4 Checklist items - unchecked by default, requiring operator verification
+  const [checkDrawings, setCheckDrawings] = useState(false);
+  const [checkParts, setCheckParts] = useState(false);
+  const [checkOriginalDoc, setCheckOriginalDoc] = useState(false);
+  const [checkFilm, setCheckFilm] = useState(false);
 
-  const [dispatcherName, setDispatcherName] = useState('YSD 出庫担当 (遠藤)');
-  const [transporterName, setTransporterName] = useState('ヤマト運輸 / クレーン車');
+  const [dispatcherName, setDispatcherName] = useState('');
+  const [transporterName, setTransporterName] = useState('');
   const [receiverName, setReceiverName] = useState(
-    loan?.to_company_name || 'パナソニック株式会社 白河工場'
+    loan?.to_company_name || ''
+  );
+  const [destinationAddress, setDestinationAddress] = useState(
+    loan?.destination_address || ''
   );
   const [sealType, setSealType] = useState<'NONE' | 'MARUIN' | 'KAKUIN' | 'BOTH'>('BOTH');
-  const [notes, setNotes] = useState(
-    'パレット4方差しクレーン吊り対応、白河工場第2搬入口にて荷下ろし'
-  );
+  const [notes, setNotes] = useState('');
 
   if (!isOpen || !loan) return null;
 
@@ -57,11 +56,11 @@ export default function PanasonicPalletReturnModal({
       setError(t('panasonicReturnModal.qrWarning'));
       return;
     }
-    if (!totalHeightMm || totalHeightMm <= 0) {
+    if (!totalHeightMm || Number(totalHeightMm) <= 0) {
       setError(t('panasonicReturnModal.totalHeightHint'));
       return;
     }
-    if (!totalWeightKg || totalWeightKg <= 0) {
+    if (!totalWeightKg || Number(totalWeightKg) <= 0) {
       setError(t('panasonicReturnModal.totalWeightPlaceholder'));
       return;
     }
@@ -83,9 +82,10 @@ export default function PanasonicPalletReturnModal({
           stretch_film_wrapped: checkFilm,
         },
         return_date: new Date().toISOString().slice(0, 10),
-        dispatcher_name: dispatcherName,
-        transporter_name: transporterName,
-        receiver_name: receiverName,
+        dispatcher_name: dispatcherName.trim(),
+        transporter_name: transporterName.trim(),
+        receiver_name: receiverName.trim(),
+        destination_address: destinationAddress.trim() || undefined,
         seal_type: sealType,
         notes: notes.trim() || undefined,
       };
@@ -223,7 +223,7 @@ export default function PanasonicPalletReturnModal({
                   <input
                     type="number"
                     value={totalHeightMm}
-                    onChange={(e) => setTotalHeightMm(Number(e.target.value))}
+                    onChange={(e) => setTotalHeightMm(e.target.value === '' ? '' : Number(e.target.value))}
                     className="form-input font-mono font-bold text-[13px] w-full"
                     placeholder={t('panasonicReturnModal.totalHeightPlaceholder')}
                     required
@@ -241,7 +241,7 @@ export default function PanasonicPalletReturnModal({
                     type="number"
                     step="0.5"
                     value={totalWeightKg}
-                    onChange={(e) => setTotalWeightKg(Number(e.target.value))}
+                    onChange={(e) => setTotalWeightKg(e.target.value === '' ? '' : Number(e.target.value))}
                     className="form-input font-mono font-bold text-[13px] w-full"
                     placeholder={t('panasonicReturnModal.totalWeightPlaceholder')}
                     required
@@ -358,7 +358,7 @@ export default function PanasonicPalletReturnModal({
           </div>
 
           {/* Section 4: 3-Party Logistics & Electronic Seals */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div>
               <label className="text-[11px] font-semibold block mb-1" style={{ color: '#475569' }}>
                 {t('panasonicReturnModal.dispatcherName')}
@@ -367,6 +367,7 @@ export default function PanasonicPalletReturnModal({
                 type="text"
                 value={dispatcherName}
                 onChange={(e) => setDispatcherName(e.target.value)}
+                placeholder="例: YSD 出庫担当 (遠藤)"
                 className="form-input text-[12px] w-full"
                 required
               />
@@ -380,12 +381,40 @@ export default function PanasonicPalletReturnModal({
                 type="text"
                 value={transporterName}
                 onChange={(e) => setTransporterName(e.target.value)}
+                placeholder="例: ヤマト運輸 / クレーン車"
                 className="form-input text-[12px] w-full"
                 required
               />
             </div>
 
             <div>
+              <label className="text-[11px] font-semibold block mb-1" style={{ color: '#475569' }}>
+                {t('panasonicReturnModal.receiverName')}
+              </label>
+              <input
+                type="text"
+                value={receiverName}
+                onChange={(e) => setReceiverName(e.target.value)}
+                placeholder="例: パナソニック株式会社 白河工場"
+                className="form-input text-[12px] w-full"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="text-[11px] font-semibold block mb-1" style={{ color: '#475569' }}>
+                {t('panasonicReturnModal.destinationAddress')}
+              </label>
+              <input
+                type="text"
+                value={destinationAddress}
+                onChange={(e) => setDestinationAddress(e.target.value)}
+                placeholder={t('panasonicReturnModal.destinationAddressPlaceholder')}
+                className="form-input text-[12px] w-full"
+              />
+            </div>
+
+            <div className="md:col-span-2">
               <label className="text-[11px] font-semibold block mb-1" style={{ color: '#475569' }}>
                 {t('panasonicReturnModal.sealType')}
               </label>

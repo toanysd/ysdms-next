@@ -326,6 +326,12 @@ export const MoldLoanPDFDocument: React.FC<MoldLoanPDFProps> = ({
     totalWeightKg?: number;
     qrSerialTag?: string;
     qrVerified?: boolean;
+    checklist?: {
+      mold_drawings?: boolean;
+      spare_parts?: boolean;
+      original_loan_doc?: boolean;
+      stretch_film_wrapped?: boolean;
+    };
     dispatcherName?: string;
     transporterName?: string;
     receiverName?: string;
@@ -343,6 +349,7 @@ export const MoldLoanPDFDocument: React.FC<MoldLoanPDFProps> = ({
           totalWeightKg: parsed.total_weight_kg,
           qrSerialTag: parsed.qr_serial_tag,
           qrVerified: parsed.qr_verified,
+          checklist: parsed.checklist,
           dispatcherName: parsed.dispatcher_name,
           transporterName: parsed.transporter_name,
           receiverName: parsed.receiver_name,
@@ -534,22 +541,24 @@ export const MoldLoanPDFDocument: React.FC<MoldLoanPDFProps> = ({
             </Text>
             <View style={styles.placardGrid}>
               <Text style={styles.placardCell}>
-                1. パレット規格: <Text style={styles.placardCellBold}>{panasonicMeta?.palletSpec || '1,100 × 1,100 mm (JIS規格)'}</Text>
+                1. パレット規格: <Text style={styles.placardCellBold}>{panasonicMeta?.palletSpec || '—'}</Text>
               </Text>
               <Text style={styles.placardCell}>
-                2. 積載全高: <Text style={styles.placardCellBold}>{panasonicMeta?.totalHeightMm ? `${panasonicMeta.totalHeightMm} mm (パレット含む)` : '650 mm (実測済)'}</Text>
+                2. 積載全高: <Text style={styles.placardCellBold}>{panasonicMeta?.totalHeightMm ? `${panasonicMeta.totalHeightMm} mm (パレット含む)` : '—'}</Text>
               </Text>
               <Text style={styles.placardCell}>
-                3. 総重量: <Text style={styles.placardCellBold}>{panasonicMeta?.totalWeightKg ? `${panasonicMeta.totalWeightKg} kg` : (weight !== '—' ? weight : '185.5 kg')}</Text>
+                3. 総重量: <Text style={styles.placardCellBold}>{panasonicMeta?.totalWeightKg ? `${panasonicMeta.totalWeightKg} kg` : (weight !== '—' ? weight : '—')}</Text>
               </Text>
               <Text style={styles.placardCell}>
-                4. 個体識別QR: <Text style={styles.placardCellBold}>{panasonicMeta?.qrSerialTag || 'PNS-MOLD-2024 (照合済)'}</Text>
+                4. 個体識別QR: <Text style={styles.placardCellBold}>{panasonicMeta?.qrSerialTag ? `${panasonicMeta.qrSerialTag} (照合済)` : '—'}</Text>
               </Text>
               <Text style={styles.placardCell}>
-                5. 車両種別: <Text style={styles.placardCellBold}>ユニック車・クレーン車積載 (荷役確認済)</Text>
+                5. 車両種別: <Text style={styles.placardCellBold}>{panasonicMeta ? 'ユニック車・クレーン車積載 (荷役確認済)' : '—'}</Text>
               </Text>
               <Text style={styles.placardCell}>
-                6. 添付品確認: <Text style={styles.placardCellBold}>[✓]金型図面  [✓]予備品  [✓]預かり証原本  [✓]保護フィルム</Text>
+                6. 添付品確認: <Text style={styles.placardCellBold}>
+                  {panasonicMeta ? `[${panasonicMeta.checklist?.mold_drawings ? '✓' : ' '}]金型図面  [${panasonicMeta.checklist?.spare_parts ? '✓' : ' '}]予備品  [${panasonicMeta.checklist?.original_loan_doc ? '✓' : ' '}]預かり証原本  [${panasonicMeta.checklist?.stretch_film_wrapped ? '✓' : ' '}]保護フィルム` : '—'}
+                </Text>
               </Text>
             </View>
           </View>

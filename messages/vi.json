@@ -5319,6 +5319,8 @@
       "transporterName": "Đơn vị vận chuyển (Xe cẩu tự hành)",
       "receiverName": "Nhà máy nhận hàng",
       "receiverNameDefault": "Công ty TNHH Panasonic - Nhà máy Shirakawa",
+      "destinationAddress": "Địa chỉ nhà máy nhận hàng",
+      "destinationAddressPlaceholder": "VD: Tỉnh Fukushima, TP Shirakawa...",
       "sealType": "Con dấu điện tử YSD",
       "sealBoth": "Dấu kép (Dấu tròn công ty + Dấu vuông quản lý)",
       "sealMaruin": "Dấu tròn đại diện pháp luật (丸印)",

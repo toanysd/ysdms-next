@@ -5319,6 +5319,8 @@
       "transporterName": "運送業者 (ユニック車・クレーン車)",
       "receiverName": "受領先工場",
       "receiverNameDefault": "パナソニック株式会社 白河工場",
+      "destinationAddress": "受領先住所 (納品先)",
+      "destinationAddressPlaceholder": "例: 福島県白河市...",
       "sealType": "電子印鑑捺印 (YSD社判)",
       "sealBoth": "社判 + 責任者印 (両方)",
       "sealMaruin": "代表取締役印 (丸印)",
