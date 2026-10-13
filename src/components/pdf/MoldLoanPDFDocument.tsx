@@ -372,7 +372,7 @@ export const MoldLoanPDFDocument: React.FC<MoldLoanPDFProps> = ({
     titleText = '金型返却票・金型棚卸 (パレット梱包・個体識別仕様)';
     subTitleText = 'MOLD RETURN & PALLET INVENTORY SLIP (PANASONIC SPEC)';
     pledgeStatement =
-      '貴社（パナソニック株式会社）所有の下記金型につきまして、現品を規定のパレット（1,100×1,100mm）に梱包し、個体識別QRコードおよび添付品（図面・予備品・預かり証原本）を照合のうえ、現品をご返却・引き渡しいたしましたことを証します。内容をご確認のうえ受領印をお願い申し上げます。';
+      '貴社（パナソニック株式会社）所有の下記金型につきまして、現品を規定のパレット（1,100 × 1,100 mm）に梱包し、個体識別QRコードおよび添付品（図面・予備品・預かり証原本）を照合のうえ、現品をご返却・引き渡しいたしましたことを証します。内容をご確認のうえ受領印をお願い申し上げます。';
     recipientTitle = `${panasonicMeta?.receiverName || loan.to_company_name || 'パナソニック株式会社 白河工場'} 御中`;
   } else if (isReturn) {
     titleText = '金型返却書 (現品受渡確認票)';
@@ -567,7 +567,7 @@ export const MoldLoanPDFDocument: React.FC<MoldLoanPDFProps> = ({
                 3. 証書原本: <Text style={styles.placardCellBold}>預かり書原本・借用書 (回収確認済)</Text>
               </Text>
               <Text style={styles.placardCell}>
-                4. 梱包荷姿: <Text style={styles.placardCellBold}>JIS標準パレット (1,100×1,100mm) ストレッチ包装</Text>
+                4. 梱包荷姿: <Text style={styles.placardCellBold}>JIS標準パレット (1,100 × 1,100 mm) ストレッチ包装</Text>
               </Text>
             </View>
           </View>

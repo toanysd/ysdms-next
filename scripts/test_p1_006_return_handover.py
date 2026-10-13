@@ -75,7 +75,7 @@ try:
 
     has_return_title = "金型返却書 (現品受渡確認票)" in pdf_content
     has_handover_checklist = "現品受渡・同梱物及び梱包荷姿確認" in pdf_content
-    has_pallet_spec = "JIS標準パレット (1,100×1,100mm)" in pdf_content
+    has_pallet_spec = ("JIS標準パレット (1,100 × 1,100 mm)" in pdf_content) or ("JIS標準パレット (1,100×1,100mm)" in pdf_content)
     has_3party_seals = "返却責任者" in pdf_content and "運送担当者" in pdf_content and "受領確認者" in pdf_content
     has_photo_integration = "photo_overall_url" in pdf_content and "photo_nameplate_url" in pdf_content
 

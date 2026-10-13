@@ -5200,7 +5200,7 @@
       "partsReturnedLabel": "Linh kiện, phụ tùng gá kẹp (Đã kèm)",
       "drawingsReturnedLabel": "Bản vẽ khuôn & sơ đồ tạo hình (Đã kèm)",
       "certReturnedLabel": "Biên bản mượn gốc (Đã thu hồi)",
-      "palletSpecLabel": "Quy cách đóng gói Pallet chuẩn 1,100x1,100mm"
+      "palletSpecLabel": "Quy cách đóng gói Pallet chuẩn 1,100 × 1,100 mm"
     },
     "detail": {
       "back": "Quay lại",
@@ -5295,9 +5295,9 @@
     "panasonicReturnModal": {
       "button": "Tạo phiếu hoàn trả Panasonic",
       "buttonText": "Tạo phiếu hoàn trả Panasonic",
-      "buttonTooltip": "Phát hành phiếu hoàn trả khuôn theo quy cách đóng pallet 1,100x1,100mm và quét QR cá thể",
+      "buttonTooltip": "Phát hành phiếu hoàn trả khuôn theo quy cách đóng pallet 1,100 × 1,100 mm và quét QR cá thể",
       "title": "Tạo Phiếu Hoàn Trả Khuôn & Kiểm Kê (Chuẩn Panasonic)",
-      "subtitle": "Đóng gói Pallet chuẩn Nhật (1,100×1,100mm) • Quét QR cá thể • Đo chiều cao cẩu • Kiểm đếm 4 món",
+      "subtitle": "Đóng gói Pallet chuẩn Nhật (1,100 × 1,100 mm) • Quét QR cá thể • Đo chiều cao cẩu • Kiểm đếm 4 món",
       "palletSpec": "Quy cách đóng gói Pallet",
       "palletSpecDefault": "1,100 × 1,100 mm (Chuẩn JIS gỗ/nhựa)",
       "totalHeight": "Chiều cao tổng cả khuôn & pallet",

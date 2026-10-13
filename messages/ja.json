@@ -5200,7 +5200,7 @@
       "partsReturnedLabel": "金型部品・取付金具 一式（同梱確認済）",
       "drawingsReturnedLabel": "金型図面・成形レイアウト図（同梱確認済）",
       "certReturnedLabel": "預かり書原本・借用書（回収確認済）",
-      "palletSpecLabel": "JIS標準パレット (1,100×1,100mm) 梱包確認済"
+      "palletSpecLabel": "JIS標準パレット (1,100 × 1,100 mm) 梱包確認済"
     },
     "detail": {
       "back": "戻る",
@@ -5295,9 +5295,9 @@
     "panasonicReturnModal": {
       "button": "パナソニック返却票作成",
       "buttonText": "パナソニック返却票作成",
-      "buttonTooltip": "パレット梱包(1,100×1,100mm)・個体識別QR照合による金型返却票を発行",
+      "buttonTooltip": "パレット梱包(1,100 × 1,100 mm)・個体識別QR照合による金型返却票を発行",
       "title": "金型返却票・金型棚卸 作成 (パナソニック仕様)",
-      "subtitle": "JISパレット梱包(1,100×1,100mm)・個体識別QR・ユニック車積載全高測定・添付品照合",
+      "subtitle": "JISパレット梱包(1,100 × 1,100 mm)・個体識別QR・ユニック車積載全高測定・添付品照合",
       "palletSpec": "パレット梱包仕様",
       "palletSpecDefault": "1,100 × 1,100 mm (JIS規格・木製/樹脂)",
       "totalHeight": "積載全高 (パレット含)",

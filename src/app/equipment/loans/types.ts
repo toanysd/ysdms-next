@@ -223,7 +223,7 @@ export const SSOT_11_CUSTOMERS: SsotCustomerPartner[] = [
     nameJA: 'パナソニック白河 / アドバネクス',
     nameVI: 'Panasonic Shirakawa / Advanex',
     evidenceRef: 'Row 100 (toanysdmail.xlsx)',
-    standardDocType: '金型返却票・金型棚卸 (QR cá thể + Pallet 1100x1100)',
+    standardDocType: '金型返却票・金型棚卸 (QR cá thể + Pallet 1,100 × 1,100 mm)',
     companyCodes: ['PNS', 'ADV', 'SNK', 'PNS03', 'PNS4'],
     companyIds: [
       'f8e174bf-fc8f-45b2-ae53-bc8915692bbc',
