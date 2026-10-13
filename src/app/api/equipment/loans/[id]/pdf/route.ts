@@ -86,7 +86,11 @@ export async function GET(
 
     let docTitle = '金型借用書';
     if (selectedType === 'RETURN_TO_CUSTOMER') {
-      docTitle = '金型返却書';
+      const isPanasonic =
+        Boolean(loan.condition_notes?.includes('PANASONIC')) ||
+        Boolean(loan.to_company_name?.includes('パナソニック')) ||
+        Boolean(loan.purpose?.includes('パナソニック'));
+      docTitle = isPanasonic ? '金型返却票・金型棚卸' : '金型返却書';
     } else if (selectedType === 'OUTSOURCE_PROCESSING') {
       docTitle = '金型外注加工依頼書';
     }

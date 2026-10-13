@@ -22,6 +22,8 @@ import type {
   DormantMoldRecord,
   StorageFeePartnerSummary,
   CreateOutsourceProcessingInput,
+  CreatePanasonicReturnInput,
+  PanasonicReturnMetadata,
 } from './types';
 import { SSOT_11_CUSTOMERS, STANDARD_MOLD_STORAGE_RATE_JPY } from './types';
 
@@ -1234,6 +1236,113 @@ export async function createOutsourceProcessingRequest(
         scheduled_return_date: input.expected_return_date,
         destination_address: input.contractor,
         purpose: `[外注加工: ${typeLabel.slice(0, 20)}] ${input.contractor}`,
+        condition_notes: updatedNotes,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('loan_id', input.loan_id);
+
+    if (updateErr) {
+      return { success: false, error: updateErr.message };
+    }
+
+    revalidatePath('/equipment/loans');
+    revalidatePath(`/equipment/loans/${input.loan_id}`);
+    return { success: true };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    return { success: false, error: msg };
+  }
+}
+
+/**
+ * 14. Create Panasonic Shirakawa Mold Return & Pallet Packing Request (Package 11 / WO-P1-010)
+ * SSOT: MOLD_CUSTODY_BUSINESS_SPEC v1.0 (Table 1.3 Row 5 & Row 100 toanysdmail.xlsx)
+ */
+export async function createPanasonicPalletReturnRequest(
+  input: CreatePanasonicReturnInput
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const supabase = await createClient();
+
+    // 1. Validation
+    if (!input.loan_id) {
+      return { success: false, error: 'Thiếu mã phiếu mượn/trả (loan_id).' };
+    }
+    if (!input.qr_verified || !input.qr_serial_tag?.trim()) {
+      return { success: false, error: 'Bắt buộc xác thực mã QR định danh cá thể khuôn trước khi hoàn trả (Panasonic Spec).' };
+    }
+    if (!input.total_height_mm || input.total_height_mm <= 0) {
+      return { success: false, error: 'Bắt buộc đo chiều cao tổng cả khuôn và pallet (mm) cho xe cẩu nâng.' };
+    }
+    if (!input.total_weight_kg || input.total_weight_kg <= 0) {
+      return { success: false, error: 'Bắt buộc cân tổng trọng lượng (kg) cho xe cẩu nâng.' };
+    }
+
+    const { data: loan, error: fetchErr } = await supabase
+      .from('equipment_loans')
+      .select('loan_id, condition_notes, to_company_id, equipment_id')
+      .eq('loan_id', input.loan_id)
+      .single();
+
+    if (fetchErr || !loan) {
+      return { success: false, error: 'Không tìm thấy phiếu mượn/trả.' };
+    }
+
+    const palletSpec = input.pallet_spec || '1,100 × 1,100 mm (JIS規格)';
+    const returnDate = input.return_date || new Date().toISOString().split('T')[0];
+
+    const metadata: PanasonicReturnMetadata = {
+      return_type: 'PANASONIC_PALLET_RETURN',
+      pallet_spec: palletSpec,
+      total_height_mm: input.total_height_mm,
+      total_weight_kg: input.total_weight_kg,
+      qr_serial_tag: input.qr_serial_tag.trim(),
+      qr_verified: input.qr_verified,
+      crane_truck_required: input.crane_truck_required !== false,
+      checklist: {
+        mold_drawings: Boolean(input.checklist?.mold_drawings),
+        spare_parts: Boolean(input.checklist?.spare_parts),
+        original_loan_doc: Boolean(input.checklist?.original_loan_doc),
+        stretch_film_wrapped: Boolean(input.checklist?.stretch_film_wrapped),
+      },
+      return_date: returnDate,
+      dispatcher_name: input.dispatcher_name || 'YSD 出庫担当',
+      transporter_name: input.transporter_name || '運送会社・ユニック車',
+      receiver_name: input.receiver_name || 'パナソニック株式会社 白河工場',
+      seal_type: input.seal_type || 'BOTH',
+      notes: input.notes,
+      updated_at: new Date().toISOString(),
+    };
+
+    const panasonicBlock = [
+      `【金型返却・パレット梱包 / PANASONIC SPEC】`,
+      `・パレット仕様: ${palletSpec}`,
+      `・積載全高: ${input.total_height_mm} mm (パレット含む)`,
+      `・総重量: ${input.total_weight_kg} kg`,
+      `・個体識別QR: ${input.qr_serial_tag.trim()} (照合済)`,
+      `・車両種別: ユニック車・クレーン車積載`,
+      `・出庫担当: ${metadata.dispatcher_name}`,
+      `・運送業者: ${metadata.transporter_name}`,
+      `・受領先: ${metadata.receiver_name}`,
+      `・添付品確認: 図面=${metadata.checklist.mold_drawings ? '済' : '未'}, 部品=${metadata.checklist.spare_parts ? '済' : '未'}, 預かり証=${metadata.checklist.original_loan_doc ? '済' : '未'}, フィルム=${metadata.checklist.stretch_film_wrapped ? '済' : '未'}`,
+      input.notes ? `・特記事項: ${input.notes}` : null,
+      `<!-- PANASONIC_RETURN_META:${JSON.stringify(metadata)} -->`,
+    ]
+      .filter(Boolean)
+      .join('\n');
+
+    const updatedNotes = loan.condition_notes
+      ? `${panasonicBlock}\n\n${loan.condition_notes}`
+      : panasonicBlock;
+
+    const { error: updateErr } = await supabase
+      .from('equipment_loans')
+      .update({
+        loan_type: 'RETURN_TO_CUSTOMER',
+        actual_return_date: returnDate,
+        contact_person: metadata.receiver_name,
+        destination_address: 'パナソニック株式会社 白河工場 (福島県白河市)',
+        purpose: `[金型返却・パレット梱包] パナソニック白河工場 (${palletSpec})`,
         condition_notes: updatedNotes,
         updated_at: new Date().toISOString(),
       })

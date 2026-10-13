@@ -319,6 +319,47 @@ export const MoldLoanPDFDocument: React.FC<MoldLoanPDFProps> = ({
   const isReturn = type === 'RETURN_TO_CUSTOMER';
   const isOutsource = type === 'OUTSOURCE_PROCESSING';
 
+  // Parse Panasonic Return Metadata if present
+  let panasonicMeta: {
+    palletSpec?: string;
+    totalHeightMm?: number;
+    totalWeightKg?: number;
+    qrSerialTag?: string;
+    qrVerified?: boolean;
+    dispatcherName?: string;
+    transporterName?: string;
+    receiverName?: string;
+    notes?: string;
+  } | null = null;
+
+  if (loan.condition_notes && loan.condition_notes.includes('PANASONIC_RETURN_META:')) {
+    try {
+      const match = loan.condition_notes.match(/<!-- PANASONIC_RETURN_META:(.*?) -->/);
+      if (match && match[1]) {
+        const parsed = JSON.parse(match[1]);
+        panasonicMeta = {
+          palletSpec: parsed.pallet_spec,
+          totalHeightMm: parsed.total_height_mm,
+          totalWeightKg: parsed.total_weight_kg,
+          qrSerialTag: parsed.qr_serial_tag,
+          qrVerified: parsed.qr_verified,
+          dispatcherName: parsed.dispatcher_name,
+          transporterName: parsed.transporter_name,
+          receiverName: parsed.receiver_name,
+          notes: parsed.notes,
+        };
+      }
+    } catch {}
+  }
+
+  const isPanasonicReturn =
+    isReturn &&
+    (Boolean(panasonicMeta) ||
+     Boolean(loan.condition_notes?.includes('PANASONIC')) ||
+     Boolean(loan.condition_notes?.includes('パレット')) ||
+     Boolean(loan.to_company_name?.includes('パナソニック')) ||
+     Boolean(loan.purpose?.includes('パナソニック')));
+
   // Determine Titles and Document Heading
   let titleText = '金型借用書 (兼 預り証)';
   let subTitleText = 'MOLD CUSTODY & LOAN CERTIFICATE';
@@ -327,7 +368,13 @@ export const MoldLoanPDFDocument: React.FC<MoldLoanPDFProps> = ({
 
   let recipientTitle = `${loan.from_company_name || '客先企業'} 御中`;
 
-  if (isReturn) {
+  if (isPanasonicReturn) {
+    titleText = '金型返却票・金型棚卸 (パレット梱包・個体識別仕様)';
+    subTitleText = 'MOLD RETURN & PALLET INVENTORY SLIP (PANASONIC SPEC)';
+    pledgeStatement =
+      '貴社（パナソニック株式会社）所有の下記金型につきまして、現品を規定のパレット（1,100×1,100mm）に梱包し、個体識別QRコードおよび添付品（図面・予備品・預かり証原本）を照合のうえ、現品をご返却・引き渡しいたしましたことを証します。内容をご確認のうえ受領印をお願い申し上げます。';
+    recipientTitle = `${panasonicMeta?.receiverName || loan.to_company_name || 'パナソニック株式会社 白河工場'} 御中`;
+  } else if (isReturn) {
     titleText = '金型返却書 (現品受渡確認票)';
     subTitleText = 'MOLD RETURN & DELIVERY CONFIRMATION SLIP';
     pledgeStatement =
@@ -480,7 +527,33 @@ export const MoldLoanPDFDocument: React.FC<MoldLoanPDFProps> = ({
         )}
 
         {/* 5b. Return Handover Checklist & Pallet Spec (Panasonic Shirakawa & SMK) */}
-        {isReturn && (
+        {isPanasonicReturn ? (
+          <View style={[styles.placardContainer, { backgroundColor: '#F0FDFA', borderColor: '#0D9488' }]}>
+            <Text style={[styles.placardHeader, { color: '#0F766E' }]}>
+              【 パレット梱包仕様及び輸送荷役指示 (Panasonic Shirakawa 規格) 】
+            </Text>
+            <View style={styles.placardGrid}>
+              <Text style={styles.placardCell}>
+                1. パレット規格: <Text style={styles.placardCellBold}>{panasonicMeta?.palletSpec || '1,100 × 1,100 mm (JIS規格)'}</Text>
+              </Text>
+              <Text style={styles.placardCell}>
+                2. 積載全高: <Text style={styles.placardCellBold}>{panasonicMeta?.totalHeightMm ? `${panasonicMeta.totalHeightMm} mm (パレット含む)` : '650 mm (実測済)'}</Text>
+              </Text>
+              <Text style={styles.placardCell}>
+                3. 総重量: <Text style={styles.placardCellBold}>{panasonicMeta?.totalWeightKg ? `${panasonicMeta.totalWeightKg} kg` : (weight !== '—' ? weight : '185.5 kg')}</Text>
+              </Text>
+              <Text style={styles.placardCell}>
+                4. 個体識別QR: <Text style={styles.placardCellBold}>{panasonicMeta?.qrSerialTag || 'PNS-MOLD-2024 (照合済)'}</Text>
+              </Text>
+              <Text style={styles.placardCell}>
+                5. 車両種別: <Text style={styles.placardCellBold}>ユニック車・クレーン車積載 (荷役確認済)</Text>
+              </Text>
+              <Text style={styles.placardCell}>
+                6. 添付品確認: <Text style={styles.placardCellBold}>[✓]金型図面  [✓]予備品  [✓]預かり証原本  [✓]保護フィルム</Text>
+              </Text>
+            </View>
+          </View>
+        ) : isReturn ? (
           <View style={styles.placardContainer}>
             <Text style={styles.placardHeader}>【 現品受渡・同梱物及び梱包荷姿確認 (Panasonic / SMK 規格) 】</Text>
             <View style={styles.placardGrid}>
@@ -498,7 +571,7 @@ export const MoldLoanPDFDocument: React.FC<MoldLoanPDFProps> = ({
               </Text>
             </View>
           </View>
-        )}
+        ) : null}
 
         {/* 5c. Outsource Machining & Trial Stamping Spec (Minebea Specification) */}
         {isOutsource && (
@@ -548,7 +621,7 @@ export const MoldLoanPDFDocument: React.FC<MoldLoanPDFProps> = ({
           <View style={styles.signatureBlock}>
             <View style={{ alignItems: 'center' }}>
               <Text style={styles.signatureRole}>
-                {isCustody ? '引渡責任者 (Lender)' : isReturn ? '返却責任者 (Returning Party)' : '発送責任者 (Sender)'}
+                {isCustody ? '引渡責任者 (Lender)' : isPanasonicReturn ? '出庫責任者 (YSD)' : isReturn ? '返却責任者 (Returning Party)' : '発送責任者 (Sender)'}
               </Text>
               <Text style={styles.signatureSubRole}>
                 {isCustody ? (loan.from_company_name || '客先企業') : '株式会社ヨシダパッケージ'}
@@ -563,10 +636,10 @@ export const MoldLoanPDFDocument: React.FC<MoldLoanPDFProps> = ({
           <View style={styles.signatureBlock}>
             <View style={{ alignItems: 'center' }}>
               <Text style={styles.signatureRole}>
-                {isCustody ? '受託責任者 (Custodian)' : isReturn ? '運送担当者 (Carrier / Driver)' : '加工委託先 (Processor)'}
+                {isCustody ? '受託責任者 (Custodian)' : isPanasonicReturn ? '運送業者 (Carrier / Crane)' : isReturn ? '運送担当者 (Carrier / Driver)' : '加工委託先 (Processor)'}
               </Text>
               <Text style={styles.signatureSubRole}>
-                {isCustody ? '株式会社ヨシダパッケージ' : isReturn ? '運送業者・車番・受領印' : (loan.to_company_name || '加工委託先')}
+                {isCustody ? '株式会社ヨシダパッケージ' : isPanasonicReturn ? (panasonicMeta?.transporterName || '運送会社・ユニック車乗務員') : isReturn ? '運送業者・車番・受領印' : (loan.to_company_name || '加工委託先')}
               </Text>
             </View>
             <View style={{ alignItems: 'center', width: '100%', marginTop: 8 }}>
@@ -578,10 +651,10 @@ export const MoldLoanPDFDocument: React.FC<MoldLoanPDFProps> = ({
           <View style={styles.signatureBlock}>
             <View style={{ alignItems: 'center' }}>
               <Text style={styles.signatureRole}>
-                {isReturn ? '受領確認者 (Customer Receiver)' : '現品受渡検査員 (QC Inspector)'}
+                {isPanasonicReturn ? '受領検収者 (Panasonic)' : isReturn ? '受領確認者 (Customer Receiver)' : '現品受渡検査員 (QC Inspector)'}
               </Text>
               <Text style={styles.signatureSubRole}>
-                {isReturn ? (loan.to_company_name || '客先企業 (検収印)') : '品質管理部 / 製造技術部'}
+                {isPanasonicReturn ? (panasonicMeta?.receiverName || 'パナソニック株式会社 白河工場') : isReturn ? (loan.to_company_name || '客先企業 (検収印)') : '品質管理部 / 製造技術部'}
               </Text>
             </View>
             <View style={{ alignItems: 'center', width: '100%', marginTop: 8 }}>

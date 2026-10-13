@@ -405,5 +405,49 @@ export interface CreateOutsourceProcessingInput {
   notes?: string;
 }
 
+// ==============================================================================
+// Package 11: Panasonic Shirakawa Mold Return & Pallet Packing (WO-P1-010)
+// SSOT: MOLD_CUSTODY_BUSINESS_SPEC v1.0 (Table 1.3 Row 5 & Row 100 toanysdmail.xlsx)
+// ==============================================================================
 
+export interface PanasonicReturnChecklist {
+  mold_drawings: boolean;       // 金型図面
+  spare_parts: boolean;         // 金型部品・予備品
+  original_loan_doc: boolean;   // 預かり書原本
+  stretch_film_wrapped: boolean;// ストレッチフィルム保護梱包
+}
 
+export interface PanasonicReturnMetadata {
+  return_type: 'PANASONIC_PALLET_RETURN';
+  pallet_spec: string;          // 1,100 × 1,100 mm (JIS規格)
+  total_height_mm: number;      // 積載全高 (パレット含)
+  total_weight_kg: number;      // 総重量 (kg)
+  qr_serial_tag: string;        // 個体識別QRコード
+  qr_verified: boolean;         // QR確認済みフラグ
+  crane_truck_required: boolean;// ユニック車・クレーン車積載
+  checklist: PanasonicReturnChecklist;
+  return_date: string;
+  dispatcher_name: string;      // 出庫担当者 (YSD)
+  transporter_name: string;     // 運送会社・クレーン車
+  receiver_name: string;        // 受領者 (パナソニック白河工場)
+  seal_type?: 'NONE' | 'MARUIN' | 'KAKUIN' | 'BOTH';
+  notes?: string;
+  updated_at: string;
+}
+
+export interface CreatePanasonicReturnInput {
+  loan_id: string;
+  pallet_spec?: string;
+  total_height_mm: number;
+  total_weight_kg: number;
+  qr_serial_tag: string;
+  qr_verified: boolean;
+  crane_truck_required?: boolean;
+  checklist: PanasonicReturnChecklist;
+  return_date?: string;
+  dispatcher_name: string;
+  transporter_name: string;
+  receiver_name: string;
+  seal_type?: 'NONE' | 'MARUIN' | 'KAKUIN' | 'BOTH';
+  notes?: string;
+}

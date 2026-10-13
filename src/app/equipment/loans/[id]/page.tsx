@@ -22,6 +22,7 @@ import {
   User,
   FileText,
   Wrench,
+  PackageCheck,
 } from 'lucide-react';
 import { getEquipmentLoanDetail } from '../actions';
 import {
@@ -33,6 +34,7 @@ import {
 import LoanPhotoCaptureSection from './_components/LoanPhotoCaptureSection';
 import LoanPdfDownloadButton from './_components/LoanPdfDownloadButton';
 import OutsourceProcessingModal from './_components/OutsourceProcessingModal';
+import PanasonicPalletReturnModal from './_components/PanasonicPalletReturnModal';
 import type { EquipmentLoanItem, LoanType, LoanStatus } from '../types';
 
 export default function EquipmentLoanDetailPage() {
@@ -51,6 +53,7 @@ export default function EquipmentLoanDetailPage() {
   const [isDispatchOpen, setIsDispatchOpen] = useState(false);
   const [isReturnOpen, setIsReturnOpen] = useState(false);
   const [isOutsourceOpen, setIsOutsourceOpen] = useState(false);
+  const [isPanasonicReturnOpen, setIsPanasonicReturnOpen] = useState(false);
 
   const fetchDetail = () => {
     if (!loanId) return;
@@ -232,6 +235,19 @@ export default function EquipmentLoanDetailPage() {
           >
             <Wrench size={14} className="text-[var(--accent)]" />
             <span className="font-semibold">{t('outsourceModal.button')}</span>
+          </button>
+
+          {/* Panasonic Pallet Return (Gói 11: Panasonic Shirakawa Specification) */}
+          <button
+            type="button"
+            onClick={() => setIsPanasonicReturnOpen(true)}
+            className="btn btn-secondary text-[12px] h-[30px] px-2.5 flex items-center gap-1.5"
+            title={t('panasonicReturnModal.buttonTooltip')}
+            data-testid="panasonic-return-btn"
+            style={{ borderColor: '#0D9488', color: '#0F766E' }}
+          >
+            <PackageCheck size={14} className="text-teal-600" />
+            <span className="font-semibold">{t('panasonicReturnModal.button')}</span>
           </button>
 
           {/* Electronic Seal & PDF Actions (Gói 9: Oita Canon & Shin-Ei Hitec) */}
@@ -529,6 +545,14 @@ export default function EquipmentLoanDetailPage() {
         loan={loan}
         isOpen={isOutsourceOpen}
         onClose={() => setIsOutsourceOpen(false)}
+        onSuccess={fetchDetail}
+      />
+
+      {/* Panasonic Pallet Return Modal (Gói 11: Panasonic Shirakawa) */}
+      <PanasonicPalletReturnModal
+        loan={loan}
+        isOpen={isPanasonicReturnOpen}
+        onClose={() => setIsPanasonicReturnOpen(false)}
         onSuccess={fetchDetail}
       />
     </div>
