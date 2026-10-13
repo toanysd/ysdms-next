@@ -21,6 +21,7 @@ import {
   Calendar,
   User,
   FileText,
+  Wrench,
 } from 'lucide-react';
 import { getEquipmentLoanDetail } from '../actions';
 import {
@@ -31,6 +32,7 @@ import {
 } from '../_components/LoanWorkflowModals';
 import LoanPhotoCaptureSection from './_components/LoanPhotoCaptureSection';
 import LoanPdfDownloadButton from './_components/LoanPdfDownloadButton';
+import OutsourceProcessingModal from './_components/OutsourceProcessingModal';
 import type { EquipmentLoanItem, LoanType, LoanStatus } from '../types';
 
 export default function EquipmentLoanDetailPage() {
@@ -48,6 +50,7 @@ export default function EquipmentLoanDetailPage() {
   const [isRejectOpen, setIsRejectOpen] = useState(false);
   const [isDispatchOpen, setIsDispatchOpen] = useState(false);
   const [isReturnOpen, setIsReturnOpen] = useState(false);
+  const [isOutsourceOpen, setIsOutsourceOpen] = useState(false);
 
   const fetchDetail = () => {
     if (!loanId) return;
@@ -218,6 +221,18 @@ export default function EquipmentLoanDetailPage() {
               <span>{t('actions.returnCheckIn')}</span>
             </button>
           )}
+
+          {/* Outsource Processing Request (Gói 10: Minebea Teflon/Plating) */}
+          <button
+            type="button"
+            onClick={() => setIsOutsourceOpen(true)}
+            className="btn btn-secondary text-[12px] h-[30px] px-2.5 flex items-center gap-1.5"
+            title={t('outsourceModal.buttonTooltip')}
+            data-testid="outsource-processing-btn"
+          >
+            <Wrench size={14} className="text-[var(--accent)]" />
+            <span className="font-semibold">{t('outsourceModal.button')}</span>
+          </button>
 
           {/* Electronic Seal & PDF Actions (Gói 9: Oita Canon & Shin-Ei Hitec) */}
           <LoanPdfDownloadButton
@@ -506,6 +521,14 @@ export default function EquipmentLoanDetailPage() {
         loan={loan}
         isOpen={isReturnOpen}
         onClose={() => setIsReturnOpen(false)}
+        onSuccess={fetchDetail}
+      />
+
+      {/* Outsource Processing Request Modal (Gói 10: Minebea) */}
+      <OutsourceProcessingModal
+        loan={loan}
+        isOpen={isOutsourceOpen}
+        onClose={() => setIsOutsourceOpen(false)}
         onSuccess={fetchDetail}
       />
     </div>

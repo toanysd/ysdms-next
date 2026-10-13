@@ -21,6 +21,7 @@ import type {
   AnnualAuditRecord,
   DormantMoldRecord,
   StorageFeePartnerSummary,
+  CreateOutsourceProcessingInput,
 } from './types';
 import { SSOT_11_CUSTOMERS, STANDARD_MOLD_STORAGE_RATE_JPY } from './types';
 
@@ -1180,6 +1181,77 @@ export async function deleteLoanPhoto(
     return { success: false, error: err.message };
   }
 }
+
+/**
+ * 17. Create / Record Outsource Processing Request (Gói 10: Minebea)
+ * Updates current equipment loan to OUTSOURCE_PROCESSING with Teflon/Plating metadata (Zero DDL)
+ */
+export async function createOutsourceProcessingRequest(
+  input: CreateOutsourceProcessingInput
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const supabase = await createClient();
+
+    const { data: loan, error: fetchErr } = await supabase
+      .from('equipment_loans')
+      .select('status, loan_code, purpose, condition_notes')
+      .eq('loan_id', input.loan_id)
+      .single();
+
+    if (fetchErr || !loan) {
+      return { success: false, error: 'Không tìm thấy phiếu mượn/trả.' };
+    }
+
+    const typeLabels: Record<string, string> = {
+      TEFLON: 'テフロンコーティング (防汚・離型処理)',
+      PLATING: '硬質クロムメッキ加工 (耐摩耗・防錆)',
+      POLISHING: '精密再研磨・刃先修正',
+      OTHER: 'その他表面改質処理',
+    };
+    const typeLabel = typeLabels[input.processing_type] || input.processing_type;
+
+    const outsourceBlock = [
+      `【外注加工依頼 / MINEBEA SPEC】`,
+      `・加工種別: ${typeLabel}`,
+      `・委託先: ${input.contractor}`,
+      `・出庫日: ${input.outsource_date}`,
+      `・返却予定日: ${input.expected_return_date}`,
+      input.trial_samples ? `・成形テスト枚数: ${input.trial_samples} (ミネベア規定 24〜60枚)` : null,
+      input.coating_thickness ? `・皮膜厚み仕様: ${input.coating_thickness}` : null,
+      input.notes ? `・特記事項: ${input.notes}` : null,
+    ]
+      .filter(Boolean)
+      .join('\n');
+
+    const updatedNotes = loan.condition_notes
+      ? `${outsourceBlock}\n\n${loan.condition_notes}`
+      : outsourceBlock;
+
+    const { error: updateErr } = await supabase
+      .from('equipment_loans')
+      .update({
+        loan_type: 'OUTSOURCE_PROCESSING',
+        scheduled_return_date: input.expected_return_date,
+        destination_address: input.contractor,
+        purpose: `[外注加工: ${typeLabel.slice(0, 20)}] ${input.contractor}`,
+        condition_notes: updatedNotes,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('loan_id', input.loan_id);
+
+    if (updateErr) {
+      return { success: false, error: updateErr.message };
+    }
+
+    revalidatePath('/equipment/loans');
+    revalidatePath(`/equipment/loans/${input.loan_id}`);
+    return { success: true };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    return { success: false, error: msg };
+  }
+}
+
 
 
 

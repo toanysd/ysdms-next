@@ -390,6 +390,12 @@ export const MoldLoanPDFDocument: React.FC<MoldLoanPDFProps> = ({
                   <Text style={styles.sealStampPlaceholder}>〔 印 〕</Text>
                 </View>
               )}
+              {isOutsource && (
+                <View style={styles.sealBox}>
+                  <Text style={styles.sealLabel}>外注受領印</Text>
+                  <Text style={styles.sealStampPlaceholder}>〔 印 〕</Text>
+                </View>
+              )}
             </View>
           </View>
         </View>
@@ -489,6 +495,27 @@ export const MoldLoanPDFDocument: React.FC<MoldLoanPDFProps> = ({
               </Text>
               <Text style={styles.placardCell}>
                 4. 梱包荷姿: <Text style={styles.placardCellBold}>JIS標準パレット (1,100×1,100mm) ストレッチ包装</Text>
+              </Text>
+            </View>
+          </View>
+        )}
+
+        {/* 5c. Outsource Machining & Trial Stamping Spec (Minebea Specification) */}
+        {isOutsource && (
+          <View style={styles.placardContainer}>
+            <Text style={styles.placardHeader}>【 外注表面処理仕様及び成形テスト指示 (Minebea Mitsumi 規格) 】</Text>
+            <View style={styles.placardGrid}>
+              <Text style={styles.placardCell}>
+                1. 加工種別: <Text style={styles.placardCellBold}>テフロンコーティング (離型性・防汚表面処理)</Text>
+              </Text>
+              <Text style={styles.placardCell}>
+                2. 成形テスト: <Text style={styles.placardCellBold}>24〜60枚 (ミネベア規定: 量産前評価サンプル必須)</Text>
+              </Text>
+              <Text style={styles.placardCell}>
+                3. 品質基準: <Text style={styles.placardCellBold}>皮膜厚み均一、ピン角ダレ・逃げ部マスキング遵守</Text>
+              </Text>
+              <Text style={styles.placardCell}>
+                4. 資産管理: <Text style={styles.placardCellBold}>客先固定資産 (目的外使用・転貸・無断複製厳禁)</Text>
               </Text>
             </View>
           </View>

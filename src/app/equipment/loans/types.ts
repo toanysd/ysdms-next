@@ -387,4 +387,23 @@ export interface StorageFeePartnerSummary {
   records: DormantMoldRecord[];
 }
 
+// ==============================================================================
+// Package 10: Outsource Processing Request for Teflon / Plating (WO-P1-009)
+// SSOT: MOLD_CUSTODY_BUSINESS_SPEC v1.0 (Topic 10 & Minebea Mitsumi Model)
+// ==============================================================================
+
+export type OutsourceProcessingType = 'TEFLON' | 'PLATING' | 'POLISHING' | 'OTHER';
+
+export interface CreateOutsourceProcessingInput {
+  loan_id: string;
+  processing_type: OutsourceProcessingType;
+  contractor: string;
+  outsource_date: string;
+  expected_return_date: string;
+  trial_samples?: string;
+  coating_thickness?: string;
+  notes?: string;
+}
+
+
 
