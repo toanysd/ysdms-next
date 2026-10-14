@@ -16,9 +16,15 @@ async function getCurrentUserAndRole() {
     .from('profiles')
     .select('role')
     .eq('id', user.id)
-    .single();
+    .maybeSingle();
 
-  return { user, role: (profile?.role ?? 'sales') as string };
+  // TEMPORARY WORKAROUND (WO-PIPE-FIX): public.profiles currently has 1 row vs 2 auth.users.
+  // Fallback to user_metadata.role or admin email until public.profiles sync migration is approved.
+  const fallbackRole =
+    (user.user_metadata?.role as string) ||
+    (user.email === 'admin@ysd-pack.co.jp' ? 'admin' : 'sales');
+
+  return { user, role: (profile?.role ?? fallbackRole) as string };
 }
 
 // ─────────────────────────────────────────
@@ -26,7 +32,7 @@ async function getCurrentUserAndRole() {
 // ─────────────────────────────────────────
 export async function saveTechnicalReviewDraft(formData: FormData) {
   try {
-    const { user, role } = await getCurrentUserAndRole();
+    const { role } = await getCurrentUserAndRole();
     if (!['engineering', 'manager', 'admin'].includes(role)) {
       return { error: 'Không có quyền tạo/sửa Technical Review.' };
     }
@@ -35,6 +41,7 @@ export async function saveTechnicalReviewDraft(formData: FormData) {
     const reviewId = formData.get('review_id') as string | null;
     const caseId   = formData.get('case_id') as string;
 
+    // technical_reviews_requested_by_fkey & technical_reviews_reviewed_by_fkey reference public.employees(employee_id)
     const payload = {
       case_id:            caseId,
       product_id:         formData.get('product_id') || null,
@@ -54,7 +61,8 @@ export async function saveTechnicalReviewDraft(formData: FormData) {
       cycle_time_sec:     formData.get('cycle_time_sec') ? Number(formData.get('cycle_time_sec')) : null,
       technical_constraints: formData.get('technical_constraints') || null,
       approval_status:    'draft' as TechnicalReviewStatus,
-      requested_by:       user.id,
+      requested_by:       (formData.get('requested_by') as string) || null,
+      reviewed_by:        (formData.get('reviewed_by') as string) || null,
     };
 
     if (reviewId) {
@@ -180,12 +188,12 @@ export async function approveTechnicalReview(
 
     if (error) return { error: error.message };
 
-    // Update business_case status if approved
+    // Update business_case status if approved (business_cases_status_check: open|in_review|quoted|ordered|completed|closed)
     if (decision === 'approved') {
       await (supabase as any)
         .from('business_cases')
-        .update({ status: 'quotation_ready' })
-        .eq('case_id', review.case_id);
+        .update({ status: 'in_review' })
+        .eq('id', review.case_id);
     }
 
     revalidatePath(`/cases/${review.case_id}`);

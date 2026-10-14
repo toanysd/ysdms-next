@@ -36,7 +36,6 @@ const CASE_TYPE_CONFIG: Record<string, { labelKey: string }> = {
   material_change:   { labelKey: 'Cases.Types.material_change' },
   complaint:         { labelKey: 'Cases.Types.complaint' },
   inventory_audit:   { labelKey: 'Cases.Types.inventory_audit' },
-  tray_review:       { labelKey: 'Cases.Types.tray_review' },
   other:             { labelKey: 'Cases.Types.other' },
 }
 

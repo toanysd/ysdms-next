@@ -1,10 +1,10 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { X, Save, Plus, Trash2 } from 'lucide-react'
 import { useTranslations } from 'next-intl'
-import type { Quotation, QuotationLine, QuotationStatus } from '../types'
+import type { Quotation, QuotationLine, QuotationStatus, QuotationType } from '../types'
 
 type Props = {
   caseId: string
@@ -15,13 +15,46 @@ type Props = {
   currentUserId: string | null
 }
 
-export default function QuotationFormModal({ caseId, companyId, initialData, onClose, onSuccess, currentUserId }: Props) {
+type ProductOption = {
+  product_id: string
+  product_code: string
+  product_name: string
+  company_id: string | null
+  design_revisions?: { revision_id: string }[]
+}
+
+export default function QuotationFormModal({ caseId, companyId, initialData, onClose, onSuccess }: Props) {
   const t = useTranslations()
   const isEdit = !!initialData
   const supabase = createClient()
   
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [products, setProducts] = useState<ProductOption[]>([])
+  const [employees, setEmployees] = useState<{ employee_id: string; employee_code: string; employee_name: string }[]>([])
+
+  useEffect(() => {
+    async function loadOptions() {
+      const [prodRes, empRes] = await Promise.all([
+        supabase
+          .from('products')
+          .select('product_id, product_code, product_name, company_id, design_revisions!design_revisions_product_id_fkey(revision_id)')
+          .order('product_code')
+          .limit(500),
+        supabase
+          .from('employees')
+          .select('employee_id, employee_code, employee_name')
+          .order('employee_code'),
+      ])
+      if (prodRes.data) setProducts(prodRes.data as any)
+      if (empRes.data) setEmployees(empRes.data)
+    }
+    loadOptions()
+  }, [supabase])
+
+  const filteredProducts = companyId
+    ? products.filter(p => !p.company_id || p.company_id === companyId)
+    : products
 
   const ITEM_TYPES = [
     { value: 'DESIGN_FEE', labelKey: 'Cases.ItemTypes.DESIGN_FEE' },
@@ -33,24 +66,32 @@ export default function QuotationFormModal({ caseId, companyId, initialData, onC
 
   const defaultLines: QuotationLine[] = initialData?.quotation_lines?.length
     ? initialData.quotation_lines
-    : [{ line_no: 1, item_type: 'MOLD', description: '', quantity: 1, unit_price: 0, amount: 0 }]
+    : [{ line_no: 1, item_type: 'MOLD', product_id: null, design_revision_id: null, model_code: null, description: '', quantity: 1, unit_price: 0, amount: 0 }]
+
+  const normalizedInitialStatus = (initialData?.status
+    ? initialData.status.toUpperCase()
+    : 'DRAFT') as QuotationStatus
 
   const [formData, setFormData] = useState<{
     quotation_no: string
+    quotation_type: QuotationType
     version: number
     quote_date: string
     valid_until: string
     currency: string
     status: QuotationStatus
+    prepared_by: string
     notes: string
     lines: QuotationLine[]
   }>({
     quotation_no: initialData?.quotation_no || '',
+    quotation_type: initialData?.quotation_type || 'SET',
     version: initialData?.version || 1,
     quote_date: initialData?.quote_date || new Date().toISOString().split('T')[0],
     valid_until: initialData?.valid_until || '',
     currency: initialData?.currency || 'JPY',
-    status: initialData?.status || 'draft',
+    status: normalizedInitialStatus,
+    prepared_by: initialData?.prepared_by || '',
     notes: initialData?.notes || '',
     lines: defaultLines,
   })
@@ -66,11 +107,36 @@ export default function QuotationFormModal({ caseId, companyId, initialData, onC
     setFormData({ ...formData, lines: newLines })
   }
 
+  const handleProductSelect = (index: number, productId: string) => {
+    const newLines = [...formData.lines]
+    const prod = products.find(p => p.product_id === productId)
+    newLines[index] = {
+      ...newLines[index],
+      product_id: prod ? prod.product_id : null,
+      design_revision_id: prod?.design_revisions?.[0]?.revision_id || null,
+      model_code: prod ? prod.product_code : null,
+    }
+    setFormData({ ...formData, lines: newLines })
+  }
+
   const addLine = () => {
     const maxLineNo = formData.lines.reduce((max, l) => Math.max(max, l.line_no), 0)
     setFormData({
       ...formData,
-      lines: [...formData.lines, { line_no: maxLineNo + 1, item_type: 'OTHER', description: '', quantity: 1, unit_price: 0, amount: 0 }]
+      lines: [
+        ...formData.lines,
+        {
+          line_no: maxLineNo + 1,
+          item_type: 'OTHER',
+          product_id: null,
+          design_revision_id: null,
+          model_code: null,
+          description: '',
+          quantity: 1,
+          unit_price: 0,
+          amount: 0,
+        },
+      ],
     })
   }
 
@@ -96,16 +162,18 @@ export default function QuotationFormModal({ caseId, companyId, initialData, onC
     }
 
     try {
+      // quotations_prepared_by_fkey references public.employees(employee_id), NOT auth.users(id)
       const payload = {
         case_id: caseId,
         company_id: companyId,
         quotation_no: formData.quotation_no,
+        quotation_type: formData.quotation_type,
         quote_date: formData.quote_date || null,
         valid_until: formData.valid_until || null,
         total_amount: totalAmount,
         status: formData.status,
         notes: formData.notes,
-        prepared_by: currentUserId,
+        prepared_by: formData.prepared_by || null,
       }
 
       let targetQuotationId = ''
@@ -138,12 +206,15 @@ export default function QuotationFormModal({ caseId, companyId, initialData, onC
         targetQuotationId = insData.quotation_id
       }
 
-      // Insert new lines
+      // Insert new lines with product_id, design_revision_id, model_code
       if (formData.lines.length > 0) {
         const linesToInsert = formData.lines.map((line, idx) => ({
           quotation_id: targetQuotationId,
           line_no: idx + 1,
           item_type: line.item_type,
+          product_id: line.product_id || null,
+          design_revision_id: line.design_revision_id || null,
+          model_code: line.model_code || null,
           description: line.description,
           quantity: line.quantity,
           unit_price: line.unit_price,
@@ -173,7 +244,7 @@ export default function QuotationFormModal({ caseId, companyId, initialData, onC
       display: 'flex', alignItems: 'center', justifyContent: 'center'
     }}>
       <div className="card-flat" style={{
-        width: '100%', maxWidth: 900, maxHeight: '90vh',
+        width: '100%', maxWidth: 960, maxHeight: '90vh',
         display: 'flex', flexDirection: 'column', padding: 0
       }}>
         
@@ -209,6 +280,16 @@ export default function QuotationFormModal({ caseId, companyId, initialData, onC
               </div>
 
               <div className="form-field">
+                <label className="form-label">見積種別 (Type)</label>
+                <select className="form-input" value={formData.quotation_type}
+                  onChange={e => setFormData({ ...formData, quotation_type: e.target.value as QuotationType })}>
+                  <option value="SET">SET (金型＋製品一括)</option>
+                  <option value="MOLD">MOLD (金型・抜型のみ)</option>
+                  <option value="TRAY">TRAY (トレイ製品のみ)</option>
+                </select>
+              </div>
+
+              <div className="form-field">
                 <label className="form-label">{t('Cases.quoteDate')}</label>
                 <input type="date" required className="form-input" value={formData.quote_date}
                   onChange={e => setFormData({ ...formData, quote_date: e.target.value })} />
@@ -218,6 +299,30 @@ export default function QuotationFormModal({ caseId, companyId, initialData, onC
                 <label className="form-label">{t('Cases.validUntil')}</label>
                 <input type="date" className="form-input" value={formData.valid_until}
                   onChange={e => setFormData({ ...formData, valid_until: e.target.value })} />
+              </div>
+
+              <div className="form-field">
+                <label className="form-label">作成担当 (Prepared By)</label>
+                <select className="form-input" value={formData.prepared_by}
+                  onChange={e => setFormData({ ...formData, prepared_by: e.target.value })}>
+                  <option value="">— 未選択 —</option>
+                  {employees.map(emp => (
+                    <option key={emp.employee_id} value={emp.employee_id}>
+                      [{emp.employee_code}] {emp.employee_name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="form-field">
+                <label className="form-label">{t('Cases.status')}</label>
+                <select className="form-input" value={formData.status}
+                  onChange={e => setFormData({ ...formData, status: e.target.value as QuotationStatus })}>
+                  <option value="DRAFT">{t('Cases.QuotationStatus.draft')}</option>
+                  <option value="SENT">{t('Cases.QuotationStatus.sent')}</option>
+                  <option value="APPROVED">{t('Cases.QuotationStatus.accepted')}</option>
+                  <option value="REJECTED">{t('Cases.QuotationStatus.rejected')}</option>
+                </select>
               </div>
             </div>
 
@@ -233,11 +338,12 @@ export default function QuotationFormModal({ caseId, companyId, initialData, onC
                 <table className="data-table">
                   <thead>
                     <tr>
-                      <th style={{ width: 150 }}>{t('Cases.itemType')}</th>
+                      <th style={{ width: 130 }}>{t('Cases.itemType')}</th>
+                      <th style={{ width: 190 }}>対象製品 (Product / 型番)</th>
                       <th>{t('Cases.itemDesc')}</th>
                       <th style={{ width: 80 }}>{t('Cases.qty')}</th>
-                      <th style={{ width: 120 }}>{t('Cases.unitPrice')}</th>
-                      <th style={{ width: 120 }}>{t('Cases.amount')}</th>
+                      <th style={{ width: 110 }}>{t('Cases.unitPrice')}</th>
+                      <th style={{ width: 110 }}>{t('Cases.amount')}</th>
                       <th style={{ width: 40 }}></th>
                     </tr>
                   </thead>
@@ -248,6 +354,17 @@ export default function QuotationFormModal({ caseId, companyId, initialData, onC
                           <select className="form-input" value={line.item_type} required
                             onChange={e => handleLineChange(index, 'item_type', e.target.value)}>
                             {ITEM_TYPES.map(tType => <option key={tType.value} value={tType.value}>{t(tType.labelKey)}</option>)}
+                          </select>
+                        </td>
+                        <td>
+                          <select className="form-input" value={line.product_id || ''}
+                            onChange={e => handleProductSelect(index, e.target.value)}>
+                            <option value="">— 製品選択 —</option>
+                            {filteredProducts.map(p => (
+                              <option key={p.product_id} value={p.product_id}>
+                                [{p.product_code}] {p.product_name}
+                              </option>
+                            ))}
                           </select>
                         </td>
                         <td>
@@ -276,7 +393,7 @@ export default function QuotationFormModal({ caseId, companyId, initialData, onC
                   </tbody>
                   <tfoot>
                     <tr style={{ background: 'var(--bg-surface-2)' }}>
-                      <td colSpan={4} style={{ textAlign: 'right', fontWeight: 600 }}>{t('Cases.totalAmount')}:</td>
+                      <td colSpan={5} style={{ textAlign: 'right', fontWeight: 600 }}>{t('Cases.totalAmount')}:</td>
                       <td style={{ textAlign: 'right', fontWeight: 700, color: 'var(--accent)' }}>
                         {new Intl.NumberFormat('ja-JP').format(totalAmount)} {formData.currency}
                       </td>
@@ -291,17 +408,6 @@ export default function QuotationFormModal({ caseId, companyId, initialData, onC
               <label className="form-label">{t('Cases.notes')}</label>
               <textarea className="form-textarea" rows={3} value={formData.notes}
                 onChange={e => setFormData({ ...formData, notes: e.target.value })} />
-            </div>
-
-            <div className="form-field" style={{ marginTop: 16 }}>
-              <label className="form-label">{t('Cases.status')}</label>
-              <select className="form-input" value={formData.status}
-                onChange={e => setFormData({ ...formData, status: e.target.value as QuotationStatus })}>
-                <option value="draft">{t('Cases.QuotationStatus.draft')}</option>
-                <option value="sent">{t('Cases.QuotationStatus.sent')}</option>
-                <option value="accepted">{t('Cases.QuotationStatus.accepted')}</option>
-                <option value="rejected">{t('Cases.QuotationStatus.rejected')}</option>
-              </select>
             </div>
 
           </form>

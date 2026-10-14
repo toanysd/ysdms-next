@@ -18,10 +18,29 @@ type Props = {
 }
 
 const STATUS_BADGE_MAP: Record<string, string> = {
-  draft:    'badge--neutral',
-  sent:     'badge--info',
-  accepted: 'badge--success',
-  rejected: 'badge--error',
+  DRAFT:     'badge--neutral',
+  SENT:      'badge--info',
+  APPROVED:  'badge--success',
+  CONVERTED: 'badge--success',
+  REJECTED:  'badge--error',
+  EXPIRED:   'badge--neutral',
+  draft:     'badge--neutral',
+  sent:      'badge--info',
+  accepted:  'badge--success',
+  rejected:  'badge--error',
+}
+
+const STATUS_I18N_KEY: Record<string, string> = {
+  DRAFT:     'Cases.QuotationStatus.draft',
+  SENT:      'Cases.QuotationStatus.sent',
+  APPROVED:  'Cases.QuotationStatus.accepted',
+  CONVERTED: 'Cases.QuotationStatus.accepted',
+  REJECTED:  'Cases.QuotationStatus.rejected',
+  EXPIRED:   'Cases.QuotationStatus.rejected',
+  draft:     'Cases.QuotationStatus.draft',
+  sent:      'Cases.QuotationStatus.sent',
+  accepted:  'Cases.QuotationStatus.accepted',
+  rejected:  'Cases.QuotationStatus.rejected',
 }
 
 export default function SalesTab({
@@ -104,13 +123,13 @@ export default function SalesTab({
                     <FileText size={16} style={{ color: 'var(--accent)' }} />
                     <span style={{ fontWeight: 600, fontSize: 14 }}>{q.quotation_no}</span>
                     <span className={`badge ${STATUS_BADGE_MAP[q.status] || 'badge--neutral'}`}>
-                      {t(`Cases.QuotationStatus.${q.status}`)}
+                      {t(STATUS_I18N_KEY[q.status] || 'Cases.QuotationStatus.draft')}
                     </span>
                   </div>
                   <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-                    <span>{t('Cases.quoteDate')}: {q.issued_date || t('Cases.undetermined')}</span>
+                    <span>{t('Cases.quoteDate')}: {q.quote_date || q.issued_date || t('Cases.undetermined')}</span>
                     <span style={{ margin: '0 8px' }}>|</span>
-                    <span>{t('Cases.totalAmountLabel')}: {new Intl.NumberFormat('ja-JP').format(q.total_amount)} {q.currency}</span>
+                    <span>{t('Cases.totalAmountLabel')}: {new Intl.NumberFormat('ja-JP').format(q.total_amount)} {q.currency || 'JPY'}</span>
                   </div>
                 </div>
                 <div style={{ display: 'flex', gap: 8 }}>

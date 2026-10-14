@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState, useTransition } from 'react';
+import { createClient } from '@/lib/supabase/client';
 import type { TechnicalReview, UserRole } from '../types';
 import {
   saveTechnicalReviewDraft,
@@ -21,10 +22,10 @@ export default function TechnicalReviewForm({
   caseId,
   review,
   currentUserRole,
-  currentUserId,
   onClose,
 }: Props) {
   const t = useTranslations();
+  const supabase = createClient();
 
   const MOLD_OPTIONS = [
     { value: 'reuse',  label: t('Cases.TechnicalReview.moldOptions.reuse') },
@@ -40,7 +41,8 @@ export default function TechnicalReviewForm({
   ];
 
   const isApproveMode =
-    review?.approval_status === 'in_review' && currentUserRole === 'manager';
+    review?.approval_status === 'in_review' &&
+    (currentUserRole === 'manager' || currentUserRole === 'admin');
   const isReadOnly =
     review?.approval_status === 'approved' ||
     review?.approval_status === 'superseded';
@@ -52,9 +54,41 @@ export default function TechnicalReviewForm({
   const [rejectReason, setRejectReason] = useState('');
   const [showRejectInput, setShowRejectInput] = useState(false);
 
+  const [selectedProductId, setSelectedProductId] = useState<string>(review?.product_id ?? '');
+  const [products, setProducts] = useState<{ product_id: string; product_code: string; product_name: string | null }[]>([]);
+  const [revisions, setRevisions] = useState<{ revision_id: string; design_code: string; product_id: string | null }[]>([]);
+  const [molds, setMolds] = useState<{ equipment_id: string; equipment_code: string; display_name: string | null }[]>([]);
+  const [cutters, setCutters] = useState<{ equipment_id: string; equipment_code: string; display_name: string | null }[]>([]);
+  const [machines, setMachines] = useState<{ machine_id: string; machine_code: string; machine_name: string }[]>([]);
+  const [employees, setEmployees] = useState<{ employee_id: string; employee_code: string; employee_name: string }[]>([]);
+
   useEffect(() => {
     formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }, []);
+
+  useEffect(() => {
+    async function loadReferenceData() {
+      const [prodRes, revRes, moldRes, cutterRes, machRes, empRes] = await Promise.all([
+        supabase.from('products').select('product_id, product_code, product_name').order('product_code').limit(500),
+        supabase.from('design_revisions').select('revision_id, design_code, product_id').order('design_code').limit(500),
+        supabase.from('equipment').select('equipment_id, equipment_code, display_name').eq('equipment_type', 'MOLD').order('equipment_code').limit(500),
+        supabase.from('equipment').select('equipment_id, equipment_code, display_name').in('equipment_type', ['CUTTER_SEPARATE', 'CUTTER_INLINE']).order('equipment_code').limit(500),
+        supabase.from('machines').select('machine_id, machine_code, machine_name').order('machine_code'),
+        supabase.from('employees').select('employee_id, employee_code, employee_name').order('employee_code'),
+      ]);
+      if (prodRes.data) setProducts(prodRes.data);
+      if (revRes.data) setRevisions(revRes.data);
+      if (moldRes.data) setMolds(moldRes.data);
+      if (cutterRes.data) setCutters(cutterRes.data);
+      if (machRes.data) setMachines(machRes.data);
+      if (empRes.data) setEmployees(empRes.data);
+    }
+    loadReferenceData();
+  }, [supabase]);
+
+  const filteredRevisions = selectedProductId
+    ? revisions.filter((r) => r.product_id === selectedProductId || r.revision_id === review?.design_revision_id)
+    : revisions;
 
   async function handleSaveDraft() {
     if (!formRef.current) return;
@@ -110,22 +144,35 @@ export default function TechnicalReviewForm({
           <legend className="form-section-title">{t('Cases.TechnicalReview.section1')}</legend>
           <div className="form-grid">
             <div className="form-group">
-              <label className="form-label">Product ID</label>
-              <input
+              <label className="form-label">対象製品 (Product)</label>
+              <select
                 name="product_id"
-                className="form-input"
-                defaultValue={review?.product_id ?? ''}
-                placeholder="FK product_id"
-              />
+                className="form-select"
+                value={selectedProductId}
+                onChange={(e) => setSelectedProductId(e.target.value)}
+              >
+                <option value="">{t('Cases.TechnicalReview.choosePlaceholder')}</option>
+                {products.map((p) => (
+                  <option key={p.product_id} value={p.product_id}>
+                    [{p.product_code}] {p.product_name || p.product_code}
+                  </option>
+                ))}
+              </select>
             </div>
             <div className="form-group">
-              <label className="form-label">Design Revision ID</label>
-              <input
+              <label className="form-label">設計版 (Design Revision)</label>
+              <select
                 name="design_revision_id"
-                className="form-input"
+                className="form-select"
                 defaultValue={review?.design_revision_id ?? ''}
-                placeholder="FK revision_id"
-              />
+              >
+                <option value="">{t('Cases.TechnicalReview.choosePlaceholder')}</option>
+                {filteredRevisions.map((r) => (
+                  <option key={r.revision_id} value={r.revision_id}>
+                    {r.design_code}
+                  </option>
+                ))}
+              </select>
             </div>
             <div className="form-group">
               <label className="form-label">{t('Cases.TechnicalReview.materialSpec')}</label>
@@ -173,12 +220,18 @@ export default function TechnicalReviewForm({
             </div>
             <div className="form-group">
               <label className="form-label">{t('Cases.TechnicalReview.moldId')}</label>
-              <input
+              <select
                 name="mold_id"
-                className="form-input"
+                className="form-select"
                 defaultValue={review?.mold_id ?? ''}
-                placeholder="FK equipment_id (MOLD)"
-              />
+              >
+                <option value="">{t('Cases.TechnicalReview.choosePlaceholder')}</option>
+                {molds.map((m) => (
+                  <option key={m.equipment_id} value={m.equipment_id}>
+                    [{m.equipment_code}] {m.display_name || m.equipment_code}
+                  </option>
+                ))}
+              </select>
             </div>
             <div className="form-group">
               <label className="form-label">{t('Cases.TechnicalReview.pocketCount')}</label>
@@ -227,21 +280,33 @@ export default function TechnicalReviewForm({
             </div>
             <div className="form-group">
               <label className="form-label">{t('Cases.TechnicalReview.cuttingDieId')}</label>
-              <input
+              <select
                 name="cutting_die_id"
-                className="form-input"
+                className="form-select"
                 defaultValue={review?.cutting_die_id ?? ''}
-                placeholder="FK equipment_id (CUTTER)"
-              />
+              >
+                <option value="">{t('Cases.TechnicalReview.choosePlaceholder')}</option>
+                {cutters.map((c) => (
+                  <option key={c.equipment_id} value={c.equipment_id}>
+                    [{c.equipment_code}] {c.display_name || c.equipment_code}
+                  </option>
+                ))}
+              </select>
             </div>
             <div className="form-group">
               <label className="form-label">{t('Cases.TechnicalReview.machineId')}</label>
-              <input
+              <select
                 name="machine_id"
-                className="form-input"
+                className="form-select"
                 defaultValue={review?.machine_id ?? ''}
-                placeholder="FK machine_id"
-              />
+              >
+                <option value="">{t('Cases.TechnicalReview.choosePlaceholder')}</option>
+                {machines.map((mc) => (
+                  <option key={mc.machine_id} value={mc.machine_id}>
+                    [{mc.machine_code}] {mc.machine_name}
+                  </option>
+                ))}
+              </select>
             </div>
             <div className="form-group">
               <label className="form-label">{t('Cases.TechnicalReview.leadTimeDays')}</label>
@@ -265,10 +330,42 @@ export default function TechnicalReviewForm({
           </div>
         </fieldset>
 
-        {/* SECTION 4: Kết luận */}
+        {/* SECTION 4: Kết luận & Người phụ trách (employees FK) */}
         <fieldset className="form-section" disabled={isReadOnly && !isApproveMode}>
           <legend className="form-section-title">{t('Cases.TechnicalReview.section4')}</legend>
           <div className="form-grid">
+            <div className="form-group">
+              <label className="form-label">依頼者 (Requested By)</label>
+              <select
+                name="requested_by"
+                className="form-select"
+                defaultValue={review?.requested_by ?? ''}
+                disabled={isReadOnly}
+              >
+                <option value="">{t('Cases.TechnicalReview.choosePlaceholder')}</option>
+                {employees.map((emp) => (
+                  <option key={emp.employee_id} value={emp.employee_id}>
+                    [{emp.employee_code}] {emp.employee_name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="form-group">
+              <label className="form-label">担当者 (Reviewed By)</label>
+              <select
+                name="reviewed_by"
+                className="form-select"
+                defaultValue={review?.reviewed_by ?? ''}
+                disabled={isReadOnly}
+              >
+                <option value="">{t('Cases.TechnicalReview.choosePlaceholder')}</option>
+                {employees.map((emp) => (
+                  <option key={emp.employee_id} value={emp.employee_id}>
+                    [{emp.employee_code}] {emp.employee_name}
+                  </option>
+                ))}
+              </select>
+            </div>
             <div className="form-group" style={{ gridColumn: '1 / -1' }}>
               <label className="form-label">{t('Cases.TechnicalReview.technicalConstraintsLabel')}</label>
               <textarea

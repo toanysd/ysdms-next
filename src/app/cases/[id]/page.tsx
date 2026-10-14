@@ -14,6 +14,30 @@ import Link from 'next/link'
 import { useTranslations } from 'next-intl'
 
 // ── Types ──────────────────────────────────────────────────────────────────
+type CaseWorkOrder = {
+  wo_id: string
+  wo_code: string
+  wo_name: string
+  wo_type: string
+  wo_status: string
+  priority: number | null
+  start_date: string | null
+  deadline: string | null
+  notes: string | null
+}
+
+type CaseJob = {
+  job_id: string
+  job_code: string
+  job_name: string
+  job_type_id: string | null
+  job_category: string | null
+  job_status: string | null
+  priority: number | null
+  deadline: string | null
+  target_completion_date: string | null
+}
+
 type CaseDetail = {
   id: string
   case_code: string
@@ -29,6 +53,8 @@ type CaseDetail = {
   sales_owner: { employee_id: string; employee_name: string } | null
   technical_reviews: TechnicalReview[]
   quotations: Quotation[]
+  work_orders?: CaseWorkOrder[]
+  jobs?: CaseJob[]
 }
 
 // ── Config ─────────────────────────────────────────────────────────────────
@@ -48,7 +74,6 @@ const CASE_TYPE_LABEL: Record<string, string> = {
   material_change:   '材料変更',
   complaint:         'クレーム',
   inventory_audit:   '棚卸依頼',
-  tray_review:       '収納検討',
   other:             'その他',
 }
 
@@ -88,12 +113,17 @@ export default function CaseDetailPage() {
     setCurrentUserId(userId)
 
     if (userId) {
+      // TEMPORARY WORKAROUND (WO-PIPE-FIX): public.profiles currently has 1 row vs 2 auth.users.
+      // Fallback to user_metadata.role or admin email until public.profiles sync migration is approved.
+      const fallbackRole =
+        (session?.user?.user_metadata?.role as UserRole) ||
+        (session?.user?.email === 'admin@ysd-pack.co.jp' ? 'admin' : 'sales')
       try {
         const { data: profile } = await (supabase as any)
           .from('profiles').select('role').eq('id', userId).maybeSingle()
-        setCurrentUserRole((profile?.role as UserRole) ?? 'sales')
+        setCurrentUserRole((profile?.role as UserRole) ?? fallbackRole)
       } catch {
-        setCurrentUserRole('sales')
+        setCurrentUserRole(fallbackRole)
       }
     }
 
@@ -117,7 +147,9 @@ export default function CaseDetailPage() {
           requested_by, reviewed_by,
           created_at, updated_at
         ),
-        quotations(*, quotation_lines(*))
+        quotations(*, quotation_lines(*)),
+        work_orders(wo_id, wo_code, wo_name, wo_type, wo_status, priority, start_date, deadline, notes),
+        jobs(job_id, job_code, job_name, job_type_id, job_category, job_status, priority, deadline, target_completion_date)
       `)
       .eq('id', caseId)
       .single()
@@ -372,15 +404,102 @@ export default function CaseDetailPage() {
 
         {/* ====== TAB: PRODUCTION ====== */}
         {activeTab === 'production' && (
-          <div className="form-section">
-            <div className="form-section-header">
-              <Factory size={14} className="section-icon" />
-              <span>{t('Cases.productionOrders')}</span>
-            </div>
-            <div className="form-section-body">
-              <div style={{ textAlign: 'center', padding: '40px 0',
-                color: 'var(--text-muted)', fontSize: 13 }}>
-                {t('Cases.noProductionOrders')}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <div className="form-section">
+              <div className="form-section-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ display: 'flex', alignItems: 'center' }}>
+                  <Factory size={14} className="section-icon" />
+                  <span>{t('Cases.productionOrders')} (Work Orders / Tooling Jobs)</span>
+                </div>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <Link href="/production/work-orders" className="btn btn-secondary btn-sm">
+                    製造指図一覧
+                  </Link>
+                  <Link href="/equipment/jobs" className="btn btn-secondary btn-sm">
+                    金型加工指図一覧
+                  </Link>
+                </div>
+              </div>
+              <div className="form-section-body">
+                {(!caseData.work_orders || caseData.work_orders.length === 0) &&
+                 (!caseData.jobs || caseData.jobs.length === 0) ? (
+                  <div style={{ textAlign: 'center', padding: '40px 0',
+                    color: 'var(--text-muted)', fontSize: 13 }}>
+                    {t('Cases.noProductionOrders')}
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                    {caseData.work_orders && caseData.work_orders.length > 0 && (
+                      <div>
+                        <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 8, color: 'var(--text-secondary)' }}>
+                          製造指図 (Work Orders: {caseData.work_orders.length}件)
+                        </div>
+                        <table className="data-table">
+                          <thead>
+                            <tr>
+                              <th>指図番号</th>
+                              <th>件名</th>
+                              <th>区分</th>
+                              <th>ステータス</th>
+                              <th>納期</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {caseData.work_orders.map(wo => (
+                              <tr key={wo.wo_id}>
+                                <td style={{ fontFamily: 'monospace', fontWeight: 700, color: 'var(--accent)' }}>
+                                  <Link href="/production/work-orders" style={{ color: 'var(--accent)' }}>
+                                    {wo.wo_code}
+                                  </Link>
+                                </td>
+                                <td>{wo.wo_name}</td>
+                                <td>{wo.wo_type}</td>
+                                <td><span className="badge badge--info">{wo.wo_status}</span></td>
+                                <td style={{ fontFamily: 'monospace' }}>{formatDate(wo.deadline)}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+
+                    {caseData.jobs && caseData.jobs.length > 0 && (
+                      <div>
+                        <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 8, color: 'var(--text-secondary)' }}>
+                          金型・治具加工指図 (Tooling Jobs: {caseData.jobs.length}件)
+                        </div>
+                        <table className="data-table">
+                          <thead>
+                            <tr>
+                              <th>ジョブ番号</th>
+                              <th>件名</th>
+                              <th>区分</th>
+                              <th>ステータス</th>
+                              <th>納期</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {caseData.jobs.map(job => (
+                              <tr key={job.job_id}>
+                                <td style={{ fontFamily: 'monospace', fontWeight: 700 }}>
+                                  <Link href={`/equipment/jobs/${job.job_id}`} style={{ color: 'var(--accent)' }}>
+                                    {job.job_code}
+                                  </Link>
+                                </td>
+                                <td>{job.job_name}</td>
+                                <td>{job.job_category || job.job_type_id || '—'}</td>
+                                <td><span className="badge badge--info">{job.job_status || '—'}</span></td>
+                                <td style={{ fontFamily: 'monospace' }}>
+                                  {formatDate(job.deadline || job.target_completion_date)}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           </div>

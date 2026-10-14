@@ -77,6 +77,9 @@ export interface QuotationLine {
   quotation_id?: string;
   line_no: number;
   item_type: 'DESIGN_FEE' | 'PROTOTYPE' | 'MOLD' | 'PRODUCT' | 'OTHER';
+  product_id?: string | null;
+  design_revision_id?: string | null;
+  model_code?: string | null;
   description: string;
   quantity: number;
   unit_price: number;
@@ -84,15 +87,17 @@ export interface QuotationLine {
   notes?: string;
 }
 
-export type QuotationStatus = 'draft' | 'sent' | 'accepted' | 'rejected';
+export type QuotationStatus = 'DRAFT' | 'SENT' | 'APPROVED' | 'CONVERTED' | 'REJECTED' | 'EXPIRED';
+export type QuotationType = 'SET' | 'MOLD' | 'TRAY';
 
 export interface Quotation {
   quotation_id: string; // the PK is quotation_id
   case_id: string;
   company_id: string;
   quotation_no: string;
+  quotation_type?: QuotationType;
   version?: number;
-  issued_date?: string | null; // using quote_date in DB actually?
+  issued_date?: string | null;
   quote_date: string | null;
   valid_until: string | null;
   total_amount: number;
