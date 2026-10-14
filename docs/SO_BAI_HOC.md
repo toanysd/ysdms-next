@@ -131,4 +131,14 @@ Tài liệu ghi nhận các sự cố kỹ thuật, lỗi cú pháp, sai sót qu
   |---|---|---|---|---|---|
   | 2026-10-14 | Mâu thuẫn quy tắc `git push` tại `.agents/AGENTS.md:31-33` và gửi payload >150 dòng qua `pe_an_messages` | Tồn tại 2 file `AGENTS.md` (21.2 KB) và `.agents/AGENTS.md` (30.7 KB, bị cắt cụt 6,714 bytes); khi bổ sung quy tắc vào `.agents/AGENTS.md` đã ghi chồng 2 dòng trái ngược nhau và AN nối cả 5 file (489 dòng) vào `content_md` | `.agents/AGENTS.md:31` ghi *"BẮT BUỘC TỰ ĐỘNG git push"* cho tài liệu, nhưng `:33` ngay dưới ghi *"Lưu ý: Chỉ khi nào có yêu cầu mới thực hiện đẩy lên github"*; `pe_an_messages` message `f7d41e27-...` chứa nối gộp 5 file `.md` | Hợp nhất thành 1 file `AGENTS.md` duy nhất ($\le 12\text{ KB}$), `.agents/AGENTS.md` chỉ giữ stub tham chiếu; chỉ `git push` khi có chỉ thị phê duyệt từ THOAN/PE; gói tin `pe_an_messages` bắt buộc $\le 150$ dòng | Resolved |
 
+---
 
+## L007 - Dùng tên cột phỏng đoán chưa kiểm chứng qua `information_schema.columns` trong script audit (RULE-DATA-02)
+
+- **Thời gian ghi nhận:** 2026-10-14 12:12 JST
+- **Phân loại:** Tuân thủ Schema (`RULE-DATA-02`) & Bằng chứng Kiểm toán DB
+- **Trạng thái:** Resolved (Đã bổ sung bước truy vấn `information_schema.columns` trước khi chạy audit/backfill và đính kèm log thực tế)
+- **Bảng tóm tắt theo mẫu 6 cột bắt buộc:**
+  | Ngày | Sự việc | Nguyên nhân gốc | Bằng chứng | Quy tắc đề xuất | Trạng thái |
+  |---|---|---|---|---|---|
+  | 2026-10-14 | Dùng tên cột chưa kiểm chứng trong script audit (`c.short_name`, `s.shipment_no`, `s.backfill_status`, `s.status`) và nêu cột trong báo cáo `WO-ORDER-NOTES-DATA-AUDIT` không kèm log `information_schema.columns` | Viết SQL dựa trên trí nhớ/giả định thay vì truy vấn `information_schema.columns` trước khi chạy; chỉ ghi tuyên bố `"BEGIN TRANSACTION READ ONLY"` mà không đính kèm log danh sách cột thực tế | Lỗi PostgreSQL `code: '42703'` (`column does not exist`) khi chạy `verify_order_shipment_browser.mjs` và `audit_order_notes.mjs`; chỉ thị kiểm toán của PE lúc `2026-10-14 12:06 JST` | Trước mọi truy vấn SQL audit/backfill hoặc khi trích dẫn cột trong báo cáo, bắt buộc chạy `SELECT column_name, data_type FROM information_schema.columns` và dán log output thực tế kèm `NOW()` vào báo cáo | Resolved |
