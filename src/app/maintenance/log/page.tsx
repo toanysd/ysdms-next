@@ -1,13 +1,13 @@
 export const dynamic = 'force-dynamic'
 
-import { useTranslations } from 'next-intl'
+import { getTranslations } from 'next-intl/server'
 import Link from 'next/link'
 import { getMaintenanceLogs } from '@/app/actions/maintenance'
 import { ArrowLeft, History, Wrench, Settings, Search } from 'lucide-react'
 
 // Nhật ký Bảo trì (Tầng 5C)
 export default async function MaintenanceLogPage() {
-  const t = useTranslations('Maintenance')
+  const t = await getTranslations('Maintenance')
   const logs = await getMaintenanceLogs()
 
   const fmt = (v: number) => new Intl.NumberFormat('en-US').format(v)
@@ -65,8 +65,8 @@ export default async function MaintenanceLogPage() {
                   {new Date(log.maintenance_date).toLocaleDateString('ja-JP')}
                 </td>
                 <td className="p-3">
-                  <Link href={`/equipment/molds/${log.mold_physical_id}`} className="font-mono font-bold text-[13px] hover:underline" style={{ color: 'var(--accent)' }}>
-                    {log.mold_physical_id.substring(0, 8)}...
+                  <Link href={`/equipment/unified?id=${log.mold_physical_id}`} className="font-mono font-bold text-[13px] hover:underline" style={{ color: 'var(--accent)' }}>
+                    {log.equipment_code || `${log.mold_physical_id.substring(0, 8)}...`}
                   </Link>
                 </td>
                 <td className="p-3">

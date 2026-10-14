@@ -40,34 +40,30 @@ export async function getLifecycleDashboard(params: {
   const from = (page - 1) * pageSize;
   const to = from + pageSize - 1;
 
-  // 1. Get stats across all equipment (or filtered by type if specified)
-  let statsQuery = supabase
-    .from('v_equipment_lifecycle_status')
-    .select('lifecycle_status, equipment_type');
-
-  if (params.type && params.type !== 'ALL') {
-    if (params.type === 'CUTTER') {
-      statsQuery = statsQuery.in('equipment_type', ['CUTTER_SEPARATE', 'CUTTER_INLINE']);
-    } else {
-      statsQuery = statsQuery.eq('equipment_type', params.type);
+  // 1. Get exact stats across all equipment (or filtered by type if specified) without PostgREST 1,000-row cap
+  const applyTypeFilter = (q: any) => {
+    if (params.type && params.type !== 'ALL') {
+      if (params.type === 'CUTTER') {
+        return q.in('equipment_type', ['CUTTER_SEPARATE', 'CUTTER_INLINE']);
+      }
+      return q.eq('equipment_type', params.type);
     }
-  }
-
-  const { data: statsRows } = await statsQuery;
-  const stats: LifecycleStats = {
-    total: statsRows?.length || 0,
-    overdue: 0,
-    warning: 0,
-    normal: 0,
+    return q;
   };
 
-  if (statsRows) {
-    for (const r of statsRows) {
-      if (r.lifecycle_status === 'OVERDUE') stats.overdue++;
-      else if (r.lifecycle_status === 'WARNING') stats.warning++;
-      else stats.normal++;
-    }
-  }
+  const [totalRes, overdueRes, warningRes, normalRes] = await Promise.all([
+    applyTypeFilter(supabase.from('v_equipment_lifecycle_status').select('*', { count: 'exact', head: true })),
+    applyTypeFilter(supabase.from('v_equipment_lifecycle_status').select('*', { count: 'exact', head: true }).eq('lifecycle_status', 'OVERDUE')),
+    applyTypeFilter(supabase.from('v_equipment_lifecycle_status').select('*', { count: 'exact', head: true }).eq('lifecycle_status', 'WARNING')),
+    applyTypeFilter(supabase.from('v_equipment_lifecycle_status').select('*', { count: 'exact', head: true }).eq('lifecycle_status', 'NORMAL')),
+  ]);
+
+  const stats: LifecycleStats = {
+    total: totalRes.count || 0,
+    overdue: overdueRes.count || 0,
+    warning: warningRes.count || 0,
+    normal: normalRes.count || 0,
+  };
 
   // 2. Query filtered & paginated records
   let query = supabase

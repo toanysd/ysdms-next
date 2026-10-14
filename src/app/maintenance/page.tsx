@@ -1,19 +1,22 @@
 export const dynamic = 'force-dynamic'
 
-import { useTranslations } from 'next-intl'
+import { getTranslations } from 'next-intl/server'
 import Link from 'next/link'
-import { getMoldHealthList } from '@/app/actions/maintenance'
-import { Wrench, AlertTriangle, ShieldCheck, Drill, History } from 'lucide-react'
+import { getMoldHealthList, getMaintenanceStats } from '@/app/actions/maintenance'
+import { Wrench, AlertTriangle, ShieldCheck, Drill, History, Activity } from 'lucide-react'
 import RecordMaintenanceButton from './RecordMaintenanceButton'
 
-// Dashboard Bảo trì Khuôn (Tầng 5C)
+// Dashboard Bảo trì Khuôn (Tầng 5C — Unified with v_equipment_lifecycle_status)
 export default async function MaintenanceDashboard() {
-  const t = useTranslations('Maintenance')
-  const healthList = await getMoldHealthList()
+  const t = await getTranslations('Maintenance')
+  const [healthList, stats] = await Promise.all([
+    getMoldHealthList(),
+    getMaintenanceStats(),
+  ])
 
-  const overdueCount = healthList.filter(h => h.health_status === 'OVERDUE').length
-  const warningCount = healthList.filter(h => h.health_status === 'WARNING').length
-  const okCount = healthList.filter(h => h.health_status === 'OK' || h.health_status === 'NO_SCHEDULE').length
+  const overdueCount = stats.overdue
+  const warningCount = stats.warning
+  const okCount = stats.normal
 
   const getStatusStyle = (status: string) => {
     if (status === 'OVERDUE') return { badgeClass: 'badge badge--error', icon: '🚨' }
@@ -44,6 +47,12 @@ export default async function MaintenanceDashboard() {
         </div>
 
         <div className="flex items-center gap-2">
+          <Link href="/equipment/lifecycle">
+            <button className="btn btn-secondary h-[30px] px-3 flex items-center gap-1.5 text-[12px] font-bold">
+              <Activity size={14} />
+              <span>Lifecycle ({fmt(stats.total)})</span>
+            </button>
+          </Link>
           <Link href="/maintenance/log">
             <button className="btn btn-secondary h-[30px] px-3 flex items-center gap-1.5 text-[12px] font-bold">
               <History size={14} />
@@ -59,7 +68,7 @@ export default async function MaintenanceDashboard() {
           <div className="card-flat p-4 flex items-center justify-between">
             <div>
               <p className="text-[12px] font-bold mb-1 uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>{t('overdueCard')}</p>
-              <h3 className="text-3xl font-black font-mono text-[var(--status-error)]">{overdueCount} <span className="text-[12px] font-normal" style={{ color: 'var(--text-muted)' }}>{t('moldsUnit')}</span></h3>
+              <h3 className="text-3xl font-black font-mono text-[var(--status-error)]">{fmt(overdueCount)} <span className="text-[12px] font-normal" style={{ color: 'var(--text-muted)' }}>{t('moldsUnit')}</span></h3>
             </div>
             <div className={`w-12 h-12 rounded-full flex items-center justify-center ${overdueCount > 0 ? 'badge badge--error animate-pulse' : 'card-flat'}`}>
               <AlertTriangle size={24} />
@@ -69,7 +78,7 @@ export default async function MaintenanceDashboard() {
           <div className="card-flat p-4 flex items-center justify-between">
             <div>
               <p className="text-[12px] font-bold mb-1 uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>{t('warningCard')}</p>
-              <h3 className="text-3xl font-black font-mono text-[var(--status-warning)]">{warningCount} <span className="text-[12px] font-normal" style={{ color: 'var(--text-muted)' }}>{t('moldsUnit')}</span></h3>
+              <h3 className="text-3xl font-black font-mono text-[var(--status-warning)]">{fmt(warningCount)} <span className="text-[12px] font-normal" style={{ color: 'var(--text-muted)' }}>{t('moldsUnit')}</span></h3>
             </div>
             <div className={`w-12 h-12 rounded-full flex items-center justify-center ${warningCount > 0 ? 'badge badge--warning' : 'card-flat'}`}>
               <Drill size={24} />
@@ -79,7 +88,7 @@ export default async function MaintenanceDashboard() {
           <div className="card-flat p-4 flex items-center justify-between">
             <div>
               <p className="text-[12px] font-bold mb-1 uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>{t('okCard')}</p>
-              <h3 className="text-3xl font-black font-mono text-[var(--status-success)]">{okCount} <span className="text-[12px] font-normal" style={{ color: 'var(--text-muted)' }}>{t('moldsUnit')}</span></h3>
+              <h3 className="text-3xl font-black font-mono text-[var(--status-success)]">{fmt(okCount)} <span className="text-[12px] font-normal" style={{ color: 'var(--text-muted)' }}>{t('moldsUnit')}</span></h3>
             </div>
             <div className="w-12 h-12 rounded-full badge badge--success flex items-center justify-center">
               <ShieldCheck size={24} />

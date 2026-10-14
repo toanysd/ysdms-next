@@ -30,11 +30,15 @@ export default function RecordMaintenanceButton({ physicalId, totalShots }: { ph
         })
     }
 
+    const readOnlyNotice = '🔒 保守記録の書込機能は安全仕様 (WO-MAINTENANCE-SCHEMA-FIX) 策定待ちのため一時ロック中 (Read-Only)'
+
     return (
         <>
             <button
-                onClick={() => setIsOpen(true)}
-                className="btn btn-secondary px-2 py-1 flex items-center gap-1 text-[11px] font-bold"
+                onClick={() => alert(readOnlyNotice)}
+                disabled={true}
+                title={readOnlyNotice}
+                className="btn btn-secondary px-2 py-1 flex items-center gap-1 text-[11px] font-bold opacity-50 cursor-not-allowed"
             >
                 <CheckCircle size={14} /> {t('maintenanceRecordBtn')}
             </button>
