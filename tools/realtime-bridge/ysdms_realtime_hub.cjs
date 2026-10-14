@@ -1,5 +1,5 @@
 /**
- * YSDMS NEXTGEN REALTIME BRIDGE HUB (v2.4.0 Dual-Path Architecture)
+ * [v2.6.0] YSDMS NEXTGEN REALTIME BRIDGE HUB (Auto-Loop & Compact Trigger Edition)
  * ------------------------------------------------
  * Cầu nối thời gian thực giữa Perplexity Web UI (PE) và Antigravity (AN)
  * dành riêng 100% cho dự án YSDMS NextGen.
@@ -10,14 +10,14 @@
  * - Tự động nhảy cổng port + 1 khi gặp EADDRINUSE.
  * - Idempotency cache chống duplicate directive.
  * - Xác thực SSOT với bảng public.pe_an_messages trên Supabase.
- * - Ranh giới bảo mật: chỉ ghi bảng pe_bridge, tuyệt đối không đụng chạm dữ liệu nghiệp vụ.
+ * - Ranh giới bảo mật: chỉ ghi bảng pe_an_messages, tuyệt đối không đụng chạm dữ liệu nghiệp vụ.
  */
 
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
-const { exec, spawn } = require('child_process');
+const { exec, spawn, execFileSync } = require('child_process');
 
 const ROOT_DIR = path.resolve(__dirname, '..', '..');
 const AGENTS_DIR = path.join(ROOT_DIR, '.agents');
@@ -29,7 +29,7 @@ const HANDOFF_LEDGER_FILE = path.join(DATA_DIR, 'pe_handoff_ledger.json');
 const START_PORT = parseInt(process.env.YSDMS_BRIDGE_PORT || process.argv[2] || '3856', 10);
 const HOST = '127.0.0.1';
 const MAX_PORT_TRIES = 30;
-const HUB_VERSION = 'v2.5.0';
+const HUB_VERSION = 'v2.6.0';
 
 // Đảm bảo các thư mục cần thiết tồn tại
 [AGENTS_DIR, DATA_DIR].forEach(dir => {
@@ -124,14 +124,25 @@ function isValidBridgeThread(threadId) {
 
 function isEchoBackContent(content) {
     if (!content || typeof content !== 'string') return false;
-    const text = content.toLowerCase();
-    return text.includes('an da nop bao cao') ||
-           text.includes('an đã nộp báo cáo') ||
-           text.includes('ban ghi bao cao id:') ||
-           text.includes('bản ghi báo cáo id:') ||
-           text.includes('bao cao an (tinh chinh muc 12') ||
-           text.includes('báo cáo an (tinh chỉnh mục 12') ||
-           text.includes('kinh moi pe tham dinh va phan hoi tiep theo');
+    const text = content.trim().toLowerCase();
+    if (
+        text.startsWith('[v2.6.0] pe đọc bridge') ||
+        text.startsWith('[v2.5.0] pe đọc bridge') ||
+        text.startsWith('pe đọc bridge.') ||
+        text.startsWith('pe doc bridge.') ||
+        text.includes('📌 báo cáo mới từ an đã lưu trên supabase') ||
+        text.includes('đề nghị pe dùng @supabase đọc toàn văn bản ghi')
+    ) {
+        return true;
+    }
+    if (text.length < 700 && (
+        text.includes('an đã nộp báo cáo nghiệm thu vào bảng') ||
+        text.includes('kinh moi pe tham dinh va phan hoi tiep theo') ||
+        text.includes('kính mời pe thẩm định và phản hồi tiếp theo')
+    )) {
+        return true;
+    }
+    return false;
 }
 
 function requiresThoanApprovalFirst(content) {
@@ -595,6 +606,91 @@ function setWindowsClipboard(text) {
     }
 }
 
+const convMetaCache = {};
+
+function getOrSaveSharedAgentApiEnv() {
+    const sharedEnvFile = path.join(process.env.USERPROFILE || '', '.gemini', 'antigravity', 'agentapi_env.json');
+    if (process.env.ANTIGRAVITY_LS_ADDRESS && process.env.ANTIGRAVITY_CSRF_TOKEN) {
+        try {
+            fs.writeFileSync(sharedEnvFile, JSON.stringify({
+                ANTIGRAVITY_LS_ADDRESS: process.env.ANTIGRAVITY_LS_ADDRESS,
+                ANTIGRAVITY_CSRF_TOKEN: process.env.ANTIGRAVITY_CSRF_TOKEN,
+                updatedAt: new Date().toISOString()
+            }, null, 2), 'utf8');
+        } catch {}
+        return { ...process.env };
+    }
+    try {
+        if (fs.existsSync(sharedEnvFile)) {
+            const saved = JSON.parse(fs.readFileSync(sharedEnvFile, 'utf8'));
+            if (saved && saved.ANTIGRAVITY_LS_ADDRESS && saved.ANTIGRAVITY_CSRF_TOKEN) {
+                return {
+                    ...process.env,
+                    ANTIGRAVITY_LS_ADDRESS: saved.ANTIGRAVITY_LS_ADDRESS,
+                    ANTIGRAVITY_CSRF_TOKEN: saved.ANTIGRAVITY_CSRF_TOKEN
+                };
+            }
+        }
+    } catch {}
+    return { ...process.env };
+}
+
+// Tự động lưu cấu hình AgentAPI ngay khi Hub khởi động nếu chạy từ trong Antigravity
+getOrSaveSharedAgentApiEnv();
+
+function resolveWorkspaceConversationId(exe, childEnv, workspaceMatchStr) {
+    const convIdFile = path.join(AGENTS_DIR, 'active_conversation_id.txt');
+    let savedConvId = '';
+    if (fs.existsSync(convIdFile)) {
+        savedConvId = fs.readFileSync(convIdFile, 'utf8').trim();
+    }
+
+    try {
+        const brainDir = path.join(process.env.USERPROFILE || '', '.gemini', 'antigravity', 'brain');
+        if (!fs.existsSync(brainDir)) return savedConvId;
+
+        const candidates = fs.readdirSync(brainDir).map(id => {
+            const logPath = path.join(brainDir, id, '.system_generated', 'logs', 'transcript.jsonl');
+            if (!fs.existsSync(logPath)) return null;
+            try {
+                const stat = fs.statSync(logPath);
+                return { id, mtimeMs: stat.mtimeMs };
+            } catch {
+                return null;
+            }
+        }).filter(Boolean).sort((a, b) => b.mtimeMs - a.mtimeMs).slice(0, 8);
+
+        for (const cand of candidates) {
+            if (!convMetaCache[cand.id]) {
+                try {
+                    const out = JSON.parse(execFileSync(exe, ['agentapi', 'get-conversation-metadata', cand.id], {
+                        env: childEnv,
+                        encoding: 'utf8',
+                        timeout: 2500,
+                        windowsHide: true
+                    }));
+                    const meta = (out && out.response && out.response.conversationMetadata && out.response.conversationMetadata.metadata) || {};
+                    const uris = (meta.workspaces || []).map(w => (w.workspaceFolderAbsoluteUri || '').toLowerCase());
+                    convMetaCache[cand.id] = {
+                        isRoot: !meta.parentConversationId,
+                        uris
+                    };
+                } catch {
+                    continue;
+                }
+            }
+            const info = convMetaCache[cand.id];
+            if (info && info.isRoot && info.uris.some(u => u.includes(workspaceMatchStr.toLowerCase()))) {
+                if (cand.id !== savedConvId) {
+                    try { fs.writeFileSync(convIdFile, cand.id, 'utf8'); } catch {}
+                }
+                return cand.id;
+            }
+        }
+    } catch {}
+    return savedConvId;
+}
+
 function notifyAntigravityAgentApi(directiveText) {
     if (!directiveText || process.platform !== 'win32') return;
     try {
@@ -602,25 +698,25 @@ function notifyAntigravityAgentApi(directiveText) {
         const exe = path.join(localAppData, 'Programs', 'Antigravity', 'resources', 'bin', 'language_server.exe');
         if (!fs.existsSync(exe)) return;
 
-        const convIdFile = path.join(AGENTS_DIR, 'active_conversation_id.txt');
-        let targetConvId = '';
-        if (fs.existsSync(convIdFile)) {
-            targetConvId = fs.readFileSync(convIdFile, 'utf8').trim();
-        }
+        const childEnv = getOrSaveSharedAgentApiEnv();
+        const targetConvId = resolveWorkspaceConversationId(exe, childEnv, 'ysdms-nextgen');
 
         if (targetConvId) {
-            const prompt = `[⚡ DIRECTIVE TỪ PE / MINH CHỦ QUA BRIDGE]\n\n${directiveText}\n\n---\n*Ghi chú: Directive được chuyển tự động vào ô chat qua Native AgentAPI từ Hub.*`;
-            const child = spawn(exe, ['agentapi', 'send-message', '--title=PE DIRECTIVE', targetConvId, prompt], { windowsHide: true });
+            const prompt = `[⚡ v2.6.0 DIRECTIVE TỪ PE / MINH CHỦ QUA BRIDGE]\n\n${directiveText}\n\n---\n*Ghi chú: Directive được chuyển tự động vào ô chat qua Native AgentAPI từ Hub [v2.6.0].*`;
+            const child = spawn(exe, ['agentapi', 'send-message', '--title=[v2.6.0] PE DIRECTIVE', targetConvId, prompt], {
+                env: childEnv,
+                windowsHide: true
+            });
             child.on('close', (code) => {
                 if (code === 0) {
-                    console.log(`[AGENTAPI WAKEUP] 🚀 Đã tự động kích hoạt Antigravity thành công (Conv: ${targetConvId.slice(0, 8)}...)!`);
+                    console.log(`[AGENTAPI WAKEUP v2.6.0] 🚀 Đã tự động kích hoạt Antigravity YSDMS thành công (Conv: ${targetConvId.slice(0, 8)}...)!`);
                 } else {
-                    console.warn(`[AGENTAPI WAKEUP] agentapi exit code: ${code}`);
+                    console.warn(`[AGENTAPI WAKEUP v2.6.0] agentapi exit code: ${code}`);
                 }
             });
         }
     } catch (e) {
-        console.warn('[AGENTAPI WAKEUP] Lỗi:', e.message);
+        console.warn('[AGENTAPI WAKEUP v2.6.0] Lỗi:', e.message);
     }
 }
 
