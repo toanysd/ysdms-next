@@ -11,6 +11,11 @@
       "sha": "013f55bf8716a81c50445c5673b5903a5c49ac9a",
       "scope": "Convert 29 duplicate/legacy page.tsx routes (N1-N4, excluding /production/mold-orders) to Next.js Server Redirects preserving query & route params",
       "stat": "29 files changed, 708 insertions(+), 4064 deletions(-)"
+    },
+    "commit_4_decision_4A_A": {
+      "sha": "42851ee3f98af1ae353f81cb922c8719ae554ef0",
+      "scope": "Remove /production/mold-orders from Sidebar.tsx and convert src/app/production/mold-orders/page.tsx to redirect('/equipment/jobs') preserving query string",
+      "stat": "2 files changed, 15 insertions(+), 1425 deletions(-)"
     }
   },
   "evidence_items": {
@@ -36,6 +41,10 @@
       "mold_design_cutters_after": [
         "src/types/database.types.ts:4138:      mold_design_cutters: {",
         "src/types/database.types.ts:4165:            foreignKeyName: \"mold_design_cutters_equipment_id_fkey\""
+      ],
+      "mold_work_orders_after": [
+        "src/types/database.types.ts:3569:            referencedRelation: \"mold_work_orders\"",
+        "src/types/database.types.ts:5042:      mold_work_orders: {"
       ],
       "broken_route_literals_after": "Total broken route literals across src/: 0",
       "status": "PASS"
@@ -112,6 +121,18 @@
         "status": "PASS",
         "tested_at": "2026-10-14T09:09:55.986Z",
         "repo_screenshot": "docs/audit_logs/screenshots/wo_route_cleanup/n4_production_worklog_redirect.png"
+      },
+      {
+        "id": "MOLD_ORDERS_REDIRECT",
+        "group": "4.A-A (/production/mold-orders -> /equipment/jobs with ?search=)",
+        "from_url": "http://localhost:3000/production/mold-orders?search=JOB",
+        "final_url": "http://localhost:3000/equipment/jobs?search=JOB",
+        "http_status": 200,
+        "path_matched": true,
+        "query_preserved": true,
+        "status": "PASS",
+        "tested_at": "2026-10-14T09:24:00.847Z",
+        "repo_screenshot": "docs/audit_logs/screenshots/wo_route_cleanup/mold_orders_redirect.png"
       }
     ],
     "SQL_AUDIT": {
