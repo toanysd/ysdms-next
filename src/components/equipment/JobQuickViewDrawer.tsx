@@ -196,8 +196,8 @@ export function JobQuickViewDrawer({ job, onClose, onOpenStepEdit, onJobUpdated 
   const statusOptions = getStatusOptions(t)
   const stepStatusBadges = getStepStatusBadge(t)
   const statusOption = statusOptions.find(s => s.value === jobStatus) || statusOptions[0]
-  const productName = (job as any).mold_masters?.products?.product_name || (job as any).products?.product_name || '-'
-  const moldCode = (job as any).mold_masters?.mold_master_code || (job as any).products?.product_code || '-'
+  const productName = (job as any).products?.product_name || '-'
+  const moldCode = (job as any).products?.product_code || job.design_revisions?.design_code || '-'
   const companyName = job.companies?.company_name || '-'
   const jobTypeName = (job as any).job_types?.job_type_name_ja || '-'
   const deadlineOverdue = isOverdue(job.mold_deadline) && job.job_status !== 'COMPLETED'
@@ -554,19 +554,19 @@ export function JobQuickViewDrawer({ job, onClose, onOpenStepEdit, onJobUpdated 
                 {job.design_revisions.cavity_count}面
               </span>
             )}
-            {(job as any).mold_masters?.products?.product_material_specs?.map((spec: any, idx: number) => (
+            {(job as any).products?.product_material_specs?.map((spec: any, idx: number) => (
               <span key={idx} style={{ fontSize: 11, color: 'var(--status-info)', backgroundColor: 'var(--bg-surface-2)', padding: '2px 8px', borderRadius: 4, fontWeight: 600 }}>
                 {spec.material_type}{spec.thickness_mm ? ` ${spec.thickness_mm}mm` : ''}
               </span>
             ))}
-            {job.design_revisions?.plastic_type_designed && !(job as any).mold_masters?.products?.product_material_specs?.length && (
+            {job.design_revisions?.plastic_type_designed && !(job as any).products?.product_material_specs?.length && (
               <span style={{ fontSize: 11, color: 'var(--status-info)', backgroundColor: 'var(--bg-surface-2)', padding: '2px 8px', borderRadius: 4, fontWeight: 600 }}>
                 {job.design_revisions.plastic_type_designed}
               </span>
             )}
-            {(job as any).mold_masters && (
-              <Link href={`/engineering/designs/${(job as any).mold_masters.mold_master_id}`} style={{ fontSize: 11, color: 'var(--accent)', backgroundColor: 'var(--accent-light)', padding: '2px 8px', borderRadius: 4, textDecoration: 'none', fontWeight: 600 }}>
-                🔗 {(job as any).mold_masters.mold_master_code} (TK)
+            {((job as any).design_revision_id || (job.design_revisions as any)?.revision_id) && (
+              <Link href={`/engineering/designs/revisions/${(job.design_revisions as any)?.revision_id || (job as any).design_revision_id}`} style={{ fontSize: 11, color: 'var(--accent)', backgroundColor: 'var(--accent-light)', padding: '2px 8px', borderRadius: 4, textDecoration: 'none', fontWeight: 600 }}>
+                🔗 {job.design_revisions?.design_code || 'Rev'} (TK)
               </Link>
             )}
             {job.equipment && (

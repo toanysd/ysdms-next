@@ -1,9 +1,9 @@
 'use client'
 
-import { ListTodo, FileText, History } from 'lucide-react'
+import { ListTodo, FileText, History, Layers } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 
-export type TabId = 'overview' | 'steps' | 'logs'
+export type TabId = 'overview' | 'steps' | 'equipment_set' | 'logs'
 
 export function JobTabNavigation({
   activeTab, onTabChange
@@ -13,9 +13,10 @@ export function JobTabNavigation({
 }) {
   const tEquipment = useTranslations('Equipment')
 
-  const tabs: { id: TabId; labelKey: 'overview' | 'steps' | 'logs'; icon: any }[] = [
+  const tabs: { id: TabId; labelKey: TabId; icon: any }[] = [
     { id: 'overview', labelKey: 'overview', icon: FileText },
     { id: 'steps', labelKey: 'steps', icon: ListTodo },
+    { id: 'equipment_set', labelKey: 'equipment_set', icon: Layers },
     { id: 'logs', labelKey: 'logs', icon: History },
   ]
 

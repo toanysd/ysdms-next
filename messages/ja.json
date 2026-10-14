@@ -2020,7 +2020,23 @@
     "tabs": {
       "overview": "概要",
       "steps": "工程",
+      "equipment_set": "セット設備",
       "logs": "ログ"
+    },
+    "setTab": {
+      "title": "関連セット設備・抜型一覧 (SSOT: equipment & equipment_assignments)",
+      "colCode": "設備コード",
+      "colName": "設備名称",
+      "colType": "設備種別",
+      "colRelation": "関係区分",
+      "colDimensions": "実測寸法 (mm)",
+      "colLocation": "保管棚番",
+      "colStatus": "状態",
+      "relPrimary": "対象金型 (PRIMARY)",
+      "relSetMember": "SET_MEMBER (専用)",
+      "relShared": "SHARED (共用)",
+      "relDirectRev": "設計版直結",
+      "emptySet": "このジョブに関連付けられたセット設備・抜型はありません。"
     },
     "sections": {
       "base": "基本情報",

@@ -1454,7 +1454,7 @@ export default function MoldJobGantt({ workOrders = [], jobs, employees = [], ma
       if (cProjStart.getTime() === cProjEnd.getTime()) cProjEnd.setHours(cProjEnd.getHours() + 1)
 
       // Extract Product Code, Job Type, and WO Code from DB relations
-      const rawCode = (primaryJob as any).products?.product_name_internal || (primaryJob as any).products?.product_code || (primaryJob as any).mold_masters?.products?.product_name_internal || ''
+      const rawCode = (primaryJob as any).products?.product_name_internal || (primaryJob as any).products?.product_code || ''
       const prodCode = extractBaseMassCode(rawCode) || rawCode
       const typeName = (primaryJob as any).job_types?.job_type_name_ja || ((primaryJob as any).job_name?.includes(':') ? (primaryJob as any).job_name.split(':')[0].trim() : '')
       const woCode = (primaryJob as any).work_orders?.wo_code

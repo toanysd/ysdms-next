@@ -2020,7 +2020,23 @@
     "tabs": {
       "overview": "Tổng quan",
       "steps": "Các bước",
+      "equipment_set": "Bộ SET Thiết bị",
       "logs": "Nhật ký"
+    },
+    "setTab": {
+      "title": "Danh sách Thiết bị & Dao cắt thuộc Bộ SET (SSOT: equipment & equipment_assignments)",
+      "colCode": "Mã thiết bị",
+      "colName": "Tên thiết bị",
+      "colType": "Loại thiết bị",
+      "colRelation": "Quan hệ SET",
+      "colDimensions": "Kích thước thực (mm)",
+      "colLocation": "Vị trí giá kệ",
+      "colStatus": "Trạng thái",
+      "relPrimary": "Khuôn chính (PRIMARY)",
+      "relSetMember": "SET_MEMBER (Theo bộ)",
+      "relShared": "SHARED (Dùng chung)",
+      "relDirectRev": "Gắn trực tiếp bản vẽ",
+      "emptySet": "Chưa có thiết bị hoặc dao cắt nào được liên kết với Job này."
     },
     "sections": {
       "base": "Thông tin gốc",

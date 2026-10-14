@@ -12,15 +12,17 @@ import { JobTabNavigation, type TabId } from './JobTabNavigation'
 
 import { OverviewTab } from './tabs/OverviewTab'
 import { StepsTab } from './tabs/StepsTab'
+import { EquipmentSetTab } from './tabs/EquipmentSetTab'
 import { LogsTab } from './tabs/LogsTab'
 import { QuickLinkMoldModal } from '@/components/equipment/QuickLinkMoldModal'
 
 function TabContent({ tab, job, onRefresh }: { tab: TabId; job: any; onRefresh: () => void }) {
   switch (tab) {
-    case 'overview': return <OverviewTab job={job} onRefresh={onRefresh} />
-    case 'steps':    return <StepsTab job={job} onRefresh={onRefresh} />
-    case 'logs':     return <LogsTab job={job} onRefresh={onRefresh} />
-    default:         return null
+    case 'overview':      return <OverviewTab job={job} onRefresh={onRefresh} />
+    case 'steps':         return <StepsTab job={job} onRefresh={onRefresh} />
+    case 'equipment_set': return <EquipmentSetTab job={job} />
+    case 'logs':          return <LogsTab job={job} onRefresh={onRefresh} />
+    default:              return null
   }
 }
 
