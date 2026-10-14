@@ -36,8 +36,8 @@ export async function addPlasticAction(formData: FormData) {
   }
 
   // Cập nhật lại cache cho trang danh sách
-  revalidatePath('/master/plastic')
+  revalidatePath('/plastics/master')
   
   // Trở về trang danh sách
-  redirect('/master/plastic')
+  redirect('/plastics/master')
 }

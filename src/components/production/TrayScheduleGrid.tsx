@@ -504,7 +504,7 @@ export default function TrayScheduleGrid({
                       {/* 4. 品番 */}
                       <td style={{ padding: '8px 10px', fontSize: 12, fontWeight: 700 }}>
                         <Link
-                          href={`/master/products`}
+                          href={`/product-center`}
                           style={{
                             color: 'var(--accent)',
                             textDecoration: 'none',

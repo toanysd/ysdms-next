@@ -102,7 +102,7 @@ export default async function AlertsPage() {
                     {/* Header */}
                     <div className="flex items-center justify-between mb-2">
                       <Link
-                        href={`/master/plastics?search=${encodeURIComponent(item.plastic_code || '')}`}
+                        href={`/plastics/master?search=${encodeURIComponent(item.plastic_code || '')}`}
                         className="font-mono text-[13px] font-bold text-[var(--accent)] hover:underline"
                       >
                         {item.plastic_code}
@@ -174,7 +174,7 @@ export default async function AlertsPage() {
                     <tr key={row.plastic_id} className={row.is_low_stock ? 'bg-[var(--tint-red-bg)]/20' : ''}>
                       <td>
                         <Link
-                          href={`/master/plastics?search=${encodeURIComponent(row.plastic_code || '')}`}
+                          href={`/plastics/master?search=${encodeURIComponent(row.plastic_code || '')}`}
                           className="font-mono text-[13px] font-bold text-[var(--accent)] hover:underline"
                         >
                           {row.plastic_code}

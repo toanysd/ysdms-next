@@ -301,7 +301,7 @@ export function OverviewTab({ job, onRefresh }: { job: any; onRefresh?: () => vo
           )}
           {job.products && (
             <InfoRow label={t('Equipment.sanPham')} value={
-              <Link href={`/master/products/${job.products.product_id}`} style={{ color: 'var(--accent)', textDecoration: 'none' }} className="hover:underline font-bold font-mono">
+              <Link href={`/product-center/${job.products.product_id}`} style={{ color: 'var(--accent)', textDecoration: 'none' }} className="hover:underline font-bold font-mono">
                 {job.products.product_name || job.products.product_code}
               </Link>
             } />

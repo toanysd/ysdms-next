@@ -116,7 +116,7 @@ export default function JobDetailPage() {
             {/* ← Product */}
             {job.products && (
               <Link
-                href={`/master/products/${job.products.product_id}`}
+                href={`/product-center/${job.products.product_id}`}
                 className="hover:underline"
                 style={{
                   display: 'inline-flex', alignItems: 'center', gap: 4,

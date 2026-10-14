@@ -351,54 +351,9 @@ export function TabDesignsEquipment({ productId }: TabDesignsEquipmentProps) {
     : '🔒 Chức năng gán/hủy gán tạm khóa chờ đặc tả ghi an toàn (WO-EQUIPMENT-ASSIGNMENT-WRITE-SPEC)'
 
   // Toggle Windows-style Linkage Checkbox (Temporarily locked read-only pending WO-EQUIPMENT-ASSIGNMENT-WRITE-SPEC)
-  const handleToggleBinding = async (item: EquipmentItem) => {
+  const handleToggleBinding = async (_item: EquipmentItem) => {
     // TODO(WO-EQUIPMENT-ASSIGNMENT-WRITE-SPEC): Re-enable safe assign/unassign write flow via public.equipment_assignments once write specification is approved by PE.
-    const isWriteSpecApproved = false
-    if (!isWriteSpecApproved) {
-      alert(bindingLockedNotice)
-      return
-    }
-
-    if (!selectedRevId || isTogglingId) return
-
-    setIsTogglingId(item.id)
-    try {
-      const isCutter = ['CUTTER', 'CUTTER_SEPARATE', 'CUTTER_INLINE', '抜型'].includes(String(item.type || '').toUpperCase())
-
-      if (item.isBound) {
-        if (confirm(t('confirmUnassign'))) {
-          if (isCutter) {
-            await supabase
-              .from('mold_design_cutters')
-              .delete()
-              .eq('mold_design_id', selectedRevId)
-              .eq('equipment_id', item.id)
-          }
-          await supabase
-            .from('equipment')
-            .update({ design_revision_id: null })
-            .eq('equipment_id', item.id)
-
-          await fetchEquipmentSet()
-        }
-      } else {
-        if (isCutter) {
-          await supabase
-            .from('mold_design_cutters')
-            .upsert({ mold_design_id: selectedRevId, equipment_id: item.id, cutter_id: item.id })
-        } else {
-          await supabase
-            .from('equipment')
-            .update({ design_revision_id: selectedRevId })
-            .eq('equipment_id', item.id)
-        }
-        await fetchEquipmentSet()
-      }
-    } catch (err) {
-      console.error('Error toggling equipment binding:', err)
-    } finally {
-      setIsTogglingId(null)
-    }
+    alert(bindingLockedNotice)
   }
 
   // Trigger Creation Modal Options

@@ -108,7 +108,7 @@ export function OrderFormClient({ customers }: OrderFormClientProps) {
 
             await createOrderWithItemsAction(header, itemInserts)
 
-            router.push('/order')
+            router.push('/orders')
             router.refresh()
         } catch (err: any) {
             console.error(err)
@@ -122,7 +122,7 @@ export function OrderFormClient({ customers }: OrderFormClientProps) {
         <form onSubmit={handleSubmit} onKeyDown={handleKeyDown} className="flex flex-col h-full bg-[var(--mcs-surface)] flex-1 overflow-hidden">
             <div className="h-[48px] bg-teal-50 px-4 flex items-center justify-between border-b border-teal-200 shrink-0 shadow-sm z-10">
                 <div className="flex items-center gap-2">
-                    <Link href="/order" className="text-teal-700 hover:text-teal-900 transition-colors mr-2">
+                    <Link href="/orders" className="text-teal-700 hover:text-teal-900 transition-colors mr-2">
                         <ArrowLeft size={18} />
                     </Link>
                     <h2 className="text-[14px] font-bold text-teal-900 flex flex-col">

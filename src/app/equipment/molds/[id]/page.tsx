@@ -295,7 +295,7 @@ export default function MoldDetailPage() {
         {/* ← Product */}
         {mold.mold_revisions?.products && (
           <Link
-            href={`/master/products/${mold.mold_revisions.product_id}`}
+            href={`/product-center/${mold.mold_revisions.product_id}`}
             className="hover:underline"
             style={{
               display: 'inline-flex', alignItems: 'center', gap: 4,

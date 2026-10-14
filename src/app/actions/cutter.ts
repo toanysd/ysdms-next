@@ -30,6 +30,6 @@ export async function addCutterAction(formData: FormData) {
     throw new Error(error.message)
   }
 
-  revalidatePath('/master/cutter')
-  redirect('/master/cutter')
+  revalidatePath('/equipment/cutting-dies')
+  redirect('/equipment/cutting-dies')
 }

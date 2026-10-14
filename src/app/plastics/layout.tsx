@@ -11,8 +11,8 @@ export default function PlasticsLayout({ children }: { children: React.ReactNode
   const navItems = [
     { href: '/plastics/inventory', label: '在庫管理', icon: <Layers size={16} /> },
     { href: '/plastics/master', label: 'プラスチックM', icon: <Box size={16} /> },
-    { href: '/plastics/receipts', label: '入荷', icon: <Package size={16} /> },
-    { href: '/plastics/usage', label: '使用・ロス', icon: <ClipboardList size={16} /> },
+    { href: '/plastics/inventory/new', label: '入荷', icon: <Package size={16} /> },
+    { href: '/plastics/inventory/consume', label: '使用・ロス', icon: <ClipboardList size={16} /> },
   ]
 
   return (

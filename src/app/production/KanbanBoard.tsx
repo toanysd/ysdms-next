@@ -85,7 +85,7 @@ export default function KanbanBoard({ initialPending, initialActive, initialComp
                     <p className="text-sm text-[var(--mcs-text-muted)]">成形現場の進行状況モニター</p>
                 </div>
                 <div className="flex gap-4">
-                    <Link href="/production/inventory" className="px-4 py-2 bg-[var(--mcs-primary)] text-white rounded-md font-bold flex items-center gap-2 hover:bg-[var(--mcs-primary-hover)] transition-colors shadow-sm">
+                    <Link href="/inventory" className="px-4 py-2 bg-[var(--mcs-primary)] text-white rounded-md font-bold flex items-center gap-2 hover:bg-[var(--mcs-primary-hover)] transition-colors shadow-sm">
                         <Warehouse size={18} /> 在庫
                     </Link>
                     <Link href="/production/active" className="px-4 py-2 bg-[var(--mcs-surface-2)] border border-[var(--mcs-border)] text-[var(--mcs-text)] rounded-md font-bold flex items-center gap-2 hover:border-[var(--mcs-primary)] transition-colors">

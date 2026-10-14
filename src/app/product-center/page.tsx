@@ -563,7 +563,7 @@ export default function ProductCenterIndexPage() {
 
           {/* Master Link */}
           <Link
-            href="/master/products"
+            href="/master"
             className="btn btn-secondary text-[11px] font-bold"
             style={{ height: 26, padding: '0 8px', gap: 3, textDecoration: 'none' }}
           >

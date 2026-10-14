@@ -139,7 +139,7 @@ export default async function InventoryReportPage() {
                 <tr key={row.plastic_id} className={row.is_low_stock ? 'bg-[var(--tint-red-bg)]/20' : ''}>
                   <td>
                     <Link
-                      href={`/master/plastics?search=${encodeURIComponent(row.plastic_code || '')}`}
+                      href={`/plastics/master?search=${encodeURIComponent(row.plastic_code || '')}`}
                       className="font-mono text-[13px] font-bold text-[var(--accent)] hover:underline"
                     >
                       {row.plastic_code}

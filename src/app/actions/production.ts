@@ -699,7 +699,7 @@ export async function createProductionPlanAction(payload: ProductionPlanInsert) 
     }
 
     revalidatePath('/production/planning')
-    revalidatePath('/order')
+    revalidatePath('/orders')
     revalidatePath('/production')
     return { id: data.po_id }
 }
@@ -737,7 +737,7 @@ export async function createProductionPlansBatchAction(payloads: ProductionPlanI
     }
 
     revalidatePath('/production/planning')
-    revalidatePath('/order')
+    revalidatePath('/orders')
     revalidatePath('/production')
     return data.map(d => ({ id: d.po_id }))
 }
@@ -787,7 +787,7 @@ export async function updateProductionPlanAction(planId: string, payload: Partia
     if (error) throw new Error(error.message)
 
     revalidatePath('/production/planning')
-    revalidatePath('/order')
+    revalidatePath('/orders')
     revalidatePath('/production')
 }
 
@@ -817,7 +817,7 @@ export async function deleteProductionPlanAction(planId: string) {
     if (error) throw new Error(error.message)
 
     revalidatePath('/production/planning')
-    revalidatePath('/order')
+    revalidatePath('/orders')
     revalidatePath('/production')
 }
 

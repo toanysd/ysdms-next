@@ -219,7 +219,7 @@ export function OverviewTab({
             <InfoRow icon={FileText} labelKey="revisionName" value={rev.revision_name} />
             {product && (
               <InfoRow icon={Layers} labelKey="productRef" value={
-                <Link href={`/master/products/${product.product_id}`} title={`製品詳細: ${product.product_code}`} className="text-[var(--accent)] hover:underline font-mono">
+                <Link href={`/product-center/${product.product_id}`} title={`製品詳細: ${product.product_code}`} className="text-[var(--accent)] hover:underline font-mono">
                   {product.product_code}
                 </Link>
               } />

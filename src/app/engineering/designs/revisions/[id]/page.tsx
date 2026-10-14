@@ -305,7 +305,7 @@ export default function DesignRevisionDetailPage() {
         {/* ← Product */}
         {rev.product_id && (
           <Link
-            href={`/master/products/${rev.product_id}`}
+            href={`/product-center/${rev.product_id}`}
             className="hover:underline"
             style={{
               display: 'inline-flex', alignItems: 'center', gap: 4,

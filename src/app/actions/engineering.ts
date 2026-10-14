@@ -73,7 +73,7 @@ export async function updateDesignStatus(productId: string, newStatus: string) {
     if (updateErr) throw new Error(updateErr.message)
     
     revalidatePath('/engineering')
-    revalidatePath(`/production/products/${productId}`)
+    revalidatePath(`/product-center/${productId}`)
     
     return { success: true }
 }
@@ -400,7 +400,7 @@ export async function createDesignRevisionAction(input: CreateDesignRevisionInpu
     throw new Error(error.message)
   }
 
-  revalidatePath(`/master/products/${input.product_id}`)
+  revalidatePath(`/product-center/${input.product_id}`)
   revalidatePath(`/engineering/designs/${input.product_id}`)
 
   return { success: true, data }
@@ -503,7 +503,6 @@ export async function updateDesignRevisionAction(input: UpdateDesignRevisionInpu
   }
 
   if (input.product_id) {
-    revalidatePath(`/master/products/${input.product_id}`)
     revalidatePath(`/product-center/${input.product_id}`)
     revalidatePath(`/engineering/designs/${input.product_id}`)
   }
@@ -592,7 +591,6 @@ export async function deleteProductAction(productId: string): Promise<{ success:
   }
 
   revalidatePath('/product-center')
-  revalidatePath('/master/products')
   revalidatePath('/equipment/schedule')
   return { success: true }
 }

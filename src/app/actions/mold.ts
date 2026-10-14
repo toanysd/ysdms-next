@@ -46,8 +46,8 @@ export async function addMoldBaseAction(formData: FormData) {
     throw new Error(error.message)
   }
 
-  revalidatePath('/master/molds')
-  redirect('/master/molds')
+  revalidatePath('/equipment/molds')
+  redirect('/equipment/molds')
 }
 
 // ========================================================
@@ -94,8 +94,8 @@ export async function addRevisionAction(formData: FormData) {
     throw new Error(error.message)
   }
 
-  revalidatePath(`/master/molds/${moldMasterId}`)
-  redirect(`/master/molds/${moldMasterId}`)
+  revalidatePath(`/product-center/${moldMasterId}`)
+  redirect(`/product-center/${moldMasterId}`)
 }
 
 // ========================================================

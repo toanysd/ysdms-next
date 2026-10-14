@@ -1101,7 +1101,7 @@ export default function MoldMasterDesignsPage() {
                     </span>
                     {moldMaster && (
                       <Link
-                        href={`/master/products?search=${encodeURIComponent(moldMaster.product_code)}`}
+                        href={`/product-center?search=${encodeURIComponent(moldMaster.product_code)}`}
                         style={{
                           display: 'inline-flex', alignItems: 'center', gap: 4,
                           padding: '2px 8px', borderRadius: 'var(--radius-sm)',

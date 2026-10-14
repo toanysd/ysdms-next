@@ -105,7 +105,7 @@ export default function EngineeringDashboard({ requests }: { requests: any[] }) 
                     {/* Action Links */}
                     <div className="grid grid-cols-2 gap-2">
                         <Link 
-                            href={product?.id ? `/production/products/${product.id}` : '#'}
+                            href={product?.id ? `/product-center/${product.id}` : '#'}
                             className={`flex justify-center items-center gap-1.5 text-[11px] font-bold py-1.5 rounded transition-colors ${!product?.id ? 'opacity-50 cursor-not-allowed bg-gray-200 text-gray-500' : 'bg-orange-50 text-orange-700 hover:bg-orange-100 border border-orange-200'}`}
                         >
                             <Layers size={14}/>

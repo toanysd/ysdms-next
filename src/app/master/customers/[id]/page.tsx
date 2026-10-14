@@ -260,7 +260,7 @@ export default async function CustomerDetailPage(props: {
                     {products.map((p: any) => (
                       <tr key={p.product_id}>
                         <td>
-                          <Link href={`/master/products/${p.product_id}`} style={{ color: 'var(--accent)', fontFamily: 'monospace', fontWeight: 700, fontSize: 13 }}>
+                          <Link href={`/product-center/${p.product_id}`} style={{ color: 'var(--accent)', fontFamily: 'monospace', fontWeight: 700, fontSize: 13 }}>
                             {p.product_code || '---'}
                           </Link>
                         </td>

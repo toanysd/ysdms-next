@@ -24,7 +24,7 @@ export default function QuickAccessNav({ data, onClose }: Props) {
       label: 'Design',
       sub: t('quickLinks.design'),
       icon: PenTool,
-      href: data.design_revision_id ? `/engineering/revisions?id=${data.design_revision_id}` : '/engineering/revisions',
+      href: data.design_revision_id ? `/engineering/designs/revisions/${data.design_revision_id}` : '/engineering/designs',
       bg: 'var(--tint-blue-bg)',
       color: 'var(--tint-blue-text)'
     },
@@ -40,7 +40,7 @@ export default function QuickAccessNav({ data, onClose }: Props) {
       label: 'Product',
       sub: t('quickLinks.product'),
       icon: Package,
-      href: productId ? `/master/products?search=${productId}` : '/master/products',
+      href: productId ? `/product-center?search=${encodeURIComponent(productId)}` : '/product-center',
       bg: 'var(--tint-orange-bg)',
       color: 'var(--tint-orange-text)'
     },
@@ -64,7 +64,7 @@ export default function QuickAccessNav({ data, onClose }: Props) {
       label: 'History',
       sub: t('quickLinks.history'),
       icon: History,
-      href: `/equipment/unified/${data.equipment_id}`,
+      href: `/equipment/molds/${data.equipment_id}`,
       bg: 'var(--bg-surface-2)',
       color: 'var(--text-primary)'
     },

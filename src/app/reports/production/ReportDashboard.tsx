@@ -387,7 +387,7 @@ export default function ReportDashboard({ initialData, defaultStartDate, default
                                     <td>
                                         {row.product_pn_raw ? (
                                             <Link
-                                                href={`/master/products?search=${encodeURIComponent(row.product_pn_raw || '')}`}
+                                                href={`/product-center?search=${encodeURIComponent(row.product_pn_raw || '')}`}
                                                 className="font-mono text-[13px] font-bold text-[var(--accent)] hover:underline"
                                             >
                                                 {row.product_pn_raw}

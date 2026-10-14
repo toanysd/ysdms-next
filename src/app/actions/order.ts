@@ -51,7 +51,7 @@ export async function createOrderWithItemsAction(
         }
     }
 
-    revalidatePath('/order')
+    revalidatePath('/orders')
     return { orderId }
 }
 
@@ -107,8 +107,8 @@ export async function updateOrderStatusAction(
         }
     }
 
-    revalidatePath('/order')
-    revalidatePath(`/order/${orderId}`)
+    revalidatePath('/orders')
+    revalidatePath(`/orders/${orderId}`)
     revalidatePath('/inventory')
     revalidatePath('/inventory/history')
 
@@ -143,8 +143,8 @@ export async function shipOrderItemsAction(
         throw new Error(data.message || data.error_code || 'Unknown error during shipping')
     }
 
-    revalidatePath('/order')
-    revalidatePath('/production/inventory')
+    revalidatePath('/orders')
+    revalidatePath('/inventory')
     
     return data
 }
@@ -227,7 +227,7 @@ export async function upsertOrderAction(data: OrderFormValues): Promise<{ succes
       if (upsertError) throw upsertError
     }
 
-    revalidatePath('/order')
+    revalidatePath('/orders')
     return { success: true, orderId }
   } catch (err: any) {
     console.error('Lỗi khi lưu Đơn hàng:', err)

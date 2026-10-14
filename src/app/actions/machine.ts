@@ -30,7 +30,7 @@ export async function addMachineAction(formData: FormData) {
     throw new Error(error.message)
   }
 
-  revalidatePath('/master/machine')
+  revalidatePath('/master/machines')
 }
 
 export async function getMachineTypes() {
@@ -103,7 +103,7 @@ export async function upsertMachineModelAction(formData: FormData) {
     throw new Error(error.message)
   }
 
-  revalidatePath('/master/machine')
+  revalidatePath('/master/machines')
 }
 
 /**

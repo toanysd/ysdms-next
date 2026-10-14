@@ -131,7 +131,7 @@ export default function DefectsDashboardPage() {
                                         </td>
                                         <td className="px-6 py-4">
                                             <div className="font-bold font-mono text-[13px]">
-                                                <Link href={`/master/products?search=${encodeURIComponent(prod?.product_name || '')}`} className="hover:underline" style={{ color: 'var(--accent)' }}>
+                                                <Link href={`/product-center?search=${encodeURIComponent(prod?.product_name || '')}`} className="hover:underline" style={{ color: 'var(--accent)' }}>
                                                     {prod?.product_name || t('noProduct')}
                                                 </Link>
                                             </div>

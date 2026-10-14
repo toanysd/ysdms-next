@@ -130,7 +130,7 @@ export function QuickActionsHub() {
           descKey: 'worklogInputDesc',
           icon: FileText,
           type: 'link',
-          href: '/worklog',
+          href: '/worklogs',
         },
         {
           key: 'daily-report',

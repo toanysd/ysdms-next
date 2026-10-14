@@ -224,7 +224,7 @@ export default function PlasticsClientPage({ masters, rolls, jobs, machines, tot
                 <tr key={roll.id}>
                   <td>
                     <Link 
-                      href={`/equipment/plastics/${roll.id}`}
+                      href={`/plastics/inventory?search=${encodeURIComponent(roll.roll_barcode || roll.id)}`}
                       style={{ color: 'var(--accent)', fontWeight: 700, fontFamily: 'monospace', fontSize: 13 }}
                     >
                       {roll.roll_barcode}

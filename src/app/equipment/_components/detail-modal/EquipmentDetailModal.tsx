@@ -748,7 +748,7 @@ export default function EquipmentDetailModal({
                       <span>{t('quickLinks.customer')}</span>
                     </Link>
                     <Link
-                      href="/master/products"
+                      href="/product-center"
                       style={{
                         fontSize: 10, fontWeight: 700, padding: '8px 4px', borderRadius: 6,
                         display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,

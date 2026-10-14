@@ -151,7 +151,7 @@ export function TabOverview({ wo, equipmentSet, progress }: TabOverviewProps) {
             <span style={{ fontSize: 13, fontWeight: 700, color: '#0F172A' }}>
               {prod?.product_code ? (
                 <Link
-                  href={`/master/products/${prod.product_id}`}
+                  href={`/product-center/${prod.product_id}`}
                   style={{ color: 'var(--accent)', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 4 }}
                 >
                   {prod.product_code} {prod.product_name ? `(${prod.product_name})` : ''}

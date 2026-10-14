@@ -77,7 +77,7 @@ export function MoldRevisionForm({ initialData, moldBaseId, moldBaseCode, sugges
       const result = await upsertMoldRevisionAction(data)
       if (result.success) {
         alert(isEdit ? t('updateSuccess') : t('createSuccess'))
-        router.push(`/master/mold/${moldBaseId}`)
+        router.push(`/product-center/${moldBaseId}`)
         router.refresh()
       } else {
         alert(result.error || t('errorOccurred'))

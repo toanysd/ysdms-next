@@ -93,7 +93,7 @@ export async function recordTrayIn(payload: TrayInPayload) {
         return { success: false, error: error.message }
     }
 
-    revalidatePath('/production/inventory')
+    revalidatePath('/inventory')
     revalidatePath('/production')
     return { success: true, txn: data }
 }
@@ -128,7 +128,7 @@ export async function recordTrayOut(payload: TrayOutPayload) {
         return { success: false, error: error.message }
     }
 
-    revalidatePath('/production/inventory')
+    revalidatePath('/inventory')
     revalidatePath('/production')
     return { success: true, txn: data }
 }
@@ -186,7 +186,7 @@ export async function recordTrayAdjust(payload: TrayAdjustPayload) {
         return { success: false, error: error.message }
     }
 
-    revalidatePath('/production/inventory')
+    revalidatePath('/inventory')
     revalidatePath('/production')
     return { success: true, txn: data, delta }
 }

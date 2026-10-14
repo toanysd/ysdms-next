@@ -404,7 +404,7 @@ function JobsPageContent() {
                           )}
                           {job.products && (
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
-                              <Link href={`/master/products/${job.products.product_id}`} style={{ fontWeight: 600, color: 'var(--status-info)', textDecoration: 'none', fontSize: 12 }}>
+                              <Link href={`/product-center/${job.products.product_id}`} style={{ fontWeight: 600, color: 'var(--status-info)', textDecoration: 'none', fontSize: 12 }}>
                                 {job.products.product_code} (SP)
                               </Link>
                             </div>

@@ -143,7 +143,7 @@ export function MoldDetailHeader({
         {/* Product code */}
         {product && (
           <Link
-            href={`/master/products?search=${encodeURIComponent(product.product_code)}`}
+            href={`/product-center?search=${encodeURIComponent(product.product_code)}`}
             style={{
               display: 'inline-flex', alignItems: 'center', gap: 4,
               padding: '2px 8px', borderRadius: 'var(--radius-sm)',
