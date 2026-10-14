@@ -29,7 +29,52 @@ const HANDOFF_LEDGER_FILE = path.join(DATA_DIR, 'pe_handoff_ledger.json');
 const START_PORT = parseInt(process.env.YSDMS_BRIDGE_PORT || process.argv[2] || '3856', 10);
 const HOST = '127.0.0.1';
 const MAX_PORT_TRIES = 30;
-const HUB_VERSION = 'v2.7.0';
+const HUB_VERSION = 'v2.7.1';
+
+function formatJstTimestamp(dateInput = new Date()) {
+    try {
+        const d = dateInput ? new Date(dateInput) : new Date();
+        if (isNaN(d.getTime())) {
+            return new Date().toLocaleString('sv-SE', { timeZone: 'Asia/Tokyo' }) + ' JST';
+        }
+        return d.toLocaleString('sv-SE', { timeZone: 'Asia/Tokyo' }) + ' JST';
+    } catch {
+        return new Date().toISOString();
+    }
+}
+
+function ensureSenderAndTimestampStamp(rawText, options = {}) {
+    if (!rawText) return '';
+    let content = String(rawText).trim();
+    const sender = options.sender || 'AN';
+    const recipient = options.recipient || (sender === 'AN' ? 'PE' : 'AN');
+    const projectLabel = options.projectLabel || 'YSDMS NextGen';
+    const threadId = options.threadId || 'YSDMS-AUTH-PHASE1';
+    const stamp = formatJstTimestamp(options.createdAt);
+    const shortId = options.messageId ? ` | ID: ${String(options.messageId).slice(0, 8)}` : '';
+
+    const firstLines = content.slice(0, 260);
+    const hasTopStamp = /\[\s*🕒?\s*(STAMP|Stamp|Thời gian)[^\]]*JST\s*\]/i.test(firstLines);
+    const hasTopSender = /TRẢ LỜI TỪ AN|NGƯỜI GỬI:|PHẢN HỒI TỪ PE|CHỈ THỊ TỪ PE/i.test(firstLines);
+
+    if (!hasTopStamp || !hasTopSender) {
+        const headerLine1 = sender === 'AN'
+            ? `TRẢ LỜI TỪ AN`
+            : `📥 [PHẢN HỒI & CHỈ THỊ TỪ ${sender} ➔ ${recipient}]`;
+        const headerLine2 = `🕒 [STAMP: ${stamp} | 👤 NGƯỜI GỬI: ${sender} ➔ ${recipient} | 📁 DỰ ÁN: ${projectLabel} | 🧵 THREAD: ${threadId}${shortId}]`;
+        content = `${headerLine1}\n${headerLine2}\n\n${content}`;
+    }
+
+    const tailLines = content.slice(-260);
+    const hasBottomStamp = /\[\s*🕒?\s*(STAMP|Stamp|GỬI SUPABASE|GUI SUPABASE)[^\]]*JST\s*\]/i.test(tailLines);
+    if (!hasBottomStamp) {
+        content = `${content}\n\n⏱️ [STAMP XÁC THỰC CUỐI TIN: ${stamp} | NGƯỜI GỬI: ${sender} ➔ ${recipient} | DỰ ÁN: ${projectLabel}${shortId}]`;
+    }
+    if (sender === 'AN' && !/TRẢ LỜI TỪ AN\s*$/i.test(content)) {
+        content = `${content}\nTRẢ LỜI TỪ AN`;
+    }
+    return content;
+}
 
 // Đảm bảo các thư mục cần thiết tồn tại
 [AGENTS_DIR, DATA_DIR].forEach(dir => {
@@ -770,7 +815,7 @@ function isAnTurnCompletelyIdle(workspaceMatchStr = 'ysdms-nextgen') {
 
 let pendingWakeupTimer = null;
 
-function executeAgentApiSend(directiveText) {
+function executeAgentApiSend(directiveText, meta = {}) {
     if (!directiveText || process.platform !== 'win32') return;
     try {
         const localAppData = process.env.LOCALAPPDATA || (process.env.USERPROFILE ? path.join(process.env.USERPROFILE, 'AppData', 'Local') : '');
@@ -781,37 +826,61 @@ function executeAgentApiSend(directiveText) {
         const targetConvId = resolveWorkspaceConversationId(exe, childEnv, 'ysdms-nextgen');
 
         if (targetConvId) {
-            const prompt = `[⚡ v2.7.0 DIRECTIVE TỪ PE / MINH CHỦ QUA BRIDGE]\n\n${directiveText}\n\n---\n*Ghi chú: Directive được chuyển tự động vào ô chat qua Native AgentAPI từ Hub [v2.7.0].*`;
-            const child = spawn(exe, ['agentapi', 'send-message', '--title=[v2.7.0] PE DIRECTIVE', targetConvId, prompt], {
+            const sender = meta.sender || 'PE';
+            const threadId = meta.threadId || hubLastSeenThreadId || 'YSDMS-AUTH-PHASE1';
+            const messageId = meta.messageId || hubLastSeenId || '';
+            const shortId = messageId ? String(messageId).slice(0, 8) : 'direct';
+            const createdStamp = formatJstTimestamp(meta.createdAt);
+            const deliveredStamp = formatJstTimestamp();
+            const stampedBody = ensureSenderAndTimestampStamp(directiveText, {
+                sender,
+                recipient: 'AN',
+                projectLabel: 'YSDMS NextGen',
+                threadId,
+                messageId,
+                createdAt: meta.createdAt
+            });
+            const prompt = [
+                `[⚡ v2.7.1 DIRECTIVE TỪ ${sender} / MINH CHỦ QUA BRIDGE]`,
+                `🕒 [THỜI GIAN BẢN TIN: ${createdStamp} | THỜI GIAN ĐẨY VÀO CHAT AN: ${deliveredStamp}]`,
+                `👤 [NGƯỜI GỬI: ${sender} ➔ AN | 📁 DỰ ÁN: YSDMS NextGen | 🧵 THREAD: ${threadId} | 🆔 ID: ${shortId}]`,
+                ``,
+                stampedBody,
+                ``,
+                `---`,
+                `🕒 [STAMP XÁC THỰC CHUYỂN TIẾP: ${deliveredStamp} | TỪ: ${sender} ➔ AN | ID: ${shortId}]`,
+                `*Ghi chú: Directive được gắn nhãn người gửi & thời gian tự động qua Native AgentAPI từ Hub [v2.7.1].*`
+            ].join('\n');
+            const child = spawn(exe, ['agentapi', 'send-message', '--title=[v2.7.1] PE DIRECTIVE', targetConvId, prompt], {
                 env: childEnv,
                 windowsHide: true
             });
             child.on('close', (code) => {
                 if (code === 0) {
-                    console.log(`[AGENTAPI WAKEUP v2.7.0] 🚀 Đã tự động kích hoạt Antigravity YSDMS thành công (Conv: ${targetConvId.slice(0, 8)}...)!`);
+                    console.log(`[AGENTAPI WAKEUP v2.7.1] 🚀 Đã tự động kích hoạt Antigravity YSDMS thành công (Conv: ${targetConvId.slice(0, 8)}...)!`);
                 } else {
-                    console.warn(`[AGENTAPI WAKEUP v2.7.0] agentapi exit code: ${code}`);
+                    console.warn(`[AGENTAPI WAKEUP v2.7.1] agentapi exit code: ${code}`);
                 }
             });
         }
     } catch (e) {
-        console.warn('[AGENTAPI WAKEUP v2.7.0] Lỗi:', e.message);
+        console.warn('[AGENTAPI WAKEUP v2.7.1] Lỗi:', e.message);
     }
 }
 
-function notifyAntigravityAgentApi(directiveText, waitAttempts = 0) {
+function notifyAntigravityAgentApi(directiveText, waitAttempts = 0, meta = {}) {
     if (!directiveText || process.platform !== 'win32') return;
     if (!isAnTurnCompletelyIdle('ysdms-nextgen') && waitAttempts < 45) {
         if (waitAttempts === 0) {
-            console.log(`[TURN GUARD v2.7.0] ⏳ AN vẫn đang chạy lượt trước — Tạm giữ chỉ thị PE trong hàng đợi chờ AN nghỉ hẳn (IDLE) mới gửi...`);
+            console.log(`[TURN GUARD v2.7.1] ⏳ AN vẫn đang chạy lượt trước — Tạm giữ chỉ thị PE trong hàng đợi chờ AN nghỉ hẳn (IDLE) mới gửi...`);
         }
         if (pendingWakeupTimer) clearTimeout(pendingWakeupTimer);
         pendingWakeupTimer = setTimeout(() => {
-            notifyAntigravityAgentApi(directiveText, waitAttempts + 1);
+            notifyAntigravityAgentApi(directiveText, waitAttempts + 1, meta);
         }, 2000);
         return;
     }
-    executeAgentApiSend(directiveText);
+    executeAgentApiSend(directiveText, meta);
 }
 
 function broadcastSse(data) {
@@ -996,25 +1065,39 @@ function startSupabaseSyncDaemon() {
                             timestamp: new Date().toISOString()
                         });
 
+                        const stampedPeText = ensureSenderAndTimestampStamp(row.content_md, {
+                            sender: row.sender || 'PE',
+                            recipient: 'AN',
+                            projectLabel: 'YSDMS NextGen',
+                            threadId: row.thread_id,
+                            messageId: row.id,
+                            createdAt: row.created_at
+                        });
                         const inboxMdPath = path.join(AGENTS_DIR, 'PE_INBOX_LATEST.md');
                         const inboxJsonPath = path.join(AGENTS_DIR, 'PE_INBOX_LATEST.json');
                         const mdContent = `# PE DIRECTIVE (YSDMS NEXTGEN BRIDGE SSOT ✅)\n\n`
                             + `- **Thread ID:** \`${row.thread_id}\`\n`
                             + `- **Request ID:** \`${handoffReqId}\`\n`
                             + `- **Message ID:** \`${row.id}\`\n`
-                            + `- **Received At:** \`${new Date().toISOString()}\`\n`
+                            + `- **Created At (JST):** \`${formatJstTimestamp(row.created_at)}\`\n`
+                            + `- **Received At (JST):** \`${formatJstTimestamp()}\`\n`
                             + `- **Target Table:** \`public.pe_an_messages\`\n\n`
-                            + `---\n\n### Nội Dung Chỉ Thị:\n\n${row.content_md}\n`;
+                            + `---\n\n### Nội Dung Chỉ Thị:\n\n${stampedPeText}\n`;
                         fs.writeFileSync(inboxMdPath, mdContent, 'utf8');
                         fs.writeFileSync(inboxJsonPath, JSON.stringify({
                             requestId: handoffReqId,
                             threadId: row.thread_id,
                             messageId: row.id,
-                            directiveText: row.content_md,
+                            directiveText: stampedPeText,
                             receivedAt: new Date().toISOString()
                         }, null, 2), 'utf8');
-                        setWindowsClipboard(row.content_md);
-                        notifyAntigravityAgentApi(row.content_md);
+                        setWindowsClipboard(stampedPeText);
+                        notifyAntigravityAgentApi(stampedPeText, 0, {
+                            sender: row.sender || 'PE',
+                            threadId: row.thread_id,
+                            messageId: row.id,
+                            createdAt: row.created_at
+                        });
                         console.log(`[SUPABASE SYNC] ⚡ Đã tự động cập nhật PE_INBOX_LATEST.json & Windows Clipboard cho Watcher (Thread: ${row.thread_id})!`);
                     }
                 }
@@ -1525,8 +1608,15 @@ const server = http.createServer(async (req, res) => {
     function dispatchPersistedPeDirectiveToAn(persistedRow, requestId, inReplyTo, workOrderId) {
         const messageId = persistedRow.id; // BẮT BUỘC là UUID thật từ Supabase
         const threadId = persistedRow.thread_id;
-        const directiveText = persistedRow.content_md;
         const createdAt = persistedRow.created_at || new Date().toISOString();
+        const directiveText = ensureSenderAndTimestampStamp(persistedRow.content_md, {
+            sender: persistedRow.sender || 'PE',
+            recipient: 'AN',
+            projectLabel: 'YSDMS NextGen',
+            threadId,
+            messageId,
+            createdAt
+        });
 
         // 1. Ghi vào .agents/PE_INBOX_LATEST.md và JSON
         const inboxMdPath = path.join(AGENTS_DIR, 'PE_INBOX_LATEST.md');
@@ -1535,7 +1625,7 @@ const server = http.createServer(async (req, res) => {
             + `- **Thread ID:** \`${threadId}\`\n`
             + `- **Request ID:** \`${requestId}\`\n`
             + `- **Supabase Row UUID:** \`${messageId}\`\n`
-            + `- **Received At:** \`${createdAt}\`\n`
+            + `- **Created At (JST):** \`${formatJstTimestamp(createdAt)}\`\n`
             + `- **Target Table:** \`public.pe_an_messages\`\n\n`
             + `---\n\n### Nội Dung Chỉ Thị:\n\n${directiveText}\n`;
 
@@ -1548,7 +1638,12 @@ const server = http.createServer(async (req, res) => {
             receivedAt: createdAt
         }, null, 2), 'utf8');
         setWindowsClipboard(directiveText);
-        notifyAntigravityAgentApi(directiveText);
+        notifyAntigravityAgentApi(directiveText, 0, {
+            sender: persistedRow.sender || 'PE',
+            threadId,
+            messageId,
+            createdAt
+        });
         updateSupabaseMessageStatus(messageId, 'CONSUMED');
 
         // 2. Correlation
@@ -1644,14 +1739,19 @@ const server = http.createServer(async (req, res) => {
                     return;
                 }
 
-                // Server-side Content Deduplication [v2.7.0]: Chặn gửi trùng cùng 1 câu trả lời PE (do hover/scroll trên DOM làm đổi nhẹ hash)
+                // Server-side Content Deduplication [v2.7.1]: Chặn gửi trùng cùng 1 câu trả lời PE (bỏ qua dòng stamp tự động ở đầu khi băm)
                 if (directiveText) {
-                    const cleanPrefix = directiveText.replace(/\s+/g, ' ').trim().slice(0, 350);
+                    const cleanPrefix = directiveText
+                        .replace(/^📥 \[PHẢN HỒI[^\n]*\n?/i, '')
+                        .replace(/^🕒 \[STAMP[^\n]*\n?/i, '')
+                        .replace(/\s+/g, ' ')
+                        .trim()
+                        .slice(0, 350);
                     const prefixHash = crypto.createHash('sha256').update(cleanPrefix).digest('hex');
                     if (!global.__YSDMS_RECENT_PE_HASHES__) global.__YSDMS_RECENT_PE_HASHES__ = {};
                     const prevTime = global.__YSDMS_RECENT_PE_HASHES__[prefixHash];
                     if (prevTime && (Date.now() - prevTime < 15 * 60 * 1000)) {
-                        console.log(`[HUB DEDUP v2.7.0] 🛡️ Đã chặn bản tin PE gửi trùng nội dung trong vòng 15 phút.`);
+                        console.log(`[HUB DEDUP v2.7.1] 🛡️ Đã chặn bản tin PE gửi trùng nội dung trong vòng 15 phút.`);
                         res.writeHead(200, { 'Content-Type': 'application/json' });
                         res.end(JSON.stringify({ success: true, deduplicated: true, reason: 'DUPLICATE_PE_CONTENT_PREFIX' }));
                         return;
@@ -1667,11 +1767,15 @@ const server = http.createServer(async (req, res) => {
 
                 if (isTempOrManualId && SUPABASE_URL && ACTIVE_KEY) {
                     try {
-                        const nowJst = new Date().toLocaleString("en-GB", { timeZone: "Asia/Tokyo" });
-                        let contentToPersist = directiveText;
-                        if (!contentToPersist.includes('[GỬI SUPABASE:') && !contentToPersist.includes('[GUI SUPABASE:')) {
-                            contentToPersist = contentToPersist.trim() + `\n\n⏱️ [GỬI SUPABASE: ${nowJst} JST]`;
-                        }
+                        const explicitMessageId = (messageId && messageId.length >= 30) ? messageId : crypto.randomUUID();
+                        const safeThreadId = threadId || 'DEFAULT';
+                        const contentToPersist = ensureSenderAndTimestampStamp(directiveText, {
+                            sender: 'PE',
+                            recipient: 'AN',
+                            projectLabel: 'YSDMS NextGen',
+                            threadId: safeThreadId,
+                            messageId: explicitMessageId
+                        });
                         let msgType = data.messageType || data.message_type;
                         if (!msgType) {
                             const upperText = directiveText.toUpperCase();
@@ -1686,8 +1790,6 @@ const server = http.createServer(async (req, res) => {
                             }
                         }
 
-                        const explicitMessageId = (messageId && messageId.length >= 30) ? messageId : crypto.randomUUID();
-                        const safeThreadId = threadId || 'DEFAULT';
                         const safeMsgType = ['DIRECTIVE', 'ANALYSIS', 'QUESTION', 'APPROVAL', 'REPORT'].includes(msgType) ? msgType : 'DIRECTIVE';
 
                         let insertRes = null;
@@ -1920,18 +2022,23 @@ const server = http.createServer(async (req, res) => {
             try {
                 const data = JSON.parse(body);
                 const threadId = data.threadId || 'YSDMS-AUTH-PHASE1';
-                const reportContent = data.content_md || data.reportText || '';
+                const rawReportContent = data.content_md || data.reportText || '';
+                const reportContent = rawReportContent
+                    ? ensureSenderAndTimestampStamp(rawReportContent, {
+                        sender: 'AN',
+                        recipient: 'PE',
+                        projectLabel: 'YSDMS NextGen',
+                        threadId,
+                        messageId: data.messageId
+                    })
+                    : '';
 
                 let messageId = data.messageId;
 
                 // Nếu AN gửi trực tiếp qua Hub thay vì gọi Supabase, Hub sẽ tự nộp lên Supabase
                 if (!messageId && reportContent && SUPABASE_URL && ACTIVE_KEY) {
                     try {
-                        const nowJst = new Date().toLocaleString("en-GB", { timeZone: "Asia/Tokyo" });
-                        let contentToPersist = reportContent;
-                        if (!contentToPersist.includes('[GỬI SUPABASE:') && !contentToPersist.includes('[GUI SUPABASE:')) {
-                            contentToPersist = contentToPersist.trim() + `\n\n⏱️ [GỬI SUPABASE: ${nowJst} JST]`;
-                        }
+                        const contentToPersist = reportContent;
                         const insertRes = await fetch(`${SUPABASE_URL}/rest/v1/pe_an_messages`, {
                             method: 'POST',
                             headers: {

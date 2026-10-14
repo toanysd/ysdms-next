@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         [v2.7.0] 🏭 YSDMS NextGen — PE ⟷ AN Realtime Bridge (Turn-Guard & Smart Editor)
+// @name         [v2.7.1] 🏭 YSDMS NextGen — PE ⟷ AN Realtime Bridge (Auto-Stamp, Turn-Guard & Smart Editor)
 // @namespace    http://tampermonkey.net/
-// @version      2.7.0
-// @description  [v2.7.0] Cầu nối thời gian thực cho YSDMS NextGen: Chốt chặn chờ AN kết thúc 100% lượt chạy mới gửi/nhận, Kiểm soát ô chat 3 trạng thái (chống dán bồi lặp lại, bảo toàn @Supabase/@GitHub, bảo vệ chữ gõ tay), Khóa cứng nút Tạm dừng & Chống xung đột tuyệt đối giữa YSDMS (:3856) và OmniLinguist (:3956).
+// @version      2.7.1
+// @description  [v2.7.1] Cầu nối thời gian thực cho YSDMS NextGen: Tự động gắn nhãn Người gửi & Stamp thời gian JST ở đầu/cuối mọi câu trả lời & nội dung dán vào ô chat, Chốt chặn chờ AN kết thúc 100% lượt chạy mới gửi/nhận, Kiểm soát ô chat 3 trạng thái, Khóa cứng nút Tạm dừng & Chống xung đột tuyệt đối giữa YSDMS (:3856) và OmniLinguist (:3956).
 // @author       Antigravity (AN) & Perplexity (PE) — Approved by Minh Chủ THOAN
 // @match        https://www.perplexity.ai/*
 // @match        https://perplexity.ai/*
@@ -18,10 +18,10 @@
 (function () {
     'use strict';
 
-    if (window.__YSDMS_BRIDGE_V270_LOADED__) return;
-    window.__YSDMS_BRIDGE_V270_LOADED__ = true;
+    if (window.__YSDMS_BRIDGE_V271_LOADED__) return;
+    window.__YSDMS_BRIDGE_V271_LOADED__ = true;
 
-    const SCRIPT_VERSION = '2.7.0';
+    const SCRIPT_VERSION = '2.7.1';
     const DEFAULT_PORT = 3856;
     const DEFAULT_THREAD_ID = 'BRIDGE-ORCHESTRATION';
 
@@ -299,10 +299,41 @@
         if (!isoStr) return '--:--:--';
         try {
             const d = new Date(isoStr);
-            return d.toLocaleTimeString('vi-VN', { hour12: false });
+            return d.toLocaleTimeString('vi-VN', { timeZone: 'Asia/Tokyo', hour12: false }) + ' JST';
         } catch {
             return '--:--:--';
         }
+    }
+
+    function formatFullJstStamp(isoStr) {
+        try {
+            const d = isoStr ? new Date(isoStr) : new Date();
+            if (isNaN(d.getTime())) {
+                return new Date().toLocaleString('sv-SE', { timeZone: 'Asia/Tokyo' }) + ' JST';
+            }
+            return d.toLocaleString('sv-SE', { timeZone: 'Asia/Tokyo' }) + ' JST';
+        } catch {
+            return new Date().toISOString();
+        }
+    }
+
+    // Tự động gắn nhãn Người gửi & Stamp thời gian JST cho mọi nội dung dán vào ô chat (nếu chưa có)
+    function ensureChatboxPayloadStamped(rawText, options = {}) {
+        if (!rawText) return '';
+        const trimmed = rawText.trim();
+        const hasStamp = /\[\s*🕒?\s*(STAMP|Thời gian|GỬI SUPABASE)[^\]]*JST\s*\]/i.test(trimmed);
+        if (hasStamp) return trimmed;
+
+        const stamp = formatFullJstStamp(options.createdAt);
+        const senderLabel = options.senderLabel || 'AN (Antigravity) ➔ PE (Perplexity)';
+        const threadLabel = options.threadId || (state.latestRow && state.latestRow.thread_id) || DEFAULT_THREAD_ID;
+        const msgIdShort = options.messageId ? ` | ID: ${String(options.messageId).slice(0, 8)}` : '';
+
+        return [
+            `🕒 [STAMP BẢN TIN: ${stamp} | 👤 NGƯỜI GỬI: ${senderLabel} | 📁 DỰ ÁN: YSDMS NextGen | 🧵 THREAD: ${threadLabel}${msgIdShort}]`,
+            trimmed,
+            `🕒 [STAMP XÁC THỰC CUỐI TIN: ${stamp} | NGƯỜI GỬI: ${senderLabel}${msgIdShort}]`
+        ].join('\n');
     }
 
     // =========================================================================
@@ -325,6 +356,7 @@
         if (!text) return false;
         const lower = text.trim().toLowerCase();
         return (
+            lower.startsWith('[v2.7.1] pe đọc bridge') ||
             lower.startsWith('[v2.7.0] pe đọc bridge') ||
             lower.startsWith('[v2.6.0] pe đọc bridge') ||
             lower.startsWith('[v2.5.0] pe đọc bridge') ||
@@ -338,12 +370,19 @@
     function buildPerplexityTriggerPrompt(row) {
         if (!row) return '';
         const id = row.id || row.message_id || 'unknown-id';
+        const shortId = String(id).slice(0, 8);
         const threadId = row.thread_id || DEFAULT_THREAD_ID;
+        const createdAtJst = formatFullJstStamp(row.created_at);
         const raw = (row.content_md || '').trim();
         if (!raw) return '';
 
         if (isEchoBackTriggerText(raw)) {
-            return raw;
+            return ensureChatboxPayloadStamped(raw, {
+                createdAt: row.created_at,
+                senderLabel: 'AN ➔ PE',
+                threadId,
+                messageId: id
+            });
         }
 
         const lines = raw.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
@@ -353,8 +392,11 @@
             : '  ' + raw.replace(/\s+/g, ' ').slice(0, 320) + (raw.length > 320 ? '...' : '');
 
         return [
-            `[v2.7.0] PE đọc Bridge.`,
+            `[v2.7.1] PE đọc Bridge.`,
+            `🕒 [STAMP BẢN TIN: ${createdAtJst} | 👤 NGƯỜI GỬI: AN ➔ PE | 📁 DỰ ÁN: YSDMS NextGen | 🆔 ID: ${shortId}]`,
             `📌 BÁO CÁO MỚI TỪ AN ĐÃ LƯU TRÊN SUPABASE (YSDMS NextGen):`,
+            `- Người gửi: AN (Antigravity Engineer) ➔ PE (Perplexity Architect)`,
+            `- Thời gian tạo báo cáo: ${createdAtJst}`,
             `- Bảng SSOT: public.pe_an_messages`,
             `- Message ID: ${id}`,
             `- Thread ID: ${threadId}`,
@@ -362,7 +404,8 @@
             `- Tóm tắt nội dung:`,
             summaryLines,
             `---`,
-            `👉 Đề nghị PE dùng @Supabase đọc toàn văn bản ghi message_id = "${id}" (thread_id = "${threadId}") trong bảng public.pe_an_messages để thẩm định và phản hồi chỉ thị tiếp theo cho AN.`
+            `👉 Đề nghị PE dùng @Supabase đọc toàn văn bản ghi message_id = "${id}" (thread_id = "${threadId}") trong bảng public.pe_an_messages để thẩm định và phản hồi chỉ thị tiếp theo cho AN (lưu ý gắn Stamp thời gian & nhãn người gửi PE ➔ AN).`,
+            `🕒 [STAMP XÁC THỰC CUỐI TIN: ${createdAtJst} | NGƯỜI GỬI: AN ➔ PE | ID: ${shortId}]`
         ].join('\n');
     }
 
@@ -574,7 +617,8 @@
         const editor = info.editor;
         state.isInjectingNow = true;
         try {
-            let finalContent = state.noAccent ? removeVietnameseAccents(rawContent) : rawContent;
+            const stampedRaw = ensureChatboxPayloadStamped(rawContent, options);
+            let finalContent = state.noAccent ? removeVietnameseAccents(stampedRaw) : stampedRaw;
             editor.focus();
 
             if (editor.tagName === 'TEXTAREA' || editor.tagName === 'INPUT') {
