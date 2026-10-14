@@ -1,10 +1,16 @@
 // ==UserScript==
-// @name         YSDMS NextGen — PE ⟷ AN Realtime Bridge (v2.5.0 Unified Gold Edition)
+// @name         [v2.5.0] YSDMS NextGen — PE ⟷ AN Realtime Bridge (v2.5.0 Unified Gold Edition)
 // @namespace    http://tampermonkey.net/
 // @version      2.5.0
-// @description  Cầu nối thời gian thực Dual-Path cho YSDMS NextGen: Light Theme, Kéo thả, Thu gọn Mini Pill, Ngăn kéo Xem tin SSOT, Tách biệt Chỉ dán / Đổ & Submit, Lọc chip @Supabase/@GitHub, Cứu hộ Alt+F10.
+// @description  Cầu nối thời gian thực Dual-Path cho YSDMS NextGen: Tự động nhận diện & cô lập đa dự án theo từng Tab (YSDMS :3856 vs OmniLinguist :3956), Vòng lặp tự động AN-PE (dừng chờ THOAN chốt khi cần), Light Theme, Kéo thả, Thu gọn Mini Pill, Ngăn kéo Xem tin SSOT, Random 1-4s Submit (ESC hủy), Lọc chip @Supabase/@GitHub, Cứu hộ Alt+F10.
 // @author       Antigravity (AN) & Perplexity (PE) — Approved by Minh Chủ THOAN
 // @match        https://www.perplexity.ai/*
+// @match        https://perplexity.ai/*
+// @match        https://*.perplexity.ai/*
+// @updateURL    http://127.0.0.1:3856/ysdms_pe_bridge.user.js
+// @downloadURL  http://127.0.0.1:3856/ysdms_pe_bridge.user.js
+// @connect      127.0.0.1
+// @connect      localhost
 // @grant        none
 // @run-at       document-idle
 // ==/UserScript==
@@ -27,11 +33,13 @@
         MINIMIZED: 'ysdms_bridge_minimized_v25',
         POS: 'ysdms_bridge_pos_v25',
         INJECTED_MAP: 'ysdms_bridge_injected_map_v25',
-        SUBMITTED_MAP: 'ysdms_bridge_submitted_map_v25'
+        SUBMITTED_MAP: 'ysdms_bridge_submitted_map_v25',
+        LAST_FORWARDED_HASH: 'ysdms_bridge_last_fwd_hash_v25',
+        TAB_PROJECT_OVERRIDE: 'bridge_tab_project_override_v25' // Lưu trong sessionStorage (riêng cho từng Tab)
     };
 
     // =========================================================================
-    // 1. QUẢN LÝ TRẠNG THÁI CỤC BỘ & BỘ NHỚ BỀN VỮNG (LOCAL STORAGE)
+    // 1. QUẢN LÝ TRẠNG THÁI CỤC BỘ & NHẬN DIỆN DỰ ÁN THEO TỪNG TAB (MULTI-PROJECT GUARD)
     // =========================================================================
     function loadJsonStorage(key, fallback) {
         try {
@@ -48,11 +56,18 @@
         } catch {}
     }
 
+    function hashString(str) {
+        if (!str) return '0';
+        let h = 0;
+        for (let i = 0; i < str.length; i++) h = ((h << 5) - h + str.charCodeAt(i)) | 0;
+        return String(h);
+    }
+
     const state = {
-        hubPort: parseInt(localStorage.getItem(STORAGE_KEYS.PORT) || String(DEFAULT_PORT), 10) || DEFAULT_PORT,
+        hubPort: parseInt(sessionStorage.getItem(STORAGE_KEYS.PORT) || localStorage.getItem(STORAGE_KEYS.PORT) || String(DEFAULT_PORT), 10) || DEFAULT_PORT,
         hubOnline: false,
         sseConnected: false,
-        mode: localStorage.getItem(STORAGE_KEYS.MODE) || 'PASTE_ONLY', // Mặc định: Chỉ dán chatbox (Dual-Shield Gatekeeper)
+        mode: localStorage.getItem(STORAGE_KEYS.MODE) || 'PASTE_ONLY', // Mặc định: Chỉ dán chatbox (hoặc bật PASTE_AND_SUBMIT cho vòng lặp tự động)
         noAccent: localStorage.getItem(STORAGE_KEYS.NO_ACCENT) === 'true',
         isPaused: localStorage.getItem(STORAGE_KEYS.PAUSED) === 'true',
         isMinimized: localStorage.getItem(STORAGE_KEYS.MINIMIZED) === 'true',
@@ -60,12 +75,75 @@
         latestRow: null,
         feedRows: [],
         turnPhase: 'IDLE', // IDLE | AN_PENDING_INJECT | AN_TEXT_INJECTED | AN_SUBMITTING | WAITING_FOR_PE | WAITING_THOAN_APPROVAL | PE_DISPATCHED_TO_AN
-        statusDetail: 'Đang kết nối Local Hub...',
+        statusDetail: 'Đang kết nối Local Hub (:3856)...',
         injectedMap: loadJsonStorage(STORAGE_KEYS.INJECTED_MAP, {}),
         submittedMap: loadJsonStorage(STORAGE_KEYS.SUBMITTED_MAP, {}),
         submitTimer: null,
-        isInjectingNow: false
+        isInjectingNow: false,
+        baselinePeProseText: '',
+        peStreamStableTicks: 0,
+        pendingPeApprovalText: '',
+        tabProjectOverride: sessionStorage.getItem(STORAGE_KEYS.TAB_PROJECT_OVERRIDE) || 'AUTO', // 'AUTO' | 'YSDMS' | 'OMNI'
+        detectedTabProject: 'YSDMS' // 'YSDMS' | 'OMNI'
     };
+
+    /**
+     * Tự động phát hiện Tab Perplexity hiện tại đang thảo luận về YSDMS hay OmniLinguist
+     * dựa trên tiêu đề trang, URL, tên Space và nội dung cuộc hội thoại trên DOM.
+     */
+    function detectTabProjectAffinity() {
+        const override = sessionStorage.getItem(STORAGE_KEYS.TAB_PROJECT_OVERRIDE) || state.tabProjectOverride || 'AUTO';
+        state.tabProjectOverride = override;
+        if (override === 'YSDMS' || override === 'OMNI') {
+            state.detectedTabProject = override;
+            return state.detectedTabProject;
+        }
+
+        try {
+            const titleAndUrl = `${document.title || ''} ${window.location.href || ''}`.toLowerCase();
+            let sampleText = titleAndUrl;
+
+            const proseNodes = document.querySelectorAll('h1, h2, .prose, [class*="prose"]');
+            const maxNodes = Math.min(proseNodes.length, 12);
+            for (let i = Math.max(0, proseNodes.length - maxNodes); i < proseNodes.length; i++) {
+                const el = proseNodes[i];
+                if (!el.closest('#ysdms-bridge-v25-root') && !el.closest('#omni-bridge-v25-root')) {
+                    sampleText += ' ' + (el.innerText || el.textContent || '').slice(0, 600).toLowerCase();
+                }
+            }
+
+            const ysdmsKeywords = [
+                'ysdms', 'toanysd', 'pe_an_messages', 'mold_custody', 'khuôn', 'dao cắt',
+                'panasonic', 'minebea', 'shirakawa', 'wo-p1-', '3856', 'schema_reference'
+            ];
+            const omniKeywords = [
+                'omnilinguist', 'omni_bridge', 'pe_bridge', 'omni-cycle', '3956',
+                'omni_pe_bridge', 'omni_realtime_hub', 'linguist'
+            ];
+
+            let ysdmsScore = 0;
+            let omniScore = 0;
+
+            for (const kw of ysdmsKeywords) {
+                if (sampleText.includes(kw)) ysdmsScore += (titleAndUrl.includes(kw) ? 3 : 1);
+            }
+            for (const kw of omniKeywords) {
+                if (sampleText.includes(kw)) omniScore += (titleAndUrl.includes(kw) ? 3 : 1);
+            }
+
+            if (omniScore > ysdmsScore && omniScore >= 1) {
+                state.detectedTabProject = 'OMNI';
+            } else if (ysdmsScore > omniScore && ysdmsScore >= 1) {
+                state.detectedTabProject = 'YSDMS';
+            }
+        } catch {}
+
+        return state.detectedTabProject;
+    }
+
+    function isTabActiveForYsdms() {
+        return detectTabProjectAffinity() !== 'OMNI';
+    }
 
     function getHubBaseUrl() {
         return `http://127.0.0.1:${state.hubPort}`;
@@ -78,7 +156,6 @@
     function markMessageInjected(id) {
         if (!id) return;
         state.injectedMap[id] = Date.now();
-        // Giữ tối đa 100 ID gần nhất
         const keys = Object.keys(state.injectedMap);
         if (keys.length > 100) {
             delete state.injectedMap[keys[0]];
@@ -106,6 +183,7 @@
     // 2. TIỆN ÍCH ÂM THANH (WEB AUDIO API) & XỬ LÝ TIẾNG VIỆT KHÔNG DẤU
     // =========================================================================
     function playChime(type = 'inject') {
+        if (!isTabActiveForYsdms()) return;
         try {
             const Ctx = window.AudioContext || window.webkitAudioContext;
             if (!Ctx) return;
@@ -118,17 +196,17 @@
             const now = ctx.currentTime;
             if (type === 'inject') {
                 osc.type = 'sine';
-                osc.frequency.setValueAtTime(587.33, now); // D5
-                osc.frequency.setValueAtTime(880, now + 0.1); // A5
+                osc.frequency.setValueAtTime(587.33, now);
+                osc.frequency.setValueAtTime(880, now + 0.1);
                 gain.gain.setValueAtTime(0.12, now);
                 gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
                 osc.start(now);
                 osc.stop(now + 0.35);
             } else if (type === 'submit' || type === 'an_dispatch') {
                 osc.type = 'triangle';
-                osc.frequency.setValueAtTime(523.25, now); // C5
-                osc.frequency.setValueAtTime(659.25, now + 0.08); // E5
-                osc.frequency.setValueAtTime(1046.5, now + 0.16); // C6
+                osc.frequency.setValueAtTime(523.25, now);
+                osc.frequency.setValueAtTime(659.25, now + 0.08);
+                osc.frequency.setValueAtTime(1046.5, now + 0.16);
                 gain.gain.setValueAtTime(0.14, now);
                 gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
                 osc.start(now);
@@ -177,6 +255,15 @@
             if (btn && btn.offsetParent !== null) return true;
         }
         return false;
+    }
+
+    function getLatestPeProseText() {
+        const proseList = Array.from(document.querySelectorAll('.prose, [class*="prose"]')).filter(
+            el => !el.closest('#ysdms-bridge-v25-root') && !el.closest('#omni-bridge-v25-root')
+        );
+        if (proseList.length === 0) return '';
+        const lastBlock = proseList[proseList.length - 1];
+        return (lastBlock.innerText || lastBlock.textContent || '').trim();
     }
 
     function stripConnectorTokens(rawText) {
@@ -230,6 +317,7 @@
                 if (
                     el.offsetParent !== null &&
                     !el.closest('#ysdms-bridge-v25-root') &&
+                    !el.closest('#omni-bridge-v25-root') &&
                     el.getBoundingClientRect().width > 120
                 ) {
                     return el;
@@ -244,7 +332,6 @@
         if (editor.tagName === 'TEXTAREA' || editor.tagName === 'INPUT') {
             return (editor.value || '').trim();
         }
-        // Nếu là contenteditable, loại bỏ các chip @Supabase / @GitHub nếu chúng nằm trong vùng editor
         const clone = editor.cloneNode(true);
         const chips = clone.querySelectorAll('[data-lexical-decorator="true"], [contenteditable="false"], button, .badge, .chip');
         chips.forEach(c => c.remove());
@@ -255,7 +342,7 @@
         if (!rawContent || state.isInjectingNow) return false;
         const editor = findPerplexityEditor();
         if (!editor) {
-            console.warn('[Bridge v2.5] Chưa tìm thấy ô chat Perplexity trên DOM.');
+            console.warn('[YSDMS Bridge v2.5] Chưa tìm thấy ô chat Perplexity trên DOM.');
             return false;
         }
 
@@ -277,17 +364,13 @@
                 editor.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertText', data: finalContent }));
                 editor.dispatchEvent(new Event('change', { bubbles: true }));
             } else {
-                // ContentEditable (Lexical / ProseMirror)
                 editor.focus();
-
-                // Chỉ xóa các đoạn văn bản <p>/<span> thông thường, giữ nguyên các decorator node (@Supabase / @GitHub) nếu có
                 const selection = window.getSelection();
                 const range = document.createRange();
                 range.selectNodeContents(editor);
                 selection.removeAllRanges();
                 selection.addRange(range);
 
-                // Phương pháp 1: ClipboardEvent Paste (Chuẩn nhất cho Lexical / React 18)
                 let pastedOk = false;
                 try {
                     const dt = new DataTransfer();
@@ -304,7 +387,6 @@
                     }
                 } catch {}
 
-                // Phương pháp 2: execCommand('insertText') nếu Paste bị chặn
                 if (!pastedOk) {
                     try {
                         editor.focus();
@@ -314,7 +396,6 @@
                     } catch {}
                 }
 
-                // Phương pháp 3: Fallback gán textContent nếu cả 2 cách trên chưa ăn
                 if (getCleanEditorText(editor).length < Math.min(15, finalContent.length * 0.3)) {
                     const p = editor.querySelector('p') || editor;
                     p.textContent = finalContent;
@@ -325,16 +406,9 @@
             await new Promise(r => setTimeout(r, 150));
             const currentLen = getCleanEditorText(editor).length;
             const targetMinLen = Math.min(20, Math.floor(finalContent.trim().length * 0.4));
-            const success = currentLen >= targetMinLen;
-
-            if (success) {
-                console.log(`[Bridge v2.5] ✅ Đã đổ thành công vào ô chat (${currentLen} ký tự).`);
-            } else {
-                console.warn(`[Bridge v2.5] ⚠️ Đổ vào ô chat chưa thành công (độ dài hiện tại: ${currentLen}). Sẽ thử lại.`);
-            }
-            return success;
+            return currentLen >= targetMinLen;
         } catch (err) {
-            console.error('[Bridge v2.5] Lỗi khi đổ văn bản:', err);
+            console.error('[YSDMS Bridge v2.5] Lỗi khi đổ văn bản:', err);
             return false;
         } finally {
             state.isInjectingNow = false;
@@ -343,7 +417,6 @@
 
     function findPerplexitySubmitButton() {
         const editor = findPerplexityEditor();
-        // 1. Tìm по aria-label / data-testid chuẩn của nút Submit Perplexity
         const directSelectors = [
             'button[aria-label="Submit" i]',
             'button[aria-label*="Submit" i]',
@@ -360,6 +433,7 @@
                     !btn.disabled &&
                     btn.getAttribute('aria-disabled') !== 'true' &&
                     !btn.closest('#ysdms-bridge-v25-root') &&
+                    !btn.closest('#omni-bridge-v25-root') &&
                     !isExcludedButton(btn)
                 ) {
                     return btn;
@@ -367,7 +441,6 @@
             }
         }
 
-        // 2. Tìm trong vùng container bao quanh ô nhập liệu (nút tròn mũi tên ở góc phải dưới của khung chat)
         if (editor) {
             let container = editor.parentElement;
             for (let depth = 0; depth < 5 && container; depth++) {
@@ -376,11 +449,11 @@
                     !b.disabled &&
                     b.getAttribute('aria-disabled') !== 'true' &&
                     !b.closest('#ysdms-bridge-v25-root') &&
+                    !b.closest('#omni-bridge-v25-root') &&
                     !isExcludedButton(b) &&
                     b.querySelector('svg')
                 );
                 if (buttons.length > 0) {
-                    // Chọn nút nằm ở ngoài cùng bên phải trong khung chat
                     buttons.sort((a, b) => b.getBoundingClientRect().right - a.getBoundingClientRect().right);
                     return buttons[0];
                 }
@@ -393,6 +466,9 @@
     async function submitPerplexityChat(messageId) {
         const editor = findPerplexityEditor();
         const submitBtn = findPerplexitySubmitButton();
+
+        state.baselinePeProseText = getLatestPeProseText();
+        state.peStreamStableTicks = 0;
 
         if (submitBtn) {
             submitBtn.click();
@@ -422,14 +498,16 @@
         return true;
     }
 
-    // Lắng nghe khi Minh Chủ tự bấm Enter hoặc tự click nút Submit trên Perplexity
     function attachNativeUserSubmitListener() {
         document.addEventListener('keydown', (e) => {
+            if (!isTabActiveForYsdms()) return;
             if (e.key === 'Enter' && !e.shiftKey && !e.ctrlKey && !e.altKey) {
                 const editor = findPerplexityEditor();
                 if (editor && (e.target === editor || editor.contains(e.target))) {
                     const row = state.latestRow;
                     if (row && row.sender === 'AN' && isMessageInjected(row.id) && !isMessageSubmitted(row.id)) {
+                        state.baselinePeProseText = getLatestPeProseText();
+                        state.peStreamStableTicks = 0;
                         setTimeout(() => {
                             markMessageSubmitted(row.id);
                             notifyHubReportConsumed(row.id, 'USER_ENTER_KEY');
@@ -443,12 +521,15 @@
         }, true);
 
         document.addEventListener('click', (e) => {
+            if (!isTabActiveForYsdms()) return;
             const btn = e.target.closest('button');
-            if (!btn || btn.closest('#ysdms-bridge-v25-root')) return;
+            if (!btn || btn.closest('#ysdms-bridge-v25-root') || btn.closest('#omni-bridge-v25-root')) return;
             const submitBtn = findPerplexitySubmitButton();
             if (submitBtn && (btn === submitBtn || submitBtn.contains(btn))) {
                 const row = state.latestRow;
                 if (row && row.sender === 'AN' && isMessageInjected(row.id) && !isMessageSubmitted(row.id)) {
+                    state.baselinePeProseText = getLatestPeProseText();
+                    state.peStreamStableTicks = 0;
                     setTimeout(() => {
                         markMessageSubmitted(row.id);
                         notifyHubReportConsumed(row.id, 'USER_CLICK_SUBMIT');
@@ -501,7 +582,9 @@
             lower.includes('đợi thoan chốt') ||
             lower.includes('đợi thoan duyệt') ||
             lower.includes('chờ quyết định từ thoan') ||
-            lower.includes('kính trình minh chủ thoan quyết định')
+            lower.includes('chờ quyết định của thoan') ||
+            lower.includes('kính trình minh chủ thoan quyết định') ||
+            lower.includes('dừng lại hỏi thoan')
         );
     }
 
@@ -511,7 +594,6 @@
         row.id = id;
         state.latestRow = row;
 
-        // TRƯỜNG HỢP 1: Tin nhắn mới nhất là từ AN (Báo cáo / Kế hoạch gửi lên PE)
         if (row.sender === 'AN') {
             const alreadySubmitted = isMessageSubmitted(id) || row.status === 'CONSUMED';
             const alreadyInjected = isMessageInjected(id);
@@ -530,12 +612,15 @@
                 return;
             }
 
-            // Chưa từng đổ vào ô chat!
             state.turnPhase = 'AN_PENDING_INJECT';
             state.statusDetail = `Có báo cáo mới từ AN (${id.slice(0, 8)}) — Chờ đổ vào ô chat`;
             renderUI();
 
-            // Kiểm tra chế độ tự động
+            // CHỐT CHẶN ĐA DỰ ÁN: Nếu Tab này đang là Tab của dự án OmniLinguist thì tuyệt đối KHÔNG tự động đổ báo cáo của YSDMS vào!
+            if (!isTabActiveForYsdms()) {
+                return;
+            }
+
             if (state.isPaused || state.mode === 'MANUAL') {
                 return;
             }
@@ -553,18 +638,19 @@
                 playChime('inject');
 
                 if (state.mode === 'PASTE_AND_SUBMIT') {
+                    const randomDelayMs = Math.floor(Math.random() * 3001) + 1000;
+                    const delaySecText = (randomDelayMs / 1000).toFixed(1);
                     state.turnPhase = 'AN_SUBMITTING';
-                    state.statusDetail = `Đã đổ vào ô chat — Tự động Submit sau 1.8s...`;
+                    state.statusDetail = `Đã đổ vào ô chat — Tự động Submit sau ${delaySecText}s (ESC để hủy)...`;
                     renderUI();
 
                     if (state.submitTimer) clearTimeout(state.submitTimer);
                     state.submitTimer = setTimeout(async () => {
-                        if (!state.isPaused && state.mode === 'PASTE_AND_SUBMIT') {
+                        if (!state.isPaused && state.mode === 'PASTE_AND_SUBMIT' && isTabActiveForYsdms()) {
                             await submitPerplexityChat(id);
                         }
-                    }, 1800);
+                    }, randomDelayMs);
                 } else {
-                    // Mặc định: PASTE_ONLY (Chỉ dán chatbox)
                     state.turnPhase = 'AN_TEXT_INJECTED';
                     state.statusDetail = `Đã đổ vào ô chat (${id.slice(0, 8)}) — Mời Minh Chủ duyệt & bấm Enter`;
                     renderUI();
@@ -573,15 +659,64 @@
             return;
         }
 
-        // TRƯỜNG HỢP 2: Tin nhắn mới nhất là từ PE (Chỉ thị / Nghiệm thu gửi về AN)
-        if (row.sender === 'PE') {
-            if (requiresThoanDecision(row.content_md) && row.status !== 'CONSUMED') {
+        if (row.sender === 'PE' || row.sender === 'THOAN') {
+            if (row.sender === 'PE' && requiresThoanDecision(row.content_md) && row.status !== 'CONSUMED') {
                 state.turnPhase = 'WAITING_THOAN_APPROVAL';
+                state.pendingPeApprovalText = row.content_md;
                 state.statusDetail = `PE yêu cầu Minh Chủ THOAN chốt trước khi gửi AN (${id.slice(0, 8)})`;
             } else {
                 state.turnPhase = 'PE_DISPATCHED_TO_AN';
                 state.statusDetail = `PE đã gửi chỉ thị (${id.slice(0, 8)}) — AN đang thực thi trên IDE`;
             }
+            renderUI();
+        }
+    }
+
+    // Tự động theo dõi khi PE trả lời xong trên giao diện Web (nếu PE chưa ghi trực tiếp vào Supabase qua MCP)
+    async function monitorPeDomResponseLoop() {
+        if (!isTabActiveForYsdms() || state.isPaused || state.turnPhase !== 'WAITING_FOR_PE') return;
+
+        const busy = isPerplexityBusy();
+        const currentProse = getLatestPeProseText();
+
+        if (busy) {
+            state.peStreamStableTicks = 0;
+            return;
+        }
+
+        if (!currentProse || currentProse.length < 60 || currentProse === state.baselinePeProseText) {
+            return;
+        }
+
+        state.peStreamStableTicks += 1;
+        // Đợi PE dừng stream ổn định ít nhất 4 chu kỳ (~4 giây) để ưu tiên đường Direct MCP Supabase của PE trước
+        if (state.peStreamStableTicks < 4) return;
+
+        // Nếu trong lúc chờ 4s mà Hub đã nhận được bản ghi PE từ Supabase MCP (turnPhase đã chuyển sang PE_DISPATCHED_TO_AN), thì không cần gửi lại
+        if (state.turnPhase !== 'WAITING_FOR_PE') return;
+
+        const textHash = hashString(currentProse);
+        const lastFwdHash = localStorage.getItem(STORAGE_KEYS.LAST_FORWARDED_HASH);
+        if (textHash === lastFwdHash) return;
+
+        localStorage.setItem(STORAGE_KEYS.LAST_FORWARDED_HASH, textHash);
+        state.baselinePeProseText = currentProse;
+
+        if (requiresThoanDecision(currentProse)) {
+            state.turnPhase = 'WAITING_THOAN_APPROVAL';
+            state.pendingPeApprovalText = currentProse;
+            state.statusDetail = '🟠 PE vừa trả lời và yêu cầu Minh Chủ THOAN chốt phương án!';
+            playChime('warn');
+            showToast('🟠 PE yêu cầu Minh Chủ THOAN chốt quyết định trước khi chuyển sang AN!');
+            renderUI();
+            return;
+        }
+
+        if (state.mode === 'PASTE_AND_SUBMIT') {
+            await handleRescueSendPeToAn(currentProse, (state.latestRow && state.latestRow.thread_id) || DEFAULT_THREAD_ID);
+        } else {
+            state.statusDetail = 'PE đã trả lời xong — Bấm Alt+F10 để bắn chỉ thị sang AN';
+            playChime('an_dispatch');
             renderUI();
         }
     }
@@ -606,7 +741,7 @@
             }
 
             if (manualNotify) {
-                showToast(`✅ Đã đồng bộ ${rows.length} bản ghi từ Supabase SSOT!`);
+                showToast(`✅ Đã đồng bộ ${rows.length} bản ghi từ Supabase SSOT (public.pe_an_messages)!`);
             }
         } catch (err) {
             state.hubOnline = false;
@@ -618,7 +753,6 @@
         }
     }
 
-    // Kết nối SSE thời gian thực tới Hub
     let eventSource = null;
     function connectSse() {
         if (eventSource) {
@@ -675,14 +809,14 @@
                         state.statusDetail = `Đã chuyển chỉ thị của PE sang AN (${(data.peMessageId || data.messageId || '').slice(0, 8)})`;
                         playChime('an_dispatch');
                         fetchFeedFromHub(false);
-                    } else if (data.type === 'MANUAL_TEST_PE' && data.text) {
+                    } else if (data.type === 'MANUAL_TEST_PE' && data.text && isTabActiveForYsdms()) {
                         const ok = await injectTextIntoPerplexity(data.text);
                         if (ok && data.autoSubmit) {
                             setTimeout(() => submitPerplexityChat(null), 1200);
                         }
                     }
                 } catch (e) {
-                    console.warn('[Bridge v2.5] Lỗi xử lý gói SSE:', e);
+                    console.warn('[YSDMS Bridge v2.5] Lỗi xử lý gói SSE:', e);
                 }
             };
             eventSource.onerror = () => {
@@ -697,7 +831,6 @@
     // =========================================================================
     // 6. CÁC HÀNH ĐỘNG ĐIỀU KHIỂN THỦ CÔNG CỦA MINH CHỦ (BUTTON ACTIONS)
     // =========================================================================
-    // 6.1. Đổ & Gửi ngay báo cáo AN vào PE (Alt+F9)
     async function handleForceInjectAndSubmitAn(onlyPaste = false) {
         let targetRow = (state.latestRow && state.latestRow.sender === 'AN') ? state.latestRow : null;
         if (!targetRow) {
@@ -734,11 +867,9 @@
         }
     }
 
-    // 6.2. Nút Cứu hộ: Quét câu trả lời PE hoặc vùng bôi đen bắn sang AN (Alt+F10)
     async function handleRescueSendPeToAn(customText = null, customThreadId = null) {
         let textToSend = customText ? customText.trim() : '';
 
-        // Ưu tiên 1: Văn bản Minh Chủ đang bôi đen trên màn hình
         if (!textToSend) {
             const sel = window.getSelection();
             if (sel && sel.toString().trim().length > 15) {
@@ -746,19 +877,15 @@
             }
         }
 
-        // Ưu tiên 2: Khối trả lời cuối cùng của PE trên giao diện Perplexity
         if (!textToSend) {
-            const proseList = Array.from(document.querySelectorAll('.prose, [class*="prose"]')).filter(
-                el => !el.closest('#ysdms-bridge-v25-root')
-            );
-            if (proseList.length > 0) {
-                const lastBlock = proseList[proseList.length - 1];
-                textToSend = (lastBlock.innerText || lastBlock.textContent || '').trim();
-            }
+            textToSend = getLatestPeProseText();
         }
 
-        // Ưu tiên 3: Nếu vẫn trống và bản ghi mới nhất trên DB là của PE (ví dụ đang chờ THOAN duyệt)
-        if (!textToSend && state.latestRow && state.latestRow.sender === 'PE') {
+        if (!textToSend && state.pendingPeApprovalText) {
+            textToSend = state.pendingPeApprovalText;
+        }
+
+        if (!textToSend && state.latestRow && (state.latestRow.sender === 'PE' || state.latestRow.sender === 'THOAN')) {
             textToSend = state.latestRow.content_md || '';
         }
 
@@ -769,7 +896,7 @@
 
         const threadId = customThreadId || (state.latestRow && state.latestRow.thread_id) || DEFAULT_THREAD_ID;
         try {
-            showToast('⏳ Đang lưu Supabase & đánh thức AN qua Native AgentAPI...');
+            showToast('⏳ Đang lưu Supabase & đánh thức AN (YSDMS) qua Native AgentAPI...');
             const res = await fetch(`${getHubBaseUrl()}/api/directive`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -786,7 +913,7 @@
             state.turnPhase = 'PE_DISPATCHED_TO_AN';
             state.statusDetail = `Đã bắn chỉ thị sang AN (${(data.messageId || '').slice(0, 8)})`;
             playChime('an_dispatch');
-            showToast('⚡ Đã lưu Supabase & kích hoạt AN thực thi thành công!');
+            showToast('⚡ Đã lưu Supabase & kích hoạt AN (YSDMS) thực thi thành công!');
             fetchFeedFromHub(false);
         } catch (err) {
             showToast(`❌ Lỗi bắn sang AN: ${err.message}`, true);
@@ -831,7 +958,7 @@
                 };
             case 'AN_SUBMITTING':
                 return {
-                    badge: '⏳ Đang tự động Submit cho PE...',
+                    badge: '⏳ Đang đếm ngược Random 1–4s Submit...',
                     bg: '#F0FDFA',
                     border: '#5EEAD4',
                     text: '#115E59',
@@ -889,7 +1016,7 @@
                 user-select: none;
             }
             .yb25-card {
-                width: 365px;
+                width: 370px;
                 background: #FFFFFF;
                 border: 1.5px solid #CBD5E1;
                 border-radius: 12px;
@@ -1128,7 +1255,6 @@
         const root = document.createElement('div');
         root.id = 'ysdms-bridge-v25-root';
 
-        // Khôi phục vị trí đã kéo thả
         const savedPos = loadJsonStorage(STORAGE_KEYS.POS, null);
         if (savedPos && typeof savedPos.left === 'number' && typeof savedPos.top === 'number') {
             const safeLeft = Math.min(Math.max(10, savedPos.left), window.innerWidth - 180);
@@ -1152,7 +1278,7 @@
         let initTop = 0;
 
         headerEl.addEventListener('mousedown', (e) => {
-            if (e.target.closest('button') || e.target.closest('.yb25-port-pill')) return;
+            if (e.target.closest('button') || e.target.closest('.yb25-port-pill') || e.target.closest('#yb25-tab-proj-btn')) return;
             isDragging = true;
             const rect = rootEl.getBoundingClientRect();
             startX = e.clientX;
@@ -1188,18 +1314,42 @@
         const root = document.getElementById('ysdms-bridge-v25-root');
         if (!root) return;
 
+        // NẾU TAB HIỆN TẠI ĐƯỢC NHẬN DIỆN LÀ CỦA DỰ ÁN OMNILINGUIST:
+        // Tự động thu về trạng thái Ngủ đông (Standby Pill nhỏ ở góc trái dưới) để nhường toàn bộ không gian và quyền điều khiển cho Omni Bridge!
+        if (!isTabActiveForYsdms()) {
+            root.style.left = '16px';
+            root.style.bottom = '14px';
+            root.style.right = 'auto';
+            root.style.top = 'auto';
+            root.innerHTML = `
+                <div class="yb25-pill" id="yb25-claim-tab-pill" style="opacity:0.78;font-size:11px;padding:4px 10px;background:#F8FAFC;" title="Tab này đang được nhận diện là dự án OmniLinguist. Bấm vào đây nếu muốn chuyển Tab này sang YSDMS (:3856)">
+                    <span>💤 YSDMS (:3856) đang nhường Tab cho Omni</span>
+                    <span style="color:#059669;text-decoration:underline;">[Bật YSDMS]</span>
+                </div>
+            `;
+            document.getElementById('yb25-claim-tab-pill')?.addEventListener('click', () => {
+                state.tabProjectOverride = 'YSDMS';
+                sessionStorage.setItem(STORAGE_KEYS.TAB_PROJECT_OVERRIDE, 'YSDMS');
+                root.style.left = 'auto';
+                root.style.right = '20px';
+                root.style.bottom = '20px';
+                renderUI();
+                fetchFeedFromHub(true);
+            });
+            return;
+        }
+
         const theme = getPhaseTheme(state.turnPhase);
         const row = state.latestRow;
         const rowMeta = row
             ? `${row.sender} • ${row.thread_id || 'DEFAULT'} • ${(row.id || '').slice(0, 8)} • ${formatShortTime(row.created_at)}`
             : 'Chưa có bản ghi nào';
 
-        // Chế độ thu gọn thành viên thuốc (Mini Pill)
         if (state.isMinimized) {
             root.innerHTML = `
                 <div class="yb25-pill" id="yb25-expand-pill" title="Bấm để mở rộng bảng điều khiển YSDMS Bridge v2.5">
                     <span style="width:9px;height:9px;border-radius:50%;background:${state.hubOnline ? '#10B981' : '#EF4444'};display:inline-block;"></span>
-                    <span>Bridge v${SCRIPT_VERSION}</span>
+                    <span>🏭 YSDMS v${SCRIPT_VERSION}</span>
                     <span style="color:${theme.text};background:${theme.bg};border:1px solid ${theme.border};padding:1px 8px;border-radius:999px;font-size:11px;">
                         ${theme.badge}
                     </span>
@@ -1223,8 +1373,10 @@
             <div class="yb25-card">
                 <div class="yb25-header" id="yb25-drag-handle" title="Kéo để di chuyển bảng điều khiển">
                     <div class="yb25-title">
-                        <span>⚡ YSDMS Bridge</span>
-                        <span style="font-size:10.5px;background:#E2E8F0;color:#334155;padding:1px 6px;border-radius:4px;">v${SCRIPT_VERSION}</span>
+                        <span>🏭 YSDMS Bridge</span>
+                        <span style="font-size:10px;background:#DBEAFE;color:#1E40AF;padding:1px 5px;border-radius:4px;cursor:pointer;" id="yb25-tab-proj-btn" title="Chế độ nhận diện dự án của Tab này (${state.tabProjectOverride}). Bấm để chuyển đổi.">
+                            Tab: YSDMS (${state.tabProjectOverride === 'AUTO' ? 'Auto' : 'Locked'})
+                        </span>
                     </div>
                     <div style="display:flex;align-items:center;gap:5px;">
                         <span class="yb25-port-pill" id="yb25-port-btn" title="Bấm để đổi cổng Local Hub"
@@ -1238,7 +1390,6 @@
                 <div class="yb25-body">
                     <div id="ysdms-bridge-v25-toast" style="display:none;padding:6px 9px;border-radius:6px;border:1px solid #6EE7B7;font-size:11.5px;font-weight:600;"></div>
 
-                    <!-- KHỐI TRẠNG THÁI HIỆN TẠI -->
                     <div class="yb25-status-box" style="background:${theme.bg};border-color:${theme.border};">
                         <div class="yb25-status-main" style="color:${theme.text};">
                             <span>${theme.badge}</span>
@@ -1251,15 +1402,14 @@
                         </div>
                     </div>
 
-                    <!-- 3 TÙY CHỌN CHẾ ĐỘ RÕ RÀNG -->
                     <div class="yb25-modes">
                         <label class="yb25-chk-label" title="Mặc định an toàn: Tự động đổ báo cáo của AN vào khung chat Perplexity và phát chuông báo, chờ Minh Chủ bấm gửi">
                             <input type="checkbox" id="yb25-chk-paste-only" ${isPasteOnly ? 'checked' : ''} />
                             <span>Chỉ dán chatbox</span>
                         </label>
-                        <label class="yb25-chk-label" title="Tự động đổ báo cáo AN vào khung chat, đợi 1.8s rồi tự động bấm nút Submit trên Perplexity">
+                        <label class="yb25-chk-label" title="Tự động đổ báo cáo AN vào khung chat, đợi Random 1-4s rồi tự động bấm nút Submit trên Perplexity">
                             <input type="checkbox" id="yb25-chk-auto-submit" ${isPasteAndSubmit ? 'checked' : ''} />
-                            <span>Đổ & Submit (1.8s)</span>
+                            <span>Đổ & Submit (1-4s)</span>
                         </label>
                         <label class="yb25-chk-label" title="Chuyển nội dung sang tiếng Việt không dấu trước khi đổ vào Perplexity (Alt+F8)">
                             <input type="checkbox" id="yb25-chk-no-accent" ${state.noAccent ? 'checked' : ''} />
@@ -1271,7 +1421,6 @@
                         </label>
                     </div>
 
-                    <!-- CỤM NÚT HÀNH ĐỘNG CHÍNH -->
                     <div class="yb25-actions">
                         ${state.turnPhase === 'WAITING_THOAN_APPROVAL' ? `
                             <button class="yb25-btn yb25-btn-orange" id="yb25-btn-approve-pe">
@@ -1291,7 +1440,6 @@
                         </button>
                     </div>
 
-                    <!-- THANH CÔNG CỤ PHỤ -->
                     <div class="yb25-toolbar">
                         <button class="yb25-tool-btn" id="yb25-btn-refresh" title="Kéo danh sách bản ghi mới nhất từ Supabase qua Hub (Alt+F5)">
                             🔄 Làm mới
@@ -1305,7 +1453,6 @@
                     </div>
                 </div>
 
-                <!-- NGĂN KÉO XEM DANH SÁCH TIN NHẮN SSOT TỪ SUPABASE -->
                 ${state.feedOpen ? `
                     <div class="yb25-feed-drawer" id="yb25-feed-list">
                         ${state.feedRows.length === 0 ? `
@@ -1348,30 +1495,33 @@
             </div>
         `;
 
-        // Gắn sự kiện kéo thả trên thanh Header
         enableDragOnHeader(document.getElementById('yb25-drag-handle'), root);
 
-        // Nút thu gọn
+        document.getElementById('yb25-tab-proj-btn')?.addEventListener('click', () => {
+            const next = state.tabProjectOverride === 'AUTO' ? 'YSDMS' : (state.tabProjectOverride === 'YSDMS' ? 'OMNI' : 'AUTO');
+            state.tabProjectOverride = next;
+            sessionStorage.setItem(STORAGE_KEYS.TAB_PROJECT_OVERRIDE, next);
+            renderUI();
+        });
+
         document.getElementById('yb25-min-btn')?.addEventListener('click', () => {
             state.isMinimized = true;
             localStorage.setItem(STORAGE_KEYS.MINIMIZED, 'true');
             renderUI();
         });
 
-        // Nút đổi cổng Hub
         document.getElementById('yb25-port-btn')?.addEventListener('click', () => {
-            const input = prompt('Nhập cổng Local Hub (Mặc định YSDMS: 3856):', String(state.hubPort));
+            const input = prompt('Nhập cổng Local Hub cho Tab này (YSDMS: 3856 / Omni: 3956):', String(state.hubPort));
             if (!input) return;
             const newPort = parseInt(input.trim(), 10);
             if (newPort > 1000 && newPort < 65535) {
                 state.hubPort = newPort;
-                localStorage.setItem(STORAGE_KEYS.PORT, String(newPort));
+                sessionStorage.setItem(STORAGE_KEYS.PORT, String(newPort));
                 connectSse();
                 fetchFeedFromHub(true);
             }
         });
 
-        // Checkbox: Chỉ dán chatbox
         document.getElementById('yb25-chk-paste-only')?.addEventListener('change', (e) => {
             if (e.target.checked) {
                 state.mode = 'PASTE_ONLY';
@@ -1383,11 +1533,9 @@
             renderUI();
         });
 
-        // Checkbox: Đổ & Submit (1.8s)
         document.getElementById('yb25-chk-auto-submit')?.addEventListener('change', (e) => {
             if (e.target.checked) {
                 state.mode = 'PASTE_AND_SUBMIT';
-                // Nếu đang có báo cáo AN đã đổ vào chat mà chưa submit, kích hoạt submit luôn
                 if (state.latestRow && state.latestRow.sender === 'AN' && state.turnPhase === 'AN_TEXT_INJECTED') {
                     submitPerplexityChat(state.latestRow.id);
                     return;
@@ -1400,13 +1548,11 @@
             renderUI();
         });
 
-        // Checkbox: Không dấu (Alt+F8)
         document.getElementById('yb25-chk-no-accent')?.addEventListener('change', (e) => {
             state.noAccent = !!e.target.checked;
             localStorage.setItem(STORAGE_KEYS.NO_ACCENT, String(state.noAccent));
         });
 
-        // Checkbox: Tạm dừng Auto
         document.getElementById('yb25-chk-pause')?.addEventListener('change', (e) => {
             state.isPaused = !!e.target.checked;
             localStorage.setItem(STORAGE_KEYS.PAUSED, String(state.isPaused));
@@ -1416,41 +1562,34 @@
             renderUI();
         });
 
-        // Nút Duyệt phương án PE & Bắn sang AN ngay
         document.getElementById('yb25-btn-approve-pe')?.addEventListener('click', () => {
             if (state.latestRow && state.latestRow.content_md) {
                 handleRescueSendPeToAn(state.latestRow.content_md, state.latestRow.thread_id);
             }
         });
 
-        // Nút Đổ & Gửi PE (Alt+F9)
         document.getElementById('yb25-btn-send-pe')?.addEventListener('click', () => {
             handleForceInjectAndSubmitAn(false);
         });
 
-        // Nút Chỉ Đổ vào ô chat
         document.getElementById('yb25-btn-paste-pe')?.addEventListener('click', () => {
             handleForceInjectAndSubmitAn(true);
         });
 
-        // Nút Cứu hộ Bắn PE sang AN (Alt+F10)
         document.getElementById('yb25-btn-rescue-an')?.addEventListener('click', () => {
             handleRescueSendPeToAn();
         });
 
-        // Nút Làm mới từ Supabase
         document.getElementById('yb25-btn-refresh')?.addEventListener('click', () => {
             fetchFeedFromHub(true);
         });
 
-        // Nút Mở/Đóng Ngăn kéo Xem tin SSOT
         document.getElementById('yb25-btn-feed')?.addEventListener('click', () => {
             state.feedOpen = !state.feedOpen;
             if (state.feedOpen) fetchFeedFromHub(false);
             renderUI();
         });
 
-        // Nút Copy tin mới nhất
         document.getElementById('yb25-btn-copy-latest')?.addEventListener('click', async () => {
             const target = state.latestRow || state.feedRows[0];
             if (!target || !target.content_md) {
@@ -1465,7 +1604,6 @@
             }
         });
 
-        // Các nút hành động trên từng dòng trong Ngăn kéo Xem tin SSOT
         const feedList = document.getElementById('yb25-feed-list');
         if (feedList) {
             feedList.querySelectorAll('button[data-action]').forEach(btn => {
@@ -1503,10 +1641,18 @@
     }
 
     // =========================================================================
-    // 8. PHÍM TẮT TOÀN CỤC (ALT+F5, ALT+F8, ALT+F9, ALT+F10) & KHỞI ĐỘNG
+    // 8. PHÍM TẮT TOÀN CỤC (CHỈ BẮT PHÍM KHI TAB THUỘC DỰ ÁN YSDMS) & KHỞI ĐỘNG
     // =========================================================================
     window.addEventListener('keydown', (e) => {
-        if (e.altKey && e.key === 'F9') {
+        if (!isTabActiveForYsdms()) return;
+        if (e.key === 'Escape' && state.submitTimer) {
+            clearTimeout(state.submitTimer);
+            state.submitTimer = null;
+            state.turnPhase = 'AN_TEXT_INJECTED';
+            state.statusDetail = 'Đã hủy tự động Submit (ESC) — Chờ Minh Chủ bấm Enter';
+            showToast('⏸️ Đã hủy đếm ngược Auto-Submit!');
+            renderUI();
+        } else if (e.altKey && e.key === 'F9') {
             e.preventDefault();
             handleForceInjectAndSubmitAn(false);
         } else if (e.altKey && e.key === 'F10') {
@@ -1529,24 +1675,32 @@
             setTimeout(initBridge, 300);
             return;
         }
+        detectTabProjectAffinity();
         createBridgeDOM();
         attachNativeUserSubmitListener();
         connectSse();
         fetchFeedFromHub(false);
 
-        // Polling fallback 3.5 giây đảm bảo luôn đồng bộ với Supabase qua Hub ngay cả khi SSE rớt mạng
         setInterval(() => {
+            const prevProj = state.detectedTabProject;
+            const curProj = detectTabProjectAffinity();
+            if (prevProj !== curProj) {
+                renderUI();
+            }
             fetchFeedFromHub(false);
         }, 3500);
 
-        // Giữ cho bảng điều khiển không bị Perplexity SPA xóa mất khi chuyển trang
+        setInterval(() => {
+            monitorPeDomResponseLoop();
+        }, 1000);
+
         setInterval(() => {
             if (document.body && !document.getElementById('ysdms-bridge-v25-root')) {
                 createBridgeDOM();
             }
         }, 2000);
 
-        console.log(`[YSDMS Bridge v${SCRIPT_VERSION}] 🚀 Unified Gold Edition đã khởi tạo thành công!`);
+        console.log(`[YSDMS Bridge v${SCRIPT_VERSION}] 🚀 Unified Gold Edition (Multi-Project Tab-Aware) đã khởi tạo thành công!`);
     }
 
     initBridge();
