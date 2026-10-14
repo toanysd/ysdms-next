@@ -12,7 +12,7 @@ export default async function OrderDetailPage(props: {
   params: Promise<{ id: string }>
   searchParams?: Promise<{ tab?: string }>
 }) {
-  const tMaster = await getTranslations('Master')
+  const tOrders = await getTranslations('Orders')
   const { id } = await props.params
   const sp = await props.searchParams
   const activeTab = sp?.tab || 'lines'
@@ -31,7 +31,7 @@ export default async function OrderDetailPage(props: {
   // 2. Fetch Order Lines
   const { data: orderLines } = await supabase
     .from('order_lines')
-    .select('*, products(product_id, product_code, product_name)')
+    .select('*, products(product_id, product_code, product_name_internal)')
     .eq('order_id', id)
     .order('line_no', { ascending: true })
 
@@ -64,7 +64,8 @@ export default async function OrderDetailPage(props: {
   // Pre-fill parameters for Work Order Shortcut
   const firstLine = orderLines && orderLines.length > 0 ? orderLines[0] : null
   const productId = firstLine?.product_id || ''
-  const woName = order.order_no ? `受注 ${order.order_no}${firstLine?.products?.product_name ? ' - ' + firstLine.products.product_name : ''}` : ''
+  const firstProductLabel = firstLine?.products?.product_name_internal || firstLine?.products?.product_code || ''
+  const woName = order.order_no ? `受注 ${order.order_no}${firstProductLabel ? ' - ' + firstProductLabel : ''}` : ''
   const deadline = order.requested_delivery ? String(order.requested_delivery).split('T')[0] : ''
 
   const woParams = new URLSearchParams()
@@ -103,16 +104,16 @@ export default async function OrderDetailPage(props: {
                 <button
                   className="btn btn-secondary flex items-center gap-1.5 text-xs px-3 py-1.5 h-auto cursor-pointer"
                   style={{ borderColor: 'var(--accent)', color: 'var(--accent)', fontWeight: 600 }}
-                  title="Tạo Lệnh sản xuất (WO) liên kết trực tiếp với đơn hàng này"
+                  title={tOrders('createWoTooltip')}
                 >
                   <ClipboardList size={14} />
-                  <span>▶ 製造指示票(WO)を作成</span>
+                  <span>{tOrders('createWoBtn')}</span>
                 </button>
               </Link>
               <Link href={`/shipments/new?order_id=${order.order_id}`}>
                 <button className="btn btn-primary flex items-center gap-1.5 text-xs px-3 py-1.5 h-auto cursor-pointer">
                   <Truck size={14} />
-                  <span>納品書を発行する</span>
+                  <span>{tOrders('issueDeliveryNoteBtn')}</span>
                 </button>
               </Link>
             </>
@@ -132,14 +133,14 @@ export default async function OrderDetailPage(props: {
               className={`tab-item ${activeTab === 'lines' ? 'tab-item--active' : ''}`}
               style={{ flex: 1, padding: '8px 4px', textDecoration: 'none' }}
             >
-              <span style={{ fontWeight: 700 }}>Chi tiết Đơn</span>
+              <span style={{ fontWeight: 700 }}>{tOrders('Tabs.order_lines')}</span>
             </Link>
             <Link 
               href={`/orders/${id}?tab=work_orders`}
               className={`tab-item ${activeTab === 'work_orders' ? 'tab-item--active' : ''}`}
               style={{ flex: 1, padding: '8px 4px', textDecoration: 'none' }}
             >
-              <span style={{ fontWeight: 700 }}>Lệnh sản xuất</span>
+              <span style={{ fontWeight: 700 }}>{tOrders('Tabs.production_instructions')}</span>
             </Link>
           </div>
         </div>

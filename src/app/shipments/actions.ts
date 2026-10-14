@@ -279,7 +279,7 @@ export async function searchOrderLinesAction(orderSearch: string) {
         remaining_qty,
         line_status,
         unit,
-        products (product_code, product_name)
+        products (product_code, product_name_internal)
       `)
       .in('order_id', orderIds)
       
@@ -309,7 +309,7 @@ export async function searchOrderLinesAction(orderSearch: string) {
           remaining_qty: remaining,
           unit: l.unit || 'pcs',
           product_code: l.products?.product_code || '',
-          product_name: l.products?.product_name || l.products?.product_code || ''
+          product_name_internal: l.products?.product_name_internal || ''
         }
       })
 

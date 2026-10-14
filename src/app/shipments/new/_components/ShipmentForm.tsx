@@ -20,8 +20,15 @@ type OrderLineDetail = {
   order_no: string
   customer_name: string
   product_code: string
-  product_name: string
+  product_name_internal: string
   unit: string
+}
+
+function formatLineProduct(line: OrderLineDetail) {
+  const code = line.product_code?.trim() || ''
+  const internal = line.product_name_internal?.trim() || ''
+  if (code && internal && internal !== code) return `${code} (${internal})`
+  return code || internal || '—'
 }
 
 interface ShipmentFormProps {
@@ -63,20 +70,20 @@ export function ShipmentForm({ deliverySites, initialOrder, initialLines = [] }:
   })
   const [notes, setNotes] = useState('')
 
-  // Async Order Line Search
+  // Async Order Line Search (preserve initialLines when orderSearch is empty)
   useEffect(() => {
-    if (orderSearch.length < 2) {
-      setAvailableLines([])
+    if (orderSearch.trim().length < 2) {
+      setAvailableLines(initialLines)
       return
     }
     const fetchLines = async () => {
-      const results = await searchOrderLinesAction(orderSearch)
+      const results = await searchOrderLinesAction(orderSearch.trim())
       setAvailableLines(results as any)
     }
 
     const timer = setTimeout(fetchLines, 400)
     return () => clearTimeout(timer)
-  }, [orderSearch])
+  }, [orderSearch, initialLines])
 
   const handleSelectLine = (line: OrderLineDetail) => {
     setSelectedLine(line)
@@ -147,14 +154,14 @@ export function ShipmentForm({ deliverySites, initialOrder, initialLines = [] }:
                       <div className="flex items-center justify-between">
                         <span className="text-[13px] font-mono font-bold text-[var(--accent)]">{line.order_no}</span>
                         <div className="flex items-center gap-2 text-xs font-mono">
-                          <span className="text-slate-500">発注: {line.quantity}</span>
+                          <span className="text-slate-500">{t('orderedShort')}: {line.quantity}</span>
                           <span className="text-emerald-700 font-bold bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
-                            残: {line.remaining_qty} {line.unit}
+                            {t('remainingShort')}: {line.remaining_qty} {line.unit}
                           </span>
                         </div>
                       </div>
-                      <div className="text-xs text-slate-700 font-medium">
-                        {line.customer_name ? `${line.customer_name} — ` : ''}{line.product_name || line.product_code || '—'}
+                      <div className="text-xs text-slate-700 font-medium font-mono">
+                        {line.customer_name ? `${line.customer_name} — ` : ''}{formatLineProduct(line)}
                       </div>
                     </div>
                   ))}
@@ -183,22 +190,22 @@ export function ShipmentForm({ deliverySites, initialOrder, initialLines = [] }:
                 </button>
               </div>
 
-              <div className="text-sm font-medium text-slate-800">
-                {selectedLine.product_name || selectedLine.product_code}
+              <div className="text-sm font-bold font-mono text-slate-800">
+                {formatLineProduct(selectedLine)}
               </div>
 
               {/* Delivery Stats Bar */}
               <div className="grid grid-cols-3 gap-2 mt-1 pt-2 border-t border-teal-100 text-xs font-mono">
                 <div>
-                  <span className="text-slate-500 block text-[10px]">発注総数</span>
+                  <span className="text-slate-500 block text-[10px]">{t('totalOrderedQty')}</span>
                   <span className="font-bold text-slate-800">{selectedLine.quantity.toLocaleString()} {selectedLine.unit}</span>
                 </div>
                 <div>
-                  <span className="text-slate-500 block text-[10px]">出荷済</span>
+                  <span className="text-slate-500 block text-[10px]">{t('shippedQty')}</span>
                   <span className="font-bold text-slate-700">{selectedLine.shipped_qty.toLocaleString()} {selectedLine.unit}</span>
                 </div>
                 <div>
-                  <span className="text-slate-500 block text-[10px]">未出荷残数</span>
+                  <span className="text-slate-500 block text-[10px]">{t('remainingQty')}</span>
                   <span className="font-bold text-emerald-700">{selectedLine.remaining_qty.toLocaleString()} {selectedLine.unit}</span>
                 </div>
               </div>
@@ -211,9 +218,9 @@ export function ShipmentForm({ deliverySites, initialOrder, initialLines = [] }:
       {selectedLine && (
         <div className="form-section bg-slate-50 p-3 rounded-md border border-slate-200">
           <label className="form-label flex items-center justify-between">
-            <span>出荷数量 (今回の出荷数)</span>
+            <span>{t('currentShipQtyLabel')}</span>
             <span className="text-xs text-slate-500 font-normal">
-              上限: {selectedLine.remaining_qty.toLocaleString()} {selectedLine.unit}
+              {t('maxShipQtyLabel')}: {selectedLine.remaining_qty.toLocaleString()} {selectedLine.unit}
             </span>
           </label>
           <div className="flex items-center gap-2">
@@ -232,14 +239,14 @@ export function ShipmentForm({ deliverySites, initialOrder, initialLines = [] }:
               className="btn btn-secondary text-xs px-2 py-1 h-auto"
               onClick={() => setQuantity(selectedLine.remaining_qty)}
             >
-              全数出荷 ({selectedLine.remaining_qty})
+              {t('shipAllBtn')} ({selectedLine.remaining_qty})
             </button>
           </div>
 
           {isQtyInvalid && (
             <div className="flex items-center gap-1.5 text-xs text-red-600 font-semibold mt-1.5">
               <AlertCircle size={13} />
-              <span>出荷数量は 1 〜 {selectedLine.remaining_qty.toLocaleString()} の範囲で入力してください。</span>
+              <span>{t('invalidQtyRange', { max: selectedLine.remaining_qty.toLocaleString() })}</span>
             </div>
           )}
         </div>
@@ -274,7 +281,7 @@ export function ShipmentForm({ deliverySites, initialOrder, initialLines = [] }:
 
       <div className="form-grid-2">
         <div className="form-section">
-          <label className="form-label">{t('deliveryNoteNo')} (納品書番号)</label>
+          <label className="form-label">{t('deliveryNoteNo')}</label>
           <input 
             type="text" 
             className="form-input font-mono" 

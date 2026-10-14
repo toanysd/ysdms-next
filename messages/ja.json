@@ -740,6 +740,13 @@
     "action": "操作",
     "print": "印刷",
     "printDevWarning": "PO印刷機能は開発中です",
+    "createWoTooltip": "この受注に直接紐づく製造指示票(WO)を作成",
+    "createWoBtn": "▶ 製造指示票(WO)を作成",
+    "issueDeliveryNoteBtn": "納品書を発行する",
+    "shippedQtyCol": "出荷済",
+    "remainingQtyCol": "未出荷残",
+    "lineStatusCol": "明細状態",
+    "errorLineProductAndQtyRequired": "すべての明細行で製品を選択し、数量を入力してください。",
     "Tabs": {
       "overview": "基本情報",
       "order_lines": "受注明細",
@@ -4677,7 +4684,16 @@
     "methodCUSTOMER_PICKUP": "客先引取",
     "methodOTHER": "その他",
     "noSite": "指定なし",
-    "changeBtn": "変更"
+    "changeBtn": "変更",
+    "orderedShort": "発注",
+    "remainingShort": "残",
+    "totalOrderedQty": "発注総数",
+    "shippedQty": "出荷済",
+    "remainingQty": "未出荷残数",
+    "currentShipQtyLabel": "出荷数量 (今回の出荷数)",
+    "maxShipQtyLabel": "上限",
+    "shipAllBtn": "全数出荷",
+    "invalidQtyRange": "出荷数量は 1 〜 {max} の範囲で入力してください。"
   },
   "Floor": {
     "title": "成形現場タブレット",

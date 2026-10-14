@@ -37,7 +37,7 @@ export default async function NewShipmentPage(props: {
         .from('order_lines')
         .select(`
           line_id, order_id, quantity, shipped_qty, remaining_qty, line_status, unit,
-          products (product_code, product_name)
+          products (product_code, product_name_internal)
         `)
         .eq('order_id', orderId)
         .order('line_no', { ascending: true })
@@ -62,7 +62,7 @@ export default async function NewShipmentPage(props: {
               : (Number(l.quantity) - Number(l.shipped_qty || 0)),
             unit: l.unit || 'pcs',
             product_code: l.products?.product_code || '',
-            product_name: l.products?.product_name || l.products?.product_code || ''
+            product_name_internal: l.products?.product_name_internal || ''
           }))
       }
     }

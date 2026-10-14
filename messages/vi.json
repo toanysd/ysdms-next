@@ -740,6 +740,13 @@
     "action": "Thao tác",
     "print": "In",
     "printDevWarning": "Tính năng in PO đang được phát triển",
+    "createWoTooltip": "Tạo Lệnh sản xuất (WO) liên kết trực tiếp với đơn hàng này",
+    "createWoBtn": "▶ Tạo Lệnh SX (WO)",
+    "issueDeliveryNoteBtn": "Phát hành Phiếu giao hàng",
+    "shippedQtyCol": "Đã giao",
+    "remainingQtyCol": "Còn lại",
+    "lineStatusCol": "Trạng thái dòng",
+    "errorLineProductAndQtyRequired": "Vui lòng chọn Sản phẩm và nhập số lượng cho tất cả các dòng.",
     "Tabs": {
       "overview": "Thông tin cơ bản",
       "order_lines": "Chi tiết đơn hàng",
@@ -4677,7 +4684,16 @@
     "methodCUSTOMER_PICKUP": "Khách đến lấy (PICKUP)",
     "methodOTHER": "Khác (OTHER)",
     "noSite": "Không chỉ định",
-    "changeBtn": "Đổi"
+    "changeBtn": "Đổi",
+    "orderedShort": "Đặt",
+    "remainingShort": "Còn",
+    "totalOrderedQty": "Tổng SL đặt",
+    "shippedQty": "Đã giao",
+    "remainingQty": "SL còn lại",
+    "currentShipQtyLabel": "Số lượng xuất (Đợt này)",
+    "maxShipQtyLabel": "Tối đa",
+    "shipAllBtn": "Xuất toàn bộ",
+    "invalidQtyRange": "Vui lòng nhập số lượng xuất trong khoảng 1 ~ {max}."
   },
   "Floor": {
     "title": "成形現場タブレット / Tablet Xưởng Thành Hình",

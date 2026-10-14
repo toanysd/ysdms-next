@@ -11,11 +11,13 @@ const PAGE_SIZE = 50
 export default async function OrdersListPage(props: {
   searchParams?: Promise<{ q?: string; tab?: string; page?: string }>
 }) {
+  const tOrders = await getTranslations('Orders')
   const tMaster = await getTranslations('Master')
   const tCommon = await getTranslations('Common')
   const sp = await props.searchParams
   
   const query = sp?.q || ''
+  const trimmedQuery = query.trim()
   const activeTab = sp?.tab || 'ALL'
   const page = parseInt(sp?.page || '1', 10)
   const from = (page - 1) * PAGE_SIZE
@@ -31,8 +33,19 @@ export default async function OrdersListPage(props: {
     dbQuery = dbQuery.eq('order_status', activeTab)
   }
 
-  if (query) {
-    dbQuery = dbQuery.or(`order_no.ilike.%${query}%,companies.company_name.ilike.%${query}%,companies.company_code.ilike.%${query}%`)
+  if (trimmedQuery) {
+    const { data: matchedCompanies } = await supabase
+      .from('companies')
+      .select('company_id')
+      .or(`company_name.ilike.%${trimmedQuery}%,company_code.ilike.%${trimmedQuery}%`)
+      .limit(100)
+
+    const matchedCompanyIds = (matchedCompanies || []).map(c => c.company_id).filter(Boolean)
+    if (matchedCompanyIds.length > 0) {
+      dbQuery = dbQuery.or(`order_no.ilike.%${trimmedQuery}%,company_id.in.(${matchedCompanyIds.join(',')})`)
+    } else {
+      dbQuery = dbQuery.ilike('order_no', `%${trimmedQuery}%`)
+    }
   }
 
   const { data: orders, count, error } = await dbQuery
@@ -47,11 +60,11 @@ export default async function OrdersListPage(props: {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <Package size={20} style={{ color: 'var(--accent)' }} />
-          <h1 className="text-[15px] font-bold" style={{ color: 'var(--text-primary)' }}>Quản lý Đơn hàng (Khay)</h1>
+          <h1 className="text-[15px] font-bold" style={{ color: 'var(--text-primary)' }}>{tOrders('title')}</h1>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <Suspense fallback={<div style={{ width: 250, height: 36, background: 'var(--bg-surface-2)', borderRadius: 4 }} />}>
-            <SearchBox placeholder={tMaster('searchCompany') + ' / Mã ĐH'} historyKey='search_orders' />
+            <SearchBox placeholder={`${tMaster('searchCompany')} / ${tOrders('internalOrderNo')}`} historyKey='search_orders' />
           </Suspense>
           <Link href="/orders/new">
             <button className="btn btn-primary flex items-center gap-1.5 cursor-pointer">
@@ -88,11 +101,11 @@ export default async function OrdersListPage(props: {
           <table className="data-table">
             <thead>
               <tr>
-                <th>Mã Đơn hàng</th>
-                <th>Khách hàng</th>
-                <th>Ngày đặt</th>
-                <th>Ngày giao (Yêu cầu)</th>
-                <th style={{ textAlign: 'center' }}>Trạng thái</th>
+                <th>{tOrders('internalOrderNo')}</th>
+                <th>{tOrders('customerName')}</th>
+                <th>{tOrders('orderDate')}</th>
+                <th>{tOrders('deliveryDate')}</th>
+                <th style={{ textAlign: 'center' }}>{tOrders('trangThai')}</th>
               </tr>
             </thead>
             <tbody>
