@@ -26,7 +26,7 @@ docs/dossier/
 │   └── R03_UI_DESIGN_AND_I18N.md            ← Page Anatomy, Compact Header, Paper Style (RULE-UI-10), next-intl
 │
 ├── 02_schema_modules/                       ← Bóc tách SCHEMA_REFERENCE.md (46.6 KB) thành 6 file sạch, 0 trùng lặp
-│   ├── S00_SCHEMA_ERD_INDEX.md              ← Sơ đồ quan hệ tổng thể + Bảng tra cứu PK/FK & Bảng đã DROP/DEPRECATED
+│   ├── S00_SCHEMA_ERD_INDEX.md              ← Sơ đồ quan hệ tổng thể + PK/FK & Phân biệt bảng KHÔNG TỒN TẠI vs TỒN TẠI nhưng cấm dùng mới
 │   ├── S01_COMPANIES_AND_MASTER.md          ← companies, company_contacts, delivery_sites, employees, machines, racks, calendar
 │   ├── S02_CASES_QUOTES_ORDERS.md           ← business_cases, technical_reviews, quotations, quotation_lines, orders, order_lines
 │   ├── S03_PRODUCTS_AND_CAD_DESIGNS.md      ← products, design_revisions, cav_types
@@ -70,12 +70,13 @@ Mỗi file `M01` $\rightarrow$ `M10` đều tuân thủ một khuôn mẫu 5 m�
   - `staging_order_lines_backfill = 6,279` dòng; `order_lines = 6,279` dòng; `orders = 2,396`; `products = 8,489`.
   - Khớp `6,279 / 6,279` dòng theo `(order_id, line_no, product_id, quantity)`; `0` trùng lặp; `0` thiếu FK; `0` khoảng trống `line_no`; `PENDING = 6,277`, `NORMALIZED = 2`.
 - **Danh sách bảng đã xác minh qua `information_schema.tables`:**
-  - **TỒN TẠI:** `profiles`, `employees`, `auxiliary_equipments`, `mold_design_cutters`, `mold_work_orders`.
-  - **KHÔNG TỒN TẠI:** `mold_masters`, `physical_molds`, `cutters`, `order_items`, `product_master`.
+  - **TỒN TẠI (Đang sử dụng chính thức):** `profiles`, `employees`, `equipment`, `equipment_assignments`, `orders`, `order_lines`, `products`, `staging_order_lines_backfill`.
+  - **TỒN TẠI trong Production nhưng CẤM DÙNG trong code mới (KHÔNG gọi là "đã DROP"):** `auxiliary_equipments`, `mold_design_cutters`, `mold_work_orders`.
+  - **KHÔNG TỒN TẠI trong Production (`NOT_FOUND`):** `mold_masters`, `physical_molds`, `cutters`, `order_items`, `product_master`.
 
 ### 🟡 GIAI ĐOẠN A (`WO-DOC-MODULAR` — CHỈ DUYỆT BƯỚC HỢP NHẤT `AGENTS.md`, CÁC BƯỚC CÒN LẠI CHƯA DUYỆT):
-- **Đã thực hiện (Commit `309d41beb629bb34a3e348af4efdbe1ab7d30746`, chờ PE nghiệm thu nội dung diff):**
-  - Hợp nhất `AGENTS.md` (`11,347 bytes` = `11.08 KiB` / `11.35 KB` $\le 12\text{ KB}$) và rút gọn `.agents/AGENTS.md` (`1,461 bytes` stub tham chiếu), ghi bài học `L006` vào `docs/SO_BAI_HOC.md`.
+- **Đã thực hiện (Nghiệm thu có điều kiện, đã bổ sung sửa đường dẫn tương đối `../AGENTS.md` và phân loại bảng legacy):**
+  - Hợp nhất `AGENTS.md` ($\le 12\text{ KB}$) và rút gọn `.agents/AGENTS.md` (stub tham chiếu dùng đường dẫn tương đối `../AGENTS.md`), ghi bài học `L006` vào `docs/SO_BAI_HOC.md`.
 - **Chưa duyệt (Ý tưởng / Đề xuất):**
   - Bóc tách `SCHEMA_REFERENCE.md` thành 6 file trong `docs/dossier/02_schema_modules/`.
   - Khởi tạo 10 file hồ sơ phân hệ `M01` $\rightarrow$ `M10` trong `docs/dossier/03_business_modules/`.

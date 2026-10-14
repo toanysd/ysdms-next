@@ -1,7 +1,7 @@
 # .agents/AGENTS.md — Stub Tham Chiếu (Consolidated to Root AGENTS.md)
 
 > **Nguồn sự thật duy nhất (SSOT) cho toàn bộ quy tắc AI Agent & Developer của dự án YSDMS NextGen đã được hợp nhất tại file gốc:**
-> 👉 [`d:\AntiGravity_Workspace\apps\ysdms-nextgen\AGENTS.md`](../AGENTS.md)
+> 👉 [`../AGENTS.md`](../AGENTS.md)
 
 ## Tóm tắt Điều hướng Nhanh (Tránh trùng lặp & cắt cụt `<user_rules>`)
 1. **QUY TẮC 0:** Mọi phản hồi bắt đầu và kết thúc bằng `TRẢ LỜI TỪ AN` + Timestamp JST; khối báo cáo gửi PE đặt trong 1 code block duy nhất ở cuối phản hồi; payload qua `public.pe_an_messages` tối đa **150 dòng**; chỉ `git push` khi có chỉ thị/phê duyệt từ Minh Chủ THOAN hoặc PE.

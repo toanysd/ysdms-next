@@ -32,10 +32,11 @@
 ### 1.2. RULE-DATA-02: Schema Compliance — Không Bịa Dữ Liệu & Xác Minh DB Thực Tế
 1. **Xác minh Schema từ DB thực tế:** Trước khi kết luận một bảng/cột tồn tại hay không hoặc trước khi viết truy vấn phức tạp, BẮT BUỘC đối chiếu `SCHEMA_REFERENCE.md` / `src/types/database.types.ts` VÀ kiểm chứng bằng truy vấn chỉ-đọc `information_schema.tables` / `information_schema.columns` trên PostgreSQL kèm `NOW()`.
 2. **Không tự bịa tên bảng/cột/FK:** Nếu cột không tồn tại (VD: `work_logs` không có `equipment_id`), tuyệt đối không dùng trong query/filter.
-3. **Single Source of Truth (SSOT) cho từng thực thể:**
+3. **Single Source of Truth (SSOT) & Phân loại Bảng Legacy:**
    - Nhựa & kích thước thiết kế: **CHỈ từ `design_revisions`** (`plastic_type_designed`, `cutline_length/width`). Không lấy từ `products.primary_plastic_code`.
    - Thiết bị vật lý: **CHỈ từ `equipment`** (`MOLD`, `CUTTER_SEPARATE`, `CUTTER_INLINE`, `WATER_BASE`, `PRESSURE_BASE`, `FRAME`, `STACKING`, `PLUG`) và `equipment_assignments` (`SET_MEMBER`, `SHARED`).
-   - Các bảng `mold_masters`, `physical_molds`, `cutters`: **DEPRECATED** — cấm dùng trong code mới.
+   - **Bảng KHÔNG TỒN TẠI trong Production (`NOT_FOUND`):** `mold_masters`, `physical_molds`, `cutters`, `order_items`, `product_master` — tuyệt đối không truy vấn.
+   - **Bảng VẪN TỒN TẠI trong Production (`EXISTS`) nhưng CẤM DÙNG trong code mới (không gọi là đã DROP):** `auxiliary_equipments`, `mold_design_cutters`, `mold_work_orders`.
 4. **Quan hệ & Cột chuẩn V3:**
    - `orders.company_id -> companies.company_id` (KHÔNG dùng `customer_id`).
    - `orders.order_id`, `products.product_id`, `order_lines.line_id` là các khóa chính UUID tương ứng.

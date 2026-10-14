@@ -87,9 +87,10 @@ flowchart TD
 ## III. KẾT QUẢ XÁC MINH SCHEMA THỰC TẾ (`information_schema`) & ĐỐI SOÁT PHƯƠNG ÁN C
 
 1. **Danh sách bảng đã xác minh trực tiếp qua `information_schema.tables` (`table_schema = 'public'` trên Supabase Production `iirezrszalmecsslbruo`):**
-   - **TỒN TẠI (`EXISTS`):** `profiles`, `employees`, `auxiliary_equipments`, `mold_design_cutters`, `mold_work_orders`, `equipment`, `equipment_assignments`, `orders`, `order_lines`, `products`, `staging_order_lines_backfill`.
-   - **KHÔNG TỒN TẠI (`NOT_FOUND`):** `mold_masters`, `physical_molds`, `cutters`, `order_items`, `product_master`.
-   - *Lưu ý quan trọng:* Tuyệt đối không dùng nhận định cũ *"bảng `profiles` không tồn tại"* (bảng `profiles` có tồn tại thực tế trong DB dù `SCHEMA_REFERENCE.md` không liệt kê).
+   - **TỒN TẠI (Đang sử dụng chính thức):** `profiles`, `employees`, `equipment`, `equipment_assignments`, `orders`, `order_lines`, `products`, `staging_order_lines_backfill`.
+   - **TỒN TẠI trong Production nhưng CẤM DÙNG trong code mới (KHÔNG gọi là "đã DROP"):** `auxiliary_equipments`, `mold_design_cutters`, `mold_work_orders`.
+   - **KHÔNG TỒN TẠI trong Production (`NOT_FOUND`):** `mold_masters`, `physical_molds`, `cutters`, `order_items`, `product_master`.
+   - *Lưu ý quan trọng:* Tuyệt đối không dùng nhận định cũ *"bảng `profiles` không tồn tại"*, và không gọi `auxiliary_equipments`, `mold_design_cutters`, `mold_work_orders` là *"đã DROP"*.
 2. **Cơ chế Join & Đối soát chuẩn của Phương án C (`staging_order_lines_backfill` $\leftrightarrow$ `order_lines`):**
    - Bảng `public.staging_order_lines_backfill` gồm 15 cột: `staging_id, batch_no, source_row_no, order_no, line_no, product_id, product_code, product_code_source, quantity, quantity_source, quantity_normalized, notes, validation_status, validation_error, created_at`.
    - **Cột `resolved_order_id` (hay `order_id`) KHÔNG tồn tại trong `staging_order_lines_backfill`.**
