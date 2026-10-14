@@ -68,7 +68,6 @@ const NAV_SECTIONS: NavSection[] = [
       { href: '/equipment/molds', icon: Box, tKey: 'items.molds' },
       { href: '/equipment/jobs', icon: Settings, tKey: 'items.jobs' },
       { href: '/equipment/schedule', icon: CalendarRange, tKey: 'items.moldSchedule' },
-      { href: '/production/mold-orders', icon: ClipboardList, tKey: 'items.moldOrders' },
       { href: '/equipment/cutting-dies', icon: Scissors, tKey: 'items.cuttingDies' },
       { href: '/equipment/locations', icon: MapPin, tKey: 'items.locations' },
       { href: '/equipment/loans', icon: ArrowLeftRight, tKey: 'items.loans' },
