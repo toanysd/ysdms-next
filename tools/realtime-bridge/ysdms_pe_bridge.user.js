@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         [v2.7.3] 🏭 YSDMS NextGen — PE ⟷ AN Realtime Bridge (Auto-Stamp, Turn-Guard & Timestamp Status UI)
+// @name         [v2.7.4] 🏭 YSDMS NextGen — PE ⟷ AN Realtime Bridge (Next-Step Status & Auto-Resume Button)
 // @namespace    http://tampermonkey.net/
-// @version      2.7.3
-// @description  [v2.7.3] Cầu nối thời gian thực cho YSDMS NextGen: Hiển thị rõ Ngày Giờ JST trên mọi dòng trạng thái (không bao giờ bị cắt cụt), Nhận diện đa định dạng payload (/api/report), Chống dán trùng Stamp, Đánh thức AN đa dự án, Chặn iframe count.perplexity.ai.
+// @version      2.7.4
+// @description  [v2.7.4] Cầu nối thời gian thực cho YSDMS NextGen: Hiển thị rõ Bước Tiếp Theo (Next Step), Nhận diện chính xác khi PE trả lời xong (kể cả khi đang Tạm dừng / F5 / Copy thủ công), Nút bấm trực quan [Tạm dừng / Tiếp tục Tự động gửi] tự động bắn sang AN ngay khi bấm Tiếp tục.
 // @author       Antigravity (AN) & Perplexity (PE) — Approved by Minh Chủ THOAN
 // @match        https://www.perplexity.ai/*
 // @match        https://perplexity.ai/*
@@ -19,10 +19,10 @@
     'use strict';
 
     if (window.top !== window.self || location.hostname === 'count.perplexity.ai') return;
-    if (window.__YSDMS_BRIDGE_V273_LOADED__) return;
-    window.__YSDMS_BRIDGE_V273_LOADED__ = true;
+    if (window.__YSDMS_BRIDGE_V274_LOADED__) return;
+    window.__YSDMS_BRIDGE_V274_LOADED__ = true;
 
-    const SCRIPT_VERSION = '2.7.3';
+    const SCRIPT_VERSION = '2.7.4';
     const DEFAULT_PORT = 3856;
     const DEFAULT_THREAD_ID = 'BRIDGE-ORCHESTRATION';
 
@@ -35,6 +35,8 @@
         POS: 'ysdms_bridge_pos_v25',
         INJECTED_MAP: 'ysdms_bridge_injected_map_v25',
         SUBMITTED_MAP: 'ysdms_bridge_submitted_map_v25',
+        AN_BASELINE_MAP: 'ysdms_bridge_an_baseline_map_v274',
+        DISPATCHED_AN_MAP: 'ysdms_bridge_dispatched_an_map_v274',
         LAST_FORWARDED_HASH: 'ysdms_bridge_last_fwd_hash_v25',
         TAB_PROJECT_OVERRIDE: 'bridge_tab_project_override_v25', // Lưu trong sessionStorage (riêng cho từng Tab)
         URL_OWNER_MAP: 'pe_bridge_url_owner_map_v27', // Ghim cứng URL hội thoại -> 'YSDMS' | 'OMNI'
@@ -77,12 +79,15 @@
         feedOpen: false,
         latestRow: null,
         feedRows: [],
-        turnPhase: 'IDLE', // IDLE | AN_PENDING_INJECT | AN_TEXT_INJECTED | AN_SUBMITTING | WAITING_FOR_PE | WAITING_THOAN_APPROVAL | PE_DISPATCHED_TO_AN
+        turnPhase: 'IDLE', // IDLE | AN_STILL_WORKING_HOLD | AN_PENDING_INJECT | AN_TEXT_INJECTED | AN_SUBMITTING | WAITING_FOR_PE | PE_READY_TO_DISPATCH | WAITING_THOAN_APPROVAL | PE_DISPATCHED_TO_AN
         statusDetail: 'Đang kết nối Local Hub (:3856)...',
         injectedMap: loadJsonStorage(STORAGE_KEYS.INJECTED_MAP, {}),
         submittedMap: loadJsonStorage(STORAGE_KEYS.SUBMITTED_MAP, {}),
+        anBaselineMap: loadJsonStorage(STORAGE_KEYS.AN_BASELINE_MAP, {}),
+        dispatchedAnMap: loadJsonStorage(STORAGE_KEYS.DISPATCHED_AN_MAP, {}),
         submitTimer: null,
         isInjectingNow: false,
+        isDispatchingPeNow: false,
         baselinePeProseText: '',
         lastObservedProseText: '',
         peStreamStableTicks: 0,
@@ -93,8 +98,6 @@
     };
 
     function isBridgeCurrentlyPaused() {
-        const domChk = document.getElementById('yb25-chk-pause');
-        if (domChk && domChk.checked) return true;
         if (state.isPaused) return true;
         if (localStorage.getItem(STORAGE_KEYS.PAUSED) === 'true') return true;
         if (sessionStorage.getItem(STORAGE_KEYS.TAB_PAUSED_LOCK) === 'true') return true;
@@ -867,6 +870,174 @@
         );
     }
 
+    function normalizeProseFingerprint(text) {
+        if (!text) return '0';
+        const norm = text.replace(/\s+/g, ' ').trim();
+        return hashString(`${norm.slice(0, 300)}||${norm.slice(-200)}||${norm.length}`);
+    }
+
+    function extractPeReplyTimestampInfo(proseText) {
+        if (!proseText) return null;
+        const regex = /(\d{4}-\d{2}-\d{2})\s+(\d{2}:\d{2}(?::\d{2})?)\s*JST/gi;
+        let match;
+        let lastMatch = null;
+        while ((match = regex.exec(proseText)) !== null) {
+            lastMatch = match;
+        }
+        if (!lastMatch) return null;
+        const dateStr = lastMatch[1];
+        const timeStr = lastMatch[2];
+        const hasSeconds = timeStr.split(':').length === 3;
+        const iso = `${dateStr}T${hasSeconds ? timeStr : timeStr + ':00'}+09:00`;
+        const ms = Date.parse(iso);
+        if (isNaN(ms)) return null;
+        return {
+            ms,
+            hasSeconds,
+            timeLabel: `${timeStr} JST`,
+            fullLabel: `${dateStr} ${timeStr} JST`
+        };
+    }
+
+    function recordBaselineProseForAnId(anId, proseText) {
+        if (!anId) return;
+        const fp = normalizeProseFingerprint(proseText || '');
+        if (state.anBaselineMap[anId] !== fp) {
+            state.anBaselineMap[anId] = fp;
+            const keys = Object.keys(state.anBaselineMap);
+            if (keys.length > 80) delete state.anBaselineMap[keys[0]];
+            saveJsonStorage(STORAGE_KEYS.AN_BASELINE_MAP, state.anBaselineMap);
+        }
+    }
+
+    function isPeReplyDispatchedForAnId(anId) {
+        if (!anId) return false;
+        return Boolean(state.dispatchedAnMap[anId]);
+    }
+
+    function markPeReplyDispatchedForAnId(anId, proseText) {
+        if (anId) {
+            state.dispatchedAnMap[anId] = Date.now();
+            const keys = Object.keys(state.dispatchedAnMap);
+            if (keys.length > 80) delete state.dispatchedAnMap[keys[0]];
+            saveJsonStorage(STORAGE_KEYS.DISPATCHED_AN_MAP, state.dispatchedAnMap);
+        }
+        if (proseText) {
+            const prefixHash = hashString(proseText.slice(0, 300).replace(/\s+/g, ' ').trim());
+            localStorage.setItem(STORAGE_KEYS.LAST_FORWARDED_HASH, prefixHash);
+            state.baselinePeProseText = proseText;
+            state.lastObservedProseText = proseText;
+        }
+    }
+
+    function isProseAlreadyForwarded(proseText, anId) {
+        if (anId && isPeReplyDispatchedForAnId(anId)) return true;
+        if (!proseText) return false;
+        const textHash = hashString(proseText);
+        const prefixHash = hashString(proseText.slice(0, 300).replace(/\s+/g, ' ').trim());
+        const fpHash = normalizeProseFingerprint(proseText);
+        const lastFwdHash = localStorage.getItem(STORAGE_KEYS.LAST_FORWARDED_HASH);
+        return Boolean(lastFwdHash && (textHash === lastFwdHash || prefixHash === lastFwdHash || fpHash === lastFwdHash));
+    }
+
+    function domHasSubmittedQueryForAnId(anId) {
+        if (!anId) return false;
+        const shortId = String(anId).slice(0, 8).toLowerCase();
+        const editor = findPerplexityEditor();
+        const userNodes = Array.from(document.querySelectorAll(
+            '[data-message-author-role="user"], [data-testid*="user-message"], .whitespace-pre-wrap'
+        ));
+        for (const el of userNodes) {
+            if (el.closest('#ysdms-bridge-v25-root') || el.closest('#omni-bridge-v25-root')) continue;
+            if (editor && (el === editor || editor.contains(el) || el.contains(editor))) continue;
+            const txt = (el.innerText || el.textContent || '').toLowerCase();
+            if (txt.includes(shortId)) return true;
+        }
+        return false;
+    }
+
+    function domHasProseAfterAnIdQuery(anId) {
+        if (!anId) return false;
+        const shortId = String(anId).slice(0, 8).toLowerCase();
+        const editor = findPerplexityEditor();
+        const userNodes = Array.from(document.querySelectorAll(
+            '[data-message-author-role="user"], [data-testid*="user-message"], .whitespace-pre-wrap'
+        )).filter(el => {
+            if (el.closest('#ysdms-bridge-v25-root') || el.closest('#omni-bridge-v25-root')) return false;
+            if (editor && (el === editor || editor.contains(el) || el.contains(editor))) return false;
+            const txt = (el.innerText || el.textContent || '').toLowerCase();
+            return txt.includes(shortId);
+        });
+        if (userNodes.length === 0) return false;
+        const matchingQuery = userNodes[userNodes.length - 1];
+        const proseNodes = Array.from(document.querySelectorAll('.prose')).filter(el => {
+            if (el.closest('#ysdms-bridge-v25-root') || el.closest('#omni-bridge-v25-root')) return false;
+            if (el.closest('button') || el.closest('[data-testid*="related"]') || el.closest('div[class*="related"]')) return false;
+            return (el.innerText || '').trim().length > 60;
+        });
+        return proseNodes.some(p =>
+            Boolean(matchingQuery.compareDocumentPosition(p) & Node.DOCUMENT_POSITION_FOLLOWING)
+        );
+    }
+
+    function detectCompletedPeReplyForAnRow(row) {
+        if (!row || row.sender !== 'AN') return null;
+        const id = row.id || row.message_id;
+        if (!id) return null;
+
+        if (isPeReplyDispatchedForAnId(id)) {
+            return { status: 'ALREADY_DISPATCHED' };
+        }
+
+        if (isPerplexityBusy()) {
+            return { status: 'PE_BUSY' };
+        }
+
+        const currentProse = getLatestPeProseText();
+        if (!currentProse || currentProse.length < 60 || isEchoBackTriggerText(currentProse)) {
+            return null;
+        }
+
+        const peStamp = extractPeReplyTimestampInfo(currentProse);
+        const rowCreatedMs = row.created_at ? new Date(row.created_at).getTime() : 0;
+
+        // CHỐT CHẶN CHỐNG NHẬN NHẦM CÂU TRẢ LỜI CŨ KHI MINH CHỦ COPY THỦ CÔNG SANG AN:
+        // Nếu câu trả lời PE trên màn hình có Stamp giờ NHỎ HƠN giờ tạo báo cáo AN hiện tại -> Đây là câu trả lời PE của lượt trước!
+        if (peStamp && peStamp.ms > 0 && rowCreatedMs > 0) {
+            const toleranceMs = peStamp.hasSeconds ? 5000 : 59999;
+            if (peStamp.ms + toleranceMs < rowCreatedMs) {
+                recordBaselineProseForAnId(id, currentProse);
+                return null;
+            }
+        }
+
+        if (isProseAlreadyForwarded(currentProse, id)) {
+            return null;
+        }
+
+        const hasNewerPeStamp = Boolean(
+            peStamp && peStamp.ms > 0 && rowCreatedMs > 0 &&
+            (peStamp.ms + (peStamp.hasSeconds ? 5000 : 59999) >= rowCreatedMs)
+        );
+        const hasDomProseAfterQuery = domHasProseAfterAnIdQuery(id);
+        const baselineFp = state.anBaselineMap[id];
+        const curFp = normalizeProseFingerprint(currentProse);
+        const hasChangedFromBaseline = Boolean(
+            baselineFp && baselineFp !== curFp &&
+            (isMessageInjected(id) || isMessageSubmitted(id))
+        );
+
+        if (hasNewerPeStamp || hasDomProseAfterQuery || hasChangedFromBaseline) {
+            return {
+                status: 'PE_COMPLETED',
+                prose: currentProse,
+                peTimeLabel: peStamp ? peStamp.timeLabel : formatShortTime(new Date().toISOString())
+            };
+        }
+
+        return null;
+    }
+
     async function evaluateAndProcessLatestRow(row, sourceLabel = 'SYNC') {
         if (!row) return;
         const id = row.id || row.message_id;
@@ -883,13 +1054,69 @@
                 return;
             }
 
-            const alreadySubmitted = isMessageSubmitted(id) || row.status === 'CONSUMED';
-            const editorState = inspectPerplexityEditorState(id);
-            const alreadyInjected = isMessageInjected(id) || editorState.stateType === 'CASE1_SAME_TRIGGER_PRESENT';
-
             const rowTime = formatShortTime(row.created_at);
 
-            // TH2: Đã dán và đã Submit -> Khóa vĩnh viễn, không bao giờ dán lại!
+            // Ghi nhận baseline .prose trước khi báo cáo AN được gửi cho PE
+            if (!state.anBaselineMap[id] && !isMessageInjected(id) && !isMessageSubmitted(id)) {
+                const curProse = getLatestPeProseText();
+                const peStamp = extractPeReplyTimestampInfo(curProse);
+                const rowCreatedMs = row.created_at ? new Date(row.created_at).getTime() : 0;
+                const isAlreadyNewerReply = Boolean(
+                    peStamp && peStamp.ms > 0 && rowCreatedMs > 0 &&
+                    (peStamp.ms + (peStamp.hasSeconds ? 5000 : 59999) >= rowCreatedMs)
+                );
+                if (!isAlreadyNewerReply) {
+                    recordBaselineProseForAnId(id, curProse);
+                }
+            }
+
+            // KIỂM TRA ƯU TIÊN: PE đã trả lời xong hoặc đang trả lời cho báo cáo AN này chưa?
+            const peCheck = detectCompletedPeReplyForAnRow(row);
+            if (peCheck) {
+                if (peCheck.status === 'ALREADY_DISPATCHED') {
+                    state.turnPhase = 'PE_DISPATCHED_TO_AN';
+                    state.statusDetail = `Đã chuyển chỉ thị của PE sang AN (Báo cáo ${id.slice(0, 8)}) — AN đang thực thi`;
+                    renderUI();
+                    return;
+                }
+                if (peCheck.status === 'PE_BUSY') {
+                    if (!isMessageInjected(id)) markMessageInjected(id);
+                    if (!isMessageSubmitted(id)) markMessageSubmitted(id);
+                    state.turnPhase = 'WAITING_FOR_PE';
+                    state.statusDetail = `PE đang phân tích báo cáo AN (${id.slice(0, 8)} • ${rowTime})...`;
+                    renderUI();
+                    return;
+                }
+                if (peCheck.status === 'PE_COMPLETED') {
+                    if (!isMessageInjected(id)) markMessageInjected(id);
+                    if (!isMessageSubmitted(id)) markMessageSubmitted(id);
+                    state.pendingPeApprovalText = peCheck.prose;
+                    if (requiresThoanDecision(peCheck.prose)) {
+                        state.turnPhase = 'WAITING_THOAN_APPROVAL';
+                        state.statusDetail = `PE đã trả lời (${peCheck.peTimeLabel}) — Chờ Minh Chủ THOAN chốt phương án`;
+                    } else {
+                        state.turnPhase = 'PE_READY_TO_DISPATCH';
+                        state.statusDetail = isBridgeCurrentlyPaused()
+                            ? `PE đã trả lời xong (${peCheck.peTimeLabel}) — Đang Tạm dừng Tự động gửi`
+                            : `PE đã trả lời xong (${peCheck.peTimeLabel}) — Chuẩn bị tự động gửi cho AN...`;
+                    }
+                    renderUI();
+                    return;
+                }
+            }
+
+            const editorState = inspectPerplexityEditorState(id);
+            // Tự động nhận diện nếu Minh Chủ đã bấm Submit (ô chat đã trống và câu hỏi đã nằm trên luồng hội thoại)
+            if (isMessageInjected(id) && !isMessageSubmitted(id) && editorState.stateType !== 'CASE1_SAME_TRIGGER_PRESENT') {
+                if (domHasSubmittedQueryForAnId(id)) {
+                    markMessageSubmitted(id);
+                }
+            }
+
+            const alreadySubmitted = isMessageSubmitted(id) || row.status === 'CONSUMED';
+            const alreadyInjected = isMessageInjected(id) || editorState.stateType === 'CASE1_SAME_TRIGGER_PRESENT';
+
+            // TH2: Đã dán và đã Submit -> Chờ PE phân tích
             if (alreadySubmitted) {
                 state.turnPhase = 'WAITING_FOR_PE';
                 state.statusDetail = `Đã gửi báo cáo AN (${id.slice(0, 8)} • ${rowTime}) — Chờ PE phản hồi...`;
@@ -907,7 +1134,9 @@
             }
 
             state.turnPhase = 'AN_PENDING_INJECT';
-            state.statusDetail = `Có báo cáo mới từ AN (${id.slice(0, 8)} • ${rowTime}) — Chờ đổ vào ô chat`;
+            state.statusDetail = isBridgeCurrentlyPaused()
+                ? `Có báo cáo mới từ AN (${id.slice(0, 8)} • ${rowTime}) — Đang Tạm dừng Tự động gửi`
+                : `Có báo cáo mới từ AN (${id.slice(0, 8)} • ${rowTime}) — Chờ đổ vào ô chat`;
             renderUI();
 
             // CHỐT CHẶN ĐA DỰ ÁN TUYỆT ĐỐI: Chỉ khi Tab được xác nhận đích danh là 'YSDMS' mới được phép tự động thao tác!
@@ -933,8 +1162,10 @@
                 return;
             }
 
-            state.baselinePeProseText = getLatestPeProseText();
-            state.lastObservedProseText = state.baselinePeProseText;
+            const curProseBeforeInject = getLatestPeProseText();
+            state.baselinePeProseText = curProseBeforeInject;
+            state.lastObservedProseText = curProseBeforeInject;
+            recordBaselineProseForAnId(id, curProseBeforeInject);
             state.peStreamStableTicks = 0;
 
             const triggerPrompt = buildPerplexityTriggerPrompt(row);
@@ -984,16 +1215,14 @@
         }
     }
 
-    // Tự động theo dõi khi PE trả lời xong trên giao diện Web để tự động đẩy xuống AN (Cho cả chế độ Chỉ dán lẫn Đổ & Submit!)
+    // LUÔN QUAN SÁT DOM PERPLEXITY MỖI GIÂY (Kể cả khi đang Tạm dừng Auto) để hiển thị đúng trạng thái thực tế!
     async function monitorPeDomResponseLoop() {
-        if (!isTabActiveForYsdms() || isBridgeCurrentlyPaused() || state.mode === 'MANUAL') return;
+        if (!isTabActiveForYsdms()) return;
 
-        // CHỐT CHẶN CHỐNG BẮN TRÙNG CÂU TRẢ LỜI PE SAU 30 GIÂY:
-        // Nếu bản ghi mới nhất trên Supabase ĐÃ LÀ CỦA PE/THOAN (tức là câu trả lời của PE cho lượt này đã được chuyển về AN rồi)
-        // thì KHÔNG tự động quét DOM bắn lại nữa, chỉ chờ đến khi AN có báo cáo mới tiếp theo!
+        const row = state.latestRow;
         if (
             state.turnPhase === 'PE_DISPATCHED_TO_AN' ||
-            (state.latestRow && (state.latestRow.sender === 'PE' || state.latestRow.sender === 'THOAN') && state.turnPhase !== 'WAITING_FOR_PE')
+            (row && (row.sender === 'PE' || row.sender === 'THOAN') && state.turnPhase !== 'WAITING_FOR_PE')
         ) {
             return;
         }
@@ -1004,6 +1233,10 @@
         if (busy) {
             state.peStreamStableTicks = 0;
             if (currentProse) state.lastObservedProseText = currentProse;
+            if (row && row.sender === 'AN') {
+                if (!isMessageInjected(row.id)) markMessageInjected(row.id);
+                if (!isMessageSubmitted(row.id)) markMessageSubmitted(row.id);
+            }
             if (state.turnPhase !== 'WAITING_FOR_PE') {
                 state.turnPhase = 'WAITING_FOR_PE';
                 state.statusDetail = 'PE đang phân tích & sinh câu trả lời trên Perplexity...';
@@ -1012,67 +1245,81 @@
             return;
         }
 
+        // Nếu báo cáo AN đã đổ vào ô chat mà hiện tại ô chat đã trống và câu hỏi đã lên luồng chat -> Chuyển sang WAITING_FOR_PE
+        if (row && row.sender === 'AN' && state.turnPhase === 'AN_TEXT_INJECTED') {
+            const editorState = inspectPerplexityEditorState(row.id);
+            if (editorState.stateType !== 'CASE1_SAME_TRIGGER_PRESENT' && domHasSubmittedQueryForAnId(row.id)) {
+                markMessageSubmitted(row.id);
+                state.turnPhase = 'WAITING_FOR_PE';
+                state.statusDetail = `Đã gửi báo cáo AN (${row.id.slice(0, 8)}) — Chờ PE phản hồi...`;
+                renderUI();
+            }
+        }
+
         if (!currentProse || currentProse.length < 60 || isEchoBackTriggerText(currentProse)) {
             return;
         }
 
-        // Khởi tạo baseline an toàn ở lần đầu mở trang để không bắn lại câu trả lời cũ từ hôm trước
-        if (!state.baselinePeProseText && state.turnPhase === 'IDLE') {
-            const savedHash = localStorage.getItem(STORAGE_KEYS.LAST_FORWARDED_HASH);
-            const curHash = hashString(currentProse);
-            if (!savedHash || savedHash === curHash) {
-                state.baselinePeProseText = currentProse;
-                state.lastObservedProseText = currentProse;
-                if (!savedHash) localStorage.setItem(STORAGE_KEYS.LAST_FORWARDED_HASH, curHash);
+        if (row && row.sender === 'AN') {
+            const peCheck = detectCompletedPeReplyForAnRow(row);
+            if (!peCheck || peCheck.status !== 'PE_COMPLETED') {
                 return;
             }
-        }
 
-        if (currentProse === state.baselinePeProseText) {
-            state.peStreamStableTicks = 0;
-            return;
-        }
-
-        // Nếu nội dung .prose vẫn đang thay đổi giữa 2 chu kỳ -> PE vẫn đang stream chữ!
-        if (currentProse !== state.lastObservedProseText) {
-            state.lastObservedProseText = currentProse;
-            state.peStreamStableTicks = 0;
-            if (state.turnPhase !== 'WAITING_FOR_PE') {
-                state.turnPhase = 'WAITING_FOR_PE';
-                state.statusDetail = 'Đang thu thập câu trả lời mới của PE...';
-                renderUI();
+            // Nếu nội dung .prose vẫn đang thay đổi giữa 2 chu kỳ -> PE vẫn đang stream chữ!
+            if (currentProse !== state.lastObservedProseText) {
+                state.lastObservedProseText = currentProse;
+                state.peStreamStableTicks = 0;
+                if (state.turnPhase !== 'WAITING_FOR_PE') {
+                    state.turnPhase = 'WAITING_FOR_PE';
+                    state.statusDetail = 'Đang thu thập câu trả lời mới của PE...';
+                    renderUI();
+                }
+                return;
             }
-            return;
-        }
 
-        state.peStreamStableTicks += 1;
-        // Đợi PE dừng stream ổn định ít nhất 4 chu kỳ (~4 giây) để ưu tiên đường Direct MCP Supabase của PE trước
-        if (state.peStreamStableTicks < 4) return;
+            state.peStreamStableTicks += 1;
+            if (state.peStreamStableTicks < 3) return;
 
-        // So sánh cả Hash toàn văn lẫn Fingerprint 300 ký tự đầu để tránh lỗi rê chuột làm đổi nhẹ DOM (.prose)
-        const textHash = hashString(currentProse);
-        const prefixHash = hashString(currentProse.slice(0, 300).replace(/\s+/g, ' ').trim());
-        const lastFwdHash = localStorage.getItem(STORAGE_KEYS.LAST_FORWARDED_HASH);
-        if (textHash === lastFwdHash || prefixHash === lastFwdHash) {
-            state.baselinePeProseText = currentProse;
-            return;
-        }
-
-        localStorage.setItem(STORAGE_KEYS.LAST_FORWARDED_HASH, prefixHash);
-        state.baselinePeProseText = currentProse;
-
-        if (requiresThoanDecision(currentProse)) {
-            state.turnPhase = 'WAITING_THOAN_APPROVAL';
+            if (!isMessageInjected(row.id)) markMessageInjected(row.id);
+            if (!isMessageSubmitted(row.id)) markMessageSubmitted(row.id);
             state.pendingPeApprovalText = currentProse;
-            state.statusDetail = '🟠 PE vừa trả lời và yêu cầu Minh Chủ THOAN chốt phương án!';
-            playChime('warn');
-            showToast('🟠 PE yêu cầu Minh Chủ THOAN chốt quyết định trước khi chuyển sang AN!');
-            renderUI();
-            return;
-        }
 
-        // Tự động đẩy chỉ thị của PE xuống cho AN thực thi (cho cả chế độ PASTE_ONLY và PASTE_AND_SUBMIT)
-        await handleRescueSendPeToAn(currentProse, (state.latestRow && state.latestRow.thread_id) || DEFAULT_THREAD_ID, false);
+            if (requiresThoanDecision(currentProse)) {
+                if (state.turnPhase !== 'WAITING_THOAN_APPROVAL') {
+                    state.turnPhase = 'WAITING_THOAN_APPROVAL';
+                    state.statusDetail = `🟠 PE vừa trả lời (${peCheck.peTimeLabel}) — Chờ Minh Chủ THOAN chốt phương án!`;
+                    playChime('warn');
+                    showToast('🟠 PE yêu cầu Minh Chủ THOAN chốt quyết định trước khi chuyển sang AN!');
+                    renderUI();
+                }
+                return;
+            }
+
+            // Nếu đang TẠM DỪNG AUTO hoặc chế độ MANUAL: Hiển thị rõ trạng thái "Đến lượt gửi cho AN" và chờ bấm [Tiếp tục Tự động gửi]!
+            if (isBridgeCurrentlyPaused() || state.mode === 'MANUAL') {
+                if (state.turnPhase !== 'PE_READY_TO_DISPATCH') {
+                    state.turnPhase = 'PE_READY_TO_DISPATCH';
+                    state.statusDetail = `PE đã trả lời xong (${peCheck.peTimeLabel}) — Đang Tạm dừng Tự động gửi`;
+                    playChime('inject');
+                    renderUI();
+                }
+                return;
+            }
+
+            // Nếu đang BẬT AUTO: Tự động bắn chỉ thị của PE sang cho AN ngay!
+            if (state.isDispatchingPeNow) return;
+            state.turnPhase = 'PE_READY_TO_DISPATCH';
+            state.statusDetail = `PE đã trả lời xong (${peCheck.peTimeLabel}) — Đang tự động gửi cho AN...`;
+            renderUI();
+
+            state.isDispatchingPeNow = true;
+            try {
+                await handleRescueSendPeToAn(currentProse, row.thread_id || DEFAULT_THREAD_ID, false);
+            } finally {
+                state.isDispatchingPeNow = false;
+            }
+        }
     }
 
     async function fetchFeedFromHub(manualNotify = false) {
@@ -1155,7 +1402,7 @@
                         fetchFeedFromHub(false);
                     } else if (data.type === 'REPORT_CONSUMED' && data.reportId) {
                         markMessageSubmitted(data.reportId);
-                        if (state.latestRow && state.latestRow.id === data.reportId) {
+                        if (state.latestRow && state.latestRow.id === data.reportId && state.turnPhase !== 'PE_READY_TO_DISPATCH') {
                             state.turnPhase = 'WAITING_FOR_PE';
                             state.statusDetail = `Báo cáo AN (${data.reportId.slice(0, 8)}) đã được gửi cho PE`;
                         }
@@ -1177,7 +1424,7 @@
                         }
                     }
                 } catch (e) {
-                    console.warn('[YSDMS Bridge v2.7.2] Lỗi xử lý gói SSE:', e);
+                    console.warn('[YSDMS Bridge v2.7.4] Lỗi xử lý gói SSE:', e);
                 }
             };
             eventSource.onerror = () => {
@@ -1202,8 +1449,10 @@
             return;
         }
 
-        state.baselinePeProseText = getLatestPeProseText();
-        state.lastObservedProseText = state.baselinePeProseText;
+        const curProse = getLatestPeProseText();
+        state.baselinePeProseText = curProse;
+        state.lastObservedProseText = curProse;
+        recordBaselineProseForAnId(targetRow.id, curProse);
         state.peStreamStableTicks = 0;
 
         const triggerPrompt = buildPerplexityTriggerPrompt(targetRow);
@@ -1263,6 +1512,7 @@
             return;
         }
 
+        const currentAnId = (state.latestRow && state.latestRow.sender === 'AN') ? state.latestRow.id : null;
         const threadId = customThreadId || (state.latestRow && state.latestRow.thread_id) || DEFAULT_THREAD_ID;
         try {
             showToast('⏳ Đang lưu Supabase & đánh thức AN (YSDMS) qua Native AgentAPI...');
@@ -1273,23 +1523,60 @@
                     directiveText: textToSend,
                     threadId: threadId,
                     isManualRescue: Boolean(isManualRescue),
-                    source: isManualRescue ? 'MANUAL_RESCUE_V272' : 'AUTO_LOOP_V272'
+                    source: isManualRescue ? 'MANUAL_RESCUE_V274' : 'AUTO_LOOP_V274'
                 })
             });
             const data = await res.json();
             if (!res.ok || data.error) {
                 throw new Error(data.error || `HTTP ${res.status}`);
             }
+            markPeReplyDispatchedForAnId(currentAnId, textToSend);
             state.turnPhase = 'PE_DISPATCHED_TO_AN';
-            state.statusDetail = `Đã bắn chỉ thị sang AN (${(data.messageId || '').slice(0, 8)})`;
+            state.statusDetail = `Đã bắn chỉ thị sang AN (${(data.messageId || '').slice(0, 8)}) — AN đang thực thi`;
             playChime('an_dispatch');
             showToast(data.retriggeredWakeup
                 ? '⚡ Đã kích hoạt đánh thức lại AN (YSDMS) thành công!'
                 : '⚡ Đã lưu Supabase & kích hoạt AN (YSDMS) thực thi thành công!');
+            renderUI();
             fetchFeedFromHub(false);
         } catch (err) {
             showToast(`❌ Lỗi bắn sang AN: ${err.message}`, true);
         }
+    }
+
+    async function handleTogglePauseAuto() {
+        const nextPaused = !isBridgeCurrentlyPaused();
+        setBridgePaused(nextPaused);
+
+        if (nextPaused) {
+            showToast('⏸️ Đã Tạm dừng Tự động gửi!');
+            if (state.latestRow) {
+                await evaluateAndProcessLatestRow(state.latestRow, 'PAUSE_CLICK');
+            } else {
+                renderUI();
+            }
+            return;
+        }
+
+        showToast('▶️ Đã bật Tiếp tục Tự động gửi — Đang thực thi bước tiếp theo...');
+        const row = state.latestRow;
+        if (row && row.sender === 'AN') {
+            const peCheck = detectCompletedPeReplyForAnRow(row);
+            if (state.turnPhase === 'PE_READY_TO_DISPATCH' || (peCheck && peCheck.status === 'PE_COMPLETED')) {
+                const proseToSend = (peCheck && peCheck.prose) || state.pendingPeApprovalText || getLatestPeProseText();
+                if (proseToSend && !requiresThoanDecision(proseToSend)) {
+                    await handleRescueSendPeToAn(proseToSend, row.thread_id || DEFAULT_THREAD_ID, false);
+                    return;
+                }
+            }
+            if (state.turnPhase === 'AN_TEXT_INJECTED' && state.mode === 'PASTE_AND_SUBMIT') {
+                await submitPerplexityChat(row.id);
+                return;
+            }
+            await evaluateAndProcessLatestRow(row, 'RESUME_AUTO');
+            return;
+        }
+        renderUI();
     }
 
     // =========================================================================
@@ -1322,7 +1609,7 @@
                 };
             case 'AN_PENDING_INJECT':
                 return {
-                    badge: '📥 Báo cáo AN mới (Chờ đổ vào chat)',
+                    badge: '📥 Báo cáo AN mới (Chờ đổ vào chat PE)',
                     bg: '#FFFBEB',
                     border: '#FCD34D',
                     text: '#92400E',
@@ -1330,7 +1617,7 @@
                 };
             case 'AN_TEXT_INJECTED':
                 return {
-                    badge: '📝 Đã đổ vào ô chat (Chờ Submit)',
+                    badge: '📝 Đã đổ vào ô chat PE (Chờ Submit)',
                     bg: '#ECFDF5',
                     border: '#6EE7B7',
                     text: '#065F46',
@@ -1351,6 +1638,14 @@
                     border: '#C4B5FD',
                     text: '#5B21B6',
                     dot: '#8B5CF6'
+                };
+            case 'PE_READY_TO_DISPATCH':
+                return {
+                    badge: '🟢 PE đã trả lời xong — Đến lượt gửi cho AN',
+                    bg: '#DCFCE7',
+                    border: '#34D399',
+                    text: '#065F46',
+                    dot: '#059669'
                 };
             case 'WAITING_THOAN_APPROVAL':
                 return {
@@ -1379,6 +1674,86 @@
         }
     }
 
+    function getNextStepDescription(phase, isPaused, mode) {
+        switch (phase) {
+            case 'AN_STILL_WORKING_HOLD':
+                return '⏭️ Tiếp theo: Chờ AN kết thúc lượt trên IDE ➔ Đổ vào PE';
+            case 'AN_PENDING_INJECT':
+                return isPaused
+                    ? '⏭️ Tiếp theo: Đổ vào ô chat PE (Bấm [▶️ Tiếp tục tự động gửi])'
+                    : '⏭️ Tiếp theo: Tự động đổ lệnh kích hoạt AN vào ô chat PE';
+            case 'AN_TEXT_INJECTED':
+                if (mode === 'PASTE_AND_SUBMIT' && isPaused) {
+                    return '⏭️ Tiếp theo: Submit gửi PE (Bấm [▶️ Tiếp tục tự động gửi])';
+                }
+                return '⏭️ Tiếp theo: Bấm Enter/Gửi cho PE (Xong sẽ tự gửi về AN)';
+            case 'AN_SUBMITTING':
+                return '⏭️ Tiếp theo: Tự động Submit ➔ Chờ PE trả lời ➔ Gửi cho AN';
+            case 'WAITING_FOR_PE':
+                return isPaused
+                    ? '⏭️ Tiếp theo: Chờ PE trả lời xong ➔ Sẵn sàng gửi cho AN'
+                    : '⏭️ Tiếp theo: Chờ PE trả lời xong ➔ Tự động gửi cho AN';
+            case 'PE_READY_TO_DISPATCH':
+                return isPaused
+                    ? '⏭️ Tiếp theo: Gửi cho AN (Bấm [▶️ Tiếp tục tự động gửi] bên dưới)'
+                    : '⏭️ Tiếp theo: Đang tự động gửi chỉ thị của PE sang cho AN...';
+            case 'WAITING_THOAN_APPROVAL':
+                return '⏭️ Tiếp theo: Minh Chủ bấm [⚡ Duyệt phương án PE] để gửi AN';
+            case 'PE_DISPATCHED_TO_AN':
+                return mode === 'PASTE_AND_SUBMIT'
+                    ? '⏭️ Tiếp theo: Chờ AN báo cáo xong ➔ Tự đổ & Submit cho PE'
+                    : '⏭️ Tiếp theo: Chờ AN báo cáo xong ➔ Tự đổ vào ô chat PE';
+            default:
+                return '⏭️ Tiếp theo: Chờ bản tin mới từ AN hoặc PE...';
+        }
+    }
+
+    function getAutoToggleButtonConfig(phase, isPaused, mode) {
+        if (isPaused) {
+            if (phase === 'PE_READY_TO_DISPATCH') {
+                return {
+                    label: '▶️ Tiếp tục Tự động gửi (Gửi ngay cho AN)',
+                    bg: '#059669',
+                    color: '#FFFFFF',
+                    border: '#047857',
+                    title: 'Đang Tạm dừng — Bấm để bật lại Tự động gửi và bắn ngay câu trả lời của PE sang cho AN'
+                };
+            }
+            if (phase === 'AN_PENDING_INJECT') {
+                return {
+                    label: '▶️ Tiếp tục Tự động gửi (Đổ ngay vào PE)',
+                    bg: '#D97706',
+                    color: '#FFFFFF',
+                    border: '#B45309',
+                    title: 'Đang Tạm dừng — Bấm để bật lại Tự động gửi và đổ ngay báo cáo AN vào ô chat PE'
+                };
+            }
+            if (phase === 'AN_TEXT_INJECTED' && mode === 'PASTE_AND_SUBMIT') {
+                return {
+                    label: '▶️ Tiếp tục Tự động gửi (Submit ngay cho PE)',
+                    bg: '#0D9488',
+                    color: '#FFFFFF',
+                    border: '#0F766E',
+                    title: 'Đang Tạm dừng — Bấm để bật lại Tự động gửi và Submit ngay cho PE'
+                };
+            }
+            return {
+                label: '▶️ Tiếp tục Tự động gửi (Đang Tạm dừng)',
+                bg: '#FEF3C7',
+                color: '#92400E',
+                border: '#F59E0B',
+                title: 'Đang Tạm dừng — Bấm để tiếp tục chế độ Tự động gửi'
+            };
+        }
+        return {
+            label: '⏸️ Tạm dừng Tự động gửi (Đang bật Auto)',
+            bg: '#F1F5F9',
+            color: '#1E293B',
+            border: '#94A3B8',
+            title: 'Chế độ Tự động gửi đang BẬT — Bấm vào đây nếu muốn Tạm dừng'
+        };
+    }
+
     function createBridgeDOM() {
         const existing = document.getElementById('ysdms-bridge-v25-root');
         if (existing) existing.remove();
@@ -1396,7 +1771,7 @@
                 user-select: none;
             }
             .yb25-card {
-                width: 370px;
+                width: 375px;
                 background: #FFFFFF;
                 border: 1.5px solid #CBD5E1;
                 border-radius: 12px;
@@ -1473,28 +1848,47 @@
                 overflow: hidden;
                 text-overflow: ellipsis;
             }
+            .yb25-status-next {
+                font-size: 11.5px;
+                font-weight: 700;
+                color: #0F172A;
+                background: rgba(255, 255, 255, 0.72);
+                padding: 3px 6px;
+                border-radius: 5px;
+                border: 1px dashed rgba(15, 23, 42, 0.18);
+                margin-top: 1px;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
             .yb25-modes {
-                display: grid;
-                grid-template-columns: 1fr 1fr;
+                display: flex;
+                flex-direction: column;
                 gap: 6px;
                 background: #F8FAFC;
                 padding: 7px 9px;
                 border-radius: 8px;
                 border: 1px solid #E2E8F0;
             }
+            .yb25-modes-row {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 6px;
+            }
             .yb25-chk-label {
                 display: flex;
                 align-items: center;
-                gap: 5px;
-                font-size: 11.5px;
+                gap: 4px;
+                font-size: 11px;
                 font-weight: 600;
                 color: #1E293B;
                 cursor: pointer;
             }
             .yb25-chk-label input {
                 accent-color: #0D9488;
-                width: 14px;
-                height: 14px;
+                width: 13.5px;
+                height: 13.5px;
                 cursor: pointer;
             }
             .yb25-actions {
@@ -1713,7 +2107,7 @@
             document.getElementById('yb25-claim-tab-pill')?.addEventListener('click', () => {
                 state.tabProjectOverride = 'YSDMS';
                 sessionStorage.setItem(STORAGE_KEYS.TAB_PROJECT_OVERRIDE, 'YSDMS');
-                setPinnedUrlOwner('YSDMS');
+                setPinnedUrlOwner(location.pathname, 'YSDMS');
                 root.style.left = 'auto';
                 root.style.right = '20px';
                 root.style.bottom = '20px';
@@ -1723,7 +2117,11 @@
             return;
         }
 
+        const isPausedNow = isBridgeCurrentlyPaused();
         const theme = getPhaseTheme(state.turnPhase);
+        const nextStepText = getNextStepDescription(state.turnPhase, isPausedNow, state.mode);
+        const toggleBtnCfg = getAutoToggleButtonConfig(state.turnPhase, isPausedNow, state.mode);
+
         const row = state.latestRow;
         const rawThread = (row && row.thread_id) || 'DEFAULT';
         const shortThread = rawThread.length > 14 ? rawThread.slice(0, 12) + '…' : rawThread;
@@ -1783,28 +2181,34 @@
                         <div class="yb25-status-sub" title="${state.statusDetail}">
                             ${state.statusDetail}
                         </div>
+                        <div class="yb25-status-next" title="${nextStepText}">
+                            ${nextStepText}
+                        </div>
                         <div class="yb25-status-sub" style="color:#64748B;">
                             ${rowMeta}
                         </div>
                     </div>
 
                     <div class="yb25-modes">
-                        <label class="yb25-chk-label" title="Tự động đổ lệnh kích hoạt gọn của AN vào chatbox chờ Minh Chủ bấm Enter; chiều PE trả lời xong vẫn TỰ ĐỘNG đẩy về AN">
-                            <input type="checkbox" id="yb25-chk-paste-only" ${isPasteOnly ? 'checked' : ''} />
-                            <span>Chỉ dán chatbox</span>
-                        </label>
-                        <label class="yb25-chk-label" title="Tự động đổ lệnh kích hoạt gọn AN vào khung chat, đợi Random 1-4s rồi tự bấm Submit; chiều PE trả lời xong TỰ ĐỘNG đẩy về AN">
-                            <input type="checkbox" id="yb25-chk-auto-submit" ${isPasteAndSubmit ? 'checked' : ''} />
-                            <span>Đổ & Submit (1-4s)</span>
-                        </label>
-                        <label class="yb25-chk-label" title="Chuyển nội dung sang tiếng Việt không dấu trước khi đổ vào Perplexity (Alt+F8)">
-                            <input type="checkbox" id="yb25-chk-no-accent" ${state.noAccent ? 'checked' : ''} />
-                            <span>Không dấu (Alt+F8)</span>
-                        </label>
-                        <label class="yb25-chk-label" title="Khóa cứng tạm dừng mọi thao tác tự động trên Tab này">
-                            <input type="checkbox" id="yb25-chk-pause" ${state.isPaused ? 'checked' : ''} />
-                            <span>⏸️ Tạm dừng Auto</span>
-                        </label>
+                        <div class="yb25-modes-row">
+                            <label class="yb25-chk-label" title="Tự động đổ lệnh kích hoạt gọn của AN vào chatbox chờ Minh Chủ bấm Enter; chiều PE trả lời xong vẫn TỰ ĐỘNG đẩy về AN">
+                                <input type="checkbox" id="yb25-chk-paste-only" ${isPasteOnly ? 'checked' : ''} />
+                                <span>Chỉ dán chatbox</span>
+                            </label>
+                            <label class="yb25-chk-label" title="Tự động đổ lệnh kích hoạt gọn AN vào khung chat, đợi Random 1-4s rồi tự bấm Submit; chiều PE trả lời xong TỰ ĐỘNG đẩy về AN">
+                                <input type="checkbox" id="yb25-chk-auto-submit" ${isPasteAndSubmit ? 'checked' : ''} />
+                                <span>Đổ & Submit (1-4s)</span>
+                            </label>
+                            <label class="yb25-chk-label" title="Chuyển nội dung sang tiếng Việt không dấu trước khi đổ vào Perplexity (Alt+F8)">
+                                <input type="checkbox" id="yb25-chk-no-accent" ${state.noAccent ? 'checked' : ''} />
+                                <span>Không dấu</span>
+                            </label>
+                        </div>
+                        <button class="yb25-btn" id="yb25-btn-toggle-pause"
+                                style="background:${toggleBtnCfg.bg};color:${toggleBtnCfg.color};border-color:${toggleBtnCfg.border};padding:6px 10px;font-size:11.5px;"
+                                title="${toggleBtnCfg.title}">
+                            ${toggleBtnCfg.label}
+                        </button>
                     </div>
 
                     <div class="yb25-actions">
@@ -1888,7 +2292,7 @@
             state.tabProjectOverride = next;
             sessionStorage.setItem(STORAGE_KEYS.TAB_PROJECT_OVERRIDE, next);
             if (next === 'YSDMS' || next === 'OMNI') {
-                setPinnedUrlOwner(next);
+                setPinnedUrlOwner(location.pathname, next);
             }
             renderUI();
         });
@@ -1942,14 +2346,8 @@
             localStorage.setItem(STORAGE_KEYS.NO_ACCENT, String(state.noAccent));
         });
 
-        document.getElementById('yb25-chk-pause')?.addEventListener('change', (e) => {
-            setBridgePaused(!!e.target.checked);
-            if (state.isPaused) {
-                state.statusDetail = '⏸️ Đã khóa cứng Tạm dừng Auto — Không tự động dán hoặc gửi';
-            } else {
-                state.statusDetail = '▶️ Đã mở lại chế độ Auto';
-            }
-            renderUI();
+        document.getElementById('yb25-btn-toggle-pause')?.addEventListener('click', () => {
+            handleTogglePauseAuto();
         });
 
         document.getElementById('yb25-btn-approve-pe')?.addEventListener('click', () => {
@@ -2070,11 +2468,7 @@
         detectTabProjectAffinity();
         const initProse = getLatestPeProseText();
         if (initProse) {
-            state.baselinePeProseText = initProse;
             state.lastObservedProseText = initProse;
-            if (!localStorage.getItem(STORAGE_KEYS.LAST_FORWARDED_HASH)) {
-                localStorage.setItem(STORAGE_KEYS.LAST_FORWARDED_HASH, hashString(initProse));
-            }
         }
         createBridgeDOM();
         attachNativeUserSubmitListener();
