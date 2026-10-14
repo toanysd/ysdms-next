@@ -113,17 +113,12 @@ export default function CaseDetailPage() {
     setCurrentUserId(userId)
 
     if (userId) {
-      // TEMPORARY WORKAROUND (WO-PIPE-FIX): public.profiles currently has 1 row vs 2 auth.users.
-      // Fallback to user_metadata.role or admin email until public.profiles sync migration is approved.
-      const fallbackRole =
-        (session?.user?.user_metadata?.role as UserRole) ||
-        (session?.user?.email === 'admin@ysd-pack.co.jp' ? 'admin' : 'sales')
       try {
         const { data: profile } = await (supabase as any)
           .from('profiles').select('role').eq('id', userId).maybeSingle()
-        setCurrentUserRole((profile?.role as UserRole) ?? fallbackRole)
+        setCurrentUserRole((profile?.role as UserRole) ?? 'sales')
       } catch {
-        setCurrentUserRole(fallbackRole)
+        setCurrentUserRole('sales')
       }
     }
 

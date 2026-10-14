@@ -115,6 +115,19 @@ export async function convertQuotationToOrderAction(
     // 2. Dùng Service Role Client để kiểm tra guard trước khi thực thi RPC cấp cao
     const serviceClient = createServerSupabaseClient() as SupabaseClient
 
+    const { data: quoteHeader, error: quoteErr } = await serviceClient
+      .from('quotations')
+      .select('quotation_id, company_id')
+      .eq('quotation_id', quotationId)
+      .maybeSingle()
+
+    if (quoteErr || !quoteHeader?.company_id) {
+      return {
+        success: false,
+        message: 'Không tìm thấy thông tin khách hàng của báo giá.',
+      }
+    }
+
     const { data: qLines, error: qLinesErr } = await serviceClient
       .from('quotation_lines')
       .select('line_id, line_no, item_type, description, product_id, design_revision_id, model_code')
@@ -135,8 +148,9 @@ export async function convertQuotationToOrderAction(
       }
     }
 
-    // Guard chống fallback LIMIT 1 trong fn_convert_quotation_to_order:
-    // Mọi dòng chi tiết bắt buộc phải có product_id hợp lệ hoặc model_code khớp products.product_code
+    // Guard theo Phương án A1 (WO-SCHEMA-SAFETY-FIX):
+    // Mọi dòng chi tiết bắt buộc phải có product_id hợp lệ thuộc cùng company_id
+    // hoặc model_code khớp đúng 1 products.product_code của cùng company_id (cấm map theo product_name).
     const candidateProductIds = Array.from(
       new Set(qLines.map((l) => l.product_id).filter((id): id is string => Boolean(id)))
     )
@@ -149,16 +163,16 @@ export async function convertQuotationToOrderAction(
     )
 
     const validProductIdSet = new Set<string>()
-    const validProductCodeSet = new Set<string>()
+    const productCodeCountMap = new Map<string, number>()
 
     if (candidateProductIds.length > 0) {
       const { data: prodByIds } = await serviceClient
         .from('products')
         .select('product_id, product_code')
+        .eq('company_id', quoteHeader.company_id)
         .in('product_id', candidateProductIds)
       for (const p of prodByIds || []) {
         validProductIdSet.add(p.product_id)
-        if (p.product_code) validProductCodeSet.add(p.product_code.trim())
       }
     }
 
@@ -166,10 +180,13 @@ export async function convertQuotationToOrderAction(
       const { data: prodByCodes } = await serviceClient
         .from('products')
         .select('product_id, product_code')
+        .eq('company_id', quoteHeader.company_id)
         .in('product_code', candidateModelCodes)
       for (const p of prodByCodes || []) {
-        validProductIdSet.add(p.product_id)
-        if (p.product_code) validProductCodeSet.add(p.product_code.trim())
+        if (p.product_code) {
+          const c = p.product_code.trim()
+          productCodeCountMap.set(c, (productCodeCountMap.get(c) || 0) + 1)
+        }
       }
     }
 
@@ -177,8 +194,10 @@ export async function convertQuotationToOrderAction(
     for (const line of qLines) {
       const hasValidId = Boolean(line.product_id && validProductIdSet.has(line.product_id))
       const trimmedCode = line.model_code ? line.model_code.trim() : ''
-      const hasValidCode = Boolean(trimmedCode && validProductCodeSet.has(trimmedCode))
-      if (!hasValidId && !hasValidCode) {
+      const hasValidUniqueCode = Boolean(
+        !line.product_id && trimmedCode && productCodeCountMap.get(trimmedCode) === 1
+      )
+      if (!hasValidId && !hasValidUniqueCode) {
         invalidLineNos.push(line.line_no)
       }
     }
@@ -186,7 +205,7 @@ export async function convertQuotationToOrderAction(
     if (invalidLineNos.length > 0) {
       return {
         success: false,
-        message: `Chặn chuyển đổi: Dòng báo giá #${invalidLineNos.join(', ')} thiếu product_id hoặc model_code hợp lệ trong danh mục sản phẩm. Vui lòng gắn sản phẩm chính xác cho từng dòng trước khi tạo đơn hàng.`,
+        message: `Chặn chuyển đổi: Dòng báo giá #${invalidLineNos.join(', ')} thiếu product_id hoặc model_code khớp duy nhất 1 mã sản phẩm của khách hàng. Vui lòng gắn sản phẩm chính xác cho từng dòng trước khi tạo đơn hàng.`,
       }
     }
 

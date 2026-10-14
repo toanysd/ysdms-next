@@ -18,13 +18,7 @@ async function getCurrentUserAndRole() {
     .eq('id', user.id)
     .maybeSingle();
 
-  // TEMPORARY WORKAROUND (WO-PIPE-FIX): public.profiles currently has 1 row vs 2 auth.users.
-  // Fallback to user_metadata.role or admin email until public.profiles sync migration is approved.
-  const fallbackRole =
-    (user.user_metadata?.role as string) ||
-    (user.email === 'admin@ysd-pack.co.jp' ? 'admin' : 'sales');
-
-  return { user, role: (profile?.role ?? fallbackRole) as string };
+  return { user, role: (profile?.role ?? 'sales') as string };
 }
 
 // ─────────────────────────────────────────
