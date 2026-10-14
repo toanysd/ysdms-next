@@ -1,5 +1,5 @@
 /**
- * [v2.6.0] YSDMS NEXTGEN REALTIME BRIDGE HUB (Auto-Loop & Compact Trigger Edition)
+ * [v2.7.0] YSDMS NEXTGEN REALTIME BRIDGE HUB (Turn-Guard & Smart Editor Edition)
  * ------------------------------------------------
  * Cầu nối thời gian thực giữa Perplexity Web UI (PE) và Antigravity (AN)
  * dành riêng 100% cho dự án YSDMS NextGen.
@@ -29,7 +29,7 @@ const HANDOFF_LEDGER_FILE = path.join(DATA_DIR, 'pe_handoff_ledger.json');
 const START_PORT = parseInt(process.env.YSDMS_BRIDGE_PORT || process.argv[2] || '3856', 10);
 const HOST = '127.0.0.1';
 const MAX_PORT_TRIES = 30;
-const HUB_VERSION = 'v2.6.0';
+const HUB_VERSION = 'v2.7.0';
 
 // Đảm bảo các thư mục cần thiết tồn tại
 [AGENTS_DIR, DATA_DIR].forEach(dir => {
@@ -126,6 +126,7 @@ function isEchoBackContent(content) {
     if (!content || typeof content !== 'string') return false;
     const text = content.trim().toLowerCase();
     if (
+        text.startsWith('[v2.7.0] pe đọc bridge') ||
         text.startsWith('[v2.6.0] pe đọc bridge') ||
         text.startsWith('[v2.5.0] pe đọc bridge') ||
         text.startsWith('pe đọc bridge.') ||
@@ -654,12 +655,13 @@ function resolveWorkspaceConversationId(exe, childEnv, workspaceMatchStr) {
             if (!fs.existsSync(logPath)) return null;
             try {
                 const stat = fs.statSync(logPath);
-                return { id, mtimeMs: stat.mtimeMs };
+                return { id, logPath, mtimeMs: stat.mtimeMs, size: stat.size };
             } catch {
                 return null;
             }
         }).filter(Boolean).sort((a, b) => b.mtimeMs - a.mtimeMs).slice(0, 8);
 
+        const matchingRootCandidates = [];
         for (const cand of candidates) {
             if (!convMetaCache[cand.id]) {
                 try {
@@ -681,17 +683,94 @@ function resolveWorkspaceConversationId(exe, childEnv, workspaceMatchStr) {
             }
             const info = convMetaCache[cand.id];
             if (info && info.isRoot && info.uris.some(u => u.includes(workspaceMatchStr.toLowerCase()))) {
-                if (cand.id !== savedConvId) {
-                    try { fs.writeFileSync(convIdFile, cand.id, 'utf8'); } catch {}
-                }
-                return cand.id;
+                matchingRootCandidates.push(cand);
             }
+        }
+
+        if (matchingRootCandidates.length > 1) {
+            const tokensToMatch = [
+                hubLastAnReportId ? hubLastAnReportId.slice(0, 8) : '',
+                hubLastSeenId ? hubLastSeenId.slice(0, 8) : '',
+                hubLastSeenThreadId || ''
+            ].filter(t => t && t.length >= 6);
+
+            for (const token of tokensToMatch) {
+                for (const cand of matchingRootCandidates) {
+                    try {
+                        const fd = fs.openSync(cand.logPath, 'r');
+                        const readSize = Math.min(cand.size, 65536);
+                        const buf = Buffer.alloc(readSize);
+                        fs.readSync(fd, buf, 0, readSize, cand.size - readSize);
+                        fs.closeSync(fd);
+                        const tailStr = buf.toString('utf8');
+                        if (tailStr.includes(token)) {
+                            if (cand.id !== savedConvId) {
+                                try { fs.writeFileSync(convIdFile, cand.id, 'utf8'); } catch {}
+                            }
+                            return cand.id;
+                        }
+                    } catch {}
+                }
+            }
+        }
+
+        if (matchingRootCandidates.length > 0) {
+            const best = matchingRootCandidates[0];
+            if (best.id !== savedConvId) {
+                try { fs.writeFileSync(convIdFile, best.id, 'utf8'); } catch {}
+            }
+            return best.id;
         }
     } catch {}
     return savedConvId;
 }
 
-function notifyAntigravityAgentApi(directiveText) {
+function isAnTurnCompletelyIdle(workspaceMatchStr = 'ysdms-nextgen') {
+    try {
+        const localAppData = process.env.LOCALAPPDATA || (process.env.USERPROFILE ? path.join(process.env.USERPROFILE, 'AppData', 'Local') : '');
+        const exe = path.join(localAppData, 'Programs', 'Antigravity', 'resources', 'bin', 'language_server.exe');
+        const childEnv = getOrSaveSharedAgentApiEnv();
+        const targetConvId = fs.existsSync(exe)
+            ? resolveWorkspaceConversationId(exe, childEnv, workspaceMatchStr)
+            : '';
+        if (!targetConvId) return true;
+
+        const logPath = path.join(process.env.USERPROFILE || '', '.gemini', 'antigravity', 'brain', targetConvId, '.system_generated', 'logs', 'transcript.jsonl');
+        if (!fs.existsSync(logPath)) return true;
+
+        const stat = fs.statSync(logPath);
+        const ageSinceModifyMs = Date.now() - stat.mtimeMs;
+
+        // Fallback an toàn: nếu file transcript không thay đổi quá 90 giây -> coi như AN đã nghỉ (IDLE)
+        if (ageSinceModifyMs > 90000) return true;
+
+        const fd = fs.openSync(logPath, 'r');
+        const readSize = Math.min(stat.size, 24576);
+        const buf = Buffer.alloc(readSize);
+        fs.readSync(fd, buf, 0, readSize, stat.size - readSize);
+        fs.closeSync(fd);
+
+        const lines = buf.toString('utf8').trim().split('\n').map(l => l.trim()).filter(Boolean);
+        if (lines.length === 0) return true;
+
+        const lastObj = JSON.parse(lines[lines.length - 1]);
+        const hasTools = Array.isArray(lastObj.tool_calls) && lastObj.tool_calls.length > 0;
+        const isFinalPlannerResponse = (
+            lastObj.type === 'PLANNER_RESPONSE' &&
+            lastObj.status === 'DONE' &&
+            !hasTools
+        );
+
+        // AN chỉ thực sự kết thúc 100% lượt chạy khi bước cuối là PLANNER_RESPONSE hoàn tất (không gọi thêm tool) và ổn định >= 1.5s
+        return isFinalPlannerResponse && ageSinceModifyMs >= 1500;
+    } catch {
+        return true;
+    }
+}
+
+let pendingWakeupTimer = null;
+
+function executeAgentApiSend(directiveText) {
     if (!directiveText || process.platform !== 'win32') return;
     try {
         const localAppData = process.env.LOCALAPPDATA || (process.env.USERPROFILE ? path.join(process.env.USERPROFILE, 'AppData', 'Local') : '');
@@ -702,25 +781,38 @@ function notifyAntigravityAgentApi(directiveText) {
         const targetConvId = resolveWorkspaceConversationId(exe, childEnv, 'ysdms-nextgen');
 
         if (targetConvId) {
-            const prompt = `[⚡ v2.6.0 DIRECTIVE TỪ PE / MINH CHỦ QUA BRIDGE]\n\n${directiveText}\n\n---\n*Ghi chú: Directive được chuyển tự động vào ô chat qua Native AgentAPI từ Hub [v2.6.0].*`;
-            const child = spawn(exe, ['agentapi', 'send-message', '--title=[v2.6.0] PE DIRECTIVE', targetConvId, prompt], {
+            const prompt = `[⚡ v2.7.0 DIRECTIVE TỪ PE / MINH CHỦ QUA BRIDGE]\n\n${directiveText}\n\n---\n*Ghi chú: Directive được chuyển tự động vào ô chat qua Native AgentAPI từ Hub [v2.7.0].*`;
+            const child = spawn(exe, ['agentapi', 'send-message', '--title=[v2.7.0] PE DIRECTIVE', targetConvId, prompt], {
                 env: childEnv,
                 windowsHide: true
             });
             child.on('close', (code) => {
                 if (code === 0) {
-                    console.log(`[AGENTAPI WAKEUP v2.6.0] 🚀 Đã tự động kích hoạt Antigravity YSDMS thành công (Conv: ${targetConvId.slice(0, 8)}...)!`);
+                    console.log(`[AGENTAPI WAKEUP v2.7.0] 🚀 Đã tự động kích hoạt Antigravity YSDMS thành công (Conv: ${targetConvId.slice(0, 8)}...)!`);
                 } else {
-                    console.warn(`[AGENTAPI WAKEUP v2.6.0] agentapi exit code: ${code}`);
+                    console.warn(`[AGENTAPI WAKEUP v2.7.0] agentapi exit code: ${code}`);
                 }
             });
         }
     } catch (e) {
-        console.warn('[AGENTAPI WAKEUP v2.6.0] Lỗi:', e.message);
+        console.warn('[AGENTAPI WAKEUP v2.7.0] Lỗi:', e.message);
     }
 }
 
-
+function notifyAntigravityAgentApi(directiveText, waitAttempts = 0) {
+    if (!directiveText || process.platform !== 'win32') return;
+    if (!isAnTurnCompletelyIdle('ysdms-nextgen') && waitAttempts < 45) {
+        if (waitAttempts === 0) {
+            console.log(`[TURN GUARD v2.7.0] ⏳ AN vẫn đang chạy lượt trước — Tạm giữ chỉ thị PE trong hàng đợi chờ AN nghỉ hẳn (IDLE) mới gửi...`);
+        }
+        if (pendingWakeupTimer) clearTimeout(pendingWakeupTimer);
+        pendingWakeupTimer = setTimeout(() => {
+            notifyAntigravityAgentApi(directiveText, waitAttempts + 1);
+        }, 2000);
+        return;
+    }
+    executeAgentApiSend(directiveText);
+}
 
 function broadcastSse(data) {
     const payload = `data: ${JSON.stringify(data)}\n\n`;
@@ -730,6 +822,9 @@ function broadcastSse(data) {
 }
 
 let hubLastSeenId = null;
+let hubLastAnReportId = null;
+let hubLastSeenThreadId = null;
+let lastHoldNotifiedId = null;
 let syncInterval = null;
 
 function startSupabaseSyncDaemon() {
@@ -756,9 +851,29 @@ function startSupabaseSyncDaemon() {
             const validRows = Array.isArray(msgs) ? msgs.filter(r => !(r.sender === 'PE' && isEchoBackContent(r.content_md))) : [];
             if (validRows.length === 0) return;
             const row = validRows[0];
+            const latestAnRow = validRows.find(r => r && r.sender === 'AN');
+            if (latestAnRow && latestAnRow.id) hubLastAnReportId = latestAnRow.id;
+            if (row && row.thread_id) hubLastSeenThreadId = row.thread_id;
 
             const isFirstCheck = !hubLastSeenId;
             if (isFirstCheck || row.id !== hubLastSeenId) {
+                // CHỐT CHẶN LƯỢT CHẠY [v2.7.0]: Nếu bản ghi mới là từ AN nhưng AN vẫn đang thao tác/chưa xuất xong câu trả lời cuối trên IDE
+                // thì tạm hoãn phát sang PE cho đến khi AN hoàn tất 100% lượt chạy!
+                const rowAgeMs = row.created_at ? (Date.now() - new Date(row.created_at).getTime()) : 0;
+                if (!isFirstCheck && row.sender === 'AN' && rowAgeMs < 90000 && !isAnTurnCompletelyIdle('ysdms-nextgen')) {
+                    if (lastHoldNotifiedId !== row.id) {
+                        lastHoldNotifiedId = row.id;
+                        console.log(`[TURN GUARD v2.7.0] ⏳ Báo cáo AN [${row.id.slice(0, 8)}] đã lên Supabase nhưng AN vẫn đang chạy trên IDE — Chờ AN dừng hẳn (IDLE) mới đẩy sang PE...`);
+                        broadcastSse({
+                            type: 'AN_STILL_WORKING_HOLD',
+                            id: row.id,
+                            threadId: row.thread_id,
+                            timestamp: new Date().toISOString()
+                        });
+                    }
+                    return;
+                }
+
                 if (!isFirstCheck) {
                     console.log(`[SUPABASE SYNC] 🔔 Phát hiện row mới trên public.pe_an_messages! ID: ${row.id} | Sender: ${row.sender} | Thread: ${row.thread_id} /* public.pe_bridge compatibility */`);
                 }
@@ -965,6 +1080,20 @@ const server = http.createServer(async (req, res) => {
             supabaseUrl: SUPABASE_URL ? 'CONFIGURED' : 'MISSING',
             time: new Date().toISOString()
         }));
+        return;
+    }
+
+    // 1a. Phục vụ trực tiếp Userscript để cập nhật Tampermonkey chỉ bằng 1 cú click
+    if (url.pathname === '/ysdms_pe_bridge.user.js' && req.method === 'GET') {
+        try {
+            const scriptPath = path.join(__dirname, 'ysdms_pe_bridge.user.js');
+            const scriptContent = fs.readFileSync(scriptPath, 'utf8');
+            res.writeHead(200, { 'Content-Type': 'text/javascript; charset=utf-8', 'Cache-Control': 'no-store' });
+            res.end(scriptContent);
+        } catch (e) {
+            res.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8' });
+            res.end('Error reading userscript: ' + e.message);
+        }
         return;
     }
 
@@ -1186,6 +1315,10 @@ const server = http.createServer(async (req, res) => {
                         const validMsgs = Array.isArray(msgs) ? msgs.filter(r => !(r.sender === 'PE' && isEchoBackContent(r.content_md))) : [];
                         if (validMsgs.length > 0) {
                             const rec = validMsgs[0];
+                            const recAgeMs = rec.created_at ? (Date.now() - new Date(rec.created_at).getTime()) : 0;
+                            if (rec.sender === 'AN' && recAgeMs < 90000 && !isAnTurnCompletelyIdle('ysdms-nextgen')) {
+                                rec.anStillWorking = true;
+                            }
                             const corr = await computeReportCorrelation(rec.thread_id);
                             const derived = rec.sender === 'AN' ? (corr.pendingAnReport ? 'AN_REPORTED' : (corr.awaitingPeReply ? 'PE_THINKING' : 'PE_HANDLED')) : (rec.sender === 'PE' ? 'WAITING_FOR_AN_ACK' : 'IDLE');
                             res.write(`data: ${JSON.stringify({
@@ -1255,6 +1388,12 @@ const server = http.createServer(async (req, res) => {
             }
             const validRows = Array.isArray(data) ? data.filter(r => !(r.sender === 'PE' && isEchoBackContent(r.content_md))) : [];
             const record = validRows.length > 0 ? validRows[0] : null;
+            if (record && record.sender === 'AN') {
+                const recAgeMs = record.created_at ? (Date.now() - new Date(record.created_at).getTime()) : 0;
+                if (recAgeMs < 90000 && !isAnTurnCompletelyIdle('ysdms-nextgen')) {
+                    record.anStillWorking = true;
+                }
+            }
             const corr = await computeReportCorrelation(threadId || (record ? record.thread_id : null));
             const derived = !record ? 'IDLE' : (record.sender === 'AN' ? (corr.pendingAnReport ? 'AN_REPORTED' : (corr.awaitingPeReply ? 'PE_THINKING' : 'PE_HANDLED')) : (record.sender === 'PE' ? 'WAITING_FOR_AN_ACK' : 'IDLE'));
 
@@ -1503,6 +1642,21 @@ const server = http.createServer(async (req, res) => {
                     res.writeHead(200, { 'Content-Type': 'application/json' });
                     res.end(JSON.stringify({ success: true, ignored: true, reason: 'ECHO_BACK_USER_QUERY_IGNORED' }));
                     return;
+                }
+
+                // Server-side Content Deduplication [v2.7.0]: Chặn gửi trùng cùng 1 câu trả lời PE (do hover/scroll trên DOM làm đổi nhẹ hash)
+                if (directiveText) {
+                    const cleanPrefix = directiveText.replace(/\s+/g, ' ').trim().slice(0, 350);
+                    const prefixHash = crypto.createHash('sha256').update(cleanPrefix).digest('hex');
+                    if (!global.__YSDMS_RECENT_PE_HASHES__) global.__YSDMS_RECENT_PE_HASHES__ = {};
+                    const prevTime = global.__YSDMS_RECENT_PE_HASHES__[prefixHash];
+                    if (prevTime && (Date.now() - prevTime < 15 * 60 * 1000)) {
+                        console.log(`[HUB DEDUP v2.7.0] 🛡️ Đã chặn bản tin PE gửi trùng nội dung trong vòng 15 phút.`);
+                        res.writeHead(200, { 'Content-Type': 'application/json' });
+                        res.end(JSON.stringify({ success: true, deduplicated: true, reason: 'DUPLICATE_PE_CONTENT_PREFIX' }));
+                        return;
+                    }
+                    global.__YSDMS_RECENT_PE_HASHES__[prefixHash] = Date.now();
                 }
 
                 // =================================================================
@@ -1802,14 +1956,6 @@ const server = http.createServer(async (req, res) => {
                     }
                 }
 
-                console.log(`\n=======================================================`);
-                console.log(`[OMNI BRIDGE] 🔔 AN ĐÃ NỘP BÁO CÁO NGHIỆM THU (${threadId})!`);
-                console.log(`Bắn tín hiệu SSE để browser chuyển CHẤM XANH 🟢...`);
-                console.log(`=======================================================\n`);
-
-                if (messageId) {
-                    hubLastSeenId = messageId;
-                }
                 if (messageId || reportContent) {
                     registerAnReport({
                         id: messageId,
@@ -1817,6 +1963,36 @@ const server = http.createServer(async (req, res) => {
                         content_md: reportContent,
                         created_at: new Date().toISOString()
                     });
+                }
+
+                // CHỐT CHẶN LƯỢT CHẠY [v2.7.0]: Nếu AN gọi /api/report trong khi lượt chạy trên IDE chưa kết thúc (chưa xuất xong câu trả lời cuối),
+                // KHÔNG phát sóng SSE ngay mà để startSupabaseSyncDaemon tự động giải phóng ngay khi AN về trạng thái IDLE!
+                if (messageId && !isAnTurnCompletelyIdle('ysdms-nextgen')) {
+                    console.log(`[TURN GUARD v2.7.0] ⏳ Đã lưu báo cáo AN [${messageId.slice(0, 8)}] từ /api/report — Chờ AN kết thúc 100% lượt chạy trên IDE mới bắn sang PE...`);
+                    broadcastSse({
+                        type: 'AN_STILL_WORKING_HOLD',
+                        id: messageId,
+                        threadId: threadId,
+                        timestamp: new Date().toISOString()
+                    });
+                    res.writeHead(200, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({
+                        success: true,
+                        threadId,
+                        messageId,
+                        heldUntilAnIdle: true,
+                        message: 'Đã lưu Supabase. Hub sẽ tự động đẩy sang PE ngay khi AN hoàn tất lượt trả lời hiện tại.'
+                    }));
+                    return;
+                }
+
+                console.log(`\n=======================================================`);
+                console.log(`[YSDMS BRIDGE v2.7.0] 🔔 AN ĐÃ NỘP BÁO CÁO NGHIỆM THU (${threadId})!`);
+                console.log(`Bắn tín hiệu SSE để browser chuyển CHẤM XANH 🟢...`);
+                console.log(`=======================================================\n`);
+
+                if (messageId) {
+                    hubLastSeenId = messageId;
                 }
                 const workOrderId = extractWorkOrderId(reportContent);
                 recordHandoffEvent({
@@ -1857,18 +2033,6 @@ const server = http.createServer(async (req, res) => {
                     contentSnippet: (reportContent || '').slice(0, 300),
                     content_md: reportContent || '',
                     timestamp: new Date().toISOString()
-                });
-
-                const ssePayload = JSON.stringify({
-                    type: 'AN_REPORT_DONE',
-                    threadId,
-                    messageId,
-                    pingMessage: data.pingMessage || 'PE đọc Bridge.',
-                    timestamp: new Date().toISOString()
-                });
-
-                sseClients.forEach(client => {
-                    client.write(`data: ${ssePayload}\n\n`);
                 });
 
                 res.writeHead(200, { 'Content-Type': 'application/json' });
