@@ -10,6 +10,7 @@ Tài liệu ghi nhận các sự cố kỹ thuật, lỗi cú pháp, sai sót qu
 3. [L003 - PE truy vấn sai entity_type khiến STEP/WORK_LOG bị báo 0](#l003---pe-truy-vấn-sai-entity_type-khiến-stepwork_log-bị-báo-0)
 4. [L004 - Commit SHA local chưa push lên remote GitHub nhưng được báo làm bằng chứng kiểm chứng độc lập](#l004---commit-sha-local-chưa-push-lên-remote-github-nhưng-được-báo-làm-bằng-chứng-kiểm-chứng-độc-lập)
 5. [L005 - Sai lệch Commit SHA do không trích xuất trực tiếp bằng lệnh git rev-parse HEAD](#l005---sai-lệch-commit-sha-do-không-trích-xuất-trực-tiếp-bằng-lệnh-git-rev-parse-head)
+6. [L006 - Mâu thuẫn quy tắc git push trong .agents/AGENTS.md và vi phạm giới hạn Compact Payload 150 dòng](#l006---mâu-thuẫn-quy-tắc-git-push-trong-agentsagentsmd-và-vi-phạm-giới-hạn-compact-payload-150-dòng)
 
 ---
 
@@ -117,4 +118,17 @@ Tài liệu ghi nhận các sự cố kỹ thuật, lỗi cú pháp, sai sót qu
   3. Kiểm tra đối chiếu với `git log -1 --format="%H"` trước khi paste vào văn bản báo cáo hoặc gửi qua Kênh C/pe_an_messages.
 - **Bài học rút ra (Takeaway):**
   - Hash integrity là nguyên tắc sống còn trong kiểm toán phần mềm phân tán. 1 ký tự sai lệch là toàn bộ chuỗi chứng thực độc lập bị vô hiệu hóa.
+
+---
+
+## L006 - Mâu thuẫn quy tắc git push trong .agents/AGENTS.md và vi phạm giới hạn Compact Payload 150 dòng
+
+- **Thời gian ghi nhận:** 2026-10-14 10:18 JST
+- **Phân loại:** Quy trình / Quản trị quy tắc AI (`AGENTS.md`) & Giao thức Realtime Bridge
+- **Trạng thái:** Resolved (Đã hợp nhất `AGENTS.md` $\le 12\text{ KB}$, thay `.agents/AGENTS.md` bằng stub tham chiếu)
+- **Bảng tóm tắt theo mẫu 6 cột bắt buộc:**
+  | Ngày | Sự việc | Nguyên nhân gốc | Bằng chứng | Quy tắc đề xuất | Trạng thái |
+  |---|---|---|---|---|---|
+  | 2026-10-14 | Mâu thuẫn quy tắc `git push` tại `.agents/AGENTS.md:31-33` và gửi payload >150 dòng qua `pe_an_messages` | Tồn tại 2 file `AGENTS.md` (21.2 KB) và `.agents/AGENTS.md` (30.7 KB, bị cắt cụt 6,714 bytes); khi bổ sung quy tắc vào `.agents/AGENTS.md` đã ghi chồng 2 dòng trái ngược nhau và AN nối cả 5 file (489 dòng) vào `content_md` | `.agents/AGENTS.md:31` ghi *"BẮT BUỘC TỰ ĐỘNG git push"* cho tài liệu, nhưng `:33` ngay dưới ghi *"Lưu ý: Chỉ khi nào có yêu cầu mới thực hiện đẩy lên github"*; `pe_an_messages` message `f7d41e27-...` chứa nối gộp 5 file `.md` | Hợp nhất thành 1 file `AGENTS.md` duy nhất ($\le 12\text{ KB}$), `.agents/AGENTS.md` chỉ giữ stub tham chiếu; chỉ `git push` khi có chỉ thị phê duyệt từ THOAN/PE; gói tin `pe_an_messages` bắt buộc $\le 150$ dòng | Resolved |
+
 
