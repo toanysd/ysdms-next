@@ -1,0 +1,126 @@
+{
+  "work_order": "WO-MOLD-DATA-SYNC-AUDIT",
+  "audit_timestamp_utc": "2026-10-14T09:29:43.585598Z",
+  "audit_timestamp_jst": "2026-10-14T18:29:43+09:00",
+  "mode": "READ_ONLY_AUDIT_AND_SPECIFICATION",
+  "db_mutations_executed": 0,
+  "deliverable_1_access_inventory": {
+    "active_accdb_file": {
+      "path": "docs/ysdJOB_20261006.accdb",
+      "size_bytes": 612442112,
+      "mtime_iso": "2026-10-08T16:12:41.588450+09:00",
+      "sha256": "0ec0f23e05a08178f0294b7f6e6de1bb5ede75feda54cf1bb8d1bb64cbd0cd66",
+      "user_table_count": 50,
+      "temp_clip_table_count": 32,
+      "view_query_count": 94
+    },
+    "excluded_accdb_file": {
+      "path": "../Nenkin20260530.accdb",
+      "size_bytes": 878022656,
+      "reason": "Non-YSDMS database (Japanese pension/tax refund tables: T_HoSo, CucThueTbl, NganHangTbl)"
+    },
+    "key_tables": [
+      {"table": "tblMold", "rows": 4793, "pk": "MoldID", "max_date_col": "MoldEntry", "max_date": "2026-10-05", "target": "public.equipment (M-*)"},
+      {"table": "tblCutter", "rows": 1729, "pk": "CutterID", "max_date_col": "CutterEntry", "max_date": "2026-10-06", "target": "public.equipment (C-*)"},
+      {"table": "tblMoldDesign", "rows": 4781, "pk": "MoldDesignID", "max_date_col": "DataInput", "max_date": "2026-09-25", "target": "public.design_revisions"},
+      {"table": "tblMoldCutter", "rows": 2738, "pk": "MoldCutterID", "max_date_col": "DateEntry", "max_date": "2026-10-06", "target": "public.equipment_assignments"},
+      {"table": "tblStakings", "rows": 2, "pk": "StakingID", "max_date_col": "DateEntry", "max_date": null, "target": "public.equipment (STACKING)"},
+      {"table": "tblTray", "rows": 4112, "pk": "TrayID", "max_date_col": "TrayDateEntry", "max_date": "2026-10-05", "target": "public.products"},
+      {"table": "tblItemType", "rows": 11, "pk": "ItemTypeID", "max_date_col": null, "max_date": null, "target": "public.item_types"},
+      {"table": "tblJOB", "rows": 1230, "pk": "JobID", "max_date_col": "DateEntry", "max_date": "2026-10-05", "target": "public.work_orders & public.jobs"},
+      {"table": "tblProcessingDeadline", "rows": 2527, "pk": "ProcessingDeadlineID", "max_date_col": "DrawingReceiptDate", "max_date": "2026-10-05", "target": "public.job_steps"},
+      {"table": "tblWorkLog", "rows": 7416, "pk": "WorkLogID", "max_date_col": "ProcessingDate", "max_date": "2026-10-05", "target": "public.work_logs"},
+      {"table": "tblLocationLog", "rows": 1488, "pk": "LocationLogID", "max_date_col": "DateEntry", "max_date": "2026-06-18", "target": "public.equipment_history (LOCATION_CHANGE)"},
+      {"table": "tblShipLog", "rows": 358, "pk": "ShipID", "max_date_col": "ShipDate", "max_date": "2026-09-25", "target": "public.equipment_ship_logs & public.equipment_history (SHIP)"},
+      {"table": "tblTeflonLog", "rows": 4692, "pk": "TeflonLogID", "max_date_col": "UpdatedAt", "max_date": "2026-09-25", "target": "public.mold_maintenance & public.equipment_history (MAINTENANCE)"},
+      {"table": "tblMoldLog", "rows": 36, "pk": "MoldLogID", "max_date_col": "ChangeDate", "max_date": "2026-09-16", "target": "public.mold_name_history & public.equipment_history (MODIFICATION)"},
+      {"table": "tblCutterLog", "rows": 21, "pk": "CutterLogID", "max_date_col": "PostReceiptDate", "max_date": "2024-09-06", "target": "public.equipment_history (MAINTENANCE)"},
+      {"table": "tblMoldBorrow", "rows": 209, "pk": "MoldBorrowID", "max_date_col": "EntryDate", "max_date": "2025-09-12", "target": "public.mold_loan_certificates (100% synced)"},
+      {"table": "statuslogs", "rows": 398, "pk": "StatusLogID", "max_date_col": "AuditDate", "max_date": "2026-09-25", "target": "public.equipment_status_logs & public.mold_inventory_checks"},
+      {"table": "scraplog", "rows": 0, "pk": "ScrapID", "max_date_col": null, "max_date": null, "target": "Empty table (disposal tracked via tblMold.MoldDisposedDate)"},
+      {"table": "DatHangVTTbl", "rows": 1396, "pk": "DatHangVTID", "max_date_col": "NgayNhanVT", "max_date": "2026-10-05", "target": "public.job_material_orders"},
+      {"table": "VatTuSDtbl", "rows": 64, "pk": "VatTuSDID", "max_date_col": null, "max_date": null, "target": "public.work_log_materials (100% synced)"},
+      {"table": "VatTuTbl", "rows": 723, "pk": "VatTuID", "max_date_col": null, "max_date": null, "target": "public.materials_catalog"},
+      {"table": "tblRackLayer", "rows": 400, "pk": "RackLayerID", "max_date_col": null, "max_date": null, "target": "public.rack_layers (380 in Supabase, 20 missing)"}
+    ]
+  },
+  "deliverable_2_gap_analysis": {
+    "equipment": {
+      "access_tblMold": 4793,
+      "access_tblCutter": 1729,
+      "supabase_total": 6497,
+      "supabase_by_type": {
+        "MOLD": {"total": 4736, "legacy_m": 4735, "manual": 1},
+        "CUTTER_SEPARATE": {"total": 1726, "legacy_c": 1725, "manual": 1},
+        "PRESSURE_BASE": {"total": 14, "legacy_m": 14, "manual": 0},
+        "WATER_BASE": {"total": 9, "legacy_m": 9, "manual": 0},
+        "PLUG": {"total": 6, "legacy_m": 6, "manual": 0},
+        "CUTTER_INLINE": {"total": 5, "legacy_m": 4, "manual": 1},
+        "STACKING": {"total": 1, "legacy_m": 1, "manual": 0},
+        "FRAME": {"total": 0, "legacy_m": 0, "manual": 0}
+      },
+      "delta_missing_molds": 24,
+      "delta_missing_mold_ids": [5904, 5905, 5907, 5908, 5909, 5911, 5912, 5913, 5914, 5915, 5916, 5917, 5918, 5919, 5920, 5921, 5922, 5923, 5924, 5925, 5926, 5927, 5928, 5929],
+      "delta_missing_cutters": 4,
+      "delta_missing_cutter_ids": [3148, 3150, 3152, 3154],
+      "keeper_company_id_populated_in_supabase": 0,
+      "keeper_company_populated_in_access_molds": 4104,
+      "keeper_company_populated_in_access_cutters": 1515
+    },
+    "design_revisions": {
+      "access_tblMoldDesign": 4781,
+      "supabase_design_revisions": 4693,
+      "matched_legacy_id": 4692,
+      "delta_missing_designs": 89
+    },
+    "equipment_assignments": {
+      "access_tblMoldCutter": 2738,
+      "supabase_equipment_assignments": 1633,
+      "delta_unmapped_links": 1105,
+      "auxiliary_equipment_assignments_in_supabase": 0
+    },
+    "jobs_steps_worklogs": {
+      "access_tblJOB": 1230,
+      "supabase_work_orders": 1203,
+      "supabase_jobs": 1205,
+      "delta_missing_jobs": 27,
+      "existing_jobs_missing_design_revision_id": 1201,
+      "access_tblProcessingDeadline": 2527,
+      "supabase_job_steps": 2457,
+      "delta_valid_missing_steps": 61,
+      "delta_orphan_steps_in_access": 20,
+      "access_tblWorkLog": 7416,
+      "supabase_work_logs": 7111,
+      "delta_step_linked_worklogs": 143,
+      "delta_shop_internal_worklogs_null_step": 118,
+      "delta_orphan_worklogs_in_access": 50
+    },
+    "history_and_audit_logs": {
+      "supabase_equipment_history": 0,
+      "access_tblLocationLog": 1488,
+      "access_tblShipLog": 358,
+      "access_tblTeflonLog_total": 4692,
+      "access_tblTeflonLog_with_sent_date": 190,
+      "access_tblMoldLog": 36,
+      "access_tblCutterLog": 21,
+      "access_statuslogs": 398,
+      "access_tblMoldBorrow": 209,
+      "supabase_mold_loan_certificates": 209
+    }
+  },
+  "deliverable_3_feature_gaps": [
+    {"id": "FG-01", "severity": "P0", "file": "src/app/equipment/molds/_components/MoldModal.tsx:132", "issue": "Uses payload.mold_revision_id instead of design_revision_id; hardcodes equipment_type='MOLD'; lacks keeper_company_id and current_rack_layer_id"},
+    {"id": "FG-02", "severity": "P0", "file": "src/app/equipment/dashboard/page.tsx:57,126", "issue": "Hardcodes today = new Date('2026-07-30') and links to non-existent /equipment/jobs/quick-create (404)"},
+    {"id": "FG-03", "severity": "P1", "file": "src/app/equipment/cutting-dies/actions.ts:28", "issue": "Hardcodes equipment_type='CUTTER_SEPARATE' (no CUTTER_INLINE support) and omits keeper_company_id / current_rack_layer_id"},
+    {"id": "FG-04", "severity": "P1", "file": "src/app/equipment/unified/UnifiedEquipmentClient.tsx:19", "issue": "Omits PLUG from EquipmentType filter and has no Create Equipment button for auxiliary types"},
+    {"id": "FG-05", "severity": "P1", "file": "src/app/actions/mold-job.ts:138", "issue": "createMoldJob sets equipment_id on jobs but leaves design_revision_id and product_id NULL"},
+    {"id": "FG-06", "severity": "P1", "file": "src/app/worklogs/page.tsx:1", "issue": "Requires job_step_id NOT NULL (cannot log shop-internal tasks) and does not record forming shot_count or equipment lifecycle events"},
+    {"id": "FG-07", "severity": "P1", "file": "src/app/actions/maintenance.ts:19", "issue": "Reads empty equipment_history (0 rows) and has no Teflon coating workflow status tracking"}
+  ],
+  "deliverable_5_backfill_waves": [
+    {"wave": "Wave 1", "scope": "rack_layers (+20), design_revisions (+89), equipment (+24 M-*, +4 C-*, keeper_company_id backfill), equipment_assignments (+missing tblMoldCutter links)"},
+    {"wave": "Wave 2", "scope": "jobs design_revision_id/product_id backfill (1,201 rows), work_orders (+27), jobs (+27), job_steps (+61), work_logs (+143 step-linked + 118 shop-internal), job_material_orders (+24)"},
+    {"wave": "Wave 3", "scope": "equipment_history (+legacy_id column migration if approved) + backfill tblLocationLog (1,488), tblShipLog (358), tblTeflonLog (active subset), tblMoldLog (36), tblCutterLog (21)"},
+    {"wave": "Wave 4", "scope": "statuslogs (398) -> equipment_status_logs & mold_inventory_checks / mold_inventory_items"}
+  ]
+}
