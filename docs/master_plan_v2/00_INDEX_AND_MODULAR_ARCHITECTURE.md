@@ -1,0 +1,87 @@
+# 🗂️ BỘ HỒ SƠ KIỂM TOÁN TOÀN DIỆN & TÁI CẤU TRÚC KẾ HOẠCH DỰ ÁN YSDMS NEXTGEN (MODULAR DOSSIER v2.0)
+
+- **Mã bộ hồ sơ:** `YSDMS-MASTER-PLAN-V2-20261014`
+- **Ngày ban hành:** `2026-10-14 JST`
+- **Mô hình thực thi:** **Gemini 4 Argon (High)** — Kỹ sư AN (Antigravity)
+- **Hệ thống điều phối:** **YSDMS Realtime Bridge v2.5.0 (Unified Gold Edition)** — Cổng `3856`
+- **Đệ trình:** Minh Chủ **THOAN** (Product Owner / Gatekeeper) & Kiến trúc sư trưởng **PE** (Perplexity Pro — Claude Sonnet Thinking)
+
+---
+
+## I. TRIẾT LÝ TỔ CHỨC HỒ SƠ PHÂN TÁCH THEO MODULE (THEO CHỈ THỊ CỦA MINH CHỦ THOAN)
+
+Thực hiện chỉ thị trực tiếp của **Minh Chủ THOAN**:
+> *"Xây dựng lại hồ sơ dự án theo hướng lưu riêng trong một folder, không lưu vào toàn bộ một file riêng, tránh việc chỉnh sửa sau này sẽ khó, tốn token mà nên bóc tách thành từng module nhỏ, mỗi module sẽ là một file riêng. Như vậy nếu sửa đổi kế hoạch liên quan đến nội dung nào thì sẽ đọc file đó, tránh phải đọc toàn bộ nội dung không cần thiết."*
+
+Bộ hồ sơ kiểm toán và kế hoạch tổng thể mới (`docs/master_plan_v2/`) được thiết kế theo kiến trúc **1 File Chỉ Mục Nhẹ (`00_INDEX`) + Các File Chuyên Đề Độc Lập (`01` $\rightarrow$ `04`)**:
+
+| Mã File | Đường dẫn | Nội dung cốt lõi | Khi nào AI / Dev cần đọc? |
+| :--- | :--- | :--- | :--- |
+| **`00_INDEX`** | `docs/master_plan_v2/00_INDEX_AND_MODULAR_ARCHITECTURE.md` | Chỉ mục điều hướng + **Kiểm toán Tối ưu hóa Bộ Quy tắc AI & Token Economy** | Đọc đầu tiên khi bắt đầu phiên mới (~3 KB) |
+| **`01_MODEL`** | `docs/master_plan_v2/01_GEMINI4_ARGON_BENCHMARK_AND_BRIDGE_V2.5.md` | Đánh giá mô hình **Gemini 4 Argon**, so sánh đối chuẩn & Giao thức phối hợp AN-PE qua Bridge v2.5.0 | Khi cấu hình luồng điều phối AN-PE hoặc chuyển đổi model |
+| **`02_BIZ_FLOW`** | `docs/master_plan_v2/02_REAL_BUSINESS_FLOW_AND_MOLD_DEPT_SYNTHESIS.md` | Tổng hợp luồng nghiệp vụ thực tế từ 10,427 email (`toanysdmail`) & Chuyên sâu Phòng Khuôn / Thiết bị | Khi thiết kế nghiệp vụ Kinh doanh, Báo giá, Thiết kế, Phòng Khuôn, Định hình |
+| **`03_AUDIT_3D`** | `docs/master_plan_v2/03_THREE_WAY_AUDIT_GAPS_AND_CODEBASE_ISSUES.md` | Đối chiếu 3 chiều (Nghiệp vụ thực tế $\leftrightarrow$ Kế hoạch cũ $\leftrightarrow$ Schema & Codebase/UI hiện tại) kèm `file:line` | Khi sửa lỗi đứt gãy luồng, dọn dẹp route trùng lặp hoặc bảng deprecated |
+| **`04_ROADMAP`** | `docs/master_plan_v2/04_REWRITE_ROADMAP_AND_MODULE_OUTLINE.md` | Đề cương chi tiết cấu trúc thư mục Hồ sơ Dự án Modular (`docs/dossier/`) & Lộ trình các Sprint tiếp theo | Khi lập kế hoạch Work Order mới hoặc cập nhật tiến độ từng phân hệ |
+
+---
+
+## II. KIỂM TOÁN BỘ QUY TẮC HIỆN TẠI CỦA DỰ ÁN & BÀI TOÁN TỐI ƯU TOKEN ECONOMY
+
+### 1. Thực trạng định lượng các file Quy tắc & Ngữ cảnh đang nạp vào AI Agent
+Qua đo đạc trực tiếp trên ổ cứng dự án (`d:\AntiGravity_Workspace\apps\ysdms-nextgen`), mỗi khi khởi động phiên mới theo quy định cũ, AI Agent bị buộc phải đọc khối lượng văn bản khổng lồ sau:
+
+| STT | File Quy tắc / Sổ cái / Schema | Số dòng | Dung lượng | Vấn đề tồn tại (kèm dẫn chứng `file:line`) |
+| :---: | :--- | ---: | ---: | :--- |
+| 1 | `AGENTS.md` (Root) | 326 dòng | **20.7 KB** | Tự động nạp vào `<user_rules>`. Chứa quy tắc Routing, Page Anatomy, `RULE-DATA-01`, `RULE-DATA-02`, `RULE-PROC-01`, `RULE-PROC-02`, CSS, i18n. |
+| 2 | `.agents/AGENTS.md` | 528 dòng | **30.0 KB** | Tự động nạp vào `<user_rules>`, nhưng **bị hệ thống cắt cụt (truncated mất 6,714 bytes cuối)** từ dòng 385 trở đi do vượt ngưỡng! Lặp lại tới **65% nội dung** đã có trong `AGENTS.md` (CSS, i18n, `RULE-PROC-01`, `RULE-PROC-02`, Table Sorting). Đồng thời dòng 379–401 vẫn vẽ sơ đồ cấu trúc cũ dùng `mold_masters`, `physical_molds`, `cutters`! |
+| 3 | `AI_SYSTEM_RULES.md` | 241 dòng | **17.0 KB** | Lặp lại quy tắc Pagination, Server-side search, CSS variables, Typography và `RULE-UI-10` (Paper Style) đã nằm trong `AGENTS.md`. |
+| 4 | `SCHEMA_REFERENCE.md` | 875 dòng | **46.6 KB** | Quá lớn cho 1 lần đọc. Nguy hiểm hơn: do nối đuôi (append) qua nhiều milestone nên **cùng một bảng bị định nghĩa lặp lại 2 lần với schema mâu thuẫn nhau**:<br>• Bảng `equipment_loans` xuất hiện ở dòng `280-320` (`loan_type = 'BORROW' \| 'RETURN' \| 'REPAIR_OUT'`) VÀ lặp lại ở dòng `738-785` (`loan_type = 'CUSTOMER_LOAN' \| 'RETURN_TO_CUSTOMER' \| 'OUTSOURCE_PROCESSING'`).<br>• Bảng `orders` & `order_lines` xuất hiện ở dòng `479-520` VÀ lặp lại ở dòng `542-574`.<br>• Bảng `shipments` xuất hiện ở dòng `575-596` (`shipment_type = 'STANDARD' \| 'DIRECT' \| 'SAMPLE'`) VÀ lặp lại ở dòng `818-842` (`shipment_type = 'physical' \| 'service' \| 'mixed'`). |
+| 5 | `ysdms-nextgen_MASTER.md` | 1,307 dòng | **149.7 KB** | Sổ cái tích lũy toàn bộ lịch sử từ đầu dự án. Nếu đọc trực tiếp sẽ ngốn ~40,000 tokens và làm loãng hoàn toàn sự chú ý (attention dilution) của mô hình. |
+| 6 | `SESSION_HANDOFF.md` (Mempalace) | 845 dòng | **90.4 KB** | Do quy tắc "chỉ APPEND, không ghi đè", file bàn giao phiên đã phình lên 90.4 KB (chứa hàng chục phiên cũ từ tháng 8–9/2026), mất tác dụng của một bản "Briefing ngắn gọn đầu phiên". |
+| **TỔNG** | **6 File Khởi động** | **4,122 dòng** | **354.4 KB** | **Tiêu tốn ~95,000 – 110,000 tokens ngay từ lượt đầu tiên, gây cắt cụt prompt và nhiễu loạn kiến trúc!** |
+
+---
+
+### 2. Năm (05) Điểm Bất Cập Trong Bộ Quy Tắc Hiện Tại Gây Rối Cho Các Mô Hình AI
+1. **Trùng lặp chồng chéo giữa 3 file quy tắc (`AGENTS.md`, `.agents/AGENTS.md`, `AI_SYSTEM_RULES.md`):**
+   - Cả hai file `AGENTS.md` và `.agents/AGENTS.md` đều được IDE tự động bơm vào `<user_rules>` mỗi lượt chat. Việc lặp lại các khối văn bản dài (`RULE-PROC-01`, `RULE-PROC-02`, CSS, Table Sorting, i18n) làm tốn gấp đôi context window thường trực và khiến cuối file `.agents/AGENTS.md` bị `<truncated 6714 bytes>`.
+2. **Mâu thuẫn nội tại ngay trong file quy tắc và file kiến thức (`Knowledge Conflict`):**
+   - `.agents/AGENTS.md:384-392` vẫn ghi sơ đồ: `/master/molds ← bảng mold_masters`, `/equipment/molds ← bảng physical_molds`, `/equipment/cutting-dies ← bảng cutters`, ngay bên dưới mục cấm dùng các bảng này (`dòng 210-235`).
+   - `.agents/mempalace/knowledge/mold_manufacturing_process.md:64-65` ghi thông số bắt buộc của `products` là `external_length_mm, external_width_mm, primary_plastic_code` — trái ngược hoàn toàn với `RULE-DATA-02` trong `AGENTS.md:173-175`.
+   - `.agents/mempalace/knowledge/thermoforming_equipment_set.md:50, 82-104` vẫn hướng dẫn tạo bảng `auxiliary_equipments` và gán `jobs.physical_mold_id` — trái ngược với `ADR-001`, `ADR-004` và `SCHEMA_REFERENCE.md:872-873`.
+   - `.agents/mempalace/knowledge/business_rules.md:8` ghi trạng thái đơn hàng là `NEW → APPROVED → IN_PRODUCTION → SHIPPED → COMPLETED` — lệch với `SCHEMA_REFERENCE.md:488` (`DRAFT → CONFIRMED → IN_PRODUCTION → SHIPPED → CLOSED | CANCELLED`).
+3. **File `SCHEMA_REFERENCE.md` (46.6 KB) vừa quá dài vừa tự mâu thuẫn do nối đuôi lịch sử:**
+   - Khi làm việc ở phân hệ Báo giá (`quotations`), AI không cần đọc cấu trúc kho cuộn nhựa (`plastic_receipt_roll`) hay lịch nghỉ lễ (`company_calendar`), nhưng hiện tại phải đọc hoặc tìm kiếm trong một file 875 dòng có nhiều định nghĩa bảng bị trùng lặp.
+4. **Cơ chế "Append-only" vào `SESSION_HANDOFF.md` (90.4 KB) và `ysdms-nextgen_MASTER.md` (149.7 KB):**
+   - Khi một file handoff vượt quá 10 KB, nó trở thành kho lưu trữ lịch sử (archive) chứ không còn là "Active Context".
+
+---
+
+### 3. Đề Xuất Kiến Trúc Quy Tắc & Ngữ Cảnh Tối Ưu Mới (Tiered Context Architecture — Giảm 85% Token Khởi Động)
+
+Để mô hình luôn có **ngữ cảnh sắc bén nhất** mà **chỉ tốn < 15 KB (~4,000 tokens)** khi khởi động phiên:
+
+```mermaid
+flowchart TD
+    subgraph T0["TẦNG 0: ALWAYS-ON RULES (< 12 KB tổng cộng)"]
+        A1["AGENTS.md (Hợp nhất & Tinh gọn <= 180 dòng)\nQUY TẮC 0, RULE-DATA-01/02, RULE-PROC-01/02,\nUI/CSS Core, Bảng chỉ mục điều hướng Module"]
+        A2[".agents/AGENTS.md (<= 40 dòng)\nChỉ chứa Con trỏ (Pointers) tới docs/dossier/ &\nQuy tắc Git/Bridge/DB Types (Không lặp lại AGENTS.md)"]
+    end
+
+    subgraph T1["TẦNG 1: ACTIVE SESSION BRIEFING (< 6 KB)"]
+        B1["docs/SESSION_HANDOFF_ACTIVE.md (<= 100 dòng)\nChỉ lưu trạng thái phiên hiện tại + 3 phiên gần nhất.\nLịch sử cũ đẩy sang docs/archive/handoffs/"]
+    end
+
+    subgraph T2["TẦNG 2: MODULAR PROJECT DOSSIER (Đọc theo đúng Module đang làm)"]
+        C1["docs/dossier/01_schema/\n• schema_index.md (Bản đồ PK/FK 1 trang)\n• schema_sales_orders.md\n• schema_product_design.md\n• schema_equipment_custody.md\n• schema_production_wo_jobs.md\n• schema_inventory_quality_finance.md"]
+        C2["docs/dossier/02_modules/\n• mod_01_cases_and_reviews.md\n• mod_02_quotations_and_pricing.md\n• mod_03_orders_and_shipments.md\n• mod_04_design_and_cad.md\n• mod_05_equipment_set_and_custody.md\n• mod_06_mold_manufacturing_jobs.md\n• mod_07_thermoforming_and_nippo.md\n• mod_08_plastics_wms_and_mrp.md\n• mod_09_quality_and_traceability.md\n• mod_10_invoices_and_storage_fees.md"]
+    end
+
+    T0 --> T1
+    T1 -->|"Chỉ mở đúng 1-2 file của Module liên quan"| T2
+```
+
+#### Lợi ích định lượng của Kiến trúc Ngữ cảnh Phân tầng (Tiered Context):
+- **Không bao giờ bị `<truncated>` trong `<user_rules>`:** Hợp nhất phần trùng lặp giữa `AGENTS.md`, `.agents/AGENTS.md` và `AI_SYSTEM_RULES.md` giúp tổng dung lượng `<user_rules>` giảm từ **67.7 KB xuống còn ~12 KB** (tiết kiệm >80% token hệ thống ở MỌI lượt hội thoại!).
+- **Đọc Schema theo phân hệ (`docs/dossier/01_schema/`):** Mỗi file schema nhánh chỉ dài **80–120 dòng (~4 KB)**, đã khử sạch 100% các đoạn trùng lặp lịch sử (`equipment_loans`, `orders`, `shipments`). Khi sửa module Khuôn, AN chỉ đọc `schema_equipment_custody.md`.
+- **Sửa Kế hoạch / Nghiệp vụ theo từng file Module độc lập (`docs/dossier/02_modules/`):** Khi Minh Chủ THOAN hoặc PE yêu cầu điều chỉnh kế hoạch ở Phòng Khuôn (`mod_05` hoặc `mod_06`), chỉ cần đọc và sửa đúng file đó (~100 dòng), không phải chạm vào các module khác.
