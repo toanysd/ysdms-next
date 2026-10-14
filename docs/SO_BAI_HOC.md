@@ -11,6 +11,7 @@ Tài liệu ghi nhận các sự cố kỹ thuật, lỗi cú pháp, sai sót qu
 4. [L004 - Commit SHA local chưa push lên remote GitHub nhưng được báo làm bằng chứng kiểm chứng độc lập](#l004---commit-sha-local-chưa-push-lên-remote-github-nhưng-được-báo-làm-bằng-chứng-kiểm-chứng-độc-lập)
 5. [L005 - Sai lệch Commit SHA do không trích xuất trực tiếp bằng lệnh git rev-parse HEAD](#l005---sai-lệch-commit-sha-do-không-trích-xuất-trực-tiếp-bằng-lệnh-git-rev-parse-head)
 6. [L006 - Mâu thuẫn quy tắc git push trong .agents/AGENTS.md và vi phạm giới hạn Compact Payload 150 dòng](#l006---mâu-thuẫn-quy-tắc-git-push-trong-agentsagentsmd-và-vi-phạm-giới-hạn-compact-payload-150-dòng)
+7. [L007 - Truy vấn bảng/cột/constraint phỏng đoán chưa đối chiếu information_schema.tables, information_schema.columns và trigger/constraint](#l007---truy-vấn-bảngcộtconstraint-phỏng-đoán-chưa-đối-chiếu-information_schematables-information_schemacolumns-và-triggerconstraint)
 
 ---
 
@@ -133,12 +134,12 @@ Tài liệu ghi nhận các sự cố kỹ thuật, lỗi cú pháp, sai sót qu
 
 ---
 
-## L007 - Dùng tên cột phỏng đoán chưa kiểm chứng qua `information_schema.columns` trong script audit (RULE-DATA-02)
+## L007 - Truy vấn bảng/cột/constraint phỏng đoán chưa đối chiếu `information_schema.tables`, `information_schema.columns` và `trigger/constraint` (RULE-DATA-02)
 
-- **Thời gian ghi nhận:** 2026-10-14 12:12 JST
+- **Thời gian ghi nhận:** 2026-10-14 12:12 JST (Bổ sung hoàn thiện: 2026-10-14 12:24 JST)
 - **Phân loại:** Tuân thủ Schema (`RULE-DATA-02`) & Bằng chứng Kiểm toán DB
-- **Trạng thái:** Resolved (Đã bổ sung bước truy vấn `information_schema.columns` trước khi chạy audit/backfill và đính kèm log thực tế)
+- **Trạng thái:** Resolved (Đã bổ sung bước truy vấn `information_schema.tables`, `information_schema.columns`, `pg_constraint` / `pg_trigger` trước khi chạy audit/backfill và lưu log SQL thực tế vào artifact)
 - **Bảng tóm tắt theo mẫu 6 cột bắt buộc:**
   | Ngày | Sự việc | Nguyên nhân gốc | Bằng chứng | Quy tắc đề xuất | Trạng thái |
   |---|---|---|---|---|---|
-  | 2026-10-14 | Dùng tên cột chưa kiểm chứng trong script audit (`c.short_name`, `s.shipment_no`, `s.backfill_status`, `s.status`) và nêu cột trong báo cáo `WO-ORDER-NOTES-DATA-AUDIT` không kèm log `information_schema.columns` | Viết SQL dựa trên trí nhớ/giả định thay vì truy vấn `information_schema.columns` trước khi chạy; chỉ ghi tuyên bố `"BEGIN TRANSACTION READ ONLY"` mà không đính kèm log danh sách cột thực tế | Lỗi PostgreSQL `code: '42703'` (`column does not exist`) khi chạy `verify_order_shipment_browser.mjs` và `audit_order_notes.mjs`; chỉ thị kiểm toán của PE lúc `2026-10-14 12:06 JST` | Trước mọi truy vấn SQL audit/backfill hoặc khi trích dẫn cột trong báo cáo, bắt buộc chạy `SELECT column_name, data_type FROM information_schema.columns` và dán log output thực tế kèm `NOW()` vào báo cáo | Resolved |
+  | 2026-10-14 | Dùng tên bảng/cột/constraint chưa kiểm chứng trong script audit (`c.short_name`, `s.shipment_no`, `s.backfill_status`, `s.status`, `profiles.email`, `business_cases.company_id`) và nêu cột trong báo cáo không kèm log `information_schema` | Viết SQL dựa trên trí nhớ/giả định thay vì truy vấn `information_schema.tables`, `information_schema.columns` và `trigger/constraint` (`pg_trigger`, `pg_constraint`) trước khi chạy; không lưu file log SQL thực tế | Lỗi PostgreSQL `code: '42703'` (`column does not exist`) khi chạy script audit; chỉ thị kiểm toán của PE lúc `2026-10-14 12:06 JST` và `12:16 JST` | Trước mọi truy vấn SQL audit/backfill hoặc khi lập đặc tả Work Order, bắt buộc truy vấn `information_schema.tables`, `information_schema.columns`, và `trigger/constraint` (`pg_trigger`, `pg_constraint`) kèm `NOW()`, đồng thời lưu log SQL đã chạy vào artifact hoặc tài liệu audit | Resolved |
