@@ -143,3 +143,15 @@ Tài liệu ghi nhận các sự cố kỹ thuật, lỗi cú pháp, sai sót qu
   | Ngày | Sự việc | Nguyên nhân gốc | Bằng chứng | Quy tắc đề xuất | Trạng thái |
   |---|---|---|---|---|---|
   | 2026-10-14 | Dùng tên bảng/cột/constraint chưa kiểm chứng trong script audit (`c.short_name`, `s.shipment_no`, `s.backfill_status`, `s.status`, `profiles.email`, `business_cases.company_id`) và nêu cột trong báo cáo không kèm log `information_schema` | Viết SQL dựa trên trí nhớ/giả định thay vì truy vấn `information_schema.tables`, `information_schema.columns` và `trigger/constraint` (`pg_trigger`, `pg_constraint`) trước khi chạy; không lưu file log SQL thực tế | Lỗi PostgreSQL `code: '42703'` (`column does not exist`) khi chạy script audit; chỉ thị kiểm toán của PE lúc `2026-10-14 12:06 JST` và `12:16 JST` | Trước mọi truy vấn SQL audit/backfill hoặc khi lập đặc tả Work Order, bắt buộc truy vấn `information_schema.tables`, `information_schema.columns`, và `trigger/constraint` (`pg_trigger`, `pg_constraint`) kèm `NOW()`, đồng thời lưu log SQL đã chạy vào artifact hoặc tài liệu audit | Resolved |
+
+---
+
+## L008 - Gửi bằng chứng kiểm thử dưới dạng đường dẫn local (`C:/Users/...`) hoặc chỉ ghi chữ "PASS" khiến PE phân loại "chưa xác minh" (RULE-PROC-03)
+
+- **Thời gian ghi nhận:** 2026-10-14 17:16 JST
+- **Phân loại:** Chuẩn hóa Bằng chứng Nghiệm thu (`RULE-PROC-03` — Evidence Pack)
+- **Trạng thái:** Resolved (Đã thiết lập `docs/audit_logs/YYYY-MM-DD_<work_order>.json` + `docs/audit_logs/screenshots/` trên GitHub và đệ trình DDL `public.pe_evidence_items`)
+- **Bảng tóm tắt theo mẫu 6 cột bắt buộc:**
+  | Ngày | Sự việc | Nguyên nhân gốc | Bằng chứng | Quy tắc đề xuất | Trạng thái |
+  |---|---|---|---|---|---|
+  | 2026-10-14 | PE ghi nhận nhiều mục *"chưa xác minh"* ở báo cáo Batch Commit 2 & Commit 3 (`WO-MOLD-UNIFY`) dù AN đã chạy `tsc`, `i18n`, `git grep` và chụp ảnh Playwright | AN lưu file JSON kiểm thử và ảnh chụp màn hình trong thư mục local (`C:/Users/.../.gemini/antigravity/brain/...`) mà PE không thể truy cập trực tiếp, đồng thời bản tóm tắt chỉ ghi `"PASS"` thay vì kèm log nguyên văn hoặc file JSON trên GitHub/Supabase | Chỉ thị & đánh giá của Minh Chủ THOAN và PE lúc `2026-10-14 16:52 JST`: PE đọc được GitHub (`get_commit`, `get_file_contents`) và Supabase SQL nhưng không đọc được đường dẫn local `C:/Users/...` | **“Không có Evidence Pack thì không có nghiệm thu” (`RULE-PROC-03`)**: Mọi báo cáo nghiệm thu phải commit `docs/audit_logs/YYYY-MM-DD_<work_order>.json` (gồm `TSC`, `I18N`, `GIT_GREP`, `BROWSER`, `SQL_AUDIT`, `SCREENSHOT`) + ảnh chụp tại `docs/audit_logs/screenshots/` lên GitHub và/hoặc ghi vào `public.pe_evidence_items` trên Supabase | Resolved |

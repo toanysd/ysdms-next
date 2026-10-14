@@ -1,0 +1,229 @@
+{
+  "work_order": "WO-MOLD-UNIFY",
+  "generated_at_utc": "2026-10-14T08:15:30.000Z",
+  "generated_at_jst": "2026-10-14 17:15:30 JST",
+  "commits": [
+    {
+      "step": "Commit 1 — Tab equipment_set on /equipment/jobs/[id] & remove mold_masters",
+      "commit_sha": "8e10b6aa4162ef4845b11b54b4d685dcfa26f4d1",
+      "files_changed": 7,
+      "insertions": 386,
+      "deletions": 15,
+      "pe_status": "ACCEPTED"
+    },
+    {
+      "step": "Commit 2 — Replace mold_design_cutters with equipment_assignments (Read-Only)",
+      "commit_sha": "c2d00dc97c75d70bab80d293c4dde1cf9d952eec",
+      "files_changed": 5,
+      "insertions": 143,
+      "deletions": 157,
+      "pe_status": "CONDITIONALLY_APPROVED_PENDING_EVIDENCE_PACK"
+    },
+    {
+      "step": "Commit 3 — Fix /maintenance, /maintenance/log & /equipment/lifecycle KPI (Read-Only)",
+      "commit_sha": "9de2c64ca0137b52cc29f87445abd216013e10a5",
+      "files_changed": 5,
+      "insertions": 156,
+      "deletions": 80,
+      "pe_status": "CONDITIONALLY_APPROVED_PENDING_EVIDENCE_PACK"
+    }
+  ],
+  "evidence_items": [
+    {
+      "work_order": "WO-MOLD-UNIFY",
+      "evidence_type": "TSC",
+      "status": "PASS",
+      "commit_sha": "9de2c64ca0137b52cc29f87445abd216013e10a5",
+      "file_path": "tsconfig.json",
+      "url": null,
+      "command": "npx tsc --noEmit --pretty false",
+      "result_summary": "TSC_EXIT_CODE=0 (0 errors across both Commit 2 c2d00dc97c75d70bab80d293c4dde1cf9d952eec and Commit 3 9de2c64ca0137b52cc29f87445abd216013e10a5)",
+      "result_json": {
+        "exit_code": 0,
+        "errors_count": 0,
+        "stdout": "",
+        "verified_at_utc": "2026-10-14T07:59:11.000Z"
+      },
+      "screenshot_path": null,
+      "created_at": "2026-10-14T07:59:11.000Z"
+    },
+    {
+      "work_order": "WO-MOLD-UNIFY",
+      "evidence_type": "I18N",
+      "status": "PASS",
+      "commit_sha": "9de2c64ca0137b52cc29f87445abd216013e10a5",
+      "file_path": "scripts/check_translations.mjs",
+      "url": null,
+      "command": "node scripts/check_translations.mjs",
+      "result_summary": "I18N_EXIT_CODE=0 (0 missing keys in messages/ja.json and messages/vi.json)",
+      "result_json": {
+        "exit_code": 0,
+        "missing_keys_count": 0,
+        "stdout": "🔍 Scanning files for missing translation keys...\n✅ All translation keys are properly defined in both ja.json and vi.json",
+        "verified_at_utc": "2026-10-14T07:59:11.000Z"
+      },
+      "screenshot_path": null,
+      "created_at": "2026-10-14T07:59:11.000Z"
+    },
+    {
+      "work_order": "WO-MOLD-UNIFY",
+      "evidence_type": "GIT_GREP",
+      "status": "PASS",
+      "commit_sha": "c2d00dc97c75d70bab80d293c4dde1cf9d952eec",
+      "file_path": "src/",
+      "url": null,
+      "command": "git grep -n \"mold_design_cutters\" -- src/ && git grep -n \"mold_masters\" -- src/",
+      "result_summary": "0 active read/write references to mold_design_cutters or mold_masters in src/. Only 2 lines remain inside the locked/unexecuted handleToggleBinding block (TabDesignsEquipment.tsx:372,387) per PE directive 'KHÔNG xóa code ghi', plus 2 auto-generated type lines in database.types.ts:4138,4165 and 3 historical comments for mold_masters.",
+      "result_json": {
+        "mold_design_cutters_active_read_matches": 0,
+        "mold_design_cutters_locked_write_matches": [
+          "src/app/product-center/[id]/_components/TabDesignsEquipment.tsx:372:              .from('mold_design_cutters')",
+          "src/app/product-center/[id]/_components/TabDesignsEquipment.tsx:387:            .from('mold_design_cutters')"
+        ],
+        "mold_design_cutters_generated_type_matches": [
+          "src/types/database.types.ts:4138:      mold_design_cutters: {",
+          "src/types/database.types.ts:4165:            foreignKeyName: \"mold_design_cutters_equipment_id_fkey\""
+        ],
+        "mold_masters_executable_matches": 0,
+        "mold_masters_comment_matches": [
+          "src/app/actions/engineering.ts:67:    // Update design_revisions directly via product_id (mold_masters DROPPED)",
+          "src/app/engineering/designs/page.tsx:78:    // Step 1: Fetch products (= mold_masters) with companies",
+          "src/app/production/products/upsert-actions.ts:63:    // (mold_masters table DROPPED - link design_revisions and mold_revisions directly via product_id)"
+        ],
+        "handleToggleBinding_read_only_guard": {
+          "file": "src/app/product-center/[id]/_components/TabDesignsEquipment.tsx",
+          "lines": "338-353",
+          "isWriteSpecApproved": false,
+          "early_return_before_any_mutation": true,
+          "new_mutations_added": 0,
+          "grid_button_disabled_line": 800,
+          "list_button_disabled_line": 922
+        }
+      },
+      "screenshot_path": null,
+      "created_at": "2026-10-14T07:59:11.000Z"
+    },
+    {
+      "work_order": "WO-MOLD-UNIFY",
+      "evidence_type": "GIT_GREP",
+      "status": "PASS",
+      "commit_sha": "9de2c64ca0137b52cc29f87445abd216013e10a5",
+      "file_path": "src/app/actions/maintenance.ts",
+      "url": null,
+      "command": "git grep -n -E \"v_mold_health|v_maintenance_overdue|mold_maintenance_log|record_maintenance_and_reset\" -- src/app/actions/maintenance.ts src/app/maintenance/ src/app/equipment/lifecycle/",
+      "result_summary": "0 matches across src/app/actions/maintenance.ts, src/app/maintenance/, and src/app/equipment/lifecycle/. All 4 non-existent DB objects removed from maintenance module.",
+      "result_json": {
+        "matches_count": 0,
+        "matches": [],
+        "note_out_of_scope_file": "src/app/actions/master-dashboard.ts:37 still references v_maintenance_overdue (outside the 5-file scope of Commit 3; flagged for WO-MAINTENANCE-SCHEMA-FIX / WO-ROUTE-CLEANUP)"
+      },
+      "screenshot_path": null,
+      "created_at": "2026-10-14T07:59:11.000Z"
+    },
+    {
+      "work_order": "WO-MOLD-UNIFY",
+      "evidence_type": "BROWSER",
+      "status": "PASS",
+      "commit_sha": "c2d00dc97c75d70bab80d293c4dde1cf9d952eec",
+      "file_path": "src/app/product-center/[id]/_components/TabDesignsEquipment.tsx",
+      "url": "http://localhost:3000/product-center/5c9541ff-14bc-4031-8e2f-a84c51b21e1e",
+      "command": "node verify_commit2.cjs (Playwright headless chromium, user: admin@ysd-pack.co.jp)",
+      "result_summary": "HTTP 200 on /product-center/5c9541ff-14bc-4031-8e2f-a84c51b21e1e (CPL-サンプル用トレイ). ProductKPIBar shows SET設備 2/8, TabOverview shows shared cutter CPL (抜型 1), TabDesignsEquipment shows shared cutter CPL with 共有 badge, read-only lock banner (WO-EQUIPMENT-ASSIGNMENT-WRITE-SPEC), and 2 disabled toggle checkboxes.",
+      "result_json": {
+        "verified_at_utc": "2026-10-14T07:43:12.783Z",
+        "verified_at_jst": "2026-10-14 16:43:12 JST",
+        "authenticated_user": "admin@ysd-pack.co.jp",
+        "url": "http://localhost:3000/product-center/5c9541ff-14bc-4031-8e2f-a84c51b21e1e",
+        "http_status": 200,
+        "hasKpi2of8": true,
+        "hasCutterInOverview": true,
+        "hasLockNotice": true,
+        "hasSharedBadge": true,
+        "disabledToggleCount": 2
+      },
+      "screenshot_path": "docs/audit_logs/screenshots/wo_mold_unify/wo_mold_unify_commit2_product_center_shared_cutter.png",
+      "created_at": "2026-10-14T07:43:12.783Z"
+    },
+    {
+      "work_order": "WO-MOLD-UNIFY",
+      "evidence_type": "BROWSER",
+      "status": "PASS",
+      "commit_sha": "9de2c64ca0137b52cc29f87445abd216013e10a5",
+      "file_path": "src/app/maintenance/page.tsx",
+      "url": "http://localhost:3000/maintenance",
+      "command": "node verify_commit3.cjs (Playwright headless chromium, user: admin@ysd-pack.co.jp)",
+      "result_summary": "HTTP 200 on /maintenance (0 errors, displays 6,497 OK equipment count and Lifecycle (6,497) button), HTTP 200 on /maintenance/log (0 errors, reads from equipment_history), and HTTP 200 on /equipment/lifecycle with exact KPI card values [\"6,497\", \"0\", \"0\", \"6,497\"].",
+      "result_json": {
+        "verified_at_utc": "2026-10-14T07:49:50.300Z",
+        "verified_at_jst": "2026-10-14 16:49:50 JST",
+        "authenticated_user": "admin@ysd-pack.co.jp",
+        "routes_tested": [
+          {
+            "url": "http://localhost:3000/maintenance",
+            "http_status": 200,
+            "maintHas6497": true,
+            "maintNoError": true,
+            "screenshot_repo_path": "docs/audit_logs/screenshots/wo_mold_unify/wo_mold_unify_commit3_maintenance_ok.png"
+          },
+          {
+            "url": "http://localhost:3000/maintenance/log",
+            "http_status": 200,
+            "maintLogNoError": true,
+            "screenshot_repo_path": "docs/audit_logs/screenshots/wo_mold_unify/wo_mold_unify_commit3_maintenance_log_ok.png"
+          },
+          {
+            "url": "http://localhost:3000/equipment/lifecycle",
+            "http_status": 200,
+            "kpiValues": ["6,497", "0", "0", "6,497"],
+            "lifecycleKpiHas6497": true,
+            "screenshot_repo_path": "docs/audit_logs/screenshots/wo_mold_unify/wo_mold_unify_commit3_lifecycle_kpi_6497.png"
+          }
+        ]
+      },
+      "screenshot_path": "docs/audit_logs/screenshots/wo_mold_unify/wo_mold_unify_commit3_lifecycle_kpi_6497.png",
+      "created_at": "2026-10-14T07:49:50.300Z"
+    },
+    {
+      "work_order": "WO-MOLD-UNIFY",
+      "evidence_type": "SQL_AUDIT",
+      "status": "PASS",
+      "commit_sha": "9de2c64ca0137b52cc29f87445abd216013e10a5",
+      "file_path": null,
+      "url": null,
+      "command": "SELECT NOW() AS db_now, (SELECT COUNT(*)::int FROM public.equipment_assignments) AS equipment_assignments, (SELECT COUNT(*)::int FROM public.mold_design_cutters) AS mold_design_cutters, (SELECT COUNT(*)::int FROM public.v_equipment_lifecycle_status) AS v_equipment_lifecycle_status, (SELECT COUNT(*)::int FROM public.equipment) AS equipment, (SELECT COUNT(*)::int FROM public.equipment_history) AS equipment_history;",
+      "result_summary": "0 DB mutations across all 3 commits of WO-MOLD-UNIFY. equipment_assignments=1633, mold_design_cutters=0, v_equipment_lifecycle_status=6497, equipment=6497, equipment_history=0.",
+      "result_json": {
+        "db_now": "2026-10-14T07:49:40.315Z",
+        "equipment_assignments": 1633,
+        "mold_design_cutters": 0,
+        "v_equipment_lifecycle_status": 6497,
+        "equipment": 6497,
+        "equipment_history": 0
+      },
+      "screenshot_path": null,
+      "created_at": "2026-10-14T07:49:40.315Z"
+    },
+    {
+      "work_order": "WO-MOLD-UNIFY",
+      "evidence_type": "SCREENSHOT",
+      "status": "PASS",
+      "commit_sha": "9de2c64ca0137b52cc29f87445abd216013e10a5",
+      "file_path": "docs/audit_logs/screenshots/wo_mold_unify/",
+      "url": "https://github.com/toanysd/ysdms-next/tree/main/docs/audit_logs/screenshots/wo_mold_unify",
+      "command": "Playwright page.screenshot()",
+      "result_summary": "6 Playwright screenshots committed to docs/audit_logs/screenshots/wo_mold_unify/ on GitHub for Commit 1, Commit 2, and Commit 3.",
+      "result_json": {
+        "screenshots": [
+          "docs/audit_logs/screenshots/wo_mold_unify/wo_mold_unify_commit1_job_set_tab.png",
+          "docs/audit_logs/screenshots/wo_mold_unify/wo_mold_unify_commit2_product_center_overview_shared_cutter.png",
+          "docs/audit_logs/screenshots/wo_mold_unify/wo_mold_unify_commit2_product_center_shared_cutter.png",
+          "docs/audit_logs/screenshots/wo_mold_unify/wo_mold_unify_commit3_maintenance_ok.png",
+          "docs/audit_logs/screenshots/wo_mold_unify/wo_mold_unify_commit3_maintenance_log_ok.png",
+          "docs/audit_logs/screenshots/wo_mold_unify/wo_mold_unify_commit3_lifecycle_kpi_6497.png"
+        ]
+      },
+      "screenshot_path": "docs/audit_logs/screenshots/wo_mold_unify/wo_mold_unify_commit3_maintenance_ok.png",
+      "created_at": "2026-10-14T07:49:50.300Z"
+    }
+  ]
+}

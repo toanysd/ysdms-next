@@ -57,6 +57,14 @@
 2. **Dual-Shield Gatekeeper:** Userscript trên Perplexity mặc định ở chế độ `[x] Chỉ dán chatbox` (không auto-submit). Minh Chủ THOAN là người duyệt và bấm gửi cho PE.
 3. **Thẩm Quyền Đóng Phiên:** AN không được tự ý đóng phiên hoặc đề nghị Minh Chủ chọn gói tiếp theo bỏ qua PE. Mọi báo cáo và đề xuất phải trình PE thẩm định trước để PE khuyến nghị lên Minh Chủ THOAN.
 
+### 2.3. RULE-PROC-03: Chuẩn Hóa Evidence Pack Qua GitHub & Supabase (“Không Có Evidence Pack Thì Không Có Nghiệm Thu”)
+1. **Cấm chỉ dẫn chiếu file/ảnh local (`C:/Users/...` hoặc Artifact Dir):** PE không đọc được file local của AN. Mọi báo cáo nghiệm thu BẮT BUỘC kèm **Evidence Pack** trên kênh PE đọc được trực tiếp:
+   - **GitHub:** Commit file `docs/audit_logs/YYYY-MM-DD_<work_order>.json` (chứa đủ `TSC`, `I18N`, `GIT_GREP`, `BROWSER`, `SQL_AUDIT`, `SCREENSHOT` theo schema chuẩn) và ảnh chụp màn hình tại `docs/audit_logs/screenshots/`.
+   - **Supabase:** Lưu bản ghi đối chứng vào `public.pe_evidence_items` (sau khi bảng được duyệt tạo) và tóm tắt nguyên văn log trong `public.pe_an_messages`.
+2. **Quy tắc Batch & Phân cổng theo Rủi ro:**
+   - **UI / Read-only:** Cho phép gộp Batch 2–3 commit liên quan và nộp Evidence Pack cuối Batch.
+   - **DB / RPC / RLS / Backfill / Cleanup:** Bắt buộc giữ đủ **2 cổng PE** (Cổng 1: PE duyệt payload SQL/migration sau khi AN chạy Verified Dry-Run; Cổng 2: PE hậu kiểm độc lập trên Supabase).
+
 ---
 
 ## 3. KIẾN TRÚC ROUTE, GIAO DIỆN & COMPONENT (UI/UX CONVENTIONS)
