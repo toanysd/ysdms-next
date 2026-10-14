@@ -6,20 +6,32 @@
 
 ---
 
+## PHẦN 0: KẾT QUẢ XÁC MINH SCHEMA THỰC TẾ (`information_schema`) & ĐỐI SOÁT PHƯƠNG ÁN C
+
+1. **Danh sách bảng đã xác minh trực tiếp qua `information_schema.tables` (`table_schema = 'public'`, 127 bảng trên Supabase Production `iirezrszalmecsslbruo`):**
+   - **TỒN TẠI (`EXISTS`):** `profiles`, `employees`, `auxiliary_equipments`, `mold_design_cutters`, `mold_work_orders`, `equipment`, `equipment_assignments`, `orders`, `order_lines`, `products`, `staging_order_lines_backfill`.
+   - **KHÔNG TỒN TẠI (`NOT_FOUND`):** `mold_masters`, `physical_molds`, `cutters`, `order_items`, `product_master`.
+2. **Cơ chế Join & Đối soát chuẩn của Phương án C (`staging_order_lines_backfill` $\leftrightarrow$ `order_lines`):**
+   - Cột `resolved_order_id` **KHÔNG tồn tại** trong `staging_order_lines_backfill`.
+   - Cơ chế join đúng: `staging_order_lines_backfill.order_no = orders.order_no`, sau đó dùng `orders.order_id` để đối chiếu `order_lines.order_id`.
+   - Kết quả đối soát chỉ-đọc (AN và PE đã xác minh độc lập lúc `2026-10-14 10:34:30 JST`): `staging_order_lines_backfill = 6,279` dòng; `order_lines = 6,279` dòng; `orders = 2,396`; `products = 8,489`; khớp `6,279 / 6,279` dòng theo `(order_id, line_no, product_id, quantity)`; `0` trùng lặp; `0` thiếu FK; `0` khoảng trống `line_no`; `PENDING = 6,277`, `NORMALIZED = 2`.
+
+---
+
 ## PHẦN A: CÁC ĐIỂM CHƯA PHÙ HỢP / LỖI THỜI TRONG KẾ HOẠCH CŨ SO VỚI THỰC TẾ VẬN HÀNH
 
 | STT | Tài liệu Kế hoạch Cũ (`file:line`) | Nội dung trong Kế hoạch Cũ | Thực tế Vận hành & Kiến trúc Hiện tại | Đánh giá Mức độ Lệch |
 | :---: | :--- | :--- | :--- | :--- |
-| 1 | `docs/Phase1_MoldCutter_Migration_Plan.md:13-68, 103-164` | Lập kế hoạch trên các bảng V1: `mold_base`, `mold_design_revision`, `mold_physical`, `cutter_master`, `product_master`, `mold_teflon_logs`, `cutter_status_logs`. | Toàn bộ các bảng V1 này đã bị thay thế bởi kiến trúc V3 & Unified Equipment (`products`, `design_revisions`, `equipment`, `equipment_assignments`, `equipment_loans` theo `ADR-001`, `ADR-004`, `ADR-009`). | 🔴 **Lỗi thời 100%** (Gây nhiễu nặng nếu AI đọc phải) |
+| 1 | `docs/Phase1_MoldCutter_Migration_Plan.md:13-68, 103-164` | Lập kế hoạch trên các bảng V1: `mold_base`, `mold_design_revision`, `mold_physical`, `cutter_master`, `product_master`, `mold_teflon_logs`, `cutter_status_logs`. | Toàn bộ các bảng V1 này đã bị thay thế bởi kiến trúc V3 & Unified Equipment (`products`, `design_revisions`, `equipment`, `equipment_assignments`, `equipment_loans` theo `ADR-001`, `ADR-004`, `ADR-009`). | 🔴 **Lỗi thời** (Gây nhiễu nặng nếu AI đọc phải) |
 | 2 | `docs/Phase2_ERP_Realignment_Plan.md:18-39` | Thiết kế luồng một chiều cứng nhắc: `Khách hàng/Đơn hàng -> Thiết kế Khay -> Tạo Khuôn/Dao -> Lên lịch -> Kanban -> Kho/MRP` trên bảng `product_master`, `mold_base`, `cutter_master`. | Thực tế tại YSD (`01_COMPREHENSIVE_BUSINESS_PROCESS_PROFILE.md:20-36, 90-91`): Luồng bắt đầu từ **Sự việc (`business_cases`) $\rightarrow$ Thẩm định Kỹ thuật & Thiết kế sơ bộ $\rightarrow$ Báo giá $\rightarrow$ Chế tạo khuôn / Dập thử mẫu $\rightarrow$ Duyệt mẫu KCS $\rightarrow$ Đơn hàng & Sản xuất hàng loạt**, có nhánh lặp lại/cải tạo liên tục. | 🔴 **Sai lệch mô hình nghiệp vụ cốt lõi** |
 | 3 | `docs/00_PROJECT_CHARTER.md:16-26`<br>`docs/01_BRD.md:49-55, 88-103, 172-176` | • Vẫn tách `Master Mold` và `Physical Mold` riêng biệt.<br>• Ghi nhận luồng `Email KH -> Đơn hàng (Order) -> Bản vẽ Design Revision` (đặt Order trước Design/Quote).<br>• Đặt mục Kế toán/Thu phí và chi nhánh Aomori vào `Out of Scope`. | • `Master Mold` đã hợp nhất vào `products`; `Physical Mold` hợp nhất vào `equipment` (`SCHEMA_REFERENCE.md:868-873`).<br>• Thực tế phải qua `Technical Review` + `Quotation` trước khi có `Order` chính thức.<br>• Nghiệp vụ Hóa đơn (`invoices`) và Thu phí bảo quản khuôn (`型保管料` Fujikura 307.5¥/tháng) đã được đưa vào phạm vi cốt lõi. | 🟠 **Lạc hậu so với kiến trúc V3 & Sprint P1** |
 | 4 | `docs/02_BUSINESS_PROCESS.md:58-60, 84-90` | • Mô tả bảng `production_orders` liên kết `mold_material_bom` qua `bom_reference_mold_id`.<br>• Section 3 (Chỉ thị SX) và Section 4 (QC & Truy xuất Lô) để trống `⏳ Chờ thiết kế`. | Các bảng `mold_material_bom` không phải là SSOT trong `SCHEMA_REFERENCE.md`; luồng sản xuất chuẩn đã chuyển sang mô hình 4 tầng `work_orders` $\rightarrow$ `jobs` $\rightarrow$ `job_steps` $\rightarrow$ `work_logs` (`ADR-002`). | 🟠 **Chưa hoàn thiện & lệch tên bảng SSOT** |
-| 5 | `docs/PROJECT_STATUS.md:1-87`<br>`docs/TECH_DEBT.md:1-20` | • `PROJECT_STATUS.md` đóng băng từ **2026-07-16** (vẫn ghi chờ Rotate key, chờ V5 Seed, chờ làm BP-32, मượn khuôn, phiếu giao hàng).<br>• `TECH_DEBT.md` dừng ở **2026-09-02** (ghi `TD-005: work_logs.quantity_ng` chưa có cột). | Thực tế dự án đã hoàn thành tới **Milestone 28** và **Sprint P1 (`WO-P1-001` $\rightarrow$ `WO-P1-010`)** tính đến `2026-10-14` (`docs/SESSION_HANDOFF_GEMINI4_ARGON.md:38-40`), cột `work_logs.quantity_ng` đã có từ Migration 100 (`SCHEMA_REFERENCE.md:426`). | 🔴 **Đóng băng 3 tháng, không phản ánh thực trạng** |
-| 6 | `.agents/mempalace/knowledge/` (`mold_manufacturing_process.md:64-65`, `thermoforming_equipment_set.md:50, 82-104`, `business_rules.md:8`) | • Chỉ định lấy nhựa/kích thước từ `products.primary_plastic_code`, `external_length_mm`.<br>• Đề xuất tạo bảng `auxiliary_equipments` và `jobs.physical_mold_id`.<br>• Ghi trạng thái đơn hàng là `NEW -> APPROVED -> COMPLETED`. | • Vi phạm trực tiếp `RULE-DATA-02` (`AGENTS.md:173-175`: Nhựa và kích thước thiết kế CHỈ lấy từ `design_revisions`).<br>• `auxiliary_equipments` và `physical_molds` đã DEPRECATED (`SCHEMA_REFERENCE.md:872-873`).<br>• Trạng thái đơn hàng thực tế là `DRAFT -> CONFIRMED -> IN_PRODUCTION -> SHIPPED -> CLOSED | CANCELLED` (`SCHEMA_REFERENCE.md:488`). | 🔴 **Mâu thuẫn trực tiếp với `RULE-DATA-02` & `SCHEMA_REFERENCE.md`** |
+| 5 | `docs/PROJECT_STATUS.md:1-87`<br>`docs/TECH_DEBT.md:1-20` | • `PROJECT_STATUS.md` đóng băng từ **2026-07-16** (vẫn ghi chờ Rotate key, chờ V5 Seed, chờ làm BP-32, mượn khuôn, phiếu giao hàng).<br>• `TECH_DEBT.md` dừng ở **2026-09-02** (ghi `TD-005: work_logs.quantity_ng` chưa có cột). | Thực tế dự án đã hoàn thành tới **Milestone 28** và **Sprint P1 (`WO-P1-001` $\rightarrow$ `WO-P1-010`)** tính đến `2026-10-14` (`docs/SESSION_HANDOFF_GEMINI4_ARGON.md:38-40`), cột `work_logs.quantity_ng` đã có từ Migration 100 (`SCHEMA_REFERENCE.md:426`). | 🔴 **Đóng băng 3 tháng, không phản ánh thực trạng** |
+| 6 | `.agents/mempalace/knowledge/` (`mold_manufacturing_process.md:64-65`, `thermoforming_equipment_set.md:50, 82-104`, `business_rules.md:8`) | • Chỉ định lấy nhựa/kích thước từ `products.primary_plastic_code`, `external_length_mm`.<br>• Đề xuất dùng bảng `auxiliary_equipments` và `jobs.physical_mold_id`.<br>• Ghi trạng thái đơn hàng là `NEW -> APPROVED -> COMPLETED`. | • Vi phạm `RULE-DATA-02` (`AGENTS.md`: Nhựa và kích thước thiết kế CHỈ lấy từ `design_revisions`).<br>• Bảng `auxiliary_equipments` **TỒN TẠI** trong DB nhưng đã ngừng dùng cho tính năng mới (`SCHEMA_REFERENCE.md:872-873`), còn bảng `physical_molds` **KHÔNG TỒN TẠI** trong DB.<br>• Trạng thái đơn hàng thực tế là `DRAFT -> CONFIRMED -> IN_PRODUCTION -> SHIPPED -> CLOSED | CANCELLED` (`SCHEMA_REFERENCE.md:488`). | 🔴 **Mâu thuẫn với `RULE-DATA-02` & `SCHEMA_REFERENCE.md`** |
 
 ---
 
-## PHẦN B: 7 ĐIỂM ĐỨT GÃY LUỒNG LIÊN THÔNG & TÍNH NĂNG CÒN THIẾU (CÓ DẪN CHỨNG `file:line`)
+## PHẦN B: 7 ĐIỂM ĐỨT GÃY LUỒNG LIÊN THÔNG & TÍNH NĂNG CÒN THIẾU (CẦN KIỂM THỬ TRÌNH DUYỆT / TRUY VẤN TRƯỚC KHI SỬA)
 
 Đối chiếu luồng nghiệp vụ thực tế xuyên suốt từ đầu đến cuối với mã nguồn hiện tại trong `src/app/`:
 
@@ -29,9 +41,9 @@
    ──> [6. Thiết bị & Gia công /equipment, /equipment/jobs] ──(ĐỨT #6, #7)──> [7. Nhật ký & Giao hàng & Lưu giữ khuôn]
 ```
 
-### 1. Đứt gãy #1 — Tab Thẩm định Kỹ thuật trong Sự việc (`/cases/[id]`) bị khóa quyền & bắt nhập UUID thô
-- **Vị trí lỗi:**
-  - `src/app/cases/[id]/page.tsx:92-97` & `src/app/cases/[id]/actions.ts:16`: Truy vấn `.from('profiles').select('role')` — vi phạm `SCHEMA_REFERENCE.md:14` (*"Bảng User là `employees`, KHÔNG phải `profiles`"*). Khi truy vấn `profiles` trả về rỗng, `currentUserRole` bị gán mặc định thành `'sales'`, khiến nút **"Tạo đánh giá kỹ thuật"** tại `src/app/cases/[id]/_components/TechnicalReviewTab.tsx:57-61` (`currentUserRole === 'engineering' || currentUserRole === 'manager'`) bị ẩn đối với người dùng!
+### 1. Đứt gãy #1 — Tab Thẩm định Kỹ thuật trong Sự việc (`/cases/[id]`) lệch bảng User (`profiles` vs `employees`) & bắt nhập UUID thô
+- **Vị trí ghi nhận:**
+  - `src/app/cases/[id]/page.tsx:92-97` & `src/app/cases/[id]/actions.ts:16`: Truy vấn `.from('profiles').select('role')`. Qua xác minh `information_schema.tables`, cả hai bảng `profiles` và `employees` đều **TỒN TẠI** trong DB (tuy nhiên `SCHEMA_REFERENCE.md:14` quy định *"Bảng User là `employees`, KHÔNG phải `profiles`"*). Nếu user không có dòng/role khớp trong `profiles`, `currentUserRole` bị gán mặc định thành `'sales'`, khiến nút **"Tạo đánh giá kỹ thuật"** tại `src/app/cases/[id]/_components/TechnicalReviewTab.tsx:57-61` bị ẩn.
   - `src/app/cases/[id]/_components/TechnicalReviewForm.tsx:115, 124, 177, 231, 240`: Các trường liên kết `product_id`, `design_revision_id`, `mold_id`, `cutting_die_id`, `machine_id` đang dùng thẻ `<input type="text" placeholder="FK product_id" />` bắt kỹ thuật viên **tự copy-paste chuỗi UUID 36 ký tự** thay vì dùng `AsyncSearchableSelect`!
   - Chưa có nút tạo nhanh Sản phẩm (`products`) hoặc Bản vẽ (`design_revisions`) trực tiếp từ kết quả Thẩm định kỹ thuật của Case.
 

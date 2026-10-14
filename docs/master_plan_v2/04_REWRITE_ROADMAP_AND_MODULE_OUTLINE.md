@@ -60,55 +60,34 @@ Mỗi file `M01` $\rightarrow$ `M10` đều tuân thủ một khuôn mẫu 5 m�
 
 ---
 
-## PHẦN III: LỘ TRÌNH 5 GIAI ĐOẠN (MASTER EXECUTION ROADMAP) ĐỂ CHUẨN HÓA TOÀN DIỆN HỆ THỐNG
+## PHẦN III: TRẠNG THÁI PHÊ DUYỆT & LỘ TRÌNH CÁC GÓI CÔNG VIỆC
 
-Dựa trên kết quả Đối chiếu 3 Chiều tại [`03_THREE_WAY_AUDIT_GAPS_AND_CODEBASE_ISSUES.md`](file:///d:/AntiGravity_Workspace/apps/ysdms-nextgen/docs/master_plan_v2/03_THREE_WAY_AUDIT_GAPS_AND_CODEBASE_ISSUES.md), AN đệ trình lộ trình thi công tiếp theo gồm **5 Giai đoạn (Phases)** được sắp xếp theo mức độ ưu tiên từ gốc đến ngọn:
+### ✅ HẠNG MỤC 0 (PHƯƠNG ÁN C — ĐÃ ĐỐI SOÁT DỮ LIỆU CHỈ-ĐỌC TRÊN PRODUCTION):
+- **Cơ chế Join chuẩn xác:**
+  - Cột `resolved_order_id` **KHÔNG tồn tại** trong `public.staging_order_lines_backfill`.
+  - Kết nối chuẩn: `staging_order_lines_backfill.order_no = orders.order_no`, sau đó dùng `orders.order_id` để đối chiếu `order_lines.order_id`.
+- **Kết quả đã xác minh độc lập bởi PE (`2026-10-14 10:34:30 JST`):**
+  - `staging_order_lines_backfill = 6,279` dòng; `order_lines = 6,279` dòng; `orders = 2,396`; `products = 8,489`.
+  - Khớp `6,279 / 6,279` dòng theo `(order_id, line_no, product_id, quantity)`; `0` trùng lặp; `0` thiếu FK; `0` khoảng trống `line_no`; `PENDING = 6,277`, `NORMALIZED = 2`.
+- **Danh sách bảng đã xác minh qua `information_schema.tables`:**
+  - **TỒN TẠI:** `profiles`, `employees`, `auxiliary_equipments`, `mold_design_cutters`, `mold_work_orders`.
+  - **KHÔNG TỒN TẠI:** `mold_masters`, `physical_molds`, `cutters`, `order_items`, `product_master`.
 
-### 🚀 GIAI ĐOẠN A (`WO-DOC-MODULAR`): Tái cấu trúc Bộ Quy tắc & Khởi tạo Hồ sơ Dự án Modular (`docs/dossier/`)
-- **Mục tiêu:** Giải quyết ngay bài toán Token Economy theo chỉ thị của Minh Chủ THOAN trước khi sửa code quy mô lớn.
-- **Hạng mục thực thi:**
-  1. Tinh gọn `AGENTS.md` và `.agents/AGENTS.md` (loại bỏ 100% đoạn lặp và thông tin bảng cũ, đảm bảo không còn bị `<truncated>` trong `<user_rules>`, giảm dung lượng nạp tự động từ 67.7 KB xuống < 12 KB).
-  2. Bóc tách `SCHEMA_REFERENCE.md` thành 6 file chuyên biệt trong `docs/dossier/02_schema_modules/` (khử sạch các đoạn định nghĩa trùng lặp của `equipment_loans`, `orders`, `shipments` và cập nhật đúng CHECK constraint của Migration M28A).
-  3. Khởi tạo 10 file hồ sơ phân hệ `M01` $\rightarrow$ `M10` trong `docs/dossier/03_business_modules/` và归档 (archive) các file kế hoạch cũ đã lỗi thời (`Phase1_MoldCutter_Migration_Plan.md`, `Phase2_ERP_Realignment_Plan.md`) vào `docs/archive/`.
+### 🟡 GIAI ĐOẠN A (`WO-DOC-MODULAR` — CHỈ DUYỆT BƯỚC HỢP NHẤT `AGENTS.md`, CÁC BƯỚC CÒN LẠI CHƯA DUYỆT):
+- **Đã thực hiện (Commit `309d41beb629bb34a3e348af4efdbe1ab7d30746`, chờ PE nghiệm thu nội dung diff):**
+  - Hợp nhất `AGENTS.md` (`11,347 bytes` = `11.08 KiB` / `11.35 KB` $\le 12\text{ KB}$) và rút gọn `.agents/AGENTS.md` (`1,461 bytes` stub tham chiếu), ghi bài học `L006` vào `docs/SO_BAI_HOC.md`.
+- **Chưa duyệt (Ý tưởng / Đề xuất):**
+  - Bóc tách `SCHEMA_REFERENCE.md` thành 6 file trong `docs/dossier/02_schema_modules/`.
+  - Khởi tạo 10 file hồ sơ phân hệ `M01` $\rightarrow$ `M10` trong `docs/dossier/03_business_modules/`.
 
-### 🔧 GIAI ĐOẠN B (`WO-PIPE-FIX`): Khắc phục 6 Điểm Đứt Gãy Luồng Liên Thông Cốt Lõi (End-to-End Pipeline Restoration)
-- **Mục tiêu:** Nối thông mạch dữ liệu từ `Sự việc (/cases)` $\rightarrow$ `Thẩm định Kỹ thuật` $\rightarrow$ `Báo giá (/orders/quotations)` $\rightarrow$ `Đơn hàng (/orders)` $\rightarrow$ `Thiết kế (/engineering/designs)` $\rightarrow$ `Work Order (/production/work-orders)` $\rightarrow$ `Chi tiết Job (/equipment/jobs/[id])`.
-- **Hạng mục thực thi:**
-  1. **Sửa `/cases/[id]` (Đứt gãy #1, #2, #4):**
-     - Đổi truy vấn phân quyền từ bảng `profiles` sang `employees` (`src/app/cases/[id]/page.tsx:93`, `actions.ts:16`).
-     - Thay thế 5 ô `<input type="text">` nhập UUID thô trong `TechnicalReviewForm.tsx:115-240` bằng `AsyncSearchableSelect` chọn trực tiếp Sản phẩm, Bản vẽ CAD, Khuôn, Dao cắt, Máy định hình + nút tạo nhanh Sản phẩm/Bản vẽ.
-     - Chuẩn hóa `QuotationFormModal.tsx` & `SalesTab.tsx` trong `/cases/[id]` dùng đúng enum chữ hoa (`'DRAFT'`, `'SENT'`, `'APPROVED'`, `'CONVERTED'`) và tích hợp trực tiếp với Auto-Pricing Engine + PDF Engine chuẩn của `/orders/quotations`.
-     - Kết nối Tab `production` trong `/cases/[id]/page.tsx:373-387` hiển thị danh sách `work_orders` và `jobs` có `case_id` tương ứng.
-  2. **Sửa `/orders/quotations` (Đứt gãy #3):**
-     - Cập nhật `CreateQuotationModal.tsx:331-340` truyền đầy đủ `product_id`, `design_revision_id` và `case_id` khi lưu `quotation_lines`, đảm bảo nút `受注確定` (`Convert to Order`) hoạt động trơn tru 100%.
-  3. **Sửa `/engineering/designs/[moldMasterId]` (Đứt gãy #5):**
-     - Sửa lỗi đọc `moldMaster?.products?.[0]` tại dòng `:263-268` để hiển thị đúng Mã SP, Tên SP và Khách hàng trên Header.
-     - Bổ sung `'APPROVED'` vào `STATUS_OPTIONS` (dòng `:142`) để kỹ thuật viên có thể duyệt bản vẽ phục vụ `rpc_confirm_work_order`.
-  4. **Khôi phục `/equipment/jobs/[id]` (Đứt gãy #6):**
-     - Khôi phục giao diện chi tiết Job 4 Tabs (`OverviewTab`, `StepsTab`, `LogsTab`, `EditStepModal`) tại `/equipment/jobs/[id]/page.tsx`, và đặt nút `🖨️ In phiếu công việc A4` dẫn sang `/equipment/jobs/[id]/print`.
+### ⚪ CÁC GÓI ĐỀ XUẤT TIẾP THEO (TRẠNG THÁI: Ý TƯỞNG — CHƯA DUYỆT, CẦN BẰNG CHỨNG TÁI HIỆN TRƯỚC KHI LẬP WORK ORDER):
+1. **`WO-PIPE-FIX` (Ý tưởng — Chưa duyệt):**
+   - Kiểm tra và đối chiếu thực tế bảng `profiles` vs `employees` trong `/cases/[id]` (`src/app/cases/[id]/page.tsx:93`, `actions.ts:16` — lưu ý cả hai bảng `profiles` và `employees` đều **TỒN TẠI** trong DB).
+   - Thay thế 5 ô `<input type="text">` nhập UUID thô trong `TechnicalReviewForm.tsx:115-240` bằng `AsyncSearchableSelect`.
+   - Chuẩn hóa `QuotationFormModal.tsx` & `CreateQuotationModal.tsx:331-340`, `/engineering/designs/[moldMasterId]/page.tsx`, và `/equipment/jobs/[id]/page.tsx` sau khi có bằng chứng tái hiện trên trình duyệt/truy vấn.
+2. **`WO-MOLD-UNIFY` (Ý tưởng — Chưa duyệt):**
+   - Chuyển 7 vị trí còn truy vấn bảng `mold_design_cutters` (hiện vẫn **TỒN TẠI** trong DB) sang đọc/ghi bảng chuẩn `equipment_assignments`.
+   - Hợp nhất `/maintenance` vào `/equipment/lifecycle` trên nền bảng `equipment`.
+3. **`WO-ROUTE-CLEANUP` & `WO-SAMPLE-QC-GATE` (Ý tưởng — Chưa duyệt, tách khỏi lô đầu chờ Minh Chủ THOAN chốt):**
+   - Quy hoạch lại `Sidebar.tsx` và cổng duyệt mẫu thử KCS (`Sample Approval Gate`).
 
-### 🧰 GIAI ĐOẠN C (`WO-MOLD-UNIFY`): Đồng bộ Toàn diện Phân hệ Phòng Khuôn & Bộ SET Thiết bị
-- **Mục tiêu:** Xóa bỏ tình trạng phân mảnh dữ liệu tại Phòng Khuôn (`金型部`).
-- **Hạng mục thực thi:**
-  1. Chuyển toàn bộ 7 vị trí còn truy vấn bảng cũ `mold_design_cutters` (`EquipmentDetailModal.tsx`, `TabDesignsEquipment.tsx`, `TabOverview.tsx`, `Topbar.tsx`) sang đọc/ghi bảng chuẩn **`equipment_assignments`** (`SET_MEMBER` / `SHARED`).
-  2. Chuẩn hóa phân loại thiết bị trên `/equipment/unified` (bổ sung filter `'PLUG'`) và `/equipment/molds` (tách rõ Khuôn `MOLD` với Đế nước `WATER_BASE` / Đế khí `PRESSURE_BASE`), thay thế trang tĩnh `/equipment/auxiliary` bằng chế độ lọc Thiết bị phụ trợ thực tế trên bảng `equipment`.
-  3. Hợp nhất `/maintenance` (đang dùng cột cũ `mold_physical_id`) vào `/equipment/lifecycle` trên nền bảng `equipment` SSOT.
-
-### 🧹 GIAI ĐOẠN D (`WO-ROUTE-CLEANUP`): Quy hoạch Lại Menu `Sidebar.tsx` & Dọn Dẹp Các Route Trùng Lặp / Mồ Côi
-- **Mục tiêu:** Đảm bảo mỗi nghiệp vụ chỉ có **1 đường dẫn chuẩn duy nhất (Single Canonical Route)**, tuân thủ 100% `RULE-UI-1`, `next-intl` và `RULE 7.1 (Sort DESC)`.
-- **Hạng mục thực thi:**
-  1. Đưa `/production/work-orders` (Work Order SSOT) về đúng vị trí điều hành và gỡ bỏ/redirect trang legacy `/production/mold-orders` (đang dùng bảng cũ `mold_work_orders`) sau khi đối chiếu dữ liệu.
-  2. Chuẩn hóa `/production-instructions` sang CSS Design System (`globals.css`) + đa ngôn ngữ `next-intl`.
-  3. Chuyển hướng (redirect) các route trùng lặp (`/master/molds`, `/master/products`, `/master/cutters`, `/production/worklog`, `/production/inventory`, `/warehouse/rolls`) về các route chuẩn trên Sidebar (`/product-center`, `/equipment/cutting-dies`, `/worklogs`, `/inventory`, `/plastics/inventory`) và xây dựng trang Dashboard danh mục chuẩn cho `/master` (kết nối `/master/customers`, `/master/machines`, `/master/racks`, `/master/calendar`, `/master/employees`).
-
-### 🧪 GIAI ĐOẠN E (`WO-SAMPLE-QC-GATE`): Hoàn thiện Cổng Duyệt Mẫu Thử KCS (`Sample Approval Gate`) & Biểu Mẫu Kiểm Tra Theo Khách Hàng
-- **Mục tiêu:** Khép kín mắt xích nghiệp vụ thực tế từ email (`00_BUSINESS_INSIGHTS.md:96-100`, `01_COMPREHENSIVE_BUSINESS_PROCESS_PROFILE.md:182-204`).
-- **Hạng mục thực thi:**
-  1. Liên kết luồng `Dập thử mẫu (試作成形)` $\rightarrow$ `Đo kích thước KCS (/quality/inspection)` $\rightarrow$ `Duyệt mẫu (量産承認)` trước khi giải phóng lô hàng thương mại trên `/shipments`.
-  2. Tích hợp cấu hình biểu mẫu kiểm tra & phiếu giao hàng đặc thù theo khách hàng (SMK in kèm Mold No & % nhựa tái chế `粉砕材含有率`, KYD `試験成績書`, Shin-Ei `専用伝票`).
-
----
-
-## PHẦN IV: ĐỆ TRÌNH KIẾN TRÚC SƯ TRƯỞNG PE & MINH CHỦ THOAN PHÊ DUYỆT
-
-AN kính trình **Minh Chủ THOAN** và **Kiến trúc sư trưởng PE** thẩm định bộ báo cáo phân tích 4 nhiệm vụ và phê duyệt cho phép AN bắt đầu thi công ngay từ **GIAI ĐOẠN A (`WO-DOC-MODULAR`: Tinh gọn Bộ Quy tắc `<user_rules>` & Khởi tạo Bộ Hồ sơ Dự án Modular `docs/dossier/`)** tiếp nối bằng **GIAI ĐOẠN B (`WO-PIPE-FIX`: Hàn gắn 6 điểm đứt gãy luồng liên thông)**.
