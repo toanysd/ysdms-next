@@ -1,0 +1,1142 @@
+{
+  "work_order": "WO-PROJECT-STATUS-REVIEW",
+  "directive_id": "2fd59151",
+  "generated_at_jst": "2026-10-15T08:42:00+09:00",
+  "db_now_utc": "2026-10-14 23:44:26.136821+00:00",
+  "base_commit_before_report": "a2a90587c503844416985f4164380171130df940",
+  "section_1_mail_source_audit": {
+    "1a_full_read_status": {
+      "before_directive_2fd59151": "MỘT PHẦN (500 email mẫu trong 00_BUSINESS_INSIGHTS.md; 1,000 email trong 10_email_derived_business_workflows.md; đọc sâu thread tiêu biểu trong 01_COMPREHENSIVE_BUSINESS_PROCESS_PROFILE.md và MOLD_CUSTODY_BUSINESS_SPEC.md)",
+      "current_audit_2026_10_15": "CÓ — Đã quét tự động 100% số dòng của cả 4 file trong D:/AntiGravity_Workspace/apps/ysdms-nextgen/source_data/mail_data bằng Python (openpyxl & csv.reader)",
+      "files_in_mail_data_dir": [
+        {
+          "file_name": "toanysdmail.xlsx",
+          "size_bytes": 17049991,
+          "sheet_count": 1,
+          "sheet_names": [
+            "toanysdmail"
+          ],
+          "column_count": 19,
+          "columns": [
+            "Subject",
+            "Body",
+            "From: (Name)",
+            "From: (Address)",
+            "From: (Type)",
+            "To: (Name)",
+            "To: (Address)",
+            "To: (Type)",
+            "CC: (Name)",
+            "CC: (Address)",
+            "CC: (Type)",
+            "BCC: (Name)",
+            "BCC: (Address)",
+            "BCC: (Type)",
+            "Billing Information",
+            "Categories",
+            "Importance",
+            "Mileage",
+            "Sensitivity"
+          ],
+          "physical_worksheet_rows": 706674,
+          "non_empty_worksheet_rows": 295259,
+          "empty_worksheet_rows": 411414,
+          "smtp_ex_header_rows": 3152,
+          "reconstructed_top_level_emails": 3708,
+          "quoted_submessages_in_body": 69102,
+          "unique_normalized_threads": 690,
+          "technical_explanation_of_706674_rows": "Khi file Outlook CSV gốc được chuyển sang Excel, các ký tự xuống dòng (newline) bên trong cột Body bị tràn thành 295,259 dòng văn bản liên tiếp và 411,414 dòng trống (tổng 706,674 dòng vật lý). Số email cấp 1 thực tế là 3,708 (chứa 69,102 đoạn hội thoại trích dẫn RE:/FW: bên trong Body)."
+        },
+        {
+          "file_name": "toanysdmail.CSV",
+          "size_bytes": 116572312,
+          "column_count": 19,
+          "total_csv_records": 3875,
+          "valid_smtp_ex_emails": 3856,
+          "unique_normalized_threads": 725,
+          "note": "Bản CSV gốc giữ nguyên cấu trúc multi-line quoting của Outlook, không bị vỡ dòng Subject/Body."
+        },
+        {
+          "file_name": "toanysdmail2.xlsx",
+          "size_bytes": 14989789,
+          "sheet_count": 1,
+          "sheet_names": [
+            "toanysdmail2"
+          ],
+          "column_count": 19,
+          "physical_worksheet_rows": 706674,
+          "non_empty_worksheet_rows": 242278,
+          "smtp_ex_header_rows": 2899
+        },
+        {
+          "file_name": "toanysdmail2.csv",
+          "size_bytes": 76874572,
+          "column_count": 19,
+          "physical_rows": 706673,
+          "non_empty_rows": 242278,
+          "smtp_ex_header_rows": 2899
+        }
+      ],
+      "date_range": {
+        "min_date": "2016-02-02",
+        "max_date": "2026-07-06",
+        "historical_quoted_mentions": "Có 5 trích dẫn lịch sử từ năm 2013; tập trung cao điểm từ 2024 đến 2026-07."
+      },
+      "scope_read_vs_unread": {
+        "read_scope": "Đã quét phân loại tự động 100% (3,856 emails / 725 threads trong CSV và 295,259 dòng không rỗng trong XLSX); đã đọc sâu toàn văn ~150 thread tiêu biểu đại diện cho 10 kịch bản nghiệp vụ và 11 khách hàng lớn.",
+        "unread_scope": "CHƯA đọc thủ công từng câu chữ của toàn bộ 69,102 đoạn reply trích dẫn lồng nhau để bóc tách tự động thành dữ liệu seed vào bảng business_cases / case_messages."
+      }
+    },
+    "1b_thread_classification_by_module": {
+      "status": "CÓ (Đã phân loại toàn bộ 725 unique threads / 3,856 emails chuẩn theo 10 module nghiệp vụ; một thread đa giai đoạn có thể khớp nhiều module)",
+      "modules": {
+        "M01_CASES_INQUIRY": {
+          "thread_count": 95,
+          "message_count": 895,
+          "examples": [
+            {
+              "thread_subject": "【YSD】新規トレイお見積依頼：AB30トレイ",
+              "msg_count": 210,
+              "csv_records": [
+                1989,
+                1990,
+                1991
+              ],
+              "date": "2025-11-02",
+              "codes": [
+                "JAE-357",
+                "JAE-358",
+                "JAE-365"
+              ],
+              "subj_match": 1
+            },
+            {
+              "thread_subject": "YSD殿　新規コネクタのトレイ見積依頼＆コスト低減のご相談",
+              "msg_count": 39,
+              "csv_records": [
+                1682,
+                1720,
+                1722
+              ],
+              "date": "2025-10-02",
+              "codes": [
+                "JAE-341",
+                "JAE-342",
+                "JAE-360"
+              ],
+              "subj_match": 1
+            },
+            {
+              "thread_subject": "SRI-007のご相談",
+              "msg_count": 38,
+              "csv_records": [
+                3278,
+                3279,
+                3280
+              ],
+              "date": "2025",
+              "codes": [
+                "SRI-006",
+                "SRI-007"
+              ],
+              "subj_match": 1
+            }
+          ]
+        },
+        "M02_CAD_DESIGN_TECH_REVIEW": {
+          "thread_count": 361,
+          "message_count": 2599,
+          "examples": [
+            {
+              "thread_subject": "【W40×40×1.28トレイの北海道からのリクエスト】RE: 新規トレイの設計検討のお願い",
+              "msg_count": 26,
+              "csv_records": [
+                795,
+                796,
+                876
+              ],
+              "date": "2025",
+              "codes": [
+                "RPD-001",
+                "RPD-002"
+              ],
+              "subj_match": 1
+            },
+            {
+              "thread_subject": "【見積依頼】1-912163-2　形状変更＋トレイ製作　PRJ-22-903718(中間梱包トレイ)",
+              "msg_count": 24,
+              "csv_records": [
+                500,
+                534,
+                567
+              ],
+              "date": "2025",
+              "codes": [
+                "1-912163-2"
+              ],
+              "subj_match": 1
+            },
+            {
+              "thread_subject": "PSM CARRIER UNIT TRAY(34-0354) MTM-194　形状変更について",
+              "msg_count": 13,
+              "csv_records": [
+                3451,
+                3486,
+                3491
+              ],
+              "date": "2026-04-02",
+              "codes": [
+                "MTM-194",
+                "MTM-195"
+              ],
+              "subj_match": 1
+            }
+          ]
+        },
+        "M03_QUOTATIONS_PRICING": {
+          "thread_count": 289,
+          "message_count": 2279,
+          "examples": [
+            {
+              "thread_subject": "トレイ金型見積依頼",
+              "msg_count": 296,
+              "csv_records": [
+                2251,
+                2811,
+                2854
+              ],
+              "date": "2025-12-01",
+              "codes": [
+                "MTM-189",
+                "MTM-190"
+              ],
+              "subj_match": 1
+            },
+            {
+              "thread_subject": "【YSD】新規トレイお見積依頼：AB30トレイ",
+              "msg_count": 210,
+              "csv_records": [
+                1989,
+                1990,
+                1991
+              ],
+              "date": "2025-11-02",
+              "codes": [
+                "JAE-357",
+                "JAE-358",
+                "JAE-365"
+              ],
+              "subj_match": 1
+            },
+            {
+              "thread_subject": "デイバイス組立機用トレイ　御見積依頼【添付あり】",
+              "msg_count": 43,
+              "csv_records": [
+                207,
+                212,
+                213
+              ],
+              "date": "2025-05-01",
+              "codes": [
+                "DIC-161"
+              ],
+              "subj_match": 1
+            }
+          ]
+        },
+        "M04_ORDERS_PO": {
+          "thread_count": 207,
+          "message_count": 1674,
+          "examples": [
+            {
+              "thread_subject": "本日受注分注文書　送付の件",
+              "msg_count": 39,
+              "csv_records": [
+                648,
+                649,
+                650
+              ],
+              "date": "2025-06-02",
+              "codes": [
+                "JAE-3",
+                "JAE-343",
+                "JAE-344"
+              ],
+              "subj_match": 1
+            },
+            {
+              "thread_subject": "《BOTTOMのシート厚は1.0mmでお願いします》RE: 【注文書が配信されました】RE: 20250901の議事メモ",
+              "msg_count": 13,
+              "csv_records": [
+                1322,
+                1323,
+                1327
+              ],
+              "date": "2025",
+              "codes": [
+                "RPD-005",
+                "RPD-006"
+              ],
+              "subj_match": 1
+            },
+            {
+              "thread_subject": "【正式注文書】L288 レンズキャップ用トレイ 10個入",
+              "msg_count": 7,
+              "csv_records": [
+                167,
+                168,
+                169
+              ],
+              "date": "2025-03-02",
+              "codes": [
+                "ASH-010",
+                "L288"
+              ],
+              "subj_match": 1
+            }
+          ]
+        },
+        "M05_EQUIPMENT_MOLD_CUTTER_SET": {
+          "thread_count": 320,
+          "message_count": 1529,
+          "examples": [
+            {
+              "thread_subject": "抜き型手配依頼　SMK-222",
+              "msg_count": 6,
+              "csv_records": [
+                1249,
+                1252,
+                1256
+              ],
+              "date": "2025",
+              "codes": [
+                "CHG-002",
+                "SMK-222"
+              ],
+              "subj_match": 1
+            },
+            {
+              "thread_subject": "カッター図面について",
+              "msg_count": 6,
+              "csv_records": [
+                1308,
+                1311,
+                1312
+              ],
+              "date": "2025-09-05",
+              "codes": [
+                "MTM-076"
+              ],
+              "subj_match": 1
+            },
+            {
+              "thread_subject": "抜き型手配依頼　ADY-131",
+              "msg_count": 3,
+              "csv_records": [
+                1027,
+                1031,
+                1107
+              ],
+              "date": "2025",
+              "codes": [
+                "ADY-131"
+              ],
+              "subj_match": 1
+            }
+          ]
+        },
+        "M06_MOLD_JOBS_MFG_MOD": {
+          "thread_count": 142,
+          "message_count": 1515,
+          "examples": [
+            {
+              "thread_subject": "BUF Carrierトレイ、BUF MG Holderトレイ本型製作依頼",
+              "msg_count": 29,
+              "csv_records": [
+                3466,
+                3534,
+                3535
+              ],
+              "date": "2026-04-02",
+              "codes": [
+                "MTM-196",
+                "MTM-197"
+              ],
+              "subj_match": 1
+            },
+            {
+              "thread_subject": "お見積もり依頼　6-912161-1 HIPSドットマーク改造",
+              "msg_count": 17,
+              "csv_records": [
+                1808,
+                1905,
+                1907
+              ],
+              "date": "2025",
+              "codes": [
+                "5-912159-1",
+                "6-912161-1",
+                "9-912127-7"
+              ],
+              "subj_match": 1
+            },
+            {
+              "thread_subject": "新規金型製作依頼の件 TKD-023",
+              "msg_count": 11,
+              "csv_records": [
+                882,
+                883,
+                884
+              ],
+              "date": "2025",
+              "codes": [
+                "TKD-023"
+              ],
+              "subj_match": 1
+            }
+          ]
+        },
+        "M07_MOLD_CUSTODY_LOANS_INVENTORY": {
+          "thread_count": 181,
+          "message_count": 1149,
+          "examples": [
+            {
+              "thread_subject": "金型廃棄依頼（2025.07）",
+              "msg_count": 11,
+              "csv_records": [
+                776,
+                778,
+                805
+              ],
+              "date": "2019-03-01",
+              "codes": [
+                "SMK-138",
+                "SMK-140",
+                "SMK-163"
+              ],
+              "subj_match": 1
+            },
+            {
+              "thread_subject": "[Cc送信案内] 2025年度 FF固定資産棚卸のお願い【希望納期：2025年9月19日（金）】",
+              "msg_count": 8,
+              "csv_records": [
+                1340,
+                1345,
+                1348
+              ],
+              "date": "2025-09-01",
+              "codes": [
+                "ADY-078"
+              ],
+              "subj_match": 1
+            },
+            {
+              "thread_subject": "未稼働金型廃棄の件（ヨシダパッケージ様）",
+              "msg_count": 7,
+              "csv_records": [
+                695,
+                698,
+                730
+              ],
+              "date": "2016-02-02",
+              "codes": [
+                "SMK-157",
+                "SMK-179",
+                "SMK-181"
+              ],
+              "subj_match": 1
+            }
+          ]
+        },
+        "M08_THERMOFORMING_PRODUCTION_MATERIAL": {
+          "thread_count": 468,
+          "message_count": 2966,
+          "examples": [
+            {
+              "thread_subject": "追加依頼PPAP　及び　RE: 5-912159-1, 5-912159-2, 5-912159-3　HIPSへ切り替え",
+              "msg_count": 36,
+              "csv_records": [
+                845,
+                847,
+                849
+              ],
+              "date": "2025",
+              "codes": [
+                "5-912159-1",
+                "5-912159-2",
+                "5-912159-3"
+              ],
+              "subj_match": 1
+            },
+            {
+              "thread_subject": "新規案件　真空成形トレイについて",
+              "msg_count": 22,
+              "csv_records": [
+                3309,
+                3356,
+                3357
+              ],
+              "date": "2025",
+              "codes": [
+                "JAE-375",
+                "JAE-376"
+              ],
+              "subj_match": 1
+            },
+            {
+              "thread_subject": "お見積もり依頼　6-912161-1 HIPSドットマーク改造",
+              "msg_count": 17,
+              "csv_records": [
+                1808,
+                1905,
+                1907
+              ],
+              "date": "2025",
+              "codes": [
+                "5-912159-1",
+                "6-912161-1",
+                "9-912127-7"
+              ],
+              "subj_match": 1
+            }
+          ]
+        },
+        "M09_QUALITY_KCS_SAMPLE": {
+          "thread_count": 107,
+          "message_count": 961,
+          "examples": [
+            {
+              "thread_subject": "【Lindoへの納品書兼検査票と現品票の登録】RE: 《Lindoへの納期回答登録のお願い》RE: 【金型起工のPOの件",
+              "msg_count": 7,
+              "csv_records": [
+                3805,
+                3807,
+                3808
+              ],
+              "date": "2025",
+              "codes": [
+                "RPD-007"
+              ],
+              "subj_match": 1
+            },
+            {
+              "thread_subject": "Re8: JX金属様向けバスバー用トレー　ポケットサンプル評価の件",
+              "msg_count": 5,
+              "csv_records": [
+                3507,
+                3509,
+                3608
+              ],
+              "date": "2026-05-01",
+              "codes": [
+                "CHG-002",
+                "CHG-007",
+                "CHG-008"
+              ],
+              "subj_match": 1
+            },
+            {
+              "thread_subject": "Re14: JX金属様向けバスバー用トレー　ポケットサンプル評価の件",
+              "msg_count": 5,
+              "csv_records": [
+                3645,
+                3648,
+                3769
+              ],
+              "date": "2026-06-03",
+              "codes": [
+                "CHG-007",
+                "CHG-008",
+                "CHG-009"
+              ],
+              "subj_match": 1
+            }
+          ]
+        },
+        "M10_SHIPMENTS_DELIVERY_BILLING": {
+          "thread_count": 464,
+          "message_count": 3049,
+          "examples": [
+            {
+              "thread_subject": "[Cc送信案内] 2025年度 FF固定資産棚卸のお願い【希望納期：2025年9月19日（金）】",
+              "msg_count": 8,
+              "csv_records": [
+                1340,
+                1345,
+                1348
+              ],
+              "date": "2025-09-01",
+              "codes": [
+                "ADY-078"
+              ],
+              "subj_match": 1
+            },
+            {
+              "thread_subject": "【Lindoへの納品書兼検査票と現品票の登録】RE: 《Lindoへの納期回答登録のお願い》RE: 【金型起工のPOの件",
+              "msg_count": 7,
+              "csv_records": [
+                3805,
+                3807,
+                3808
+              ],
+              "date": "2025",
+              "codes": [
+                "RPD-007"
+              ],
+              "subj_match": 1
+            },
+            {
+              "thread_subject": "納品書発行の御願い 注文書№204182",
+              "msg_count": 5,
+              "csv_records": [
+                155,
+                156,
+                157
+              ],
+              "date": "2025",
+              "codes": [
+                "ASH-008",
+                "ASH-009"
+              ],
+              "subj_match": 1
+            }
+          ]
+        }
+      }
+    },
+    "1c_files_generated_from_mail": [
+      {
+        "path": "docs/mail_analysis/00_BUSINESS_INSIGHTS.md",
+        "lines": 103,
+        "commit_sha": "ea0787d5b9057d04f91b590a3c1cdb2ddcd51886",
+        "commit_date": "2026-07-14 18:44:58 +0900",
+        "basis": "500 email mẫu lọc từ toanysdmail.CSV"
+      },
+      {
+        "path": "docs/mail_analysis/00_README.md",
+        "lines": 32,
+        "commit_sha": "ea0787d5b9057d04f91b590a3c1cdb2ddcd51886",
+        "commit_date": "2026-07-14 18:44:58 +0900",
+        "basis": "Mô tả 10 danh mục CSV lọc từ toanysdmail.CSV"
+      },
+      {
+        "path": "docs/mail_analysis/00_SUMMARY.csv",
+        "lines": 11,
+        "commit_sha": "ea0787d5b9057d04f91b590a3c1cdb2ddcd51886",
+        "commit_date": "2026-07-14 18:44:58 +0900",
+        "basis": "Thống kê 10 danh mục từ khóa"
+      },
+      {
+        "path": "docs/mail_analysis/toanysdmail.zip",
+        "bytes": 11983621,
+        "commit_sha": "a66343f095f5797de09e4c30dca78a06225e97de",
+        "commit_date": "2026-07-14 20:03:00 +0900",
+        "basis": "Bản nén toanysdmail.CSV upload để PE phân tích"
+      },
+      {
+        "path": "docs/mail_analysis/01_COMPREHENSIVE_BUSINESS_PROCESS_PROFILE.md",
+        "lines": 605,
+        "commit_sha": "b5a3c991e583ed95fd890155a073f1d7ae1b0b40",
+        "commit_date": "2026-07-14 20:28:20 +0900",
+        "basis": "Phân tích toàn luồng Stage A..I từ các thread thực tế trong toanysdmail"
+      },
+      {
+        "path": "docs/business/MOLD_CUSTODY_BUSINESS_SPEC.md",
+        "lines": 406,
+        "commit_sha": "2b282c00ba303b9d0201bb26de9274f73a2e06d0",
+        "updated_commit_sha": "b8a28b7d93935263796b4984fcd4695fc4645b5b",
+        "commit_date": "2026-10-07 17:23:32 +0900",
+        "basis": "Đặc tả SSOT Lưu giữ, Mượn trả, Kiểm kê, Phí lưu kho, Teflon & Pallet QR từ toanysdmail.xlsx và source_data/金型保管料(20250704)"
+      },
+      {
+        "path": "docs/master_plan_v2/02_REAL_BUSINESS_FLOW_AND_MOLD_DEPT_SYNTHESIS.md",
+        "lines": 133,
+        "commit_sha": "b3513bd0d504cbd002254bbe31bdc7cb0837de57",
+        "commit_date": "2026-10-14 10:03:19 +0900",
+        "basis": "Tổng hợp 8 giai đoạn nghiệp vụ thực tế và 3 chuyên đề Phòng Khuôn từ mail + báo giá + spec"
+      }
+    ],
+    "1d_mail_to_spec_and_code_mapping": {
+      "implemented_in_spec_and_code": [
+        "Stage A-C (Case -> Technical Review -> Quotation -> Order): Đã có schema và UI, đã sửa và kiểm chứng E2E trong WO-PIPE-FIX (c6f20b9848636b2c6df552ef55365cb814210742), WO-SCHEMA-SAFETY-FIX (d51b5609014ba1583db6955ff73a3d214e7597fd), WO-PIPE-E2E-PILOT & CLEANUP.",
+        "Báo giá Khuôn & Khay 3 Trụ cột (docs/quotations/01..04, commit 0ca262a828afb93f457c45072a31645948a31da8): Đã triển khai trong src/lib/pricing/quotation-engine.ts và /orders/quotations.",
+        "Stage D & Lưu giữ/Mượn trả/Kiểm kê khuôn (MOLD_CUSTODY_BUSINESS_SPEC.md, Sprint P1 WO-P1-001..010): Đã có bảng equipment_loans (Migration 098), MoldLoanPDFDocument.tsx (Placard, thước dây, 2 con dấu, Pallet 1100x1100 + QR), và xuất Excel kiểm kê.",
+        "Bộ SET Thiết bị & Vòng đời Khuôn (WO-MOLD-UNIFY, commits 8e10b6aa4162ef4845b11b54b4d685dcfa26f4d1, c2d00dc97c75d70bab80d293c4dde1cf9d952eec, 9de2c64ca0137b52cc29f87445abd216013e10a5): Đã dùng equipment + equipment_assignments và v_equipment_lifecycle_status."
+      ],
+      "not_yet_in_code_or_incomplete": [
+        "Stage E (Sample Planning & Approval Gate): Bảng sample_requests=0, sample_submissions=0; CHƯA có cổng chặn xuất hàng khi mẫu thử chưa được khách duyệt.",
+        "Stage F (Production Instruction / BP-32): Bảng production_instructions=0; trang /production-instructions mới là khung sơ bộ, chưa tách Free/Paid/Office sample và chưa đạt chuẩn CSS/i18n.",
+        "Stage G (External Subcontract Coordination - Marudai MRDI): CHƯA LÀM bảng và UI điều phối lịch máy thầu phụ / giờ cắt hàng 15:00.",
+        "Chủ đề 3 MOLD_CUSTODY (Tính phí lưu kho khuôn ngưng >=3 năm Fujikura 307.5¥/tháng + 3% lãi chậm trả): Đã có trong Spec, CHƯA có màn hình tính phí & in bộ 4 chứng từ.",
+        "Stage I (Post-delivery child events trên Case: đổi nhựa HIPS, sửa khắc mã, báo cáo môi trường PPWR): CHƯA LÀM."
+      ]
+    }
+  },
+  "section_2_mold_dept_and_discussion_audit": {
+    "2a_mold_dept_requirements_matrix": [
+      {
+        "req_id": "MOLD-R01",
+        "requirement": "Quản lý hợp nhất 8 loại thiết bị (MOLD, PLUG, CUTTER_INLINE, CUTTER_SEPARATE, WATER_BASE, PRESSURE_BASE, FRAME, STACKING) và quan hệ Bộ SET (SET_MEMBER / SHARED)",
+        "source": "Mail (RE: 金型とカッターの互換について) + ADR-001/004/010 + Thảo luận WO-MOLD-UNIFY",
+        "in_plan": "CÓ",
+        "in_code_and_db": "MỘT PHẦN (DB có 6,497 equipment & 1,633 equipment_assignments; đã hoàn thành WO-MOLD-UNIFY)",
+        "remaining_gap": "Hoàn tất WO-EQUIPMENT-UI-FIX (thêm PLUG vào /equipment/unified, sửa MoldModal/CuttersClient) và đồng bộ +24 khuôn, +4 dao, +1,337 assignments từ Access (WO-MOLD-SYNC-WAVE1)."
+      },
+      {
+        "req_id": "MOLD-R02",
+        "requirement": "Quản lý vị trí giá-tầng kệ (racks / rack_layers) và Công ty lưu giữ (keeper_company_id)",
+        "source": "Mail (Terada Deimu Row 3096, JAE Cột I) + Access (tblRackLayer, tblMold.KeeperCompany) + WO-MOLD-DATA-SYNC-AUDIT",
+        "in_plan": "CÓ",
+        "in_code_and_db": "MỘT PHẦN (DB có 90 racks, 380 rack_layers)",
+        "remaining_gap": "Thiếu 20 rack_layers và 3,940 khuôn M-* chưa được backfill keeper_company_id trên Supabase; MoldModal/CuttersClient chưa có ô chọn (đã viết trong stash WO-EQUIPMENT-UI-FIX, chờ duyệt chạy)."
+      },
+      {
+        "req_id": "MOLD-R03",
+        "requirement": "Quy trình gia công chế tạo khuôn 4 tầng (work_orders -> jobs -> job_steps -> work_logs) với 3 tracks MOLD / PLUG / CUTTER và phiếu in A4 kèm mã QR",
+        "source": "Access ysdJOB_20261006.accdb + ADR-002 + Thảo luận WO-MOLD-DATA-SYNC-AUDIT",
+        "in_plan": "CÓ",
+        "in_code_and_db": "MỘT PHẦN (DB có 1,203 work_orders, 1,205 jobs, 2,457 job_steps, 7,111 work_logs; đã khôi phục trang chi tiết /equipment/jobs/[id] ở WO-PIPE-FIX)",
+        "remaining_gap": "CreateJobModal chưa lưu design_revision_id/product_id/company_id (đang trong stash WO-EQUIPMENT-UI-FIX); còn thiếu +262 jobs, +635 job_steps (Wave 2) và +2,437 work_logs + LEGACY-STEP-SHOP-INTERNAL (Wave 3) từ Access."
+      },
+      {
+        "req_id": "MOLD-R04",
+        "requirement": "Chứng từ Tiếp nhận & Hoàn trả Khuôn khách hàng (CUSTOMER_LOAN / RETURN_TO_CUSTOMER): Biển Placard, thước dây, 2 con dấu (角印/丸印), Pallet 1100x1100 & kiểm tra nhãn QR",
+        "source": "MOLD_CUSTODY_BUSINESS_SPEC.md (Shin-Ei Row 30, Transtron Row 52, Panasonic Row 100)",
+        "in_plan": "CÓ (Sprint P1 WO-P1-001..010)",
+        "in_code_and_db": "MỘT PHẦN (Đã có equipment_loans Migration 098, MoldLoanPDFDocument.tsx, /equipment/loans)",
+        "remaining_gap": "Trong DB hiện chỉ có 1 dòng ở equipment_loans nhưng có 209 dòng ở bảng cũ mold_loan_certificates và 587 dòng tblMoldShipLog trong Access (chờ Wave 4 đồng bộ)."
+      },
+      {
+        "req_id": "MOLD-R05",
+        "requirement": "Chiến dịch Kiểm kê Tài sản Định kỳ Hàng năm (T10-T2: JAE, Canon, Panasonic, Rhythm, A&T) — Xuất Excel cột G/H/I/J/K",
+        "source": "MOLD_CUSTODY_BUSINESS_SPEC.md (Chủ đề 2, Row 15/16/50/9)",
+        "in_plan": "CÓ (Sprint P1 WO-P1-006/007)",
+        "in_code_and_db": "MỘT PHẦN (Đã có hàm exportCustomerSurveyExcel trong src/app/equipment/loans/actions.ts và /equipment/lifecycle)",
+        "remaining_gap": "Cần dữ liệu keeper_company_id (Wave 1) và lịch sử sử dụng thực tế để điền chính xác 100% cột I (Nơi giữ) và cột J/K (Khuôn ngưng >=3 năm)."
+      },
+      {
+        "req_id": "MOLD-R06",
+        "requirement": "Xuất gia công bề mặt ngoại vi (OUTSOURCE_PROCESSING — Phủ Teflon / Mạ Minebea) & Cổng dập thử mẫu 24-60 tấm khi khuôn quay về",
+        "source": "MOLD_CUSTODY_BUSINESS_SPEC.md (Chủ đề 4, Minebea Row 697) + Access tblTeflonLog (4,692 dòng) + Quyết định 3.D của PE",
+        "in_plan": "CÓ",
+        "in_code_and_db": "MỘT PHẦN (Đã có OutsourceProcessingPDFDocument.tsx và loan_type='OUTSOURCE_PROCESSING')",
+        "remaining_gap": "Chưa đồng bộ 4,686 dòng có SentDate từ tblTeflonLog vào lớp lịch sử (Wave 4 theo Quyết định 3.D Phương án B); chưa có cổng bắt buộc dập mẫu thử sau khi nhận lại khuôn Teflon."
+      },
+      {
+        "req_id": "MOLD-R07",
+        "requirement": "Cảnh báo Khuôn ngưng hoạt động >=3 năm (非稼働金型) & Tính phí bảo quản khuôn (型保管料 Fujikura 307.5¥/tháng + 3% lãi chậm trả)",
+        "source": "MOLD_CUSTODY_BUSINESS_SPEC.md (Chủ đề 3, Fujikura source_data/金型保管料(20250704))",
+        "in_plan": "CÓ",
+        "in_code_and_db": "MỘT PHẦN (/equipment/lifecycle đã hiển thị trạng thái từ v_equipment_lifecycle_status)",
+        "remaining_gap": "CHƯA LÀM công cụ tính phí lưu kho 307.5¥/tháng + 3% lãi phạt và xuất bộ 4 chứng từ kế toán Fujikura."
+      },
+      {
+        "req_id": "MOLD-R08",
+        "requirement": "Thủ tục bàn giao tiêu hủy khuôn (廃棄対応 Omura Giken / SMK): Gom đủ Khuôn + Phụ tùng + Bản vẽ + Biên nhận gốc gửi 着払い",
+        "source": "MOLD_CUSTODY_BUSINESS_SPEC.md (Mục 3.8, Row 70 & 82)",
+        "in_plan": "CÓ",
+        "in_code_and_db": "CHƯA LÀM (Bảng mold_disposal_logs = 0 dòng)",
+        "remaining_gap": "Cần bổ sung checklist thu hồi đủ 4 thành phần (Khuôn, Phụ tùng, Bản vẽ, Biên nhận gốc) và cờ 着払い khi tạo lệnh trả/hủy khuôn."
+      }
+    ],
+    "2b_implementation_counts": {
+      "MOLD_CUSTODY_BUSINESS_SPEC_md": {
+        "total_distinct_requirements": 15,
+        "fully_implemented": 7,
+        "partially_implemented": 4,
+        "not_yet_implemented": 4
+      },
+      "02_REAL_BUSINESS_FLOW_AND_MOLD_DEPT_SYNTHESIS_md": {
+        "total_functional_blocks": 11,
+        "fully_implemented_and_e2e_verified": 4,
+        "partially_implemented": 5,
+        "not_yet_implemented": 2
+      }
+    },
+    "2c_contradictions_between_mail_spec_and_code": [
+      "1. Luồng khởi đầu: docs/01_BRD.md:88-103 đặt Order trước Design/Quote, mâu thuẫn với Mail thực tế (01_COMPREHENSIVE_BUSINESS_PROCESS_PROFILE.md:20-36: Case -> Technical Review -> Quotation -> Order).",
+      "2. Tên bảng thiết bị trong Spec cũ: 00_BUSINESS_INSIGHTS.md:76-78, 10_email_derived_business_workflows.md:45,80 và .agents/mempalace/knowledge/thermoforming_equipment_set.md:50,82-104 vẫn chỉ định dùng physical_molds, mold_masters, auxiliary_equipments, mâu thuẫn với DB V3 (hợp nhất vào equipment + equipment_assignments).",
+      "3. Tự mâu thuẫn trong SCHEMA_REFERENCE.md: Bảng equipment_loans được định nghĩa 2 lần với enum khác nhau (dòng 280-320 dùng BORROW/RETURN/REPAIR_OUT vs dòng 738-785 dùng CUSTOMER_LOAN/RETURN_TO_CUSTOMER/OUTSOURCE_PROCESSING); bảng shipments lặp 2 lần (dòng 575 vs dòng 818).",
+      "4. Phân mảnh bảng chứng từ mượn khuôn trong DB: Bảng cũ mold_loan_certificates đang giữ 209 dòng, trong khi bảng V3 equipment_loans chỉ có 1 dòng và asset_custody_certificates có 0 dòng.",
+      "5. Lệch cột trong MoldModal.tsx trên HEAD (a2a90587): Dòng 96 dùng mold_revision_id thay vì design_revision_id và thiếu bộ chọn equipment_type phụ trợ, keeper_company_id, current_rack_layer_id; /equipment/unified/page.tsx:18 thiếu PLUG (đã sửa trong stash WO-EQUIPMENT-UI-FIX).",
+      "6. Lịch sử phủ Teflon: Mail (Minebea Row 697) và Access (tblTeflonLog 4,692 dòng) ghi nhận phủ Teflon thường xuyên, nhưng trên Supabase mold_maintenance=0 và equipment_history=0 (PE đã chốt Phương án D: tách lớp lịch sử Teflon, chỉ nạp dòng có SentDate)."
+    ]
+  },
+  "section_3_modular_dossier_organization": {
+    "3a_confirm_no_dossier_on_main": "XÁC NHẬN: Trên nhánh main (HEAD a2a90587c503844416985f4164380171130df940) và trên ổ cứng hiện CHƯA CÓ thư mục docs/dossier/. AN chưa tạo thư mục này khi chưa có phê duyệt của PE.",
+    "3b_current_docs_inventory_and_bloated_files": {
+      "bloated_or_duplicate_files": [
+        {
+          "path": "docs/ysdms-nextgen_MASTER.md",
+          "lines": 1463,
+          "bytes": 136791,
+          "issue": "Sổ cái tích lũy quá dài (136.8 KB), gây tốn token nếu đọc toàn bộ."
+        },
+        {
+          "path": "docs/SESSION_HANDOFF.md",
+          "lines": 1334,
+          "bytes": 115908,
+          "issue": "Nối đuôi lịch sử nhiều tháng (115.9 KB), mất tính chất Active Briefing."
+        },
+        {
+          "path": "SCHEMA_REFERENCE.md",
+          "lines": 875,
+          "bytes": 47748,
+          "issue": "Định nghĩa lặp 2 lần mâu thuẫn nhau cho equipment_loans, orders, shipments; thiếu bảng profiles."
+        },
+        {
+          "path": "docs/AN_deep_scan_part1/2/3.md",
+          "lines": 2342,
+          "bytes": 123646,
+          "issue": "Trùng lặp nội dung với docs/02_BUSINESS_PROCESS_CATALOG.md (343 dòng)."
+        },
+        {
+          "path": "docs/Phase1_MoldCutter_Migration_Plan.md & Phase2_ERP_Realignment_Plan.md & PROJECT_STATUS.md",
+          "lines": 303,
+          "bytes": 16506,
+          "issue": "Đóng băng từ tháng 7/2026, dùng tên bảng V1 không còn tồn tại."
+        }
+      ]
+    },
+    "3c_proposed_per_module_folder_structure": {
+      "principle": "Mỗi module có 1 folder riêng trong docs/dossier/. Bên trong mỗi folder module chỉ chứa đúng 2 file: business.md (nghiệp vụ, route, trạng thái, backlog) và schema.md (bảng, cột, FK, view, RPC, RLS của riêng module đó). Chưa tạo thư mục — chỉ đệ trình PE duyệt.",
+      "target_size_per_file": "<= 120 dòng (<= 5 KB / file, ~1,200 tokens)",
+      "proposed_folders": [
+        {
+          "folder": "docs/dossier/00_core/",
+          "files": [
+            "00_INDEX.md",
+            "00_ACTIVE_HANDOFF.md"
+          ],
+          "scope": "Chỉ mục gốc toàn dự án + Bàn giao phiên hiện hành (<= 80 dòng/file)"
+        },
+        {
+          "folder": "docs/dossier/M01_cases_reviews/",
+          "files": [
+            "business.md",
+            "schema.md"
+          ],
+          "scope": "Sự việc (/cases) & Thẩm định kỹ thuật (business_cases, technical_reviews)"
+        },
+        {
+          "folder": "docs/dossier/M02_quotations_pricing/",
+          "files": [
+            "business.md",
+            "schema.md"
+          ],
+          "scope": "Báo giá (/orders/quotations), Ma trận giá khuôn & 3 trụ cột giá khay (quotations, quotation_lines)"
+        },
+        {
+          "folder": "docs/dossier/M03_orders_pipe/",
+          "files": [
+            "business.md",
+            "schema.md"
+          ],
+          "scope": "Đơn hàng (/orders) & Chuyển đổi báo giá -> đơn hàng -> lệnh SX (orders, order_lines, staging_order_lines_backfill)"
+        },
+        {
+          "folder": "docs/dossier/M04_products_designs/",
+          "files": [
+            "business.md",
+            "schema.md"
+          ],
+          "scope": "Product Center (/product-center) & Thiết kế CAD (/engineering/designs) (products, design_revisions, cav_types)"
+        },
+        {
+          "folder": "docs/dossier/M05_equipment_set/",
+          "files": [
+            "business.md",
+            "schema.md"
+          ],
+          "scope": "Thiết bị hợp nhất (/equipment/unified, /molds, /cutting-dies, /aluminum) & Bộ SET 8 loại (equipment, equipment_assignments)"
+        },
+        {
+          "folder": "docs/dossier/M06_mold_jobs_schedule/",
+          "files": [
+            "business.md",
+            "schema.md"
+          ],
+          "scope": "Gia công chế tạo khuôn (/equipment/jobs, /schedule, /production/work-orders) (work_orders, jobs, job_steps, work_logs)"
+        },
+        {
+          "folder": "docs/dossier/M07_mold_custody_loans/",
+          "files": [
+            "business.md",
+            "schema.md"
+          ],
+          "scope": "Lưu giữ, mượn trả, kiểm kê, phí lưu kho, Teflon, bảo trì (/equipment/loans, /lifecycle, /maintenance) (equipment_loans, equipment_history, mold_maintenance)"
+        },
+        {
+          "folder": "docs/dossier/M08_thermoforming_nippo/",
+          "files": [
+            "business.md",
+            "schema.md"
+          ],
+          "scope": "Định hình (/production, /production-instructions) & Nhật ký xưởng (/worklogs) (production_instructions, forming_daily_logs, press_daily_logs)"
+        },
+        {
+          "folder": "docs/dossier/M09_quality_kcs_sample/",
+          "files": [
+            "business.md",
+            "schema.md"
+          ],
+          "scope": "Duyệt mẫu thử KCS & Kiểm tra chất lượng (/quality/*) (sample_requests, inspections, tray_inspections, defect_reports)"
+        },
+        {
+          "folder": "docs/dossier/M10_shipments_wms_finance/",
+          "files": [
+            "business.md",
+            "schema.md"
+          ],
+          "scope": "Giao hàng (/shipments), Kho cuộn nhựa & khay (/plastics, /inventory) & Hóa đơn (/invoices) (shipments, material_stock, plastic_receipt_roll, invoices)"
+        },
+        {
+          "folder": "docs/dossier/M11_companies_master/",
+          "files": [
+            "business.md",
+            "schema.md"
+          ],
+          "scope": "Khách hàng, đối tác, máy móc, giá kệ, nhân sự (/companies, /master/*) (companies, employees, profiles, machines, racks, rack_layers)"
+        }
+      ],
+      "update_governance_rules": {
+        "who_writes": "AN soạn thảo bản cập nhật (diff nhỏ) chỉ trên folder của module thuộc Work Order đang thực thi.",
+        "when_updated": "Cập nhật ở Pha 3 (Nghiệm thu Work Order) hoặc khi PE phê duyệt thay đổi đặc tả/schema của module đó.",
+        "who_approves": "PE hậu kiểm độc lập qua GitHub diff và Minh Chủ THOAN phê duyệt."
+      }
+    }
+  },
+  "section_4_all_system_modules_status": {
+    "currently_active_module": "M05 & M06 (Equipment Unified / Cutting Dies / Mold Jobs — đang tạm dừng WO-EQUIPMENT-UI-FIX ở trạng thái git stash và chuẩn bị WO-MOLD-SYNC-WAVE1 theo chỉ thị 2fd59151).",
+    "wo_equipment_ui_fix_progress": {
+      "started": true,
+      "code_written_local": "Đã sửa xong 10 file trên local (MoldModal.tsx, cutting-dies/actions.ts, cutting-dies/page.tsx, CuttersClient.tsx, unified/page.tsx, equipment/dashboard/page.tsx, CreateJobModal.tsx, mold-job.ts, messages/ja.json, messages/vi.json); đã pass npx tsc --noEmit (0 lỗi) và check_translations.mjs (0 missing keys).",
+      "commit_sha": "CHƯA CÓ COMMIT (Đang giữ trong git stash 'wip: WO-EQUIPMENT-UI-FIX held per PE directive 2fd59151' để đảm bảo không sửa src/ trong lượt báo cáo này).",
+      "remaining_work": "Sau khi PE xem báo cáo này và cho phép tiếp tục: pop stash, chạy Playwright sau khi login xác thực để chụp 4 ảnh minh chứng, commit code + audit JSON + nạp pe_evidence_items."
+    },
+    "modules_table": [
+      {
+        "module": "M01. Quản lý Sự việc & Thẩm định Kỹ thuật (/cases)",
+        "category": "Hoàn thành và có bằng chứng",
+        "stage_5_level": "Đã kiểm thử thực tế (E2E Pilot & Cleanup PASS)",
+        "latest_commit_sha": "d51b5609014ba1583db6955ff73a3d214e7597fd",
+        "evidence": "WO-PIPE-FIX (c6f20b98), WO-SCHEMA-SAFETY-FIX (d51b5609), WO-PIPE-E2E-PILOT & CLEANUP; DB profiles=3, business_cases=0, technical_reviews=0",
+        "remaining_work": "Bổ sung nút tạo nhanh Sản phẩm / Bản vẽ từ kết quả Technical Review và hỗ trợ child-events hậu giao hàng (Stage I)."
+      },
+      {
+        "module": "M02. Báo giá & Engine Tính giá 3 Trụ cột (/orders/quotations)",
+        "category": "Hoàn thành và có bằng chứng",
+        "stage_5_level": "Đã kiểm thử thực tế (E2E Pilot & Cleanup PASS)",
+        "latest_commit_sha": "d51b5609014ba1583db6955ff73a3d214e7597fd",
+        "evidence": "WO-PIPE-FIX (c6f20b98), WO-SCHEMA-SAFETY-FIX (d51b5609, Method A1 RPC fn_convert_quotation_to_order); DB quotations=0, quotation_lines=0",
+        "remaining_work": "Không còn lỗi blocker ở luồng chuẩn; có thể bổ sung so sánh nhiều kịch bản báo giá (reuse/modify/new) trong giai đoạn sau."
+      },
+      {
+        "module": "M03. Đơn hàng & Đối soát Dòng chi tiết (/orders)",
+        "category": "Hoàn thành và có bằng chứng",
+        "stage_5_level": "Đã kiểm thử thực tế (Browser + SQL Audit PASS)",
+        "latest_commit_sha": "013f55bf8716a81c50445c5673b5903a5c49ac9a",
+        "evidence": "WO-ORDER-NOTES-BACKFILL, WO-ORDER-SHIPMENT-UI-FIX, Option C Audit (orders=2,396, order_lines=6,279 khớp 100% staging_order_lines_backfill=6,279)",
+        "remaining_work": "Quyết định thời điểm đóng/archive bảng staging_order_lines_backfill sau khi đã khớp 6,279/6,279."
+      },
+      {
+        "module": "M04. Product Center & Thiết kế CAD (/product-center, /engineering/designs)",
+        "category": "Hoàn thành và có bằng chứng",
+        "stage_5_level": "Đã kiểm thử thực tế (Browser + Evidence Pack PASS)",
+        "latest_commit_sha": "013f55bf8716a81c50445c5673b5903a5c49ac9a",
+        "evidence": "WO-PIPE-FIX (c6f20b98), WO-MOLD-UNIFY Commit 2 (c2d00dc9), WO-ROUTE-CLEANUP (0efcddb8), docs/audit_logs/2026-10-14_WO-MOLD-UNIFY.json; DB products=8,489, design_revisions=4,693",
+        "remaining_work": "Đồng bộ +88 design_revisions mới (+54 products) và đối chiếu 71 design_revisions trùng design_code từ Access trong WO-MOLD-SYNC-WAVE1."
+      },
+      {
+        "module": "M05. Thiết bị Hợp nhất, Khuôn, Dao cắt & Phôi nhôm (/equipment/unified, /molds, /cutting-dies, /aluminum)",
+        "category": "Tạm dừng (Đang giữ local stash chờ PE duyệt báo cáo tổng thể)",
+        "stage_5_level": "Mã đã viết (Local stash cho WO-EQUIPMENT-UI-FIX) / Đặc tả đã duyệt",
+        "latest_commit_sha": "817f7b340b65dfbbc600344430ac150bef41afda",
+        "evidence": "docs/audit_logs/2026-10-14_WO-MOLD-UNIFY.json, docs/audit_logs/2026-10-14_WO-MOLD-DATA-SYNC-AUDIT.json; DB equipment=6,497, equipment_assignments=1,633, aluminum_blanks=0",
+        "remaining_work": "Hoàn tất commit & browser evidence cho WO-EQUIPMENT-UI-FIX; thực thi WO-MOLD-SYNC-WAVE1 (+20 rack_layers, +24 M-*, +4 C-*, backfill 3,940 keeper_company_id, +1,337 equipment_assignments) sau khi qua Cổng 1 PE."
+      },
+      {
+        "module": "M06. Gia công Khuôn, Lịch biểu Gantt & Work Orders (/equipment/jobs, /schedule, /production/work-orders)",
+        "category": "Hoàn thành một phần",
+        "stage_5_level": "Đã kiểm thử thực tế (Tab Bộ SET & trang chi tiết Job đã nghiệm thu; còn thiếu đồng bộ delta Access)",
+        "latest_commit_sha": "42851ee3f98af1ae353f81cb922c8719ae554ef0",
+        "evidence": "WO-MOLD-UNIFY Commit 1 (8e10b6aa), WO-ROUTE-CLEANUP 4.A-A (42851ee3), docs/audit_logs/2026-10-14_WO-ROUTE-CLEANUP.json; DB work_orders=1,203, jobs=1,205, job_steps=2,457, work_logs=7,111",
+        "remaining_work": "Hoàn tất CreateJobModal trong WO-EQUIPMENT-UI-FIX; chuẩn bị và chạy Wave 2 (+262 jobs, +635 job_steps, LEGACY-STEP-SHOP-INTERNAL) & Wave 3 (+2,437 work_logs)."
+      },
+      {
+        "module": "M07. Lưu giữ, Mượn trả, Kiểm kê & Bảo trì Khuôn (/equipment/loans, /lifecycle, /maintenance)",
+        "category": "Hoàn thành một phần",
+        "stage_5_level": "Đã kiểm thử thực tế (UI read-only & PDF P1 đã kiểm thử; dữ liệu lịch sử chưa đồng bộ đủ)",
+        "latest_commit_sha": "9de2c64ca0137b52cc29f87445abd216013e10a5",
+        "evidence": "WO-MOLD-UNIFY Commit 3 (9de2c64c), docs/audit_logs/2026-10-14_WO-MOLD-UNIFY.json; DB equipment_loans=1, mold_loan_certificates=209, v_equipment_lifecycle_status=6,497, equipment_history=0, mold_maintenance=0",
+        "remaining_work": "Đồng bộ Wave 4 (587 tblMoldShipLog + 4,686 tblTeflonLog có SentDate + đối chiếu 209 mold_loan_certificates); xây dựng công cụ tính phí lưu kho Fujikura (307.5¥/tháng + 3% lãi) và checklist hủy khuôn SMK/Omura."
+      },
+      {
+        "module": "M08. Sản xuất Định hình, Chỉ thị SX & Nhật ký Xưởng (/production, /production-instructions, /worklogs)",
+        "category": "Hoàn thành một phần",
+        "stage_5_level": "Mã đã viết (Nhật ký /worklogs hoạt động với 7,111 dòng; /production-instructions mới là bản dựng sơ bộ)",
+        "latest_commit_sha": "42851ee3f98af1ae353f81cb922c8719ae554ef0",
+        "evidence": "docs/audit_logs/2026-10-14_WO-ROUTE-CLEANUP.json; DB work_logs=7,111, production_schedules=30, production_instructions=0, forming_daily_logs=0, press_daily_logs=0",
+        "remaining_work": "Chuẩn hóa /production-instructions theo Stage F của mail (tách số lượng Free/Paid/Office, gắn cổng giữ hàng chờ duyệt mẫu, sửa Tailwind màu cứng & i18n); bổ sung điều phối thầu phụ Marudai (Stage G)."
+      },
+      {
+        "module": "M09. Quản lý Chất lượng KCS & Duyệt Mẫu Thử (/quality/inspection, /quality/defects)",
+        "category": "Chưa bắt đầu (Ở mức liên thông Sample Approval Gate; mới có UI khung)",
+        "stage_5_level": "Mã đã viết (Khung UI) / DB 0 dòng",
+        "latest_commit_sha": "013f55bf8716a81c50445c5673b5903a5c49ac9a",
+        "evidence": "DB inspections=0, tray_inspections=0, sample_requests=0, sample_submissions=0, defect_reports=0",
+        "remaining_work": "Thiết kế & triển khai WO-SAMPLE-QC-GATE nối mẫu thử từ Khuôn/Teflon -> Đo kích thước KCS -> Duyệt mẫu (量産承認) -> Mở khóa xuất hàng."
+      },
+      {
+        "module": "M10. Giao hàng, Kho Cuộn Nhựa/Khay & Hóa đơn (/shipments, /plastics/inventory, /inventory, /invoices)",
+        "category": "Hoàn thành một phần",
+        "stage_5_level": "Đã áp dụng vào Supabase (Kho nhựa có 321 cuộn & 180 material_stock; UI /shipments đã sửa lỗi hiển thị)",
+        "latest_commit_sha": "013f55bf8716a81c50445c5673b5903a5c49ac9a",
+        "evidence": "WO-ORDER-SHIPMENT-UI-FIX, WO-ROUTE-CLEANUP (0efcddb8); DB plastic_master=818, plastic_receipt_roll=321, material_stock=180, v_product_stock_summary=8,488, shipments=0, invoices=0",
+        "remaining_work": "Kiểm thử E2E tạo phiếu giao hàng (納品書 chuẩn & form SMK/KYD) + hóa đơn (請求書) thực tế từ Order."
+      },
+      {
+        "module": "M11. Danh mục Chủ thể, Máy móc, Giá kệ & Nhân sự (/companies, /master/*)",
+        "category": "Hoàn thành và có bằng chứng",
+        "stage_5_level": "Đã kiểm thử thực tế (Dữ liệu Master đã nạp đầy đủ trên Production)",
+        "latest_commit_sha": "013f55bf8716a81c50445c5673b5903a5c49ac9a",
+        "evidence": "WO-SCHEMA-SAFETY-FIX (d51b5609), WO-ROUTE-CLEANUP (0efcddb8); DB companies=2,214, company_contacts=859, delivery_sites=1,169, employees=25, profiles=3, machines=14, racks=90, rack_layers=380, cav_types=52, company_calendar=1,095",
+        "remaining_work": "Chỉ còn bổ sung +20 rack_layers từ Access trong WO-MOLD-SYNC-WAVE1."
+      },
+      {
+        "module": "M12. Dashboard Điều hành, Báo cáo & Xác thực (/dashboard, /reports/*, /login)",
+        "category": "Hoàn thành và có bằng chứng",
+        "stage_5_level": "Đã kiểm thử thực tế",
+        "latest_commit_sha": "817f7b340b65dfbbc600344430ac150bef41afda",
+        "evidence": "WO-SCHEMA-SAFETY-FIX (d51b5609), WO-ROUTE-CLEANUP (0efcddb8); DB v_dashboard_executive_kpis=1, pe_an_messages=163, pe_evidence_items=20",
+        "remaining_work": "Hoàn tất sửa ngày hardcode và dead link trên /equipment/dashboard trong WO-EQUIPMENT-UI-FIX."
+      }
+    ]
+  },
+  "section_5_next_plan_and_priorities": {
+    "5a_5b_5c_prioritized_roadmap": [
+      {
+        "order": 1,
+        "code": "WO-EQUIPMENT-UI-FIX",
+        "group": "NHÓM 1: UI / Read-Only & Form Actions (Không Migration, Không Backfill)",
+        "goal": "Hoàn tất 5 hạng mục UI Thiết bị & Job đã được PE duyệt đặc tả lúc 18:50 JST hôm qua (đang nằm sẵn trong git stash).",
+        "scope": "10 files: MoldModal.tsx, cutting-dies/actions.ts, cutting-dies/page.tsx, CuttersClient.tsx, unified/page.tsx, equipment/dashboard/page.tsx, CreateJobModal.tsx, mold-job.ts, messages/ja.json, messages/vi.json.",
+        "risk": "Thấp (Chỉ sửa UI/Form action, không thay đổi dữ liệu hiện có trên Production).",
+        "touches_db": "Không migration, không backfill.",
+        "needs_thoan_approval": "Đã được THOAN/PE duyệt đặc tả lúc 18:50 JST; chỉ cần cho phép pop stash, chụp ảnh Playwright và commit."
+      },
+      {
+        "order": 2,
+        "code": "WO-DOC-MODULAR",
+        "group": "NHÓM 1: Tài liệu / Read-Only (Không đụng Code hay DB)",
+        "goal": "Khởi tạo cấu trúc thư mục docs/dossier/ theo đúng đề xuất Mục 3c (mỗi module 1 folder riêng chứa business.md + schema.md <= 120 dòng).",
+        "scope": "Tạo docs/dossier/00_core/ và M01..M11; khử trùng lặp SCHEMA_REFERENCE.md.",
+        "risk": "Không có rủi ro vận hành (0 tác động runtime/DB).",
+        "touches_db": "Không.",
+        "needs_thoan_approval": "Duyệt cấu trúc 12 folders (00_core + M01..M11) tại Mục 3c."
+      },
+      {
+        "order": 3,
+        "code": "WO-MOLD-SYNC-WAVE1",
+        "group": "NHÓM 2: DB / Đồng bộ Dữ liệu (Bắt buộc qua 2 Cổng PE)",
+        "goal": "Đồng bộ đầy đủ tầng Master Thiết bị, Tầng kệ, Bản vẽ và Quan hệ Bộ SET từ Access sang Supabase.",
+        "scope": "+20 rack_layers, +88 design_revisions mới (+54 products) & map 71 design_revisions trùng design_code, +24 khuôn M-*, +4 dao cắt C-*, backfill 3,940 keeper_company_id, +1,337 equipment_assignments.",
+        "risk": "Trung bình (Ghi vào các bảng lõi products, design_revisions, rack_layers, equipment, equipment_assignments; đã có file dry-run JSON kiểm chứng 100% FK).",
+        "touches_db": "CÓ (INSERT/UPDATE có kiểm soát bằng ROW_COUNT trong transaction).",
+        "needs_thoan_approval": "Duyệt 2 quyết định xử lý design_revisions (71 dòng trùng design_code + 54 dòng tạo mới products) và duyệt cho chạy sau khi PE qua Cổng 1."
+      },
+      {
+        "order": 4,
+        "code": "WO-MOLD-SYNC-WAVE2 & WAVE3",
+        "group": "NHÓM 2: DB / Đồng bộ Dữ liệu (Bắt buộc qua 2 Cổng PE)",
+        "goal": "Đồng bộ phần chênh lệch Jobs (+262), Job Steps (+635), tạo LEGACY-STEP-SHOP-INTERNAL và nạp +2,437 Work Logs từ Access.",
+        "scope": "Bảng work_orders, jobs, job_steps, work_logs.",
+        "risk": "Trung bình (Phụ thuộc Wave 1 hoàn tất trước để đủ FK equipment_id / design_revision_id).",
+        "touches_db": "CÓ (Qua 2 cổng PE: Dry-Run -> Thực thi -> Hậu kiểm).",
+        "needs_thoan_approval": "Duyệt payload Dry-Run chi tiết sau khi xong Wave 1."
+      },
+      {
+        "order": 5,
+        "code": "WO-MOLD-SYNC-WAVE4",
+        "group": "NHÓM 2: DB / Đồng bộ Dữ liệu (Bắt buộc qua 2 Cổng PE)",
+        "goal": "Đồng bộ lịch sử di chuyển khuôn (587 tblMoldShipLog), lịch sử gửi phủ Teflon có SentDate (4,686 dòng theo Quyết định 3.D Phương án B) và hợp nhất 209 dòng mold_loan_certificates.",
+        "scope": "Bảng equipment_history, lớp lịch sử Teflon/bảo trì, equipment_loans.",
+        "risk": "Trung bình.",
+        "touches_db": "CÓ (Qua 2 cổng PE).",
+        "needs_thoan_approval": "Xác nhận cách ánh xạ 209 dòng mold_loan_certificates hiện có sang equipment_loans."
+      },
+      {
+        "order": 6,
+        "code": "WO-PRODUCTION-INSTRUCTION-AND-SAMPLE-GATE",
+        "group": "NHÓM 1 + 2: Nghiệp vụ Thực tế từ Mail (Stage E & Stage F)",
+        "goal": "Hoàn thiện màn hình Chỉ thị Sản xuất (/production-instructions) tách Free/Paid/Office sample và Cổng Duyệt Mẫu Thử KCS (Sample Approval Gate) trước khi xuất hàng.",
+        "scope": "src/app/production-instructions/, src/app/quality/, sample_requests, production_instructions.",
+        "risk": "Thấp - Trung bình.",
+        "touches_db": "Chỉ dùng các bảng đã tồn tại (production_instructions, sample_requests) hoặc sửa UI.",
+        "needs_thoan_approval": "Duyệt đặc tả chi tiết sau khi hoàn tất đồng bộ dữ liệu Phòng Khuôn (Wave 1-4)."
+      }
+    ],
+    "5d_wave_1_to_4_status": {
+      "wave_1": "ĐÃ HOÀN TẤT PHÂN TÍCH DRY-RUN CHỈ-ĐỌC (docs/audit_logs/2026-10-14_WO-MOLD-SYNC-WAVE1-DRYRUN.json): 20/20 rack_layers khớp racks; 24/24 khuôn M-* và 4/4 dao C-* khớp FK; 3,940/3,940 khuôn M-* khớp keeper_company_id (0 unresolved); +1,337 equipment_assignments. Cần THOAN/PE duyệt xử lý 71 design_revisions đã tồn tại theo design_code và tạo 54 products cho 88 design_revisions mới.",
+      "wave_2": "Đã xác định tổng lượng (+262 jobs, +635 job_steps) và chốt Quyết định 3.C Phương án A (LEGACY-STEP-SHOP-INTERNAL). Chờ Wave 1 chạy xong để xuất payload Dry-Run chi tiết.",
+      "wave_3": "Đã xác định tổng lượng (+2,437 work_logs: 2,319 có deadline + 118 gắn vào LEGACY-STEP-SHOP-INTERNAL). Chờ Wave 2.",
+      "wave_4": "Đã chốt Quyết định 3.D Phương án B (tách lớp lịch sử Teflon, chỉ đưa 4,686 dòng có SentDate vào lịch sử; nạp 587 tblMoldShipLog). Cần đối chiếu thêm 209 dòng mold_loan_certificates."
+    },
+    "5e_items_to_stop_or_drop": [
+      "1. BỎ HẲN các kế hoạch dựa trên bảng V1 (mold_base, mold_physical, cutter_master, product_master, mold_work_orders, mold_design_cutters) trong Phase1/Phase2_Plan.md.",
+      "2. BỎ phương án đổ 100% 4,692 dòng tblTeflonLog vào mold_maintenance (tuân thủ Quyết định 3.D Phương án B của PE).",
+      "3. BỎ phương án gỡ NOT NULL trên work_logs.job_step_id (tuân thủ Quyết định 3.C Phương án A của PE).",
+      "4. DỪNG phát triển mọi trang trùng lặp đã redirect trong WO-ROUTE-CLEANUP (/production/mold-orders, /master/molds, /master/products, /master/cutters, /production/worklog).",
+      "5. DỪNG việc nối đuôi (append-only) vào ysdms-nextgen_MASTER.md (136.8 KB) và SESSION_HANDOFF.md (115.9 KB)."
+    ]
+  },
+  "section_6_live_db_counts": {
+    "profiles": 3,
+    "employees": 25,
+    "companies": 2214,
+    "company_contacts": 859,
+    "delivery_sites": 1169,
+    "machines": 14,
+    "racks": 90,
+    "rack_layers": 380,
+    "cav_types": 52,
+    "plastics": "NOT_FOUND",
+    "business_cases": 0,
+    "technical_reviews": 0,
+    "quotations": 0,
+    "quotation_lines": 0,
+    "orders": 2396,
+    "order_lines": 6279,
+    "staging_order_lines_backfill": 6279,
+    "products": 8489,
+    "design_revisions": 4693,
+    "equipment": 6497,
+    "equipment_assignments": 1633,
+    "equipment_photos": 0,
+    "equipment_loans": 1,
+    "equipment_history": 0,
+    "mold_maintenance": 0,
+    "work_orders": 1203,
+    "jobs": 1205,
+    "job_steps": 2457,
+    "work_logs": 7111,
+    "production_instructions": 0,
+    "forming_daily_logs": 0,
+    "press_daily_logs": 0,
+    "production_logs": 0,
+    "quality_inspections": "NOT_FOUND",
+    "defect_reports": 0,
+    "shipments": 0,
+    "shipment_lines": "NOT_FOUND",
+    "invoices": 0,
+    "invoice_lines": 0,
+    "plastic_master_roll": "NOT_FOUND",
+    "plastic_receipt_roll": 321,
+    "material_stock": 180,
+    "pe_an_messages": 163,
+    "pe_evidence_items": 20,
+    "auxiliary_equipments": 0,
+    "mold_design_cutters": 0,
+    "mold_work_orders": 0
+  }
+}
