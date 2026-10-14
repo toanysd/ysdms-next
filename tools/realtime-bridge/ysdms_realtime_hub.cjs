@@ -29,7 +29,7 @@ const HANDOFF_LEDGER_FILE = path.join(DATA_DIR, 'pe_handoff_ledger.json');
 const START_PORT = parseInt(process.env.YSDMS_BRIDGE_PORT || process.argv[2] || '3856', 10);
 const HOST = '127.0.0.1';
 const MAX_PORT_TRIES = 30;
-const HUB_VERSION = 'v2.7.2';
+const HUB_VERSION = 'v2.7.3';
 
 function formatJstTimestamp(dateInput = new Date()) {
     try {
@@ -2058,23 +2058,40 @@ const server = http.createServer(async (req, res) => {
         req.on('end', async () => {
             try {
                 const data = JSON.parse(body);
-                const threadId = data.threadId || 'YSDMS-AUTH-PHASE1';
-                const rawReportContent = data.content_md || data.reportText || '';
+                const threadId = data.threadId || data.thread_id || 'YSDMS-AUTH-PHASE1';
+                const rawReportContent =
+                    data.content_md ||
+                    data.content ||
+                    data.reportText ||
+                    data.report_text ||
+                    data.text ||
+                    data.markdown ||
+                    data.report ||
+                    data.message ||
+                    data.body ||
+                    '';
+                let messageId = data.messageId || data.message_id || data.id || '';
+
+                if (!messageId && !String(rawReportContent).trim()) {
+                    res.writeHead(400, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ success: false, error: 'Thiếu nội dung báo cáo (content_md / content)' }));
+                    return;
+                }
+
                 const reportContent = rawReportContent
                     ? ensureSenderAndTimestampStamp(rawReportContent, {
                         sender: 'AN',
                         recipient: 'PE',
                         projectLabel: 'YSDMS NextGen',
                         threadId,
-                        messageId: data.messageId
+                        messageId
                     })
                     : '';
-
-                let messageId = data.messageId;
 
                 // Nếu AN gửi trực tiếp qua Hub thay vì gọi Supabase, Hub sẽ tự nộp lên Supabase
                 if (!messageId && reportContent && SUPABASE_URL && ACTIVE_KEY) {
                     try {
+                        const explicitId = crypto.randomUUID();
                         const contentToPersist = reportContent;
                         const insertRes = await fetch(`${SUPABASE_URL}/rest/v1/pe_an_messages`, {
                             method: 'POST',
@@ -2085,15 +2102,20 @@ const server = http.createServer(async (req, res) => {
                                 'Prefer': 'return=representation'
                             },
                             body: JSON.stringify({
+                                message_id: explicitId,
                                 thread_id: threadId,
                                 sender: 'AN',
                                 message_type: 'REPORT',
+                                status: 'PENDING',
                                 content_md: contentToPersist
                             })
                         });
                         if (insertRes.ok) {
                             const insData = await insertRes.json();
-                            if (insData && insData.length > 0) messageId = insData[0].message_id || insData[0].id;
+                            if (insData && insData.length > 0) messageId = insData[0].message_id || insData[0].id || explicitId;
+                        } else {
+                            const errText = await insertRes.text();
+                            console.warn(`[HUB REPORT] Supabase từ chối lưu report: HTTP ${insertRes.status} - ${errText}`);
                         }
                     } catch (e) {
                         console.warn('[HUB REPORT] Lỗi nộp Supabase:', e.message);

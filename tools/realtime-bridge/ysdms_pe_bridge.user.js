@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         [v2.7.2] 🏭 YSDMS NextGen — PE ⟷ AN Realtime Bridge (Auto-Stamp, Turn-Guard & Cross-Project Wakeup)
+// @name         [v2.7.3] 🏭 YSDMS NextGen — PE ⟷ AN Realtime Bridge (Auto-Stamp, Turn-Guard & Timestamp Status UI)
 // @namespace    http://tampermonkey.net/
-// @version      2.7.2
-// @description  [v2.7.2] Cầu nối thời gian thực cho YSDMS NextGen: Sửa triệt để lỗi PermissionDenied project_id khi đánh thức AN đa dự án, Nút Cứu hộ luôn ép đánh thức lại AN, Chặn chạy ngầm trên iframe count.perplexity.ai (0 lỗi CORS), Tự động gắn nhãn Người gửi & Stamp thời gian JST ở đầu/cuối.
+// @version      2.7.3
+// @description  [v2.7.3] Cầu nối thời gian thực cho YSDMS NextGen: Hiển thị rõ Ngày Giờ JST trên mọi dòng trạng thái (không bao giờ bị cắt cụt), Nhận diện đa định dạng payload (/api/report), Chống dán trùng Stamp, Đánh thức AN đa dự án, Chặn iframe count.perplexity.ai.
 // @author       Antigravity (AN) & Perplexity (PE) — Approved by Minh Chủ THOAN
 // @match        https://www.perplexity.ai/*
 // @match        https://perplexity.ai/*
@@ -19,10 +19,10 @@
     'use strict';
 
     if (window.top !== window.self || location.hostname === 'count.perplexity.ai') return;
-    if (window.__YSDMS_BRIDGE_V272_LOADED__) return;
-    window.__YSDMS_BRIDGE_V272_LOADED__ = true;
+    if (window.__YSDMS_BRIDGE_V273_LOADED__) return;
+    window.__YSDMS_BRIDGE_V273_LOADED__ = true;
 
-    const SCRIPT_VERSION = '2.7.2';
+    const SCRIPT_VERSION = '2.7.3';
     const DEFAULT_PORT = 3856;
     const DEFAULT_THREAD_ID = 'BRIDGE-ORCHESTRATION';
 
@@ -322,7 +322,7 @@
     function ensureChatboxPayloadStamped(rawText, options = {}) {
         if (!rawText) return '';
         const trimmed = rawText.trim();
-        const hasStamp = /\[\s*🕒?\s*(STAMP|Thời gian|GỬI SUPABASE)[^\]]*JST\s*\]/i.test(trimmed);
+        const hasStamp = /STAMP BẢN TIN:|STAMP XÁC THỰC|\[\s*🕒?\s*(STAMP|Thời gian|GỬI SUPABASE)[^\]]*\]/i.test(trimmed);
         if (hasStamp) return trimmed;
 
         const stamp = formatFullJstStamp(options.createdAt);
@@ -357,10 +357,7 @@
         if (!text) return false;
         const lower = text.trim().toLowerCase();
         return (
-            lower.startsWith('[v2.7.1] pe đọc bridge') ||
-            lower.startsWith('[v2.7.0] pe đọc bridge') ||
-            lower.startsWith('[v2.6.0] pe đọc bridge') ||
-            lower.startsWith('[v2.5.0] pe đọc bridge') ||
+            /^\[v2\.\d+\.\d+\]\s*pe đọc bridge/i.test(lower) ||
             lower.startsWith('pe đọc bridge.') ||
             lower.startsWith('pe doc bridge.') ||
             lower.includes('📌 báo cáo mới từ an đã lưu trên supabase') ||
@@ -393,7 +390,7 @@
             : '  ' + raw.replace(/\s+/g, ' ').slice(0, 320) + (raw.length > 320 ? '...' : '');
 
         return [
-            `[v2.7.1] PE đọc Bridge.`,
+            `[v${SCRIPT_VERSION}] PE đọc Bridge.`,
             `🕒 [STAMP BẢN TIN: ${createdAtJst} | 👤 NGƯỜI GỬI: AN ➔ PE | 📁 DỰ ÁN: YSDMS NextGen | 🆔 ID: ${shortId}]`,
             `📌 BÁO CÁO MỚI TỪ AN ĐÃ LƯU TRÊN SUPABASE (YSDMS NextGen):`,
             `- Người gửi: AN (Antigravity Engineer) ➔ PE (Perplexity Architect)`,
@@ -890,10 +887,12 @@
             const editorState = inspectPerplexityEditorState(id);
             const alreadyInjected = isMessageInjected(id) || editorState.stateType === 'CASE1_SAME_TRIGGER_PRESENT';
 
-            // TH2: Đã dán và đã Submit -> Khóa vĩnh viễn, không bao giờ dán lại
+            const rowTime = formatShortTime(row.created_at);
+
+            // TH2: Đã dán và đã Submit -> Khóa vĩnh viễn, không bao giờ dán lại!
             if (alreadySubmitted) {
                 state.turnPhase = 'WAITING_FOR_PE';
-                state.statusDetail = `Đã gửi báo cáo AN (${id.slice(0, 8)}) — Chờ PE phản hồi...`;
+                state.statusDetail = `Đã gửi báo cáo AN (${id.slice(0, 8)} • ${rowTime}) — Chờ PE phản hồi...`;
                 renderUI();
                 return;
             }
@@ -902,13 +901,13 @@
             if (alreadyInjected) {
                 if (!isMessageInjected(id)) markMessageInjected(id);
                 state.turnPhase = 'AN_TEXT_INJECTED';
-                state.statusDetail = `Đã đổ vào ô chat (${id.slice(0, 8)}) — Chờ Minh Chủ bấm Gửi cho PE`;
+                state.statusDetail = `Đã đổ vào ô chat (${id.slice(0, 8)} • ${rowTime}) — Chờ Minh Chủ bấm Gửi`;
                 renderUI();
                 return;
             }
 
             state.turnPhase = 'AN_PENDING_INJECT';
-            state.statusDetail = `Có báo cáo mới từ AN (${id.slice(0, 8)}) — Chờ đổ vào ô chat`;
+            state.statusDetail = `Có báo cáo mới từ AN (${id.slice(0, 8)} • ${rowTime}) — Chờ đổ vào ô chat`;
             renderUI();
 
             // CHỐT CHẶN ĐA DỰ ÁN TUYỆT ĐỐI: Chỉ khi Tab được xác nhận đích danh là 'YSDMS' mới được phép tự động thao tác!
@@ -922,14 +921,14 @@
             }
 
             if (isPerplexityBusy()) {
-                state.statusDetail = `PE đang bận trả lời — Chờ PE xong sẽ tự đổ lệnh kích hoạt (${id.slice(0, 8)})...`;
+                state.statusDetail = `PE đang bận trả lời — Chờ PE xong sẽ tự đổ (${id.slice(0, 8)} • ${rowTime})...`;
                 renderUI();
                 return;
             }
 
             // TH3B: Nếu Minh Chủ đang gõ chữ riêng trong ô chat -> Bảo vệ chữ của Minh Chủ, không tự động đè!
             if (editorState.stateType === 'CASE3B_USER_CUSTOM_TEXT') {
-                state.statusDetail = `🛡️ Ô chat đang có chữ Minh Chủ gõ tay — Tạm hoãn tự động dán (${id.slice(0, 8)})`;
+                state.statusDetail = `🛡️ Ô chat đang có chữ Minh Chủ gõ tay — Tạm hoãn dán (${id.slice(0, 8)} • ${rowTime})`;
                 renderUI();
                 return;
             }
@@ -953,7 +952,7 @@
                     const randomDelayMs = Math.floor(Math.random() * 3001) + 1000;
                     const delaySecText = (randomDelayMs / 1000).toFixed(1);
                     state.turnPhase = 'AN_SUBMITTING';
-                    state.statusDetail = `Đã đổ lệnh kích hoạt — Tự động Submit sau ${delaySecText}s (ESC để hủy)...`;
+                    state.statusDetail = `Đã đổ (${id.slice(0, 8)} • ${rowTime}) — Tự Submit sau ${delaySecText}s (ESC hủy)...`;
                     renderUI();
 
                     if (state.submitTimer) clearTimeout(state.submitTimer);
@@ -964,7 +963,7 @@
                     }, randomDelayMs);
                 } else {
                     state.turnPhase = 'AN_TEXT_INJECTED';
-                    state.statusDetail = `Đã đổ lệnh kích hoạt gọn (${id.slice(0, 8)}) — Mời Minh Chủ bấm Enter`;
+                    state.statusDetail = `Đã đổ lệnh kích hoạt (${id.slice(0, 8)} • ${rowTime}) — Mời bấm Enter`;
                     renderUI();
                 }
             }
@@ -972,13 +971,14 @@
         }
 
         if (row.sender === 'PE' || row.sender === 'THOAN') {
+            const rowTime = formatShortTime(row.created_at);
             if (row.sender === 'PE' && requiresThoanDecision(row.content_md) && row.status !== 'CONSUMED') {
                 state.turnPhase = 'WAITING_THOAN_APPROVAL';
                 state.pendingPeApprovalText = row.content_md;
-                state.statusDetail = `PE yêu cầu Minh Chủ THOAN chốt trước khi gửi AN (${id.slice(0, 8)})`;
+                state.statusDetail = `PE trình phương án (${id.slice(0, 8)} • ${rowTime}) — Chờ THOAN chốt`;
             } else {
                 state.turnPhase = 'PE_DISPATCHED_TO_AN';
-                state.statusDetail = `PE đã gửi chỉ thị (${id.slice(0, 8)}) — AN đang thực thi trên IDE`;
+                state.statusDetail = `${row.sender} đã gửi chỉ thị (${id.slice(0, 8)} • ${rowTime}) — AN đang thực thi`;
             }
             renderUI();
         }
@@ -1725,8 +1725,10 @@
 
         const theme = getPhaseTheme(state.turnPhase);
         const row = state.latestRow;
+        const rawThread = (row && row.thread_id) || 'DEFAULT';
+        const shortThread = rawThread.length > 14 ? rawThread.slice(0, 12) + '…' : rawThread;
         const rowMeta = row
-            ? `${row.sender} • ${row.thread_id || 'DEFAULT'} • ${(row.id || '').slice(0, 8)} • ${formatShortTime(row.created_at)}`
+            ? `🕒 ${formatFullJstStamp(row.created_at)} • ${row.sender} • ${(row.id || '').slice(0, 8)} • ${shortThread}`
             : 'Chưa có bản ghi nào';
 
         if (state.isMinimized) {
