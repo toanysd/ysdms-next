@@ -1,6 +1,6 @@
 'use client'
 
-import { Briefcase, Box, Calendar, FileText } from 'lucide-react'
+import { Briefcase, Box, Calendar, FileText, Printer } from 'lucide-react'
 import Link from 'next/link'
 import { useTranslations } from 'next-intl'
 
@@ -18,9 +18,20 @@ export function JobDetailHeader({ job }: { job: any }) {
 
   return (
     <div className="card-flat" style={{ padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 6 }}>
-      <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 6, textTransform: 'uppercase' }}>
-        <Briefcase size={14} className="text-[var(--accent)]" />
-        <span>{t('Equipment.jobTitle')}</span>
+      <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6, textTransform: 'uppercase' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <Briefcase size={14} className="text-[var(--accent)]" />
+          <span>{t('Equipment.jobTitle')}</span>
+        </div>
+        <Link
+          href={`/equipment/jobs/${job.job_id}/print`}
+          className="btn btn-secondary"
+          style={{ height: 26, padding: '0 10px', fontSize: 11, gap: 4, textDecoration: 'none' }}
+          title="A4金型加工指図書を印刷表示"
+        >
+          <Printer size={12} />
+          <span style={{ fontFamily: 'var(--font-jp)', fontWeight: 700 }}>A4印刷</span>
+        </Link>
       </div>
       
       {/* Row 1: Main info */}
