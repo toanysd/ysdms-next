@@ -13,25 +13,45 @@ export interface EditableQuotationLine {
   unit_price: number
   amount: number
   notes?: string
+  product_id?: string | null
+  design_revision_id?: string | null
+  model_code?: string | null
+}
+
+export interface QuotationProductRef {
+  product_id: string
+  product_code: string
+  product_name: string
+  design_revisions?: { revision_id?: string; design_code?: string | null }[]
 }
 
 interface QuotationLineEditorProps {
   lines: EditableQuotationLine[]
   onChange: (lines: EditableQuotationLine[]) => void
   readOnly?: boolean
+  products?: QuotationProductRef[]
+  defaultProduct?: {
+    product_id: string
+    product_code: string
+    design_revision_id?: string | null
+  } | null
 }
 
 const ITEM_TYPES = [
-  { value: 'MOLD', labelJA: '金型 (MOLD)' },
-  { value: 'CUTTER', labelJA: '抜型 (CUTTER)' },
-  { value: 'PLUG', labelJA: 'プラグ (PLUG)' },
+  { value: 'MOLD', labelJA: '金型・治具 (MOLD)' },
   { value: 'PRODUCT', labelJA: 'トレイ製品 (PRODUCT)' },
-  { value: 'SAMPLE', labelJA: '試作成形 (SAMPLE)' },
-  { value: 'SHIPPING', labelJA: '運賃・梱包 (SHIPPING)' },
-  { value: 'OTHER', labelJA: 'その他 (OTHER)' },
+  { value: 'PROTOTYPE', labelJA: '試作成形 (PROTOTYPE)' },
+  { value: 'DESIGN_FEE', labelJA: '設計費 (DESIGN_FEE)' },
+  { value: 'OTHER', labelJA: '抜型・その他 (OTHER)' },
 ]
 
-export function QuotationLineEditor({ lines, onChange, readOnly = false }: QuotationLineEditorProps) {
+export function QuotationLineEditor({
+  lines,
+  onChange,
+  readOnly = false,
+  products = [],
+  defaultProduct = null,
+}: QuotationLineEditorProps) {
   const t = useTranslations('Quotations')
 
   const handleLineChange = (index: number, field: keyof EditableQuotationLine, value: any) => {
@@ -49,6 +69,19 @@ export function QuotationLineEditor({ lines, onChange, readOnly = false }: Quota
     onChange(next)
   }
 
+  const handleProductSelect = (index: number, productId: string) => {
+    const next = [...lines]
+    const matched = products.find((p) => p.product_id === productId)
+    const revId = matched?.design_revisions?.[0]?.revision_id || null
+    next[index] = {
+      ...next[index],
+      product_id: matched ? matched.product_id : null,
+      design_revision_id: revId,
+      model_code: matched ? matched.product_code : (next[index].model_code || null),
+    }
+    onChange(next)
+  }
+
   const handleAddLine = () => {
     const newLine: EditableQuotationLine = {
       line_no: lines.length + 1,
@@ -58,6 +91,9 @@ export function QuotationLineEditor({ lines, onChange, readOnly = false }: Quota
       unit_price: 0,
       amount: 0,
       notes: '',
+      product_id: defaultProduct?.product_id || null,
+      design_revision_id: defaultProduct?.design_revision_id || null,
+      model_code: defaultProduct?.product_code || null,
     }
     onChange([...lines, newLine])
   }
@@ -78,20 +114,21 @@ export function QuotationLineEditor({ lines, onChange, readOnly = false }: Quota
         <table className="data-table" style={{ width: '100%', fontSize: 12 }}>
           <thead>
             <tr>
-              <th style={{ width: 45, textAlign: 'center' }}>No</th>
-              <th style={{ width: 140 }}>種別 (Type)</th>
+              <th style={{ width: 40, textAlign: 'center' }}>No</th>
+              <th style={{ width: 135 }}>種別 (Type)</th>
+              <th style={{ width: 170 }}>対象製品 (Product / 型番)</th>
               <th>品名・規格仕様 (Description)</th>
-              <th style={{ width: 85, textAlign: 'right' }}>数量 (Qty)</th>
-              <th style={{ width: 110, textAlign: 'right' }}>単価 (¥)</th>
-              <th style={{ width: 125, textAlign: 'right' }}>金額 (¥)</th>
-              <th style={{ width: 140 }}>備考 (Notes)</th>
-              {!readOnly && <th style={{ width: 45, textAlign: 'center' }}></th>}
+              <th style={{ width: 80, textAlign: 'right' }}>数量 (Qty)</th>
+              <th style={{ width: 105, textAlign: 'right' }}>単価 (¥)</th>
+              <th style={{ width: 115, textAlign: 'right' }}>金額 (¥)</th>
+              <th style={{ width: 130 }}>備考 (Notes)</th>
+              {!readOnly && <th style={{ width: 40, textAlign: 'center' }}></th>}
             </tr>
           </thead>
           <tbody>
             {lines.length === 0 ? (
               <tr>
-                <td colSpan={readOnly ? 7 : 8} style={{ textAlign: 'center', padding: 24, color: 'var(--text-muted)' }}>
+                <td colSpan={readOnly ? 8 : 9} style={{ textAlign: 'center', padding: 24, color: 'var(--text-muted)' }}>
                   明細行がありません。「行追加」または「自動計算」をクリックしてください。
                 </td>
               </tr>
@@ -114,10 +151,42 @@ export function QuotationLineEditor({ lines, onChange, readOnly = false }: Quota
                         className="form-input"
                         style={{ height: 26, fontSize: 11, padding: '0 4px' }}
                       >
-                        {ITEM_TYPES.map((t) => (
-                          <option key={t.value} value={t.value}>{t.labelJA}</option>
+                        {ITEM_TYPES.map((tItem) => (
+                          <option key={tItem.value} value={tItem.value}>{tItem.labelJA}</option>
                         ))}
                       </select>
+                    )}
+                  </td>
+
+                  {/* Target Product / Model Code */}
+                  <td>
+                    {readOnly ? (
+                      <span style={{ fontFamily: 'monospace', fontWeight: 700, color: 'var(--accent)' }}>
+                        {line.model_code || '—'}
+                      </span>
+                    ) : products.length > 0 ? (
+                      <select
+                        value={line.product_id || ''}
+                        onChange={(e) => handleProductSelect(idx, e.target.value)}
+                        className="form-input"
+                        style={{ height: 26, fontSize: 11, padding: '0 4px', fontFamily: 'monospace' }}
+                      >
+                        <option value="">-- 製品選択 --</option>
+                        {products.map((p) => (
+                          <option key={p.product_id} value={p.product_id}>
+                            {p.product_code} ({p.product_name})
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <input
+                        type="text"
+                        value={line.model_code || ''}
+                        onChange={(e) => handleLineChange(idx, 'model_code', e.target.value)}
+                        className="form-input"
+                        placeholder="製品コード..."
+                        style={{ height: 26, fontSize: 11, fontFamily: 'monospace' }}
+                      />
                     )}
                   </td>
 

@@ -112,8 +112,84 @@ export async function convertQuotationToOrderAction(
       // An toàn bỏ qua nếu không có auth cookie/session
     }
 
-    // 2. Dùng Service Role Client để thực thi RPC cấp cao (ghi đồng thời orders, order_lines, quotations)
+    // 2. Dùng Service Role Client để kiểm tra guard trước khi thực thi RPC cấp cao
     const serviceClient = createServerSupabaseClient() as SupabaseClient
+
+    const { data: qLines, error: qLinesErr } = await serviceClient
+      .from('quotation_lines')
+      .select('line_id, line_no, item_type, description, product_id, design_revision_id, model_code')
+      .eq('quotation_id', quotationId)
+      .order('line_no', { ascending: true })
+
+    if (qLinesErr) {
+      return {
+        success: false,
+        message: `Không thể kiểm tra chi tiết báo giá: ${qLinesErr.message}`,
+      }
+    }
+
+    if (!qLines || qLines.length === 0) {
+      return {
+        success: false,
+        message: 'Báo giá không có dòng chi tiết nào để chuyển đổi thành đơn hàng.',
+      }
+    }
+
+    // Guard chống fallback LIMIT 1 trong fn_convert_quotation_to_order:
+    // Mọi dòng chi tiết bắt buộc phải có product_id hợp lệ hoặc model_code khớp products.product_code
+    const candidateProductIds = Array.from(
+      new Set(qLines.map((l) => l.product_id).filter((id): id is string => Boolean(id)))
+    )
+    const candidateModelCodes = Array.from(
+      new Set(
+        qLines
+          .map((l) => (l.model_code ? l.model_code.trim() : ''))
+          .filter((code) => code.length > 0)
+      )
+    )
+
+    const validProductIdSet = new Set<string>()
+    const validProductCodeSet = new Set<string>()
+
+    if (candidateProductIds.length > 0) {
+      const { data: prodByIds } = await serviceClient
+        .from('products')
+        .select('product_id, product_code')
+        .in('product_id', candidateProductIds)
+      for (const p of prodByIds || []) {
+        validProductIdSet.add(p.product_id)
+        if (p.product_code) validProductCodeSet.add(p.product_code.trim())
+      }
+    }
+
+    if (candidateModelCodes.length > 0) {
+      const { data: prodByCodes } = await serviceClient
+        .from('products')
+        .select('product_id, product_code')
+        .in('product_code', candidateModelCodes)
+      for (const p of prodByCodes || []) {
+        validProductIdSet.add(p.product_id)
+        if (p.product_code) validProductCodeSet.add(p.product_code.trim())
+      }
+    }
+
+    const invalidLineNos: number[] = []
+    for (const line of qLines) {
+      const hasValidId = Boolean(line.product_id && validProductIdSet.has(line.product_id))
+      const trimmedCode = line.model_code ? line.model_code.trim() : ''
+      const hasValidCode = Boolean(trimmedCode && validProductCodeSet.has(trimmedCode))
+      if (!hasValidId && !hasValidCode) {
+        invalidLineNos.push(line.line_no)
+      }
+    }
+
+    if (invalidLineNos.length > 0) {
+      return {
+        success: false,
+        message: `Chặn chuyển đổi: Dòng báo giá #${invalidLineNos.join(', ')} thiếu product_id hoặc model_code hợp lệ trong danh mục sản phẩm. Vui lòng gắn sản phẩm chính xác cho từng dòng trước khi tạo đơn hàng.`,
+      }
+    }
+
     const { data, error } = await serviceClient.rpc('fn_convert_quotation_to_order', {
       p_quotation_id: quotationId,
       p_user_id: userId,

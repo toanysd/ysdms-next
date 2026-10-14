@@ -100,19 +100,21 @@ export function CreateQuotationModal({ isOpen, onClose, onSuccess }: CreateQuota
 
         if (compData) setCompanies(compData)
 
-        const { data: prodData } = await supabase
+        const { data: prodData, error: prodErr } = await supabase
           .from('products')
           .select(`
             product_id, product_code, product_name, company_id,
-            design_revisions (
+            design_revisions!design_revisions_product_id_fkey (
               revision_id, design_code, design_length, design_width, design_height, design_depth,
               cutline_length, cutline_width, corner_r, chamfer_c, pocket_numbers, cavity_count,
               has_separate_cutter, plug_type, plastic_type_designed, machine_feed_pitch_mm,
-              thickness_mm, legacy_specs
+              legacy_specs
             )
           `)
           .order('product_code', { ascending: true })
+          .limit(500)
 
+        if (prodErr) console.error('Error loading products:', prodErr)
         if (prodData) setProducts(prodData as any)
       } catch (err: any) {
         console.error('Error loading master data:', err)
@@ -129,14 +131,32 @@ export function CreateQuotationModal({ isOpen, onClose, onSuccess }: CreateQuota
     return products.filter((p) => p.company_id === selectedCompanyId)
   }, [products, selectedCompanyId])
 
-  // When product changes, auto-set company if empty
+  const selectedProductObj = useMemo(
+    () => products.find((p) => p.product_id === selectedProductId) || null,
+    [products, selectedProductId]
+  )
+
+  // When product changes, auto-set company if empty and backfill unlinked lines
   const handleProductChange = (productId: string) => {
     setSelectedProductId(productId)
-    if (productId && !selectedCompanyId) {
-      const prod = products.find((p) => p.product_id === productId)
-      if (prod && prod.company_id) {
+    const prod = products.find((p) => p.product_id === productId)
+    if (prod) {
+      if (!selectedCompanyId && prod.company_id) {
         setSelectedCompanyId(prod.company_id)
       }
+      const revId = (prod.design_revisions?.[0] as any)?.revision_id || null
+      setLines((prev) =>
+        prev.map((l) =>
+          l.product_id
+            ? l
+            : {
+                ...l,
+                product_id: prod.product_id,
+                design_revision_id: revId,
+                model_code: prod.product_code,
+              }
+        )
+      )
     }
   }
 
@@ -149,7 +169,10 @@ export function CreateQuotationModal({ isOpen, onClose, onSuccess }: CreateQuota
 
     const prod = products.find((p) => p.product_id === selectedProductId)
     const revs = prod?.design_revisions || []
-    const latestRev = revs.length > 0 ? revs[0] : {}
+    const latestRev = revs.length > 0 ? revs[0] : ({} as DesignRevisionSpec)
+    const resolvedProductId = prod?.product_id || null
+    const resolvedRevisionId = (latestRev as any)?.revision_id || null
+    const resolvedModelCode = prod?.product_code || null
     const company = companies.find((c) => c.company_id === selectedCompanyId)
     const companyCode = company?.company_code
 
@@ -212,9 +235,12 @@ export function CreateQuotationModal({ isOpen, onClose, onSuccess }: CreateQuota
         unit_price: moldResult.moldBasePrice,
         amount: moldResult.moldBasePrice,
         notes: `${moldTypeLabel}型 (A5052材 CNC切削加工)${moldResult.lotDiscount > 0 ? ` ※発注ロット値引き -¥${moldResult.lotDiscount.toLocaleString()} 適用済` : ''}`,
+        product_id: resolvedProductId,
+        design_revision_id: resolvedRevisionId,
+        model_code: resolvedModelCode,
       })
 
-      // 2. Cutter Line
+      // 2. Cutter Line (mapped to OTHER per quotation_lines_item_type_check)
       const cutterDesc = isExistingCutter
         ? '既存抜型を使用 (新規抜型費用なし)'
         : latestRev.has_separate_cutter
@@ -223,36 +249,45 @@ export function CreateQuotationModal({ isOpen, onClose, onSuccess }: CreateQuota
 
       generatedLines.push({
         line_no: generatedLines.length + 1,
-        item_type: 'CUTTER',
+        item_type: 'OTHER',
         description: `抜型 (Cutline: ${dim.cutlineLength}x${dim.cutlineWidth}mm R${dim.cornerR})`,
         quantity: 1,
         unit_price: moldResult.cutterPrice,
         amount: moldResult.cutterPrice,
         notes: cutterDesc,
+        product_id: resolvedProductId,
+        design_revision_id: resolvedRevisionId,
+        model_code: resolvedModelCode,
       })
 
-      // 3. Plug Line (if applicable)
+      // 3. Plug Line (if applicable, mapped to MOLD per quotation_lines_item_type_check)
       if (moldResult.plugPrice > 0) {
         generatedLines.push({
           line_no: generatedLines.length + 1,
-          item_type: 'PLUG',
+          item_type: 'MOLD',
           description: `プラグアシスト治具 (${latestRev.plug_type || '樹脂プラグ'})`,
           quantity: 1,
           unit_price: moldResult.plugPrice,
           amount: moldResult.plugPrice,
           notes: '成形補助プラグ',
+          product_id: resolvedProductId,
+          design_revision_id: resolvedRevisionId,
+          model_code: resolvedModelCode,
         })
       }
 
-      // 4. Sample Trial Line
+      // 4. Sample Trial Line (mapped to PROTOTYPE per quotation_lines_item_type_check)
       generatedLines.push({
         line_no: generatedLines.length + 1,
-        item_type: 'SAMPLE',
+        item_type: 'PROTOTYPE',
         description: `試作成形・サンプル作成一式 (${freeSampleTrial ? '無償提供 2〜10枚' : '検査レポート付き'})`,
         quantity: 1,
         unit_price: moldResult.samplePrice,
         amount: moldResult.samplePrice,
         notes: freeSampleTrial ? '無償提供 (費用なし)' : '初期サンプル10ショット',
+        product_id: resolvedProductId,
+        design_revision_id: resolvedRevisionId,
+        model_code: resolvedModelCode,
       })
     }
 
@@ -267,6 +302,9 @@ export function CreateQuotationModal({ isOpen, onClose, onSuccess }: CreateQuota
         unit_price: trayResult.suggestedSellingPrice,
         amount: Math.round(targetLot * trayResult.suggestedSellingPrice),
         notes: `ロット: ${targetLot.toLocaleString()}枚基準 (材料: ¥${trayResult.rawMaterialCostPerPcs} + 包装: ¥${trayResult.packingCostPerPcs} + 成形: ¥${trayResult.formingProcessCostPerPcs})`,
+        product_id: resolvedProductId,
+        design_revision_id: resolvedRevisionId,
+        model_code: resolvedModelCode,
       })
     }
 
@@ -295,6 +333,42 @@ export function CreateQuotationModal({ isOpen, onClose, onSuccess }: CreateQuota
     }
     if (lines.length === 0) {
       setError('少なくとも1つの明細行を入力してください (Vui lòng nhập ít nhất 1 dòng báo giá)')
+      return
+    }
+
+    // Resolve product_id, design_revision_id, model_code for each line
+    const fallbackProd = selectedProductObj
+    const fallbackRevId = (fallbackProd?.design_revisions?.[0] as any)?.revision_id || null
+
+    const resolvedLines = lines.map((l, i) => {
+      const lineProd = l.product_id
+        ? products.find((p) => p.product_id === l.product_id) || null
+        : fallbackProd
+      const lineProductId = l.product_id || lineProd?.product_id || null
+      const lineRevId =
+        l.design_revision_id ||
+        (lineProd ? (lineProd.design_revisions?.[0] as any)?.revision_id || null : fallbackRevId)
+      const lineModelCode = (l.model_code?.trim() || lineProd?.product_code || '').trim() || null
+
+      return {
+        line_no: i + 1,
+        item_type: l.item_type,
+        description: l.description,
+        quantity: l.quantity,
+        unit_price: l.unit_price,
+        amount: l.amount,
+        notes: l.notes,
+        product_id: lineProductId,
+        design_revision_id: lineRevId,
+        model_code: lineModelCode,
+      }
+    })
+
+    const missingProductLines = resolvedLines.filter((l) => !l.product_id && !l.model_code)
+    if (missingProductLines.length > 0) {
+      setError(
+        `明細行 #${missingProductLines.map((l) => l.line_no).join(', ')} に製品 (Product / 型番) が指定されていません。製品を選択してください。`
+      )
       return
     }
 
@@ -327,19 +401,23 @@ export function CreateQuotationModal({ isOpen, onClose, onSuccess }: CreateQuota
 
       const newId = qData.quotation_id
 
-      // 2. Insert Quotation Lines
-      const lineRows = lines.map((l, i) => ({
+      // 2. Insert Quotation Lines with full product_id, design_revision_id, model_code
+      const lineRows = resolvedLines.map((l) => ({
         quotation_id: newId,
-        line_no: i + 1,
+        line_no: l.line_no,
         item_type: l.item_type,
         description: l.description,
         quantity: l.quantity,
         unit_price: l.unit_price,
         amount: l.amount,
         notes: l.notes,
+        product_id: l.product_id,
+        design_revision_id: l.design_revision_id,
+        model_code: l.model_code,
       }))
 
-      const { error: linesErr } = await supabase.from('quotation_lines').insert(lineRows)
+      // Verified in information_schema.columns: public.quotation_lines has product_id, design_revision_id, model_code
+      const { error: linesErr } = await supabase.from('quotation_lines').insert(lineRows as any)
       if (linesErr) throw linesErr
 
       onSuccess(newId)
@@ -690,7 +768,20 @@ export function CreateQuotationModal({ isOpen, onClose, onSuccess }: CreateQuota
             <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 6 }}>
               {t('lineItems')}
             </div>
-            <QuotationLineEditor lines={lines} onChange={setLines} />
+            <QuotationLineEditor
+              lines={lines}
+              onChange={setLines}
+              products={filteredProducts as any}
+              defaultProduct={
+                selectedProductObj
+                  ? {
+                      product_id: selectedProductObj.product_id,
+                      product_code: selectedProductObj.product_code,
+                      design_revision_id: (selectedProductObj.design_revisions?.[0] as any)?.revision_id || null,
+                    }
+                  : null
+              }
+            />
           </div>
 
           {/* Notes & Terms */}
