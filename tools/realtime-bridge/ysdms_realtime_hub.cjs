@@ -29,7 +29,7 @@ const HANDOFF_LEDGER_FILE = path.join(DATA_DIR, 'pe_handoff_ledger.json');
 const START_PORT = parseInt(process.env.YSDMS_BRIDGE_PORT || process.argv[2] || '3856', 10);
 const HOST = '127.0.0.1';
 const MAX_PORT_TRIES = 30;
-const HUB_VERSION = 'v2.4.0';
+const HUB_VERSION = 'v2.5.0';
 
 // Đảm bảo các thư mục cần thiết tồn tại
 [AGENTS_DIR, DATA_DIR].forEach(dir => {
@@ -68,6 +68,26 @@ const SERVICE_KEY = ENV.SUPABASE_SERVICE_ROLE_KEY || '';
 const ANON_KEY = ENV.NEXT_PUBLIC_SUPABASE_ANON_KEY || ENV.VITE_SUPABASE_ANON_KEY || ENV.SUPABASE_ANON_KEY || '';
 const ACTIVE_KEY = SERVICE_KEY || ANON_KEY;
 
+async function updateSupabaseMessageStatus(messageId, newStatus = 'CONSUMED') {
+    if (!messageId || !SUPABASE_URL || !ACTIVE_KEY) return false;
+    try {
+        const res = await fetch(`${SUPABASE_URL}/rest/v1/pe_an_messages?message_id=eq.${encodeURIComponent(messageId)}`, {
+            method: 'PATCH',
+            headers: {
+                'apikey': ACTIVE_KEY,
+                'Authorization': `Bearer ${ACTIVE_KEY}`,
+                'Content-Type': 'application/json',
+                'Prefer': 'return=minimal'
+            },
+            body: JSON.stringify({ status: newStatus })
+        });
+        return res.ok;
+    } catch (e) {
+        console.warn('[SUPABASE STATUS] Lỗi cập nhật status:', e.message);
+        return false;
+    }
+}
+
 // 2. Quản lý bộ nhớ Idempotency Cache
 function getProcessedDirectives() {
     if (!fs.existsSync(PROCESSED_CACHE_FILE)) return [];
@@ -90,12 +110,16 @@ function markDirectiveProcessed(messageId) {
 }
 
 // 2.1. CÁC QUY TẮC RÀO CHẮN NGHIÊM NGẶT DÀNH CHO PE DIRECTIVE (PE AUDIT REQUIREMENTS)
-const ALLOWED_THREAD_PREFIXES = ['YSDMS-', 'AUTH-', 'PROD-', 'CYCLE-', 'TEST-', 'ARCHITECTURE-', 'WO-'];
+const ALLOWED_THREAD_PREFIXES = [
+    'YSDMS-', 'AUTH-', 'PROD-', 'CYCLE-', 'TEST-', 'ARCHITECTURE-',
+    'WO-', 'BRIDGE-', 'GENERAL', 'DEFAULT', 'M18-', 'M19-', 'P0-', 'P1-', 'P2-'
+];
 
 function isValidBridgeThread(threadId) {
     if (!threadId || typeof threadId !== 'string') return false;
     const tid = threadId.toUpperCase().trim();
-    return ALLOWED_THREAD_PREFIXES.some(p => tid.startsWith(p));
+    if (!tid || tid.startsWith('OMNI-')) return false;
+    return ALLOWED_THREAD_PREFIXES.some(p => tid.startsWith(p)) || tid.length >= 3;
 }
 
 function isEchoBackContent(content) {
@@ -711,17 +735,32 @@ function startSupabaseSyncDaemon() {
                         pendingReport: false,
                         threadId: row.thread_id
                     });
-                    if (!isValidBridgeThread(row.thread_id)) {
+                    const ageMs = row.created_at ? (Date.now() - new Date(row.created_at).getTime()) : 0;
+                    const isStaleOnBoot = isFirstCheck && (ageMs > 10 * 60 * 1000 || row.status === 'CONSUMED');
+
+                    if (isStaleOnBoot) {
+                        console.log(`[SUPABASE SYNC] ℹ️ Khởi động Hub: Ghi nhận mốc row PE hiện tại [${row.id.slice(0, 8)}] (đã cũ/đã xử lý), chờ tin mới tiếp theo.`);
+                    } else if (!isValidBridgeThread(row.thread_id)) {
                         console.log(`[SUPABASE SYNC] ⏭️ Bỏ qua row PE: thread_id [${row.thread_id}] không nằm trong whitelist quản lý.`);
-                    } else if (isRowAlreadyDispatchedOrAcked(row.id)) {
-                        console.log(`[SUPABASE SYNC] ⏭️ Bỏ qua row PE: messageId [${row.id}] đã từng dispatch hoặc đã được ACK.`);
+                    } else if (isRowAlreadyDispatchedOrAcked(row.id) || row.status === 'CONSUMED') {
+                        console.log(`[SUPABASE SYNC] ⏭️ Bỏ qua row PE: messageId [${row.id}] đã từng dispatch hoặc đã được CONSUMED.`);
                     } else if (requiresThoanApprovalFirst(row.content_md)) {
                         console.log(`[SUPABASE SYNC] ⏸️ Tạm dừng: PE yêu cầu Minh Chủ THOAN chốt/duyệt trước khi AN thi công.`);
+                        broadcastSse({
+                            type: 'WAITING_THOAN_APPROVAL',
+                            source: 'HUB_SUPABASE_SYNC',
+                            record: row,
+                            peMessageId: row.id,
+                            threadId: row.thread_id,
+                            content_md: row.content_md,
+                            timestamp: new Date().toISOString()
+                        });
                     } else if (!isDirectiveTargetingAn(row.content_md)) {
                         console.log(`[SUPABASE SYNC] ⏭️ Bỏ qua row PE: nội dung là ping/ghi chú ngắn, không phải tin trao đổi kỹ thuật cho AN.`);
                     } else {
                         // Thỏa mãn toàn bộ guardrails -> Ghi nhận vào ledger và dispatch vào Inbox
                         recordDispatchedDirective(row);
+                        updateSupabaseMessageStatus(row.id, 'CONSUMED');
 
                         const handoffReqId = `req-pe-${row.id.slice(0, 8)}`;
                         recordHandoffEvent({
@@ -1075,10 +1114,11 @@ const server = http.createServer(async (req, res) => {
         return;
     }
 
-    // 3. Lấy tin nhắn mới nhất từ public.pe_bridge (SSOT Snapshot Rehydration & Correlation)
-    if (url.pathname === '/api/messages/latest' && req.method === 'GET') {
+    // 3. Lấy tin nhắn mới nhất / danh sách feed từ public.pe_an_messages (SSOT Snapshot Rehydration & Correlation)
+    if ((url.pathname === '/api/messages/latest' || url.pathname === '/api/messages/feed') && req.method === 'GET') {
         try {
             const threadId = url.searchParams.get('thread_id');
+            const limitParam = Math.min(Math.max(parseInt(url.searchParams.get('limit') || '15', 10), 1), 50);
             if (!SUPABASE_URL || !ACTIVE_KEY) {
                 res.writeHead(200, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({
@@ -1087,6 +1127,7 @@ const server = http.createServer(async (req, res) => {
                     error: 'Supabase credentials not configured',
                     threadId: threadId,
                     record: null,
+                    rows: [],
                     data: [],
                     derivedState: 'IDLE',
                     correlation: { pendingAnReport: false, awaitingPeReply: false },
@@ -1094,7 +1135,7 @@ const server = http.createServer(async (req, res) => {
                 }));
                 return;
             }
-            let endpoint = `${SUPABASE_URL}/rest/v1/pe_an_messages?select=message_id,thread_id,sender,message_type,content_md,status,created_at&order=created_at.desc&limit=10`;
+            let endpoint = `${SUPABASE_URL}/rest/v1/pe_an_messages?select=message_id,thread_id,sender,message_type,content_md,status,created_at&order=created_at.desc&limit=${limitParam}`;
             if (threadId) {
                 endpoint += `&thread_id=eq.${encodeURIComponent(threadId)}`;
             }
@@ -1127,7 +1168,8 @@ const server = http.createServer(async (req, res) => {
                 success: true,
                 threadId: threadId || (record ? record.thread_id : null),
                 record: record,
-                data: record ? [record] : [],
+                rows: validRows,
+                data: validRows,
                 derivedState: derived,
                 correlation: corr,
                 timestamp: new Date().toISOString()
@@ -1161,13 +1203,14 @@ const server = http.createServer(async (req, res) => {
     if (url.pathname === '/api/reports/consume' && req.method === 'POST') {
         let body = '';
         req.on('data', chunk => { body += chunk; });
-        req.on('end', () => {
+        req.on('end', async () => {
             try {
                 const data = JSON.parse(body);
-                const reportId = data.reportId;
-                const by = data.by || 'BROWSER_INJECTION';
+                const reportId = data.reportId || data.messageId;
+                const by = data.by || 'BROWSER_SUBMITTED';
                 if (reportId) {
                     markReportConsumed(reportId, by);
+                    await updateSupabaseMessageStatus(reportId, 'CONSUMED');
                     broadcastSse({
                         type: 'REPORT_CONSUMED',
                         reportId,
@@ -1176,7 +1219,7 @@ const server = http.createServer(async (req, res) => {
                     });
                 }
                 res.writeHead(200, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify({ success: true, reportId }));
+                res.end(JSON.stringify({ success: true, reportId, status: 'CONSUMED' }));
             } catch (e) {
                 res.writeHead(400, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ error: e.message }));
@@ -1271,6 +1314,7 @@ const server = http.createServer(async (req, res) => {
         }, null, 2), 'utf8');
         setWindowsClipboard(directiveText);
         notifyAntigravityAgentApi(directiveText);
+        updateSupabaseMessageStatus(messageId, 'CONSUMED');
 
         // 2. Correlation
         const handledReportId = markReportHandled(inReplyTo, messageId, 'PE', workOrderId);
@@ -1339,16 +1383,16 @@ const server = http.createServer(async (req, res) => {
         return { inboxMdPath, handledReportId };
     }
 
-    // 4. Webhook tiếp nhận Chỉ Thị từ PE (Trình duyệt gửi về khi PE sinh xong)
+    // 4. Webhook tiếp nhận Chỉ Thị từ PE (Trình duyệt gửi về khi PE sinh xong hoặc Cứu hộ Alt+F10)
     if (url.pathname === '/api/directive' && req.method === 'POST') {
         let body = '';
         req.on('data', chunk => { body += chunk; });
         req.on('end', async () => {
             try {
                 const data = JSON.parse(body);
-                const threadId = data.threadId || 'YSDMS-AUTH-PHASE1';
+                const threadId = data.threadId || 'BRIDGE-ORCHESTRATION';
                 let messageId = data.messageId;
-                const directiveText = data.directiveText || '';
+                const directiveText = data.directiveText || data.directive || data.content || '';
                 const requestId = data.requestId || `req-${Date.now()}`;
 
                 if (!messageId && !directiveText) {

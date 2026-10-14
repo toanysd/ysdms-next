@@ -1317,3 +1317,18 @@ Thứ tự nạp cha-con bất biến: `work_orders / jobs -> job_steps -> work_
 - `scripts/execute_production_insert_b1.py` (script thực thi và hậu kiểm)
 - `scripts/production_insert_b1_execution_result.json` (kết quả thực thi chi tiết)
 - `docs/reports/2026-10-07_b1_production_insert_execution_report.md` (báo cáo nghiệm thu thực thi)
+
+
+---
+
+## 🚀 [2026-10-14 09:42 JST] CHUYỂN TIẾP SANG PHIÊN THẢO LUẬN MỚI (GEMINI 4 ARGON + BRIDGE v2.5.0)
+- **Tài liệu bàn giao chi tiết (ĐỌC NGAY KHI BẮT ĐẦU PHIÊN MỚI):** `docs/SESSION_HANDOFF_GEMINI4_ARGON.md`
+- **Cầu nối Realtime Bridge v2.5.0 (Unified Gold Edition):**
+  * Local Hub đang chạy nền tại `http://127.0.0.1:3856` (`tools/realtime-bridge/ysdms_realtime_hub.cjs`).
+  * Userscript: `tools/realtime-bridge/ysdms_pe_bridge.user.js` (`v2.5.0`).
+  * **Bước 0 bắt buộc ở phiên mới:** Ghi ngay `<conversation-id>` của phiên mới vào `.agents/active_conversation_id.txt` để Native AgentAPI định tuyến chính xác vào khung chat mới.
+- **Nhiệm vụ trọng tâm phiên mới (Mô hình Gemini 4 Argon):**
+  1. Đánh giá mô hình **Gemini 4 Argon** và so sánh với các mô hình cũ / tương đương (Claude Sonnet Thinking, GPT, Gemini thế hệ trước).
+  2. Rà soát toàn bộ dự án, đặc biệt là luồng nghiệp vụ thực tế từ email (`docs/mail_analysis/00_BUSINESS_INSIGHTS.md`, `01_COMPREHENSIVE_BUSINESS_PROCESS_PROFILE.md`, `docs/business/MOLD_CUSTODY_BUSINESS_SPEC.md`) và nghiệp vụ thực tế tại **Phòng Khuôn & Thiết Bị**.
+  3. Đối chiếu 3 chiều (Nghiệp vụ thực tế $\leftrightarrow$ Kế hoạch đã triển khai $\leftrightarrow$ Mã nguồn & Giao diện hiện tại của YSDMS) để chỉ ra các điểm chưa phù hợp, các nội dung còn thiếu so với kế hoạch và logic.
+  4. Lập kế hoạch viết lại bộ Kế hoạch & Hồ sơ dự án cho phù hợp, gửi qua **Bridge v2.5.0** để phối hợp vòng lặp **AN - PE** và trình **Minh Chủ THOAN** chốt.
