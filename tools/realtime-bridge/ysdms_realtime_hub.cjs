@@ -29,7 +29,7 @@ const HANDOFF_LEDGER_FILE = path.join(DATA_DIR, 'pe_handoff_ledger.json');
 const START_PORT = parseInt(process.env.YSDMS_BRIDGE_PORT || process.argv[2] || '3856', 10);
 const HOST = '127.0.0.1';
 const MAX_PORT_TRIES = 30;
-const HUB_VERSION = 'v2.7.1';
+const HUB_VERSION = 'v2.7.2';
 
 function formatJstTimestamp(dateInput = new Date()) {
     try {
@@ -720,6 +720,7 @@ function resolveWorkspaceConversationId(exe, childEnv, workspaceMatchStr) {
                     const uris = (meta.workspaces || []).map(w => (w.workspaceFolderAbsoluteUri || '').toLowerCase());
                     convMetaCache[cand.id] = {
                         isRoot: !meta.parentConversationId,
+                        projectId: meta.projectId || '',
                         uris
                     };
                 } catch {
@@ -826,6 +827,15 @@ function executeAgentApiSend(directiveText, meta = {}) {
         const targetConvId = resolveWorkspaceConversationId(exe, childEnv, 'ysdms-nextgen');
 
         if (targetConvId) {
+            const targetProjectId = (convMetaCache[targetConvId] && convMetaCache[targetConvId].projectId) || '';
+            const sendEnv = { ...childEnv };
+            delete sendEnv.ANTIGRAVITY_SOURCE_METADATA;
+            delete sendEnv.ANTIGRAVITY_TRAJECTORY_ID;
+            sendEnv.ANTIGRAVITY_CONVERSATION_ID = targetConvId;
+            if (targetProjectId) {
+                sendEnv.ANTIGRAVITY_PROJECT_ID = targetProjectId;
+            }
+
             const sender = meta.sender || 'PE';
             const threadId = meta.threadId || hubLastSeenThreadId || 'YSDMS-AUTH-PHASE1';
             const messageId = meta.messageId || hubLastSeenId || '';
@@ -841,7 +851,7 @@ function executeAgentApiSend(directiveText, meta = {}) {
                 createdAt: meta.createdAt
             });
             const prompt = [
-                `[⚡ v2.7.1 DIRECTIVE TỪ ${sender} / MINH CHỦ QUA BRIDGE]`,
+                `[⚡ v2.7.2 DIRECTIVE TỪ ${sender} / MINH CHỦ QUA BRIDGE]`,
                 `🕒 [THỜI GIAN BẢN TIN: ${createdStamp} | THỜI GIAN ĐẨY VÀO CHAT AN: ${deliveredStamp}]`,
                 `👤 [NGƯỜI GỬI: ${sender} ➔ AN | 📁 DỰ ÁN: YSDMS NextGen | 🧵 THREAD: ${threadId} | 🆔 ID: ${shortId}]`,
                 ``,
@@ -849,22 +859,25 @@ function executeAgentApiSend(directiveText, meta = {}) {
                 ``,
                 `---`,
                 `🕒 [STAMP XÁC THỰC CHUYỂN TIẾP: ${deliveredStamp} | TỪ: ${sender} ➔ AN | ID: ${shortId}]`,
-                `*Ghi chú: Directive được gắn nhãn người gửi & thời gian tự động qua Native AgentAPI từ Hub [v2.7.1].*`
+                `*Ghi chú: Directive được gắn nhãn người gửi & thời gian tự động qua Native AgentAPI từ Hub [v2.7.2].*`
             ].join('\n');
-            const child = spawn(exe, ['agentapi', 'send-message', '--title=[v2.7.1] PE DIRECTIVE', targetConvId, prompt], {
-                env: childEnv,
+            let outBuf = '';
+            const child = spawn(exe, ['agentapi', 'send-message', '--title=[v2.7.2] PE DIRECTIVE', targetConvId, prompt], {
+                env: sendEnv,
                 windowsHide: true
             });
+            if (child.stdout) child.stdout.on('data', d => { outBuf += d.toString(); });
+            if (child.stderr) child.stderr.on('data', d => { outBuf += d.toString(); });
             child.on('close', (code) => {
                 if (code === 0) {
-                    console.log(`[AGENTAPI WAKEUP v2.7.1] 🚀 Đã tự động kích hoạt Antigravity YSDMS thành công (Conv: ${targetConvId.slice(0, 8)}...)!`);
+                    console.log(`[AGENTAPI WAKEUP v2.7.2] 🚀 Đã tự động kích hoạt Antigravity YSDMS thành công (Conv: ${targetConvId.slice(0, 8)}...)!`);
                 } else {
-                    console.warn(`[AGENTAPI WAKEUP v2.7.1] agentapi exit code: ${code}`);
+                    console.warn(`[AGENTAPI WAKEUP v2.7.2] agentapi exit code: ${code} | detail: ${outBuf.trim().slice(0, 200)}`);
                 }
             });
         }
     } catch (e) {
-        console.warn('[AGENTAPI WAKEUP v2.7.1] Lỗi:', e.message);
+        console.warn('[AGENTAPI WAKEUP v2.7.2] Lỗi:', e.message);
     }
 }
 
@@ -1751,7 +1764,31 @@ const server = http.createServer(async (req, res) => {
                     if (!global.__YSDMS_RECENT_PE_HASHES__) global.__YSDMS_RECENT_PE_HASHES__ = {};
                     const prevTime = global.__YSDMS_RECENT_PE_HASHES__[prefixHash];
                     if (prevTime && (Date.now() - prevTime < 15 * 60 * 1000)) {
-                        console.log(`[HUB DEDUP v2.7.1] 🛡️ Đã chặn bản tin PE gửi trùng nội dung trong vòng 15 phút.`);
+                        if (data.isManualRescue) {
+                            console.log(`[HUB RESCUE v2.7.2] ⚡ Minh Chủ bấm Cứu hộ thủ công — Giữ nguyên bản ghi Supabase (không lưu trùng) nhưng kích hoạt đánh thức AN ngay lập tức!`);
+                            const rescueStamped = ensureSenderAndTimestampStamp(directiveText, {
+                                sender: 'PE',
+                                recipient: 'AN',
+                                projectLabel: 'YSDMS NextGen',
+                                threadId,
+                                messageId: hubLastSeenId || messageId
+                            });
+                            setWindowsClipboard(rescueStamped);
+                            notifyAntigravityAgentApi(rescueStamped, 0, {
+                                sender: 'PE',
+                                threadId,
+                                messageId: hubLastSeenId || messageId
+                            });
+                            res.writeHead(200, { 'Content-Type': 'application/json' });
+                            res.end(JSON.stringify({
+                                success: true,
+                                deduplicated: true,
+                                retriggeredWakeup: true,
+                                messageId: hubLastSeenId || messageId || 'rescued'
+                            }));
+                            return;
+                        }
+                        console.log(`[HUB DEDUP v2.7.2] 🛡️ Đã chặn bản tin PE gửi trùng nội dung trong vòng 15 phút.`);
                         res.writeHead(200, { 'Content-Type': 'application/json' });
                         res.end(JSON.stringify({ success: true, deduplicated: true, reason: 'DUPLICATE_PE_CONTENT_PREFIX' }));
                         return;

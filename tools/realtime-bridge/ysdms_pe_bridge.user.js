@@ -1,12 +1,12 @@
 // ==UserScript==
-// @name         [v2.7.1] 🏭 YSDMS NextGen — PE ⟷ AN Realtime Bridge (Auto-Stamp, Turn-Guard & Smart Editor)
+// @name         [v2.7.2] 🏭 YSDMS NextGen — PE ⟷ AN Realtime Bridge (Auto-Stamp, Turn-Guard & Cross-Project Wakeup)
 // @namespace    http://tampermonkey.net/
-// @version      2.7.1
-// @description  [v2.7.1] Cầu nối thời gian thực cho YSDMS NextGen: Tự động gắn nhãn Người gửi & Stamp thời gian JST ở đầu/cuối mọi câu trả lời & nội dung dán vào ô chat, Chốt chặn chờ AN kết thúc 100% lượt chạy mới gửi/nhận, Kiểm soát ô chat 3 trạng thái, Khóa cứng nút Tạm dừng & Chống xung đột tuyệt đối giữa YSDMS (:3856) và OmniLinguist (:3956).
+// @version      2.7.2
+// @description  [v2.7.2] Cầu nối thời gian thực cho YSDMS NextGen: Sửa triệt để lỗi PermissionDenied project_id khi đánh thức AN đa dự án, Nút Cứu hộ luôn ép đánh thức lại AN, Chặn chạy ngầm trên iframe count.perplexity.ai (0 lỗi CORS), Tự động gắn nhãn Người gửi & Stamp thời gian JST ở đầu/cuối.
 // @author       Antigravity (AN) & Perplexity (PE) — Approved by Minh Chủ THOAN
 // @match        https://www.perplexity.ai/*
 // @match        https://perplexity.ai/*
-// @match        https://*.perplexity.ai/*
+// @noframes
 // @updateURL    http://127.0.0.1:3856/ysdms_pe_bridge.user.js
 // @downloadURL  http://127.0.0.1:3856/ysdms_pe_bridge.user.js
 // @connect      127.0.0.1
@@ -18,10 +18,11 @@
 (function () {
     'use strict';
 
-    if (window.__YSDMS_BRIDGE_V271_LOADED__) return;
-    window.__YSDMS_BRIDGE_V271_LOADED__ = true;
+    if (window.top !== window.self || location.hostname === 'count.perplexity.ai') return;
+    if (window.__YSDMS_BRIDGE_V272_LOADED__) return;
+    window.__YSDMS_BRIDGE_V272_LOADED__ = true;
 
-    const SCRIPT_VERSION = '2.7.1';
+    const SCRIPT_VERSION = '2.7.2';
     const DEFAULT_PORT = 3856;
     const DEFAULT_THREAD_ID = 'BRIDGE-ORCHESTRATION';
 
@@ -1071,10 +1072,13 @@
         }
 
         // Tự động đẩy chỉ thị của PE xuống cho AN thực thi (cho cả chế độ PASTE_ONLY và PASTE_AND_SUBMIT)
-        await handleRescueSendPeToAn(currentProse, (state.latestRow && state.latestRow.thread_id) || DEFAULT_THREAD_ID);
+        await handleRescueSendPeToAn(currentProse, (state.latestRow && state.latestRow.thread_id) || DEFAULT_THREAD_ID, false);
     }
 
     async function fetchFeedFromHub(manualNotify = false) {
+        if (!manualNotify && state.detectedTabProject === 'OMNI') {
+            return;
+        }
         try {
             const res = await fetch(`${getHubBaseUrl()}/api/messages/feed?limit=12`, {
                 method: 'GET',
@@ -1173,7 +1177,7 @@
                         }
                     }
                 } catch (e) {
-                    console.warn('[YSDMS Bridge v2.7.0] Lỗi xử lý gói SSE:', e);
+                    console.warn('[YSDMS Bridge v2.7.2] Lỗi xử lý gói SSE:', e);
                 }
             };
             eventSource.onerror = () => {
@@ -1232,7 +1236,7 @@
         }
     }
 
-    async function handleRescueSendPeToAn(customText = null, customThreadId = null) {
+    async function handleRescueSendPeToAn(customText = null, customThreadId = null, isManualRescue = true) {
         let textToSend = customText ? customText.trim() : '';
 
         if (!textToSend) {
@@ -1268,7 +1272,8 @@
                 body: JSON.stringify({
                     directiveText: textToSend,
                     threadId: threadId,
-                    source: 'MANUAL_RESCUE_V250'
+                    isManualRescue: Boolean(isManualRescue),
+                    source: isManualRescue ? 'MANUAL_RESCUE_V272' : 'AUTO_LOOP_V272'
                 })
             });
             const data = await res.json();
@@ -1278,7 +1283,9 @@
             state.turnPhase = 'PE_DISPATCHED_TO_AN';
             state.statusDetail = `Đã bắn chỉ thị sang AN (${(data.messageId || '').slice(0, 8)})`;
             playChime('an_dispatch');
-            showToast('⚡ Đã lưu Supabase & kích hoạt AN (YSDMS) thực thi thành công!');
+            showToast(data.retriggeredWakeup
+                ? '⚡ Đã kích hoạt đánh thức lại AN (YSDMS) thành công!'
+                : '⚡ Đã lưu Supabase & kích hoạt AN (YSDMS) thực thi thành công!');
             fetchFeedFromHub(false);
         } catch (err) {
             showToast(`❌ Lỗi bắn sang AN: ${err.message}`, true);
