@@ -1,0 +1,156 @@
+{
+  "work_order": "WO-EVIDENCE-INFRA",
+  "executed_at_utc": "2026-10-14T08:29:26.117Z",
+  "migration_commit_sha": "b66f5f7e546c0032242b6b71300e12d36624de3e",
+  "preflight": {
+    "db_now": "2026-10-14T08:29:26.577Z",
+    "pe_evidence_items_regclass": null,
+    "pe_an_messages_count": 153,
+    "equipment_assignments": 1633,
+    "v_equipment_lifecycle_status": 6497,
+    "equipment_history": 0,
+    "orders": 2396,
+    "order_lines": 6279
+  },
+  "postflight_a": {
+    "db_now": "2026-10-14T08:29:26.761Z",
+    "table_exists": "pe_evidence_items",
+    "rls_enabled": true,
+    "policies_count": 2,
+    "policies": [
+      {
+        "cmd": "INSERT",
+        "qual": null,
+        "roles": [
+          "service_role"
+        ],
+        "policyname": "pe_evidence_items_insert_service_role",
+        "with_check": "true"
+      },
+      {
+        "cmd": "SELECT",
+        "qual": "true",
+        "roles": [
+          "authenticated"
+        ],
+        "policyname": "pe_evidence_items_select_authenticated",
+        "with_check": null
+      }
+    ],
+    "grants": [
+      {
+        "grantee": "authenticated",
+        "privilege_type": "SELECT"
+      },
+      {
+        "grantee": "service_role",
+        "privilege_type": "DELETE"
+      },
+      {
+        "grantee": "service_role",
+        "privilege_type": "INSERT"
+      },
+      {
+        "grantee": "service_role",
+        "privilege_type": "REFERENCES"
+      },
+      {
+        "grantee": "service_role",
+        "privilege_type": "SELECT"
+      },
+      {
+        "grantee": "service_role",
+        "privilege_type": "TRIGGER"
+      },
+      {
+        "grantee": "service_role",
+        "privilege_type": "TRUNCATE"
+      },
+      {
+        "grantee": "service_role",
+        "privilege_type": "UPDATE"
+      }
+    ],
+    "rows_count": 0,
+    "pe_an_messages_count": 153
+  },
+  "postflight_b": {
+    "db_now": "2026-10-14T08:29:26.794Z",
+    "total_rows": 8,
+    "wo_mold_unify_rows": 8,
+    "message_id_rows": 8,
+    "rows_outside_scope": 0,
+    "pe_an_messages_count": 153,
+    "equipment_assignments": 1633,
+    "v_equipment_lifecycle_status": 6497,
+    "equipment_history": 0,
+    "orders": 2396,
+    "order_lines": 6279,
+    "seeded_rows": [
+      {
+        "url": "http://localhost:3000/equipment/lifecycle",
+        "status": "PASS",
+        "commit_sha": "9de2c64ca0137b52cc29f87445abd216013e10a5",
+        "evidence_id": "08768a18-0f94-49ad-a129-0ad40f8731ae",
+        "evidence_type": "BROWSER",
+        "screenshot_path": "docs/audit_logs/screenshots/wo_mold_unify/wo_mold_unify_commit3_lifecycle_kpi_6497.png"
+      },
+      {
+        "url": "http://localhost:3000/product-center/5c9541ff-14bc-4031-8e2f-a84c51b21e1e",
+        "status": "PASS",
+        "commit_sha": "c2d00dc97c75d70bab80d293c4dde1cf9d952eec",
+        "evidence_id": "1de59833-06e0-49fa-9b2c-247468d7f539",
+        "evidence_type": "BROWSER",
+        "screenshot_path": "docs/audit_logs/screenshots/wo_mold_unify/wo_mold_unify_commit2_product_center_overview_shared_cutter.png"
+      },
+      {
+        "url": "http://localhost:3000/maintenance",
+        "status": "PASS",
+        "commit_sha": "9de2c64ca0137b52cc29f87445abd216013e10a5",
+        "evidence_id": "75cf51e9-4a11-4d15-830c-b660a79f2d5f",
+        "evidence_type": "BROWSER",
+        "screenshot_path": "docs/audit_logs/screenshots/wo_mold_unify/wo_mold_unify_commit3_maintenance_ok.png"
+      },
+      {
+        "url": "http://localhost:3000/maintenance/log",
+        "status": "PASS",
+        "commit_sha": "9de2c64ca0137b52cc29f87445abd216013e10a5",
+        "evidence_id": "87454484-5aff-4c91-a84d-8f9cc3ccc842",
+        "evidence_type": "BROWSER",
+        "screenshot_path": "docs/audit_logs/screenshots/wo_mold_unify/wo_mold_unify_commit3_maintenance_log_ok.png"
+      },
+      {
+        "url": null,
+        "status": "PASS",
+        "commit_sha": "c2d00dc97c75d70bab80d293c4dde1cf9d952eec",
+        "evidence_id": "ca19a1bd-01f3-4194-bbaf-38c47dbad370",
+        "evidence_type": "GIT_GREP",
+        "screenshot_path": null
+      },
+      {
+        "url": null,
+        "status": "PASS",
+        "commit_sha": "9de2c64ca0137b52cc29f87445abd216013e10a5",
+        "evidence_id": "5b74fc36-e54c-405e-8c63-3ced94c39987",
+        "evidence_type": "GIT_GREP",
+        "screenshot_path": null
+      },
+      {
+        "url": null,
+        "status": "PASS",
+        "commit_sha": "9de2c64ca0137b52cc29f87445abd216013e10a5",
+        "evidence_id": "4462ef5c-34bd-4019-a34e-6aa04975d14c",
+        "evidence_type": "I18N",
+        "screenshot_path": null
+      },
+      {
+        "url": null,
+        "status": "PASS",
+        "commit_sha": "9de2c64ca0137b52cc29f87445abd216013e10a5",
+        "evidence_id": "84e7cc11-90dd-4234-90b6-18d23c1b2d4c",
+        "evidence_type": "TSC",
+        "screenshot_path": null
+      }
+    ]
+  }
+}
