@@ -27,12 +27,7 @@ type MoldMasterInfo = {
   product_name: string | null
   product_name_internal: string | null
   company_id: string | null
-  products: {
-    product_code: string
-    product_name: string
-    customer_product_name: string | null
-    companies: { company_name: string; company_code: string } | null
-  }[] | null
+  companies: { company_name: string; company_code: string } | null
 }
 
 type Employee = {
@@ -139,7 +134,7 @@ const STATUS_CONFIG: Record<StatusKey, { label: string; badge: string }> = {
   SUPERSEDED: { label: '旧版',     badge: 'badge badge--neutral' },
 }
 
-const STATUS_OPTIONS: StatusKey[] = ['DRAFT', 'SUBMITTED', 'RELEASED', 'REJECTED', 'SUPERSEDED']
+const STATUS_OPTIONS: StatusKey[] = ['DRAFT', 'SUBMITTED', 'APPROVED', 'RELEASED', 'REJECTED', 'SUPERSEDED']
 
 const EMPTY_FORM: FormData = {
   design_code: '', revision_number: null, status: 'DRAFT',
@@ -260,18 +255,7 @@ export default function MoldMasterDesignsPage() {
 
   /* ── Derived data ─────────────────────────────────── */
 
-  const firstProduct = moldMaster?.products?.[0] ?? null
-  const companyName = firstProduct?.companies?.company_name ?? '—'
-  const companyCode = firstProduct?.companies?.company_code ?? ''
-  const productCode = firstProduct?.product_code ?? '—'
-  const productName = firstProduct?.product_name ?? ''
-  const customerProductName = firstProduct?.customer_product_name ?? '—'
-  // Get company_id from product's company for inserts
-  const derivedCompanyId = (() => {
-    // Try to find company_id from the mold_master itself
-    if (moldMaster?.company_id) return moldMaster.company_id
-    return null
-  })()
+  const derivedCompanyId = moldMaster?.company_id ?? null
 
   /* ── Form helpers ─────────────────────────────────── */
 
@@ -438,9 +422,8 @@ export default function MoldMasterDesignsPage() {
   /* ── Render helpers ───────────────────────────────── */
 
   const renderBadge = (status: string | null) => {
-    const s = status ?? 'DRAFT'
-    const key = (s === 'APPROVED' ? 'RELEASED' : s) as StatusKey
-    const cfg = STATUS_CONFIG[key] ?? STATUS_CONFIG.DRAFT
+    const s = (status ?? 'DRAFT') as StatusKey
+    const cfg = STATUS_CONFIG[s] ?? STATUS_CONFIG.DRAFT
     return (
       <span className={cfg.badge} style={{ fontSize: 10, padding: '2px 8px', whiteSpace: 'nowrap' }}>
         <span style={{ fontFamily: 'var(--font-jp)', fontWeight: 700 }}>{cfg.label}</span>
@@ -518,6 +501,20 @@ export default function MoldMasterDesignsPage() {
                   {moldMaster.product_name_internal || '—'}
                 </div>
               </div>
+              <div>
+                <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>顧客製品名</span>
+                <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)' }}>
+                  {moldMaster.product_name || '—'}
+                </div>
+              </div>
+              <div>
+                <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>得意先</span>
+                <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)' }}>
+                  {moldMaster.companies
+                    ? `[${moldMaster.companies.company_code}] ${moldMaster.companies.company_name}`
+                    : '—'}
+                </div>
+              </div>
             </div>
           </div>
 
@@ -541,6 +538,129 @@ export default function MoldMasterDesignsPage() {
               </button>
             )}
           </div>
+        </div>
+      )}
+
+      {/* ── Revisions Table (設計版一覧) ── */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <span style={{ fontFamily: 'var(--font-jp)', fontSize: 12, color: 'var(--text-secondary)', fontWeight: 600 }}>
+          設計版一覧
+          {!loading && <span style={{ marginLeft: 6, fontSize: 11, color: 'var(--text-muted)' }}>({revisions.length})</span>}
+        </span>
+      </div>
+
+      {loading ? (
+        <div className="card-flat" style={{ padding: 32, textAlign: 'center', color: 'var(--text-muted)', fontSize: 12 }}>
+          読み込み中...
+        </div>
+      ) : error ? (
+        <div className="card-flat" style={{ padding: 16, color: 'var(--status-error)', fontSize: 12 }}>
+          エラー: {error}
+        </div>
+      ) : revisions.length === 0 ? (
+        <div className="card-flat" style={{ padding: 32, textAlign: 'center', color: 'var(--text-muted)', fontSize: 12 }}>
+          <span style={{ fontFamily: 'var(--font-jp)' }}>設計版なし</span>
+        </div>
+      ) : (
+        <div className="card-flat" style={{ padding: 0, overflow: 'hidden' }}>
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th style={{ width: 64 }}>版番</th>
+                <th>設計コード</th>
+                <th style={{ width: 96 }}>ステータス</th>
+                <th>設計寸法 (L×W×H)</th>
+                <th>抜型寸 (Cutline)</th>
+                <th style={{ width: 64, textAlign: 'center' }}>取数</th>
+                <th>材質</th>
+                <th>設計者</th>
+                <th style={{ width: 100 }}>設計日</th>
+                <th style={{ width: 100 }}>承認日</th>
+                <th style={{ width: 110, textAlign: 'center' }}>操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              {revisions.map(rev => {
+                const isSelected = selectedRevisionId === rev.revision_id
+                return (
+                  <tr
+                    key={rev.revision_id}
+                    onClick={() => setSelectedRevisionId(isSelected ? null : rev.revision_id)}
+                    style={{
+                      cursor: 'pointer',
+                      background: isSelected ? 'color-mix(in srgb, var(--accent) 8%, transparent)' : undefined,
+                      borderLeft: isSelected ? '3px solid var(--accent)' : '3px solid transparent',
+                    }}
+                  >
+                    <td style={{ fontFamily: 'monospace', fontWeight: 700 }} onClick={e => e.stopPropagation()}>
+                      <Link href={`/engineering/designs/revisions/${rev.revision_id}`} style={{ color: 'var(--accent)' }}>
+                        R{rev.revision_number ?? '—'}
+                      </Link>
+                    </td>
+                    <td style={{ fontFamily: 'monospace', fontWeight: 700 }} onClick={e => e.stopPropagation()}>
+                      <Link href={`/engineering/designs/revisions/${rev.revision_id}`} style={{ color: 'var(--accent)' }}>
+                        {rev.design_code}
+                      </Link>
+                    </td>
+                    <td>{renderBadge(rev.status)}</td>
+                    <td style={{ fontFamily: 'monospace', fontSize: 12 }}>
+                      {dimStr(rev.design_length, rev.design_width, rev.design_height)}
+                    </td>
+                    <td style={{ fontFamily: 'monospace', fontSize: 12 }}>
+                      {rev.cutline_length != null && rev.cutline_width != null
+                        ? `${rev.cutline_length}×${rev.cutline_width}`
+                        : '—'}
+                    </td>
+                    <td style={{ textAlign: 'center', fontFamily: 'monospace' }}>{rev.cavity_count ?? '—'}</td>
+                    <td style={{ fontSize: 12 }}>{rev.plastic_type_designed ?? '—'}</td>
+                    <td>{rev.employees?.employee_name ?? rev.designer ?? '—'}</td>
+                    <td style={{ fontSize: 12, fontFamily: 'monospace' }}>{fmtDate(rev.design_date)}</td>
+                    <td style={{ fontSize: 12, fontFamily: 'monospace' }}>{fmtDate(rev.approved_date)}</td>
+                    <td style={{ textAlign: 'center' }} onClick={e => e.stopPropagation()}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
+                        <button
+                          type="button"
+                          title="ジョブ作成"
+                          onClick={() => setJobModalRevId(rev.revision_id)}
+                          style={{
+                            width: 28, height: 28, display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                            borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-default)',
+                            background: 'var(--bg-surface)', color: 'var(--accent)', cursor: 'pointer',
+                          }}
+                        >
+                          <Hammer size={12} />
+                        </button>
+                        <button
+                          type="button"
+                          title="編集"
+                          onClick={() => openEditModal(rev)}
+                          style={{
+                            width: 28, height: 28, display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                            borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-default)',
+                            background: 'var(--bg-surface)', color: 'var(--accent)', cursor: 'pointer',
+                          }}
+                        >
+                          <Pencil size={12} />
+                        </button>
+                        <button
+                          type="button"
+                          title="削除"
+                          onClick={() => handleDelete(rev.revision_id, `Rev ${rev.revision_number}`)}
+                          style={{
+                            width: 28, height: 28, display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                            borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-default)',
+                            background: 'var(--bg-surface)', color: 'var(--status-error)', cursor: 'pointer',
+                          }}
+                        >
+                          <Trash2 size={12} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
         </div>
       )}
 
