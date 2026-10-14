@@ -1,36 +1,27 @@
+import { redirect } from 'next/navigation'
+
 export const dynamic = 'force-dynamic'
 
-import React from 'react'
-import { createClient } from '@/lib/supabase/server'
-import ProductsClientPage from './_components/ProductsClientPage'
-
-export const metadata = {
-  title: 'トレイ（製品）管理 | YSDMS NextGen',
-}
-
-export const revalidate = 0
-
-export default async function ProductsPage() {
-  const supabase = await createClient()
-
-  const [
-    { data: customers },
-    { data: plasticTypes },
-    { data: productsData }
-  ] = await Promise.all([
-    supabase.from('companies').select('company_id, company_name, company_code').order('company_name').limit(100),
-    supabase.from('materials').select('material_id, material_code, material_type, thickness_mm, width_mm').order('material_code'),
-    supabase.from('products').select(`
-      product_id, product_code, product_name, product_name_internal, updated_at,
-      companies:companies!products_company_id_fkey (company_code)
-    `).order('updated_at', { ascending: false }).limit(100)
-  ])
-
-  return (
-    <ProductsClientPage 
-      customers={customers || []} 
-      plasticTypes={plasticTypes || []} 
-      initialProducts={productsData || []}
-    />
-  )
+/**
+ * Route redirect: /production/products -> /product-center
+ * Standardized under WO-ROUTE-CLEANUP. Preserves 100% of searchParams.
+ */
+export default async function ProductionProductsRedirectPage(props: {
+  searchParams?: Promise<{ [key: string]: string | string[] | undefined }>
+}) {
+  const sp = await props.searchParams
+  const params = new URLSearchParams()
+  if (sp) {
+    for (const [k, v] of Object.entries(sp)) {
+      if (v !== undefined) {
+        if (Array.isArray(v)) {
+          v.forEach(val => params.append(k, val))
+        } else {
+          params.set(k, v)
+        }
+      }
+    }
+  }
+  const qs = params.toString()
+  redirect(`/product-center${qs ? `?${qs}` : ''}`)
 }

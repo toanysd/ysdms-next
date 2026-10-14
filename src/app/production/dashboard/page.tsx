@@ -1,12 +1,27 @@
-export default function ProductionDashboard() {
-  return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">成形部 (Thermoforming Dashboard)</h1>
-          <p className="text-[var(--text-muted)]">トレイの成形生産と看板管理</p>
-        </div>
-      </div>
-    </div>
-  )
+import { redirect } from 'next/navigation'
+
+export const dynamic = 'force-dynamic'
+
+/**
+ * Route redirect: /production/dashboard -> /dashboard
+ * Standardized under WO-ROUTE-CLEANUP. Preserves 100% of searchParams.
+ */
+export default async function ProductionDashboardRedirectPage(props: {
+  searchParams?: Promise<{ [key: string]: string | string[] | undefined }>
+}) {
+  const sp = await props.searchParams
+  const params = new URLSearchParams()
+  if (sp) {
+    for (const [k, v] of Object.entries(sp)) {
+      if (v !== undefined) {
+        if (Array.isArray(v)) {
+          v.forEach(val => params.append(k, val))
+        } else {
+          params.set(k, v)
+        }
+      }
+    }
+  }
+  const qs = params.toString()
+  redirect(`/dashboard${qs ? `?${qs}` : ''}`)
 }

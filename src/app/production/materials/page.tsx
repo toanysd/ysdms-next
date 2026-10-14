@@ -1,80 +1,27 @@
-import React from 'react';
-import { Package } from 'lucide-react';
-import PlasticRollScanner from './PlasticRollScanner';
+import { redirect } from 'next/navigation'
 
-export const metadata = {
-  title: '原材料在庫管理 | YSDMS NextGen',
-}
+export const dynamic = 'force-dynamic'
 
-export default function MaterialsPage() {
-  return (
-    <div className="flex-1 p-6 overflow-y-auto bg-[var(--mcs-bg)]">
-      <header className="mb-6 flex justify-between items-end">
-        <div>
-          <h1 className="text-xl font-bold text-[var(--mcs-text)] flex items-center gap-2">
-            <Package className="text-[var(--mcs-primary)]" />
-            原材料在庫管理 (Plastic WMS)
-          </h1>
-          <p className="text-[12px] text-[var(--mcs-text-muted)] mt-1">バーコードと長さ（m）によるプラスチックロール在庫管理</p>
-        </div>
-      </header>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-1">
-          <PlasticRollScanner />
-        </div>
-        
-        <div className="lg:col-span-2">
-          <div className="bg-[var(--mcs-surface)] border border-[var(--mcs-border)] rounded-lg shadow-sm overflow-hidden flex flex-col h-full min-h-[400px]">
-            <div className="p-4 border-b border-[var(--mcs-border)] flex justify-between items-center bg-[var(--mcs-surface-3)]">
-              <h2 className="font-bold text-[var(--mcs-text)] text-sm">ロール在庫一覧 (Rolls In Stock)</h2>
-            </div>
-            <div className="flex-1 overflow-auto">
-              <table className="w-full text-left text-sm border-collapse">
-                <thead className="bg-[var(--mcs-surface-2)] text-[var(--mcs-text-muted)] text-[11px] uppercase sticky top-0 z-10 shadow-sm border-b border-[var(--mcs-border)]">
-                  <tr>
-                    <th className="p-3">ロールコード (Barcode)</th>
-                    <th className="p-3">材料コード</th>
-                    <th className="p-3 text-right">入荷時 (m)</th>
-                    <th className="p-3 text-right">現在残量 (m)</th>
-                    <th className="p-3">ステータス</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {/* Mock data for visualization */}
-                  <tr className="border-b border-[var(--mcs-border)] hover:bg-[var(--mcs-surface-hover)]">
-                    <td className="p-3 font-mono text-[var(--mcs-primary)] font-bold">R2607-001</td>
-                    <td className="p-3 font-bold">A-PET-0.5-640</td>
-                    <td className="p-3 text-right tabular-nums">1,000.0</td>
-                    <td className="p-3 text-right tabular-nums font-bold text-[var(--mcs-success)]">850.5</td>
-                    <td className="p-3">
-                      <span className="bg-[var(--mcs-success-light)] text-[var(--mcs-success-text)] px-2 py-0.5 rounded text-[10px] font-bold uppercase">In Stock</span>
-                    </td>
-                  </tr>
-                  <tr className="border-b border-[var(--mcs-border)] hover:bg-[var(--mcs-surface-hover)]">
-                    <td className="p-3 font-mono text-[var(--mcs-primary)] font-bold">R2607-002</td>
-                    <td className="p-3 font-bold">A-PET-0.5-640</td>
-                    <td className="p-3 text-right tabular-nums">1,000.0</td>
-                    <td className="p-3 text-right tabular-nums font-bold text-[var(--mcs-warning)]">120.0</td>
-                    <td className="p-3">
-                      <span className="bg-[var(--mcs-warning-light)] text-[var(--mcs-warning-text)] px-2 py-0.5 rounded text-[10px] font-bold uppercase">In Use</span>
-                    </td>
-                  </tr>
-                  <tr className="border-b border-[var(--mcs-border)] hover:bg-[var(--mcs-surface-hover)]">
-                    <td className="p-3 font-mono text-[var(--mcs-primary)] font-bold">R2607-003</td>
-                    <td className="p-3 font-bold">PS-1.0-640-BLK-C</td>
-                    <td className="p-3 text-right tabular-nums">500.0</td>
-                    <td className="p-3 text-right tabular-nums font-bold text-[var(--mcs-success)]">500.0</td>
-                    <td className="p-3">
-                      <span className="bg-[var(--mcs-success-light)] text-[var(--mcs-success-text)] px-2 py-0.5 rounded text-[10px] font-bold uppercase">In Stock</span>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+/**
+ * Route redirect: /production/materials -> /plastics/inventory
+ * Standardized under WO-ROUTE-CLEANUP. Preserves 100% of searchParams.
+ */
+export default async function ProductionMaterialsRedirectPage(props: {
+  searchParams?: Promise<{ [key: string]: string | string[] | undefined }>
+}) {
+  const sp = await props.searchParams
+  const params = new URLSearchParams()
+  if (sp) {
+    for (const [k, v] of Object.entries(sp)) {
+      if (v !== undefined) {
+        if (Array.isArray(v)) {
+          v.forEach(val => params.append(k, val))
+        } else {
+          params.set(k, v)
+        }
+      }
+    }
+  }
+  const qs = params.toString()
+  redirect(`/plastics/inventory${qs ? `?${qs}` : ''}`)
 }

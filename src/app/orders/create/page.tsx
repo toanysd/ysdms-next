@@ -1,33 +1,27 @@
-'use client'
+import { redirect } from 'next/navigation'
 
-import React, { Suspense } from 'react'
-import { useRouter } from 'next/navigation'
-import { OrderForm } from '../_components/OrderForm'
-import { ArrowLeft } from 'lucide-react'
-import { useTranslations } from 'next-intl'
+export const dynamic = 'force-dynamic'
 
-export default function CreateOrderPage() {
-  const router = useRouter()
-  const t = useTranslations('Orders')
-
-  return (
-    <div style={{ maxWidth: 1200, margin: '0 auto', padding: '20px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', marginBottom: 24 }}>
-        <button 
-          onClick={() => router.back()} 
-          className="btn btn-secondary"
-          style={{ marginRight: 16, padding: '8px 12px' }}
-        >
-          <ArrowLeft size={16} />
-        </button>
-        <h1 style={{ fontSize: 24, fontWeight: 700, margin: 0 }}>
-          {t('newOrderRegistration')}
-        </h1>
-      </div>
-
-      <Suspense fallback={<div className="p-8 text-center" style={{ color: 'var(--text-muted)' }}>Loading...</div>}>
-        <OrderForm />
-      </Suspense>
-    </div>
-  )
+/**
+ * Route redirect: /orders/create -> /orders/new
+ * Standardized under WO-ROUTE-CLEANUP. Preserves 100% of searchParams.
+ */
+export default async function OrdersCreateRedirectPage(props: {
+  searchParams?: Promise<{ [key: string]: string | string[] | undefined }>
+}) {
+  const sp = await props.searchParams
+  const params = new URLSearchParams()
+  if (sp) {
+    for (const [k, v] of Object.entries(sp)) {
+      if (v !== undefined) {
+        if (Array.isArray(v)) {
+          v.forEach(val => params.append(k, val))
+        } else {
+          params.set(k, v)
+        }
+      }
+    }
+  }
+  const qs = params.toString()
+  redirect(`/orders/new${qs ? `?${qs}` : ''}`)
 }

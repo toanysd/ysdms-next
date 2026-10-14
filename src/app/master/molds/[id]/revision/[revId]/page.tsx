@@ -1,43 +1,29 @@
-import { createClient } from '@/lib/supabase/server'
-import { notFound } from 'next/navigation'
-import { MoldRevisionForm } from '../../../_components/MoldRevisionForm'
+import { redirect } from 'next/navigation'
 
-type Props = {
-  params: Promise<{ id: string, revId: string }>
-}
+export const dynamic = 'force-dynamic'
 
-export default async function EditMoldRevisionPage({ params }: Props) {
-  const { id, revId } = await params
-  const supabase = await createClient()
-
-  // Verify the product exists
-  const { data: moldBase } = await supabase
-    .from('products')
-    .select('product_id, product_code, product_name_internal')
-    .eq('product_id', id)
-    .single()
-
-  if (!moldBase) {
-    notFound()
+/**
+ * Route redirect: /master/molds/[id]/revision/[revId] -> /engineering/designs/revisions/${revId}
+ * Standardized under WO-ROUTE-CLEANUP. Preserves route param and searchParams.
+ */
+export default async function MasterMoldRevisionDetailRedirectPage(props: {
+  params: Promise<{ revId: string }>
+  searchParams?: Promise<{ [key: string]: string | string[] | undefined }>
+}) {
+  const { revId } = await props.params
+  const sp = await props.searchParams
+  const params = new URLSearchParams()
+  if (sp) {
+    for (const [k, v] of Object.entries(sp)) {
+      if (v !== undefined) {
+        if (Array.isArray(v)) {
+          v.forEach(val => params.append(k, val))
+        } else {
+          params.set(k, v)
+        }
+      }
+    }
   }
-
-  // Fetch the specific revision
-  const { data: revision } = await supabase
-    .from('design_revisions')
-    .select('*')
-    .eq('revision_id', revId)
-    .eq('product_id', id)
-    .single()
-
-  if (!revision) {
-    notFound()
-  }
-
-  return (
-    <MoldRevisionForm 
-      initialData={revision}
-      moldBaseId={moldBase.product_id} 
-      moldBaseCode={moldBase.product_code} 
-    />
-  )
+  const qs = params.toString()
+  redirect(`/engineering/designs/revisions/${revId}${qs ? `?${qs}` : ''}`)
 }

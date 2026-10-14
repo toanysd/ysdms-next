@@ -1,35 +1,27 @@
-import { createClient } from '@/lib/supabase/server'
-import { notFound } from 'next/navigation'
-import { MoldRevisionForm } from '../../../_components/MoldRevisionForm'
-import { suggestNextRevisionLabel } from '@/app/actions/mold'
+import { redirect } from 'next/navigation'
 
-type Props = {
-  params: Promise<{ id: string }>
-}
+export const dynamic = 'force-dynamic'
 
-export default async function NewMoldRevisionPage({ params }: Props) {
-  const { id } = await params
-  const supabase = await createClient()
-
-  // Verify the product exists
-  const { data: moldBase } = await supabase
-    .from('products')
-    .select('product_id, product_code, product_name_internal')
-    .eq('product_id', id)
-    .single()
-
-  if (!moldBase) {
-    notFound()
+/**
+ * Route redirect: /master/molds/[id]/revision/new -> /engineering/designs
+ * Standardized under WO-ROUTE-CLEANUP. Preserves 100% of searchParams.
+ */
+export default async function MasterMoldRevisionNewRedirectPage(props: {
+  searchParams?: Promise<{ [key: string]: string | string[] | undefined }>
+}) {
+  const sp = await props.searchParams
+  const params = new URLSearchParams()
+  if (sp) {
+    for (const [k, v] of Object.entries(sp)) {
+      if (v !== undefined) {
+        if (Array.isArray(v)) {
+          v.forEach(val => params.append(k, val))
+        } else {
+          params.set(k, v)
+        }
+      }
+    }
   }
-
-  // Suggest next label
-  const suggestedLabel = await suggestNextRevisionLabel(id)
-
-  return (
-    <MoldRevisionForm 
-      moldBaseId={moldBase.product_id} 
-      moldBaseCode={moldBase.product_code} 
-      suggestedLabel={suggestedLabel}
-    />
-  )
+  const qs = params.toString()
+  redirect(`/engineering/designs${qs ? `?${qs}` : ''}`)
 }

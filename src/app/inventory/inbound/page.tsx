@@ -1,17 +1,27 @@
+import { redirect } from 'next/navigation'
+
 export const dynamic = 'force-dynamic'
 
-// @ts-nocheck
-import { createClient } from '@/lib/supabase/server'
-import { InboundFormClient } from '@/components/inventory/InboundFormClient'
-
-export default async function InventoryInboundPage() {
-    const supabase = await createClient()
-
-    // Lấy danh mục Nhựa
-    const { data: plastics } = await supabase
-        .from('plastic_master')
-        .select('id:plastic_id, code:plastic_code, material:plastic_family, color_name:color')
-        .eq('is_active', true)
-
-    return <InboundFormClient plastics={plastics || []} />
+/**
+ * Route redirect: /inventory/inbound -> /plastics/inventory/new
+ * Standardized under WO-ROUTE-CLEANUP. Preserves 100% of searchParams.
+ */
+export default async function InventoryInboundRedirectPage(props: {
+  searchParams?: Promise<{ [key: string]: string | string[] | undefined }>
+}) {
+  const sp = await props.searchParams
+  const params = new URLSearchParams()
+  if (sp) {
+    for (const [k, v] of Object.entries(sp)) {
+      if (v !== undefined) {
+        if (Array.isArray(v)) {
+          v.forEach(val => params.append(k, val))
+        } else {
+          params.set(k, v)
+        }
+      }
+    }
+  }
+  const qs = params.toString()
+  redirect(`/plastics/inventory/new${qs ? `?${qs}` : ''}`)
 }
