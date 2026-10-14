@@ -574,45 +574,54 @@ export function TabOverview(props: TabOverviewProps) {
           // Set Auxiliary Equipment (only non-molds, non-cutters)
           setEquipDetails(auxiliaryEquips as unknown as EquipDetail[])
 
-          // Check for shared cutters via mold_design_cutters junction table
-          const { data: juncs } = await supabase
-            .from('mold_design_cutters')
-            .select('mold_design_id, equipment_id')
-            .in('mold_design_id', revIds)
+          // Check for assigned/shared cutters via equipment_assignments SSOT junction table
+          const primaryMoldIds = (equips || [])
+            .filter((eq: any) => eq.equipment_type === 'MOLD' || eq.equipment_type?.includes('金型'))
+            .map((eq: any) => eq.equipment_id as string)
+            .filter(Boolean)
 
           let sharedCutters: any[] = []
-          if (juncs && juncs.length > 0) {
-            const juncCutterIds = juncs.map(j => j.equipment_id as string).filter(Boolean)
-            if (juncCutterIds.length > 0) {
-              const { data: sCutters } = await supabase
-                .from('equipment')
-                .select(`
-                  equipment_id, equipment_code, display_name, equipment_type, sub_type, usage_status, device_status,
-                  design_revision_id, actual_length_mm, actual_width_mm, actual_height_mm,
-                  rack_layers(layer_code, racks(rack_code)),
-                  keeper_company:companies!equipment_keeper_company_id_fkey(company_code, company_name)
-                `)
-                .in('equipment_id', juncCutterIds)
+          if (primaryMoldIds.length > 0) {
+            const { data: assigns } = await supabase
+              .from('equipment_assignments')
+              .select('assignment_id, primary_equipment_id, related_equipment_id, relationship_type')
+              .in('primary_equipment_id', primaryMoldIds)
 
-              if (sCutters) {
-                sharedCutters = sCutters.map(sc => {
-                  const matchJunc = juncs.find(j => j.equipment_id === sc.equipment_id)
-                  return {
-                    cutter_id: sc.equipment_id,
-                    cutter_no: sc.equipment_code,
-                    cutter_name: sc.display_name,
-                    cutter_type: sc.sub_type,
-                    usage_status: sc.usage_status,
-                    cutter_presence: sc.device_status !== 'DISPOSED',
-                    design_revision_id: sc.design_revision_id,
-                    cutter_length_mm: sc.actual_length_mm ? Number(sc.actual_length_mm) : null,
-                    cutter_width_mm: sc.actual_width_mm ? Number(sc.actual_width_mm) : null,
-                    rack_layers: sc.rack_layers,
-                    keeper_company: sc.keeper_company,
-                    is_shared: sc.design_revision_id ? !revIds.includes(sc.design_revision_id) : true,
-                    linked_rev_id: matchJunc?.mold_design_id || sc.design_revision_id
-                  }
-                })
+            if (assigns && assigns.length > 0) {
+              const relatedIds = [...new Set(assigns.map(a => a.related_equipment_id as string).filter(Boolean))]
+              if (relatedIds.length > 0) {
+                const { data: sCutters } = await supabase
+                  .from('equipment')
+                  .select(`
+                    equipment_id, equipment_code, display_name, equipment_type, sub_type, usage_status, device_status,
+                    design_revision_id, actual_length_mm, actual_width_mm, actual_height_mm,
+                    rack_layers(layer_code, racks(rack_code)),
+                    keeper_company:companies!equipment_keeper_company_id_fkey(company_code, company_name)
+                  `)
+                  .in('equipment_id', relatedIds)
+                  .in('equipment_type', ['CUTTER_SEPARATE', 'CUTTER_INLINE', 'CUTTER', '抜型'])
+
+                if (sCutters) {
+                  sharedCutters = sCutters.map(sc => {
+                    const matchAssign = assigns.find(a => a.related_equipment_id === sc.equipment_id)
+                    const primaryMold = (equips || []).find((m: any) => m.equipment_id === matchAssign?.primary_equipment_id)
+                    return {
+                      cutter_id: sc.equipment_id,
+                      cutter_no: sc.equipment_code,
+                      cutter_name: sc.display_name,
+                      cutter_type: sc.sub_type,
+                      usage_status: sc.usage_status,
+                      cutter_presence: sc.device_status !== 'DISPOSED',
+                      design_revision_id: sc.design_revision_id,
+                      cutter_length_mm: sc.actual_length_mm ? Number(sc.actual_length_mm) : null,
+                      cutter_width_mm: sc.actual_width_mm ? Number(sc.actual_width_mm) : null,
+                      rack_layers: sc.rack_layers,
+                      keeper_company: sc.keeper_company,
+                      is_shared: matchAssign?.relationship_type === 'SHARED' || (sc.design_revision_id ? !revIds.includes(sc.design_revision_id) : true),
+                      linked_rev_id: primaryMold?.design_revision_id || sc.design_revision_id
+                    }
+                  })
+                }
               }
             }
           }

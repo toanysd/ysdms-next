@@ -222,40 +222,49 @@ export function TabDesignsEquipment({ productId }: TabDesignsEquipmentProps) {
         })
       }
 
-      // B. Shared cutters via mold_design_cutters junction table
-      const { data: juncs } = await supabase
-        .from('mold_design_cutters')
-        .select('equipment_id')
-        .eq('mold_design_id', selectedRevId)
+      // B. Assigned/Shared SET equipment via equipment_assignments SSOT junction table
+      const primaryMoldIds = (equipData || [])
+        .filter((e: any) => e.equipment_type === 'MOLD' || e.equipment_type?.includes('金型'))
+        .map((e: any) => e.equipment_id as string)
+        .filter(Boolean)
 
-      if (juncs && juncs.length > 0) {
-        const juncCutterIds = juncs.map(j => j.equipment_id as string).filter(Boolean)
-        if (juncCutterIds.length > 0) {
-          const { data: sCutters } = await supabase
-            .from('equipment')
-            .select('equipment_id, equipment_type, equipment_code, display_name, usage_status, device_status, rack_layers(layer_code, racks(rack_code))')
-            .in('equipment_id', juncCutterIds)
+      if (primaryMoldIds.length > 0) {
+        const { data: assigns } = await supabase
+          .from('equipment_assignments')
+          .select('assignment_id, primary_equipment_id, related_equipment_id, relationship_type')
+          .in('primary_equipment_id', primaryMoldIds)
 
-          if (sCutters && sCutters.length > 0) {
-            sCutters.forEach((sc: any) => {
-              if (!equipMap.has(sc.equipment_id)) {
-                const displayCode = formatCutterDisplayCode(sc.equipment_code)
-                const rack = formatRackLocationDisplay(sc.rack_layers)
+        if (assigns && assigns.length > 0) {
+          const relatedIds = [...new Set(assigns.map(a => a.related_equipment_id as string).filter(Boolean))]
+          if (relatedIds.length > 0) {
+            const { data: sEquips } = await supabase
+              .from('equipment')
+              .select('equipment_id, equipment_type, equipment_code, display_name, usage_status, device_status, rack_layers(layer_code, racks(rack_code))')
+              .in('equipment_id', relatedIds)
 
-                equipMap.set(sc.equipment_id, {
-                  id: sc.equipment_id,
-                  type: sc.equipment_type || 'CUTTER',
-                  code: displayCode,
-                  name: sc.display_name || '',
-                  status: sc.usage_status || sc.device_status || 'ACTIVE',
-                  rack,
-                  isDirect: false,
-                  isBound: true,
-                  isCavMatch: false,
-                  url: `/equipment/unified?id=${sc.equipment_id}`,
-                })
-              }
-            })
+            if (sEquips && sEquips.length > 0) {
+              sEquips.forEach((sc: any) => {
+                if (!equipMap.has(sc.equipment_id)) {
+                  const matchAssign = assigns.find(a => a.related_equipment_id === sc.equipment_id)
+                  const isCutter = ['CUTTER', 'CUTTER_SEPARATE', 'CUTTER_INLINE', '抜型'].includes(String(sc.equipment_type || '').toUpperCase())
+                  const displayCode = isCutter ? formatCutterDisplayCode(sc.equipment_code) : (sc.equipment_code || '—')
+                  const rack = formatRackLocationDisplay(sc.rack_layers)
+
+                  equipMap.set(sc.equipment_id, {
+                    id: sc.equipment_id,
+                    type: sc.equipment_type || 'CUTTER',
+                    code: displayCode,
+                    name: sc.display_name || '',
+                    status: sc.usage_status || sc.device_status || 'ACTIVE',
+                    rack,
+                    isDirect: matchAssign?.relationship_type !== 'SHARED',
+                    isBound: true,
+                    isCavMatch: false,
+                    url: `/equipment/unified?id=${sc.equipment_id}`,
+                  })
+                }
+              })
+            }
           }
         }
       }
@@ -336,8 +345,20 @@ export function TabDesignsEquipment({ productId }: TabDesignsEquipmentProps) {
     fetchEquipmentSet()
   }, [selectedRevId, revisions])
 
-  // Toggle Windows-style Linkage Checkbox
+  const isJaLocale = t('directBinding') === '直接'
+  const bindingLockedNotice = isJaLocale
+    ? '🔒 設備割当・解除機能は安全な書込仕様 (WO-EQUIPMENT-ASSIGNMENT-WRITE-SPEC) 策定待ちのため一時ロック中です'
+    : '🔒 Chức năng gán/hủy gán tạm khóa chờ đặc tả ghi an toàn (WO-EQUIPMENT-ASSIGNMENT-WRITE-SPEC)'
+
+  // Toggle Windows-style Linkage Checkbox (Temporarily locked read-only pending WO-EQUIPMENT-ASSIGNMENT-WRITE-SPEC)
   const handleToggleBinding = async (item: EquipmentItem) => {
+    // TODO(WO-EQUIPMENT-ASSIGNMENT-WRITE-SPEC): Re-enable safe assign/unassign write flow via public.equipment_assignments once write specification is approved by PE.
+    const isWriteSpecApproved = false
+    if (!isWriteSpecApproved) {
+      alert(bindingLockedNotice)
+      return
+    }
+
     if (!selectedRevId || isTogglingId) return
 
     setIsTogglingId(item.id)
@@ -671,10 +692,25 @@ export function TabDesignsEquipment({ productId }: TabDesignsEquipmentProps) {
 
             {/* Equipment Set Header & Category Filter Tabs + Grid/List View Switcher */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-primary)' }}>
-                  {t('productionEquipmentSet')} {selectedRev?.design_code ? `(${selectedRev.design_code})` : ''}
-                </span>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-primary)' }}>
+                    {t('productionEquipmentSet')} {selectedRev?.design_code ? `(${selectedRev.design_code})` : ''}
+                  </span>
+                  <span
+                    style={{
+                      fontSize: 10,
+                      padding: '2px 8px',
+                      borderRadius: 4,
+                      background: 'var(--bg-surface-2)',
+                      border: '1px solid var(--border-default)',
+                      color: 'var(--text-secondary)',
+                      fontWeight: 600,
+                    }}
+                  >
+                    {bindingLockedNotice}
+                  </span>
+                </div>
 
                 {/* Grid vs List View Mode Switcher */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 2, background: 'var(--bg-surface-2)', padding: 2, borderRadius: 4, border: '1px solid var(--border-default)' }}>
@@ -777,13 +813,14 @@ export function TabDesignsEquipment({ productId }: TabDesignsEquipmentProps) {
                               e.stopPropagation()
                               handleToggleBinding(item)
                             }}
-                            disabled={isLoadingThis}
+                            disabled={true}
                             style={{
-                              background: 'transparent', border: 'none', cursor: 'pointer', padding: 0,
+                              background: 'transparent', border: 'none', cursor: 'not-allowed', padding: 0,
                               color: item.isBound ? theme.color : 'var(--text-muted)',
+                              opacity: 0.55,
                               display: 'flex', alignItems: 'center', justifyContent: 'center'
                             }}
-                            title={item.isBound ? t('confirmUnassign') : t('unassignedLink')}
+                            title={bindingLockedNotice}
                           >
                             {isLoadingThis ? (
                               <RefreshCw size={14} className="spin" />
@@ -900,8 +937,9 @@ export function TabDesignsEquipment({ productId }: TabDesignsEquipmentProps) {
                           e.stopPropagation()
                           handleToggleBinding(item)
                         }}
-                        disabled={isLoadingThis}
-                        style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: 0, color: item.isBound ? theme.color : 'var(--text-muted)', display: 'flex', alignItems: 'center' }}
+                        disabled={true}
+                        style={{ background: 'transparent', border: 'none', cursor: 'not-allowed', opacity: 0.55, padding: 0, color: item.isBound ? theme.color : 'var(--text-muted)', display: 'flex', alignItems: 'center' }}
+                        title={bindingLockedNotice}
                       >
                         {isLoadingThis ? (
                           <RefreshCw size={13} className="spin" />

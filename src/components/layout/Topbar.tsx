@@ -158,15 +158,18 @@ export default function Topbar() {
               let targetProdCode = c.design_revisions?.products?.product_code
 
               if (!targetProdId) {
-                const { data: juncs } = await supabase
-                  .from('mold_design_cutters')
-                  .select('mold_design_id, design_revisions(product_id, products(product_code))')
-                  .eq('equipment_id', c.equipment_id)
+                const { data: assigns } = await supabase
+                  .from('equipment_assignments')
+                  .select('primary_eq:equipment!equipment_assignments_primary_equipment_id_fkey(design_revision_id, design_revisions(product_id, products(product_code)))')
+                  .eq('related_equipment_id', c.equipment_id)
                   .limit(1)
 
-                if (juncs && juncs.length > 0) {
-                  targetProdId = (juncs[0] as any).design_revisions?.product_id
-                  targetProdCode = (juncs[0] as any).design_revisions?.products?.product_code
+                if (assigns && assigns.length > 0) {
+                  const primaryEq = Array.isArray((assigns[0] as any).primary_eq)
+                    ? (assigns[0] as any).primary_eq[0]
+                    : (assigns[0] as any).primary_eq
+                  targetProdId = primaryEq?.design_revisions?.product_id
+                  targetProdCode = primaryEq?.design_revisions?.products?.product_code
                 }
               }
 

@@ -72,13 +72,14 @@ export const ProductKPIBar: React.FC<ProductKPIBarProps> = ({ productId }) => {
           if (moldIds.length > 0) {
             const { data: assignments } = await supabase
               .from('equipment_assignments')
-              .select('assigned_equipment_id, equipment:equipment!equipment_assignments_assigned_equipment_id_fkey(equipment_type)')
+              .select('related_equipment_id, related_eq:equipment!equipment_assignments_related_equipment_id_fkey(equipment_type)')
               .in('primary_equipment_id', moldIds)
 
             if (assignments) {
               assignments.forEach((a: any) => {
-                if (a.equipment?.equipment_type) {
-                  types.add(a.equipment.equipment_type)
+                const relEq = Array.isArray(a.related_eq) ? a.related_eq[0] : a.related_eq
+                if (relEq?.equipment_type) {
+                  types.add(relEq.equipment_type)
                 }
               })
             }

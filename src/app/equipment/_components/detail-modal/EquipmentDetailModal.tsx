@@ -230,72 +230,7 @@ export default function EquipmentDetailModal({
       }
     }
 
-    // 3. Junction table mold_design_cutters lookup (Molds -> Cutters)
-    if (revId && !isItemCutter && isUuid(revId)) {
-      const { data: juncCutters } = await supabase
-        .from('mold_design_cutters')
-        .select('equipment_id')
-        .eq('mold_design_id', revId)
-      if (juncCutters && juncCutters.length > 0) {
-        const cutterRefIds = juncCutters.map(j => j.equipment_id as string).filter(Boolean)
-        const validCutterRefIds = cutterRefIds.filter(cid => isUuid(cid))
-        if (validCutterRefIds.length > 0) {
-          const { data: eqCutters } = await supabase
-            .from('equipment')
-            .select('equipment_id, equipment_code, display_name, usage_status, equipment_type')
-            .in('equipment_id', validCutterRefIds)
-          if (eqCutters && eqCutters.length > 0) {
-            eqCutters.forEach((ec: any) => {
-              if (!isSelf(ec.equipment_id, ec.equipment_code)) {
-                relatedSet.set(ec.equipment_id, {
-                  equipment_id: ec.equipment_id,
-                  equipment_code: ec.equipment_code,
-                  display_name: ec.display_name,
-                  equipment_type: ec.equipment_type || 'CUTTER',
-                  usage_status: ec.usage_status
-                })
-              }
-            })
-          }
-        }
-      }
-    }
-
-    // 4. Junction table mold_design_cutters lookup (Cutters -> Molds)
-    if (isItemCutter) {
-      const cutterLookupIds = [targetEqId, legacyCutterId].filter(cid => cid && isUuid(cid))
-      if (cutterLookupIds.length > 0) {
-        const { data: juncMolds } = await supabase
-          .from('mold_design_cutters')
-          .select('mold_design_id')
-          .in('equipment_id', cutterLookupIds)
-        if (juncMolds && juncMolds.length > 0) {
-          const moldDesignIds = [...new Set(juncMolds.map(j => j.mold_design_id).filter(Boolean))]
-          const validMoldDesignIds = moldDesignIds.filter(mid => isUuid(mid))
-          if (validMoldDesignIds.length > 0) {
-            const { data: moldEquips } = await supabase
-              .from('equipment')
-              .select('equipment_id, equipment_code, display_name, usage_status, equipment_type')
-              .in('design_revision_id', validMoldDesignIds)
-            if (moldEquips && moldEquips.length > 0) {
-              moldEquips.forEach((me: any) => {
-                const isMoldType = ['MOLD', 'WATER_BASE', 'PRESSURE_BASE'].includes(me.equipment_type) || me.equipment_type?.includes('金型')
-                if (isMoldType && !isSelf(me.equipment_id, me.equipment_code)) {
-                  relatedSet.set(me.equipment_id, {
-                    equipment_id: me.equipment_id,
-                    equipment_code: me.equipment_code,
-                    display_name: me.display_name,
-                    equipment_type: me.equipment_type,
-                    usage_status: me.usage_status
-                  })
-                }
-              })
-            }
-          }
-        }
-      }
-    }
-
+    // Note: Step 1 above already queries public.equipment_assignments (both primary_equipment_id and related_equipment_id) as SSOT.
     item.related_equipment = Array.from(relatedSet.values())
 
       setData(item)
