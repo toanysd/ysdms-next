@@ -1,0 +1,132 @@
+{
+  "work_order": "WO-ROUTE-CLEANUP",
+  "audited_at_utc": "2026-10-14T09:09:56.500Z",
+  "commits": {
+    "commit_1": {
+      "sha": "817f7b340b65dfbbc600344430ac150bef41afda",
+      "scope": "Fix 22 broken 404 route literals/actions, repoint 29 inbound links to canonical V3 routes, remove 2 dead mold_design_cutters lines in TabDesignsEquipment.tsx",
+      "stat": "34 files changed, 57 insertions(+), 104 deletions(-)"
+    },
+    "commit_2": {
+      "sha": "013f55bf8716a81c50445c5673b5903a5c49ac9a",
+      "scope": "Convert 29 duplicate/legacy page.tsx routes (N1-N4, excluding /production/mold-orders) to Next.js Server Redirects preserving query & route params",
+      "stat": "29 files changed, 708 insertions(+), 4064 deletions(-)"
+    }
+  },
+  "evidence_items": {
+    "TSC": {
+      "command": "npx tsc --noEmit --pretty false",
+      "exit_code": 0,
+      "output": "",
+      "status": "PASS"
+    },
+    "I18N": {
+      "command": "node scripts/check_translations.mjs",
+      "exit_code": 0,
+      "output": "🔍 Scanning files for missing translation keys...\n✅ All translation keys are properly defined in both ja.json and vi.json",
+      "status": "PASS"
+    },
+    "GIT_GREP": {
+      "mold_design_cutters_before": [
+        "src/app/product-center/[id]/_components/TabDesignsEquipment.tsx:372: .from('mold_design_cutters')",
+        "src/app/product-center/[id]/_components/TabDesignsEquipment.tsx:387: .from('mold_design_cutters')",
+        "src/types/database.types.ts:4138: mold_design_cutters: {",
+        "src/types/database.types.ts:4165: foreignKeyName: \"mold_design_cutters_equipment_id_fkey\""
+      ],
+      "mold_design_cutters_after": [
+        "src/types/database.types.ts:4138:      mold_design_cutters: {",
+        "src/types/database.types.ts:4165:            foreignKeyName: \"mold_design_cutters_equipment_id_fkey\""
+      ],
+      "broken_route_literals_after": "Total broken route literals across src/: 0",
+      "status": "PASS"
+    },
+    "BROWSER": [
+      {
+        "id": "N1_QUERY",
+        "group": "N1 (Product Master -> Product Center with ?search=)",
+        "from_url": "http://localhost:3000/master/products?search=JAE",
+        "final_url": "http://localhost:3000/product-center?search=JAE",
+        "http_status": 200,
+        "path_matched": true,
+        "query_preserved": true,
+        "status": "PASS",
+        "tested_at": "2026-10-14T09:09:33.068Z",
+        "repo_screenshot": "docs/audit_logs/screenshots/wo_route_cleanup/n1_master_products_query_redirect.png"
+      },
+      {
+        "id": "N1_ID",
+        "group": "N1 (Product Detail [id] -> Product Center [id])",
+        "from_url": "http://localhost:3000/master/products/24227b6d-7e98-4527-9d4d-700e8976b79f",
+        "final_url": "http://localhost:3000/product-center/24227b6d-7e98-4527-9d4d-700e8976b79f",
+        "http_status": 200,
+        "path_matched": true,
+        "query_preserved": true,
+        "status": "PASS",
+        "tested_at": "2026-10-14T09:09:37.691Z",
+        "repo_screenshot": "docs/audit_logs/screenshots/wo_route_cleanup/n1_master_products_id_redirect.png"
+      },
+      {
+        "id": "N2_MOLDS_QUERY",
+        "group": "N2 (Master Molds -> Equipment Molds with ?search=)",
+        "from_url": "http://localhost:3000/master/molds?search=JAE",
+        "final_url": "http://localhost:3000/equipment/molds?search=JAE",
+        "http_status": 200,
+        "path_matched": true,
+        "query_preserved": true,
+        "status": "PASS",
+        "tested_at": "2026-10-14T09:09:41.841Z",
+        "repo_screenshot": "docs/audit_logs/screenshots/wo_route_cleanup/n2_master_molds_query_redirect.png"
+      },
+      {
+        "id": "N3_ROLL_ID",
+        "group": "N3 (Warehouse Roll [id] -> Plastics Inventory ?search=[id])",
+        "from_url": "http://localhost:3000/warehouse/rolls/ROLL-TEST-01",
+        "final_url": "http://localhost:3000/plastics/inventory?search=ROLL-TEST-01",
+        "http_status": 200,
+        "path_matched": true,
+        "query_preserved": true,
+        "status": "PASS",
+        "tested_at": "2026-10-14T09:09:46.310Z",
+        "repo_screenshot": "docs/audit_logs/screenshots/wo_route_cleanup/n3_warehouse_roll_id_redirect.png"
+      },
+      {
+        "id": "N3_INBOUND_QUERY",
+        "group": "N3 (Inventory Inbound -> Plastics Inventory New with ?q=)",
+        "from_url": "http://localhost:3000/inventory/inbound?q=PET",
+        "final_url": "http://localhost:3000/plastics/inventory/new?q=PET",
+        "http_status": 200,
+        "path_matched": true,
+        "query_preserved": true,
+        "status": "PASS",
+        "tested_at": "2026-10-14T09:09:50.759Z",
+        "repo_screenshot": "docs/audit_logs/screenshots/wo_route_cleanup/n3_inventory_inbound_redirect.png"
+      },
+      {
+        "id": "N4_WORKLOG_QUERY",
+        "group": "N4 (Production Worklog -> Worklogs with ?search=)",
+        "from_url": "http://localhost:3000/production/worklog?search=JOB",
+        "final_url": "http://localhost:3000/worklogs?search=JOB",
+        "http_status": 200,
+        "path_matched": true,
+        "query_preserved": true,
+        "status": "PASS",
+        "tested_at": "2026-10-14T09:09:55.986Z",
+        "repo_screenshot": "docs/audit_logs/screenshots/wo_route_cleanup/n4_production_worklog_redirect.png"
+      }
+    ],
+    "SQL_AUDIT": {
+      "purpose": "Verify zero business table mutations during WO-ROUTE-CLEANUP",
+      "result": {
+        "db_now": "2026-10-14T09:09:57.159Z",
+        "orders": 2396,
+        "order_lines": 6279,
+        "equipment": 6497,
+        "equipment_assignments": 1633,
+        "equipment_history": 0,
+        "profiles": 3,
+        "pe_evidence_items_before": 8
+      },
+      "status": "PASS"
+    }
+  }
+}
