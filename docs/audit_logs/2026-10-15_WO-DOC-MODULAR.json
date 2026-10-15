@@ -1,0 +1,162 @@
+{
+  "work_order": "WO-DOC-MODULAR",
+  "timestamp_jst": "2026-10-15 10:40:35 JST",
+  "status": "PASS",
+  "summary": "Modularized project documentation into 13 folders (00_core + M01..M12, 26 files total). Every file strictly <= 120 lines and <= 5,120 bytes. Zero existing files deleted, zero src/messages changes, zero DB business mutations.",
+  "commits": {
+    "group_a_00_core_M01_to_M04": "4f7ce4f83893095aaa6ea7638541e01cc60ef859",
+    "group_b_M05_to_M07": "693fce8fbf7dd2a468499e9ebd9b6e5aea2dcf9f"
+  },
+  "constraints_check": {
+    "total_folders": 13,
+    "total_files": 26,
+    "max_lines_observed": 51,
+    "max_bytes_observed": 4973,
+    "line_limit": 120,
+    "byte_limit": 5120,
+    "deleted_existing_files": 0,
+    "modified_src_or_messages": 0
+  },
+  "db_invariants": {
+    "db_now": "2026-10-15 01:40:38.834962+00",
+    "orders": 2396,
+    "order_lines": 6279,
+    "equipment": 6497,
+    "equipment_assignments": 1633,
+    "equipment_history": 0,
+    "profiles": 3,
+    "public_relations": 128
+  },
+  "files": [
+    {
+      "file": "docs/dossier/00_core/00_INDEX.md",
+      "lines": 31,
+      "bytes": 3847
+    },
+    {
+      "file": "docs/dossier/00_core/00_ACTIVE_HANDOFF.md",
+      "lines": 24,
+      "bytes": 2925
+    },
+    {
+      "file": "docs/dossier/M01_cases/business.md",
+      "lines": 28,
+      "bytes": 2647
+    },
+    {
+      "file": "docs/dossier/M01_cases/schema.md",
+      "lines": 27,
+      "bytes": 1840
+    },
+    {
+      "file": "docs/dossier/M02_tech_review_design/business.md",
+      "lines": 22,
+      "bytes": 2779
+    },
+    {
+      "file": "docs/dossier/M02_tech_review_design/schema.md",
+      "lines": 51,
+      "bytes": 4973
+    },
+    {
+      "file": "docs/dossier/M03_quotations_pricing/business.md",
+      "lines": 21,
+      "bytes": 2483
+    },
+    {
+      "file": "docs/dossier/M03_quotations_pricing/schema.md",
+      "lines": 26,
+      "bytes": 2385
+    },
+    {
+      "file": "docs/dossier/M04_orders/business.md",
+      "lines": 22,
+      "bytes": 2504
+    },
+    {
+      "file": "docs/dossier/M04_orders/schema.md",
+      "lines": 33,
+      "bytes": 2775
+    },
+    {
+      "file": "docs/dossier/M05_equipment_set/business.md",
+      "lines": 19,
+      "bytes": 2489
+    },
+    {
+      "file": "docs/dossier/M05_equipment_set/schema.md",
+      "lines": 27,
+      "bytes": 2750
+    },
+    {
+      "file": "docs/dossier/M06_mold_jobs/business.md",
+      "lines": 20,
+      "bytes": 2424
+    },
+    {
+      "file": "docs/dossier/M06_mold_jobs/schema.md",
+      "lines": 43,
+      "bytes": 3958
+    },
+    {
+      "file": "docs/dossier/M07_mold_custody/business.md",
+      "lines": 18,
+      "bytes": 3000
+    },
+    {
+      "file": "docs/dossier/M07_mold_custody/schema.md",
+      "lines": 34,
+      "bytes": 3205
+    },
+    {
+      "file": "docs/dossier/M08_forming_subcontract/business.md",
+      "lines": 21,
+      "bytes": 2713
+    },
+    {
+      "file": "docs/dossier/M08_forming_subcontract/schema.md",
+      "lines": 36,
+      "bytes": 3387
+    },
+    {
+      "file": "docs/dossier/M09_quality_sample_gate/business.md",
+      "lines": 19,
+      "bytes": 2657
+    },
+    {
+      "file": "docs/dossier/M09_quality_sample_gate/schema.md",
+      "lines": 35,
+      "bytes": 2927
+    },
+    {
+      "file": "docs/dossier/M10_shipments_billing/business.md",
+      "lines": 22,
+      "bytes": 2561
+    },
+    {
+      "file": "docs/dossier/M10_shipments_billing/schema.md",
+      "lines": 40,
+      "bytes": 3245
+    },
+    {
+      "file": "docs/dossier/M11_companies_master/business.md",
+      "lines": 20,
+      "bytes": 2439
+    },
+    {
+      "file": "docs/dossier/M11_companies_master/schema.md",
+      "lines": 40,
+      "bytes": 2936
+    },
+    {
+      "file": "docs/dossier/M12_dashboard_admin/business.md",
+      "lines": 19,
+      "bytes": 2178
+    },
+    {
+      "file": "docs/dossier/M12_dashboard_admin/schema.md",
+      "lines": 21,
+      "bytes": 1788
+    }
+  ]
+}
