@@ -1,24 +1,18 @@
-# ⚡ YSDMS NextGen — Bàn Giao Phiên Hiện Hành (`00_ACTIVE_HANDOFF.md`)
+# 📌 YSDMS NextGen — Active Handoff (`00_ACTIVE_HANDOFF.md`)
 
-- **Thời điểm cập nhật:** `2026-10-15 10:35 JST` (`db_now = 2026-10-15 01:39:47.755187+00:00`)
-- **Nhánh Git:** `main` (Đồng bộ `origin/main`)
+- **Cập nhật lần cuối:** `2026-10-15 11:22:50 JST`
+- **Work Order vừa đóng:** `WO-DOC-MODULAR` (**CLOSED** — PE nghiệm thu tại `2026-10-15 10:53 JST`, Commit `d7635db6`).
+- **Work Order hiện hành:** `WO-MOLD-SYNC-WAVE1` — **CỔNG 1 (`GATE 1 PAYLOAD SUBMITTED`, Chờ PE duyệt)**.
 
-## 1. Các Work Order Đã Đóng Gần Nhất (`CLOSED`)
-1. **`WO-PIPE-FIX` + `WO-SCHEMA-SAFETY-FIX` + `WO-PIPE-E2E-PILOT` + `WO-PIPE-E2E-CLEANUP` (`CLOSED`):**
-   - Khôi phục chuỗi `Case -> Technical Review -> Quotation -> Order` (Method A1 trong `fn_convert_quotation_to_order`, backfill `profiles = 3/3`, dọn sạch 12 UUID pilot).
-2. **`WO-MOLD-UNIFY` (`CLOSED` — Commits `8e10b6aa`, `c2d00dc9`, `9de2c64c`):**
-   - Bổ sung `EquipmentSetTab.tsx` trong `/equipment/jobs/[id]`; chuyển `/product-center/[id]` & `EquipmentDetailModal` sang đọc `equipment_assignments`; sửa `/maintenance` & KPI `/equipment/lifecycle` (`6,497`) dùng `v_equipment_lifecycle_status`.
-3. **`WO-EVIDENCE-INFRA` & `WO-ROUTE-CLEANUP` (`CLOSED` — Commits `817f7b34`, `013f55bf`, `42851ee3`, `0efcddb8`):**
-   - Tạo bảng `public.pe_evidence_items`; sửa 22 broken route literals; chuyển 30 route trùng lặp (gồm `/production/mold-orders`) thành Server Redirect về Canonical V3.
-4. **`WO-MOLD-DATA-SYNC-AUDIT` (`ACCEPTED` — `a2a90587`) & `WO-PROJECT-STATUS-REVIEW` (`181b0fae`):**
-   - Hoàn tất đối chiếu Access `ysdJOB_20261006.accdb` vs Supabase, quét 100% `source_data/mail_data` (`725` unique threads / `3,856` clean CSV emails / `706,674` XLSX rows).
-5. **`WO-EQUIPMENT-UI-FIX` (`CLOSED` — Code `a587a5c2`, Evidence `97116e09`):**
-   - Sửa `MoldModal.tsx` (`design_revision_id`, `equipment_type`, `keeper_company_id`, `current_rack_layer_id`), `cutting-dies` (`CUTTER_INLINE`/`CUTTER_SEPARATE`), `/equipment/unified` (tab `PLUG`), `/equipment/dashboard`, và `CreateJobModal.tsx` + `mold-job.ts`.
+## 1. Trạng Thái Cổng Kiểm Toán `WO-MOLD-SYNC-WAVE1` (Cổng 1)
+- **Đã kiểm chứng Dry-Run thực tế trên PostgreSQL (`BEGIN ... ROLLBACK`, 0 mutation lưu lại):**
+  1. **Step 1.1 (`public.rack_layers`):** `+20` dòng (`380 -> 400`, dùng `layer_number = RackLayerID` và `layer_code = <rack_code>-L<num>-<id>` để 0 va chạm `UNIQUE(rack_id, layer_number)`).
+  2. **Step 1.2A (`71 tblMoldDesign` trùng `design_code`):** `70` dòng đã có trong PG với `legacy_id = 'DESIGN-' || id` $ightarrow$ chuẩn hóa thành `'D-' || id` (`ROW_COUNT = 70`); `1` dòng (`MoldDesignID = 4725`, `CHG001D`) trùng `D-4724` và có `0` khuôn/dao tham chiếu $ightarrow$ `SKIP_DUPLICATE_MAP_TO_D_4724`.
+  3. **Step 1.2B & 1.2C (`54 products` mới cho `88 design_revisions` mới):** Chèn `+54` `public.products` mới (`8,489 -> 8,543`, `product_lifecycle_status = 'MASS_PRODUCTION'`) và `+88` `public.design_revisions` mới (`4,693 -> 4,781`, khớp 100% `tblMoldDesign`).
+  4. **Step 1.3 (`24 MOLD` + `4 CUTTER` mới):** Chèn `+28` dòng `public.equipment` (`6,497 -> 6,525`; 4 dao cắt dùng hậu tố `-2` `JAE380-2`, `ADY133R1-2`, `YKW009-2`, `YCM082R1-2` thỏa mãn `UNIQUE(equipment_code)`).
+  5. **Step 1.4 (`keeper_company_id` Strict Backfill):** Chỉ map 6 mã `COMP-1, 3, 4, 5, 6, 10` khớp chính xác `companies.legacy_id = 'COMP-' || KeeperCompany` $ightarrow$ cập nhật `225` khuôn + `1` dao cắt (`ROW_COUNT = 226`). Bỏ qua `KeeperCompany = 2` (`ヨシダパッケージ` nội bộ YSD, `3,714` khuôn, không có `COMP-2`, tránh gán nhầm vào `CUST-2` `MOK`) và `KeeperCompany = 1540` (`ミツミ電機☆`, `2` khuôn, không có `COMP-1540`).
+  6. **Step 1.5 (`public.equipment_assignments`):** Chèn `+1,337` dòng (`1,633 -> 2,970`, gồm `265 SET_MEMBER` + `1,072 SHARED`).
 
-## 2. Work Order Đang Thực Thi Hiện Tại
-- **`WO-DOC-MODULAR` (Chỉ thị `d7ac6322`):** Khởi tạo 13 thư mục trong `docs/dossier/` (`00_core` + `M01`..`M12`), mỗi module gồm `business.md` và `schema.md` (`<= 120` dòng, `<= 5 KB`), chia thành 3 commits theo nhóm module. Không xóa file gốc, không sửa `src/`, không đụng DB nghiệp vụ.
-
-## 3. Lộ Trình Kế Tiếp (Chờ PE & Minh Chủ THOAN Duyệt)
-1. **`WO-MOLD-SYNC-WAVE1`:** Đã có kết quả Dry-Run chỉ-đọc tại `docs/audit_logs/2026-10-14_WO-MOLD-SYNC-WAVE1-DRYRUN.json` (`+20` `rack_layers`, `+88` `design_revisions` mới + map `71` dòng trùng `design_code`, `+24` `M-*`, `+4` `C-*`, backfill `3,940` `keeper_company_id`, `+1,337` `equipment_assignments`).
-2. **`WO-MOLD-SYNC-WAVE2` & `WAVE3`:** Đồng bộ `+262` `jobs`, `+635` `job_steps`, `LEGACY-STEP-SHOP-INTERNAL` & `+2,437` `work_logs`.
-3. **`WO-MOLD-SYNC-WAVE4`:** Đồng bộ `587` `tblMoldShipLog`, `4,686` `tblTeflonLog` có `SentDate`, và hợp nhất `209` `mold_loan_certificates`.
+## 2. Hồ Sơ Đối Chứng Cổng 1 Trên GitHub & Supabase
+- **JSON Mapping đầy đủ:** `docs/audit_logs/2026-10-15_WO-MOLD-SYNC-WAVE1-GATE1.json`
+- **SQL Payload & Rollback Plan:** `docs/audit_logs/2026-10-15_WO-MOLD-SYNC-WAVE1-GATE1.sql`
