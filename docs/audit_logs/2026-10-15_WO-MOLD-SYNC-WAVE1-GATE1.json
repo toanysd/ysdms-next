@@ -1,9 +1,9 @@
 {
   "work_order": "WO-MOLD-SYNC-WAVE1",
-  "gate": "GATE_1_PAYLOAD_SUBMISSION",
+  "gate": "GATE_1_PAYLOAD_V2_SUBMISSION",
   "status": "DRY_RUN_VERIFIED_VIA_BEGIN_ROLLBACK_AWAITING_PE_APPROVAL",
-  "verified_at_utc": "2026-10-15 02:22:52.364305+00",
-  "verified_at_jst": "2026-10-15 11:22:50 JST",
+  "verified_at_utc": "2026-10-15 02:44:45.802667+00",
+  "verified_at_jst": "2026-10-15 11:44:50 JST",
   "db_mutations_persisted": 0,
   "public_relations_verification": {
     "BASE_TABLE": 117,
@@ -59,7 +59,8 @@
     "step_1_3a_molds_inserted": 24,
     "step_1_3b_cutters_inserted": 4,
     "step_1_4_keeper_company_strict_updated": 26,
-    "step_1_5_equipment_assignments_inserted": 37
+    "step_1_5_equipment_assignments_inserted": 37,
+    "step_1_0_companies_inserted_cob_444": 1
   },
   "condition_4_1_71_design_code_matches": {
     "rule": "70 records in tblMoldDesign (4786..4916) already exist in public.design_revisions with legacy_id = 'DESIGN-' || MoldDesignID -> normalize prefix to 'D-' || MoldDesignID (UPDATE 70 rows). 1 record (MoldDesignID=4725, CHG001D) duplicates MoldDesignID=4724 (D-4724, CHG001D) and has 0 molds/cutters referencing it -> SKIP insert and map to D-4724 (06566026-234b-44ff-86ce-55623c8a88d6).",
@@ -1108,7 +1109,7 @@
         "product_code": "COB001",
         "product_name": "COB-001",
         "product_name_internal": "COB-001",
-        "company_id": "1b234ffe-deeb-46a3-8408-47285e7ec1e9",
+        "company_id": "2c08b859-50cb-57ad-9e5b-a52faaff3664",
         "product_status": "ACTIVE",
         "product_lifecycle_status": "MASS_PRODUCTION",
         "source_MoldDesignID": 4942,
@@ -1555,7 +1556,7 @@
         "product_lifecycle_status": "MASS_PRODUCTION",
         "source_MoldDesignID": 4365,
         "source_TrayID": null,
-        "source_CustomerID": null
+        "source_CustomerID": 177
       }
     ],
     "new_designs_88": [
@@ -2217,7 +2218,7 @@
         "tray_info": "COB-001",
         "product_id": "b58cddd7-20c8-5546-a675-61924b001271",
         "product_source": "INSERT_NEW_PRODUCT",
-        "company_id": "1b234ffe-deeb-46a3-8408-47285e7ec1e9",
+        "company_id": "2c08b859-50cb-57ad-9e5b-a52faaff3664",
         "design_length": 355.0,
         "design_width": 240.0,
         "design_height": 39.0,
@@ -4214,7 +4215,7 @@
         "equipment_type": "MOLD",
         "design_revision_id": "5c8621f5-21f1-5a13-bf36-8102ff8fa578",
         "MoldDesignID": 4942,
-        "company_id": "1b234ffe-deeb-46a3-8408-47285e7ec1e9",
+        "company_id": "2c08b859-50cb-57ad-9e5b-a52faaff3664",
         "keeper_company_id": null,
         "KeeperCompany_raw": null,
         "current_rack_layer_id": "4deeb4fd-6065-4ede-b784-36e14a54fbb7",
@@ -14502,5 +14503,268 @@
         "relationship_type": "SHARED"
       }
     ]
+  },
+  "split_sql_files_v2": [
+    {
+      "file": "docs/audit_logs/wave1_payload_v2/01_staging_ddl.sql",
+      "lines": 61,
+      "bytes": 2255
+    },
+    {
+      "file": "docs/audit_logs/wave1_payload_v2/02_step1_companies_and_rack_layers.sql",
+      "lines": 66,
+      "bytes": 2621
+    },
+    {
+      "file": "docs/audit_logs/wave1_payload_v2/03_step2_designs_and_products.sql",
+      "lines": 106,
+      "bytes": 4574
+    },
+    {
+      "file": "docs/audit_logs/wave1_payload_v2/04_step3_equipment_and_keeper.sql",
+      "lines": 102,
+      "bytes": 4243
+    },
+    {
+      "file": "docs/audit_logs/wave1_payload_v2/05_step4_equipment_assignments.sql",
+      "lines": 56,
+      "bytes": 2206
+    },
+    {
+      "file": "docs/audit_logs/wave1_payload_v2/06_full_rollback_plan.sql",
+      "lines": 78,
+      "bytes": 3735
+    }
+  ],
+  "step_1_0_company_cob_444": {
+    "company_id": "2c08b859-50cb-57ad-9e5b-a52faaff3664",
+    "legacy_id": "CUST-444",
+    "CustomerID": 444,
+    "company_code": "COB",
+    "company_name": "COB",
+    "company_type": [
+      "CUSTOMER"
+    ],
+    "is_active": true,
+    "source_DateEntry": "2026-09-29",
+    "notes": "SYNC_WAVE1_TBLCUSTOMER_444"
+  },
+  "cutter_dash2_convention_evidence": {
+    "total_existing_cutters_C_prefix": 1725,
+    "existing_cutters_with_dash2_suffix": 1156,
+    "existing_cutters_with_dash2_pct": 67.01,
+    "existing_cutters_with_numeric_suffix": 1452,
+    "existing_cutters_with_numeric_pct": 84.17,
+    "sample_15_existing_pairs": [
+      {
+        "mold_legacy_id": "M-716",
+        "mold_equipment_code": "HAK001",
+        "mold_display_name": "HAK-001",
+        "cutter_legacy_id": "C-997",
+        "cutter_equipment_code": "HAK001-2",
+        "cutter_display_name": "HAK-001"
+      },
+      {
+        "mold_legacy_id": "M-1088",
+        "mold_equipment_code": "NSM002",
+        "mold_display_name": "NSM-002",
+        "cutter_legacy_id": "C-994",
+        "cutter_equipment_code": "NSM002-2",
+        "cutter_display_name": "NSM-002"
+      },
+      {
+        "mold_legacy_id": "M-168",
+        "mold_equipment_code": "SRI002",
+        "mold_display_name": "SRI-002",
+        "cutter_legacy_id": "C-990",
+        "cutter_equipment_code": "SRI002-2",
+        "cutter_display_name": "SRI-002"
+      },
+      {
+        "mold_legacy_id": "M-2613",
+        "mold_equipment_code": "YSDG0351",
+        "mold_display_name": "YSD-G-035-1",
+        "cutter_legacy_id": "C-989",
+        "cutter_equipment_code": "YSDG0351-2",
+        "cutter_display_name": "YSD-G-035-1"
+      },
+      {
+        "mold_legacy_id": "M-2933",
+        "mold_equipment_code": "THP007",
+        "mold_display_name": "THP-007",
+        "cutter_legacy_id": "C-988",
+        "cutter_equipment_code": "THP007-2",
+        "cutter_display_name": "THP-007"
+      },
+      {
+        "mold_legacy_id": "M-2053",
+        "mold_equipment_code": "SMK203",
+        "mold_display_name": "SMK-203",
+        "cutter_legacy_id": "C-987",
+        "cutter_equipment_code": "SMK203-2",
+        "cutter_display_name": "SMK-203"
+      },
+      {
+        "mold_legacy_id": "M-776",
+        "mold_equipment_code": "MZT128",
+        "mold_display_name": "MZT-128",
+        "cutter_legacy_id": "C-986",
+        "cutter_equipment_code": "MZT128-2",
+        "cutter_display_name": "MZT-128"
+      },
+      {
+        "mold_legacy_id": "M-2872",
+        "mold_equipment_code": "ASH004",
+        "mold_display_name": "ASH-004",
+        "cutter_legacy_id": "C-985",
+        "cutter_equipment_code": "ASH004-2",
+        "cutter_display_name": "ASH-004"
+      },
+      {
+        "mold_legacy_id": "M-47",
+        "mold_equipment_code": "TSP003",
+        "mold_display_name": "TSP-003",
+        "cutter_legacy_id": "C-984",
+        "cutter_equipment_code": "TSP003-2",
+        "cutter_display_name": "TSP-003"
+      },
+      {
+        "mold_legacy_id": "M-3913",
+        "mold_equipment_code": "ODS044",
+        "mold_display_name": "ODS-044",
+        "cutter_legacy_id": "C-983",
+        "cutter_equipment_code": "ODS044-2",
+        "cutter_display_name": "ODS-044"
+      },
+      {
+        "mold_legacy_id": "M-1950",
+        "mold_equipment_code": "TIH013",
+        "mold_display_name": "TIH-013",
+        "cutter_legacy_id": "C-982",
+        "cutter_equipment_code": "TIH013-2",
+        "cutter_display_name": "TIH-013"
+      },
+      {
+        "mold_legacy_id": "M-2630",
+        "mold_equipment_code": "ODS051",
+        "mold_display_name": "ODS-051",
+        "cutter_legacy_id": "C-981",
+        "cutter_equipment_code": "ODS051-2",
+        "cutter_display_name": "ODS-051"
+      },
+      {
+        "mold_legacy_id": "M-2484",
+        "mold_equipment_code": "TE71292",
+        "mold_display_name": "TE-7-129-2",
+        "cutter_legacy_id": "C-980",
+        "cutter_equipment_code": "TE71292-2",
+        "cutter_display_name": "TE-7-129-2"
+      },
+      {
+        "mold_legacy_id": "M-2015",
+        "mold_equipment_code": "SMK183",
+        "mold_display_name": "SMK-183",
+        "cutter_legacy_id": "C-978",
+        "cutter_equipment_code": "SMK183-2",
+        "cutter_display_name": "SMK-183"
+      },
+      {
+        "mold_legacy_id": "M-3792",
+        "mold_equipment_code": "KSPInline",
+        "mold_display_name": "KSP-Inline",
+        "cutter_legacy_id": "C-977",
+        "cutter_equipment_code": "KSPInline-2",
+        "cutter_display_name": "KSP-Inline"
+      }
+    ]
+  },
+  "legacy_id_uniqueness_audit": {
+    "preflight": {
+      "companies_total": 2214,
+      "companies_leg_non_null": 1991,
+      "companies_leg_distinct": 1991,
+      "companies_leg_duplicates": 0,
+      "rack_layers_total": 380,
+      "rack_layers_leg_non_null": 380,
+      "rack_layers_leg_distinct": 380,
+      "rack_layers_leg_duplicates": 0,
+      "products_total": 8489,
+      "products_leg_non_null": 4083,
+      "products_leg_distinct": 4083,
+      "products_leg_duplicates": 0,
+      "design_revisions_total": 4693,
+      "design_revisions_leg_non_null": 4692,
+      "design_revisions_leg_distinct": 4692,
+      "design_revisions_leg_duplicates": 0,
+      "design_revisions_DESIGN_prefix_count": 70,
+      "equipment_total": 6497,
+      "equipment_leg_non_null": 6494,
+      "equipment_leg_distinct": 6494,
+      "equipment_leg_duplicates": 0,
+      "equipment_with_keeper": 0,
+      "equipment_assignments_total": 1633,
+      "equipment_history_total": 0,
+      "work_logs_total": 7111,
+      "orders_total": 2396,
+      "order_lines_total": 6279
+    },
+    "in_transaction_before_rollback": {
+      "companies_total": 2215,
+      "companies_leg_non_null": 1992,
+      "companies_leg_distinct": 1992,
+      "companies_leg_duplicates": 0,
+      "rack_layers_total": 400,
+      "rack_layers_leg_non_null": 400,
+      "rack_layers_leg_distinct": 400,
+      "rack_layers_leg_duplicates": 0,
+      "products_total": 8543,
+      "products_leg_non_null": 4137,
+      "products_leg_distinct": 4137,
+      "products_leg_duplicates": 0,
+      "design_revisions_total": 4781,
+      "design_revisions_leg_non_null": 4780,
+      "design_revisions_leg_distinct": 4780,
+      "design_revisions_leg_duplicates": 0,
+      "design_revisions_DESIGN_prefix_count": 0,
+      "equipment_total": 6525,
+      "equipment_leg_non_null": 6522,
+      "equipment_leg_distinct": 6522,
+      "equipment_leg_duplicates": 0,
+      "equipment_with_keeper": 227,
+      "equipment_assignments_total": 2970,
+      "equipment_history_total": 0,
+      "work_logs_total": 7111,
+      "orders_total": 2396,
+      "order_lines_total": 6279
+    },
+    "post_rollback": {
+      "companies_total": 2214,
+      "companies_leg_non_null": 1991,
+      "companies_leg_distinct": 1991,
+      "companies_leg_duplicates": 0,
+      "rack_layers_total": 380,
+      "rack_layers_leg_non_null": 380,
+      "rack_layers_leg_distinct": 380,
+      "rack_layers_leg_duplicates": 0,
+      "products_total": 8489,
+      "products_leg_non_null": 4083,
+      "products_leg_distinct": 4083,
+      "products_leg_duplicates": 0,
+      "design_revisions_total": 4693,
+      "design_revisions_leg_non_null": 4692,
+      "design_revisions_leg_distinct": 4692,
+      "design_revisions_leg_duplicates": 0,
+      "design_revisions_DESIGN_prefix_count": 70,
+      "equipment_total": 6497,
+      "equipment_leg_non_null": 6494,
+      "equipment_leg_distinct": 6494,
+      "equipment_leg_duplicates": 0,
+      "equipment_with_keeper": 0,
+      "equipment_assignments_total": 1633,
+      "equipment_history_total": 0,
+      "work_logs_total": 7111,
+      "orders_total": 2396,
+      "order_lines_total": 6279
+    }
   }
 }
