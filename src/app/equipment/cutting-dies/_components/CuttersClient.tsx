@@ -18,6 +18,12 @@ interface MoldDesign {
   design_code: string
 }
 
+interface RackLayer {
+  id: string
+  layer_code: string
+  rack_code?: string
+}
+
 interface Cutter {
   cutter_id: string
   cutter_no: string
@@ -30,6 +36,8 @@ interface Cutter {
   cutter_height_mm: number | null
   base_type: string | null
   company_id: string | null
+  keeper_company_id?: string | null
+  current_rack_layer_id?: string | null
   design_revision_id: string | null
   usage_status: string
   notes: string | null
@@ -41,6 +49,7 @@ export default function CuttersClient({
   initialCutters, 
   companies, 
   moldDesigns,
+  rackLayers = [],
   totalRecords,
   initialPage = 1,
   initialSearch = ''
@@ -48,6 +57,7 @@ export default function CuttersClient({
   initialCutters: Cutter[]
   companies: Company[]
   moldDesigns: MoldDesign[]
+  rackLayers?: RackLayer[]
   totalRecords?: number
   initialPage?: number
   initialSearch?: string
@@ -75,7 +85,7 @@ export default function CuttersClient({
   const [form, setForm] = useState({
     cutter_no: '',
     cutter_name: '',
-    cutter_type: 'INLINE',
+    cutter_type: 'SEPARATE',
     cavity_count: '',
     pitch_mm: '' as string | number,
     cutter_length_mm: '' as string | number,
@@ -83,6 +93,8 @@ export default function CuttersClient({
     cutter_height_mm: '' as string | number,
     base_type: 'WOOD_12MM',
     company_id: '',
+    keeper_company_id: '',
+    current_rack_layer_id: '',
     design_revision_id: '',
     usage_status: 'ACTIVE',
     notes: ''
@@ -98,7 +110,7 @@ export default function CuttersClient({
       setForm({
         cutter_no: cutter.cutter_no || '',
         cutter_name: cutter.cutter_name || '',
-        cutter_type: cutter.cutter_type || 'INLINE',
+        cutter_type: cutter.cutter_type || 'SEPARATE',
         cavity_count: cutter.cavity_count || '',
         pitch_mm: cutter.pitch_mm || '',
         cutter_length_mm: cutter.cutter_length_mm || '',
@@ -106,6 +118,8 @@ export default function CuttersClient({
         cutter_height_mm: cutter.cutter_height_mm || '',
         base_type: cutter.base_type || 'WOOD_12MM',
         company_id: cutter.company_id || '',
+        keeper_company_id: cutter.keeper_company_id || '',
+        current_rack_layer_id: cutter.current_rack_layer_id || '',
         design_revision_id: cutter.design_revision_id || '',
         usage_status: cutter.usage_status || 'ACTIVE',
         notes: cutter.notes || ''
@@ -115,7 +129,7 @@ export default function CuttersClient({
       setForm({
         cutter_no: '',
         cutter_name: '',
-        cutter_type: 'INLINE',
+        cutter_type: 'SEPARATE',
         cavity_count: '',
         pitch_mm: '',
         cutter_length_mm: '',
@@ -123,6 +137,8 @@ export default function CuttersClient({
         cutter_height_mm: '',
         base_type: 'WOOD_12MM',
         company_id: '',
+        keeper_company_id: '',
+        current_rack_layer_id: '',
         design_revision_id: '',
         usage_status: 'ACTIVE',
         notes: ''
@@ -142,6 +158,8 @@ export default function CuttersClient({
       cutter_width_mm: form.cutter_width_mm ? Number(form.cutter_width_mm) : null,
       cutter_height_mm: form.cutter_height_mm ? Number(form.cutter_height_mm) : null,
       company_id: form.company_id || null,
+      keeper_company_id: form.keeper_company_id || null,
+      current_rack_layer_id: form.current_rack_layer_id || null,
       design_revision_id: form.design_revision_id || null,
       cutter_id: editingCutter?.cutter_id
     }
@@ -349,6 +367,32 @@ export default function CuttersClient({
                     <option value="">{t('commonCutter')}</option>
                     {moldDesigns.map(m => (
                       <option key={m.design_id} value={m.design_id}>{m.design_code}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[12px] font-semibold text-[var(--text-muted)]">{t('keeperCompany')}</label>
+                  <select 
+                    value={form.keeper_company_id}
+                    onChange={e => setForm({...form, keeper_company_id: e.target.value})}
+                    className="form-input w-full text-[13px]"
+                  >
+                    <option value="">{t('unspecified')}</option>
+                    {companies.map(c => (
+                      <option key={c.company_id} value={c.company_id}>{c.company_short_name || c.company_name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[12px] font-semibold text-[var(--text-muted)]">{t('rackLayer')}</label>
+                  <select 
+                    value={form.current_rack_layer_id}
+                    onChange={e => setForm({...form, current_rack_layer_id: e.target.value})}
+                    className="form-input w-full text-[13px]"
+                  >
+                    <option value="">{t('unspecified')}</option>
+                    {rackLayers.map(r => (
+                      <option key={r.id} value={r.id}>{r.rack_code ? `${r.rack_code} (${r.layer_code})` : r.layer_code}</option>
                     ))}
                   </select>
                 </div>

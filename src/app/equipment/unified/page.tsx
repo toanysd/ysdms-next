@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import {
   Search, X, Loader2, ArrowLeft, ArrowUpFromLine,
   ArrowUp, ArrowDown, ArrowUpDown, Layers, FileText,
-  Trash2, Pencil, PenTool
+  Trash2, Pencil, PenTool, Plus
 } from 'lucide-react'
 import { Pagination } from '@/components/ui/Pagination'
 import { SearchSuggestions } from '@/components/ui/SearchSuggestions'
@@ -14,8 +14,9 @@ import { useSearchHistory } from '@/hooks/useSearchHistory'
 import Link from 'next/link'
 import { useTranslations } from 'next-intl'
 import EquipmentDetailModal from '@/app/equipment/_components/detail-modal/EquipmentDetailModal'
+import { MoldModal } from '@/components/equipment/MoldModal'
 
-type EquipmentType = 'ALL' | 'MOLD' | 'CUTTER' | 'WATER_BASE' | 'PRESSURE_BASE' | 'FRAME' | 'STACKING'
+type EquipmentType = 'ALL' | 'MOLD' | 'CUTTER' | 'WATER_BASE' | 'PRESSURE_BASE' | 'FRAME' | 'STACKING' | 'PLUG'
 
 type Equipment = {
   equipment_id: string
@@ -65,8 +66,9 @@ function UnifiedEquipmentPageContent() {
   const [showSuggestions, setShowSuggestions] = useState(false)
   const { history, addToHistory, removeFromHistory, clearHistory } = useSearchHistory('search_equipment_unified')
 
-  // Selected Equipment Modal
+  // Selected Equipment Modal & Create Modal
   const [selectedEquipId, setSelectedEquipId] = useState<string | null>(null)
+  const [createModalOpen, setCreateModalOpen] = useState(false)
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -164,6 +166,7 @@ function UnifiedEquipmentPageContent() {
     if (type === 'CUTTER_SEPARATE' || type === 'CUTTER_INLINE') return 'badge--warning'
     if (type === 'WATER_BASE') return 'badge--success'
     if (type === 'PRESSURE_BASE') return 'badge--error'
+    if (type === 'PLUG') return 'badge--info'
     return 'badge--neutral'
   }
 
@@ -210,6 +213,7 @@ function UnifiedEquipmentPageContent() {
       case 'PRESSURE_BASE': return t('typeLabels.PRESSURE_BASE')
       case 'FRAME': return t('typeLabels.FRAME')
       case 'STACKING': return t('typeLabels.STACKING')
+      case 'PLUG': return t('typeLabels.PLUG')
       default: return type
     }
   }
@@ -234,6 +238,7 @@ function UnifiedEquipmentPageContent() {
     { type: 'PRESSURE_BASE', labelKey: 'filterPressureBase' },
     { type: 'FRAME', labelKey: 'filterFrame' },
     { type: 'STACKING', labelKey: 'filterStacking' },
+    { type: 'PLUG', labelKey: 'filterPlug' },
   ]
 
   return (
@@ -256,6 +261,14 @@ function UnifiedEquipmentPageContent() {
             </div>
           </div>
         </div>
+        <button
+          onClick={() => setCreateModalOpen(true)}
+          className="btn btn-primary"
+          style={{ height: 28, padding: '0 10px', gap: 4, fontSize: 11 }}
+        >
+          <Plus size={13} />
+          <span style={{ fontFamily: 'var(--font-jp)' }}>{t('newRegister')}</span>
+        </button>
       </div>
 
       {/* Filters */}
@@ -411,6 +424,16 @@ function UnifiedEquipmentPageContent() {
         equipmentId={selectedEquipId}
         onUpdateSuccess={fetchEquipment}
         onNavigate={(id) => setSelectedEquipId(id)}
+      />
+
+      {/* Create Equipment Modal */}
+      <MoldModal
+        isOpen={createModalOpen}
+        onClose={() => setCreateModalOpen(false)}
+        onSuccess={() => fetchEquipment()}
+        initialData={{
+          equipment_type: (filterType !== 'ALL' && filterType !== 'CUTTER') ? filterType : 'MOLD'
+        }}
       />
     </div>
   )

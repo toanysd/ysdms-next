@@ -1233,7 +1233,9 @@
     "addNew": "新規抜型登録",
     "dimensions": "寸法 (L x W x H)",
     "edit": "編集",
-    "delete": "削除"
+    "delete": "削除",
+    "keeperCompany": "保管先会社",
+    "rackLayer": "保管棚番"
   },
   "Planning": {
     "Toolbar": {
@@ -1973,6 +1975,7 @@
     "title": "設備統合管理",
     "subtitle": "金型・抜型・水冷盤等の統合検索・管理",
     "searchPlaceholder": "コード・名称で検索...",
+    "newRegister": "新規設備登録",
     "filterAll": "すべて",
     "filterMold": "金型",
     "filterCutter": "抜型",
@@ -1980,6 +1983,7 @@
     "filterPressureBase": "圧空盤",
     "filterFrame": "枠",
     "filterStacking": "熱かしめ",
+    "filterPlug": "プラグ",
     "cols": {
       "code": "コード",
       "name": "名称",
@@ -1998,7 +2002,8 @@
       "WATER_BASE": "水冷盤",
       "PRESSURE_BASE": "圧空盤",
       "FRAME": "枠",
-      "STACKING": "熱かしめ"
+      "STACKING": "熱かしめ",
+      "PLUG": "プラグ"
     },
     "statusLabels": {
       "NORMAL": "正常",
@@ -2014,6 +2019,15 @@
     "details": "詳細"
   },
   "Equipment": {
+    "equipmentTypeLabel": "設備種別",
+    "keeperCompanyLabel": "保管先会社",
+    "rackLayerLabel": "保管棚番",
+    "typeMold": "金型 (MOLD)",
+    "typeWaterBase": "水冷盤 (WATER_BASE)",
+    "typePressureBase": "圧空盤 (PRESSURE_BASE)",
+    "typeFrame": "枠 (FRAME)",
+    "typeStacking": "熱かしめ (STACKING)",
+    "typePlug": "プラグ (PLUG)",
     "statusPending": "未着手",
     "statusInProgress": "進行中",
     "statusCompleted": "完了",

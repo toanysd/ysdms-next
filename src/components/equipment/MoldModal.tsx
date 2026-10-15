@@ -20,12 +20,16 @@ const getStorageLabels = (t: any) => ({
 })
 
 export type PhysicalMoldFormData = {
+  equipment_type?: string
   equipment_code: string
   display_name: string
   device_status: string
   usage_status: string
-  mold_revision_id: string | null
+  mold_revision_id?: string | null
+  design_revision_id?: string | null
   mold_revision_label?: string | null
+  keeper_company_id?: string | null
+  current_rack_layer_id?: string | null
   actual_length_mm: string
   actual_width_mm: string
   actual_height_mm: string
@@ -53,12 +57,15 @@ export function MoldModal({ isOpen, onClose, onSuccess, editingId, initialData }
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  const [formEquipmentType, setFormEquipmentType] = useState(initialData?.equipment_type || 'MOLD')
   const [formSystemCode, setFormSystemCode] = useState(initialData?.equipment_code || '')
   const [formDisplayName, setFormDisplayName] = useState(initialData?.display_name || '')
   const [formStatus, setFormStatus] = useState(initialData?.device_status || 'ACTIVE')
   const [formUsage, setFormUsage] = useState(initialData?.usage_status || 'IN_STOCK')
-  const [formRevisionId, setFormRevisionId] = useState(initialData?.mold_revision_id || '')
+  const [formRevisionId, setFormRevisionId] = useState(initialData?.design_revision_id || initialData?.mold_revision_id || '')
   const [formRevisionLabel, setFormRevisionLabel] = useState(initialData?.mold_revision_label || '')
+  const [formKeeperCompanyId, setFormKeeperCompanyId] = useState(initialData?.keeper_company_id || '')
+  const [formRackLayerId, setFormRackLayerId] = useState(initialData?.current_rack_layer_id || '')
   const [formLength, setFormLength] = useState(initialData?.actual_length_mm || '')
   const [formWidth, setFormWidth] = useState(initialData?.actual_width_mm || '')
   const [formHeight, setFormHeight] = useState(initialData?.actual_height_mm || '')
@@ -67,16 +74,43 @@ export function MoldModal({ isOpen, onClose, onSuccess, editingId, initialData }
   const [formPieceCount, setFormPieceCount] = useState(initialData?.piece_count || '1')
   const [formNotes, setFormNotes] = useState(initialData?.notes || '')
 
+  const [companies, setCompanies] = useState<{ company_id: string; company_name: string; company_code: string | null }[]>([])
+  const [rackLayers, setRackLayers] = useState<{ id: string; layer_code: string; rack_code?: string }[]>([])
+
+  useEffect(() => {
+    if (!isOpen) return
+    const fetchMasters = async () => {
+      const [{ data: compData }, { data: rackData }] = await Promise.all([
+        supabase.from('companies').select('company_id, company_name, company_code').eq('is_active', true).order('company_code', { ascending: true }).limit(500),
+        supabase.from('rack_layers').select('id, layer_code, racks(rack_code)').order('layer_code', { ascending: true }).limit(500),
+      ])
+      if (compData) setCompanies(compData)
+      if (rackData) {
+        setRackLayers(rackData.map((r: any) => ({
+          id: r.id,
+          layer_code: r.layer_code,
+          rack_code: r.racks?.rack_code
+        })))
+      }
+    }
+    fetchMasters()
+  }, [isOpen, supabase])
+
   useEffect(() => {
     if (isOpen && editingId) {
       // Fetch existing data
       const fetchMold = async () => {
-        const { data, error } = await supabase.from('equipment').select('*').eq('equipment_id', editingId).single()
+        const { data } = await supabase.from('equipment').select('*, design_revisions(design_code)').eq('equipment_id', editingId).single()
         if (data) {
+          setFormEquipmentType(data.equipment_type || 'MOLD')
           setFormSystemCode(data.equipment_code || '')
           setFormDisplayName(data.display_name || '')
           setFormStatus(data.device_status || 'ACTIVE')
           setFormUsage(data.usage_status || 'IN_STOCK')
+          setFormRevisionId(data.design_revision_id || '')
+          setFormRevisionLabel((data.design_revisions as any)?.design_code || data.design_revision_id || '')
+          setFormKeeperCompanyId(data.keeper_company_id || '')
+          setFormRackLayerId(data.current_rack_layer_id || '')
           setFormLength(data.actual_length_mm || '')
           setFormWidth(data.actual_width_mm || '')
           setFormHeight(data.actual_height_mm || '')
@@ -84,15 +118,19 @@ export function MoldModal({ isOpen, onClose, onSuccess, editingId, initialData }
           setFormMoldType(data.mold_type || 'M')
           setFormPieceCount(data.piece_count ? data.piece_count.toString() : '1')
           setFormNotes(data.notes || '')
-          // optionally fetch revision label
         }
       }
       fetchMold()
     } else if (isOpen && initialData) {
+      setFormEquipmentType(initialData.equipment_type || 'MOLD')
       setFormSystemCode(initialData.equipment_code || '')
       setFormDisplayName(initialData.display_name || '')
       setFormStatus(initialData.device_status || 'ACTIVE')
       setFormUsage(initialData.usage_status || 'IN_STOCK')
+      setFormRevisionId(initialData.design_revision_id || initialData.mold_revision_id || '')
+      setFormRevisionLabel(initialData.mold_revision_label || '')
+      setFormKeeperCompanyId(initialData.keeper_company_id || '')
+      setFormRackLayerId(initialData.current_rack_layer_id || '')
       setFormLength(initialData.actual_length_mm || '')
       setFormWidth(initialData.actual_width_mm || '')
       setFormHeight(initialData.actual_height_mm || '')
@@ -116,11 +154,14 @@ export function MoldModal({ isOpen, onClose, onSuccess, editingId, initialData }
     }
 
     const payload: any = {
-      equipment_type: 'MOLD',
+      equipment_type: formEquipmentType || 'MOLD',
       equipment_code: formSystemCode.trim(),
       display_name: formDisplayName.trim() || formSystemCode.trim(),
       device_status: formStatus,
       usage_status: formUsage,
+      design_revision_id: formRevisionId || null,
+      keeper_company_id: formKeeperCompanyId || null,
+      current_rack_layer_id: formRackLayerId || null,
       actual_length_mm: formLength || null,
       actual_width_mm: formWidth || null,
       actual_height_mm: formHeight || null,
@@ -129,8 +170,6 @@ export function MoldModal({ isOpen, onClose, onSuccess, editingId, initialData }
       piece_count: formPieceCount ? parseInt(formPieceCount) : null,
       notes: formNotes || null,
     }
-    if (formRevisionId) payload.mold_revision_id = formRevisionId
-    else payload.mold_revision_id = null
 
     if (editingId) {
       const { error: err } = await supabase
@@ -171,6 +210,19 @@ export function MoldModal({ isOpen, onClose, onSuccess, editingId, initialData }
           <div className="flex gap-3">
             <div className="flex-1">
               <label className="block text-[11px] font-bold text-slate-600 mb-1" style={{ fontFamily: 'var(--font-jp)' }}>
+                {t('Equipment.equipmentTypeLabel')}
+              </label>
+              <select value={formEquipmentType} onChange={e => setFormEquipmentType(e.target.value)} className="form-input w-full" style={{ fontSize: 12 }}>
+                <option value="MOLD">{t('Equipment.typeMold')}</option>
+                <option value="WATER_BASE">{t('Equipment.typeWaterBase')}</option>
+                <option value="PRESSURE_BASE">{t('Equipment.typePressureBase')}</option>
+                <option value="FRAME">{t('Equipment.typeFrame')}</option>
+                <option value="STACKING">{t('Equipment.typeStacking')}</option>
+                <option value="PLUG">{t('Equipment.typePlug')}</option>
+              </select>
+            </div>
+            <div className="flex-1">
+              <label className="block text-[11px] font-bold text-slate-600 mb-1" style={{ fontFamily: 'var(--font-jp)' }}>
                 {t('Equipment.systemCode')} <span className="font-normal text-[9px] text-slate-400">{t('Equipment.systemCodeHint')}</span>
               </label>
               <input value={formSystemCode} onChange={e => setFormSystemCode(e.target.value)} className="form-input w-full" style={{ fontSize: 12 }} />
@@ -198,6 +250,35 @@ export function MoldModal({ isOpen, onClose, onSuccess, editingId, initialData }
               </label>
               <select value={formUsage} onChange={e => setFormUsage(e.target.value)} className="form-input w-full" style={{ fontSize: 12 }}>
                 {Object.keys(storageLabels).map(k => <option key={k} value={k}>{(storageLabels as any)[k]}</option>)}
+              </select>
+            </div>
+          </div>
+
+          <div className="flex gap-3">
+            <div className="flex-1">
+              <label className="block text-[11px] font-bold text-slate-600 mb-1" style={{ fontFamily: 'var(--font-jp)' }}>
+                {t('Equipment.keeperCompanyLabel')}
+              </label>
+              <select value={formKeeperCompanyId} onChange={e => setFormKeeperCompanyId(e.target.value)} className="form-input w-full" style={{ fontSize: 12 }}>
+                <option value="">—</option>
+                {companies.map(c => (
+                  <option key={c.company_id} value={c.company_id}>
+                    {c.company_code ? `${c.company_code} - ${c.company_name}` : c.company_name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="flex-1">
+              <label className="block text-[11px] font-bold text-slate-600 mb-1" style={{ fontFamily: 'var(--font-jp)' }}>
+                {t('Equipment.rackLayerLabel')}
+              </label>
+              <select value={formRackLayerId} onChange={e => setFormRackLayerId(e.target.value)} className="form-input w-full" style={{ fontSize: 12 }}>
+                <option value="">—</option>
+                {rackLayers.map(r => (
+                  <option key={r.id} value={r.id}>
+                    {r.rack_code ? `${r.rack_code} (${r.layer_code})` : r.layer_code}
+                  </option>
+                ))}
               </select>
             </div>
           </div>

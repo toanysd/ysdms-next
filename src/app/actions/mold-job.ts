@@ -139,6 +139,42 @@ export interface JobStepRow {
 export async function createMoldJobAction(input: CreateMoldJobInput) {
     const supabase = await createClient()
 
+    let resolvedDesignRevId = input.design_revision_id || null
+    let resolvedProductId = input.product_id || input.mold_master_id || null
+    let resolvedCompanyId = input.company_id || null
+
+    if (input.equipment_id && (!resolvedDesignRevId || !resolvedCompanyId)) {
+        const { data: eqRow } = await supabase
+            .from('equipment')
+            .select('design_revision_id, company_id')
+            .eq('equipment_id', input.equipment_id)
+            .single()
+        if (eqRow) {
+            if (!resolvedDesignRevId && eqRow.design_revision_id) {
+                resolvedDesignRevId = eqRow.design_revision_id
+            }
+            if (!resolvedCompanyId && eqRow.company_id) {
+                resolvedCompanyId = eqRow.company_id
+            }
+        }
+    }
+
+    if (resolvedDesignRevId && (!resolvedProductId || !resolvedCompanyId)) {
+        const { data: revRow } = await supabase
+            .from('design_revisions')
+            .select('product_id, company_id')
+            .eq('revision_id', resolvedDesignRevId)
+            .single()
+        if (revRow) {
+            if (!resolvedProductId && revRow.product_id) {
+                resolvedProductId = revRow.product_id
+            }
+            if (!resolvedCompanyId && revRow.company_id) {
+                resolvedCompanyId = revRow.company_id
+            }
+        }
+    }
+
     // 1. Insert job with correct column names
     const { data: job, error: jobError } = await supabase
         .from('jobs')
@@ -146,10 +182,10 @@ export async function createMoldJobAction(input: CreateMoldJobInput) {
             job_code: input.job_code,
             job_name: input.job_name,
             job_type_id: input.job_type_id,
-            product_id: input.product_id || input.mold_master_id || null, // fallback from deprecated mold_master_id
+            product_id: resolvedProductId,
             equipment_id: input.equipment_id || null,
-            design_revision_id: input.design_revision_id || null,
-            company_id: input.company_id || null,
+            design_revision_id: resolvedDesignRevId,
+            company_id: resolvedCompanyId,
             responsible_id: input.responsible_id || null,
             mold_deadline: input.mold_deadline || null,
             ship_date: input.ship_date || null,
@@ -168,13 +204,13 @@ export async function createMoldJobAction(input: CreateMoldJobInput) {
 
     // 2. Fetch standard process times - filter by track(s)
     //    Only auto-generate steps for Mold Jobs (design_revision_id is present)
-    if (input.design_revision_id) {
+    if (resolvedDesignRevId) {
         // MOLD track always; add FINISH always
         const tracks = ['MOLD', 'FINISH']
         
         let hasPlug = input.has_plug !== false
         // Override with plug_type if available
-        const { data: rev } = await supabase.from('design_revisions').select('plug_type').eq('revision_id', input.design_revision_id).single()
+        const { data: rev } = await supabase.from('design_revisions').select('plug_type').eq('revision_id', resolvedDesignRevId).single()
         if (rev && rev.plug_type) {
             hasPlug = (rev.plug_type !== 'Không Plug')
         }

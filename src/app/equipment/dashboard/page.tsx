@@ -54,7 +54,7 @@ export default function ToolingDashboard() {
       }
     }
 
-    const today = new Date('2026-07-30')
+    const today = new Date()
     const deadline = new Date(deadlineStr)
     const diffTime = deadline.getTime() - today.getTime()
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
@@ -123,7 +123,7 @@ export default function ToolingDashboard() {
             <span>{t('ganttChart')}</span>
           </Link>
           <Link
-            href="/equipment/jobs/quick-create"
+            href="/equipment/jobs"
             className="btn btn-secondary"
             style={{ height: 26, padding: '0 10px', gap: 4, fontSize: 11, textDecoration: 'none' }}
           >

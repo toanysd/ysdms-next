@@ -54,15 +54,17 @@ export default async function CuttersPage({
     cutter_id: c.equipment_id,
     cutter_no: c.equipment_code,
     cutter_name: c.display_name,
-    cutter_type: c.sub_type,
+    cutter_type: c.equipment_type === 'CUTTER_INLINE' ? 'INLINE' : (c.sub_type || 'SEPARATE'),
     cutter_length_mm: c.actual_length_mm ? Number(c.actual_length_mm) : null,
     cutter_width_mm: c.actual_width_mm ? Number(c.actual_width_mm) : null,
     cutter_height_mm: c.actual_height_mm ? Number(c.actual_height_mm) : null,
+    keeper_company_id: c.keeper_company_id || null,
+    current_rack_layer_id: c.current_rack_layer_id || null,
     companies: c.companies ? { company_short_name: c.companies.company_code } : null,
     mold_designs: c.design_revisions ? { design_code: c.design_revisions.design_code } : null
   }))
 
-  // 2. Fetch Companies (Customers)
+  // 2. Fetch Companies (Customers & Keepers)
   const { data: rawCompanies } = await supabase
     .from('companies')
     .select('company_id, company_name, company_code, company_type')
@@ -70,11 +72,10 @@ export default async function CuttersPage({
     .order('company_code', { ascending: true })
 
   const companies = (rawCompanies || [])
-    .filter((c: any) => c.company_type?.includes('CUSTOMER'))
     .map(c => ({
       company_id: c.company_id,
       company_name: c.company_name,
-      company_short_name: c.company_code
+      company_short_name: c.company_code || c.company_name
     }))
 
   // 3. Fetch Mold Designs
@@ -88,11 +89,24 @@ export default async function CuttersPage({
     design_code: d.design_code
   }))
 
+  // 4. Fetch Rack Layers
+  const { data: rawRacks } = await supabase
+    .from('rack_layers')
+    .select('id, layer_code, racks(rack_code)')
+    .order('layer_code', { ascending: true })
+
+  const rackLayers = (rawRacks || []).map((r: any) => ({
+    id: r.id,
+    layer_code: r.layer_code,
+    rack_code: r.racks?.rack_code
+  }))
+
   return (
     <CuttersClient 
       initialCutters={cutters || []} 
       companies={companies || []}
       moldDesigns={moldDesigns || []}
+      rackLayers={rackLayers}
       totalRecords={count || 0}
       initialPage={page}
       initialSearch={q}

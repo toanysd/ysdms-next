@@ -22,6 +22,8 @@ type DesignRevision = {
   revision_id: string
   design_code: string
   revision_number: number | null
+  product_id?: string | null
+  company_id?: string | null
 }
 
 type Props = {
@@ -80,7 +82,7 @@ export function CreateJobModal({
       if (productId) {
         const { data: designs } = await supabase
           .from('design_revisions')
-          .select('revision_id, design_code, revision_number')
+          .select('revision_id, design_code, revision_number, product_id, company_id')
           .eq('product_id', productId)
           .order('revision_number', { ascending: false })
         if (designs) {
@@ -99,7 +101,7 @@ export function CreateJobModal({
         if (mId) {
           const { data: designs } = await supabase
             .from('design_revisions')
-            .select('revision_id, design_code, revision_number')
+            .select('revision_id, design_code, revision_number, product_id, company_id')
             .eq('product_id', mId)
             .order('revision_number', { ascending: false })
           if (designs) {
@@ -111,7 +113,7 @@ export function CreateJobModal({
         // Global case - fetch recent
         const { data: designs } = await supabase
           .from('design_revisions')
-          .select('revision_id, design_code, revision_number')
+          .select('revision_id, design_code, revision_number, product_id, company_id')
           .order('created_at', { ascending: false })
           .limit(200)
         if (designs) {
@@ -266,10 +268,10 @@ export function CreateJobModal({
     setSaving(true)
     try {
       // Find the design code to generate job name
-      const design = designRevisions.find(d => d.revision_id === selectedDesignId)
+      const selectedDesignObj = designRevisions.find(d => d.revision_id === selectedDesignId)
       const jType = jobTypes.find(t => t.job_type_id === jobTypeId)
       
-      const designCode = jobCategory === 'MOLD' && design ? design.design_code : 'GEN'
+      const designCode = jobCategory === 'MOLD' && selectedDesignObj ? selectedDesignObj.design_code : 'GEN'
       const jTypeName = jType?.job_type_name_ja || 'Job'
       
       const autoJobCode = `JOB-${designCode}-${Date.now().toString().slice(-4)}`
@@ -279,7 +281,8 @@ export function CreateJobModal({
         job_code: autoJobCode,
         job_name: autoJobName,
         job_type_id: jobTypeId,
-        product_id: jobCategory === 'MOLD' ? (productId || null) : null,
+        product_id: jobCategory === 'MOLD' ? (productId || selectedDesignObj?.product_id || null) : null,
+        company_id: jobCategory === 'MOLD' ? (selectedDesignObj?.company_id || null) : null,
         equipment_id: jobCategory === 'MOLD' ? (selectedMoldId || null) : null,
         design_revision_id: jobCategory === 'MOLD' ? selectedDesignId : undefined,
         notes: notes || null

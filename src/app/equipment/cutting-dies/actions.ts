@@ -15,6 +15,8 @@ export async function upsertCutter(payload: {
   cutter_height_mm?: number | null
   base_type?: string
   company_id?: string | null
+  keeper_company_id?: string | null
+  current_rack_layer_id?: string | null
   design_revision_id?: string | null
   usage_status: string
   notes?: string
@@ -25,12 +27,14 @@ export async function upsertCutter(payload: {
     const data = {
       equipment_code: payload.cutter_no,
       display_name: payload.cutter_name || payload.cutter_no,
-      equipment_type: 'CUTTER_SEPARATE',
+      equipment_type: payload.cutter_type === 'INLINE' ? 'CUTTER_INLINE' : 'CUTTER_SEPARATE',
       sub_type: payload.cutter_type,
       actual_length_mm: payload.cutter_length_mm ? String(payload.cutter_length_mm) : null,
       actual_width_mm: payload.cutter_width_mm ? String(payload.cutter_width_mm) : null,
       actual_height_mm: payload.cutter_height_mm ? String(payload.cutter_height_mm) : null,
       company_id: payload.company_id || null,
+      keeper_company_id: payload.keeper_company_id || null,
+      current_rack_layer_id: payload.current_rack_layer_id || null,
       design_revision_id: payload.design_revision_id || null,
       usage_status: payload.usage_status,
       notes: payload.notes || null,

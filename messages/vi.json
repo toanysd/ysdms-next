@@ -1233,7 +1233,9 @@
     "addNew": "Đăng ký dao cắt mới",
     "dimensions": "Kích thước (D x R x C)",
     "edit": "Chỉnh sửa",
-    "delete": "Xóa"
+    "delete": "Xóa",
+    "keeperCompany": "Đơn vị giữ dao",
+    "rackLayer": "Vị trí kệ lưu kho"
   },
   "Quotations": {
     "title": "Báo Giá (Quotations)",
@@ -1973,6 +1975,7 @@
     "title": "Quản lý Thiết bị Thống nhất",
     "subtitle": "Tìm kiếm và quản lý tổng hợp: Khuôn, Dao cắt, Đế làm mát...",
     "searchPlaceholder": "Tìm theo mã hoặc tên...",
+    "newRegister": "Đăng ký thiết bị mới",
     "filterAll": "Tất cả",
     "filterMold": "Khuôn",
     "filterCutter": "Dao cắt",
@@ -1980,6 +1983,7 @@
     "filterPressureBase": "Đế áp lực",
     "filterFrame": "Khung",
     "filterStacking": "Đầu hàn",
+    "filterPlug": "Plug",
     "cols": {
       "code": "Mã",
       "name": "Tên",
@@ -1998,7 +2002,8 @@
       "WATER_BASE": "Đế làm mát",
       "PRESSURE_BASE": "Đế áp lực",
       "FRAME": "Khung",
-      "STACKING": "Đầu hàn"
+      "STACKING": "Đầu hàn",
+      "PLUG": "Plug"
     },
     "statusLabels": {
       "NORMAL": "Bình thường",
@@ -2014,6 +2019,15 @@
     "details": "Chi tiết"
   },
   "Equipment": {
+    "equipmentTypeLabel": "Loại thiết bị",
+    "keeperCompanyLabel": "Đơn vị giữ khuôn",
+    "rackLayerLabel": "Vị trí kệ lưu kho",
+    "typeMold": "Khuôn (MOLD)",
+    "typeWaterBase": "Đế làm mát (WATER_BASE)",
+    "typePressureBase": "Đế áp lực (PRESSURE_BASE)",
+    "typeFrame": "Khung (FRAME)",
+    "typeStacking": "Đầu hàn (STACKING)",
+    "typePlug": "Plug (PLUG)",
     "statusPending": "Chưa bắt đầu",
     "statusInProgress": "Đang làm",
     "statusCompleted": "Hoàn thành",
