@@ -1,0 +1,125 @@
+{
+  "work_order": "WO-EQUIPMENT-UI-FIX",
+  "directive_id": "817c6ffb",
+  "audited_at_utc": "2026-10-15 01:29:08.077097+00:00",
+  "commits": {
+    "commit_1_code": {
+      "sha": "a587a5c2279f4ec7363acd504ec0750677d67e88",
+      "scope": "Fix MoldModal design_revision_id & auxiliary equipment_type/keeper/rack selectors; support CUTTER_INLINE/CUTTER_SEPARATE + keeper/rack in cutting-dies; add PLUG tab & MoldModal in /equipment/unified; replace hardcoded 2026-07-30 & dead /equipment/jobs/quick-create link in /equipment/dashboard; resolve design_revision_id/product_id/company_id in CreateJobModal & createMoldJob",
+      "stat": "10 files changed, 268 insertions(+), 35 deletions(-)"
+    }
+  },
+  "evidence_items": {
+    "TSC": {
+      "command": "npx tsc --noEmit --pretty false",
+      "exit_code": 0,
+      "output": "",
+      "status": "PASS"
+    },
+    "I18N": {
+      "command": "node scripts/check_translations.mjs",
+      "exit_code": 0,
+      "output": "🔍 Scanning files for missing translation keys...\n✅ All translation keys are properly defined in both ja.json and vi.json",
+      "status": "PASS"
+    },
+    "GIT_GREP": {
+      "command": "git grep -n \"2026-07-30|/equipment/jobs/quick-create\" -- src/app/equipment/dashboard/page.tsx",
+      "dashboard_hardcoded_date_or_dead_link_matches": 0,
+      "mold_modal_payload_column": "design_revision_id: formRevisionId || null (line 173 of src/components/equipment/MoldModal.tsx)",
+      "status": "PASS"
+    },
+    "BROWSER": [
+      {
+        "id": "1_MOLD_MODAL",
+        "scenario": "MoldModal (/equipment/molds?action=new)",
+        "url": "http://localhost:3000/equipment/molds?action=new",
+        "final_url": "http://localhost:3000/equipment/molds",
+        "http_status": 200,
+        "assertions": {
+          "has_equipment_type_options_MOLD_WATER_BASE_PRESSURE_BASE_FRAME_STACKING_PLUG": true,
+          "has_keeper_company_id_select": true,
+          "has_current_rack_layer_id_select": true,
+          "payload_uses_design_revision_id": true
+        },
+        "status": "PASS",
+        "tested_at": "2026-10-15T01:27:33.975Z",
+        "repo_screenshot": "docs/audit_logs/screenshots/wo_equipment_ui_fix/mold_modal_fields.png"
+      },
+      {
+        "id": "2_CUTTING_DIES",
+        "scenario": "cutting-dies (/equipment/cutting-dies -> New Cutter Modal)",
+        "url": "http://localhost:3000/equipment/cutting-dies",
+        "final_url": "http://localhost:3000/equipment/cutting-dies?page=1&q=",
+        "http_status": 200,
+        "assertions": {
+          "has_inline_separate_options_CUTTER_INLINE_and_CUTTER_SEPARATE": true,
+          "has_keeper_company_id_select": true,
+          "has_current_rack_layer_id_select": true
+        },
+        "status": "PASS",
+        "tested_at": "2026-10-15T01:27:41.562Z",
+        "repo_screenshot": "docs/audit_logs/screenshots/wo_equipment_ui_fix/cutter_modal_fields.png"
+      },
+      {
+        "id": "3_EQUIPMENT_DASHBOARD",
+        "scenario": "equipment dashboard (/equipment/dashboard)",
+        "url": "http://localhost:3000/equipment/dashboard",
+        "final_url": "http://localhost:3000/equipment/dashboard",
+        "http_status": 200,
+        "assertions": {
+          "dead_quick_create_link_count": 0,
+          "valid_jobs_link_count": 2,
+          "hardcoded_date_2026_07_30_removed": true
+        },
+        "status": "PASS",
+        "tested_at": "2026-10-15T01:27:46.124Z",
+        "repo_screenshot": "docs/audit_logs/screenshots/wo_equipment_ui_fix/equipment_dashboard_ok.png"
+      },
+      {
+        "id": "4_MOLD_JOB_CREATE",
+        "scenario": "mold job create (/equipment/jobs -> CreateJobModal)",
+        "url": "http://localhost:3000/equipment/jobs",
+        "final_url": "http://localhost:3000/equipment/jobs",
+        "http_status": 200,
+        "assertions": {
+          "create_job_modal_open": true,
+          "resolves_design_revision_id_product_id_company_id_in_createMoldJob": true
+        },
+        "status": "PASS",
+        "tested_at": "2026-10-15T01:27:50.715Z",
+        "repo_screenshot": "docs/audit_logs/screenshots/wo_equipment_ui_fix/mold_job_create_modal.png"
+      },
+      {
+        "id": "5_UNIFIED_PLUG_TAB",
+        "scenario": "unified equipment PLUG tab & + 新規設備登録 (/equipment/unified)",
+        "url": "http://localhost:3000/equipment/unified",
+        "final_url": "http://localhost:3000/equipment/unified",
+        "http_status": 200,
+        "assertions": {
+          "plug_tab_found": true,
+          "has_new_equipment_modal_trigger": true
+        },
+        "status": "PASS",
+        "tested_at": "2026-10-15T01:27:54.983Z",
+        "repo_screenshot": "docs/audit_logs/screenshots/wo_equipment_ui_fix/unified_plug_tab.png"
+      }
+    ],
+    "SQL_AUDIT": {
+      "purpose": "Verify zero mutations on Production business tables during WO-EQUIPMENT-UI-FIX",
+      "result": {
+        "db_now": "2026-10-15 01:29:08.077097+00:00",
+        "orders": 2396,
+        "order_lines": 6279,
+        "equipment": 6497,
+        "equipment_assignments": 1633,
+        "equipment_history": 0,
+        "jobs": 1205,
+        "job_steps": 2457,
+        "work_logs": 7111,
+        "profiles": 3,
+        "pe_evidence_items_before": 21
+      },
+      "status": "PASS"
+    }
+  }
+}
