@@ -1,0 +1,1094 @@
+{
+  "work_order": "WO-MOLD-SYNC-WAVE2-SPEC-AND-WAVE1-QA",
+  "verified_at_utc": "2026-10-15 03:14:09.158162+00",
+  "verified_at_jst": "2026-10-15 12:14:07 JST",
+  "db_mutations_executed": 0,
+  "part_1_wave1_post_load_quality_audit": {
+    "fk_integrity_10_checks": {
+      "broken_rl_rack_fk": 0,
+      "broken_prod_comp_fk": 0,
+      "broken_des_prod_fk": 0,
+      "broken_des_comp_fk": 0,
+      "broken_eq_des_fk": 0,
+      "broken_eq_comp_fk": 0,
+      "broken_eq_keeper_fk": 0,
+      "broken_eq_rl_fk": 0,
+      "broken_ea_primary_fk": 0,
+      "broken_ea_related_fk": 0
+    },
+    "equipment_assignments_quality": {
+      "total_assignments": 2970,
+      "distinct_pairs": 2970,
+      "wave1_inserted": 1337,
+      "wave1_set_member": 265,
+      "wave1_shared": 1072,
+      "self_links": 0,
+      "reverse_pair_collisions": 0,
+      "duplicate_pairs": 0
+    },
+    "existing_molds_now_resolvable_after_wave1": {
+      "total_molds_missing_drev_or_company_now_resolvable": 4769,
+      "molds_missing_design_revision_id_now_resolvable": 67,
+      "molds_in_wave1_assignments_explained": 17,
+      "sample_10_candidates": [
+        {
+          "equipment_id": "dc9d43db-ccbe-427b-af67-8b7b5e8d80e4",
+          "legacy_id": "M-36",
+          "equipment_code": "TSP001",
+          "current_design_revision_id": "91d2a6c4-be4e-4b80-80c1-75c90c2c6ce0",
+          "resolved_design_revision_id": "91d2a6c4-be4e-4b80-80c1-75c90c2c6ce0",
+          "resolved_design_legacy_id": "D-3159",
+          "current_company_id": null,
+          "resolved_company_id": null
+        },
+        {
+          "equipment_id": "f64ea889-678b-4d54-a115-9c64309b615b",
+          "legacy_id": "M-37",
+          "equipment_code": "TNX024D",
+          "current_design_revision_id": "6aa02e14-3c0c-4f8e-b82f-f34484aabe01",
+          "resolved_design_revision_id": "6aa02e14-3c0c-4f8e-b82f-f34484aabe01",
+          "resolved_design_legacy_id": "D-4794",
+          "current_company_id": null,
+          "resolved_company_id": null
+        },
+        {
+          "equipment_id": "77adc4ff-e3cf-469f-82fc-b089f42bf92d",
+          "legacy_id": "M-39",
+          "equipment_code": "TKN002",
+          "current_design_revision_id": "b43704df-ef8b-48cf-a1ef-51d1ae4585b9",
+          "resolved_design_revision_id": "b43704df-ef8b-48cf-a1ef-51d1ae4585b9",
+          "resolved_design_legacy_id": "D-3075",
+          "current_company_id": null,
+          "resolved_company_id": null
+        },
+        {
+          "equipment_id": "091a2338-86be-498b-80f3-7b30b7c64342",
+          "legacy_id": "M-40",
+          "equipment_code": "TSP004",
+          "current_design_revision_id": "a056fe93-7d27-4c0c-a8f8-34d8f504d494",
+          "resolved_design_revision_id": "a056fe93-7d27-4c0c-a8f8-34d8f504d494",
+          "resolved_design_legacy_id": "D-3161",
+          "current_company_id": null,
+          "resolved_company_id": null
+        },
+        {
+          "equipment_id": "2a6a453a-3087-49de-ade1-75b93a20a162",
+          "legacy_id": "M-41",
+          "equipment_code": "TE022",
+          "current_design_revision_id": "9a88f59f-a044-4c42-8f8b-8776c1e8283d",
+          "resolved_design_revision_id": "9a88f59f-a044-4c42-8f8b-8776c1e8283d",
+          "resolved_design_legacy_id": "D-2440",
+          "current_company_id": null,
+          "resolved_company_id": null
+        },
+        {
+          "equipment_id": "017cfd48-659b-40f3-a8bf-fa239b0cbe70",
+          "legacy_id": "M-42",
+          "equipment_code": "TKS002",
+          "current_design_revision_id": "4062620f-c4bb-478b-965a-ac6d5ede72d4",
+          "resolved_design_revision_id": "4062620f-c4bb-478b-965a-ac6d5ede72d4",
+          "resolved_design_legacy_id": "D-3080",
+          "current_company_id": null,
+          "resolved_company_id": null
+        },
+        {
+          "equipment_id": "31e4c5b3-fcd6-4f0f-9e6e-7feacc712aa1",
+          "legacy_id": "M-43",
+          "equipment_code": "THP002",
+          "current_design_revision_id": "5af69c0e-e4fe-45a5-8c1c-12a30347f288",
+          "resolved_design_revision_id": "5af69c0e-e4fe-45a5-8c1c-12a30347f288",
+          "resolved_design_legacy_id": "D-2995",
+          "current_company_id": null,
+          "resolved_company_id": null
+        },
+        {
+          "equipment_id": "d293856c-eb98-4dd3-b0ea-98b5d342a7e7",
+          "legacy_id": "M-44",
+          "equipment_code": "TMD",
+          "current_design_revision_id": "ad5812d6-b828-40b2-95b1-cd06f4431b85",
+          "resolved_design_revision_id": "ad5812d6-b828-40b2-95b1-cd06f4431b85",
+          "resolved_design_legacy_id": "D-3107",
+          "current_company_id": null,
+          "resolved_company_id": null
+        },
+        {
+          "equipment_id": "62e86f90-f478-483b-9cf2-7eed92775bd6",
+          "legacy_id": "M-34",
+          "equipment_code": "TSS004",
+          "current_design_revision_id": "3c095b83-b538-4cd1-9e0b-5f75cb41e0fc",
+          "resolved_design_revision_id": "3c095b83-b538-4cd1-9e0b-5f75cb41e0fc",
+          "resolved_design_legacy_id": "D-3166",
+          "current_company_id": null,
+          "resolved_company_id": null
+        },
+        {
+          "equipment_id": "717bece6-4928-4c4f-abe6-1c6c46ce1e9b",
+          "legacy_id": "M-35",
+          "equipment_code": "TKS019",
+          "current_design_revision_id": "a27266fa-f98c-4a66-8fdb-35e0095ebaac",
+          "resolved_design_revision_id": "a27266fa-f98c-4a66-8fdb-35e0095ebaac",
+          "resolved_design_legacy_id": "D-3095",
+          "current_company_id": null,
+          "resolved_company_id": null
+        }
+      ]
+    },
+    "staging_table_status": {
+      "table_name": "public.staging_mold_sync_wave1",
+      "total_rows": 1824,
+      "applied_rows": 1824,
+      "rls_enabled": true,
+      "recommendation": "Keep as read-only audit ledger until Wave 2 & Wave 3 complete, or archive/drop per PE directive"
+    }
+  },
+  "part_2_wave2_specification": {
+    "step_2_0_equipment_drev_backfill": {
+      "description": "Backfill design_revision_id and company_id on existing M-* rows in public.equipment that were imported before Wave 1 when their D-* design_revision did not exist yet",
+      "target_table": "public.equipment",
+      "molds_missing_design_revision_id_count": 67,
+      "molds_missing_company_id_only_count": 4702,
+      "total_rows_to_update": 4769
+    },
+    "step_2_1_existing_work_orders_and_jobs_fk_backfill": {
+      "description": "Backfill design_revision_id, product_id, company_id on existing LEGACY-WO-* (1,202/1,203) and LEGACY-JOB-* (1,202/1,205) from tblJOB.MoldDesignID -> D-<id> so v_work_order_equipment_set populates across all legacy work orders",
+      "existing_work_orders_total": 1203,
+      "existing_work_orders_resolvable_to_update": 1202,
+      "existing_jobs_total": 1205,
+      "existing_jobs_resolvable_to_update": 1202,
+      "unresolvable_legacy_jobs_count": 0
+    },
+    "step_2_2_insert_missing_27_work_orders_and_jobs": {
+      "description": "Insert 27 missing tblJOB records (JobID 1205..1231) into public.work_orders (LEGACY-WO-<JobID>) and public.jobs (LEGACY-JOB-<JobID>)",
+      "access_tblJOB_total": 1230,
+      "missing_count": 27,
+      "resolved_design_revision_count": 27,
+      "resolved_equipment_count": 27,
+      "records": [
+        {
+          "JobID": 1251,
+          "JobCode": "ADY133R1",
+          "JobName": "ADY-133 R1",
+          "MoldDesignID": 4917,
+          "MoldID": 5904,
+          "resolved_design_revision_id": "f0876ba1-a06c-5a94-82c2-ed2fd47d1180",
+          "resolved_product_id": "18ed8fc9-ca6f-566a-a344-cb39f3224571",
+          "resolved_company_id": "4d426b50-b401-47bc-933b-f51370dcd69e",
+          "resolved_equipment_id": "ef9d6309-5fe9-5fdd-a817-9757950a4925",
+          "DateEntry": "2026-08-28",
+          "DeliveryDeadline": "2026-09-15"
+        },
+        {
+          "JobID": 1252,
+          "JobCode": "YKW009",
+          "JobName": "YKW-009",
+          "MoldDesignID": 4918,
+          "MoldID": 5905,
+          "resolved_design_revision_id": "2cca46f8-0655-581b-931b-6e7a98069cee",
+          "resolved_product_id": "4676b172-cf1b-46a7-99ce-5728cdaf9af1",
+          "resolved_company_id": "c676b2bb-fb82-4f99-b310-3f19ac6b0b03",
+          "resolved_equipment_id": "36d6f52b-c4b8-55bc-a01e-4b4997b45c18",
+          "DateEntry": "2026-08-28",
+          "DeliveryDeadline": "2026-09-10"
+        },
+        {
+          "JobID": 1253,
+          "JobCode": "TOW005DR2",
+          "JobName": "TOW-005D R2",
+          "MoldDesignID": 4919,
+          "MoldID": 5906,
+          "resolved_design_revision_id": "9afc8566-eb13-5182-9a99-6a5d0635b883",
+          "resolved_product_id": "2d2300b7-7771-4e1c-9b9d-e74c0fdcac21",
+          "resolved_company_id": "262c5b66-a2fa-4eed-80d0-c0b885d45c75",
+          "resolved_equipment_id": "d9af1d82-3f1d-5da2-a938-43eca792210e",
+          "DateEntry": "2026-08-31",
+          "DeliveryDeadline": "2026-09-11"
+        },
+        {
+          "JobID": 1254,
+          "JobCode": "SSK011R3",
+          "JobName": "SSK-011 R3",
+          "MoldDesignID": 4920,
+          "MoldID": 5907,
+          "resolved_design_revision_id": "155187e8-de4e-537b-88f7-40e2ed035b9d",
+          "resolved_product_id": "970a3bf2-221d-5eff-b261-ecacd2e70891",
+          "resolved_company_id": "9698ebd8-2a00-4272-9f7e-ee4dd3bc07be",
+          "resolved_equipment_id": "bdf8caf6-c3b6-52eb-b01e-2dbe122244da",
+          "DateEntry": "2026-09-01",
+          "DeliveryDeadline": "2026-09-14"
+        },
+        {
+          "JobID": 1255,
+          "JobCode": "CHG019D",
+          "JobName": "CHG-019 D",
+          "MoldDesignID": 4921,
+          "MoldID": 5908,
+          "resolved_design_revision_id": "3b683be3-473e-5b39-b83a-d0473408d81b",
+          "resolved_product_id": "92a46dd1-7000-562b-a65e-11b583760ebd",
+          "resolved_company_id": "50b8e78b-ec3c-424c-8ac9-a3948e84f503",
+          "resolved_equipment_id": "a5481aaf-8b58-5e40-b8f0-14299d4f81f1",
+          "DateEntry": "2026-09-02",
+          "DeliveryDeadline": "2026-09-05"
+        },
+        {
+          "JobID": 1256,
+          "JobCode": "DIC0642面",
+          "JobName": "DIC-064 2面",
+          "MoldDesignID": 4922,
+          "MoldID": 5910,
+          "resolved_design_revision_id": "86b4d89f-51d7-565b-8ba6-51f7a60127b0",
+          "resolved_product_id": "ff489213-8af1-4856-9341-19353eb42ed4",
+          "resolved_company_id": "46779df5-53c5-4184-95af-8b137d275b1b",
+          "resolved_equipment_id": "f837fee0-1b01-567c-853c-fff06ae8dfa6",
+          "DateEntry": "2026-09-02",
+          "DeliveryDeadline": "2026-09-07"
+        },
+        {
+          "JobID": 1257,
+          "JobCode": "MTM194R3",
+          "JobName": "MTM-194 R3",
+          "MoldDesignID": 4923,
+          "MoldID": 5754,
+          "resolved_design_revision_id": "460209ff-7b6b-5f13-81ac-4922cfd79ee8",
+          "resolved_product_id": "be0241ce-396f-4fa7-baaa-bf8c5b7cf522",
+          "resolved_company_id": "9ce59084-bd9f-46e4-a0cd-7f85b2e050a6",
+          "resolved_equipment_id": "8532131d-9cec-4cb6-b72e-d2b97b9532de",
+          "DateEntry": "2026-09-03",
+          "DeliveryDeadline": "2026-09-04"
+        },
+        {
+          "JobID": 1258,
+          "JobCode": "CHG020D",
+          "JobName": "CHG-020 D",
+          "MoldDesignID": 4924,
+          "MoldID": 5911,
+          "resolved_design_revision_id": "3899eb12-6e01-5dc8-b817-7f57ddc097dd",
+          "resolved_product_id": "a8e891df-3e94-5b4f-ae33-4536ccd2a62a",
+          "resolved_company_id": "50b8e78b-ec3c-424c-8ac9-a3948e84f503",
+          "resolved_equipment_id": "1817839a-ea20-5d93-b6ce-3a7e7975dba8",
+          "DateEntry": "2026-09-03",
+          "DeliveryDeadline": "2026-09-09"
+        },
+        {
+          "JobID": 1259,
+          "JobCode": "CHG016DR4",
+          "JobName": "CHG-016D R4",
+          "MoldDesignID": 4925,
+          "MoldID": 5912,
+          "resolved_design_revision_id": "e31638c7-513b-5905-9d67-5d5b6f9c754e",
+          "resolved_product_id": "96af2284-38b1-5f3c-82d7-f6ad19e8e125",
+          "resolved_company_id": "50b8e78b-ec3c-424c-8ac9-a3948e84f503",
+          "resolved_equipment_id": "0c8058c7-bbcd-54e2-8273-d4489aeb780d",
+          "DateEntry": "2026-09-04",
+          "DeliveryDeadline": "2026-09-09"
+        },
+        {
+          "JobID": 1260,
+          "JobCode": "JAE382",
+          "JobName": "JAE-382",
+          "MoldDesignID": 4926,
+          "MoldID": 5913,
+          "resolved_design_revision_id": "f4fcaf23-69e7-5666-b772-bc427e1e6998",
+          "resolved_product_id": "b66d2435-188d-596f-82bc-317039cd332e",
+          "resolved_company_id": "5551651a-6ff6-4ba8-bef4-af2b61e8632a",
+          "resolved_equipment_id": "645ae31c-ef0b-5dcb-8a90-eb21f2170d29",
+          "DateEntry": "2026-09-07",
+          "DeliveryDeadline": "2026-09-28"
+        },
+        {
+          "JobID": 1261,
+          "JobCode": "CHG017DR4",
+          "JobName": "CHG-017 DR4",
+          "MoldDesignID": 4927,
+          "MoldID": 5914,
+          "resolved_design_revision_id": "29d63b38-3815-5281-9f17-de6313bad9ec",
+          "resolved_product_id": "c9becfbc-366c-5312-b2bf-d0e17075210f",
+          "resolved_company_id": "50b8e78b-ec3c-424c-8ac9-a3948e84f503",
+          "resolved_equipment_id": "7a7f619a-9557-513e-a10a-7a371202cf9d",
+          "DateEntry": "2026-09-08",
+          "DeliveryDeadline": "2026-09-14"
+        },
+        {
+          "JobID": 1262,
+          "JobCode": "DIC0692CAV",
+          "JobName": "DIC-069-2CAV",
+          "MoldDesignID": 4928,
+          "MoldID": 5915,
+          "resolved_design_revision_id": "f4ac569d-aa3d-56de-9188-dfbaa8eaaee0",
+          "resolved_product_id": "389e33e9-1201-500d-a045-d5d3a44232f1",
+          "resolved_company_id": "46779df5-53c5-4184-95af-8b137d275b1b",
+          "resolved_equipment_id": "26d14ed9-04c2-5f50-ace0-2a87517e9e79",
+          "DateEntry": "2026-09-09",
+          "DeliveryDeadline": "2026-09-18"
+        },
+        {
+          "JobID": 1263,
+          "JobCode": "SSM059R1",
+          "JobName": "SSM-059 R1",
+          "MoldDesignID": 4929,
+          "MoldID": 5916,
+          "resolved_design_revision_id": "e8d555b1-b9cc-5583-b85b-724036fd9cd3",
+          "resolved_product_id": "1ed4aedf-3a1e-5028-9966-deea80a43df9",
+          "resolved_company_id": "c1158470-7e69-47c7-addf-db1d98214c4d",
+          "resolved_equipment_id": "2a69de5b-f959-5266-8f90-94332f45439b",
+          "DateEntry": "2026-09-11",
+          "DeliveryDeadline": "2026-09-25"
+        },
+        {
+          "JobID": 1264,
+          "JobCode": "JAE193",
+          "JobName": "JAE-193",
+          "MoldDesignID": 725,
+          "MoldID": 403,
+          "resolved_design_revision_id": "57677b49-6a50-4c4e-ac2f-c0171a2c80bc",
+          "resolved_product_id": "9c38f691-4325-4233-b2b2-e3fb4c4018a3",
+          "resolved_company_id": null,
+          "resolved_equipment_id": "869c5575-cff2-4a38-9d1b-0d0cbb514f76",
+          "DateEntry": "2026-09-15",
+          "DeliveryDeadline": "2026-09-15"
+        },
+        {
+          "JobID": 1265,
+          "JobCode": "STD013",
+          "JobName": "STD-013",
+          "MoldDesignID": 4930,
+          "MoldID": 5917,
+          "resolved_design_revision_id": "5ef7607b-6099-5d3c-853f-5a06c064120e",
+          "resolved_product_id": "1373d6e7-5995-54da-be80-65e2ec669d15",
+          "resolved_company_id": "1825d7d2-3490-4d07-870c-60eefaf93b17",
+          "resolved_equipment_id": "d7612715-29d0-557a-a893-8692ef6f29c2",
+          "DateEntry": "2026-09-15",
+          "DeliveryDeadline": "2026-09-24"
+        },
+        {
+          "JobID": 1266,
+          "JobCode": "NHC010",
+          "JobName": "NHC-010",
+          "MoldDesignID": 4931,
+          "MoldID": 5918,
+          "resolved_design_revision_id": "e1fc50d3-39ac-54d8-9a53-e04f56b22683",
+          "resolved_product_id": "e126a41a-f1fe-5e88-9634-aac860006e1b",
+          "resolved_company_id": "564c4ada-f866-4a88-8358-1b97cac614f1",
+          "resolved_equipment_id": "421f331b-022b-5f10-8893-3735a3efb617",
+          "DateEntry": "2026-09-15",
+          "DeliveryDeadline": "2026-10-02"
+        },
+        {
+          "JobID": 1268,
+          "JobCode": "ASH005R1",
+          "JobName": "ASH-005 R1",
+          "MoldDesignID": 4932,
+          "MoldID": 1134,
+          "resolved_design_revision_id": "c41881e2-0aec-570b-9126-2c35e235c02a",
+          "resolved_product_id": "e24f83d9-7d42-42b9-8059-eee68d9c6e4a",
+          "resolved_company_id": "0ea1a54f-c0d9-49a3-8159-a3397c2e2338",
+          "resolved_equipment_id": "f28d8c33-dad2-453f-bae4-c5c1627112b1",
+          "DateEntry": "2026-09-16",
+          "DeliveryDeadline": "2026-09-17"
+        },
+        {
+          "JobID": 1269,
+          "JobCode": "DIC145R12CAV",
+          "JobName": "DIC-145R1-2CAV",
+          "MoldDesignID": 4935,
+          "MoldID": 5920,
+          "resolved_design_revision_id": "9130374a-7c49-5896-8d3a-fa5e777749d9",
+          "resolved_product_id": "13331744-e792-486f-889f-674dceedb98a",
+          "resolved_company_id": "46779df5-53c5-4184-95af-8b137d275b1b",
+          "resolved_equipment_id": "00627ea3-1656-5e72-911d-f784abcfde0f",
+          "DateEntry": "2026-09-19",
+          "DeliveryDeadline": "2026-09-28"
+        },
+        {
+          "JobID": 1270,
+          "JobCode": "CHG018DR1",
+          "JobName": "CHG-018D R1",
+          "MoldDesignID": 4936,
+          "MoldID": 5921,
+          "resolved_design_revision_id": "902b7a1d-0fa2-5e30-8bdf-ed807a5834f7",
+          "resolved_product_id": "d6a4b784-4d55-54da-a1cc-513d9aff7367",
+          "resolved_company_id": "50b8e78b-ec3c-424c-8ac9-a3948e84f503",
+          "resolved_equipment_id": "5c4d5ee1-c053-5a8c-8656-8dc7c0128bad",
+          "DateEntry": "2026-09-23",
+          "DeliveryDeadline": "2026-10-01"
+        },
+        {
+          "JobID": 1271,
+          "JobCode": "IRI017",
+          "JobName": "IRI-017",
+          "MoldDesignID": 4937,
+          "MoldID": 5922,
+          "resolved_design_revision_id": "50ece4e4-eafa-556e-93d7-03961cf1cf0d",
+          "resolved_product_id": "5407212a-7250-5790-bf3b-f2096b851056",
+          "resolved_company_id": "dc902de9-c28f-493e-aee8-07af61a9425f",
+          "resolved_equipment_id": "a67d784c-e832-5156-bfa1-dff5cde8aeed",
+          "DateEntry": "2026-09-23",
+          "DeliveryDeadline": "2026-10-05"
+        },
+        {
+          "JobID": 1272,
+          "JobCode": "DIC165DR6",
+          "JobName": "DIC-165D R6",
+          "MoldDesignID": 4938,
+          "MoldID": 5923,
+          "resolved_design_revision_id": "056dddfd-2e39-5175-9c4f-38b7b3131801",
+          "resolved_product_id": "962dac83-a390-4b95-8b0e-226c3ff00a9e",
+          "resolved_company_id": "46779df5-53c5-4184-95af-8b137d275b1b",
+          "resolved_equipment_id": "878198ad-b596-5901-bf5c-32c32676390b",
+          "DateEntry": "2026-09-25",
+          "DeliveryDeadline": "2026-10-06"
+        },
+        {
+          "JobID": 1273,
+          "JobCode": "TOW005R2",
+          "JobName": "TOW-005 R2",
+          "MoldDesignID": 4939,
+          "MoldID": 5924,
+          "resolved_design_revision_id": "e400ae00-2b46-5004-a4d8-d498c6672277",
+          "resolved_product_id": "63316635-f0ec-5cec-b2cb-894a53b2404c",
+          "resolved_company_id": "262c5b66-a2fa-4eed-80d0-c0b885d45c75",
+          "resolved_equipment_id": "91fafef4-2b43-5bc5-aae9-28956430f6cd",
+          "DateEntry": "2026-09-25",
+          "DeliveryDeadline": "2026-10-07"
+        },
+        {
+          "JobID": 1274,
+          "JobCode": "SHT022AR5",
+          "JobName": "SHT-022A R5",
+          "MoldDesignID": 4940,
+          "MoldID": 5925,
+          "resolved_design_revision_id": "9d518ffb-7891-5c3b-a9d3-5054f6674608",
+          "resolved_product_id": "4a16474e-5671-53a0-9aa8-47c21988bbbb",
+          "resolved_company_id": "011b1a81-bcfd-49a0-ab35-5dbe08ab789e",
+          "resolved_equipment_id": "56e7f857-0512-5ca0-9f5e-f0deb6c99c23",
+          "DateEntry": "2026-09-25",
+          "DeliveryDeadline": "2026-10-08"
+        },
+        {
+          "JobID": 1275,
+          "JobCode": "WB385X290",
+          "JobName": "WB-385X290",
+          "MoldDesignID": 4941,
+          "MoldID": 5926,
+          "resolved_design_revision_id": "fca24fa5-8195-5859-94de-41b331da579d",
+          "resolved_product_id": "c4ad811e-9521-58d2-9b40-a2ce30ab9e91",
+          "resolved_company_id": "bfdb082e-34d9-44b3-aad4-f56ef89200d9",
+          "resolved_equipment_id": "bea13704-b037-53b9-b318-f98f3bf9ff28",
+          "DateEntry": "2026-09-29",
+          "DeliveryDeadline": "2026-09-30"
+        },
+        {
+          "JobID": 1276,
+          "JobCode": "COB001",
+          "JobName": "COB-001",
+          "MoldDesignID": 4942,
+          "MoldID": 5927,
+          "resolved_design_revision_id": "5c8621f5-21f1-5a13-bf36-8102ff8fa578",
+          "resolved_product_id": "b58cddd7-20c8-5546-a675-61924b001271",
+          "resolved_company_id": "2c08b859-50cb-57ad-9e5b-a52faaff3664",
+          "resolved_equipment_id": "954bdd4e-85a0-59b5-9b6a-77b59d145c71",
+          "DateEntry": "2026-09-29",
+          "DeliveryDeadline": "2026-10-09"
+        },
+        {
+          "JobID": 1277,
+          "JobCode": "SMK232",
+          "JobName": "SMK-232",
+          "MoldDesignID": 4943,
+          "MoldID": 5928,
+          "resolved_design_revision_id": "6d0d091e-9e7a-5926-8fa9-49fd270230a4",
+          "resolved_product_id": "163b69f6-e57f-5b82-b7cc-7ff6e10036e4",
+          "resolved_company_id": "2af154c3-4f7a-405b-9502-8f121eada865",
+          "resolved_equipment_id": "095cb3aa-49e9-5751-a38a-c7cb7c32ff21",
+          "DateEntry": "2026-09-30",
+          "DeliveryDeadline": "2026-10-13"
+        },
+        {
+          "JobID": 1278,
+          "JobCode": "YCM082R1",
+          "JobName": "YCM-082 R1",
+          "MoldDesignID": 4944,
+          "MoldID": 5929,
+          "resolved_design_revision_id": "1ed0a660-5d25-549a-a779-3fd109b558fc",
+          "resolved_product_id": "5880fb7d-1ed1-50f1-8e6a-5c8e1da25b5f",
+          "resolved_company_id": "952bce3d-a891-4829-a220-8c184763dff2",
+          "resolved_equipment_id": "8e0c597a-6947-5a69-b405-5c65befe8e42",
+          "DateEntry": "2026-10-05",
+          "DeliveryDeadline": "2026-10-19"
+        }
+      ]
+    },
+    "step_2_3_insert_missing_55_job_steps": {
+      "description": "Insert 55 valid missing tblProcessingDeadline records into public.job_steps (LEGACY-STEP-<ProcessingDeadlineID>); skip 20 orphan records in Access whose JobID does not exist in tblJOB",
+      "access_tblProcessingDeadline_total": 2527,
+      "pg_job_steps_total": 2457,
+      "pg_job_steps_legacy": 2452,
+      "valid_missing_steps_to_insert": 55,
+      "orphan_steps_in_access_skipped": 20,
+      "orphan_steps_detail": [
+        {
+          "ProcessingDeadlineID": 3892,
+          "orphan_JobID": null
+        },
+        {
+          "ProcessingDeadlineID": 2970,
+          "orphan_JobID": null
+        },
+        {
+          "ProcessingDeadlineID": 2971,
+          "orphan_JobID": null
+        },
+        {
+          "ProcessingDeadlineID": 3024,
+          "orphan_JobID": null
+        },
+        {
+          "ProcessingDeadlineID": 3065,
+          "orphan_JobID": null
+        },
+        {
+          "ProcessingDeadlineID": 3066,
+          "orphan_JobID": null
+        },
+        {
+          "ProcessingDeadlineID": 3099,
+          "orphan_JobID": null
+        },
+        {
+          "ProcessingDeadlineID": 3107,
+          "orphan_JobID": null
+        },
+        {
+          "ProcessingDeadlineID": 3242,
+          "orphan_JobID": null
+        },
+        {
+          "ProcessingDeadlineID": 3284,
+          "orphan_JobID": null
+        },
+        {
+          "ProcessingDeadlineID": 3325,
+          "orphan_JobID": null
+        },
+        {
+          "ProcessingDeadlineID": 3329,
+          "orphan_JobID": null
+        },
+        {
+          "ProcessingDeadlineID": 3347,
+          "orphan_JobID": null
+        },
+        {
+          "ProcessingDeadlineID": 3379,
+          "orphan_JobID": null
+        },
+        {
+          "ProcessingDeadlineID": 3380,
+          "orphan_JobID": null
+        },
+        {
+          "ProcessingDeadlineID": 3381,
+          "orphan_JobID": null
+        },
+        {
+          "ProcessingDeadlineID": 3390,
+          "orphan_JobID": null
+        },
+        {
+          "ProcessingDeadlineID": 3404,
+          "orphan_JobID": null
+        },
+        {
+          "ProcessingDeadlineID": 3554,
+          "orphan_JobID": null
+        },
+        {
+          "ProcessingDeadlineID": 3612,
+          "orphan_JobID": null
+        }
+      ],
+      "valid_missing_steps_records": [
+        {
+          "ProcessingDeadlineID": 4253,
+          "JobID": 1265,
+          "ItemTypeID": 2,
+          "ProcessingStatusID": 8,
+          "ProcessingDeadline": "2026-09-21",
+          "DrawingReceiptDate": "2026-09-15"
+        },
+        {
+          "ProcessingDeadlineID": 4254,
+          "JobID": 1265,
+          "ItemTypeID": 3,
+          "ProcessingStatusID": 8,
+          "ProcessingDeadline": "2026-09-21",
+          "DrawingReceiptDate": "2026-09-15"
+        },
+        {
+          "ProcessingDeadlineID": 4255,
+          "JobID": 1266,
+          "ItemTypeID": 2,
+          "ProcessingStatusID": 8,
+          "ProcessingDeadline": "2026-09-29",
+          "DrawingReceiptDate": "2026-09-15"
+        },
+        {
+          "ProcessingDeadlineID": 4256,
+          "JobID": 1266,
+          "ItemTypeID": 3,
+          "ProcessingStatusID": 8,
+          "ProcessingDeadline": "2026-09-29",
+          "DrawingReceiptDate": "2026-09-15"
+        },
+        {
+          "ProcessingDeadlineID": 4257,
+          "JobID": 1268,
+          "ItemTypeID": 2,
+          "ProcessingStatusID": 8,
+          "ProcessingDeadline": "2026-09-14",
+          "DrawingReceiptDate": "2026-09-16"
+        },
+        {
+          "ProcessingDeadlineID": 4258,
+          "JobID": 1269,
+          "ItemTypeID": 2,
+          "ProcessingStatusID": 8,
+          "ProcessingDeadline": "2026-09-23",
+          "DrawingReceiptDate": "2026-09-19"
+        },
+        {
+          "ProcessingDeadlineID": 4259,
+          "JobID": 1269,
+          "ItemTypeID": 3,
+          "ProcessingStatusID": 8,
+          "ProcessingDeadline": "2026-09-23",
+          "DrawingReceiptDate": "2026-09-19"
+        },
+        {
+          "ProcessingDeadlineID": 4260,
+          "JobID": 1270,
+          "ItemTypeID": 2,
+          "ProcessingStatusID": 8,
+          "ProcessingDeadline": "2026-09-28",
+          "DrawingReceiptDate": "2026-09-23"
+        },
+        {
+          "ProcessingDeadlineID": 4261,
+          "JobID": 1270,
+          "ItemTypeID": 3,
+          "ProcessingStatusID": 8,
+          "ProcessingDeadline": "2026-09-28",
+          "DrawingReceiptDate": "2026-09-23"
+        },
+        {
+          "ProcessingDeadlineID": 4262,
+          "JobID": 1271,
+          "ItemTypeID": 2,
+          "ProcessingStatusID": 8,
+          "ProcessingDeadline": "2026-09-30",
+          "DrawingReceiptDate": "2026-09-23"
+        },
+        {
+          "ProcessingDeadlineID": 4263,
+          "JobID": 1271,
+          "ItemTypeID": 3,
+          "ProcessingStatusID": 8,
+          "ProcessingDeadline": "2026-09-30",
+          "DrawingReceiptDate": "2026-09-23"
+        },
+        {
+          "ProcessingDeadlineID": 4264,
+          "JobID": 1272,
+          "ItemTypeID": 2,
+          "ProcessingStatusID": 8,
+          "ProcessingDeadline": "2026-10-01",
+          "DrawingReceiptDate": "2026-09-25"
+        },
+        {
+          "ProcessingDeadlineID": 4265,
+          "JobID": 1272,
+          "ItemTypeID": 3,
+          "ProcessingStatusID": 8,
+          "ProcessingDeadline": "2026-10-01",
+          "DrawingReceiptDate": "2026-09-25"
+        },
+        {
+          "ProcessingDeadlineID": 4266,
+          "JobID": 1273,
+          "ItemTypeID": 2,
+          "ProcessingStatusID": 8,
+          "ProcessingDeadline": "2026-10-02",
+          "DrawingReceiptDate": "2026-09-25"
+        },
+        {
+          "ProcessingDeadlineID": 4267,
+          "JobID": 1273,
+          "ItemTypeID": 3,
+          "ProcessingStatusID": 8,
+          "ProcessingDeadline": "2026-10-02",
+          "DrawingReceiptDate": "2026-09-25"
+        },
+        {
+          "ProcessingDeadlineID": 4268,
+          "JobID": 1274,
+          "ItemTypeID": 2,
+          "ProcessingStatusID": 1,
+          "ProcessingDeadline": "2026-10-05",
+          "DrawingReceiptDate": "2026-09-25"
+        },
+        {
+          "ProcessingDeadlineID": 4269,
+          "JobID": 1274,
+          "ItemTypeID": 3,
+          "ProcessingStatusID": 1,
+          "ProcessingDeadline": "2026-10-05",
+          "DrawingReceiptDate": "2026-09-25"
+        },
+        {
+          "ProcessingDeadlineID": 4270,
+          "JobID": 1275,
+          "ItemTypeID": 2,
+          "ProcessingStatusID": 8,
+          "ProcessingDeadline": "2026-09-25",
+          "DrawingReceiptDate": "2026-09-29"
+        },
+        {
+          "ProcessingDeadlineID": 4271,
+          "JobID": 1276,
+          "ItemTypeID": 2,
+          "ProcessingStatusID": 1,
+          "ProcessingDeadline": "2026-10-06",
+          "DrawingReceiptDate": "2026-09-29"
+        },
+        {
+          "ProcessingDeadlineID": 4272,
+          "JobID": 1276,
+          "ItemTypeID": 3,
+          "ProcessingStatusID": 1,
+          "ProcessingDeadline": "2026-10-06",
+          "DrawingReceiptDate": "2026-09-29"
+        },
+        {
+          "ProcessingDeadlineID": 4273,
+          "JobID": 1277,
+          "ItemTypeID": 2,
+          "ProcessingStatusID": 1,
+          "ProcessingDeadline": "2026-10-07",
+          "DrawingReceiptDate": "2026-09-30"
+        },
+        {
+          "ProcessingDeadlineID": 4274,
+          "JobID": 1277,
+          "ItemTypeID": 3,
+          "ProcessingStatusID": 1,
+          "ProcessingDeadline": "2026-10-07",
+          "DrawingReceiptDate": "2026-09-30"
+        },
+        {
+          "ProcessingDeadlineID": 4277,
+          "JobID": 1278,
+          "ItemTypeID": 2,
+          "ProcessingStatusID": 1,
+          "ProcessingDeadline": "2026-10-13",
+          "DrawingReceiptDate": "2026-10-05"
+        },
+        {
+          "ProcessingDeadlineID": 4278,
+          "JobID": 1278,
+          "ItemTypeID": 3,
+          "ProcessingStatusID": 1,
+          "ProcessingDeadline": "2026-10-13",
+          "DrawingReceiptDate": "2026-10-05"
+        },
+        {
+          "ProcessingDeadlineID": 4279,
+          "JobID": 1278,
+          "ItemTypeID": 4,
+          "ProcessingStatusID": 8,
+          "ProcessingDeadline": "0813-02-15",
+          "DrawingReceiptDate": null
+        },
+        {
+          "ProcessingDeadlineID": 4234,
+          "JobID": 1258,
+          "ItemTypeID": 2,
+          "ProcessingStatusID": 8,
+          "ProcessingDeadline": "2026-09-04",
+          "DrawingReceiptDate": "2026-09-03"
+        },
+        {
+          "ProcessingDeadlineID": 4235,
+          "JobID": 1258,
+          "ItemTypeID": 3,
+          "ProcessingStatusID": 8,
+          "ProcessingDeadline": "2026-09-04",
+          "DrawingReceiptDate": "2026-09-03"
+        },
+        {
+          "ProcessingDeadlineID": 4236,
+          "JobID": 1259,
+          "ItemTypeID": 2,
+          "ProcessingStatusID": 8,
+          "ProcessingDeadline": "2026-09-04",
+          "DrawingReceiptDate": "2026-09-04"
+        },
+        {
+          "ProcessingDeadlineID": 4237,
+          "JobID": 1259,
+          "ItemTypeID": 3,
+          "ProcessingStatusID": 8,
+          "ProcessingDeadline": "2026-09-04",
+          "DrawingReceiptDate": "2026-09-04"
+        },
+        {
+          "ProcessingDeadlineID": 4239,
+          "JobID": 1254,
+          "ItemTypeID": 4,
+          "ProcessingStatusID": 8,
+          "ProcessingDeadline": null,
+          "DrawingReceiptDate": null
+        },
+        {
+          "ProcessingDeadlineID": 4240,
+          "JobID": 1251,
+          "ItemTypeID": 4,
+          "ProcessingStatusID": 8,
+          "ProcessingDeadline": "2026-09-11",
+          "DrawingReceiptDate": null
+        },
+        {
+          "ProcessingDeadlineID": 4242,
+          "JobID": 1260,
+          "ItemTypeID": 2,
+          "ProcessingStatusID": 8,
+          "ProcessingDeadline": "2026-09-23",
+          "DrawingReceiptDate": "2026-09-07"
+        },
+        {
+          "ProcessingDeadlineID": 4243,
+          "JobID": 1260,
+          "ItemTypeID": 3,
+          "ProcessingStatusID": 8,
+          "ProcessingDeadline": "2026-09-23",
+          "DrawingReceiptDate": "2026-09-07"
+        },
+        {
+          "ProcessingDeadlineID": 4244,
+          "JobID": 1260,
+          "ItemTypeID": 4,
+          "ProcessingStatusID": 8,
+          "ProcessingDeadline": null,
+          "DrawingReceiptDate": null
+        },
+        {
+          "ProcessingDeadlineID": 4245,
+          "JobID": 1261,
+          "ItemTypeID": 2,
+          "ProcessingStatusID": 8,
+          "ProcessingDeadline": "2026-09-09",
+          "DrawingReceiptDate": "2026-09-08"
+        },
+        {
+          "ProcessingDeadlineID": 4246,
+          "JobID": 1262,
+          "ItemTypeID": 2,
+          "ProcessingStatusID": 8,
+          "ProcessingDeadline": "2026-09-15",
+          "DrawingReceiptDate": "2026-09-09"
+        },
+        {
+          "ProcessingDeadlineID": 4247,
+          "JobID": 1262,
+          "ItemTypeID": 3,
+          "ProcessingStatusID": 8,
+          "ProcessingDeadline": "2026-09-15",
+          "DrawingReceiptDate": "2026-09-09"
+        },
+        {
+          "ProcessingDeadlineID": 4248,
+          "JobID": 1261,
+          "ItemTypeID": 3,
+          "ProcessingStatusID": 8,
+          "ProcessingDeadline": "2026-09-09",
+          "DrawingReceiptDate": "2026-09-08"
+        },
+        {
+          "ProcessingDeadlineID": 4249,
+          "JobID": 1263,
+          "ItemTypeID": 2,
+          "ProcessingStatusID": 8,
+          "ProcessingDeadline": "2026-09-17",
+          "DrawingReceiptDate": "2026-09-11"
+        },
+        {
+          "ProcessingDeadlineID": 4250,
+          "JobID": 1263,
+          "ItemTypeID": 3,
+          "ProcessingStatusID": 8,
+          "ProcessingDeadline": "2026-09-17",
+          "DrawingReceiptDate": "2026-09-11"
+        },
+        {
+          "ProcessingDeadlineID": 4252,
+          "JobID": 1264,
+          "ItemTypeID": 3,
+          "ProcessingStatusID": 8,
+          "ProcessingDeadline": "2026-09-15",
+          "DrawingReceiptDate": "2026-09-15"
+        },
+        {
+          "ProcessingDeadlineID": 4219,
+          "JobID": 1251,
+          "ItemTypeID": 2,
+          "ProcessingStatusID": 8,
+          "ProcessingDeadline": "2026-09-10",
+          "DrawingReceiptDate": "2026-08-28"
+        },
+        {
+          "ProcessingDeadlineID": 4220,
+          "JobID": 1251,
+          "ItemTypeID": 3,
+          "ProcessingStatusID": 8,
+          "ProcessingDeadline": "2026-09-10",
+          "DrawingReceiptDate": "2026-08-28"
+        },
+        {
+          "ProcessingDeadlineID": 4221,
+          "JobID": 1252,
+          "ItemTypeID": 2,
+          "ProcessingStatusID": 8,
+          "ProcessingDeadline": "2026-09-07",
+          "DrawingReceiptDate": "2026-08-28"
+        },
+        {
+          "ProcessingDeadlineID": 4222,
+          "JobID": 1252,
+          "ItemTypeID": 3,
+          "ProcessingStatusID": 8,
+          "ProcessingDeadline": "2026-09-07",
+          "DrawingReceiptDate": "2026-08-28"
+        },
+        {
+          "ProcessingDeadlineID": 4223,
+          "JobID": 1252,
+          "ItemTypeID": 4,
+          "ProcessingStatusID": 8,
+          "ProcessingDeadline": "2026-09-08",
+          "DrawingReceiptDate": null
+        },
+        {
+          "ProcessingDeadlineID": 4224,
+          "JobID": 1253,
+          "ItemTypeID": 2,
+          "ProcessingStatusID": 8,
+          "ProcessingDeadline": "2026-09-08",
+          "DrawingReceiptDate": "2026-08-31"
+        },
+        {
+          "ProcessingDeadlineID": 4225,
+          "JobID": 1253,
+          "ItemTypeID": 3,
+          "ProcessingStatusID": 8,
+          "ProcessingDeadline": "2026-09-08",
+          "DrawingReceiptDate": "2026-08-31"
+        },
+        {
+          "ProcessingDeadlineID": 4227,
+          "JobID": 1254,
+          "ItemTypeID": 2,
+          "ProcessingStatusID": 8,
+          "ProcessingDeadline": "2026-09-09",
+          "DrawingReceiptDate": "2026-09-01"
+        },
+        {
+          "ProcessingDeadlineID": 4228,
+          "JobID": 1254,
+          "ItemTypeID": 3,
+          "ProcessingStatusID": 8,
+          "ProcessingDeadline": "2026-09-09",
+          "DrawingReceiptDate": "2026-09-01"
+        },
+        {
+          "ProcessingDeadlineID": 4229,
+          "JobID": 1255,
+          "ItemTypeID": 2,
+          "ProcessingStatusID": 8,
+          "ProcessingDeadline": "2026-09-02",
+          "DrawingReceiptDate": "2026-09-02"
+        },
+        {
+          "ProcessingDeadlineID": 4230,
+          "JobID": 1255,
+          "ItemTypeID": 3,
+          "ProcessingStatusID": 8,
+          "ProcessingDeadline": "2026-09-02",
+          "DrawingReceiptDate": "2026-09-02"
+        },
+        {
+          "ProcessingDeadlineID": 4231,
+          "JobID": 1256,
+          "ItemTypeID": 2,
+          "ProcessingStatusID": 8,
+          "ProcessingDeadline": "2026-09-02",
+          "DrawingReceiptDate": "2026-09-02"
+        },
+        {
+          "ProcessingDeadlineID": 4232,
+          "JobID": 1256,
+          "ItemTypeID": 3,
+          "ProcessingStatusID": 1,
+          "ProcessingDeadline": "2026-09-02",
+          "DrawingReceiptDate": "2026-09-02"
+        },
+        {
+          "ProcessingDeadlineID": 4233,
+          "JobID": 1257,
+          "ItemTypeID": 2,
+          "ProcessingStatusID": 8,
+          "ProcessingDeadline": "2026-09-04",
+          "DrawingReceiptDate": "2026-09-03"
+        }
+      ]
+    },
+    "step_2_4_insert_missing_205_work_logs": {
+      "description": "Insert 205 valid step-linked tblWorkLog records into public.work_logs (LEGACY-LOG-<WorkLogID>); hold 94 shop-internal NULL-step logs and 7 orphan-step logs for explicit PE decision because work_logs.job_id is NOT NULL",
+      "access_tblWorkLog_total": 7416,
+      "pg_work_logs_total": 7111,
+      "pg_work_logs_legacy": 7110,
+      "valid_step_linked_to_insert": 205,
+      "employee_resolved_count": 205,
+      "processing_code_resolved_count": 205,
+      "shop_internal_null_step_held_for_pe_decision": 94,
+      "orphan_step_in_access_skipped": 7,
+      "orphan_step_detail": [
+        {
+          "WorkLogID": 5153,
+          "orphan_ProcessingDeadlineID": 3024
+        },
+        {
+          "WorkLogID": 5288,
+          "orphan_ProcessingDeadlineID": 3065
+        },
+        {
+          "WorkLogID": 6174,
+          "orphan_ProcessingDeadlineID": 3284
+        },
+        {
+          "WorkLogID": 6260,
+          "orphan_ProcessingDeadlineID": 3325
+        },
+        {
+          "WorkLogID": 6469,
+          "orphan_ProcessingDeadlineID": 3390
+        },
+        {
+          "WorkLogID": 6511,
+          "orphan_ProcessingDeadlineID": 3404
+        },
+        {
+          "WorkLogID": 7121,
+          "orphan_ProcessingDeadlineID": 3612
+        }
+      ]
+    }
+  }
+}
