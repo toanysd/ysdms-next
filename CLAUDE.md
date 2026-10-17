@@ -1,37 +1,13 @@
-# YSDMS NextGen — AI Agent Instructions
-# Đây là file bắt buộc cho tất cả AI tools (Claude Code, Cursor, Antigravity, etc.)
+# YSDMS NextGen — Claude & AI Agent Entry Point (Thin Wrapper)
 
-## MUST READ FIRST (theo thứ tự)
-1. `SCHEMA_REFERENCE.md` — Schema DB (bắt buộc trước khi viết bất kỳ Supabase query)
-2. `AI_SYSTEM_RULES.md` — Quy tắc coding, performance, architecture
-3. `src/app/globals.css` — Design tokens
+> **Single Source of Truth (SSOT):** Toàn bộ quy tắc bắt buộc của dự án được hợp nhất tại [`AGENTS.md`](./AGENTS.md). Không đọc các bản lưu trữ trong `_archive/`.
 
-## Stack
-- Next.js 16.2.3 (App Router, Webpack — KHÔNG dùng Turbopack khi build)
-- Supabase (PostgreSQL + RLS)
-- TypeScript strict
-- Custom CSS (CSS variables, KHÔNG dùng hardcoded color)
-- pnpm workspaces (monorepo)
+## 1. Thứ Tự Nạp Ngữ Cảnh Tinh Gọn (Token Economy)
+1. [`AGENTS.md`](./AGENTS.md) — Luật lõi (`QUY TẮC 0`, `RULE-DATA-01/02`, `RULE-PROC-01..03`, `RULE-EXEC`) & Sơ đồ Router.
+2. [`docs/dossier/00_core/00_INDEX.md`](./docs/dossier/00_core/00_INDEX.md) & [`00_ACTIVE_HANDOFF.md`](./docs/dossier/00_core/00_ACTIVE_HANDOFF.md) — Chỉ mục 12 Module & Bàn giao phiên hiện hành.
+3. `docs/dossier/M01..M12/{business,schema}.md` — Chỉ đọc đúng Module thuộc phạm vi Work Order đang thực thi (`<= 120` dòng/file).
+4. [`docs/dossier/00_core/RULES_UI_AND_DATA.md`](./docs/dossier/00_core/RULES_UI_AND_DATA.md) — Quy chuẩn UI/UX (`src/app/globals.css`), Pagination 50 dòng, Fuzzy Search, Paper Style `SpecCell`.
 
-## Thư mục CẤM ĐỌC
-- `.agents/` — Session files của AI subagents cũ (370+ thư mục, nhiễu loạn)
-- `supabase/migrations/archived/` — Schema cũ đã bị overwrite, gây nhầm lẫn schema
-- `temp_ai/`, `scratch/`, `tham_khao/` — File tạm thời
-- `_trash_node_modules/`, `node_modules/`, `.next/`, `.turbo/` — Build artifacts
-- `release/`, `source_data/`, `business_docs/` — Không liên quan đến code
-
-## Critical Rules — Database
-1. `orders.company_id → companies` (KHÔNG phải `customer_id → customers`)
-2. `products.product_name` (KHÔNG phải `product_name_ja` — đã đổi tên trong schema V3)
-3. Filter đơn hàng: `.eq('company_id', id)` KHÔNG phải `.eq('customer_id', id)`
-
-## Critical Rules — Code
-1. KHÔNG dùng `.select('*')` — luôn chỉ định columns cụ thể
-2. LUÔN phân trang: `.range(from, to)` + `{ count: 'exact' }` (50 rows/page)
-3. KHÔNG hardcode màu — dùng `var(--accent)`, `var(--text-primary)`, etc.
-4. Server Components cho data fetching; Client Components chỉ cho interactivity
-5. Chạy `npx tsc --noEmit` trước khi báo cáo hoàn thành (0 errors)
-
-## Commands
-- Dev: `npm run dev` hoặc `pnpm dev`
-- TypeScript check: `npx tsc --noEmit`
+## 2. Stack & Lệnh Kiểm Chứng Thực Tế (`package.json` v0.1.9)
+- **Stack:** Next.js `16.2.3` (`dev: next dev --turbo`, `build: next build`) | React `19.2.4` | TypeScript `5` | Supabase PostgreSQL + RLS | `next-intl ^4.13.2` | Quản lý gói: `npm` (single-app repo).
+- **Kiểm chứng bắt buộc:** `node ".\node_modules\typescript\bin\tsc" --noEmit` (0 errors) & `node scripts/check_translations.mjs` (0 missing keys).
