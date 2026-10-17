@@ -1,0 +1,664 @@
+{
+  "work_order": "WO-DATA-AUDIT-SUMMARY",
+  "pe_directive_id": "715539cb",
+  "generated_at_jst": "2026-10-17 17:58:02 JST",
+  "db_verified_at_utc": "2026-10-17 08:58:02.994273+00",
+  "db_mutations_executed": 0,
+  "live_production_counts": {
+    "companies": 2215,
+    "rack_layers": 400,
+    "racks": 90,
+    "products": 8543,
+    "design_revisions": 4781,
+    "equipment": 6525,
+    "equipment_molds_with_drev": 4793,
+    "equipment_with_keeper": 227,
+    "equipment_with_company": 27,
+    "equipment_assignments": 2970,
+    "work_orders": 1230,
+    "jobs": 1232,
+    "job_steps": 2512,
+    "work_logs": 7316,
+    "v_work_order_equipment_set": 1833,
+    "equipment_history": 1896,
+    "equipment_ship_logs": 356,
+    "mold_maintenance": 190,
+    "mold_name_history": 35,
+    "equipment_status_logs": 352,
+    "asset_location_logs": 1450,
+    "mold_loan_certificates": 209,
+    "orders": 2396,
+    "order_lines": 6279,
+    "staging_mold_sync_wave1_total": 1824,
+    "staging_mold_sync_wave1_applied": 1824,
+    "staging_mold_sync_wave2_total": 2785,
+    "staging_mold_sync_wave2_applied": 2785,
+    "staging_mold_sync_wave3_total": 2829,
+    "staging_mold_sync_wave3_applied": 2829
+  },
+  "waves_summary": {
+    "total_staging_operations_across_3_waves": 7438,
+    "wave_1": {
+      "work_order": "WO-MOLD-SYNC-WAVE1",
+      "status": "CLOSED",
+      "execution_commit_sha": "c6f3ca9e98f88856fb3ef7d6ee8da6701a4ba412",
+      "staging_table": "public.staging_mold_sync_wave1",
+      "staging_rows_total": 1824,
+      "staging_rows_applied": 1824,
+      "operations_by_table": [
+        {
+          "step": "1.0",
+          "target_table": "public.companies",
+          "action": "INSERT",
+          "rows_affected": 1,
+          "before": 2214,
+          "after": 2215,
+          "detail": "Insert CUST-444 (COB) from tblCustomer"
+        },
+        {
+          "step": "1.1",
+          "target_table": "public.rack_layers",
+          "action": "INSERT",
+          "rows_affected": 20,
+          "before": 380,
+          "after": 400,
+          "detail": "Insert 20 missing RackLayerID (381..400) from tblRackLayer"
+        },
+        {
+          "step": "1.2A",
+          "target_table": "public.design_revisions",
+          "action": "UPDATE",
+          "rows_affected": 70,
+          "before": 4693,
+          "after": 4693,
+          "detail": "Normalize legacy_id prefix DESIGN-* -> D-* for 70 existing revisions (4786..4916)"
+        },
+        {
+          "step": "1.2B",
+          "target_table": "public.products",
+          "action": "INSERT",
+          "rows_affected": 54,
+          "before": 8489,
+          "after": 8543,
+          "detail": "Insert 54 missing parent products (22 TRAY-* + 32 P-*) for 88 new designs"
+        },
+        {
+          "step": "1.2C",
+          "target_table": "public.design_revisions",
+          "action": "INSERT",
+          "rows_affected": 88,
+          "before": 4693,
+          "after": 4781,
+          "detail": "Insert 88 missing tblMoldDesign records (D-*)"
+        },
+        {
+          "step": "1.3A",
+          "target_table": "public.equipment",
+          "action": "INSERT",
+          "rows_affected": 24,
+          "before": 6497,
+          "after": 6521,
+          "detail": "Insert 24 missing tblMold records (M-*)"
+        },
+        {
+          "step": "1.3B",
+          "target_table": "public.equipment",
+          "action": "INSERT",
+          "rows_affected": 4,
+          "before": 6521,
+          "after": 6525,
+          "detail": "Insert 4 missing tblCutter records (C-*)"
+        },
+        {
+          "step": "1.4",
+          "target_table": "public.equipment",
+          "action": "UPDATE",
+          "rows_affected": 226,
+          "before": 0,
+          "after": 226,
+          "detail": "Strict backfill keeper_company_id via companies.legacy_id = 'COMP-' || KeeperCompany (225 MOLD + 1 CUTTER)"
+        },
+        {
+          "step": "1.5",
+          "target_table": "public.equipment_assignments",
+          "action": "INSERT",
+          "rows_affected": 1337,
+          "before": 1633,
+          "after": 2970,
+          "detail": "Insert 1,337 missing (primary_equipment_id, related_equipment_id) pairs from tblMoldCutter (265 SET_MEMBER + 1,072 SHARED)"
+        }
+      ]
+    },
+    "wave_2": {
+      "work_order": "WO-MOLD-SYNC-WAVE2",
+      "status": "CLOSED",
+      "execution_commit_sha": "3cff159d744d68daff09293d3c1479c704b6c319",
+      "staging_table": "public.staging_mold_sync_wave2",
+      "staging_rows_total": 2785,
+      "staging_rows_applied": 2785,
+      "operations_by_table": [
+        {
+          "step": "2.0",
+          "target_table": "public.equipment",
+          "action": "UPDATE",
+          "rows_affected": 67,
+          "before": 4726,
+          "after": 4793,
+          "detail": "Backfill design_revision_id for 67 M-* equipment via tblJOB.MoldDesignID -> 100% (4,793/4,793) M-* linked to design_revisions"
+        },
+        {
+          "step": "2.1A",
+          "target_table": "public.work_orders",
+          "action": "UPDATE",
+          "rows_affected": 1202,
+          "before": 1203,
+          "after": 1203,
+          "detail": "Backfill 7 FK/status/period columns on 1,202 existing work_orders from tblJOB"
+        },
+        {
+          "step": "2.1B",
+          "target_table": "public.jobs",
+          "action": "UPDATE",
+          "rows_affected": 1202,
+          "before": 1205,
+          "after": 1205,
+          "detail": "Backfill mold_design_id and equipment_id on 1,202 existing jobs from tblJOB"
+        },
+        {
+          "step": "2.2A",
+          "target_table": "public.work_orders",
+          "action": "INSERT",
+          "rows_affected": 27,
+          "before": 1203,
+          "after": 1230,
+          "detail": "Insert 27 missing tblJOB records into work_orders (1,203 -> 1,230)"
+        },
+        {
+          "step": "2.2B",
+          "target_table": "public.jobs",
+          "action": "INSERT",
+          "rows_affected": 27,
+          "before": 1205,
+          "after": 1232,
+          "detail": "Insert 27 missing tblJOB records into jobs (1,205 -> 1,232, including 2 native NextGen jobs)"
+        },
+        {
+          "step": "2.3",
+          "target_table": "public.job_steps",
+          "action": "INSERT",
+          "rows_affected": 55,
+          "before": 2457,
+          "after": 2512,
+          "detail": "Insert 55 valid tblProcessingDeadline records into job_steps (2,457 -> 2,512)"
+        },
+        {
+          "step": "2.4",
+          "target_table": "public.work_logs",
+          "action": "INSERT",
+          "rows_affected": 205,
+          "before": 7111,
+          "after": 7316,
+          "detail": "Insert 205 valid tblWorkLog records into work_logs (7,111 -> 7,316)"
+        },
+        {
+          "step": "2.5",
+          "target_table": "public.equipment",
+          "action": "UPDATE",
+          "rows_affected": 27,
+          "before": 0,
+          "after": 27,
+          "detail": "Backfill equipment.company_id (machining vendor) via tblJOB.MachiningCustomerID (1->COMP-1607 TKC: 18, 2->COMP-1334NSB: 7, 3->COMP-1545 MTY: 2)"
+        }
+      ]
+    },
+    "wave_3": {
+      "work_order": "WO-MOLD-SYNC-WAVE3",
+      "status": "CLOSED",
+      "execution_commit_sha": "8a6b7db922cfbc58f73a3c9a9c5b32475ea55dec",
+      "staging_table": "public.staging_mold_sync_wave3",
+      "staging_rows_total": 2829,
+      "staging_rows_applied": 2829,
+      "operations_by_table": [
+        {
+          "step": "3.1",
+          "target_table": "public.equipment_history",
+          "action": "INSERT",
+          "rows_affected": 1488,
+          "before": 0,
+          "after": 1488,
+          "detail": "Insert 1,488 tblLocationLog records (LOCATION_CHANGE; LocationLogID=1356 to_location=NULL with 'Orphan RackLayerID=840'; asset_location_logs=1,450 untouched)"
+        },
+        {
+          "step": "3.2",
+          "target_table": "public.equipment_ship_logs",
+          "action": "INSERT",
+          "rows_affected": 356,
+          "before": 0,
+          "after": 356,
+          "detail": "Create table & insert 356 valid tblShipLog records with ShipDate IS NOT NULL"
+        },
+        {
+          "step": "3.3",
+          "target_table": "public.mold_maintenance",
+          "action": "INSERT",
+          "rows_affected": 190,
+          "before": 0,
+          "after": 190,
+          "detail": "Insert 190 tblTeflonLog records with SentDate IS NOT NULL (TEFLON_COATING)"
+        },
+        {
+          "step": "3.4A",
+          "target_table": "public.mold_name_history",
+          "action": "INSERT",
+          "rows_affected": 35,
+          "before": 0,
+          "after": 35,
+          "detail": "Create table & insert 35 valid tblMoldLog records"
+        },
+        {
+          "step": "3.4B",
+          "target_table": "public.equipment_history",
+          "action": "INSERT",
+          "rows_affected": 56,
+          "before": 1488,
+          "after": 1544,
+          "detail": "Insert 35 tblMoldLog (MODIFICATION) + 21 tblCutterLog (CUTTER_MAINTENANCE) into equipment_history"
+        },
+        {
+          "step": "3.5A",
+          "target_table": "public.equipment_status_logs",
+          "action": "INSERT",
+          "rows_affected": 352,
+          "before": 0,
+          "after": 352,
+          "detail": "Create table & insert 352 valid statuslogs records with Status IS NOT NULL"
+        },
+        {
+          "step": "3.5B",
+          "target_table": "public.equipment_history",
+          "action": "INSERT",
+          "rows_affected": 352,
+          "before": 1544,
+          "after": 1896,
+          "detail": "Insert 352 statuslogs events (STATUS_CHECK_IN: 215, STATUS_CHECK_OUT: 112, STATUS_AUDIT: 23, STATUS_CHANGE: 2) into equipment_history"
+        }
+      ]
+    }
+  },
+  "excluded_rows_by_reason": [
+    {
+      "wave": "Wave 1",
+      "source_table": "tblMoldDesign",
+      "excluded_count": 1,
+      "reason": "Duplicate design code CHG001D: MoldDesignID=4725 duplicates MoldDesignID=4724 (D-4724) and has 0 molds/cutters referencing it; mapped to D-4724 (Condition 4.1)."
+    },
+    {
+      "wave": "Wave 1",
+      "source_table": "tblMold / tblCutter (KeeperCompany)",
+      "excluded_count": 3717,
+      "reason": "Strict COMP-* matching rule (Condition 4.4): KeeperCompany=2 (YSD in-house, 3,714 molds + 1 cutter) and KeeperCompany=1540 (MTM, 2 molds M-2926 & M-4412) have no COMP-2 / COMP-1540 row in public.companies; keeper_company_id kept NULL (in-house custody default)."
+    },
+    {
+      "wave": "Wave 1",
+      "source_table": "tblMoldCutter",
+      "excluded_count": 152,
+      "reason": "152 tblMoldCutter rows point to a MoldDesignID that has 0 physical M-* records in tblMold (even after Wave 2 Job backfill). Their cutters already link directly to design_revisions via equipment.design_revision_id; the remaining 2,586 rows with >=1 physical mold expanded to 2,970 (MOLD, CUTTER) pairs in equipment_assignments."
+    },
+    {
+      "wave": "Wave 1 (Pre-Wave1)",
+      "source_table": "tblTray",
+      "excluded_count": 7,
+      "reason": "7 blank rows in tblTray (TrayID: 5206, 5223, 5226, 5244, 5277, 5370, 5381) have both TrayName=NULL and TrayCode=NULL (4,105/4,112 valid trays synced as TRAY-* in public.products)."
+    },
+    {
+      "wave": "Wave 2",
+      "source_table": "tblProcessingDeadline",
+      "excluded_count": 20,
+      "reason": "Orphan JobID not in tblJOB (Decision 2.D): 19 rows have JobID IS NULL and 1 row has JobID=575 (non-existent in tblJOB); logged in EXCLUDED_ORPHAN_JOB_STEPS."
+    },
+    {
+      "wave": "Wave 2",
+      "source_table": "tblWorkLog",
+      "excluded_count": 7,
+      "reason": "Orphan ProcessingDeadlineID (Decision 2.E): 6 rows reference orphan ProcessingDeadlineIDs (whose JobID is NULL) and 1 row references non-existent ProcessingDeadlineID=1736; logged in EXCLUDED_ORPHAN_WORK_LOGS."
+    },
+    {
+      "wave": "Wave 2",
+      "source_table": "tblWorkLog",
+      "excluded_count": 94,
+      "reason": "Null ProcessingDeadlineID (Decision 2.E): 94 legacy work log rows have ProcessingDeadlineID IS NULL whereas public.work_logs.job_step_id is NOT NULL; logged in EXCLUDED_LEGACY_WORK_LOGS."
+    },
+    {
+      "wave": "Wave 2",
+      "source_table": "tblJOB (MachiningCustomerID)",
+      "excluded_count": 166,
+      "reason": "Self-machining & unmapped vendor (Decision 2.C): 164 jobs have MachiningCustomerID=4 (YSD internal machining -> equipment.company_id kept NULL) and 2 jobs have MachiningCustomerID=5 (no company row in public.companies -> kept NULL)."
+    },
+    {
+      "wave": "Wave 3",
+      "source_table": "tblShipLog",
+      "excluded_count": 2,
+      "reason": "Missing ShipDate (Decision Q2): ShipID=619 and ShipID=620 have ShipDate IS NULL whereas equipment_ship_logs.ship_date is NOT NULL; logged in EXCLUDED_SHIPLOGS."
+    },
+    {
+      "wave": "Wave 3",
+      "source_table": "tblTeflonLog",
+      "excluded_count": 4502,
+      "reason": "Not yet sent for coating (Decision Q3): 78 pending rows (RequestedDate IS NOT NULL AND SentDate IS NULL, logged in EXCLUDED_TEFLON_PENDING_78) + 4,424 blank/placeholder rows (both RequestedDate and SentDate are NULL). Only the 190 rows with SentDate IS NOT NULL were inserted into mold_maintenance."
+    },
+    {
+      "wave": "Wave 3",
+      "source_table": "tblMoldLog",
+      "excluded_count": 1,
+      "reason": "Completely blank row (Decision Q4): MoldLogID=24 has MoldID=NULL, ChangeDate=NULL, OldMoldName=NULL, NewMoldName=NULL; logged in EXCLUDED_MOLDLOGS."
+    },
+    {
+      "wave": "Wave 3",
+      "source_table": "statuslogs",
+      "excluded_count": 46,
+      "reason": "Missing Status code (Decision Q5): 46 rows have Status IS NULL (including 1 row with both MoldID and CutterID NULL); logged in EXCLUDED_STATUSLOGS_46."
+    }
+  ],
+  "remaining_access_data_inventory": {
+    "category_A_fully_synced_core_and_waves_30_tables": [
+      {
+        "access_table": "tblCustomer",
+        "access_rows": 415,
+        "supabase_table": "public.companies (CUST-*)",
+        "supabase_rows": 415,
+        "status": "100% Synced (Wave 1 added CUST-444)"
+      },
+      {
+        "access_table": "tblCompany",
+        "access_rows": 1725,
+        "supabase_table": "public.companies (COMP-*)",
+        "supabase_rows": 1577,
+        "status": "Synced (148 deduplicated with tblCustomer / YSD internal)"
+      },
+      {
+        "access_table": "tblTrayCustomer",
+        "access_rows": 1069,
+        "supabase_table": "public.delivery_sites",
+        "supabase_rows": 1169,
+        "status": "100% Synced"
+      },
+      {
+        "access_table": "tblMachiningCustomer",
+        "access_rows": 5,
+        "supabase_table": "public.companies / equipment.company_id",
+        "supabase_rows": 27,
+        "status": "Synced in Wave 2 Step 2.5 (IDs 1..3 mapped; ID 4=YSD; ID 5=unmapped)"
+      },
+      {
+        "access_table": "tblRack",
+        "access_rows": 90,
+        "supabase_table": "public.racks",
+        "supabase_rows": 90,
+        "status": "100% Synced"
+      },
+      {
+        "access_table": "tblRackLayer",
+        "access_rows": 400,
+        "supabase_table": "public.rack_layers",
+        "supabase_rows": 400,
+        "status": "100% Synced (Wave 1 added 20 rows)"
+      },
+      {
+        "access_table": "tblTray",
+        "access_rows": 4112,
+        "supabase_table": "public.products (TRAY-*)",
+        "supabase_rows": 4105,
+        "status": "100% Valid Synced (7 blank rows excluded)"
+      },
+      {
+        "access_table": "tblMoldDesign",
+        "access_rows": 4781,
+        "supabase_table": "public.design_revisions",
+        "supabase_rows": 4781,
+        "status": "100% Synced (Wave 1 added 88 + normalized 70; 1 dup CHG001D mapped to D-4724)"
+      },
+      {
+        "access_table": "tblMold",
+        "access_rows": 4793,
+        "supabase_table": "public.equipment (M-*)",
+        "supabase_rows": 4793,
+        "status": "100% Synced (Wave 1 added 24; Wave 2 linked 67 design_revision_id)"
+      },
+      {
+        "access_table": "tblCutter",
+        "access_rows": 1729,
+        "supabase_table": "public.equipment (C-*)",
+        "supabase_rows": 1729,
+        "status": "100% Synced (Wave 1 added 4; plus 3 native NextGen equipment = 6,525 total)"
+      },
+      {
+        "access_table": "tblMoldCutter",
+        "access_rows": 2738,
+        "supabase_table": "public.equipment_assignments",
+        "supabase_rows": 2970,
+        "status": "100% Valid Synced (2,586 rows with physical mold expanded to 2,970 pairs; 152 no-mold rows linked via equipment.design_revision_id)"
+      },
+      {
+        "access_table": "tblJOB",
+        "access_rows": 1230,
+        "supabase_table": "public.work_orders & public.jobs",
+        "supabase_rows": "1,230 / 1,232",
+        "status": "100% Synced in Wave 2 (1,202 updated + 27 inserted; 1 pre-existing)"
+      },
+      {
+        "access_table": "tblProcessingDeadline",
+        "access_rows": 2527,
+        "supabase_table": "public.job_steps",
+        "supabase_rows": 2512,
+        "status": "100% Valid Synced in Wave 2 (2,507 legacy + 5 native = 2,512; 20 orphans excluded)"
+      },
+      {
+        "access_table": "tblWorkLog",
+        "access_rows": 7416,
+        "supabase_table": "public.work_logs",
+        "supabase_rows": 7316,
+        "status": "100% Valid Synced in Wave 2 (7,315 legacy + 1 native = 7,316; 101 invalid/orphan excluded)"
+      },
+      {
+        "access_table": "tblLocationLog",
+        "access_rows": 1488,
+        "supabase_table": "public.equipment_history & asset_location_logs",
+        "supabase_rows": "1,488 / 1,450",
+        "status": "100% Synced in Wave 3 Step 3.1"
+      },
+      {
+        "access_table": "tblShipLog",
+        "access_rows": 358,
+        "supabase_table": "public.equipment_ship_logs",
+        "supabase_rows": 356,
+        "status": "100% Valid Synced in Wave 3 Step 3.2 (2 NULL ShipDate excluded)"
+      },
+      {
+        "access_table": "tblTeflonLog",
+        "access_rows": 4692,
+        "supabase_table": "public.mold_maintenance",
+        "supabase_rows": 190,
+        "status": "100% Sent Synced in Wave 3 Step 3.3 (78 pending + 4,424 empty excluded)"
+      },
+      {
+        "access_table": "tblMoldLog",
+        "access_rows": 36,
+        "supabase_table": "public.mold_name_history & equipment_history",
+        "supabase_rows": "35 / 35",
+        "status": "100% Valid Synced in Wave 3 Step 3.4 (1 empty row excluded)"
+      },
+      {
+        "access_table": "tblCutterLog",
+        "access_rows": 21,
+        "supabase_table": "public.equipment_history",
+        "supabase_rows": 21,
+        "status": "100% Synced in Wave 3 Step 3.4B"
+      },
+      {
+        "access_table": "statuslogs",
+        "access_rows": 398,
+        "supabase_table": "public.equipment_status_logs & equipment_history",
+        "supabase_rows": "352 / 352",
+        "status": "100% Valid Synced in Wave 3 Step 3.5 (46 NULL Status excluded)"
+      },
+      {
+        "access_table": "tblMoldBorrow",
+        "access_rows": 209,
+        "supabase_table": "public.mold_loan_certificates",
+        "supabase_rows": 209,
+        "status": "100% Synced (Pre-Wave 1)"
+      },
+      {
+        "access_table": "destinations",
+        "access_rows": 16,
+        "supabase_table": "public.destinations",
+        "supabase_rows": 16,
+        "status": "100% Synced (Pre-Wave 1)"
+      },
+      {
+        "access_table": "tblEmployee",
+        "access_rows": 23,
+        "supabase_table": "public.employees",
+        "supabase_rows": 25,
+        "status": "100% Synced (23 legacy + 2 NextGen)"
+      },
+      {
+        "access_table": "tblItemType",
+        "access_rows": 11,
+        "supabase_table": "public.item_types",
+        "supabase_rows": 11,
+        "status": "100% Synced"
+      },
+      {
+        "access_table": "tblMachine",
+        "access_rows": 14,
+        "supabase_table": "public.machines",
+        "supabase_rows": 14,
+        "status": "100% Synced"
+      },
+      {
+        "access_table": "tblProcessingCode",
+        "access_rows": 53,
+        "supabase_table": "public.processing_codes",
+        "supabase_rows": 54,
+        "status": "100% Synced (53 legacy + 1 NextGen)"
+      },
+      {
+        "access_table": "tblProcessingItem",
+        "access_rows": 20,
+        "supabase_table": "public.processing_items",
+        "supabase_rows": 20,
+        "status": "100% Synced"
+      },
+      {
+        "access_table": "tblProcessingStatus",
+        "access_rows": 13,
+        "supabase_table": "public.processing_statuses",
+        "supabase_rows": 13,
+        "status": "100% Synced"
+      },
+      {
+        "access_table": "tblCalendar",
+        "access_rows": 730,
+        "supabase_table": "public.company_calendar",
+        "supabase_rows": 1095,
+        "status": "100% Synced (expanded to 3 years = 1,095 days)"
+      },
+      {
+        "access_table": "tblCav",
+        "access_rows": 57,
+        "supabase_table": "public.cav_types",
+        "supabase_rows": 52,
+        "status": "Synced (52 unique valid cav_code in cav_types)"
+      }
+    ],
+    "category_B_plastic_lookup_and_spec_tables_9_tables": [
+      {
+        "access_table": "tblPLASTICforForming",
+        "access_rows": 330,
+        "supabase_table": "public.plastic_master (818) & design_revisions",
+        "status": "Consolidated into plastic_master (818 rows) & design_revisions material specs"
+      },
+      {
+        "access_table": "tblPlasticColor (7), tblPlasticCompany (23), tblPlasticGroup (17), tblPlasticLength (24), tblPlasticMaterial (5), tblPlasticStaticCharge (22), tblPlasticThickness (25), tblPlasticWidth (26)",
+        "access_rows": 149,
+        "supabase_table": "public.plastic_master (818) & public.companies",
+        "status": "Normalized / consolidated into plastic_master attributes"
+      }
+    ],
+    "category_C_unsynced_or_empty_legacy_tables_12_tables": [
+      {
+        "access_table": "VatTuTbl",
+        "access_rows": 723,
+        "target_supabase_candidate": "public.materials (0 rows)",
+        "status": "NOT_SYNCED — Legacy mold raw material / steel / aluminum blank catalog (723 items)"
+      },
+      {
+        "access_table": "DatHangVTTbl",
+        "access_rows": 1396,
+        "target_supabase_candidate": "public.mold_material_bom (0 rows)",
+        "status": "NOT_SYNCED — Legacy mold material purchase orders per JobID (1,396 rows)"
+      },
+      {
+        "access_table": "VatTuSDtbl",
+        "access_rows": 64,
+        "target_supabase_candidate": "public.material_consumption_logs (0 rows)",
+        "status": "NOT_SYNCED — Legacy material usage per WorkLogID (64 rows)"
+      },
+      {
+        "access_table": "tblDefect",
+        "access_rows": 4,
+        "target_supabase_candidate": "public.defect_reports / job_qc_logs (0 rows)",
+        "status": "NOT_SYNCED — 4 legacy machining defect records (JobID: 94, 552, 159, 7)"
+      },
+      {
+        "access_table": "tblCase",
+        "access_rows": 18,
+        "target_supabase_candidate": "N/A (Cardboard box folding dimension lookup)",
+        "status": "NOT_SYNCED — 18 rows of cardboard box dimensions (TatamuSize, Chouhen, tanpen, fukasa)"
+      },
+      {
+        "access_table": "tblResponsiblePerson",
+        "access_rows": 13,
+        "target_supabase_candidate": "public.employees / work_orders.assigned_to",
+        "status": "PARTIAL — Mapped by name during Job sync; 13 rows in Access lookup table"
+      },
+      {
+        "access_table": "tblEmployee_old",
+        "access_rows": 7,
+        "target_supabase_candidate": "Deprecated archive of tblEmployee",
+        "status": "NOT_NEEDED — Superseded by tblEmployee (23 rows)"
+      },
+      {
+        "access_table": "tblStakings",
+        "access_rows": 2,
+        "target_supabase_candidate": "public.equipment (STACKING = 1)",
+        "status": "NOT_NEEDED — 2 placeholder rows ('MZT-007', 'ZA'); physical stacking is in tblMold (M-5212)"
+      },
+      {
+        "access_table": "tblTrayOrder",
+        "access_rows": 2,
+        "target_supabase_candidate": "public.orders (2,396 rows)",
+        "status": "NOT_NEEDED — 2 test/seed rows from 2026-03-10 ('seed-plan-20260310-01'); real orders (2,396) synced from CSV/Excel"
+      },
+      {
+        "access_table": "scraplog",
+        "access_rows": 0,
+        "target_supabase_candidate": "public.mold_disposal_logs (0 rows)",
+        "status": "EMPTY IN ACCESS (0 rows)"
+      },
+      {
+        "access_table": "tblMoldDesignLog",
+        "access_rows": 0,
+        "target_supabase_candidate": "public.design_approval_logs (0 rows)",
+        "status": "EMPTY IN ACCESS (0 rows)"
+      },
+      {
+        "access_table": "~TMPCLP* (9 system clipboard tables)",
+        "access_rows": 23,
+        "target_supabase_candidate": "N/A (MS Access internal ~TMPCLP tables)",
+        "status": "IGNORED — Access internal temp/paste error tables"
+      }
+    ]
+  }
+}

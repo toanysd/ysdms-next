@@ -1,17 +1,16 @@
 # 📌 YSDMS NextGen — Active Handoff (`00_ACTIVE_HANDOFF.md`)
 
-- **Cập nhật lần cuối:** `2026-10-17 17:43:00 JST`
+- **Cập nhật lần cuối:** `2026-10-17 17:59:00 JST`
 - **Work Order đã đóng (`CLOSED`):**
+  - `WO-MOLD-SYNC-WAVE3` (**CLOSED & VERIFIED BY PE** tại `8a6b7db922cfbc58f73a3c9a9c5b32475ea55dec`, Directive `715539cb`).
   - `WO-MOLD-SYNC-WAVE2` (**CLOSED & VERIFIED BY PE** tại `3cff159d744d68daff09293d3c1479c704b6c319`).
-  - `WO-CONTEXT-PALACE` (**CLOSED**), `WO-MOLD-SYNC-WAVE1` (**CLOSED**), `WO-DOC-MODULAR` (**CLOSED**), `WO-EQUIPMENT-UI-FIX` (**CLOSED**).
-- **Work Order hiện hành:** `WO-MOLD-SYNC-WAVE3` (đã gộp `Wave 4` theo Chỉ thị PE `d9fd207d`) — **ĐÃ THỰC THI TRÊN PRODUCTION (`2,829/2,829` DÒNG APPLIED, `0` LỖI FK), CHỜ PE HẬU KIỂM CỔNG 2 & ĐÓNG WO**.
+  - `WO-MOLD-SYNC-WAVE1` (**CLOSED**), `WO-CONTEXT-PALACE` (**CLOSED**), `WO-DOC-MODULAR` (**CLOSED**), `WO-EQUIPMENT-UI-FIX` (**CLOSED**).
+- **Work Order hiện hành:** `WO-DATA-AUDIT-SUMMARY` (Theo Chỉ thị PE `715539cb`) — **ĐÃ LẬP BÁO CÁO TỔNG HỢP READ-ONLY 3 WAVE (`1+2+3`) & KIỂM KÊ 51 BẢNG ACCESS, CHỜ PE NGHIỆM THU & ĐÓNG WO**.
 
-## 1. Kết Quả Thực Thi Production `WO-MOLD-SYNC-WAVE3` (`docs/audit_logs/2026-10-17_WO-MOLD-SYNC-WAVE3-EXECUTION.json`)
-1. **Step 0 (`01_staging_ddl.sql`):** Tạo `public.staging_mold_sync_wave3`, bật RLS (`relrowsecurity = true`, 2 policies), nạp `2,829` dòng (`applied = true: 2,829/2,829`).
-2. **Step 3.1 (`02_step3_1_location_to_equipment_history.sql` — Q1):** `ROW_COUNT = 1,488` vào `public.equipment_history` (`LOCATION_CHANGE`; `LocationLogID=1356` có `to_location = NULL` & `'Orphan RackLayerID=840'`; giữ nguyên `asset_location_logs = 1,450`).
-3. **Step 3.2 (`03_step3_2_ship_logs_insert.sql` — Q2):** `ROW_COUNT = 356` vào `public.equipment_ship_logs` (`shiplog_dup_leg = 0`; loại `2` dòng `ShipDate IS NULL`).
-4. **Step 3.3 (`04_step3_3_teflon_to_mold_maintenance.sql` — Q3):** `ROW_COUNT = 190` vào `public.mold_maintenance` (`TEFLON_COATING`; loại `78` pending & `4,424` rỗng).
-5. **Step 3.4 (`05_step3_4_mold_cutter_logs_insert.sql` — Q4):** `3.4A ROW_COUNT = 35` vào `public.mold_name_history` (loại `MoldLogID=24` rỗng); `3.4B ROW_COUNT = 56` (`35 MODIFICATION` + `21 CUTTER_MAINTENANCE`) vào `public.equipment_history` (`1,488 -> 1,544`).
-6. **Step 3.5 (`06_step3_5_status_logs_insert.sql` — Q5/5A):** `3.5A ROW_COUNT = 352` vào `public.equipment_status_logs` (`statlog_dup_leg = 0`); `3.5B ROW_COUNT = 352` (`STATUS_*`) vào `public.equipment_history` (`1,544 -> 1,896`; loại `46` dòng `Status IS NULL`).
-7. **Postflight & Invariants:** `13/13` FK checks = `0`; `equipment_history = 1,896`, `equipment_ship_logs = 356`, `mold_maintenance = 190`, `mold_name_history = 35`, `equipment_status_logs = 352`, `asset_location_logs = 1,450`, `equipment = 6,525`, `work_orders = 1,230`, `jobs = 1,232`, `job_steps = 2,512`, `work_logs = 7,316`.
-8. **Điểm dừng hiện tại:** Chờ **PE** hậu kiểm Cổng 2 độc lập trên Supabase Production và tuyên bố **`CLOSED` cho `WO-MOLD-SYNC-WAVE3`**.
+## 1. Tóm Tắt Kiểm Toán Tổng Hợp 3 Wave (`docs/audit_logs/2026-10-17_WO-DATA-AUDIT-SUMMARY.{md,json}`)
+1. **Tổng số dòng biến đổi qua 3 bảng Staging (`100% applied`):** `7,438` dòng (`Wave 1 = 1,824` | `Wave 2 = 2,785` | `Wave 3 = 2,829`).
+2. **Số bản ghi Production hiện hành sau 3 Wave:** `companies = 2,215`, `racks = 90`, `rack_layers = 400`, `products = 8,543`, `design_revisions = 4,781`, `equipment = 6,525` (`molds_with_drev = 4,793`, `keeper_company_id = 226`, `company_id = 27`), `equipment_assignments = 2,970`, `work_orders = 1,230`, `jobs = 1,232`, `job_steps = 2,512`, `work_logs = 7,316`, `equipment_history = 1,896`, `equipment_ship_logs = 356`, `mold_maintenance = 190`, `mold_name_history = 35`, `equipment_status_logs = 352`, `asset_location_logs = 1,450`, `mold_loan_certificates = 209`.
+3. **Dữ liệu Access (`ysdJOB_20261006.accdb` — `51` bảng: `42` bảng người dùng + `9` bảng `~TMPCLP*`):**
+   - `39/42` bảng cốt lõi & danh mục nhựa đã đồng bộ/chuẩn hóa hoàn chỉnh.
+   - Chỉ còn nhóm 3 bảng vật tư chế tạo khuôn (`VatTuTbl = 723`, `DatHangVTTbl = 1,396`, `VatTuSDtbl = 64`) và 2 bảng phụ nhỏ (`tblDefect = 4`, `tblCase = 18`) chưa đồng bộ (tùy chọn nếu nghiệp vụ cần).
+4. **Điểm dừng hiện tại:** Chờ **PE** nghiệm thu báo cáo `WO-DATA-AUDIT-SUMMARY` và chỉ đạo Work Order tiếp theo.
