@@ -1,0 +1,1244 @@
+{
+  "work_order": "WO-MOLD-SYNC-WAVE3",
+  "gate": "GATE_1_PAYLOAD_V1_SUBMISSION",
+  "status": "DRY_RUN_AND_ROLLBACK_SCRIPT_VERIFIED_VIA_BEGIN_ROLLBACK_AWAITING_PE_GO",
+  "pe_directive_id": "d9fd207d",
+  "architectural_decisions_enforced": {
+    "Q1_location_log": "Insert 1,488 rows into equipment_history (LOCATION_CHANGE); LocationLogID=1356 has to_location=NULL & note 'Orphan RackLayerID=840'; 0 changes to asset_location_logs (1,450)",
+    "Q2_ship_log": "Insert 356 rows with ShipDate IS NOT NULL into equipment_ship_logs; exclude 2 NULL ShipDate rows into EXCLUDED_SHIPLOGS; 0 rows to equipment_history",
+    "Q3_teflon_log": "Insert 190 rows with SentDate IS NOT NULL into mold_maintenance (TEFLON_COATING); exclude 78 pending & 4,424 empty rows",
+    "Q4_mold_cutter_log": "Insert 35 valid tblMoldLog rows into mold_name_history + 35 (MODIFICATION) & 21 tblCutterLog (CUTTER_MAINTENANCE) into equipment_history; exclude MoldLogID=24 empty row",
+    "Q5_statuslogs": "Merged Wave 4 into Wave 3 (Decision 5A): insert 352 valid rows into equipment_status_logs & 352 rows into equipment_history; exclude 46 Status IS NULL rows into EXCLUDED_STATUSLOGS"
+  },
+  "verified_at_utc": "2026-10-17 08:34:52.445867+00",
+  "verified_at_jst": "2026-10-17 17:34:51 JST",
+  "db_mutations_persisted": 0,
+  "staging_summary": {
+    "table_name": "public.staging_mold_sync_wave3",
+    "batch_code": "WO-MOLD-SYNC-WAVE3-V1",
+    "total_staging_rows": 2829,
+    "breakdown": {
+      "3.1_EQHIST_LOCATION": 1488,
+      "3.2_SHIPLOG_INSERT": 356,
+      "3.3_TEFLON_MAINT_INSERT": 190,
+      "3.4A_MOLDNAME_HIST_INSERT": 35,
+      "3.4B_EQHIST_MOLD_CUTTER": 56,
+      "3.5A_STATUSLOG_INSERT": 352,
+      "3.5B_EQHIST_STATUS": 352
+    }
+  },
+  "preflight_baseline": {
+    "equipment_history_total": 0,
+    "eqhist_location_change": 0,
+    "eqhist_modification": 0,
+    "eqhist_cutter_maint": 0,
+    "eqhist_status_events": 0,
+    "equipment_ship_logs_total": 0,
+    "shiplog_dup_leg": 0,
+    "mold_maintenance_total": 0,
+    "mold_name_history_total": 0,
+    "equipment_status_logs_total": 0,
+    "statlog_dup_leg": 0,
+    "asset_location_logs_total": 1450,
+    "equipment_total": 6525,
+    "work_orders_total": 1230,
+    "jobs_total": 1232,
+    "job_steps_total": 2512,
+    "work_logs_total": 7316,
+    "orders_total": 2396,
+    "order_lines_total": 6279
+  },
+  "in_transaction_postflight_before_rollback": {
+    "equipment_history_total": 1896,
+    "eqhist_location_change": 1488,
+    "eqhist_modification": 35,
+    "eqhist_cutter_maint": 21,
+    "eqhist_status_events": 352,
+    "equipment_ship_logs_total": 356,
+    "shiplog_dup_leg": 0,
+    "mold_maintenance_total": 190,
+    "mold_name_history_total": 35,
+    "equipment_status_logs_total": 352,
+    "statlog_dup_leg": 0,
+    "asset_location_logs_total": 1450,
+    "equipment_total": 6525,
+    "work_orders_total": 1230,
+    "jobs_total": 1232,
+    "job_steps_total": 2512,
+    "work_logs_total": 7316,
+    "orders_total": 2396,
+    "order_lines_total": 6279
+  },
+  "in_transaction_fk_integrity_check": {
+    "broken_eh_eq_fk": 0,
+    "broken_eh_emp_fk": 0,
+    "broken_ship_eq_fk": 0,
+    "broken_ship_from_comp_fk": 0,
+    "broken_ship_to_comp_fk": 0,
+    "broken_ship_emp_fk": 0,
+    "broken_maint_eq_fk": 0,
+    "broken_maint_vendor_fk": 0,
+    "broken_maint_emp_fk": 0,
+    "broken_mname_eq_fk": 0,
+    "broken_stat_eq_fk": 0,
+    "broken_stat_dest_fk": 0,
+    "broken_stat_emp_fk": 0
+  },
+  "in_transaction_after_07_rollback_plan_script": {
+    "equipment_history_total": 0,
+    "eqhist_location_change": 0,
+    "eqhist_modification": 0,
+    "eqhist_cutter_maint": 0,
+    "eqhist_status_events": 0,
+    "equipment_ship_logs_total": 0,
+    "shiplog_dup_leg": 0,
+    "mold_maintenance_total": 0,
+    "mold_name_history_total": 0,
+    "equipment_status_logs_total": 0,
+    "statlog_dup_leg": 0,
+    "asset_location_logs_total": 1450,
+    "equipment_total": 6525,
+    "work_orders_total": 1230,
+    "jobs_total": 1232,
+    "job_steps_total": 2512,
+    "work_logs_total": 7316,
+    "orders_total": 2396,
+    "order_lines_total": 6279
+  },
+  "post_outer_rollback_counts": {
+    "equipment_history_total": 0,
+    "eqhist_location_change": 0,
+    "eqhist_modification": 0,
+    "eqhist_cutter_maint": 0,
+    "eqhist_status_events": 0,
+    "equipment_ship_logs_total": 0,
+    "shiplog_dup_leg": 0,
+    "mold_maintenance_total": 0,
+    "mold_name_history_total": 0,
+    "equipment_status_logs_total": 0,
+    "statlog_dup_leg": 0,
+    "asset_location_logs_total": 1450,
+    "equipment_total": 6525,
+    "work_orders_total": 1230,
+    "jobs_total": 1232,
+    "job_steps_total": 2512,
+    "work_logs_total": 7316,
+    "orders_total": 2396,
+    "order_lines_total": 6279
+  },
+  "split_sql_files_v1": {
+    "01_staging_ddl.sql": {
+      "lines": 58,
+      "bytes": 2154
+    },
+    "02_step3_1_location_to_equipment_history.sql": {
+      "lines": 49,
+      "bytes": 1971
+    },
+    "03_step3_2_ship_logs_insert.sql": {
+      "lines": 52,
+      "bytes": 2080
+    },
+    "04_step3_3_teflon_to_mold_maintenance.sql": {
+      "lines": 45,
+      "bytes": 1721
+    },
+    "05_step3_4_mold_cutter_logs_insert.sql": {
+      "lines": 63,
+      "bytes": 2555
+    },
+    "06_step3_5_status_logs_insert.sql": {
+      "lines": 76,
+      "bytes": 3209
+    },
+    "07_full_rollback_plan.sql": {
+      "lines": 68,
+      "bytes": 3189
+    }
+  },
+  "location_log_1356_orphan_sample": {
+    "history_id": "81b94091-ddd3-5080-b312-c3a0484b5b3e",
+    "legacy_id": "LEGACY-LOC-1356",
+    "LocationLogID": 1356,
+    "equipment_id": "af8102fb-db3a-4b54-a1a9-4393d366af7c",
+    "equipment_legacy_id": "C-3070",
+    "action_type": "LOCATION_CHANGE",
+    "action_date": "2025-11-19",
+    "from_location": null,
+    "to_location": null,
+    "old_rack_layer_id": null,
+    "new_rack_layer_id": null,
+    "performed_by": null,
+    "description": "[LEGACY-LOC-1356] | Orphan RackLayerID=840"
+  },
+  "EXCLUDED_SHIPLOGS": [
+    {
+      "ShipID": 33,
+      "legacy_id": "LEGACY-SHIP-33",
+      "reason": "EXCLUDED_BY_PE_Q2_NULL_SHIP_DATE",
+      "MoldID": 1917,
+      "CutterID": null,
+      "ShipItemName": null,
+      "ShipNotes": "2024"
+    },
+    {
+      "ShipID": 117,
+      "legacy_id": "LEGACY-SHIP-117",
+      "reason": "EXCLUDED_BY_PE_Q2_NULL_SHIP_DATE",
+      "MoldID": 5090,
+      "CutterID": null,
+      "ShipItemName": null,
+      "ShipNotes": null
+    }
+  ],
+  "EXCLUDED_MOLDLOGS": [
+    {
+      "MoldLogID": 24,
+      "legacy_id": "LEGACY-MOLDLOG-24",
+      "reason": "EXCLUDED_BY_PE_Q4_EMPTY_MOLD_ID_ROW",
+      "ChangeDate": "2025-08-21"
+    }
+  ],
+  "EXCLUDED_TEFLON_PENDING_78": [
+    {
+      "TeflonLogID": 173,
+      "legacy_id": "LEGACY-TEFLON-173",
+      "MoldID": 5650,
+      "TeflonStatus": "テフロン加工承認待ち",
+      "RequestedDate": null,
+      "reason": "EXCLUDED_BY_PE_Q3_PENDING_WITHOUT_SENT_DATE"
+    },
+    {
+      "TeflonLogID": 347,
+      "legacy_id": "LEGACY-TEFLON-347",
+      "MoldID": 174,
+      "TeflonStatus": "テフロン加工済",
+      "RequestedDate": null,
+      "reason": "EXCLUDED_BY_PE_Q3_PENDING_WITHOUT_SENT_DATE"
+    },
+    {
+      "TeflonLogID": 661,
+      "legacy_id": "LEGACY-TEFLON-661",
+      "MoldID": 366,
+      "TeflonStatus": "テフロン加工済",
+      "RequestedDate": null,
+      "reason": "EXCLUDED_BY_PE_Q3_PENDING_WITHOUT_SENT_DATE"
+    },
+    {
+      "TeflonLogID": 1288,
+      "legacy_id": "LEGACY-TEFLON-1288",
+      "MoldID": 1040,
+      "TeflonStatus": "テフロン加工済",
+      "RequestedDate": null,
+      "reason": "EXCLUDED_BY_PE_Q3_PENDING_WITHOUT_SENT_DATE"
+    },
+    {
+      "TeflonLogID": 1371,
+      "legacy_id": "LEGACY-TEFLON-1371",
+      "MoldID": 1129,
+      "TeflonStatus": "テフロン加工済",
+      "RequestedDate": null,
+      "reason": "EXCLUDED_BY_PE_Q3_PENDING_WITHOUT_SENT_DATE"
+    },
+    {
+      "TeflonLogID": 1376,
+      "legacy_id": "LEGACY-TEFLON-1376",
+      "MoldID": 1135,
+      "TeflonStatus": "テフロン加工済",
+      "RequestedDate": null,
+      "reason": "EXCLUDED_BY_PE_Q3_PENDING_WITHOUT_SENT_DATE"
+    },
+    {
+      "TeflonLogID": 1399,
+      "legacy_id": "LEGACY-TEFLON-1399",
+      "MoldID": 1171,
+      "TeflonStatus": "テフロン加工済",
+      "RequestedDate": null,
+      "reason": "EXCLUDED_BY_PE_Q3_PENDING_WITHOUT_SENT_DATE"
+    },
+    {
+      "TeflonLogID": 1495,
+      "legacy_id": "LEGACY-TEFLON-1495",
+      "MoldID": 1326,
+      "TeflonStatus": "テフロン加工済",
+      "RequestedDate": null,
+      "reason": "EXCLUDED_BY_PE_Q3_PENDING_WITHOUT_SENT_DATE"
+    },
+    {
+      "TeflonLogID": 2877,
+      "legacy_id": "LEGACY-TEFLON-2877",
+      "MoldID": 4218,
+      "TeflonStatus": "テフロン加工済",
+      "RequestedDate": null,
+      "reason": "EXCLUDED_BY_PE_Q3_PENDING_WITHOUT_SENT_DATE"
+    },
+    {
+      "TeflonLogID": 3223,
+      "legacy_id": "LEGACY-TEFLON-3223",
+      "MoldID": 3192,
+      "TeflonStatus": "テフロン加工済",
+      "RequestedDate": null,
+      "reason": "EXCLUDED_BY_PE_Q3_PENDING_WITHOUT_SENT_DATE"
+    },
+    {
+      "TeflonLogID": 3520,
+      "legacy_id": "LEGACY-TEFLON-3520",
+      "MoldID": 4606,
+      "TeflonStatus": "テフロン加工済",
+      "RequestedDate": null,
+      "reason": "EXCLUDED_BY_PE_Q3_PENDING_WITHOUT_SENT_DATE"
+    },
+    {
+      "TeflonLogID": 3523,
+      "legacy_id": "LEGACY-TEFLON-3523",
+      "MoldID": 4617,
+      "TeflonStatus": "テフロン加工済",
+      "RequestedDate": null,
+      "reason": "EXCLUDED_BY_PE_Q3_PENDING_WITHOUT_SENT_DATE"
+    },
+    {
+      "TeflonLogID": 3546,
+      "legacy_id": "LEGACY-TEFLON-3546",
+      "MoldID": 4648,
+      "TeflonStatus": "テフロン加工済",
+      "RequestedDate": null,
+      "reason": "EXCLUDED_BY_PE_Q3_PENDING_WITHOUT_SENT_DATE"
+    },
+    {
+      "TeflonLogID": 3612,
+      "legacy_id": "LEGACY-TEFLON-3612",
+      "MoldID": 4306,
+      "TeflonStatus": "テフロン加工済",
+      "RequestedDate": null,
+      "reason": "EXCLUDED_BY_PE_Q3_PENDING_WITHOUT_SENT_DATE"
+    },
+    {
+      "TeflonLogID": 3698,
+      "legacy_id": "LEGACY-TEFLON-3698",
+      "MoldID": 4403,
+      "TeflonStatus": "テフロン加工済",
+      "RequestedDate": null,
+      "reason": "EXCLUDED_BY_PE_Q3_PENDING_WITHOUT_SENT_DATE"
+    },
+    {
+      "TeflonLogID": 3699,
+      "legacy_id": "LEGACY-TEFLON-3699",
+      "MoldID": 4404,
+      "TeflonStatus": "テフロン加工済",
+      "RequestedDate": null,
+      "reason": "EXCLUDED_BY_PE_Q3_PENDING_WITHOUT_SENT_DATE"
+    },
+    {
+      "TeflonLogID": 3721,
+      "legacy_id": "LEGACY-TEFLON-3721",
+      "MoldID": 4428,
+      "TeflonStatus": "テフロン加工済",
+      "RequestedDate": null,
+      "reason": "EXCLUDED_BY_PE_Q3_PENDING_WITHOUT_SENT_DATE"
+    },
+    {
+      "TeflonLogID": 3741,
+      "legacy_id": "LEGACY-TEFLON-3741",
+      "MoldID": 4461,
+      "TeflonStatus": "テフロン加工承認待ち",
+      "RequestedDate": null,
+      "reason": "EXCLUDED_BY_PE_Q3_PENDING_WITHOUT_SENT_DATE"
+    },
+    {
+      "TeflonLogID": 4432,
+      "legacy_id": "LEGACY-TEFLON-4432",
+      "MoldID": 5421,
+      "TeflonStatus": "テフロン加工承認待ち",
+      "RequestedDate": null,
+      "reason": "EXCLUDED_BY_PE_Q3_PENDING_WITHOUT_SENT_DATE"
+    },
+    {
+      "TeflonLogID": 4433,
+      "legacy_id": "LEGACY-TEFLON-4433",
+      "MoldID": 5422,
+      "TeflonStatus": "テフロン加工承認待ち",
+      "RequestedDate": null,
+      "reason": "EXCLUDED_BY_PE_Q3_PENDING_WITHOUT_SENT_DATE"
+    },
+    {
+      "TeflonLogID": 4447,
+      "legacy_id": "LEGACY-TEFLON-4447",
+      "MoldID": 5438,
+      "TeflonStatus": "テフロン加工済",
+      "RequestedDate": null,
+      "reason": "EXCLUDED_BY_PE_Q3_PENDING_WITHOUT_SENT_DATE"
+    },
+    {
+      "TeflonLogID": 4543,
+      "legacy_id": "LEGACY-TEFLON-4543",
+      "MoldID": 5543,
+      "TeflonStatus": "テフロン加工承認待ち",
+      "RequestedDate": null,
+      "reason": "EXCLUDED_BY_PE_Q3_PENDING_WITHOUT_SENT_DATE"
+    },
+    {
+      "TeflonLogID": 4557,
+      "legacy_id": "LEGACY-TEFLON-4557",
+      "MoldID": 5559,
+      "TeflonStatus": "テフロン加工承認待ち",
+      "RequestedDate": "2026-03-11",
+      "reason": "EXCLUDED_BY_PE_Q3_PENDING_WITHOUT_SENT_DATE"
+    },
+    {
+      "TeflonLogID": 4570,
+      "legacy_id": "LEGACY-TEFLON-4570",
+      "MoldID": 5683,
+      "TeflonStatus": "テフロン加工承認待ち",
+      "RequestedDate": "2025-12-18",
+      "reason": "EXCLUDED_BY_PE_Q3_PENDING_WITHOUT_SENT_DATE"
+    },
+    {
+      "TeflonLogID": 4572,
+      "legacy_id": "LEGACY-TEFLON-4572",
+      "MoldID": 5689,
+      "TeflonStatus": "テフロン加工承認待ち",
+      "RequestedDate": "2025-12-26",
+      "reason": "EXCLUDED_BY_PE_Q3_PENDING_WITHOUT_SENT_DATE"
+    },
+    {
+      "TeflonLogID": 4573,
+      "legacy_id": "LEGACY-TEFLON-4573",
+      "MoldID": 5695,
+      "TeflonStatus": "テフロン加工承認待ち",
+      "RequestedDate": "2026-01-14",
+      "reason": "EXCLUDED_BY_PE_Q3_PENDING_WITHOUT_SENT_DATE"
+    },
+    {
+      "TeflonLogID": 4575,
+      "legacy_id": "LEGACY-TEFLON-4575",
+      "MoldID": 1163,
+      "TeflonStatus": "承認済(発送待ち)",
+      "RequestedDate": "2026-01-22",
+      "reason": "EXCLUDED_BY_PE_Q3_PENDING_WITHOUT_SENT_DATE"
+    },
+    {
+      "TeflonLogID": 4579,
+      "legacy_id": "LEGACY-TEFLON-4579",
+      "MoldID": 5689,
+      "TeflonStatus": "承認済(発送待ち)",
+      "RequestedDate": "2026-01-27",
+      "reason": "EXCLUDED_BY_PE_Q3_PENDING_WITHOUT_SENT_DATE"
+    },
+    {
+      "TeflonLogID": 4581,
+      "legacy_id": "LEGACY-TEFLON-4581",
+      "MoldID": 5691,
+      "TeflonStatus": "テフロン加工承認待ち",
+      "RequestedDate": "2026-01-27",
+      "reason": "EXCLUDED_BY_PE_Q3_PENDING_WITHOUT_SENT_DATE"
+    },
+    {
+      "TeflonLogID": 4582,
+      "legacy_id": "LEGACY-TEFLON-4582",
+      "MoldID": 5691,
+      "TeflonStatus": "承認済(発送待ち)",
+      "RequestedDate": "2026-01-27",
+      "reason": "EXCLUDED_BY_PE_Q3_PENDING_WITHOUT_SENT_DATE"
+    },
+    {
+      "TeflonLogID": 4583,
+      "legacy_id": "LEGACY-TEFLON-4583",
+      "MoldID": 5693,
+      "TeflonStatus": "承認済(発送待ち)",
+      "RequestedDate": "2026-01-27",
+      "reason": "EXCLUDED_BY_PE_Q3_PENDING_WITHOUT_SENT_DATE"
+    },
+    {
+      "TeflonLogID": 4588,
+      "legacy_id": "LEGACY-TEFLON-4588",
+      "MoldID": 5714,
+      "TeflonStatus": "テフロン加工承認待ち",
+      "RequestedDate": "2026-01-29",
+      "reason": "EXCLUDED_BY_PE_Q3_PENDING_WITHOUT_SENT_DATE"
+    },
+    {
+      "TeflonLogID": 4589,
+      "legacy_id": "LEGACY-TEFLON-4589",
+      "MoldID": 5714,
+      "TeflonStatus": "承認済(発送待ち)",
+      "RequestedDate": "2026-01-30",
+      "reason": "EXCLUDED_BY_PE_Q3_PENDING_WITHOUT_SENT_DATE"
+    },
+    {
+      "TeflonLogID": 4597,
+      "legacy_id": "LEGACY-TEFLON-4597",
+      "MoldID": 5725,
+      "TeflonStatus": "テフロン加工承認待ち",
+      "RequestedDate": "2026-02-12",
+      "reason": "EXCLUDED_BY_PE_Q3_PENDING_WITHOUT_SENT_DATE"
+    },
+    {
+      "TeflonLogID": 4598,
+      "legacy_id": "LEGACY-TEFLON-4598",
+      "MoldID": 5726,
+      "TeflonStatus": "テフロン加工承認待ち",
+      "RequestedDate": "2026-02-12",
+      "reason": "EXCLUDED_BY_PE_Q3_PENDING_WITHOUT_SENT_DATE"
+    },
+    {
+      "TeflonLogID": 4599,
+      "legacy_id": "LEGACY-TEFLON-4599",
+      "MoldID": 5725,
+      "TeflonStatus": "承認済(発送待ち)",
+      "RequestedDate": "2026-02-14",
+      "reason": "EXCLUDED_BY_PE_Q3_PENDING_WITHOUT_SENT_DATE"
+    },
+    {
+      "TeflonLogID": 4601,
+      "legacy_id": "LEGACY-TEFLON-4601",
+      "MoldID": 5726,
+      "TeflonStatus": "承認済(発送待ち)",
+      "RequestedDate": "2026-02-14",
+      "reason": "EXCLUDED_BY_PE_Q3_PENDING_WITHOUT_SENT_DATE"
+    },
+    {
+      "TeflonLogID": 4602,
+      "legacy_id": "LEGACY-TEFLON-4602",
+      "MoldID": 5659,
+      "TeflonStatus": "承認済(発送待ち)",
+      "RequestedDate": "2026-02-14",
+      "reason": "EXCLUDED_BY_PE_Q3_PENDING_WITHOUT_SENT_DATE"
+    },
+    {
+      "TeflonLogID": 4612,
+      "legacy_id": "LEGACY-TEFLON-4612",
+      "MoldID": 5650,
+      "TeflonStatus": "承認済(発送待ち)",
+      "RequestedDate": "2026-03-12",
+      "reason": "EXCLUDED_BY_PE_Q3_PENDING_WITHOUT_SENT_DATE"
+    },
+    {
+      "TeflonLogID": 4614,
+      "legacy_id": "LEGACY-TEFLON-4614",
+      "MoldID": 5543,
+      "TeflonStatus": "承認済(発送待ち)",
+      "RequestedDate": "2026-03-12",
+      "reason": "EXCLUDED_BY_PE_Q3_PENDING_WITHOUT_SENT_DATE"
+    },
+    {
+      "TeflonLogID": 4617,
+      "legacy_id": "LEGACY-TEFLON-4617",
+      "MoldID": 5740,
+      "TeflonStatus": "テフロン加工承認待ち",
+      "RequestedDate": "2026-03-13",
+      "reason": "EXCLUDED_BY_PE_Q3_PENDING_WITHOUT_SENT_DATE"
+    },
+    {
+      "TeflonLogID": 4621,
+      "legacy_id": "LEGACY-TEFLON-4621",
+      "MoldID": 5559,
+      "TeflonStatus": "承認済(発送待ち)",
+      "RequestedDate": "2026-03-11",
+      "reason": "EXCLUDED_BY_PE_Q3_PENDING_WITHOUT_SENT_DATE"
+    },
+    {
+      "TeflonLogID": 4623,
+      "legacy_id": "LEGACY-TEFLON-4623",
+      "MoldID": 5738,
+      "TeflonStatus": "テフロン加工承認待ち",
+      "RequestedDate": "2026-03-14",
+      "reason": "EXCLUDED_BY_PE_Q3_PENDING_WITHOUT_SENT_DATE"
+    },
+    {
+      "TeflonLogID": 4624,
+      "legacy_id": "LEGACY-TEFLON-4624",
+      "MoldID": 5738,
+      "TeflonStatus": "承認済(発送待ち)",
+      "RequestedDate": "2026-03-16",
+      "reason": "EXCLUDED_BY_PE_Q3_PENDING_WITHOUT_SENT_DATE"
+    },
+    {
+      "TeflonLogID": 4626,
+      "legacy_id": "LEGACY-TEFLON-4626",
+      "MoldID": 5421,
+      "TeflonStatus": "承認済(発送待ち)",
+      "RequestedDate": "2026-03-16",
+      "reason": "EXCLUDED_BY_PE_Q3_PENDING_WITHOUT_SENT_DATE"
+    },
+    {
+      "TeflonLogID": 4628,
+      "legacy_id": "LEGACY-TEFLON-4628",
+      "MoldID": 5422,
+      "TeflonStatus": "承認済(発送待ち)",
+      "RequestedDate": "2026-03-14",
+      "reason": "EXCLUDED_BY_PE_Q3_PENDING_WITHOUT_SENT_DATE"
+    },
+    {
+      "TeflonLogID": 4634,
+      "legacy_id": "LEGACY-TEFLON-4634",
+      "MoldID": 5747,
+      "TeflonStatus": "承認済(発送待ち)",
+      "RequestedDate": "2026-03-24",
+      "reason": "EXCLUDED_BY_PE_Q3_PENDING_WITHOUT_SENT_DATE"
+    },
+    {
+      "TeflonLogID": 4636,
+      "legacy_id": "LEGACY-TEFLON-4636",
+      "MoldID": 5740,
+      "TeflonStatus": "承認済(発送待ち)",
+      "RequestedDate": "2026-03-24",
+      "reason": "EXCLUDED_BY_PE_Q3_PENDING_WITHOUT_SENT_DATE"
+    },
+    {
+      "TeflonLogID": 4637,
+      "legacy_id": "LEGACY-TEFLON-4637",
+      "MoldID": 5764,
+      "TeflonStatus": "テフロン加工承認待ち",
+      "RequestedDate": "2026-03-25",
+      "reason": "EXCLUDED_BY_PE_Q3_PENDING_WITHOUT_SENT_DATE"
+    },
+    {
+      "TeflonLogID": 4638,
+      "legacy_id": "LEGACY-TEFLON-4638",
+      "MoldID": 5764,
+      "TeflonStatus": "承認済(発送待ち)",
+      "RequestedDate": "2026-03-25",
+      "reason": "EXCLUDED_BY_PE_Q3_PENDING_WITHOUT_SENT_DATE"
+    },
+    {
+      "TeflonLogID": 4644,
+      "legacy_id": "LEGACY-TEFLON-4644",
+      "MoldID": 5758,
+      "TeflonStatus": "承認済(発送待ち)",
+      "RequestedDate": "2026-04-01",
+      "reason": "EXCLUDED_BY_PE_Q3_PENDING_WITHOUT_SENT_DATE"
+    },
+    {
+      "TeflonLogID": 4646,
+      "legacy_id": "LEGACY-TEFLON-4646",
+      "MoldID": 5765,
+      "TeflonStatus": "承認済(発送待ち)",
+      "RequestedDate": "2026-04-03",
+      "reason": "EXCLUDED_BY_PE_Q3_PENDING_WITHOUT_SENT_DATE"
+    },
+    {
+      "TeflonLogID": 4653,
+      "legacy_id": "LEGACY-TEFLON-4653",
+      "MoldID": 5683,
+      "TeflonStatus": "承認済(発送待ち)",
+      "RequestedDate": "2026-04-10",
+      "reason": "EXCLUDED_BY_PE_Q3_PENDING_WITHOUT_SENT_DATE"
+    },
+    {
+      "TeflonLogID": 4656,
+      "legacy_id": "LEGACY-TEFLON-4656",
+      "MoldID": 5769,
+      "TeflonStatus": "承認済(発送待ち)",
+      "RequestedDate": "2026-04-22",
+      "reason": "EXCLUDED_BY_PE_Q3_PENDING_WITHOUT_SENT_DATE"
+    },
+    {
+      "TeflonLogID": 4658,
+      "legacy_id": "LEGACY-TEFLON-4658",
+      "MoldID": 5695,
+      "TeflonStatus": "承認済(発送待ち)",
+      "RequestedDate": "2026-04-22",
+      "reason": "EXCLUDED_BY_PE_Q3_PENDING_WITHOUT_SENT_DATE"
+    },
+    {
+      "TeflonLogID": 4660,
+      "legacy_id": "LEGACY-TEFLON-4660",
+      "MoldID": 4461,
+      "TeflonStatus": "テフロン加工済",
+      "RequestedDate": null,
+      "reason": "EXCLUDED_BY_PE_Q3_PENDING_WITHOUT_SENT_DATE"
+    },
+    {
+      "TeflonLogID": 4661,
+      "legacy_id": "LEGACY-TEFLON-4661",
+      "MoldID": 5781,
+      "TeflonStatus": "テフロン加工承認待ち",
+      "RequestedDate": "2026-04-24",
+      "reason": "EXCLUDED_BY_PE_Q3_PENDING_WITHOUT_SENT_DATE"
+    },
+    {
+      "TeflonLogID": 4664,
+      "legacy_id": "LEGACY-TEFLON-4664",
+      "MoldID": 5781,
+      "TeflonStatus": "承認済(発送待ち)",
+      "RequestedDate": "2026-05-07",
+      "reason": "EXCLUDED_BY_PE_Q3_PENDING_WITHOUT_SENT_DATE"
+    },
+    {
+      "TeflonLogID": 4666,
+      "legacy_id": "LEGACY-TEFLON-4666",
+      "MoldID": 5797,
+      "TeflonStatus": "テフロン加工承認待ち",
+      "RequestedDate": "2026-05-21",
+      "reason": "EXCLUDED_BY_PE_Q3_PENDING_WITHOUT_SENT_DATE"
+    },
+    {
+      "TeflonLogID": 4667,
+      "legacy_id": "LEGACY-TEFLON-4667",
+      "MoldID": 5797,
+      "TeflonStatus": "承認済(発送待ち)",
+      "RequestedDate": "2026-05-21",
+      "reason": "EXCLUDED_BY_PE_Q3_PENDING_WITHOUT_SENT_DATE"
+    },
+    {
+      "TeflonLogID": 4669,
+      "legacy_id": "LEGACY-TEFLON-4669",
+      "MoldID": 5789,
+      "TeflonStatus": "テフロン加工承認待ち",
+      "RequestedDate": "2026-05-15",
+      "reason": "EXCLUDED_BY_PE_Q3_PENDING_WITHOUT_SENT_DATE"
+    },
+    {
+      "TeflonLogID": 4670,
+      "legacy_id": "LEGACY-TEFLON-4670",
+      "MoldID": 5789,
+      "TeflonStatus": "承認済(発送待ち)",
+      "RequestedDate": "2026-05-15",
+      "reason": "EXCLUDED_BY_PE_Q3_PENDING_WITHOUT_SENT_DATE"
+    },
+    {
+      "TeflonLogID": 4673,
+      "legacy_id": "LEGACY-TEFLON-4673",
+      "MoldID": 5754,
+      "TeflonStatus": "テフロン加工承認待ち",
+      "RequestedDate": "2026-05-20",
+      "reason": "EXCLUDED_BY_PE_Q3_PENDING_WITHOUT_SENT_DATE"
+    },
+    {
+      "TeflonLogID": 4674,
+      "legacy_id": "LEGACY-TEFLON-4674",
+      "MoldID": 5754,
+      "TeflonStatus": "承認済(発送待ち)",
+      "RequestedDate": "2026-05-20",
+      "reason": "EXCLUDED_BY_PE_Q3_PENDING_WITHOUT_SENT_DATE"
+    },
+    {
+      "TeflonLogID": 4678,
+      "legacy_id": "LEGACY-TEFLON-4678",
+      "MoldID": 5788,
+      "TeflonStatus": "テフロン加工承認待ち",
+      "RequestedDate": "2026-04-30",
+      "reason": "EXCLUDED_BY_PE_Q3_PENDING_WITHOUT_SENT_DATE"
+    },
+    {
+      "TeflonLogID": 4679,
+      "legacy_id": "LEGACY-TEFLON-4679",
+      "MoldID": 5816,
+      "TeflonStatus": "テフロン加工承認待ち",
+      "RequestedDate": "2026-05-27",
+      "reason": "EXCLUDED_BY_PE_Q3_PENDING_WITHOUT_SENT_DATE"
+    },
+    {
+      "TeflonLogID": 4680,
+      "legacy_id": "LEGACY-TEFLON-4680",
+      "MoldID": 5812,
+      "TeflonStatus": "承認済(発送待ち)",
+      "RequestedDate": "2026-06-05",
+      "reason": "EXCLUDED_BY_PE_Q3_PENDING_WITHOUT_SENT_DATE"
+    },
+    {
+      "TeflonLogID": 4682,
+      "legacy_id": "LEGACY-TEFLON-4682",
+      "MoldID": 5810,
+      "TeflonStatus": "テフロン加工承認待ち",
+      "RequestedDate": "2026-06-05",
+      "reason": "EXCLUDED_BY_PE_Q3_PENDING_WITHOUT_SENT_DATE"
+    },
+    {
+      "TeflonLogID": 4683,
+      "legacy_id": "LEGACY-TEFLON-4683",
+      "MoldID": 5830,
+      "TeflonStatus": "テフロン加工承認待ち",
+      "RequestedDate": "2026-06-08",
+      "reason": "EXCLUDED_BY_PE_Q3_PENDING_WITHOUT_SENT_DATE"
+    },
+    {
+      "TeflonLogID": 4685,
+      "legacy_id": "LEGACY-TEFLON-4685",
+      "MoldID": 5831,
+      "TeflonStatus": "テフロン加工承認待ち",
+      "RequestedDate": "2026-06-11",
+      "reason": "EXCLUDED_BY_PE_Q3_PENDING_WITHOUT_SENT_DATE"
+    },
+    {
+      "TeflonLogID": 4686,
+      "legacy_id": "LEGACY-TEFLON-4686",
+      "MoldID": 5799,
+      "TeflonStatus": "承認済(発送待ち)",
+      "RequestedDate": "2026-06-11",
+      "reason": "EXCLUDED_BY_PE_Q3_PENDING_WITHOUT_SENT_DATE"
+    },
+    {
+      "TeflonLogID": 4689,
+      "legacy_id": "LEGACY-TEFLON-4689",
+      "MoldID": 5830,
+      "TeflonStatus": "承認済(発送待ち)",
+      "RequestedDate": "2026-06-13",
+      "reason": "EXCLUDED_BY_PE_Q3_PENDING_WITHOUT_SENT_DATE"
+    },
+    {
+      "TeflonLogID": 4694,
+      "legacy_id": "LEGACY-TEFLON-4694",
+      "MoldID": 5860,
+      "TeflonStatus": "承認済(発送待ち)",
+      "RequestedDate": "2026-07-08",
+      "reason": "EXCLUDED_BY_PE_Q3_PENDING_WITHOUT_SENT_DATE"
+    },
+    {
+      "TeflonLogID": 4699,
+      "legacy_id": "LEGACY-TEFLON-4699",
+      "MoldID": 5831,
+      "TeflonStatus": "承認済(発送待ち)",
+      "RequestedDate": "2026-07-17",
+      "reason": "EXCLUDED_BY_PE_Q3_PENDING_WITHOUT_SENT_DATE"
+    },
+    {
+      "TeflonLogID": 4700,
+      "legacy_id": "LEGACY-TEFLON-4700",
+      "MoldID": 5865,
+      "TeflonStatus": "テフロン加工済",
+      "RequestedDate": null,
+      "reason": "EXCLUDED_BY_PE_Q3_PENDING_WITHOUT_SENT_DATE"
+    },
+    {
+      "TeflonLogID": 4701,
+      "legacy_id": "LEGACY-TEFLON-4701",
+      "MoldID": 5852,
+      "TeflonStatus": "テフロン加工承認待ち",
+      "RequestedDate": "2026-08-18",
+      "reason": "EXCLUDED_BY_PE_Q3_PENDING_WITHOUT_SENT_DATE"
+    },
+    {
+      "TeflonLogID": 4702,
+      "legacy_id": "LEGACY-TEFLON-4702",
+      "MoldID": 5852,
+      "TeflonStatus": "承認済(発送待ち)",
+      "RequestedDate": "2026-08-18",
+      "reason": "EXCLUDED_BY_PE_Q3_PENDING_WITHOUT_SENT_DATE"
+    },
+    {
+      "TeflonLogID": 4705,
+      "legacy_id": "LEGACY-TEFLON-4705",
+      "MoldID": 5907,
+      "TeflonStatus": "承認済(発送待ち)",
+      "RequestedDate": "2026-09-16",
+      "reason": "EXCLUDED_BY_PE_Q3_PENDING_WITHOUT_SENT_DATE"
+    }
+  ],
+  "EXCLUDED_STATUSLOGS_46": [
+    {
+      "StatusLogID": 7,
+      "legacy_id": "LEGACY-STATLOG-7",
+      "MoldID": 3192,
+      "CutterID": null,
+      "Timestamp": null,
+      "Notes": "台車",
+      "reason": "EXCLUDED_BY_PE_Q5_DECISION_5A_NULL_STATUS"
+    },
+    {
+      "StatusLogID": 8,
+      "legacy_id": "LEGACY-STATLOG-8",
+      "MoldID": 5604,
+      "CutterID": null,
+      "Timestamp": null,
+      "Notes": "Viet",
+      "reason": "EXCLUDED_BY_PE_Q5_DECISION_5A_NULL_STATUS"
+    },
+    {
+      "StatusLogID": 11,
+      "legacy_id": "LEGACY-STATLOG-11",
+      "MoldID": 3331,
+      "CutterID": null,
+      "Timestamp": null,
+      "Notes": "",
+      "reason": "EXCLUDED_BY_PE_Q5_DECISION_5A_NULL_STATUS"
+    },
+    {
+      "StatusLogID": 12,
+      "legacy_id": "LEGACY-STATLOG-12",
+      "MoldID": 5640,
+      "CutterID": null,
+      "Timestamp": null,
+      "Notes": "HAI",
+      "reason": "EXCLUDED_BY_PE_Q5_DECISION_5A_NULL_STATUS"
+    },
+    {
+      "StatusLogID": 13,
+      "legacy_id": "LEGACY-STATLOG-13",
+      "MoldID": 5415,
+      "CutterID": null,
+      "Timestamp": null,
+      "Notes": "",
+      "reason": "EXCLUDED_BY_PE_Q5_DECISION_5A_NULL_STATUS"
+    },
+    {
+      "StatusLogID": 14,
+      "legacy_id": "LEGACY-STATLOG-14",
+      "MoldID": 5644,
+      "CutterID": null,
+      "Timestamp": null,
+      "Notes": "",
+      "reason": "EXCLUDED_BY_PE_Q5_DECISION_5A_NULL_STATUS"
+    },
+    {
+      "StatusLogID": 15,
+      "legacy_id": "LEGACY-STATLOG-15",
+      "MoldID": 5550,
+      "CutterID": null,
+      "Timestamp": null,
+      "Notes": "ラベル付き写真撮影",
+      "reason": "EXCLUDED_BY_PE_Q5_DECISION_5A_NULL_STATUS"
+    },
+    {
+      "StatusLogID": 16,
+      "legacy_id": "LEGACY-STATLOG-16",
+      "MoldID": 5415,
+      "CutterID": null,
+      "Timestamp": null,
+      "Notes": "坂田精文堂から",
+      "reason": "EXCLUDED_BY_PE_Q5_DECISION_5A_NULL_STATUS"
+    },
+    {
+      "StatusLogID": 17,
+      "legacy_id": "LEGACY-STATLOG-17",
+      "MoldID": 5415,
+      "CutterID": null,
+      "Timestamp": null,
+      "Notes": "71",
+      "reason": "EXCLUDED_BY_PE_Q5_DECISION_5A_NULL_STATUS"
+    },
+    {
+      "StatusLogID": 18,
+      "legacy_id": "LEGACY-STATLOG-18",
+      "MoldID": 5604,
+      "CutterID": null,
+      "Timestamp": null,
+      "Notes": "51",
+      "reason": "EXCLUDED_BY_PE_Q5_DECISION_5A_NULL_STATUS"
+    },
+    {
+      "StatusLogID": 19,
+      "legacy_id": "LEGACY-STATLOG-19",
+      "MoldID": 5650,
+      "CutterID": null,
+      "Timestamp": null,
+      "Notes": "11/11",
+      "reason": "EXCLUDED_BY_PE_Q5_DECISION_5A_NULL_STATUS"
+    },
+    {
+      "StatusLogID": 20,
+      "legacy_id": "LEGACY-STATLOG-20",
+      "MoldID": 5650,
+      "CutterID": null,
+      "Timestamp": null,
+      "Notes": "11/12",
+      "reason": "EXCLUDED_BY_PE_Q5_DECISION_5A_NULL_STATUS"
+    },
+    {
+      "StatusLogID": 21,
+      "legacy_id": "LEGACY-STATLOG-21",
+      "MoldID": 5646,
+      "CutterID": null,
+      "Timestamp": null,
+      "Notes": "11/12",
+      "reason": "EXCLUDED_BY_PE_Q5_DECISION_5A_NULL_STATUS"
+    },
+    {
+      "StatusLogID": 22,
+      "legacy_id": "LEGACY-STATLOG-22",
+      "MoldID": 3331,
+      "CutterID": null,
+      "Timestamp": null,
+      "Notes": "",
+      "reason": "EXCLUDED_BY_PE_Q5_DECISION_5A_NULL_STATUS"
+    },
+    {
+      "StatusLogID": 23,
+      "legacy_id": "LEGACY-STATLOG-23",
+      "MoldID": 3020,
+      "CutterID": null,
+      "Timestamp": "2025-11-20 09:49:52",
+      "Notes": "坂田さん",
+      "reason": "EXCLUDED_BY_PE_Q5_DECISION_5A_NULL_STATUS"
+    },
+    {
+      "StatusLogID": 24,
+      "legacy_id": "LEGACY-STATLOG-24",
+      "MoldID": 5632,
+      "CutterID": null,
+      "Timestamp": "2025-11-21 00:00:00",
+      "Notes": "",
+      "reason": "EXCLUDED_BY_PE_Q5_DECISION_5A_NULL_STATUS"
+    },
+    {
+      "StatusLogID": 25,
+      "legacy_id": "LEGACY-STATLOG-25",
+      "MoldID": 5633,
+      "CutterID": null,
+      "Timestamp": "2025-11-21 10:19:42",
+      "Notes": "",
+      "reason": "EXCLUDED_BY_PE_Q5_DECISION_5A_NULL_STATUS"
+    },
+    {
+      "StatusLogID": 26,
+      "legacy_id": "LEGACY-STATLOG-26",
+      "MoldID": 5663,
+      "CutterID": null,
+      "Timestamp": "2025-11-26 08:23:37",
+      "Notes": "新規成形",
+      "reason": "EXCLUDED_BY_PE_Q5_DECISION_5A_NULL_STATUS"
+    },
+    {
+      "StatusLogID": 27,
+      "legacy_id": "LEGACY-STATLOG-27",
+      "MoldID": 5632,
+      "CutterID": null,
+      "Timestamp": "2025-11-26 19:02:24",
+      "Notes": "テフロン加工済",
+      "reason": "EXCLUDED_BY_PE_Q5_DECISION_5A_NULL_STATUS"
+    },
+    {
+      "StatusLogID": 28,
+      "legacy_id": "LEGACY-STATLOG-28",
+      "MoldID": 5633,
+      "CutterID": null,
+      "Timestamp": "2025-11-26 19:04:14",
+      "Notes": "テフロン加工済",
+      "reason": "EXCLUDED_BY_PE_Q5_DECISION_5A_NULL_STATUS"
+    },
+    {
+      "StatusLogID": 29,
+      "legacy_id": "LEGACY-STATLOG-29",
+      "MoldID": 5636,
+      "CutterID": null,
+      "Timestamp": "2025-11-26 19:09:21",
+      "Notes": "",
+      "reason": "EXCLUDED_BY_PE_Q5_DECISION_5A_NULL_STATUS"
+    },
+    {
+      "StatusLogID": 30,
+      "legacy_id": "LEGACY-STATLOG-30",
+      "MoldID": 5639,
+      "CutterID": null,
+      "Timestamp": "2025-11-26 19:09:35",
+      "Notes": "",
+      "reason": "EXCLUDED_BY_PE_Q5_DECISION_5A_NULL_STATUS"
+    },
+    {
+      "StatusLogID": 31,
+      "legacy_id": "LEGACY-STATLOG-31",
+      "MoldID": 1844,
+      "CutterID": null,
+      "Timestamp": "2025-11-27 12:57:41",
+      "Notes": "Khach xem khuon",
+      "reason": "EXCLUDED_BY_PE_Q5_DECISION_5A_NULL_STATUS"
+    },
+    {
+      "StatusLogID": 32,
+      "legacy_id": "LEGACY-STATLOG-32",
+      "MoldID": 1740,
+      "CutterID": null,
+      "Timestamp": "2025-12-01 14:40:25",
+      "Notes": "",
+      "reason": "EXCLUDED_BY_PE_Q5_DECISION_5A_NULL_STATUS"
+    },
+    {
+      "StatusLogID": 33,
+      "legacy_id": "LEGACY-STATLOG-33",
+      "MoldID": 1736,
+      "CutterID": null,
+      "Timestamp": "2025-12-01 14:41:35",
+      "Notes": "",
+      "reason": "EXCLUDED_BY_PE_Q5_DECISION_5A_NULL_STATUS"
+    },
+    {
+      "StatusLogID": 34,
+      "legacy_id": "LEGACY-STATLOG-34",
+      "MoldID": 1741,
+      "CutterID": null,
+      "Timestamp": "2025-12-01 14:42:11",
+      "Notes": "",
+      "reason": "EXCLUDED_BY_PE_Q5_DECISION_5A_NULL_STATUS"
+    },
+    {
+      "StatusLogID": 35,
+      "legacy_id": "LEGACY-STATLOG-35",
+      "MoldID": 1752,
+      "CutterID": null,
+      "Timestamp": "2025-12-01 14:42:31",
+      "Notes": "",
+      "reason": "EXCLUDED_BY_PE_Q5_DECISION_5A_NULL_STATUS"
+    },
+    {
+      "StatusLogID": 36,
+      "legacy_id": "LEGACY-STATLOG-36",
+      "MoldID": 1734,
+      "CutterID": null,
+      "Timestamp": "2025-12-01 14:42:43",
+      "Notes": "",
+      "reason": "EXCLUDED_BY_PE_Q5_DECISION_5A_NULL_STATUS"
+    },
+    {
+      "StatusLogID": 37,
+      "legacy_id": "LEGACY-STATLOG-37",
+      "MoldID": 1743,
+      "CutterID": null,
+      "Timestamp": "2025-12-01 14:43:21",
+      "Notes": "",
+      "reason": "EXCLUDED_BY_PE_Q5_DECISION_5A_NULL_STATUS"
+    },
+    {
+      "StatusLogID": 38,
+      "legacy_id": "LEGACY-STATLOG-38",
+      "MoldID": 1742,
+      "CutterID": null,
+      "Timestamp": "2025-12-01 14:43:30",
+      "Notes": "",
+      "reason": "EXCLUDED_BY_PE_Q5_DECISION_5A_NULL_STATUS"
+    },
+    {
+      "StatusLogID": 39,
+      "legacy_id": "LEGACY-STATLOG-39",
+      "MoldID": 1745,
+      "CutterID": null,
+      "Timestamp": "2025-12-01 14:43:44",
+      "Notes": "",
+      "reason": "EXCLUDED_BY_PE_Q5_DECISION_5A_NULL_STATUS"
+    },
+    {
+      "StatusLogID": 40,
+      "legacy_id": "LEGACY-STATLOG-40",
+      "MoldID": 1739,
+      "CutterID": null,
+      "Timestamp": "2025-12-01 14:43:54",
+      "Notes": "",
+      "reason": "EXCLUDED_BY_PE_Q5_DECISION_5A_NULL_STATUS"
+    },
+    {
+      "StatusLogID": 41,
+      "legacy_id": "LEGACY-STATLOG-41",
+      "MoldID": 1737,
+      "CutterID": null,
+      "Timestamp": "2025-12-01 14:44:04",
+      "Notes": "",
+      "reason": "EXCLUDED_BY_PE_Q5_DECISION_5A_NULL_STATUS"
+    },
+    {
+      "StatusLogID": 42,
+      "legacy_id": "LEGACY-STATLOG-42",
+      "MoldID": 4785,
+      "CutterID": null,
+      "Timestamp": "2025-12-01 14:44:15",
+      "Notes": "",
+      "reason": "EXCLUDED_BY_PE_Q5_DECISION_5A_NULL_STATUS"
+    },
+    {
+      "StatusLogID": 43,
+      "legacy_id": "LEGACY-STATLOG-43",
+      "MoldID": 4784,
+      "CutterID": null,
+      "Timestamp": "2025-12-01 14:44:29",
+      "Notes": "",
+      "reason": "EXCLUDED_BY_PE_Q5_DECISION_5A_NULL_STATUS"
+    },
+    {
+      "StatusLogID": 44,
+      "legacy_id": "LEGACY-STATLOG-44",
+      "MoldID": 1744,
+      "CutterID": null,
+      "Timestamp": "2025-12-01 14:44:37",
+      "Notes": "",
+      "reason": "EXCLUDED_BY_PE_Q5_DECISION_5A_NULL_STATUS"
+    },
+    {
+      "StatusLogID": 45,
+      "legacy_id": "LEGACY-STATLOG-45",
+      "MoldID": 3936,
+      "CutterID": null,
+      "Timestamp": "2025-12-01 14:44:58",
+      "Notes": "",
+      "reason": "EXCLUDED_BY_PE_Q5_DECISION_5A_NULL_STATUS"
+    },
+    {
+      "StatusLogID": 46,
+      "legacy_id": "LEGACY-STATLOG-46",
+      "MoldID": 3937,
+      "CutterID": null,
+      "Timestamp": "2025-12-01 14:45:07",
+      "Notes": "",
+      "reason": "EXCLUDED_BY_PE_Q5_DECISION_5A_NULL_STATUS"
+    },
+    {
+      "StatusLogID": 47,
+      "legacy_id": "LEGACY-STATLOG-47",
+      "MoldID": 1735,
+      "CutterID": null,
+      "Timestamp": "2025-12-01 14:45:15",
+      "Notes": "",
+      "reason": "EXCLUDED_BY_PE_Q5_DECISION_5A_NULL_STATUS"
+    },
+    {
+      "StatusLogID": 48,
+      "legacy_id": "LEGACY-STATLOG-48",
+      "MoldID": 1738,
+      "CutterID": null,
+      "Timestamp": "2025-12-01 14:45:30",
+      "Notes": "",
+      "reason": "EXCLUDED_BY_PE_Q5_DECISION_5A_NULL_STATUS"
+    },
+    {
+      "StatusLogID": 49,
+      "legacy_id": "LEGACY-STATLOG-49",
+      "MoldID": 824,
+      "CutterID": null,
+      "Timestamp": "2025-12-01 14:45:40",
+      "Notes": "",
+      "reason": "EXCLUDED_BY_PE_Q5_DECISION_5A_NULL_STATUS"
+    },
+    {
+      "StatusLogID": 50,
+      "legacy_id": "LEGACY-STATLOG-50",
+      "MoldID": 5663,
+      "CutterID": null,
+      "Timestamp": "2025-12-04 11:06:04",
+      "Notes": "",
+      "reason": "EXCLUDED_BY_PE_Q5_DECISION_5A_NULL_STATUS"
+    },
+    {
+      "StatusLogID": 52,
+      "legacy_id": "LEGACY-STATLOG-52",
+      "MoldID": 5644,
+      "CutterID": null,
+      "Timestamp": "2025-12-04 11:56:09",
+      "Notes": "改造後の成形",
+      "reason": "EXCLUDED_BY_PE_Q5_DECISION_5A_NULL_STATUS"
+    },
+    {
+      "StatusLogID": 53,
+      "legacy_id": "LEGACY-STATLOG-53",
+      "MoldID": 5566,
+      "CutterID": null,
+      "Timestamp": "2025-12-05 09:22:14",
+      "Notes": "",
+      "reason": "EXCLUDED_BY_PE_Q5_DECISION_5A_NULL_STATUS"
+    },
+    {
+      "StatusLogID": 54,
+      "legacy_id": "LEGACY-STATLOG-54",
+      "MoldID": 3246,
+      "CutterID": null,
+      "Timestamp": "2025-12-09 15:02:29",
+      "Notes": "棚卸",
+      "reason": "EXCLUDED_BY_PE_Q5_DECISION_5A_NULL_STATUS"
+    },
+    {
+      "StatusLogID": 55,
+      "legacy_id": "LEGACY-STATLOG-55",
+      "MoldID": 462,
+      "CutterID": null,
+      "Timestamp": "2025-12-09 15:10:15",
+      "Notes": "棚卸",
+      "reason": "EXCLUDED_BY_PE_Q5_DECISION_5A_NULL_STATUS"
+    }
+  ]
+}
