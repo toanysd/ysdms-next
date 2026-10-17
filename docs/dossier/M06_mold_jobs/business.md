@@ -17,9 +17,9 @@
 - Đã nghiệm thu `WO-PIPE-FIX` (`c6f20b98`), `WO-MOLD-UNIFY` (`8e10b6aa`), `WO-ROUTE-CLEANUP` (`42851ee3`), `WO-EQUIPMENT-UI-FIX` (`a587a5c2`), `WO-MOLD-SYNC-WAVE2` (`3cff159d`).
 - `/equipment/schedule` (`getJobsForGantt`, `getWorkOrdersForGantt`, `MoldJobGantt`, `ToolingExcelGridView`, `ToolingGroupedJobCard`, `ToolingCalendarMatrix`, `JobQuickViewDrawer`, `autoScheduler`) chuẩn hóa dùng `COALESCE(mold_deadline, deadline)` và loại bỏ job nội bộ `JOB-INTERNAL-SHOP` khỏi biểu đồ Gantt khuôn.
 
-## 4. Hạng Mục Đang Chờ Duyệt Cổng 2 (`WO-SCHEDULE-DATA-AND-UI-ALIGNMENT`)
-- **Payload Backfill Cổng 1 (`BEGIN...ROLLBACK` PASS — chờ PE duyệt Cổng 2):**
+## 4. Hạng Mục Đang Chờ Duyệt Cổng 2 (`WO-SCHEDULE-DATA-AND-UI-ALIGNMENT` — Payload v2)
+- **Payload Backfill Cổng 1 v2 (`BEGIN...ROLLBACK` PASS, đã bỏ `ELSE` fallback theo `RULE-DATA-01` — chờ PE duyệt Cổng 2):**
   1. `public.jobs.company_id`: `+1,131` dòng (`101` $\rightarrow$ `1,232/1,232`, `0` NULL).
   2. `public.jobs.job_type_id`: `+28` dòng (`1,204` $\rightarrow$ `1,232/1,232`, `0` NULL).
   3. `public.work_orders`: `+1,203` dòng được bổ sung (`company_id`: `99` $\rightarrow$ `1,230/1,230`; `deadline`: `28` $\rightarrow$ `1,135/1,230`; `start_date`: `27` $\rightarrow$ `799/1,230`).
-  4. `public.job_steps.track`: `+2,507` dòng (`5` $\rightarrow$ `2,512/2,512`, `0` NULL).
+  4. `public.job_steps.track`: `+2,506` dòng (`5` $\rightarrow$ `2,511/2,512`); `1` dòng `EXCLUDED` giữ `track = NULL` (`LEGACY-STEP-1672` trên job `TE24264091`, `step_name = 'Legacy Step'`, `item_type_id = NULL`).

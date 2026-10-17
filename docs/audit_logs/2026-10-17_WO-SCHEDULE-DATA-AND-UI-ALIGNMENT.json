@@ -1,23 +1,12 @@
 {
   "work_order": "WO-SCHEDULE-DATA-AND-UI-ALIGNMENT",
-  "directive_id": "17481433",
-  "timestamp_jst": "2026-10-17 19:03 JST",
-  "phase": "UI_COMPLETED_AND_GATE1_BACKFILL_DRYRUN_SUBMITTED",
+  "directive_id": "f4aa3c7f",
+  "timestamp_jst": "2026-10-17 19:11 JST",
+  "phase": "UI_ACCEPTED_AND_GATE1_PAYLOAD_V2_DRYRUN_SUBMITTED",
   "schema_changes": 0,
   "production_db_mutations": 0,
   "part_a_ui_alignment": {
-    "status": "COMPLETED",
-    "modified_files": [
-      "src/app/actions/mold-job.ts",
-      "src/app/actions/work-orders.ts",
-      "src/app/equipment/schedule/page.tsx",
-      "src/app/equipment/schedule/_components/ToolingExcelGridView.tsx",
-      "src/app/equipment/schedule/_components/ToolingGroupedJobCard.tsx",
-      "src/app/equipment/schedule/_components/ToolingCalendarMatrix.tsx",
-      "src/components/equipment/MoldJobGantt.tsx",
-      "src/components/equipment/JobQuickViewDrawer.tsx",
-      "src/lib/scheduling/autoScheduler.ts"
-    ],
+    "status": "ACCEPTED_AND_CLOSED_BY_PE_AT_fc02bd7bceed8f21decb2abec0440df1979f1fa2",
     "quality_gates": {
       "tsc_no_emit": { "exit_code": 0, "errors": 0 },
       "check_translations_mjs": { "exit_code": 0, "missing_keys": 0 },
@@ -42,8 +31,9 @@
       }
     }
   },
-  "part_b_backfill_gate1_dry_run": {
+  "part_b_backfill_gate1_payload_v2_dry_run": {
     "transaction_mode": "BEGIN ... ROLLBACK",
+    "fallback_else_removed": true,
     "post_rollback_matches_before": true,
     "before_stats": {
       "work_orders": {
@@ -87,29 +77,42 @@
       },
       "job_steps": {
         "total": 2512,
-        "track_not_null": 2512,
-        "track_null": 0
+        "track_not_null": 2511,
+        "track_null": 1
       }
     },
     "updated_row_counts": {
       "jobs_company_id_updated": 1131,
       "jobs_job_type_id_updated": 28,
       "work_orders_updated": 1203,
-      "job_steps_track_updated": 2507
+      "job_steps_track_updated": 2506
     },
+    "excluded_job_steps_track_null": [
+      {
+        "step_id": "cd2d3225-f63a-4374-aa60-5760818d96ac",
+        "job_id": "a753412b-b303-424d-9e33-df275e50d17f",
+        "job_code": "TE24264091",
+        "step_no": 2,
+        "step_name": "Legacy Step",
+        "item_type_id": null,
+        "legacy_id": "LEGACY-STEP-1672",
+        "reason": "Source tblProcessingDeadline row (ProcessingDeadlineID=1672) has TypeID=NULL and generic step_name='Legacy Step'; left as track=NULL per RULE-DATA-01 (no fallback)."
+      }
+    ],
     "job_steps_track_distribution_after": {
       "MOLD": 1130,
       "PLUG": 809,
       "CUTTER": 356,
       "STAKING": 157,
       "MACHINE": 19,
-      "OTHER": 10,
       "WATER COOLING BASE": 10,
+      "OTHER": 9,
       "ALUMI": 9,
       "PRESSIER BASE": 6,
       "FINISH": 3,
       "FRAME": 2,
-      "DESIGN": 1
+      "DESIGN": 1,
+      "NULL_EXCLUDED": 1
     }
   }
 }
