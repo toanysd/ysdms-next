@@ -1,40 +1,22 @@
 {
   "work_order": "WO-SCHEDULE-DATA-AND-UI-ALIGNMENT",
-  "directive_id": "f4aa3c7f",
-  "timestamp_jst": "2026-10-17 19:11 JST",
-  "phase": "UI_ACCEPTED_AND_GATE1_PAYLOAD_V2_DRYRUN_SUBMITTED",
+  "directive_id": "a19f9ba2",
+  "timestamp_jst": "2026-10-17 19:16 JST",
+  "db_commit_timestamp_utc": "2026-10-17 10:15:07.323308+00:00",
+  "phase": "GATE2_COMMITTED_AND_POST_VERIFIED_PASS",
   "schema_changes": 0,
-  "production_db_mutations": 0,
   "part_a_ui_alignment": {
-    "status": "ACCEPTED_AND_CLOSED_BY_PE_AT_fc02bd7bceed8f21decb2abec0440df1979f1fa2",
-    "quality_gates": {
-      "tsc_no_emit": { "exit_code": 0, "errors": 0 },
-      "check_translations_mjs": { "exit_code": 0, "missing_keys": 0 },
-      "playwright_e2e": {
-        "internal_shop_search": {
-          "url": "/equipment/schedule?search=JOB-INTERNAL-SHOP",
-          "contains_internal_shop_card": false,
-          "shows_empty_schedule": true
-        },
-        "gantt_view_coalesce": {
-          "url": "/equipment/schedule?search=IRI002R2&view=gantt",
-          "has_deadline_2026_07_14": true,
-          "has_internal_shop": false
-        },
-        "grid_view_coalesce": {
-          "url": "/equipment/schedule?from=2026-07-06&to=2026-07-19&view=grid",
-          "has_job_IRI002R2": true,
-          "has_deadline_badge_07_14": true,
-          "has_internal_shop": false
-        },
-        "page_errors": []
-      }
-    }
+    "status": "ACCEPTED_AND_CLOSED_BY_PE_AT_fc02bd7bceed8f21decb2abec0440df1979f1fa2"
   },
-  "part_b_backfill_gate1_payload_v2_dry_run": {
-    "transaction_mode": "BEGIN ... ROLLBACK",
+  "part_b_backfill_gate2_committed": {
+    "committed": true,
     "fallback_else_removed": true,
-    "post_rollback_matches_before": true,
+    "rowcounts_executed": {
+      "jobs_company_updated": 1131,
+      "jobs_type_updated": 28,
+      "wo_updated": 1203,
+      "js_track_updated": 2506
+    },
     "before_stats": {
       "work_orders": {
         "total": 1230,
@@ -56,9 +38,15 @@
         "total": 2512,
         "track_not_null": 5,
         "track_null": 2507
+      },
+      "invariants": {
+        "orders": 2396,
+        "order_lines": 6279,
+        "equipment": 6525,
+        "asset_location_logs": 1450
       }
     },
-    "after_dry_run_stats": {
+    "after_commit_stats": {
       "work_orders": {
         "total": 1230,
         "deadline_not_null": 1135,
@@ -79,13 +67,13 @@
         "total": 2512,
         "track_not_null": 2511,
         "track_null": 1
+      },
+      "invariants": {
+        "orders": 2396,
+        "order_lines": 6279,
+        "equipment": 6525,
+        "asset_location_logs": 1450
       }
-    },
-    "updated_row_counts": {
-      "jobs_company_id_updated": 1131,
-      "jobs_job_type_id_updated": 28,
-      "work_orders_updated": 1203,
-      "job_steps_track_updated": 2506
     },
     "excluded_job_steps_track_null": [
       {
@@ -95,11 +83,10 @@
         "step_no": 2,
         "step_name": "Legacy Step",
         "item_type_id": null,
-        "legacy_id": "LEGACY-STEP-1672",
-        "reason": "Source tblProcessingDeadline row (ProcessingDeadlineID=1672) has TypeID=NULL and generic step_name='Legacy Step'; left as track=NULL per RULE-DATA-01 (no fallback)."
+        "legacy_id": "LEGACY-STEP-1672"
       }
     ],
-    "job_steps_track_distribution_after": {
+    "job_steps_track_distribution_after_commit": {
       "MOLD": 1130,
       "PLUG": 809,
       "CUTTER": 356,
