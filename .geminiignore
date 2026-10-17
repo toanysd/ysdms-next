@@ -25,15 +25,21 @@ coverage/
 playwright-report/
 test-results/
 
-# 4. Dữ Liệu Tạm, Scratch & Tài Liệu Thô Ngoài Luồng Code
+# 4. Dữ Liệu Tạm, Scratch, Bridge Internals & Tài Liệu Thô Ngoài Luồng Code
 temp_ai/
 scratch/
 tham_khao/
 source_data/
 business_docs/
 docs/reports/
+docs/audit_logs/
+docs/realtime-bridge/
+tools/realtime-bridge/
+scripts/archived/
+scripts/rebaseline/
+scripts/seed_v5/
 
-# 5. Các Script Nháp / One-off Tại Gốc Repo & Scripts Phục Vụ Kiểm Thử Tạm
+# 5. Chốt Chặn Script Nháp / One-off Tại Gốc Repo (Đã dọn vào _archive/scratch/ tại Cổng 3)
 apply_066.js
 apply_schema.js
 check*.js
@@ -45,6 +51,7 @@ fix_sidebar.js
 inspect_*.py
 parse_*.py
 prev_workflow.ts
+query_fk.js
 run_test.js
 scratch_query.js
 scratch_query2.js
