@@ -26,8 +26,15 @@
 
 ---
 
-## 2. Truy Vấn Dữ Liệu & Hiệu Năng (`RULE-DATA-1` .. `RULE-DATA-6`)
+## 2. Truy Vấn Dữ Liệu, Schema SSOT & Hiệu Năng (`RULE-DATA-01/02` & `RULE-DATA-1..6`)
 
+- **`[RULE-DATA-01]` Không Fallback Kỹ Thuật:** `cutline_length/width` (`design_revisions` qua `getCutlineSpecs`) $\neq$ kích thước vật lý (`equipment.actual_*_mm` / `cutter_*_mm`). Cấm regex parse text runtime (`product_description`, `display_name`, `tray_info`) để suy diễn cutline/corner R/chamfer C; trống hiển thị `"—"`.
+- **`[RULE-DATA-02]` Xác Minh DB Thực Tế & Khóa/Cột Chuẩn V3:**
+  - Kiểm chứng `information_schema.tables/columns` kèm `NOW()` và `docs/dossier/M01..M12/schema.md` trước khi viết query.
+  - **SSOT:** Nhựa & cutline từ `design_revisions` (`plastic_type_designed`, không lấy `products.primary_plastic_code`); thiết bị từ `equipment` & `equipment_assignments` (`SET_MEMBER`, `SHARED`).
+  - **Bảng `NOT_FOUND` (cấm truy vấn):** `mold_masters`, `physical_molds`, `cutters`, `order_items`, `product_master`.
+  - **Bảng `EXISTS` nhưng CẤM DÙNG trong code mới (không gọi là đã DROP):** `auxiliary_equipments`, `mold_design_cutters`, `mold_work_orders`.
+  - **Khóa & Cột chuẩn V3:** `orders.company_id -> companies.company_id` (không dùng `customer_id`); `orders.order_id`, `products.product_id`, `order_lines.line_id`; `products.product_name`, `product_name_internal`, `product_code`, `product_status` (không dùng `status` hay `product_name_ja`).
 - **`[RULE-DATA-1]` Pagination bắt buộc:** Không bao giờ dùng `.select('*')` không giới hạn cho bảng $> 100$ dòng. Luôn chỉ định cột cụ thể, dùng `.range(from, to)` + `{ count: 'exact' }` (`PAGE_SIZE = 50`) và render `@/components/ui/Pagination`.
 - **`[RULE-DATA-2]` Server-side search:** Lọc trên server qua `.ilike()` hoặc `.textSearch()`. Không tải toàn bộ về `.filter()` trên JS.
 - **`[RULE-DATA-3]` Default Filter + Toggle Chip:** Trang có ngữ cảnh rõ (VD: `/master/customers` mặc định `company_type.cs.{CUSTOMER}`) phải hiện Filter Chip `[Khách hàng ×]` để người dùng chủ động bật/tắt.
