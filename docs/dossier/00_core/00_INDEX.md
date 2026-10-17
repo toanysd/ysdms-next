@@ -1,6 +1,6 @@
 # 🗂️ YSDMS NextGen — Chỉ Mục Hồ Sơ Dự Án Theo Module (`docs/dossier/`)
 
-> **SSOT Index (`WO-DOC-MODULAR`)** — Cập nhật: `2026-10-17 JST` (Post-Wave 2)
+> **SSOT Index (`WO-DOC-MODULAR`)** — Cập nhật: `2026-10-17 JST` (Post-Wave 3)
 > **Quy tắc Token Economy:** Khi làm việc ở Module nào, chỉ đọc `business.md` + `schema.md` trong thư mục của Module đó (`<= 120` dòng, `<= 5 KB`/file). Không đọc toàn bộ `ysdms-nextgen_MASTER.md` hay `SCHEMA_REFERENCE.md`.
 
 ## 1. Bản Đồ 12 Module Hệ Thống & Trạng Thái Hiện Hành
@@ -14,7 +14,7 @@
 | **M04** | `M04_orders/` | Đơn hàng & Đối soát dòng chi tiết (`/orders`) | `orders` (2,396), `order_lines` (6,279) | ✅ Verified |
 | **M05** | `M05_equipment_set/` | Thiết bị hợp nhất, Khuôn, Dao cắt, Phôi nhôm & Bộ SET (`/equipment/*`) | `equipment` (6,525), `equipment_assignments` (2,970) | ✅ Wave 1/2 Synced |
 | **M06** | `M06_mold_jobs/` | Gia công chế tạo khuôn, Lịch Gantt & Work Orders (`/equipment/jobs`, `/schedule`) | `work_orders` (1,230), `jobs` (1,232), `job_steps` (2,512) | ✅ Wave 2 Synced |
-| **M07** | `M07_mold_custody/` | Lưu giữ, Mượn trả, Kiểm kê, Phí lưu kho, Teflon & Bảo trì (`/equipment/loans`, `/lifecycle`) | `equipment_loans` (1), `v_equipment_lifecycle_status` (6,525) | 🟡 Chờ Wave 4 |
+| **M07** | `M07_mold_custody/` | Lưu giữ, Mượn trả, Kiểm kê, Phí lưu kho, Teflon & Bảo trì (`/equipment/loans`, `/lifecycle`) | `equipment_history` (1,896), `equipment_ship_logs` (356), `mold_maintenance` (190), `mold_name_history` (35), `equipment_status_logs` (352) | ✅ Wave 3 Synced |
 | **M08** | `M08_forming_subcontract/` | Định hình, Chỉ thị SX, Nhật ký & Thầu phụ (`/production*`, `/worklogs`) | `work_logs` (7,316), `production_instructions` (0) | ✅ Wave 2 Synced |
 | **M09** | `M09_quality_sample_gate/` | Chất lượng KCS & Cổng duyệt mẫu thử (`/quality/*`) | `sample_requests` (0), `inspections` (0), `defect_reports` (0) | ⚪ Chưa liên thông |
 | **M10** | `M10_shipments_billing/` | Giao hàng, Kho Cuộn Nhựa/Khay & Hóa đơn (`/shipments`, `/plastics`, `/invoices`) | `plastic_receipt_roll` (321), `material_stock` (180), `shipments` (0) | 🟡 Một phần |

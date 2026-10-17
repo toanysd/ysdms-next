@@ -14,5 +14,5 @@
 - **PDF Templates:** `MoldLoanPDFDocument.tsx`, `OutsourceProcessingPDFDocument.tsx`, `PanasonicPalletReturnPDFDocument.tsx`.
 
 ## 3. Trạng Thái Hiện Tại & Hạng Mục Còn Thiếu (`Backlog`)
-- **Đã triển khai (`7/15` mục đầy đủ, `4/15` một phần):** Migration 098 (`equipment_loans`), 3 mẫu PDF chuẩn Nhật, xuất Excel khảo sát (`exportCustomerSurveyExcel`), và sửa `/maintenance` + KPI `/equipment/lifecycle` (`6,497` thiết bị) đọc `v_equipment_lifecycle_status` (`WO-MOLD-UNIFY` Commit 3 `9de2c64c`).
-- **Còn thiếu (`4/15` mục + Wave 4):** (1) Đồng bộ `Wave 4` (`587` `tblMoldShipLog`, `4,686` `tblTeflonLog` có `SentDate` theo Quyết định 3.D Phương án B, và đối chiếu `209` `mold_loan_certificates`); (2) Công cụ tính phí lưu kho Fujikura `307.5¥/tháng + 3% lãi`; (3) Checklist 4 thành phần hủy khuôn SMK/Omura; (4) Cổng dập mẫu thử sau Teflon.
+- **Đã triển khai (`8/15` mục đầy đủ, `4/15` một phần):** Migration 098 (`equipment_loans`), 3 mẫu PDF chuẩn Nhật, xuất Excel khảo sát (`exportCustomerSurveyExcel`), sửa `/maintenance` + KPI `/equipment/lifecycle` (`6,525` thiết bị) đọc `v_equipment_lifecycle_status`, và hoàn tất đồng bộ lịch sử `WO-MOLD-SYNC-WAVE3` (`2,829` dòng mới vào `equipment_history = 1,896`, `equipment_ship_logs = 356`, `mold_maintenance = 190`, `mold_name_history = 35`, `equipment_status_logs = 352`).
+- **Còn thiếu (`3/15` mục UI/Nghiệp vụ):** (1) Công cụ tính phí lưu kho Fujikura `307.5¥/tháng + 3% lãi`; (2) Checklist 4 thành phần hủy khuôn SMK/Omura; (3) Cổng dập mẫu thử sau Teflon & liên thông đối chiếu `209` `mold_loan_certificates`.
