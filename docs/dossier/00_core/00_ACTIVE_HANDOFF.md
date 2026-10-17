@@ -1,12 +1,12 @@
 # 📌 YSDMS NextGen — Active Handoff (`00_ACTIVE_HANDOFF.md`)
 
-- **Cập nhật lần cuối:** `2026-10-15 11:44:50 JST`
-- **Work Order đã đóng:** `WO-DOC-MODULAR` (**CLOSED**), `WO-EQUIPMENT-UI-FIX` (**CLOSED**).
-- **Work Order hiện hành:** `WO-MOLD-SYNC-WAVE1` — **CỔNG 1 PAYLOAD V2 (`SUBMITTED`, Chờ PE duyệt)**.
+- **Cập nhật lần cuối:** `2026-10-17 15:22:00 JST`
+- **Work Order đã đóng (`CLOSED`):** `WO-CONTEXT-PALACE` (Cổng 1, 2, 3 ĐẠT — Smart Memory Palace 2.0), `WO-MOLD-SYNC-WAVE1`, `WO-DOC-MODULAR`, `WO-EQUIPMENT-UI-FIX`.
+- **Nhánh chờ Merge vào `main` (chờ Minh Chủ THOAN duyệt):** `chore/context-v4` (`7a93f496854419d18cee45f4057aec525c92519e`).
+- **Work Order kế tiếp chờ lệnh GO từ Minh Chủ THOAN:** `WO-MOLD-SYNC-WAVE2` (Đặc tả & Payload v1 đã trình tại `e3f63f4fdfdbf5e9dea1daac715de5c16d3a8d07`).
 
-## 1. Giải Quyết Triệt Để 4 Yêu Cầu Của PE Tại Payload V2 (`ID: f198b608`)
-1. **Xử lý `COB001` theo Phương án A (PE đề xuất):** Tạo mới `1` dòng `public.companies` cho khách hàng `COB` (`CustomerID = 444` $ightarrow$ `legacy_id = 'CUST-444'`, `company_id = '2c08b859-50cb-57ad-9e5b-a52faaff3664'`) ở `Step 1.0`, sau đó gán `TRAY-5387` (`products`), `D-4942` (`design_revisions`), và `M-5927` (`equipment`) về đúng `CUST-444` (**0 gán tạm vào YSD**).
-2. **Bằng chứng quy ước hậu tố `-2` cho `CUTTER_SEPARATE`:** Trong `1,725` dao cắt (`legacy_id LIKE 'C-%'`) hiện có trong `public.equipment`, có **`1,156` dao cắt (`67.01%`) dùng chính xác hậu tố `-2`** (`HAK001-2`, `NSM002-2`, `SRI002-2`, `SMK203-2`...) và **`1,452` dao cắt (`84.17%`) dùng hậu tố số** khi trùng mã với `MOLD`, trong khi `legacy_id` giữ nguyên `'C-<CutterID>'`.
-3. **Kiểm chứng `unique legacy_id` (`0` trùng lặp trước & sau trong `BEGIN ... ROLLBACK`):**
-   - `companies`: `1,991 -> 1,992` (`dup = 0`) | `rack_layers`: `380 -> 400` (`dup = 0`) | `products`: `4,083 -> 4,137` (`dup = 0`) | `design_revisions`: `4,692 -> 4,780` (`dup = 0`, `DESIGN-* = 0`) | `equipment`: `6,494 -> 6,522` (`dup = 0`).
-4. **Tách 6 File SQL độc lập (`<= 120` dòng/file) kèm Preflight/Postflight riêng:** Lưu tại `docs/audit_logs/wave1_payload_v2/01_staging_ddl.sql` .. `06_full_rollback_plan.sql`.
+## 1. Kết Quả Nghiệm Thu `WO-CONTEXT-PALACE` (Smart Memory Palace 2.0 — `CLOSED`)
+1. **Cổng 1 (Dry-Run Audit):** Xác minh độc lập toàn bộ hiện trạng file quy tắc, tài liệu lớn và cấu trúc thư mục.
+2. **Cổng 2 (Tái Cấu Trúc & Router):** Lưu trữ 18 file lịch sử/cũ vào `_archive/` qua `git mv` (`0` xóa file); tách `docs/dossier/00_core/RULES_UI_AND_DATA.md` (`88` dòng); rút gọn `AGENTS.md` (`30` dòng / `4.2 KB`), `CLAUDE.md` (`13` dòng), `.cursorrules` (`11` dòng); đồng bộ `.geminiignore` & `.cursorignore` (`78` dòng).
+3. **Cổng 3 (Dọn Gốc Repo & Bản Đồ `PROJECT_MAP.md`):** `git mv` 41 script/CSV/XLSX/JSON/SQL tạm vào `_archive/scratch/` (`0` xóa file); sinh `.agents/context/PROJECT_MAP.md` (`207` dòng / `36 KB`: `565` files & `586` symbols từ `src/` qua `repomap.py` trong `0.778s` + `121` headings từ `27` file `docs/dossier/`).
+4. **Điểm dừng hiện tại:** Chờ Minh Chủ **THOAN** duyệt: (a) Merge nhánh `chore/context-v4` vào `main`, và (b) Cấp lệnh `GO` cho `WO-MOLD-SYNC-WAVE2`.

@@ -1,0 +1,78 @@
+# YSDMS NextGen — AI & RepoMap Ignore Rules (.geminiignore, synced with .cursorignore)
+# Chặn các vùng nhiễu, lịch sử lưu trữ và file tạm để tiết kiệm Token & tăng tốc quét AST/RepoMap
+
+# 1. Vùng Lưu Trữ Lịch Sử & Bản Sao Cũ (Cổng 2 WO-CONTEXT-PALACE)
+_archive/
+release/
+src20260502_1216.rar
+supabase/migrations/archived/
+v3-*.md
+
+# 2. Thư Mục Phiên AI Subagents Cũ (479+ subdirs) — Chỉ mở .agents/context/
+.agents/*
+!.agents/context/
+.ai/
+
+# 3. Build Artifacts & Dependencies
+node_modules/
+_trash_node_modules/
+.next/
+.turbo/
+dist/
+build/
+out/
+coverage/
+playwright-report/
+test-results/
+
+# 4. Dữ Liệu Tạm, Scratch, Bridge Internals & Tài Liệu Thô Ngoài Luồng Code
+temp_ai/
+scratch/
+tham_khao/
+source_data/
+business_docs/
+docs/reports/
+docs/audit_logs/
+docs/realtime-bridge/
+tools/realtime-bridge/
+scripts/archived/
+scripts/rebaseline/
+scripts/seed_v5/
+
+# 5. Chốt Chặn Script Nháp / One-off Tại Gốc Repo (Đã dọn vào _archive/scratch/ tại Cổng 3)
+apply_066.js
+apply_schema.js
+check*.js
+check_*.mjs
+dump_*.py
+dump_*.js
+fix_rls.mjs
+fix_sidebar.js
+inspect_*.py
+parse_*.py
+prev_workflow.ts
+query_fk.js
+run_test.js
+scratch_query.js
+scratch_query2.js
+temp_types.ts
+verify_data_chain.mjs
+verify_kowa_emori.mjs
+*.lnk
+*.xlsx
+*.csv
+*.rar
+*.zip
+
+# 6. File Seed SQL Lớn & Log Sinh Tự Động
+supabase/migrations/20260606000000_999_seed_legacy_data_v2.sql
+supabase/migrations/20260612000002_068_seed_legacy_v3.sql
+supabase/migrations/20260604000002_064_core_nextgen_seed.sql
+supabase/migrations/02_YSDMS_NEXTGEN_SEED_DATA.sql
+tsconfig.tsbuildinfo
+*.tsbuildinfo
+real_tsc.log
+tsc.log
+verification_output.txt
+dates.txt
+*.log
