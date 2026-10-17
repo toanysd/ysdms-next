@@ -14,5 +14,13 @@
 - **PDF Templates:** `MoldLoanPDFDocument.tsx`, `OutsourceProcessingPDFDocument.tsx`, `PanasonicPalletReturnPDFDocument.tsx`.
 
 ## 3. Trạng Thái Hiện Tại & Hạng Mục Còn Thiếu (`Backlog`)
-- **Đã triển khai (`8/15` mục đầy đủ, `4/15` một phần):** Migration 098 (`equipment_loans`), 3 mẫu PDF chuẩn Nhật, xuất Excel khảo sát (`exportCustomerSurveyExcel`), sửa `/maintenance` + KPI `/equipment/lifecycle` (`6,525` thiết bị) đọc `v_equipment_lifecycle_status`, và hoàn tất đồng bộ lịch sử `WO-MOLD-SYNC-WAVE3` (`2,829` dòng mới vào `equipment_history = 1,896`, `equipment_ship_logs = 356`, `mold_maintenance = 190`, `mold_name_history = 35`, `equipment_status_logs = 352`).
-- **Còn thiếu (`3/15` mục UI/Nghiệp vụ):** (1) Công cụ tính phí lưu kho Fujikura `307.5¥/tháng + 3% lãi`; (2) Checklist 4 thành phần hủy khuôn SMK/Omura; (3) Cổng dập mẫu thử sau Teflon & liên thông đối chiếu `209` `mold_loan_certificates`.
+- **Đã triển khai (`9/15` mục đầy đủ, `4/15` một phần):**
+  - Migration 098 (`equipment_loans`), 3 mẫu PDF chuẩn Nhật, xuất Excel khảo sát (`exportCustomerSurveyExcel`), sửa `/maintenance` + KPI `/equipment/lifecycle` (`6,525` thiết bị) đọc `v_equipment_lifecycle_status`.
+  - Hoàn tất đồng bộ lịch sử `WO-MOLD-SYNC-WAVE3` (`2,829` dòng mới vào `equipment_history = 1,896`, `equipment_ship_logs = 356`, `mold_maintenance = 190`, `mold_name_history = 35`, `equipment_status_logs = 352`).
+  - **Hoàn tất `WO-EQUIP-OPS-WAVE3-WIRING` (`2026-10-17 JST`):** Liên thông 5 module vận hành trong Modal Chi tiết Thiết bị (`src/app/equipment/_components/detail-modal/modules/`) trực tiếp vào các bảng SSOT của Wave 3, hiển thị đầy đủ **`2,386` dòng lịch sử** trên UI:
+    1. `TeflonCoatingModule.tsx`: Đọc/ghi trực tiếp `public.mold_maintenance` (`maintenance_type = 'TEFLON_COATING'`, `190` dòng) + tự động ghi `equipment_ship_logs` & `equipment_status_logs` ở Bước 3 (Xuất đi mạ) và Bước 4 (Nhận khuôn về).
+    2. `TransportModule.tsx`: Đọc/ghi `public.equipment_ship_logs` (`356` dòng) + `equipment_history` (`SHIP_OUT`, `SHIP_IN`, `SHIP_TRANSFER`, `TRANSFER`) và áp dụng Golden Rule tự động cập nhật `usage_status` (`IN`/`OUT`).
+    3. `LocationMoveModule.tsx`: Đọc/ghi `public.equipment_history` với `action_type IN ('RELOCATE', 'LOCATION_CHANGE')` (`1,488` dòng), hiển thị rõ `📍 from_location ➔ to_location`.
+    4. `CheckInOutModule.tsx` & `InventoryAuditModule.tsx`: Đọc/ghi `public.equipment_status_logs` (`352` dòng) + `equipment_history` (`STATUS_IN`, `STATUS_OUT`, `STATUS_DISPOSED`, `STATUS_RETURNED`, `STATUS_AUDIT`) và bổ sung nút **Stamp Kiểm kê 1 chạm (`🔍 棚卸 (AUDIT)`)**.
+    5. `PhotoManagerModule.tsx`: Bổ sung **Privacy Blur Shield mặc định** (`filter: blur(12px)`, `:hover` xem rõ, nút/checkbox `Toggle Blur`, và mở Popup Lightbox xem rõ chi tiết theo Quy tắc Toàn cục số 3).
+- **Còn thiếu (`2/15` mục UI/Nghiệp vụ):** (1) Công cụ tính phí lưu kho Fujikura `307.5¥/tháng + 3% lãi`; (2) Checklist 4 thành phần hủy khuôn SMK/Omura & đối chiếu `209` `mold_loan_certificates`.

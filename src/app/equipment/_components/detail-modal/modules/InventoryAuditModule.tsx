@@ -38,13 +38,26 @@ export default function InventoryAuditModule({ data, onClose, onSuccess }: Props
 
       if (err1) throw err1
 
-      // Log into equipment_history
-      await supabase.from('equipment_history').insert({
-        equipment_id: data.equipment_id,
-        action_type: 'MAINTENANCE',
-        action_date: today,
-        description: `[棚卸実査] Kết quả: ${auditResult}. ${auditNotes || 'Đã kiểm tra vị trí thực tế'}`
-      })
+      const nowISO = new Date().toISOString()
+      const descText = `[棚卸実査] Kết quả: ${auditResult}. ${auditNotes || 'Đã kiểm tra vị trí thực tế'}`
+
+      // Log into public.equipment_status_logs + public.equipment_history (Wave 3 SSOT)
+      await Promise.all([
+        supabase.from('equipment_status_logs').insert({
+          equipment_id: data.equipment_id,
+          status: 'AUDIT',
+          action_date: nowISO,
+          to_location: rackText || keeperName,
+          notes: descText
+        } as any),
+        supabase.from('equipment_history').insert({
+          equipment_id: data.equipment_id,
+          action_type: 'STATUS_AUDIT',
+          action_date: today,
+          to_location: rackText || null,
+          description: descText
+        } as any)
+      ])
 
       setMsg('✅ 棚卸実査を完了として記録しました！')
       setTimeout(() => {

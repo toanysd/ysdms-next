@@ -18,15 +18,15 @@
 - `from_location` (text) | `to_location` (text) | `from_company_id` (uuid) | `to_company_id` (uuid)
 - `job_id` (uuid) | `description` (text) | `performed_by` (uuid) | `created_at` (timestamptz)
 ### `public.equipment_ship_logs` (`356` dòng — từ `tblShipLog` có `ShipDate IS NOT NULL`):
-- `ship_log_id` (uuid*) | `legacy_ship_log_id` (integer UNIQUE) | `equipment_id` (uuid*) | `from_company_id` (uuid) | `to_company_id` (uuid)
-- `ship_date` (date*) | `handler_name` (text) | `ship_notes` (text) | `performed_by` (uuid) | `legacy_date_entry` (timestamptz) | `created_at` (timestamptz*)
+- `ship_log_id` (uuid*) | `equipment_id` (uuid) | `equipment_type` (text) | `ship_item_name` (text) | `ship_date` (date*)
+- `from_company_id` (uuid) | `to_company_id` (uuid) | `employee_id` (uuid) | `notes` (text) | `legacy_ship_id` (integer UNIQUE) | `legacy_mold_id` (integer) | `legacy_cutter_id` (integer) | `created_at` (timestamptz)
 ### `public.mold_maintenance` (`190` dòng — `TEFLON_COATING` từ `tblTeflonLog` có `SentDate IS NOT NULL`):
 - `maintenance_id` (uuid*) | `physical_mold_id` (uuid*) | `maintenance_type` (text*) | `request_date` (timestamptz)
 - `completed_date` (timestamptz) | `vendor_id` (uuid) | `employee_id` (uuid) | `reason` (text)
 - `result` (text) | `cost` (numeric) | `status` (text) | `notes` (text) | `created_at` (timestamptz) | `updated_at` (timestamptz)
 ### `public.mold_name_history` (`35` dòng — từ `tblMoldLog` loại `MoldLogID=24` rỗng) & `public.equipment_status_logs` (`352` dòng — từ `statuslogs` có `Status IS NOT NULL`):
 - `mold_name_history`: `name_history_id` (uuid*) | `equipment_id` (uuid*) | `old_mold_name` (text) | `new_mold_name` (text*) | `changed_at` (date*) | `changed_by` (uuid) | `change_notes` (text)
-- `equipment_status_logs`: `status_log_id` (uuid*) | `legacy_status_log_id` (integer UNIQUE) | `equipment_id` (uuid*) | `status_code` (text*) | `audit_type` (text) | `logged_at` (timestamptz*) | `employee_id` (uuid) | `destination_id` ( text) | `notes` (text) | `session_id` (text)
+- `equipment_status_logs`: `status_log_id` (uuid*) | `equipment_id` (uuid) | `status` (text* CHECK `IN ('IN','OUT','DISPOSED','RETURNED','AUDIT')`) | `action_date` (timestamptz*) | `employee_id` (uuid) | `destination_id` (uuid) | `to_location` (text) | `notes` (text) | `legacy_mold_id` (integer) | `legacy_cutter_id` (integer) | `legacy_status_log_id` (integer UNIQUE) | `created_at` (timestamptz)
 
 ## 3. View `public.v_equipment_lifecycle_status` (VIEW — 6,525 dòng)
 - `equipment_id` (uuid) | `equipment_code` (text) | `display_name` (text) | `equipment_type` (text)

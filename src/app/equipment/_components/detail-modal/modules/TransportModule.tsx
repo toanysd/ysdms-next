@@ -34,6 +34,7 @@ interface Employee {
 
 interface TransportLog {
   history_id: string
+  source?: 'ship_log' | 'history'
   action_date: string
   description: string | null
   from_company_name: string | null
@@ -69,7 +70,7 @@ export default function TransportModule({ data, onClose, onSuccess }: Props) {
   const [selectedCompanyId, setSelectedCompanyId] = useState<string>('')
   const [notes, setNotes] = useState<string>('')
 
-  // Initialize data
+  // Initialize data from public.equipment_ship_logs (Wave 3 SSOT) + equipment_history (SHIP_* / TRANSFER)
   useEffect(() => {
     const savedEmp = localStorage.getItem('ysd_default_employee_id')
     if (savedEmp) {
@@ -88,36 +89,71 @@ export default function TransportModule({ data, onClose, onSuccess }: Props) {
           supabase.from('employees').select('employee_id, employee_name, employee_code').order('employee_name')
         ])
 
-        if (compRes.data) setCompanies(compRes.data)
-        if (empRes.data) setEmployees(empRes.data)
+        const compList: Company[] = compRes.data || []
+        const empList: Employee[] = empRes.data || []
+        setCompanies(compList)
+        setEmployees(empList)
+
+        const compMap = new Map(compList.map(c => [c.company_id, c.company_name]))
+        const empMap = new Map(empList.map(e => [e.employee_id, e.employee_name]))
 
         if (targetEquipmentId && targetEquipmentId !== 'undefined') {
-          const { data: histData } = await supabase
-            .from('equipment_history')
-            .select(`
-              history_id,
-              action_date,
-              description,
-              from_company:from_company_id(company_name),
-              to_company:to_company_id(company_name),
-              employees:performed_by(employee_name)
-            `)
-            .eq('equipment_id', targetEquipmentId)
-            .eq('action_type', 'TRANSFER')
-            .order('action_date', { ascending: false })
-            .limit(50)
+          const [shipRes, histRes] = await Promise.all([
+            supabase
+              .from('equipment_ship_logs')
+              .select('ship_log_id, ship_date, from_company_id, to_company_id, employee_id, notes, created_at')
+              .eq('equipment_id', targetEquipmentId)
+              .order('ship_date', { ascending: false })
+              .limit(50),
+            supabase
+              .from('equipment_history')
+              .select('history_id, action_type, action_date, description, from_company_id, to_company_id, performed_by, created_at')
+              .eq('equipment_id', targetEquipmentId)
+              .in('action_type', ['TRANSFER', 'SHIP_OUT', 'SHIP_IN', 'SHIP_TRANSFER'])
+              .order('action_date', { ascending: false })
+              .limit(50)
+          ])
 
-          if (histData) {
-            const formatted = histData.map((h: any) => ({
-              history_id: h.history_id,
-              action_date: h.action_date,
-              description: h.description,
-              from_company_name: h.from_company?.company_name || null,
-              to_company_name: h.to_company?.company_name || null,
-              employee_name: h.employees?.employee_name || null
-            }))
-            setHistoryLogs(formatted)
+          const combined: TransportLog[] = []
+          const seenKeys = new Set<string>()
+
+          if (shipRes.data) {
+            for (const s of shipRes.data as any[]) {
+              const dateStr = s.ship_date ? String(s.ship_date).slice(0, 10) : ''
+              const dedupKey = `${dateStr}|${s.from_company_id || ''}|${s.to_company_id || ''}`
+              seenKeys.add(dedupKey)
+              combined.push({
+                history_id: s.ship_log_id,
+                source: 'ship_log',
+                action_date: dateStr,
+                description: s.notes || null,
+                from_company_name: s.from_company_id ? compMap.get(s.from_company_id) || null : null,
+                to_company_name: s.to_company_id ? compMap.get(s.to_company_id) || null : null,
+                employee_name: s.employee_id ? empMap.get(s.employee_id) || null : null
+              })
+            }
           }
+
+          if (histRes.data) {
+            for (const h of histRes.data as any[]) {
+              const dateStr = h.action_date ? String(h.action_date).slice(0, 10) : ''
+              const dedupKey = `${dateStr}|${h.from_company_id || ''}|${h.to_company_id || ''}`
+              if (seenKeys.has(dedupKey)) continue
+              seenKeys.add(dedupKey)
+              combined.push({
+                history_id: h.history_id,
+                source: 'history',
+                action_date: dateStr,
+                description: h.description || null,
+                from_company_name: h.from_company_id ? compMap.get(h.from_company_id) || null : null,
+                to_company_name: h.to_company_id ? compMap.get(h.to_company_id) || null : null,
+                employee_name: h.performed_by ? empMap.get(h.performed_by) || null : null
+              })
+            }
+          }
+
+          combined.sort((a, b) => (b.action_date || '').localeCompare(a.action_date || ''))
+          setHistoryLogs(combined)
         }
       } catch (err) {
         console.error('Error loading transport data:', err)
@@ -139,10 +175,14 @@ export default function TransportModule({ data, onClose, onSuccess }: Props) {
     }
   }
 
-  const handleDeleteLog = async (logId: string) => {
+  const handleDeleteLog = async (logId: string, source?: 'ship_log' | 'history') => {
     if (!confirm('Lịch sử này sẽ bị xóa khỏi hệ thống. Bạn có chắc chắn?')) return
     try {
-      await supabase.from('equipment_history').delete().eq('history_id', logId)
+      if (source === 'ship_log') {
+        await supabase.from('equipment_ship_logs').delete().eq('ship_log_id', logId)
+      } else {
+        await supabase.from('equipment_history').delete().eq('history_id', logId)
+      }
       setHistoryLogs(prev => prev.filter(h => h.history_id !== logId))
     } catch (err: any) {
       alert('Lỗi xóa lịch sử: ' + err.message)
@@ -175,12 +215,27 @@ export default function TransportModule({ data, onClose, onSuccess }: Props) {
       const compObj = companies.find(c => c.company_id === selectedCompanyId)
       const fromCompObj = companies.find(c => c.company_id === data?.keeper_company_id)
 
-      // 1. Update Equipment table — keeper_company_id and returned_date
+      // Golden Rule: Check if target company is internal YSD or external partner
+      const compCodeUpper = (compObj?.company_code || '').toUpperCase()
+      const compNameLower = (compObj?.company_name || '').toLowerCase()
+      const isInternalYsd =
+        compCodeUpper.startsWith('YSD') ||
+        compNameLower.includes('ysd') ||
+        compNameLower.includes('八潮') ||
+        compNameLower.includes('埼玉')
+
+      const updatedUsageStatus = isInternalYsd ? 'IN' : 'OUT'
+      const updatedDeviceStatus = isInternalYsd ? 'IN_STOCK' : 'OUT_OF_STOCK'
+      const shipActionType = isInternalYsd ? 'SHIP_IN' : 'SHIP_OUT'
+
+      // 1. Update Equipment table — keeper_company_id, usage_status, device_status, and returned_date
       if (data?.equipment_id) {
         const { error: eqErr } = await supabase
           .from('equipment')
           .update({
             keeper_company_id: selectedCompanyId,
+            usage_status: updatedUsageStatus,
+            device_status: updatedDeviceStatus,
             returned_date: todayStr
           } as any)
           .eq('equipment_id', targetEquipmentId)
@@ -188,33 +243,50 @@ export default function TransportModule({ data, onClose, onSuccess }: Props) {
         if (eqErr) throw eqErr
       }
 
+      const prevKeeperCompanyId = data?.keeper_company_id || null
+
       // Sync data prop in memory
       if (data) {
         data.keeper_company_id = selectedCompanyId
         data.keeper_company = compObj ? { company_name: compObj.company_name, company_code: compObj.company_code } : null
+        data.usage_status = updatedUsageStatus
+        data.device_status = updatedDeviceStatus
         data.returned_date = todayStr
       }
 
-      // 2. Insert into equipment_history
+      // 2. Insert into public.equipment_ship_logs (Wave 3 SSOT) + public.equipment_history
       const descStr = notes ? `[出荷] ${notes}` : `[出荷] Vận chuyển đến ${compObj?.company_name || 'Công ty đích'}`
-      const { data: newHist, error: histErr } = await supabase
-        .from('equipment_history')
-        .insert({
-          equipment_id: targetEquipmentId,
-          action_type: 'TRANSFER',
-          action_date: todayStr,
-          from_company_id: data?.keeper_company_id || null,
-          to_company_id: selectedCompanyId,
-          performed_by: selectedEmployeeId,
-          description: descStr
-        } as any)
-        .select()
-        .single()
-
-      if (histErr) console.warn('History log note:', histErr)
+      const [shipInsertRes] = await Promise.all([
+        supabase
+          .from('equipment_ship_logs')
+          .insert({
+            equipment_id: targetEquipmentId,
+            equipment_type: data?.equipment_type || 'MOLD',
+            ship_item_name: data?.equipment_code || data?.display_name || null,
+            ship_date: todayStr,
+            from_company_id: prevKeeperCompanyId,
+            to_company_id: selectedCompanyId,
+            employee_id: selectedEmployeeId,
+            notes: descStr
+          } as any)
+          .select()
+          .single(),
+        supabase
+          .from('equipment_history')
+          .insert({
+            equipment_id: targetEquipmentId,
+            action_type: shipActionType,
+            action_date: todayStr,
+            from_company_id: prevKeeperCompanyId,
+            to_company_id: selectedCompanyId,
+            performed_by: selectedEmployeeId,
+            description: descStr
+          } as any)
+      ])
 
       const newLogItem: TransportLog = {
-        history_id: newHist?.history_id || String(Date.now()),
+        history_id: shipInsertRes?.data?.ship_log_id || String(Date.now()),
+        source: 'ship_log',
         action_date: todayStr,
         description: descStr,
         from_company_name: fromCompObj?.company_name || null,
@@ -403,7 +475,7 @@ export default function TransportModule({ data, onClose, onSuccess }: Props) {
                       <td style={{ padding: '6px 4px', textAlign: 'center', whiteSpace: 'nowrap' }}>
                         <button
                           type="button"
-                          onClick={() => handleDeleteLog(h.history_id)}
+                          onClick={() => handleDeleteLog(h.history_id, h.source)}
                           style={{ color: '#ef4444', background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 700 }}
                           title="Xóa"
                         >

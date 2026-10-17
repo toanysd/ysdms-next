@@ -18,6 +18,7 @@ interface Props {
 
 interface MovementLog {
   movement_id: string
+  source?: 'status_log' | 'history'
   movement_type: string
   moved_at: string
   notes: string | null
@@ -36,7 +37,7 @@ interface Destination {
   destination_name: string
 }
 
-
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 // Fallback Default Chips (Rendered immediately on frame 0 to eliminate initial flicker)
 const DEFAULT_DESTINATIONS: Destination[] = [
@@ -69,7 +70,6 @@ export default function CheckInOutModule({ data, onClose, onSuccess }: Props) {
   const [employees, setEmployees] = useState<Employee[]>([])
   const [destinations, setDestinations] = useState<Destination[]>(DEFAULT_DESTINATIONS)
 
-
   // Form State
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>('')
   const [defaultEmpChecked, setDefaultEmpChecked] = useState<boolean>(false)
@@ -81,11 +81,8 @@ export default function CheckInOutModule({ data, onClose, onSuccess }: Props) {
   const [searchHistoryQuery, setSearchHistoryQuery] = useState<string>('')
   const [unlockDelete, setUnlockDelete] = useState<boolean>(false)
 
-
-
-  // Load Initial Lookups & Preferences
+  // Load Initial Lookups & Preferences + Wave 3 SSOT (equipment_status_logs + equipment_history STATUS_*)
   useEffect(() => {
-    // Read saved defaults from localStorage
     const savedEmp = localStorage.getItem('ysd_default_employee_id')
     if (savedEmp) {
       setSelectedEmployeeId(savedEmp)
@@ -106,38 +103,88 @@ export default function CheckInOutModule({ data, onClose, onSuccess }: Props) {
           supabase.from('destinations').select('destination_id, destination_name').order('destination_name')
         ])
 
-        if (empRes.data) setEmployees(empRes.data)
-        if (destRes.data && destRes.data.length > 0) setDestinations(destRes.data)
+        const empList: Employee[] = empRes.data || []
+        const destList: Destination[] = destRes.data && destRes.data.length > 0 ? destRes.data : DEFAULT_DESTINATIONS
+        setEmployees(empList)
+        setDestinations(destList)
 
-        // Fetch History from equipment_history — only IN/OUT logs for this module
+        const empMap = new Map(empList.map(e => [e.employee_id, e.employee_name]))
+        const destMap = new Map(destList.map(d => [d.destination_id, d.destination_name]))
+
         if (targetEquipmentId && targetEquipmentId !== 'undefined') {
-          const { data: historyData } = await supabase
-            .from('equipment_history')
-            .select(`
-              history_id,
-              action_type,
-              action_date,
-              description,
-              to_location,
-              performed_by,
-              employees(employee_name)
-            `)
-            .eq('equipment_id', targetEquipmentId)
-            .in('action_type', ['IN', 'OUT', 'CHECK_IN', 'CHECK_OUT'])
-            .order('action_date', { ascending: false })
-            .limit(50)
+          const [statusRes, historyRes] = await Promise.all([
+            supabase
+              .from('equipment_status_logs')
+              .select('status_log_id, status, action_date, employee_id, destination_id, to_location, notes, created_at')
+              .eq('equipment_id', targetEquipmentId)
+              .order('action_date', { ascending: false })
+              .limit(50),
+            supabase
+              .from('equipment_history')
+              .select('history_id, action_type, action_date, description, to_location, performed_by, created_at')
+              .eq('equipment_id', targetEquipmentId)
+              .in('action_type', [
+                'IN', 'OUT', 'CHECK_IN', 'CHECK_OUT', 'AUDIT',
+                'STATUS_IN', 'STATUS_OUT', 'STATUS_DISPOSED', 'STATUS_RETURNED', 'STATUS_AUDIT'
+              ])
+              .order('action_date', { ascending: false })
+              .limit(50)
+          ])
 
-          if (historyData) {
-            const formatted = historyData.map((h: any) => ({
-              movement_id: h.history_id,
-              movement_type: h.action_type || 'OUT',
-              moved_at: h.action_date || new Date().toISOString(),
-              notes: h.description || '',
-              destination_name: h.to_location || null,
-              employee_name: h.employees?.employee_name || null
-            }))
-            setHistoryLogs(formatted)
+          const combined: MovementLog[] = []
+          const seenMap = new Map<string, MovementLog>()
+
+          if (statusRes.data) {
+            for (const s of statusRes.data as any[]) {
+              const dateStr = s.action_date ? String(s.action_date).slice(0, 10) : ''
+              const normStatus = (s.status || 'OUT').toUpperCase()
+              const dedupKey = `${dateStr}|${normStatus}|${s.employee_id || ''}`
+              const item: MovementLog = {
+                movement_id: s.status_log_id,
+                source: 'status_log',
+                movement_type: normStatus,
+                moved_at: s.action_date || new Date().toISOString(),
+                notes: s.notes || '',
+                destination_name: s.to_location || (s.destination_id ? destMap.get(s.destination_id) || null : null),
+                employee_name: s.employee_id ? empMap.get(s.employee_id) || null : null
+              }
+              seenMap.set(dedupKey, item)
+              combined.push(item)
+            }
           }
+
+          if (historyRes.data) {
+            for (const h of historyRes.data as any[]) {
+              const dateStr = h.action_date ? String(h.action_date).slice(0, 10) : ''
+              const rawType = (h.action_type || 'OUT').toUpperCase()
+              const normType = rawType.startsWith('STATUS_') ? rawType.replace('STATUS_', '') : rawType
+              const isLegacyAudit = typeof h.description === 'string' && h.description.includes('AuditType=Audit')
+              const effectiveType = isLegacyAudit ? 'AUDIT' : normType
+              const dedupKey = `${dateStr}|${normType}|${h.performed_by || ''}`
+
+              if (seenMap.has(dedupKey)) {
+                const existing = seenMap.get(dedupKey)!
+                if (isLegacyAudit) existing.movement_type = 'AUDIT'
+                if (!existing.notes && h.description) existing.notes = h.description
+                continue
+              }
+
+              const item: MovementLog = {
+                movement_id: h.history_id,
+                source: 'history',
+                movement_type: effectiveType,
+                moved_at: h.action_date || new Date().toISOString(),
+                notes: h.description || '',
+                destination_name: h.to_location || null,
+                employee_name: h.performed_by ? empMap.get(h.performed_by) || null : null
+              }
+              seenMap.set(dedupKey, item)
+              combined.push(item)
+            }
+          }
+
+          combined.sort((a, b) => String(b.moved_at || '').localeCompare(String(a.moved_at || '')))
+          setHistoryLogs(combined)
         }
       } catch (err) {
         console.error('Error fetching checkin/out data:', err)
@@ -172,20 +219,22 @@ export default function CheckInOutModule({ data, onClose, onSuccess }: Props) {
   }
 
   // Handle Delete History Log
-  const handleDeleteLog = async (logId: string) => {
+  const handleDeleteLog = async (logId: string, source?: 'status_log' | 'history') => {
     if (!confirm('Lịch sử này sẽ bị xóa khỏi hệ thống. Bạn có chắc chắn?')) return
     try {
-      await supabase.from('equipment_history').delete().eq('history_id', logId)
+      if (source === 'status_log') {
+        await supabase.from('equipment_status_logs').delete().eq('status_log_id', logId)
+      } else {
+        await supabase.from('equipment_history').delete().eq('history_id', logId)
+      }
       setHistoryLogs(prev => prev.filter(l => l.movement_id !== logId))
     } catch (err: any) {
       alert('Lỗi xóa lịch sử: ' + err.message)
     }
   }
 
-  // Core Action Handlers — Only IN and OUT
-  // CheckIn/Out does NOT change keeper_company_id (that's Transport's job)
-  // CheckIn/Out does NOT change rack position (that's Rack Move's job)
-  const handleAction = async (actionType: 'IN' | 'OUT') => {
+  // Core Action Handlers — IN, OUT, and 1-Tap Stamp AUDIT
+  const handleAction = async (actionType: 'IN' | 'OUT' | 'AUDIT') => {
     if (!targetEquipmentId || targetEquipmentId === 'undefined') {
       setMsg({ type: 'error', text: '⚠️ Invalid equipment_id' })
       return
@@ -204,25 +253,29 @@ export default function CheckInOutModule({ data, onClose, onSuccess }: Props) {
       const todayStr = nowISO.slice(0, 10)
       const empObj = employees.find(e => e.employee_id === selectedEmployeeId)
       const destObj = destinations.find(d => d.destination_id === selectedDestinationId)
+      const validDestUuid = selectedDestinationId && UUID_REGEX.test(selectedDestinationId) ? selectedDestinationId : null
 
-      const updatedUsageStatus = actionType === 'IN' ? 'IN' : 'OUT'
-      const updatedDeviceStatus = actionType === 'IN' ? 'IN_STOCK' : 'OUT_OF_STOCK'
+      const isAudit = actionType === 'AUDIT'
+      const updatedUsageStatus = isAudit ? (data?.usage_status === 'OUT' ? 'OUT' : 'IN') : actionType === 'IN' ? 'IN' : 'OUT'
+      const updatedDeviceStatus = isAudit ? (data?.device_status === 'OUT_OF_STOCK' ? 'OUT_OF_STOCK' : 'IN_STOCK') : actionType === 'IN' ? 'IN_STOCK' : 'OUT_OF_STOCK'
 
-      // 1. Update Equipment table — usage_status, device_status, and returned_date
+      // 1. Update Equipment table — usage_status, device_status, on_checklist (if AUDIT), and returned_date
       if (data?.equipment_id) {
+        const eqUpdatePayload: Record<string, any> = {
+          usage_status: updatedUsageStatus,
+          device_status: updatedDeviceStatus,
+          returned_date: todayStr
+        }
+        if (isAudit) {
+          eqUpdatePayload.on_checklist = true
+        }
         const { error: eqErr } = await supabase
           .from('equipment')
-          .update({
-            usage_status: updatedUsageStatus,
-            device_status: updatedDeviceStatus,
-            returned_date: todayStr
-          } as any)
+          .update(eqUpdatePayload as any)
           .eq('equipment_id', targetEquipmentId)
 
         if (eqErr) console.warn('Equipment update note:', eqErr)
       }
-
-
 
       // Update local data prop in memory
       if (data) {
@@ -230,28 +283,42 @@ export default function CheckInOutModule({ data, onClose, onSuccess }: Props) {
         data.device_status = updatedDeviceStatus
         data.returned_date = todayStr
       }
-      setCurrentStatus(updatedUsageStatus)
+      setCurrentStatus(isAudit ? 'AUDIT' : updatedUsageStatus)
 
-      // 2. Insert into equipment_history with structured columns
-      const descStr = notes || (destObj ? destObj.destination_name : `${actionType}`)
-      const { data: newHist, error: histErr } = await supabase
-        .from('equipment_history')
-        .insert({
-          equipment_id: targetEquipmentId,
-          action_type: actionType,
-          action_date: todayStr,
-          performed_by: selectedEmployeeId || null,
-          to_location: destObj?.destination_name || null,
-          description: descStr
-        } as any)
-        .select()
-        .single()
+      // 2. Insert into public.equipment_status_logs (Wave 3 SSOT) + public.equipment_history
+      const descStr = notes || (isAudit ? '[棚卸スタンプ] Kiểm kê 1 chạm tại chỗ' : destObj ? destObj.destination_name : `${actionType}`)
+      const historyActionType = isAudit ? 'STATUS_AUDIT' : `STATUS_${actionType}`
 
-      if (histErr) console.warn('Equipment history log insert note:', histErr)
+      const [statusInsertRes] = await Promise.all([
+        supabase
+          .from('equipment_status_logs')
+          .insert({
+            equipment_id: targetEquipmentId,
+            status: actionType,
+            action_date: nowISO,
+            employee_id: selectedEmployeeId || null,
+            destination_id: validDestUuid,
+            to_location: destObj?.destination_name || null,
+            notes: descStr
+          } as any)
+          .select()
+          .single(),
+        supabase
+          .from('equipment_history')
+          .insert({
+            equipment_id: targetEquipmentId,
+            action_type: historyActionType,
+            action_date: todayStr,
+            performed_by: selectedEmployeeId || null,
+            to_location: destObj?.destination_name || null,
+            description: descStr
+          } as any)
+      ])
 
       // Update UI History Log list
       const newLogItem: MovementLog = {
-        movement_id: newHist?.history_id || String(Date.now()),
+        movement_id: statusInsertRes?.data?.status_log_id || String(Date.now()),
+        source: 'status_log',
         movement_type: actionType,
         moved_at: nowISO,
         notes: descStr,
@@ -260,7 +327,7 @@ export default function CheckInOutModule({ data, onClose, onSuccess }: Props) {
       }
       setHistoryLogs(prev => [newLogItem, ...prev])
 
-      setMsg({ type: 'success', text: `✅ ${actionType} OK!` })
+      setMsg({ type: 'success', text: `✅ ${actionType === 'AUDIT' ? '棚卸スタンプ (AUDIT)' : actionType} OK!` })
 
       setTimeout(() => {
         onSuccess()
@@ -389,26 +456,39 @@ export default function CheckInOutModule({ data, onClose, onSuccess }: Props) {
               ) : (
                 filteredHistory.map((h, i) => {
                   const typeUpper = h.movement_type?.toUpperCase() || 'OUT'
-                  const isTypeIn = typeUpper === 'IN' || typeUpper === 'CHECK_IN'
-                  const isTypeAudit = typeUpper === 'AUDIT'
+                  const isTypeIn = typeUpper === 'IN' || typeUpper === 'CHECK_IN' || typeUpper === 'STATUS_IN' || typeUpper === 'RETURNED' || typeUpper === 'STATUS_RETURNED'
+                  const isTypeAudit = typeUpper === 'AUDIT' || typeUpper === 'STATUS_AUDIT'
+                  const isTypeDisposed = typeUpper === 'DISPOSED' || typeUpper === 'STATUS_DISPOSED'
                   const isTypeRelocate = typeUpper === 'RELOCATE'
 
                   const badgeClass = isTypeIn
                     ? 'badge badge--success'
                     : isTypeAudit
                     ? 'badge badge--info'
+                    : isTypeDisposed
+                    ? 'badge badge--neutral'
                     : isTypeRelocate
                     ? 'badge badge--neutral'
                     : 'badge badge--warning'
 
+                  const badgeLabel = isTypeIn
+                    ? (typeUpper.includes('RETURN') ? 'RETURN' : 'IN')
+                    : isTypeAudit
+                    ? 'AUDIT'
+                    : isTypeDisposed
+                    ? 'DISPOSED'
+                    : isTypeRelocate
+                    ? 'MOVE'
+                    : 'OUT'
+
                   return (
                     <tr key={h.movement_id || i}>
                       <td style={{ padding: '6px 8px', whiteSpace: 'nowrap', fontFamily: 'monospace' }}>
-                        {h.moved_at ? h.moved_at.slice(0, 10) : '-'}
+                        {h.moved_at ? String(h.moved_at).slice(0, 10) : '-'}
                       </td>
                       <td style={{ padding: '6px 4px', textAlign: 'center', whiteSpace: 'nowrap' }}>
                         <span className={badgeClass} style={{ fontSize: 10, padding: '2px 6px' }}>
-                          {isTypeIn ? 'IN' : isTypeAudit ? 'AUDIT' : isTypeRelocate ? 'MOVE' : 'OUT'}
+                          {badgeLabel}
                         </span>
                       </td>
                       <td style={{ padding: '6px 8px', fontWeight: 600, whiteSpace: 'nowrap' }}>
@@ -424,7 +504,7 @@ export default function CheckInOutModule({ data, onClose, onSuccess }: Props) {
                         <td style={{ padding: '6px 4px', textAlign: 'center', whiteSpace: 'nowrap' }}>
                           <button
                             type="button"
-                            onClick={() => handleDeleteLog(h.movement_id)}
+                            onClick={() => handleDeleteLog(h.movement_id, h.source)}
                             style={{ color: '#ef4444', background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 700 }}
                             title="Xóa"
                           >
@@ -490,10 +570,13 @@ export default function CheckInOutModule({ data, onClose, onSuccess }: Props) {
                   badgeText = '登録済 (Chưa có nhật ký)'
                   badgeClass = 'badge badge--neutral'
                 }
-              } else if (latestAction === 'OUT' || latestAction === 'CHECK_OUT' || latestAction === 'TRANSFER' || latestAction === 'LOAN') {
+              } else if (latestAction === 'AUDIT' || latestAction === 'STATUS_AUDIT') {
+                badgeText = '棚卸済 (AUDIT)'
+                badgeClass = 'badge badge--info'
+              } else if (latestAction === 'OUT' || latestAction === 'CHECK_OUT' || latestAction === 'STATUS_OUT' || latestAction === 'TRANSFER' || latestAction === 'LOAN') {
                 badgeText = t('outStock') || 'OUT (社外)'
                 badgeClass = 'badge badge--warning'
-              } else if (latestAction === 'IN' || latestAction === 'CHECK_IN' || latestAction === 'RETURN') {
+              } else if (latestAction === 'IN' || latestAction === 'CHECK_IN' || latestAction === 'STATUS_IN' || latestAction === 'RETURN' || latestAction === 'RETURNED' || latestAction === 'STATUS_RETURNED') {
                 badgeText = t('inStock') || 'IN (社内)'
                 badgeClass = 'badge badge--success'
               } else {
@@ -687,8 +770,8 @@ export default function CheckInOutModule({ data, onClose, onSuccess }: Props) {
 
         </div>
 
-        {/* 2 Action Buttons: IN and OUT only */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8, marginTop: 'auto', flexShrink: 0 }}>
+        {/* 3 Action Buttons: IN, OUT, and 1-Tap Stamp AUDIT */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginTop: 'auto', flexShrink: 0 }}>
           {/* GREEN BUTTON: IN */}
           <button
             type="button"
@@ -700,8 +783,8 @@ export default function CheckInOutModule({ data, onClose, onSuccess }: Props) {
               color: '#ffffff',
               border: 'none',
               borderRadius: 8,
-              padding: '14px 8px',
-              fontSize: 14,
+              padding: '12px 6px',
+              fontSize: 13,
               fontWeight: 700,
               display: 'flex',
               flexDirection: 'column',
@@ -726,8 +809,8 @@ export default function CheckInOutModule({ data, onClose, onSuccess }: Props) {
               color: '#ffffff',
               border: 'none',
               borderRadius: 8,
-              padding: '14px 8px',
-              fontSize: 14,
+              padding: '12px 6px',
+              fontSize: 13,
               fontWeight: 700,
               display: 'flex',
               flexDirection: 'column',
@@ -739,6 +822,33 @@ export default function CheckInOutModule({ data, onClose, onSuccess }: Props) {
             }}
           >
             {loading ? <Loader2 className="animate-spin" size={16} /> : <div>{t('btnOut')}</div>}
+          </button>
+
+          {/* BLUE BUTTON: 1-TAP STAMP AUDIT */}
+          <button
+            type="button"
+            disabled={loading}
+            onClick={() => handleAction('AUDIT')}
+            className="btn"
+            style={{
+              background: '#0284c7',
+              color: '#ffffff',
+              border: 'none',
+              borderRadius: 8,
+              padding: '12px 6px',
+              fontSize: 12,
+              fontWeight: 700,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 2,
+              boxShadow: '0 2px 4px rgba(2, 132, 199, 0.3)',
+              cursor: loading ? 'not-allowed' : 'pointer'
+            }}
+            title="棚卸スタンプ (Kiểm kê 1 chạm tại chỗ)"
+          >
+            {loading ? <Loader2 className="animate-spin" size={16} /> : <div>🔍 棚卸 (AUDIT)</div>}
           </button>
         </div>
       </div>

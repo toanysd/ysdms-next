@@ -1,0 +1,72 @@
+{
+  "work_order": "WO-EQUIP-OPS-WAVE3-WIRING",
+  "directive_id": "1fc28a6d",
+  "executed_at_jst": "2026-10-17T18:40:00+09:00",
+  "schema_changes": 0,
+  "migrations_created": 0,
+  "production_db_manual_mutations": 0,
+  "quality_gates": {
+    "tsc_no_emit": {
+      "command": "npx tsc --noEmit --pretty false",
+      "exit_code": 0,
+      "errors": 0
+    },
+    "i18n_check_translations": {
+      "command": "node scripts/check_translations.mjs",
+      "exit_code": 0,
+      "missing_keys": 0
+    },
+    "browser_playwright_verification": {
+      "url": "http://localhost:3000/equipment/unified?search=KSP208",
+      "equipment_code": "KSP208",
+      "equipment_id": "8b592766-0876-44af-8702-5c74ef670526",
+      "modal_opened": true,
+      "page_errors": 0,
+      "modules_verified": {
+        "TeflonCoatingModule": {
+          "target_table": "public.mold_maintenance (maintenance_type = 'TEFLON_COATING')",
+          "wave3_rows_unlocked_global": 190,
+          "ksp208_rows_rendered": 2,
+          "status": "PASS"
+        },
+        "TransportModule": {
+          "target_table": "public.equipment_ship_logs + public.equipment_history (SHIP_OUT, SHIP_IN, SHIP_TRANSFER, TRANSFER)",
+          "wave3_rows_unlocked_global": 356,
+          "ksp208_rows_rendered": 3,
+          "golden_rule_applied": true,
+          "status": "PASS"
+        },
+        "LocationMoveModule": {
+          "target_table": "public.equipment_history (action_type IN ('RELOCATE', 'LOCATION_CHANGE'))",
+          "wave3_rows_unlocked_global": 1488,
+          "ksp208_rows_rendered": 3,
+          "from_to_rack_formatted": true,
+          "status": "PASS"
+        },
+        "CheckInOutModule": {
+          "target_table": "public.equipment_status_logs + public.equipment_history (STATUS_IN, STATUS_OUT, STATUS_DISPOSED, STATUS_RETURNED, STATUS_AUDIT)",
+          "wave3_rows_unlocked_global": 352,
+          "ksp208_rows_rendered": 3,
+          "one_tap_stamp_audit_button": true,
+          "status": "PASS"
+        },
+        "PhotoManagerModule": {
+          "default_privacy_blur_shield": true,
+          "hover_unblur_css": true,
+          "toggle_blur_button_and_checkbox": true,
+          "lightbox_unblur_on_open": true,
+          "status": "PASS"
+        }
+      }
+    }
+  },
+  "total_wave3_rows_unlocked_on_ui": 2386,
+  "modified_files": [
+    "src/app/equipment/_components/detail-modal/modules/TeflonCoatingModule.tsx",
+    "src/app/equipment/_components/detail-modal/modules/TransportModule.tsx",
+    "src/app/equipment/_components/detail-modal/modules/LocationMoveModule.tsx",
+    "src/app/equipment/_components/detail-modal/modules/CheckInOutModule.tsx",
+    "src/app/equipment/_components/detail-modal/modules/InventoryAuditModule.tsx",
+    "src/app/equipment/_components/detail-modal/modules/PhotoManagerModule.tsx"
+  ]
+}

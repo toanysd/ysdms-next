@@ -77,13 +77,16 @@ export default function LocationMoveModule({ data, onClose, onSuccess }: Props) 
       try {
         const [empRes, layersRes] = await Promise.all([
           supabase.from('employees').select('employee_id, employee_code, employee_name').order('employee_name'),
-          supabase.from('rack_layers').select('id, layer_code, racks(rack_code, rack_name)').limit(200)
+          supabase.from('rack_layers').select('id, layer_code, racks(rack_code, rack_name)').limit(400)
         ])
 
-        if (empRes.data) setEmployees(empRes.data)
+        const empList: Employee[] = empRes.data || []
+        setEmployees(empList)
         if (layersRes.data) setRackLayers(layersRes.data as any)
 
-        // Fetch History ONLY for RELOCATE events
+        const empMap = new Map(empList.map(e => [e.employee_id, e.employee_name]))
+
+        // Fetch History for RELOCATE and LOCATION_CHANGE (Wave 3 SSOT: 1,488 rows)
         if (targetEquipmentId && targetEquipmentId !== 'undefined') {
           const { data: histData } = await supabase
             .from('equipment_history')
@@ -91,21 +94,29 @@ export default function LocationMoveModule({ data, onClose, onSuccess }: Props) 
               history_id,
               action_type,
               action_date,
+              from_location,
+              to_location,
               description,
-              employees(employee_name)
+              performed_by
             `)
             .eq('equipment_id', targetEquipmentId)
-            .eq('action_type', 'RELOCATE')
+            .in('action_type', ['RELOCATE', 'LOCATION_CHANGE'])
             .order('action_date', { ascending: false })
             .limit(50)
 
           if (histData) {
-            const formatted: RelocateHistoryLog[] = histData.map((h: any) => ({
-              history_id: h.history_id,
-              action_date: h.action_date || new Date().toISOString().slice(0, 10),
-              description: h.description || '',
-              employee_name: h.employees?.employee_name || null
-            }))
+            const formatted: RelocateHistoryLog[] = histData.map((h: any) => {
+              const hasLocPair = Boolean(h.from_location || h.to_location)
+              const locSummary = hasLocPair
+                ? `📍 ${h.from_location || '—'} ➔ ${h.to_location || '—'}${h.description ? ` · ${h.description}` : ''}`
+                : h.description || ''
+              return {
+                history_id: h.history_id,
+                action_date: h.action_date ? String(h.action_date).slice(0, 10) : new Date().toISOString().slice(0, 10),
+                description: locSummary,
+                employee_name: h.performed_by ? empMap.get(h.performed_by) || null : null
+              }
+            })
             setHistoryLogs(formatted)
           }
         }
@@ -152,9 +163,10 @@ export default function LocationMoveModule({ data, onClose, onSuccess }: Props) 
 
       if (autoCheckIn) {
         updatePayload.usage_status = 'IN'
+        updatePayload.device_status = 'IN_STOCK'
       }
 
-      // 1. Update Equipment or Physical Molds table
+      // 1. Update Equipment table
       if (data?.equipment_id) {
         const { error: eqErr } = await supabase
           .from('equipment')
@@ -164,14 +176,16 @@ export default function LocationMoveModule({ data, onClose, onSuccess }: Props) 
         if (eqErr) throw eqErr
       }
 
-      // 2. Insert into equipment_history (Action Type = RELOCATE)
+      // 2. Insert into equipment_history (Action Type = LOCATION_CHANGE)
       const descText = notes || `Thay đổi tầng kệ từ [${currentRackText}] sang vị trí mới [${newRackCode}]`
       const { data: newHist, error: histErr } = await supabase
         .from('equipment_history')
         .insert({
           equipment_id: targetEquipmentId,
-          action_type: 'RELOCATE',
+          action_type: 'LOCATION_CHANGE',
           action_date: actionDate,
+          from_location: currentRackText || null,
+          to_location: newRackCode,
           performed_by: selectedEmployeeId || null,
           description: descText
         } as any)
@@ -184,7 +198,7 @@ export default function LocationMoveModule({ data, onClose, onSuccess }: Props) 
       const newLogItem: RelocateHistoryLog = {
         history_id: newHist?.history_id || String(Date.now()),
         action_date: actionDate,
-        description: descText,
+        description: `📍 ${currentRackText || '—'} ➔ ${newRackCode} · ${descText}`,
         employee_name: empObj?.employee_name || null
       }
       setHistoryLogs(prev => [newLogItem, ...prev])
