@@ -91,6 +91,7 @@ export default function ToolingExcelGridView({
     // Filter jobs
     const filteredJobs = useMemo(() => {
         return liveJobs.filter(j => {
+            if (j.job_code === 'JOB-INTERNAL-SHOP') return false
             if (trackFilter && trackFilter !== 'ALL') {
                 if (trackFilter === 'DESIGN') {
                     const isDesignJob = j.job_category === 'DESIGN' || j.job_code?.startsWith('DES-') || j.job_steps?.some(s => (s.track || '').toUpperCase() === 'DESIGN')
@@ -136,7 +137,8 @@ export default function ToolingExcelGridView({
         const isCompletedOrActive = step.step_status === 'COMPLETED' || step.step_status === 'IN_PROGRESS' || (step.processing_statuses?.status_code && !step.processing_statuses.status_code.includes('未'))
 
         const stepDl = step.deadline ? step.deadline.split('T')[0] : null
-        const jobMoldDl = job.mold_deadline ? job.mold_deadline.split('T')[0] : null
+        const effectiveJobMoldDl = job.mold_deadline || job.deadline
+        const jobMoldDl = effectiveJobMoldDl ? effectiveJobMoldDl.split('T')[0] : null
         const jobTargetDl = job.target_completion_date ? job.target_completion_date.split('T')[0] : (jobMoldDl || null)
         
         // Fallback: nếu cấp job không có target/mold deadline, dùng chính deadline của step

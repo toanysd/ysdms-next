@@ -422,6 +422,7 @@ export async function getJobsForGantt(searchQuery?: string, fromDate?: string, t
             job_types(job_type_name_ja, job_type_name_vi)
         `, { count: 'exact' })
         .neq('job_status', 'CANCELLED')
+        .neq('job_code', 'JOB-INTERNAL-SHOP')
         
     let stepJobIds: string[] = []
 
@@ -501,6 +502,7 @@ export async function getJobsForGantt(searchQuery?: string, fromDate?: string, t
                 job_types(job_type_name_ja, job_type_name_vi)
             `, { count: 'exact' })
             .neq('job_status', 'CANCELLED')
+            .neq('job_code', 'JOB-INTERNAL-SHOP')
 
         if (searchQuery?.trim()) {
             const cleanQ = searchQuery.trim()
@@ -580,6 +582,7 @@ export async function getJobsForGantt(searchQuery?: string, fromDate?: string, t
                 `)
                 .in('product_id', matchedProductIds)
                 .neq('job_status', 'CANCELLED')
+                .neq('job_code', 'JOB-INTERNAL-SHOP')
             
             if (siblingJobs) {
                 siblingJobs.forEach(sj => {
@@ -636,11 +639,31 @@ export async function getJobsForGantt(searchQuery?: string, fromDate?: string, t
             })
         }
     }
-    // Sort job_steps by step_no on client side
-    const processedJobs = finalData.map(job => ({
-        ...job,
-        job_steps: (job.job_steps || []).sort((a: any, b: any) => a.step_no - b.step_no)
-    }))
+    // Sort job_steps by step_no on client side, apply COALESCE(mold_deadline, deadline), and exclude JOB-INTERNAL-SHOP
+    const processedJobs = finalData
+        .filter((job: any) => job.job_code !== 'JOB-INTERNAL-SHOP')
+        .map((job: any) => {
+            const effectiveMoldDeadline = job.mold_deadline || (job.deadline ? String(job.deadline).split('T')[0] : null)
+            return {
+                ...job,
+                mold_deadline: effectiveMoldDeadline,
+                deadline: job.deadline || job.mold_deadline || null,
+                job_steps: (job.job_steps || []).sort((a: any, b: any) => a.step_no - b.step_no)
+            }
+        })
+        .sort((a: any, b: any) => {
+            const dlA = a.mold_deadline || a.deadline || ''
+            const dlB = b.mold_deadline || b.deadline || ''
+            if (dlA && dlB) {
+                const diff = new Date(dlB).getTime() - new Date(dlA).getTime()
+                if (diff !== 0) return diff
+            } else if (dlA && !dlB) {
+                return -1
+            } else if (!dlA && dlB) {
+                return 1
+            }
+            return (new Date(b.created_at || 0).getTime()) - (new Date(a.created_at || 0).getTime())
+        })
     
     return { data: processedJobs as any as JobForGantt[], count: count || 0 }
 }

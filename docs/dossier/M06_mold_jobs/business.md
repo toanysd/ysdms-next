@@ -13,8 +13,13 @@
 - **Redirect từ route cũ (`WO-ROUTE-CLEANUP`):** `/production/mold-orders` -> `/equipment/jobs`; `/production/jobs*` -> `/equipment/jobs*`.
 
 ## 3. Trạng Thái Hiện Tại & Bằng Chứng Nghiệm Thu
-- **Trạng thái:** **Hoàn thành UI & Đã nghiệm thu `WO-PIPE-FIX` (`c6f20b98`), `WO-MOLD-UNIFY` (`8e10b6aa`), `WO-ROUTE-CLEANUP` (`42851ee3`), `WO-EQUIPMENT-UI-FIX` (`a587a5c2`)**.
-- Đã khôi phục trang chi tiết `/equipment/jobs/[id]`, bổ sung `EquipmentSetTab.tsx`, và sửa `CreateJobModal.tsx` + `createMoldJob` tự động lưu `design_revision_id`, `product_id`, `company_id`.
+- **Trạng thái:** **Hoàn thành UI `/equipment/schedule` (`COALESCE(mold_deadline, deadline)`, ẩn `JOB-INTERNAL-SHOP`) & Đã nộp Gate 1 Backfill `WO-SCHEDULE-DATA-AND-UI-ALIGNMENT`**.
+- Đã nghiệm thu `WO-PIPE-FIX` (`c6f20b98`), `WO-MOLD-UNIFY` (`8e10b6aa`), `WO-ROUTE-CLEANUP` (`42851ee3`), `WO-EQUIPMENT-UI-FIX` (`a587a5c2`), `WO-MOLD-SYNC-WAVE2` (`3cff159d`).
+- `/equipment/schedule` (`getJobsForGantt`, `getWorkOrdersForGantt`, `MoldJobGantt`, `ToolingExcelGridView`, `ToolingGroupedJobCard`, `ToolingCalendarMatrix`, `JobQuickViewDrawer`, `autoScheduler`) chuẩn hóa dùng `COALESCE(mold_deadline, deadline)` và loại bỏ job nội bộ `JOB-INTERNAL-SHOP` khỏi biểu đồ Gantt khuôn.
 
-## 4. Hạng Mục Còn Thiếu (`Backlog`)
-- Đồng bộ `WO-MOLD-SYNC-WAVE2` (`+262` `jobs`, `+635` `job_steps`, tạo `LEGACY-STEP-SHOP-INTERNAL` theo Quyết định 3.C Phương án A) và `WAVE3` (`+2,437` `work_logs`) từ Access.
+## 4. Hạng Mục Đang Chờ Duyệt Cổng 2 (`WO-SCHEDULE-DATA-AND-UI-ALIGNMENT`)
+- **Payload Backfill Cổng 1 (`BEGIN...ROLLBACK` PASS — chờ PE duyệt Cổng 2):**
+  1. `public.jobs.company_id`: `+1,131` dòng (`101` $\rightarrow$ `1,232/1,232`, `0` NULL).
+  2. `public.jobs.job_type_id`: `+28` dòng (`1,204` $\rightarrow$ `1,232/1,232`, `0` NULL).
+  3. `public.work_orders`: `+1,203` dòng được bổ sung (`company_id`: `99` $\rightarrow$ `1,230/1,230`; `deadline`: `28` $\rightarrow$ `1,135/1,230`; `start_date`: `27` $\rightarrow$ `799/1,230`).
+  4. `public.job_steps.track`: `+2,507` dòng (`5` $\rightarrow$ `2,512/2,512`, `0` NULL).

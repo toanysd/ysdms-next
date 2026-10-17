@@ -133,8 +133,8 @@ export function calculateAutoSchedule(
     const ob = statusOrder[b.job_status || 'PENDING'] ?? 1
     if (oa !== ob) return oa - ob
     // Same status: sort by deadline (earliest first)
-    const da = a.mold_deadline ? new Date(a.mold_deadline).getTime() : Infinity
-    const db = b.mold_deadline ? new Date(b.mold_deadline).getTime() : Infinity
+    const da = (a.mold_deadline || a.deadline) ? new Date((a.mold_deadline || a.deadline)!).getTime() : Infinity
+    const db = (b.mold_deadline || b.deadline) ? new Date((b.mold_deadline || b.deadline)!).getTime() : Infinity
     return da - db
   })
 
@@ -146,6 +146,7 @@ export function calculateAutoSchedule(
 
   for (const job of clonedJobs) {
     const jobStatus = job.job_status || 'PENDING'
+    const effectiveMoldDeadline = job.mold_deadline || job.deadline
 
     // ──────────────────────────────────────────────────────────────────────
     // CASE 1: COMPLETED or CANCELLED — Skip entirely
@@ -295,10 +296,10 @@ export function calculateAutoSchedule(
       if (earliestPlannedStart && earliestPlannedStart > today) {
         // 3a: Steps already have planned dates in the future → respect them
         baseDate = new Date(earliestPlannedStart)
-      } else if (!earliestPlannedStart && job.mold_deadline) {
+      } else if (!earliestPlannedStart && effectiveMoldDeadline) {
         // 3b: No planned dates, but deadline exists → Backward scheduling
         // Calculate: Start = Deadline - totalPlannedHours (working days)
-        const deadline = new Date(job.mold_deadline)
+        const deadline = new Date(effectiveMoldDeadline)
         // Even if totalPlannedHours is 0, subtractWorkingHours will return deadline
         // If it's 0, we still want to schedule it BEFORE or ON the deadline
         baseDate = subtractWorkingHours(deadline, totalPlannedHours || (steps.length * 8), allowSaturday, maxHoursPerDay)
@@ -351,8 +352,8 @@ export function calculateAutoSchedule(
     }
 
     // Check if final cursor position exceeds deadline
-    if (job.mold_deadline) {
-      const deadlineDate = new Date(job.mold_deadline)
+    if (effectiveMoldDeadline) {
+      const deadlineDate = new Date(effectiveMoldDeadline)
       // Find latest planned_end across all steps after scheduling
       let latestPlannedEnd = new Date(0)
       for (const step of steps) {

@@ -296,8 +296,24 @@ export async function getWorkOrdersForGantt(params: {
     return { data: [], count: 0 }
   }
 
+  const processed = (data || []).map((wo: any) => {
+    const childJobs = (wo.jobs || [])
+      .filter((j: any) => j.job_code !== 'JOB-INTERNAL-SHOP')
+      .map((j: any) => ({
+        ...j,
+        mold_deadline: j.mold_deadline || (j.deadline ? String(j.deadline).split('T')[0] : null),
+        deadline: j.deadline || j.mold_deadline || null,
+      }))
+    const fallbackWoDl = childJobs.find((j: any) => j.mold_deadline || j.deadline)?.deadline || childJobs.find((j: any) => j.mold_deadline)?.mold_deadline || null
+    return {
+      ...wo,
+      deadline: wo.deadline || fallbackWoDl,
+      jobs: childJobs,
+    }
+  })
+
   return {
-    data: (data || []) as WorkOrderWithJobs[],
+    data: processed as WorkOrderWithJobs[],
     count: count || 0,
   }
 }

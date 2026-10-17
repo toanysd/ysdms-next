@@ -79,7 +79,7 @@ export function JobQuickViewDrawer({ job, onClose, onOpenStepEdit, onJobUpdated 
       setJobTypeId(job.job_type_id ? String(job.job_type_id) : '1')
       setPriority(job.priority || 5)
       setTargetCompletionDate(job.target_completion_date?.split('T')[0] || '')
-      setMoldDeadline(job.mold_deadline?.split('T')[0] || '')
+      setMoldDeadline((job.mold_deadline || job.deadline)?.split('T')[0] || '')
       setShipDate(job.ship_date?.split('T')[0] || '')
       setJobStatus(job.job_status || 'PENDING')
       setNotes((job as any).notes || '')
@@ -152,7 +152,7 @@ export function JobQuickViewDrawer({ job, onClose, onOpenStepEdit, onJobUpdated 
       ;(job as any).notes = notes
 
       // 2. Sync main tooling steps if they were aligned with previous mold_deadline
-      const oldMoldDl = job.mold_deadline?.split('T')[0]
+      const oldMoldDl = (job.mold_deadline || job.deadline)?.split('T')[0]
       const oldTargetDl = job.target_completion_date?.split('T')[0]
       if (job.job_steps && job.job_steps.length > 0) {
         for (const st of job.job_steps) {
@@ -200,14 +200,15 @@ export function JobQuickViewDrawer({ job, onClose, onOpenStepEdit, onJobUpdated 
   const moldCode = (job as any).products?.product_code || job.design_revisions?.design_code || '-'
   const companyName = job.companies?.company_name || '-'
   const jobTypeName = (job as any).job_types?.job_type_name_ja || '-'
-  const deadlineOverdue = isOverdue(job.mold_deadline) && job.job_status !== 'COMPLETED'
+  const effectiveJobMoldDeadline = job.mold_deadline || job.deadline
+  const deadlineOverdue = isOverdue(effectiveJobMoldDeadline) && job.job_status !== 'COMPLETED'
   const completedSteps = steps.filter(s => s.step_status === 'COMPLETED').length
 
   const resetEditing = () => {
     setIsEditing(false)
     setJobName(job.job_name || '')
     setPriority(job.priority || 5)
-    setMoldDeadline(job.mold_deadline?.split('T')[0] || '')
+    setMoldDeadline((job.mold_deadline || job.deadline)?.split('T')[0] || '')
     setShipDate(job.ship_date?.split('T')[0] || '')
     setJobStatus(job.job_status || 'PENDING')
     setNotes((job as any).notes || '')
@@ -430,7 +431,7 @@ export function JobQuickViewDrawer({ job, onClose, onOpenStepEdit, onJobUpdated 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                   <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-muted)' }}>🛠️ 指示納期 / 払出</span>
                   <span style={{ fontSize: 12, fontFamily: 'monospace', fontWeight: 700, color: deadlineOverdue ? 'var(--status-error)' : 'var(--text-primary)', background: '#fff', padding: '2px 4px', borderRadius: 4, textAlign: 'center', border: '1px solid var(--border-default)' }}>
-                    {job.mold_deadline ? formatDate(job.mold_deadline) : '—'}
+                    {effectiveJobMoldDeadline ? formatDate(effectiveJobMoldDeadline) : '—'}
                   </span>
                 </div>
 

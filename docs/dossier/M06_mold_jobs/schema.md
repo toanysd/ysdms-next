@@ -37,7 +37,12 @@
 - `arrangement` (text) | `condition` (text) | `manufacture_location` (text) | `target_completion_date` (date)
 - `legacy_id` (text) | `legacy_specs` (jsonb)
 
-## 4. Views, RPCs & Quy Tắc Liên Kết (`ADR-002` & `ADR-010`)
+## 4. Views, RPCs & Quy Tắc Liên Kết (`ADR-002`, `ADR-010`, `WO-SCHEDULE-DATA-AND-UI-ALIGNMENT`)
 - **Views:** `v_work_order_progress` (`1,230` dòng), `v_work_order_equipment_set` (`1,833` dòng), `v_job_status_summary`.
 - **RPCs:** `fn_get_wo_equipment_set(p_wo_id UUID)` (truy xuất Bộ SET 8 thiết bị cho Work Order/Job từ `equipment_assignments` + `cav_type_id`), `rpc_confirm_work_order`, `rpc_create_work_order_from_order`.
-- **Quyết định Kiến trúc Wave 2 (`1B` & `2A` — PE duyệt `2026-10-15`):** Backfill `design_revision_id` cho `67` khuôn `M-*` (`0` thay đổi `company_id`), backfill FK cho `1,202` `work_orders`/`jobs`, nạp `+27` `work_orders`/`jobs`, `+55` `job_steps`, `+205` `work_logs` có `job_step_id` hợp lệ (loại trừ `94` dòng `ProcessingDeadlineID IS NULL` vào `EXCLUDED_LEGACY_WORK_LOGS`).
+- **Quyết định Kiến trúc Wave 2 (`1B` & `2A` — PE duyệt `2026-10-15`):** Backfill `design_revision_id` cho `67` khuôn `M-*` (`0` thay đổi `company_id`), backfill FK cho `1,202` `work_orders`/`jobs`, nạp `+27` `work_orders`/`jobs`, `+55` `job_steps`, `+205` `work_logs` có `job_step_id` hợp lệ.
+- **Payload Backfill Cổng 1 (`WO-SCHEDULE-DATA-AND-UI-ALIGNMENT` — `BEGIN...ROLLBACK` verified):**
+  - `jobs.company_id`: `COALESCE(wo.company_id, p.company_id, dr.company_id, dr_p.company_id)` (`+1,131` dòng $\rightarrow$ `1,232/1,232`, `0` NULL).
+  - `jobs.job_type_id`: Ánh xạ tất định từ `job_category` (`+28` dòng $\rightarrow$ `1,232/1,232`, `0` NULL).
+  - `work_orders`: `deadline` từ `MAX(COALESCE(j.deadline, j.mold_deadline, j.target_completion_date, j.ship_date))` (`+1,107` dòng $\rightarrow$ `1,135/1,230`), `start_date` từ `MIN(j.start_date)` (`+772` dòng $\rightarrow$ `799/1,230`), `company_id` (`+1,131` dòng $\rightarrow$ `1,230/1,230`).
+  - `job_steps.track`: Chuẩn hóa từ `item_type_id` & `step_name` (`+2,507` dòng $\rightarrow$ `2,512/2,512`, `0` NULL).

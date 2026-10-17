@@ -73,7 +73,7 @@ export default async function ToolingSchedulePage(props: ToolingSchedulePageProp
   }
 
   const workOrders = woData.data
-  const jobs = jobsData.data
+  const jobs = (jobsData.data || []).filter(j => j.job_code !== 'JOB-INTERNAL-SHOP')
   const totalJobs = jobsData.count
   const employees = empData.data || []
   const machines = machData.data || []
@@ -82,8 +82,9 @@ export default async function ToolingSchedulePage(props: ToolingSchedulePageProp
   const inProgress = jobs.filter(j => j.job_status === 'IN_PROGRESS').length
   const completed = jobs.filter(j => j.job_status === 'COMPLETED').length
   const overdue = jobs.filter(j => {
-    if (!j.mold_deadline) return false
-    return new Date(j.mold_deadline) < new Date() && j.job_status !== 'COMPLETED'
+    const effectiveDeadline = j.mold_deadline || j.deadline
+    if (!effectiveDeadline) return false
+    return new Date(effectiveDeadline) < new Date() && j.job_status !== 'COMPLETED'
   }).length
 
   return (

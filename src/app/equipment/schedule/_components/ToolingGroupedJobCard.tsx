@@ -199,7 +199,7 @@ function resolveJobOverallUrgency(job: JobForGantt, steps: JobStepRow[]): Urgenc
         const isStDone = st.step_status === 'COMPLETED' || st.processing_statuses?.status_code?.includes('完了')
         if (isStDone) continue
 
-        const stDl = st.deadline || job.mold_deadline
+        const stDl = st.deadline || job.mold_deadline || job.deadline
         const stUrgency = resolveUrgency(stDl, false)
         if (URGENCY_RANK[stUrgency.level] > URGENCY_RANK[highestUrgency.level]) {
             highestUrgency = stUrgency
@@ -243,6 +243,7 @@ export default function ToolingGroupedJobCard({
 
     const overallUrgency = resolveJobOverallUrgency(job, steps)
     const productCode = job.products?.product_code || job.job_code || 'JOB'
+    const effectiveMoldDeadline = job.mold_deadline || (job.deadline ? job.deadline.split('T')[0] : null)
 
     const isProto = isPrototypeDesignOrMold({
         design_code: job.design_revisions?.design_code,
@@ -326,9 +327,9 @@ export default function ToolingGroupedJobCard({
                                 🏁{job.target_completion_date.slice(5)}
                             </span>
                         )}
-                        {job.mold_deadline && (
+                        {effectiveMoldDeadline && (
                             <span className="text-[var(--accent)] bg-white border border-[var(--border-default)] px-1 py-0.2 rounded whitespace-nowrap" title="指示納期 / 払出期日">
-                                🛠️{job.mold_deadline.slice(5, 10)}
+                                🛠️{effectiveMoldDeadline.slice(5, 10)}
                             </span>
                         )}
                         {job.ship_date && (
@@ -371,7 +372,7 @@ export default function ToolingGroupedJobCard({
                         const statusMeta = resolveStepStatus(step)
                         const isStepDone = statusMeta.label === '完了'
 
-                        const stepDeadline = step.deadline || job.mold_deadline
+                        const stepDeadline = step.deadline || job.mold_deadline || job.deadline
                         const stepUrgency = resolveUrgency(stepDeadline, isStepDone)
 
                         return (

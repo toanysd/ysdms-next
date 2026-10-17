@@ -1,0 +1,115 @@
+{
+  "work_order": "WO-SCHEDULE-DATA-AND-UI-ALIGNMENT",
+  "directive_id": "17481433",
+  "timestamp_jst": "2026-10-17 19:03 JST",
+  "phase": "UI_COMPLETED_AND_GATE1_BACKFILL_DRYRUN_SUBMITTED",
+  "schema_changes": 0,
+  "production_db_mutations": 0,
+  "part_a_ui_alignment": {
+    "status": "COMPLETED",
+    "modified_files": [
+      "src/app/actions/mold-job.ts",
+      "src/app/actions/work-orders.ts",
+      "src/app/equipment/schedule/page.tsx",
+      "src/app/equipment/schedule/_components/ToolingExcelGridView.tsx",
+      "src/app/equipment/schedule/_components/ToolingGroupedJobCard.tsx",
+      "src/app/equipment/schedule/_components/ToolingCalendarMatrix.tsx",
+      "src/components/equipment/MoldJobGantt.tsx",
+      "src/components/equipment/JobQuickViewDrawer.tsx",
+      "src/lib/scheduling/autoScheduler.ts"
+    ],
+    "quality_gates": {
+      "tsc_no_emit": { "exit_code": 0, "errors": 0 },
+      "check_translations_mjs": { "exit_code": 0, "missing_keys": 0 },
+      "playwright_e2e": {
+        "internal_shop_search": {
+          "url": "/equipment/schedule?search=JOB-INTERNAL-SHOP",
+          "contains_internal_shop_card": false,
+          "shows_empty_schedule": true
+        },
+        "gantt_view_coalesce": {
+          "url": "/equipment/schedule?search=IRI002R2&view=gantt",
+          "has_deadline_2026_07_14": true,
+          "has_internal_shop": false
+        },
+        "grid_view_coalesce": {
+          "url": "/equipment/schedule?from=2026-07-06&to=2026-07-19&view=grid",
+          "has_job_IRI002R2": true,
+          "has_deadline_badge_07_14": true,
+          "has_internal_shop": false
+        },
+        "page_errors": []
+      }
+    }
+  },
+  "part_b_backfill_gate1_dry_run": {
+    "transaction_mode": "BEGIN ... ROLLBACK",
+    "post_rollback_matches_before": true,
+    "before_stats": {
+      "work_orders": {
+        "total": 1230,
+        "deadline_not_null": 28,
+        "deadline_null": 1202,
+        "start_date_not_null": 27,
+        "start_date_null": 1203,
+        "company_id_not_null": 99,
+        "company_id_null": 1131
+      },
+      "jobs": {
+        "total": 1232,
+        "company_id_not_null": 101,
+        "company_id_null": 1131,
+        "job_type_id_not_null": 1204,
+        "job_type_id_null": 28
+      },
+      "job_steps": {
+        "total": 2512,
+        "track_not_null": 5,
+        "track_null": 2507
+      }
+    },
+    "after_dry_run_stats": {
+      "work_orders": {
+        "total": 1230,
+        "deadline_not_null": 1135,
+        "deadline_null": 95,
+        "start_date_not_null": 799,
+        "start_date_null": 431,
+        "company_id_not_null": 1230,
+        "company_id_null": 0
+      },
+      "jobs": {
+        "total": 1232,
+        "company_id_not_null": 1232,
+        "company_id_null": 0,
+        "job_type_id_not_null": 1232,
+        "job_type_id_null": 0
+      },
+      "job_steps": {
+        "total": 2512,
+        "track_not_null": 2512,
+        "track_null": 0
+      }
+    },
+    "updated_row_counts": {
+      "jobs_company_id_updated": 1131,
+      "jobs_job_type_id_updated": 28,
+      "work_orders_updated": 1203,
+      "job_steps_track_updated": 2507
+    },
+    "job_steps_track_distribution_after": {
+      "MOLD": 1130,
+      "PLUG": 809,
+      "CUTTER": 356,
+      "STAKING": 157,
+      "MACHINE": 19,
+      "OTHER": 10,
+      "WATER COOLING BASE": 10,
+      "ALUMI": 9,
+      "PRESSIER BASE": 6,
+      "FINISH": 3,
+      "FRAME": 2,
+      "DESIGN": 1
+    }
+  }
+}

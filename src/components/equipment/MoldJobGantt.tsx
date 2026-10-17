@@ -1244,7 +1244,9 @@ export default function MoldJobGantt({ workOrders = [], jobs, employees = [], ma
     }
 
     // Sort jobs by deadline descending: newest (latest deadline) at the top, oldest at the bottom
-    const sortedJobs = [...displayJobs].sort((a, b) => {
+    const sortedJobs = [...displayJobs]
+      .filter(j => j.job_code !== 'JOB-INTERNAL-SHOP')
+      .sort((a, b) => {
       const dlA = a.mold_deadline || a.deadline || ''
       const dlB = b.mold_deadline || b.deadline || ''
       if (dlA && dlB) {
@@ -1436,7 +1438,8 @@ export default function MoldJobGantt({ workOrders = [], jobs, employees = [], ma
       })
 
       if (!hasValidSteps) {
-        const targetDl = primaryJob.mold_deadline || primaryJob.deadline || groupJobs.find(j => j.mold_deadline)?.mold_deadline
+        const fallbackGroupJob = groupJobs.find(j => j.mold_deadline || j.deadline)
+        const targetDl = primaryJob.mold_deadline || primaryJob.deadline || fallbackGroupJob?.mold_deadline || fallbackGroupJob?.deadline
         if (targetDl) {
             projEnd = new Date(targetDl)
             projStart = new Date(projEnd)
