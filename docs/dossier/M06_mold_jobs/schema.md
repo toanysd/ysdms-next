@@ -1,9 +1,9 @@
 # 🗄️ M06 — Schema Work Orders, Jobs & Job Steps (`M06_mold_jobs/schema.md`)
 
-- **Đối chiếu `information_schema.columns` lúc:** `2026-10-15 01:39:47.755187+00:00`
-- **Số bản ghi Production:** `work_orders = 1,203` | `jobs = 1,205` | `job_steps = 2,457` | `mold_work_orders = 0` (Legacy, cấm dùng).
+- **Đối chiếu `information_schema.columns` lúc:** `2026-10-17 07:20:15.988565+00:00` (Post-Wave 2)
+- **Số bản ghi Production:** `work_orders = 1,230` | `jobs = 1,232` | `job_steps = 2,512` | `v_work_order_equipment_set = 1,833` | `mold_work_orders = 0` (Legacy, cấm dùng).
 
-## 1. Bảng `public.work_orders` (BASE TABLE — 1,203 dòng)
+## 1. Bảng `public.work_orders` (BASE TABLE — 1,230 dòng)
 - `wo_id` (uuid*) | `wo_code` (text*) | `wo_name` (text*) | `product_id` (uuid)
 - `design_revision_id` (uuid) | `order_id` (uuid) | `company_id` (uuid) | `case_id` (uuid)
 - `wo_type` (text*) | `wo_status` (text*) | `start_date` (timestamptz) | `deadline` (timestamptz)
@@ -11,7 +11,7 @@
 - `created_at` (timestamptz) | `updated_at` (timestamptz) | `created_by` (uuid) | `legacy_id` (text)
 - `legacy_specs` (jsonb)
 
-## 2. Bảng `public.jobs` (BASE TABLE — 1,205 dòng)
+## 2. Bảng `public.jobs` (BASE TABLE — 1,232 dòng)
 - `job_id` (uuid*) | `job_code` (text*) | `job_name` (text*) | `job_type_id` (text)
 - `design_revision_id` (uuid) | `company_id` (uuid) | `responsible_id` (uuid) | `outsource_company` (uuid)
 - `start_date` (timestamptz) | `deadline` (timestamptz) | `completed_date` (timestamptz) | `estimated_hours` (numeric)
@@ -25,7 +25,7 @@
 - `job_category` (text) | `equipment_id` (uuid) | `case_id` (uuid) | `work_order_id` (uuid)
 - `target_completion_date` (date) | `legacy_specs` (jsonb)
 
-## 3. Bảng `public.job_steps` (BASE TABLE — 2,457 dòng)
+## 3. Bảng `public.job_steps` (BASE TABLE — 2,512 dòng)
 - `step_id` (uuid*) | `job_id` (uuid*) | `step_no` (integer*) | `processing_item_id` (integer)
 - `processing_status_id` (integer) | `step_name` (text*) | `step_status` (text) | `deadline` (timestamptz)
 - `estimated_hours` (numeric) | `outsource_company` (uuid) | `machining_location` (text) | `set_info` (text)
@@ -38,6 +38,6 @@
 - `legacy_id` (text) | `legacy_specs` (jsonb)
 
 ## 4. Views, RPCs & Quy Tắc Liên Kết (`ADR-002` & `ADR-010`)
-- **Views:** `v_work_order_progress` (`1,203` dòng), `v_work_order_equipment_set` (`2` dòng), `v_job_status_summary` (`2` dòng).
+- **Views:** `v_work_order_progress` (`1,230` dòng), `v_work_order_equipment_set` (`1,833` dòng), `v_job_status_summary`.
 - **RPCs:** `fn_get_wo_equipment_set(p_wo_id UUID)` (truy xuất Bộ SET 8 thiết bị cho Work Order/Job từ `equipment_assignments` + `cav_type_id`), `rpc_confirm_work_order`, `rpc_create_work_order_from_order`.
-- **Quyết định Kiến trúc 3.C (Phương án A — PE duyệt `2026-10-14 18:50 JST`):** Giữ nguyên ràng buộc `work_logs.job_step_id NOT NULL`; sử dụng 1 system Job/Step cố định `LEGACY-STEP-SHOP-INTERNAL` cho `118` dòng nhật ký nội bộ xưởng (`ProcessingDeadlineID IS NULL`) khi chạy Wave 2/3.
+- **Quyết định Kiến trúc Wave 2 (`1B` & `2A` — PE duyệt `2026-10-15`):** Backfill `design_revision_id` cho `67` khuôn `M-*` (`0` thay đổi `company_id`), backfill FK cho `1,202` `work_orders`/`jobs`, nạp `+27` `work_orders`/`jobs`, `+55` `job_steps`, `+205` `work_logs` có `job_step_id` hợp lệ (loại trừ `94` dòng `ProcessingDeadlineID IS NULL` vào `EXCLUDED_LEGACY_WORK_LOGS`).
