@@ -1,0 +1,199 @@
+{
+  "work_order": "WO-AI-EXTRACTION-AUDIT",
+  "gate": "GATE_1_READ_ONLY_AUDIT",
+  "directive_id": "65ffb9df",
+  "executed_at_jst": "2026-10-17T18:18:00+09:00",
+  "db_now_utc": "2026-04-17 09:13:20.097253+00",
+  "production_db_mutations": 0,
+  "pipeline_architecture": {
+    "entry_paths": [
+      {
+        "name": "Path 1 — AI OCR Manufacturing Sheet",
+        "ui_component": "src/components/ocr/ManufacturingSheetOCRModal.tsx",
+        "api_routes": [
+          "src/app/api/ocr/extract/route.ts",
+          "src/app/api/ocr/check-product/route.ts",
+          "src/app/api/ocr/save/route.ts"
+        ],
+        "ai_models": [
+          "gemini-3.6-flash",
+          "gemini-2.5-flash"
+        ],
+        "tables_written": [
+          "public.companies",
+          "public.products",
+          "public.design_revisions",
+          "public.work_orders",
+          "public.equipment",
+          "public.equipment_assignments",
+          "public.jobs",
+          "public.job_steps"
+        ],
+        "critical_bugs": [
+          "save/route.ts:111-119 falls back to arbitrary first row in public.companies when customer lookup fails",
+          "save/route.ts:511,591,708 sets equipment.company_id to Customer ID instead of Machining Vendor ID (violates Wave 2 Decision 2.C)",
+          "save/route.ts:676 skips creating public.equipment row for PLUG components, leaving plugEquipId = NULL at line 1035",
+          "save/route.ts:1062-1122 creates DESIGN job (DES-*) with equipment_id = NULL and omits start_date on MOLD/CUTTER/PLUG jobs",
+          "OCR source image is not persisted to Supabase Storage / public.equipment_photos after extraction",
+          "Sequential HTTP calls without a wrapping DB transaction"
+        ]
+      },
+      {
+        "name": "Path 2 — Fast Tooling Job Form (Non-AI)",
+        "ui_component": "src/app/equipment/jobs/_components/FastJobCreateForm.tsx",
+        "server_action": "src/app/actions/fast-tooling-job.ts",
+        "critical_bugs": [
+          "Calls non-existent RPC create_fast_tooling_job then falls back to client code",
+          "Does NOT create a public.work_orders record (jobs.work_order_id = NULL)",
+          "Line 163 uses invalid column product_lifecycle_status: 'ACTIVE' instead of product_status: 'ACTIVE'"
+        ]
+      },
+      {
+        "name": "Path 3 — Quick Mold Job Wizard (Non-AI)",
+        "ui_component": "src/components/modals/CenteredQuickJobWizardModal.tsx",
+        "server_action": "src/app/actions/quick-mold-job.ts",
+        "critical_bugs": [
+          "Hardcodes revision_number = 1 and design_category = 'MASS_PRODUCTION' (vs 'MASS' in OCR save)",
+          "Does not create public.equipment_assignments rows",
+          "Hardcodes fallback companyId = '3c52ba34-...'"
+        ]
+      },
+      {
+        "name": "Path 4 — Email Extraction Script (Offline Only)",
+        "script": "scripts/parse_mail_deep.py",
+        "critical_bugs": [
+          "Offline batch script only; not connected to ManufacturingSheetOCRModal or any API endpoint"
+        ]
+      }
+    ]
+  },
+  "schedule_tables_live_audit": {
+    "work_orders": {
+      "total_rows": 1230,
+      "missing_product_id": 0,
+      "missing_design_revision_id": 0,
+      "missing_company_id": 1131,
+      "missing_start_date": 1203,
+      "missing_deadline": 1202,
+      "missing_responsible_id": 1203,
+      "status_breakdown": {
+        "COMPLETED": 1225,
+        "OPEN": 4,
+        "IN_PROGRESS": 1
+      }
+    },
+    "jobs": {
+      "total_rows": 1232,
+      "missing_work_order_id": 1,
+      "missing_product_id": 1,
+      "missing_design_revision_id": 1,
+      "missing_equipment_id": 2,
+      "missing_company_id": 1131,
+      "missing_job_type_id": 28,
+      "missing_start_date": 433,
+      "missing_deadline": 98,
+      "missing_mold_deadline": 1166,
+      "missing_target_completion_date": 1230,
+      "missing_ship_date": 1230,
+      "missing_responsible_id": 1205,
+      "rows_missing_core_fks": [
+        {
+          "job_id": "c2c71352-00b8-45fc-8f07-9edf89bfe345",
+          "job_code": "DES-JAE380",
+          "job_name": "JAE-380 設計",
+          "job_status": "IN_PROGRESS",
+          "job_category": "DESIGN",
+          "work_order_id": "2c66d4a5-45e0-445e-812d-50da88ab91bc",
+          "product_id": "345de0fd-18bf-4888-aa98-5ae6cf089e8e",
+          "design_revision_id": "18f4b2da-bc66-4ca4-86ac-6f89b6064415",
+          "equipment_id": null
+        },
+        {
+          "job_id": "380d3e19-6074-4701-a0bd-d0e8a2892202",
+          "job_code": "JOB-INTERNAL-SHOP",
+          "job_name": "社内作業・5S・保全",
+          "job_status": "OPEN",
+          "job_category": "INTERNAL_OPS",
+          "work_order_id": null,
+          "product_id": null,
+          "design_revision_id": null,
+          "equipment_id": null
+        }
+      ]
+    },
+    "job_steps": {
+      "total_rows": 2512,
+      "missing_job_id": 0,
+      "missing_step_name": 0,
+      "missing_track": 2507,
+      "missing_type_code": 2512,
+      "missing_item_type_id": 2457,
+      "missing_deadline": 759,
+      "missing_planned_start": 2512,
+      "missing_planned_end": 2512
+    },
+    "production_schedules": {
+      "total_rows": 30,
+      "missing_mold_id": 30,
+      "missing_order_line_id": 30
+    }
+  },
+  "operational_modules_disconnects_vs_wave3": [
+    {
+      "module": "CheckInOutModule.tsx",
+      "current_query": "equipment_history WHERE action_type IN ('IN', 'OUT', 'CHECK_IN', 'CHECK_OUT')",
+      "wave3_ssot": "public.equipment_status_logs (352 rows) + equipment_history WHERE action_type IN ('STATUS_CHECK_IN', 'STATUS_CHECK_OUT', 'STATUS_AUDIT')",
+      "hidden_wave3_rows": 352,
+      "missing_features_vs_moldcuttersearch": [
+        "1-tap Stamp Audit mode (AUDIT)",
+        "Pinned employee selection",
+        "Reading/writing public.equipment_status_logs"
+      ]
+    },
+    {
+      "module": "TeflonCoatingModule.tsx",
+      "current_query": "public.jobs WHERE job_category = 'EQUIPMENT_REPAIR' (0 rows)",
+      "wave3_ssot": "public.mold_maintenance WHERE maintenance_type = 'TEFLON_COATING' AND physical_mold_id = equipment_id (190 rows)",
+      "hidden_wave3_rows": 190,
+      "missing_features_vs_moldcuttersearch": [
+        "Reading/writing public.mold_maintenance (all 190 Wave 3 Teflon rows are currently invisible on UI)",
+        "4-step Teflon state workflow (Requested -> Approved -> Sent -> Received) synced with ship_logs and status_logs"
+      ]
+    },
+    {
+      "module": "TransportModule.tsx",
+      "current_query": "equipment_history WHERE action_type = 'TRANSFER' (0 rows from Wave 3)",
+      "wave3_ssot": "public.equipment_ship_logs (356 rows) + equipment_history WHERE action_type IN ('SHIP_OUT', 'SHIP_IN', 'SHIP_TRANSFER', 'TRANSFER')",
+      "hidden_wave3_rows": 356,
+      "missing_features_vs_moldcuttersearch": [
+        "Reading/writing public.equipment_ship_logs (all 356 Wave 3 ship logs are currently invisible on UI)",
+        "Golden Rule auto-OUT when transferring out of YSD and RackLayer prompt when returning to YSD"
+      ]
+    },
+    {
+      "module": "LocationMoveModule.tsx",
+      "current_query": "equipment_history WHERE action_type = 'RELOCATE' (0 rows)",
+      "wave3_ssot": "equipment_history WHERE action_type IN ('RELOCATE', 'LOCATION_CHANGE') (1,488 Wave 3 rows) + public.asset_location_logs (1,450 rows)",
+      "hidden_wave3_rows": 1488,
+      "missing_features_vs_moldcuttersearch": [
+        "Including LOCATION_CHANGE in equipment_history query (all 1,488 Wave 3 location history rows are currently invisible on UI)"
+      ]
+    },
+    {
+      "module": "PhotoManagerModule.tsx & EquipmentPhotoGallery.tsx",
+      "current_query": "public.equipment_photos (0 rows) + bucket equipment-photos",
+      "wave3_ssot": "public.equipment_photos",
+      "hidden_wave3_rows": 0,
+      "missing_features_vs_moldcuttersearch": [
+        "Default Privacy Blur Shield (Rule 3 Global: default blur + hover/toggle blur)",
+        "Direct mobile camera capture button (capture='environment')",
+        "Auto-attaching scanned OCR manufacturing sheet image to equipment_photos"
+      ]
+    }
+  ],
+  "proposed_work_orders": [
+    "WO-EQUIP-OPS-WAVE3-WIRING",
+    "WO-SCHEDULE-DATA-AND-UI-ALIGNMENT",
+    "WO-AI-OCR-PIPELINE-HARDENING"
+  ]
+}

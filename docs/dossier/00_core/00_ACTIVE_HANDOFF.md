@@ -1,16 +1,20 @@
 # 📌 YSDMS NextGen — Active Handoff (`00_ACTIVE_HANDOFF.md`)
 
-- **Cập nhật lần cuối:** `2026-10-17 17:59:00 JST`
+- **Cập nhật lần cuối:** `2026-10-17 18:19:00 JST`
 - **Work Order đã đóng (`CLOSED`):**
-  - `WO-MOLD-SYNC-WAVE3` (**CLOSED & VERIFIED BY PE** tại `8a6b7db922cfbc58f73a3c9a9c5b32475ea55dec`, Directive `715539cb`).
-  - `WO-MOLD-SYNC-WAVE2` (**CLOSED & VERIFIED BY PE** tại `3cff159d744d68daff09293d3c1479c704b6c319`).
-  - `WO-MOLD-SYNC-WAVE1` (**CLOSED**), `WO-CONTEXT-PALACE` (**CLOSED**), `WO-DOC-MODULAR` (**CLOSED**), `WO-EQUIPMENT-UI-FIX` (**CLOSED**).
-- **Work Order hiện hành:** `WO-DATA-AUDIT-SUMMARY` (Theo Chỉ thị PE `715539cb`) — **ĐÃ LẬP BÁO CÁO TỔNG HỢP READ-ONLY 3 WAVE (`1+2+3`) & KIỂM KÊ 51 BẢNG ACCESS, CHỜ PE NGHIỆM THU & ĐÓNG WO**.
+  - `WO-DATA-AUDIT-SUMMARY` (**CLOSED & VERIFIED BY PE** tại `33ea19e197266fabff4a83f1a004fef457e2e9bd`, Directive `65ffb9df`; `WO-MATERIAL-SYNC-WAVE4` đã hủy theo lệnh Minh Chủ **THOAN**).
+  - `WO-MOLD-SYNC-WAVE3` (**CLOSED** tại `8a6b7db922cfbc58f73a3c9a9c5b32475ea55dec`), `WO-MOLD-SYNC-WAVE2` (**CLOSED** tại `3cff159d744d68daff09293d3c1479c704b6c319`), `WO-MOLD-SYNC-WAVE1` (**CLOSED**), `WO-CONTEXT-PALACE` (**CLOSED**).
+- **Work Order hiện hành:** `WO-AI-EXTRACTION-AUDIT` (Gate 1 — Read-Only theo Chỉ thị PE `65ffb9df`) — **ĐÃ HOÀN TẤT BÁO CÁO KIỂM TOÁN (`docs/audit_logs/2026-10-17_WO-AI-EXTRACTION-AUDIT.{md,json}`), CHỜ PE DUYỆT KẾ HOẠCH CẢI TIẾN**.
 
-## 1. Tóm Tắt Kiểm Toán Tổng Hợp 3 Wave (`docs/audit_logs/2026-10-17_WO-DATA-AUDIT-SUMMARY.{md,json}`)
-1. **Tổng số dòng biến đổi qua 3 bảng Staging (`100% applied`):** `7,438` dòng (`Wave 1 = 1,824` | `Wave 2 = 2,785` | `Wave 3 = 2,829`).
-2. **Số bản ghi Production hiện hành sau 3 Wave:** `companies = 2,215`, `racks = 90`, `rack_layers = 400`, `products = 8,543`, `design_revisions = 4,781`, `equipment = 6,525` (`molds_with_drev = 4,793`, `keeper_company_id = 226`, `company_id = 27`), `equipment_assignments = 2,970`, `work_orders = 1,230`, `jobs = 1,232`, `job_steps = 2,512`, `work_logs = 7,316`, `equipment_history = 1,896`, `equipment_ship_logs = 356`, `mold_maintenance = 190`, `mold_name_history = 35`, `equipment_status_logs = 352`, `asset_location_logs = 1,450`, `mold_loan_certificates = 209`.
-3. **Dữ liệu Access (`ysdJOB_20261006.accdb` — `51` bảng: `42` bảng người dùng + `9` bảng `~TMPCLP*`):**
-   - `39/42` bảng cốt lõi & danh mục nhựa đã đồng bộ/chuẩn hóa hoàn chỉnh.
-   - Chỉ còn nhóm 3 bảng vật tư chế tạo khuôn (`VatTuTbl = 723`, `DatHangVTTbl = 1,396`, `VatTuSDtbl = 64`) và 2 bảng phụ nhỏ (`tblDefect = 4`, `tblCase = 18`) chưa đồng bộ (tùy chọn nếu nghiệp vụ cần).
-4. **Điểm dừng hiện tại:** Chờ **PE** nghiệm thu báo cáo `WO-DATA-AUDIT-SUMMARY` và chỉ đạo Work Order tiếp theo.
+## 1. Tóm Tắt Phát Hiện Cốt Lõi `WO-AI-EXTRACTION-AUDIT` (Gate 1 Read-Only)
+1. **Pipeline Trích xuất AI & Tạo mới (`ysdms-nextgen`):** Đang chia thành 3 luồng rời rạc (`/api/ocr/save`, `createFastToolingJobAction`, `createQuickMoldJobWorkflow`). Trong `/api/ocr/save`: (a) fallback lấy dòng đầu tiên bất kỳ trong `companies` khi không khớp khách hàng, (b) gán `equipment.company_id` bằng Khách hàng thay vì Nhà gia công khuôn, (c) bỏ sót tạo dòng `equipment` cho `PLUG` (`plugEquipId = NULL`), (d) tạo Job `DESIGN` (`DES-JAE380`) có `equipment_id = NULL` và thiếu `start_date` trên các Job thiết bị.
+2. **Kiểm toán Bảng Kế hoạch Khuôn (`/equipment/schedule`):**
+   - `work_orders` (`1,230`): `product_id/design_revision_id` thiếu `0`, nhưng `company_id = NULL` (`1,131`), `deadline = NULL` (`1,202`), `start_date = NULL` (`1,203`).
+   - `jobs` (`1,232`): chỉ 2 dòng thiếu `equipment_id` (`DES-JAE380` và `JOB-INTERNAL-SHOP`), nhưng `mold_deadline = NULL` (`1,166` — trong khi `deadline` có `1,134` dòng), `company_id = NULL` (`1,131`), `job_type_id = NULL` (`28`).
+   - `job_steps` (`2,512`): `track = NULL` (`2,507` dòng), `item_type_id = NULL` (`2,457` dòng).
+3. **Đứt gãy giữa 4 Module Vận hành Thiết bị (`ysdms-nextgen`) và dữ liệu Wave 3 (`2,386` dòng lịch sử bị ẩn trên UI):**
+   - `TeflonCoatingModule` đọc `jobs (EQUIPMENT_REPAIR)` thay vì `mold_maintenance` (`190` dòng Wave 3).
+   - `TransportModule` chỉ lọc `TRANSFER` thay vì đọc `equipment_ship_logs` (`356` dòng Wave 3) & `SHIP_*`.
+   - `LocationMoveModule` chỉ lọc `RELOCATE` thay vì `LOCATION_CHANGE` (`1,488` dòng Wave 3).
+   - `CheckInOutModule` chưa lọc `STATUS_*` / đọc `equipment_status_logs` (`352` dòng Wave 3).
+4. **Điểm dừng hiện tại:** Chờ **PE** duyệt lộ trình 3 WO đề xuất (`WO-EQUIP-OPS-WAVE3-WIRING`, `WO-SCHEDULE-DATA-AND-UI-ALIGNMENT`, `WO-AI-OCR-PIPELINE-HARDENING`).
